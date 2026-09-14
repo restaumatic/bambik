@@ -22,30 +22,86 @@
 -- |     co-strength `Coretaining`: `unfolding @w` (the productive unfold,
 -- |     the `Coreel` optic's row form).
 -- |
--- | Law connecting the two classes: as in `RecordToVariant`, no `identity`
--- | crosses the modes, but a **silent sink** does — `p [ | b ] {}`, consuming
--- | any case and contributing no field (`PUI`'s parametric `silence` at that
--- | type; at `b = ()` it is the merge unit, `lcmap case_ identity`). A unary
--- | introduce operator — one case reducing into the record — is the
--- | **sink-pinned merge**, derivable and therefore not exported (L14):
+-- | ## Laws of the `+→×` shape
 -- |
--- | ```
--- | reduce @l g = variantToRecord (lcmap unwrap g) silence
--- |   where unwrap :: [ l :: f ] -> f   -- eliminate the singleton variant
--- | ```
+-- | For a citizen `w :: p [ | i ] { | o }` — a **fold** of occurrences into
+-- | retained state, or at `o = {}` a **status** — with `occur e` an input
+-- | occurrence, `emit y` an emission, `≈`/`⊑` from
+-- | doc/observational-semantics.md (§3.1 is this shape's modality, *may*
+-- | release). The first three are protocol obligations; the rest are
+-- | carrier guarantees given them.
 -- |
--- | with the cross-operand **retention** the merge machinery performs on
--- | non-`l` events supplied, in the free-function form, by `Retaining`.
+-- | **Citizen laws** — what any `+→×` component owes:
 -- |
--- | Completing the arity ladder downward, the merge has **no unit of its
--- | own**; conditionally on the carrier — *if* `p` is also a `Category` —
--- | the wire at the unit row entered from the empty variant, `lcmap case_
--- | identity :: p (Variant ()) {}`, must play well with it:
--- | `variantToRecord (lcmap case_ identity) g = g = variantToRecord g
--- | (lcmap case_ identity)`. Never fed,
--- | owning no field, its side of the gate is pre-satisfied — which is why
--- | any silent element of that type serves equally, and `silence` at
--- | `b = ()` is one.
+-- |   1. **Causality.** Every emission is a response to an input
+-- |      occurrence; nothing at registration, nothing spontaneous. An
+-- |      occurrence may leave the state unchanged and then owes nothing — a
+-- |      status (`[ event ] → {}`) renders each occurrence and owes the
+-- |      channel nothing ever.
+-- |   2. **Wholeness.** Every `emit y` is a whole `{ | o }`, completed from
+-- |      retained knowledge — never fabricated. Before the knowledge exists
+-- |      (a `retain` whose state case has not arrived) an emission needing
+-- |      it is withheld, not invented; `unfolding`/`accumulated` take a
+-- |      seed so that moment is registration.
+-- |   3. **Publicity.** The retained state **is** the released state: an
+-- |      occurrence that changes what would be released, releases. A change
+-- |      can never stay private. (Releasing also on *unchanged* state is the
+-- |      carrier's permitted choice, made so no row needs `Eq`; a carrier
+-- |      releasing only on change satisfies the same laws.)
+-- |
+-- | **Merge laws** — for `m = variantToRecord w1 w2`, inputs owned
+-- | (`OwnedVariantInputs`), outputs owned (`OwnedRecordOutputs`):
+-- |
+-- |   4. **Unit.** Conditional on the carrier — *if* `p` is a `Category`,
+-- |      the wire at the unit row entered from the empty variant is the
+-- |      unit exactly:
+-- |
+-- |      ```
+-- |      variantToRecord (lcmap case_ identity) g = g = variantToRecord g (lcmap case_ identity)   -- :: p (Variant ()) {}
+-- |      ```
+-- |
+-- |      Never fed and owning no field, its side of the gate is
+-- |      pre-satisfied, so any silent element of that type serves equally —
+-- |      `PUI`'s parametric `silence` at `b = ()` is one. The merge has no
+-- |      unit of its own; this completes the arity ladder downward.
+-- |   5. **Pinned sink.** The unary reduce — one case folding into the
+-- |      record — is the sink-pinned merge, derivable and therefore not
+-- |      exported (L14):
+-- |
+-- |      ```
+-- |      reduce @l g = variantToRecord (lcmap unwrap g) silence
+-- |        where unwrap :: [ l :: f ] -> f
+-- |      ```
+-- |
+-- |      with the cross-operand **retention** the merge performs on non-`l`
+-- |      occurrences supplied, in the free-function form, by `Retaining`.
+-- |   6. **Symmetry and associativity**, up to `≈`.
+-- |   7. **Closure.** If `w1`, `w2` satisfy 1–3, so does `m` from the moment
+-- |      both operands have contributed: an occurrence is **dispatched** to
+-- |      its one owner (exactly one operand answers, so no torn row is
+-- |      possible — every ingredient of tearing but a broadcast), and the
+-- |      output is the **gate** shared with `×→×`: the union released once
+-- |      both have spoken, each side's last contribution retained. Before
+-- |      both have, `m` withholds, never fabricates. The step is kept so a
+-- |      re-entrant echo during an occurrence coalesces into one release.
+-- |   8. **Inheritance over owned fields.** `w1 ⊑ w1'` implies `m ⊑ m'`
+-- |      when `w1` owns a field; an operand owning none refines nothing.
+-- |      Every status owns none, so a status beside a fold never withholds
+-- |      it, whatever it renders.
+-- |   9. **Exactness.** An operand counts only at its declared fields:
+-- |      `variantToRecord w1 w2 ≈ variantToRecord (rmap exact w1) w2`.
+-- |  10. **Independence.** An emission goes downstream, never to the
+-- |      sibling; the state channel across cases is `Retaining`'s `retain`,
+-- |      the loop `Coretaining`'s `unfolding`, whose retraction is seeded
+-- |      (`coretain (seeded (Right c0) >>> retain g) ≈ g`).
+-- |
+-- | Laws 4, 6, 7 and 9 have value-level tests in test/Main.purs (`unit law
+-- | +→×`, `+→× symmetry`/`+→× associativity`, `+→× gating`, the
+-- | no-tear prediction of doc §8.0, `+→× exactness`); 8 is the unit law's
+-- | zero-field half; 5 and 10 are definitional. Starvation reads off the
+-- | set as at `×→×`: a merge silent once both sides have spoken has an
+-- | operand breaking law 3; one silent before that is waiting on an owned
+-- | field's first occurrence — prime it (`unfolding`'s seed, `seeded`).
 module Data.Profunctor.Row.VariantToRecord
   ( bind
   , variantToRecord

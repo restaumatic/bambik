@@ -22,26 +22,77 @@
 -- |     `folding @w` (the terminating fold at row granularity, the
 -- |     `Coshutter` optic's row form).
 -- |
--- | Law connecting the two classes: the mixed directions have no `identity` to
--- | pin (nothing inhabits a mode-crossing diagonal), but they have the class's
--- | own **unit** `silence`, the silent source (a class member, and the one
--- | unit no wire reaches: `{}` is terminal, `Variant ()` initial). The unary
--- | introduce operator is the **unit-pinned merge**,
+-- | ## Laws of the `×→+` shape
 -- |
--- | ```
--- | recordToCase @l g = recordToVariant (rmap (inj (Proxy @l)) g) silence
--- | ```
+-- | For a citizen `w :: p { | i } [ | o ]` — an **event source** fed a
+-- | row — with `feed x` a feed, `emit e` an emission, `≈` observational
+-- | equivalence (doc/observational-semantics.md; §3.1 is this shape's
+-- | modality, *must not* echo). The first three are protocol obligations
+-- | the type cannot enforce (`identity` and `clicked` share a type); the
+-- | rest are what a carrier guarantees given them.
 -- |
--- | and a pinned unit contributes nothing — which is why `recordToCase`
--- | collapses to plain `rmap (inj l)` on any `Profunctor`.
+-- | **Citizen laws** — what any `×→+` component owes:
 -- |
--- | As nullary operator, `silence` is the empty merge:
--- | `recordToVariant silence g = g`. Silence is forced on the output end (the
--- | empty variant is uninhabited) and sufficient on the input end (the empty
--- | record demands nothing), and parametricity extends both to arbitrary
--- | rows — so the unit is stated at any rows, as `silence` itself.
+-- |   1. **Arming.** `feed x` never emits, and nothing is emitted at
+-- |      registration. A feed *arms*: it is the replay ammunition, not a
+-- |      cause. This is doc law 3 (no synchronous event echo) seen from
+-- |      the source's side, and what lets `updated`/`applied` feed an
+-- |      emitter without firing it.
+-- |   2. **Idempotence of arming.** `feed x ; feed x ≈ feed x` — feeding
+-- |      is a write to the replay slot, so the second write changes nothing.
+-- |   3. **Replay wholeness.** An emission's payload is the **whole** row
+-- |      last fed (`clicked`'s protocol; `armed`; `# with patch`), or the
+-- |      last value of a burst at quiescence (`resolve`) — never a
+-- |      fabricated row, never a partial one. Before any feed a source is
+-- |      silent: a click before anything was shown does nothing. Replay is
+-- |      lawful over records only, which is why the shape's sources are
+-- |      row-shaped.
 -- |
--- | It is also what an **absent event source is**. A `×→+` component that
+-- | **Merge laws** — for `m = recordToVariant w1 w2`, inputs shared
+-- | (`SharedRecordInputs`), outputs shared (`SharedVariantOutputs`):
+-- |
+-- |   4. **Unit.** The class's own member `silence` — the one unit no wire
+-- |      reaches, since `{}` is terminal and `Variant ()` initial — is the
+-- |      unit exactly, at any rows:
+-- |
+-- |      ```
+-- |      recordToVariant silence g = g = recordToVariant g silence
+-- |      ```
+-- |
+-- |      Silence is forced on the output end (the empty variant is
+-- |      uninhabited) and sufficient on the input end (the empty record
+-- |      demands nothing), and parametricity extends both to arbitrary rows.
+-- |   5. **Pinned unit.** The unary introduce is the unit-pinned merge, and
+-- |      a pinned unit contributes nothing:
+-- |
+-- |      ```
+-- |      recordToCase @l g = recordToVariant (rmap (inj (Proxy @l)) g) silence = rmap (inj (Proxy @l)) g
+-- |      ```
+-- |
+-- |      which is why `recordToCase` (and `toCase`/`toCases` over it)
+-- |      needs only `Profunctor`.
+-- |   6. **Symmetry and associativity**, up to `≈`.
+-- |   7. **Closure.** If `w1`, `w2` satisfy 1–3, so does `m`: a feed is
+-- |      **broadcast** to both operands (each arms), and each emission
+-- |      exits **as it occurs**, ungated — an event has no value between
+-- |      occurrences, so there is nothing to retain, nothing to gate and
+-- |      nothing to tear, and the merge is stateless. The broadcast owes
+-- |      the boundary at most one thing per feed; law 1 on the operands is
+-- |      what discharges it here (at `×→×` the carrier discharges the same
+-- |      obligation itself, by the step) — one cause, two output kinds
+-- |      (Data.Profunctor.Row, "What an inclusive input side obliges").
+-- |   8. **Independence.** The operands receive no feeds but `m`'s, and an
+-- |      emission goes downstream, never to the sibling. The loop at this
+-- |      shape is `Resolving`'s: `resolve`/`coresolve`, whose seeded
+-- |      retraction is `debounced` (Data.Profunctor.Resolving).
+-- |
+-- | Laws 4 and 7 have value-level tests in test/Main.purs (`unit law ×→+`,
+-- | `×→+ broadcast`); associativity is tested (`×→+ associativity`),
+-- | symmetry is not separately; 5 is a definitional collapse and 8
+-- | definitional. Law 1 is why this shape has no starvation: a silent
+-- | source is lawful, and an absent one is `silence` (below).
+-- |
+-- | `silence` is also what an **absent event source is**. A `×→+` component that
 -- | exists in one state and not in another
 -- | (`button @"Start" {} # provided @"halted" phaseOf`) is, in the state
 -- | where it is absent, observationally `silence`: fed nothing, emitting

@@ -11,12 +11,69 @@
 -- | focus/background dispatch `splitVariant` on the floor in
 -- | `Data.Profunctor.Row` — neither mentions a row profunctor.
 -- |
--- | The merge has **no unit of its own**; its unit law is conditional on
--- | the carrier: *if* `p` is also a `Category`, `identity` at the empty
--- | variant must play well with it, `variantToVariant identity g = g =
--- | variantToVariant g identity`. Both empty-variant ends
--- | are uninhabited, so the wire there can neither receive nor emit: it is
--- | silence, forced, and any silent element of that type is equal to it.
+-- | ## Laws of the `+→+` shape
+-- |
+-- | For a citizen `w :: p [ | i ] [ | o ]` — a **handler** of occurrences
+-- | — with `occur e` an input occurrence (a feed at `+`), `emit e'` an
+-- | emission, `≈` observational equivalence (doc/observational-semantics.md;
+-- | §3.1 is this shape's modality, *may*). The first two are protocol
+-- | obligations; the rest are carrier guarantees given them.
+-- |
+-- | **Citizen laws** — what any `+→+` component owes:
+-- |
+-- |   1. **Causality.** Every emission is a response to an input
+-- |      occurrence — during it or after it, once, several times or never
+-- |      (forward, transform, split, end). Nothing at registration, nothing
+-- |      spontaneous: a handler never *originates*. `identity` forwards each
+-- |      occurrence exactly once; `action` responds when its `Aff` settles.
+-- |      This is `iterate`'s well-foundedness — re-entry is an event loop,
+-- |      not a busy loop — and why a response emitted inside `toUser` is
+-- |      not the echo doc law 3 forbids (the law is about sources).
+-- |   2. **Counting.** `occur e ; occur e` is two occurrences, not one, and
+-- |      nothing in the shape may coalesce them: an event has no value
+-- |      between occurrences, so there is nothing to compare and no `Eq`
+-- |      is ever needed. (The contrast with `×→×`'s feed-idempotence is the
+-- |      kind distinction itself.)
+-- |
+-- | **Merge laws** — for `m = variantToVariant w1 w2`, inputs owned
+-- | (`OwnedVariantInputs`: exactly one handler per case), outputs shared
+-- | (`SharedVariantOutputs`):
+-- |
+-- |   3. **Unit.** Conditional on the carrier — *if* `p` is a `Category`,
+-- |      `identity :: p (Variant ()) (Variant ())` is the unit exactly:
+-- |
+-- |      ```
+-- |      variantToVariant identity g = g = variantToVariant g identity
+-- |      ```
+-- |
+-- |      Both empty-variant ends are uninhabited, so the wire there can
+-- |      neither receive nor emit: it is silence, forced, and any silent
+-- |      element of that type is equal to it. The merge has no unit of its
+-- |      own.
+-- |   4. **Symmetry and associativity**, up to `≈`.
+-- |   5. **Dispatch.** An occurrence of case `l` is delivered to the one
+-- |      handler owning `l` and to no other (`DisjointLabels` makes a
+-- |      duplicated case a compile error naming it). Exactly one operand
+-- |      answers each occurrence — the exclusive-input side's whole content.
+-- |   6. **Closure.** If `w1`, `w2` satisfy 1–2, so does `m`: dispatched on
+-- |      input, each emission exiting as it occurs. Nothing to gate (a
+-- |      variant output has no value between occurrences), nothing to tear
+-- |      (no broadcast), so the merge is **stateless** — the one merge
+-- |      carrying neither feed obligation, needing only `Applicative m` on
+-- |      `PUI`.
+-- |   7. **Independence.** An emission goes downstream, never to the
+-- |      sibling handler. The loop at this shape is `Cochoice`'s `iterate`
+-- |      (`again` cases re-enter, `done` cases exit), and its retraction
+-- |      holds **raw** — `unleft (left g) = g` — the one direction where
+-- |      it does, which is the trace asymmetry theorem (doc §5).
+-- |   8. **Background transparency.** `subChoice w` acts as `identity` on
+-- |      every case outside `w`'s focus row: background occurrences pass
+-- |      untouched, exactly once.
+-- |
+-- | Laws 3, 4 (associativity), 5 and 6 have value-level tests in
+-- | test/Main.purs (`unit law +→+`, `+→+ associativity`, `+→+ dispatch`);
+-- | 7's retraction is the `unleft (left g) = g` test; symmetry is not
+-- | separately tested; 8 is the `subChoice` demo's contract (cashbox).
 -- |
 -- | One transpose of a `RecordToRecord` name is **deliberately absent**
 -- | here: `field`'s

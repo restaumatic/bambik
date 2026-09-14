@@ -29,21 +29,67 @@
 -- |     `Colens` optic's row form; the optic itself is in
 -- |     `Data.Lens.Colens`).
 -- |
--- | The merge has **no unit of its own**. Its unit law is conditional on
--- | the carrier: *if* `p` is also a `Category`, `identity` at the unit row
--- | must play well with the merge —
+-- | ## Laws of the `×→×` shape
 -- |
--- | ```
--- | recordToRecord identity g = g = recordToRecord g identity     -- identity :: p {} {}
--- | ```
+-- | For a citizen `w :: p { | i } { | o }`, with `feed x` a feed, `emit y`
+-- | an emission, `≈` observational equivalence and `⊑` refinement
+-- | (doc/observational-semantics.md, whose §3.2 derives the gate from
+-- | these). The first three are **protocol obligations** the type cannot
+-- | enforce; the rest are what a carrier **guarantees** given them.
 -- |
--- | The wire at `{}` owns no field, so a lawful merge treats its side as
--- | known from the start and ignores whatever it echoes — a contribution
--- | of zero fields is no contribution. That is what makes `identity` the
--- | unit exactly (not up to an echo), and the same wire is
--- | `VariantToVariant`'s unit at `Variant ()`. Pointing (one emission at
--- | registration) is not a unit's job: it is `Seeding`'s `announce`, and
--- | `with`/`mvu` below close over that.
+-- | **Citizen laws** — what any `×→×` component owes:
+-- |
+-- |   1. **Idempotence.** `feed x ; feed x ≈ feed x`.
+-- |   2. **Totality per owned field.** If `o` is non-empty, every `feed x`
+-- |      is answered by exactly one `emit y`. Nothing at registration —
+-- |      except that a citizen with input `{}` counts registration as its
+-- |      feed, since `{}` is always known: that is `announce`. If `o` is
+-- |      empty, nothing is owed (a display may answer `{}` or stay silent).
+-- |   3. **Wholeness.** Every `emit y` is a whole `{ | o }`: a one-sided
+-- |      change is completed from retained knowledge, never fabricated and
+-- |      never sent partial. `field @l` is the leaf instance — the
+-- |      background re-attached.
+-- |
+-- | **Merge laws** — for `m = recordToRecord w1 w2`, inputs shared
+-- | (`SharedRecordInputs`), outputs disjoint (`OwnedRecordOutputs`):
+-- |
+-- |   4. **Unit.** Conditional on the carrier — *if* `p` is a `Category`,
+-- |      `identity :: p {} {}` is the unit **exactly**, not up to an echo:
+-- |
+-- |      ```
+-- |      recordToRecord identity g = g = recordToRecord g identity
+-- |      ```
+-- |
+-- |      The merge has no unit of its own; the wire at `{}` owns no field,
+-- |      so a lawful merge treats its side as known from the start and
+-- |      ignores whatever it echoes (law 7). The same wire is
+-- |      `VariantToVariant`'s unit at `Variant ()`. Pointing is not a
+-- |      unit's job: it is `Seeding`'s `announce`, which `with`/`mvu`
+-- |      below close over.
+-- |   5. **Symmetry and associativity**, up to `≈`.
+-- |   6. **Closure.** If `w1`, `w2` satisfy 1–3, so does `m` from its first
+-- |      feed on. Law 2 for `m` is the **step**: one release per feed,
+-- |      after both operands answered. Law 3 for `m` is **retention**: a
+-- |      one-sided emission completed with the sibling's last
+-- |      contribution. Before the first feed `m` drops, never fabricates —
+-- |      the primed equivalence, the named `Strong` deviation.
+-- |   7. **Inheritance over owned fields.** `w1 ⊑ w1'` implies `m ⊑ m'`
+-- |      when `w1` owns a field. An operand owning none refines nothing,
+-- |      whatever it emits or withholds — which is why a display never
+-- |      enters a gate, and why `shownWhen`'s detached pane (a `{}`-output
+-- |      `provided`, silent while absent) never withholds the row.
+-- |   8. **Exactness.** An operand counts only at its declared fields:
+-- |      `recordToRecord w1 w2 ≈ recordToRecord (rmap exact w1) w2`. A
+-- |      runtime copy of a sibling's field never shadows the sibling.
+-- |   9. **Independence.** The operands receive no feeds but `m`'s, and an
+-- |      emission goes downstream, never to the sibling. Cross-feed is the
+-- |      loop's — `looped m` — and only there.
+-- |
+-- | Each of 4–8 has a value-level test in test/Main.purs (the unit and
+-- | zero-field laws, symmetry and mixed associativity, one-feed-one-release,
+-- | `⊑`-monotonicity, the exactness trim); 9 is definitional. Starvation
+-- | reads off the set: a merge silent after its first feed has an operand
+-- | breaking or refining law 2; one silent before any feed is unprimed.
 module Data.Profunctor.Row.RecordToRecord
   ( bind
   , recordToRecord
