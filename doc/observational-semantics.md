@@ -492,7 +492,12 @@ with no torn row, a user emission releasing at once, nested merges
 releasing once, the disjoint-operand shape it is reachable from, and §8.0's
 prediction — `+→×` dispatch carrying every ingredient of the torn row except
 a broadcast, and provably not tearing: each operand sees only its own cases,
-a re-fed case releases once beside its retained sibling), `⊑`-monotonicity of `>>>` and `⊗`, the container
-action's laxity at the inner surface, `bracketed`'s retraction on the
+a re-fed case releases once beside its retained sibling), `⊑`-monotonicity of `>>>` and `⊗` (the merge at all four shapes), the
+eleven-axis grid's remaining cells (Data.Profunctor.Row, "The laws, stated
+once": the three citizen axes at each shape on its own wire, replay source
+or merge — `repetition`/`emission`/`answer ×→×`, `×→+`, `+→+`, `+→×` — the
+`×→+` and `+→+` symmetries, the free exactness cell at `×→+`, and
+`independence` at all four with `looped` as the cross-feed contrast), the
+container action's laxity at the inner surface, `bracketed`'s retraction on the
 order-form pair, the Ocular admission law for a node-wrapping ocular and its
 failure for a capturing decorator, and `announce`'s naturality.

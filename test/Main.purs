@@ -84,6 +84,33 @@ dedupConsecutive = foldl (\acc x -> if last acc == Just x then acc else acc <> [
 -- `xs` is a subsequence of `ys` — the refinement order `⊑` on streams: the
 -- withholding side emits what the other emits, possibly fewer
 -- (doc/observational-semantics.md §2).
+-- A refinement of its argument: the same component minus its first
+-- emission — the `p ⊑ p'` witness at the shapes where no gate supplies one.
+quieter :: forall i o. PUI Effect i o -> PUI Effect i o
+quieter g = PUI do
+  inner <- unwrap g
+  spoken <- Ref.new false
+  pure
+    { toUser: inner.toUser
+    , fromUser: \prop -> inner.fromUser \o -> do
+        already <- Ref.read spoken
+        if already then prop o else Ref.write true spoken
+    }
+
+-- The probe carrier's occurrence source — `clicked`'s protocol as a probe:
+-- a feed arms (stored, never emitted), a click replays the whole row last
+-- fed as case `clicked`, and a click before any feed does nothing.
+replaySource :: forall i. Ref.Ref (Maybe (Effect Unit)) -> PUI Effect i [ clicked :: i ]
+replaySource trigger = PUI do
+  slot <- Ref.new Nothing
+  pure
+    { toUser: \i -> Ref.write (Just i) slot
+    , fromUser: \prop -> Ref.write (Just (Ref.read slot >>= \armed -> for_ armed \i -> prop (.clicked i))) trigger
+    }
+
+click :: Ref.Ref (Maybe (Effect Unit)) -> Effect Unit
+click trigger = Ref.read trigger >>= \act -> for_ act identity
+
 isSubsequence :: forall a. Eq a => Array a -> Array a -> Boolean
 isSubsequence xs ys = case uncons xs, uncons ys of
   Nothing, _ -> true
@@ -1672,6 +1699,269 @@ main = do
     assertEqual "enrichment: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
     assertEqual "enrichment: the gated merge emits the residual only" [ { a: 2, b: "fed", c: true } ] lower
     assertEqual "enrichment: the ungated merge emits everything" [ { a: 1, b: "early", c: true }, { a: 2, b: "fed", c: true } ] upper
+
+  -- The same at the two shared-output shapes, where nothing gates: with
+  -- `quieter g` (g minus its first emission) as p ⊑ p', the merge's output
+  -- is the subsequence with exactly that emission missing.
+  do
+    let
+      run q = do
+        gProp <- Ref.new Nothing
+        rProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
+        m <- unwrap (recordToVariant (q (probe gProp :: PUI Effect { a :: Int } [ x :: Int ])) (probe rProp :: PUI Effect { a :: Int } [ y :: String ]))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { a: 0 }
+        fire gProp (.x 1)
+        fire rProp (.y "e")
+        fire gProp (.x 2)
+        Ref.read outs
+    lower <- run quieter
+    upper <- run identity
+    assertEqual "enrichment at ×→+: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
+    assertEqual "enrichment at ×→+: the quieter merge lacks exactly the dropped emission" [ .y "e", .x 2 ] lower
+    assertEqual "enrichment at ×→+: the full merge emits everything" [ .x 1, .y "e", .x 2 ] upper
+  do
+    let
+      run q = do
+        gProp <- Ref.new Nothing
+        rProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array [ ok :: Int, err :: String ])
+        m <- unwrap (variantToVariant (q (probe gProp :: PUI Effect [ a :: Int ] [ ok :: Int ])) (probe rProp :: PUI Effect [ b :: String ] [ ok :: Int, err :: String ]))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser (.a 0)
+        fire gProp (.ok 1)
+        fire rProp (.err "e")
+        fire gProp (.ok 2)
+        Ref.read outs
+    lower <- run quieter
+    upper <- run identity
+    assertEqual "enrichment at +→+: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
+    assertEqual "enrichment at +→+: the quieter merge lacks exactly the dropped emission" [ .err "e", .ok 2 ] lower
+    assertEqual "enrichment at +→+: the full merge emits everything" [ .ok 1, .err "e", .ok 2 ] upper
+
+  -- and at +→×, the other gated shape: the quieter fold's first emission is
+  -- gone, so the gate opens one occurrence later and the residuals agree.
+  do
+    let
+      run q = do
+        aIns <- Ref.new ([] :: Array [ x :: Int ])
+        aProp <- Ref.new Nothing
+        bIns <- Ref.new ([] :: Array [ y :: String ])
+        bProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+        m <- unwrap (variantToRecord
+          (q (echoProbe (match { x: \n -> { a: n } }) aIns aProp :: PUI Effect [ x :: Int ] { a :: Int }))
+          (echoProbe (match { y: \t -> { b: t } }) bIns bProp :: PUI Effect [ y :: String ] { b :: String }))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser (.x 1) *> m.toUser (.y "s") *> m.toUser (.x 2)
+        Ref.read outs
+    lower <- run quieter
+    upper <- run identity
+    assertEqual "enrichment at +→×: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
+    assertEqual "enrichment at +→×: the quieter merge opens one occurrence later" [ { a: 2, b: "s" } ] lower
+    assertEqual "enrichment at +→×: the full merge releases on every whole occurrence" [ { a: 1, b: "s" }, { a: 2, b: "s" } ] upper
+
+  -- == The eleven-axis grid (Data.Profunctor.Row, "The laws, stated once"): ==
+  -- == the cells no earlier probe pins — the three citizen axes at each ==
+  -- == shape on the shape's own wire, source or merge, the two missing ==
+  -- == symmetries, the free exactness cell, and independence at all four. ==
+
+  -- Axes 1–3 at ×→×, on the echo wire merged with an owner: feeding the same
+  -- row twice is one feed — boundary stream up to stutter and retained
+  -- state alike — and each feed is answered once, whole.
+  do
+    let
+      run feeds = do
+        pProp <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+        m <- unwrap (recordToRecord (identity :: PUI Effect { a :: Int } { a :: Int }) (probe pProp :: PUI Effect { a :: Int } { b :: String }))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        fire pProp { b: "x" }
+        for_ feeds m.toUser
+        fire pProp { b: "y" }
+        Ref.read outs
+    once <- run [ { a: 1 } ]
+    twice <- run [ { a: 1 }, { a: 1 } ]
+    assertEqual "repetition ×→×: twice is once, up to stutter" (dedupConsecutive once) (dedupConsecutive twice)
+    assertEqual "repetition ×→×: the state retained after two feeds is that after one" [ { a: 1, b: "x" }, { a: 1, b: "y" } ] once
+    assertEqual "answer ×→×: each feed answered once — the stutter is exactly the second answer" [ { a: 1, b: "x" }, { a: 1, b: "x" }, { a: 1, b: "y" } ] twice
+
+  -- Axes 1–3 at ×→+, on the replay source: a click before any feed does
+  -- nothing, a feed emits nothing, two feeds arm the same one row, and a
+  -- click replays the whole row last fed.
+  do
+    trigger <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array [ clicked :: { a :: Int, b :: String } ])
+    m <- unwrap (replaySource trigger :: PUI Effect { a :: Int, b :: String } [ clicked :: { a :: Int, b :: String } ])
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    click trigger
+    Ref.read outs >>= assertEqual "emission ×→+: a click before any feed does nothing" []
+    m.toUser { a: 1, b: "x" }
+    Ref.read outs >>= assertEqual "answer ×→+: a feed is answered by no emission — it arms" []
+    m.toUser { a: 1, b: "x" }
+    click trigger
+    Ref.read outs >>= assertEqual "repetition ×→+: fed twice, one click replays the one row" [ .clicked { a: 1, b: "x" } ]
+    m.toUser { a: 2, b: "y" }
+    click trigger
+    Ref.read outs >>= assertEqual "emission ×→+: the whole row last fed" [ .clicked { a: 1, b: "x" }, .clicked { a: 2, b: "y" } ]
+
+  -- Axes 1–3 at +→+, on the forward wire and its merge: nothing at
+  -- registration, one occurrence forwarded exactly once, two occurrences
+  -- forwarded as two.
+  do
+    outs <- Ref.new ([] :: Array [ x :: Int ])
+    m <- unwrap (identity :: PUI Effect [ x :: Int ] [ x :: Int ])
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    Ref.read outs >>= assertEqual "emission +→+: nothing at registration" []
+    m.toUser (.x 1)
+    Ref.read outs >>= assertEqual "answer +→+: the forward wire answers an occurrence exactly once" [ .x 1 ]
+    m.toUser (.x 1)
+    Ref.read outs >>= assertEqual "repetition +→+: twice is two" [ .x 1, .x 1 ]
+    outs2 <- Ref.new ([] :: Array [ x :: Int, y :: String ])
+    m2 <- unwrap (variantToVariant (identity :: PUI Effect [ x :: Int ] [ x :: Int ]) (identity :: PUI Effect [ y :: String ] [ y :: String ]))
+    m2.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs2
+    m2.toUser (.x 1) *> m2.toUser (.x 1) *> m2.toUser (.y "e")
+    Ref.read outs2 >>= assertEqual "repetition +→+: the merge coalesces nothing either" [ .x 1, .x 1, .y "e" ]
+
+  -- Axes 1–3 at +→×, on the merge of two echo folds and a status beside
+  -- one: nothing at registration, withheld until the knowledge exists,
+  -- released whole on a change, stepped again on a repeated occurrence,
+  -- and a status owes the channel nothing.
+  do
+    aIns <- Ref.new ([] :: Array [ x :: Int ])
+    aProp <- Ref.new Nothing
+    bIns <- Ref.new ([] :: Array [ y :: String ])
+    bProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+    m <- unwrap (variantToRecord
+      (echoProbe (match { x: \n -> { a: n } }) aIns aProp :: PUI Effect [ x :: Int ] { a :: Int })
+      (echoProbe (match { y: \t -> { b: t } }) bIns bProp :: PUI Effect [ y :: String ] { b :: String }))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    Ref.read outs >>= assertEqual "emission +→×: nothing at registration" []
+    m.toUser (.x 1)
+    Ref.read outs >>= assertEqual "emission +→×: withheld until the knowledge exists, never partial" []
+    m.toUser (.y "s")
+    Ref.read outs >>= assertEqual "answer +→×: a change releases, whole" [ { a: 1, b: "s" } ]
+    m.toUser (.x 1)
+    Ref.read outs >>= assertEqual "repetition +→×: twice is two — the fold steps again (release on every occurrence, the permitted choice)" [ { a: 1, b: "s" }, { a: 1, b: "s" } ]
+    Ref.read aIns >>= assertEqual "repetition +→×: the owner was stepped twice" [ .x 1, .x 1 ]
+    sProp <- Ref.new Nothing
+    outsS <- Ref.new ([] :: Array { b :: String })
+    mS <- unwrap (variantToRecord
+      (probe sProp :: PUI Effect [ z :: Unit ] {})
+      (echoProbe (match { y: \t -> { b: t } }) bIns bProp :: PUI Effect [ y :: String ] { b :: String }))
+    mS.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsS
+    mS.toUser (.z unit) *> mS.toUser (.y "s")
+    Ref.read outsS >>= assertEqual "answer +→×: a status beside the fold owes nothing — the fold releases without it" [ { b: "s" } ]
+
+  -- Axis 5 at ×→+: operand order is not observable at the boundary.
+  do
+    let
+      run wrapper = do
+        p1Prop <- Ref.new Nothing
+        p2Prop <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
+        m <- unwrap (wrapper (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int ]) (probe p2Prop :: PUI Effect { s :: Int } [ y :: String ]))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { s: 1 }
+        fire p1Prop (.x 1) *> fire p2Prop (.y "e") *> fire p1Prop (.x 2)
+        Ref.read outs
+    ab <- run recordToVariant
+    ba <- run \p1 p2 -> recordToVariant p2 p1
+    assertEqual "×→+ symmetry: boundary streams agree under either operand order" ab ba
+    assertEqual "×→+ symmetry: the script's stream" [ .x 1, .y "e", .x 2 ] ab
+
+  -- Axis 5 at +→+: likewise, dispatch and exits alike.
+  do
+    let
+      run wrapper = do
+        ins1 <- Ref.new ([] :: Array [ x :: Int ])
+        ins2 <- Ref.new ([] :: Array [ y :: String ])
+        p1Prop <- Ref.new Nothing
+        p2Prop <- Ref.new Nothing
+        outs <- Ref.new ([] :: Array [ ok :: Int, err :: String ])
+        m <- unwrap (wrapper (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int ]) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ err :: String ]))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser (.x 1) *> m.toUser (.y "b")
+        fire p1Prop (.ok 1) *> fire p2Prop (.err "e") *> fire p1Prop (.ok 2)
+        i1 <- Ref.read ins1
+        i2 <- Ref.read ins2
+        o <- Ref.read outs
+        pure { i1, i2, o }
+    ab <- run variantToVariant
+    ba <- run \p1 p2 -> variantToVariant p2 p1
+    assertEqual "+→+ symmetry: boundary streams agree under either operand order" ab ba
+    assertEqual "+→+ symmetry: the script's streams" { i1: [ .x 1 ], i2: [ .y "b" ], o: [ .ok 1, .err "e", .ok 2 ] } ab
+
+  -- Axis 8 at ×→+: exactness is free — a case both operands declare exits
+  -- from either, unmarked, and nothing trims.
+  do
+    p1Prop <- Ref.new Nothing
+    p2Prop <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
+    m <- unwrap (recordToVariant (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int ]))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { s: 0 }
+    fire p1Prop (.x 1) *> fire p2Prop (.x 2) *> fire p1Prop (.y "e")
+    Ref.read outs >>= assertEqual "exactness ×→+: a shared case exits from either operand, unmarked" [ .x 1, .x 2, .y "e" ]
+
+  -- Axis 11 at all four shapes: an operand is fed only the merge's feeds;
+  -- a sibling's emission never reaches it. `looped` is the contrast — the
+  -- one place cross-feed happens.
+  do
+    ins1 <- Ref.new ([] :: Array { s :: Int })
+    ins2 <- Ref.new ([] :: Array { s :: Int })
+    p1Prop <- Ref.new Nothing
+    p2Prop <- Ref.new Nothing
+    m <- unwrap (recordToRecord (probeIO ins1 p1Prop :: PUI Effect { s :: Int } { a :: Int }) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } { b :: String }))
+    m.fromUser \_ -> pure unit
+    m.toUser { s: 1 }
+    fire p1Prop { a: 1 } *> fire p2Prop { b: "x" } *> fire p1Prop { a: 2 }
+    Ref.read ins1 >>= assertEqual "independence ×→×: an operand is fed only the merge's feeds" [ { s: 1 } ]
+    Ref.read ins2 >>= assertEqual "independence ×→×: a sibling's emission never reaches it" [ { s: 1 } ]
+    lIns1 <- Ref.new ([] :: Array { a :: Int, b :: String })
+    lIns2 <- Ref.new ([] :: Array { a :: Int, b :: String })
+    l1Prop <- Ref.new Nothing
+    l2Prop <- Ref.new Nothing
+    l <- unwrap (looped (recordToRecord (probeIO lIns1 l1Prop :: PUI Effect { a :: Int, b :: String } { a :: Int }) (probeIO lIns2 l2Prop :: PUI Effect { a :: Int, b :: String } { b :: String })))
+    l.fromUser \_ -> pure unit
+    l.toUser { a: 0, b: "x" }
+    fire l1Prop { a: 1 } *> fire l2Prop { b: "y" } *> fire l1Prop { a: 2 }
+    Ref.read lIns2 >>= assertEqual "independence ×→×: under `looped`, and only there, the sibling is re-fed" [ { a: 0, b: "x" }, { a: 1, b: "y" }, { a: 2, b: "y" } ]
+  do
+    ins1 <- Ref.new ([] :: Array { s :: Int })
+    ins2 <- Ref.new ([] :: Array { s :: Int })
+    p1Prop <- Ref.new Nothing
+    p2Prop <- Ref.new Nothing
+    m <- unwrap (recordToVariant (probeIO ins1 p1Prop :: PUI Effect { s :: Int } [ x :: Int ]) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } [ y :: String ]))
+    m.fromUser \_ -> pure unit
+    m.toUser { s: 1 }
+    fire p1Prop (.x 1) *> fire p2Prop (.y "e")
+    Ref.read ins1 >>= assertEqual "independence ×→+: an operand is fed only the merge's feeds" [ { s: 1 } ]
+    Ref.read ins2 >>= assertEqual "independence ×→+: a sibling's emission never reaches it" [ { s: 1 } ]
+  do
+    ins1 <- Ref.new ([] :: Array [ x :: Int ])
+    ins2 <- Ref.new ([] :: Array [ y :: String ])
+    p1Prop <- Ref.new Nothing
+    p2Prop <- Ref.new Nothing
+    m <- unwrap (variantToVariant (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int ]) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ ok :: Int ]))
+    m.fromUser \_ -> pure unit
+    m.toUser (.x 1) *> m.toUser (.y "b")
+    fire p1Prop (.ok 1) *> fire p2Prop (.ok 2)
+    Ref.read ins1 >>= assertEqual "independence +→+: an operand is fed only its dispatched cases" [ .x 1 ]
+    Ref.read ins2 >>= assertEqual "independence +→+: a sibling's emission never reaches it, even on a case it also declares" [ .y "b" ]
+  do
+    ins1 <- Ref.new ([] :: Array [ x :: Int ])
+    ins2 <- Ref.new ([] :: Array [ y :: String ])
+    p1Prop <- Ref.new Nothing
+    p2Prop <- Ref.new Nothing
+    m <- unwrap (variantToRecord (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] { a :: Int }) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] { b :: String }))
+    m.fromUser \_ -> pure unit
+    m.toUser (.x 1) *> m.toUser (.y "b")
+    fire p1Prop { a: 1 } *> fire p2Prop { b: "s" } *> fire p1Prop { a: 2 }
+    Ref.read ins1 >>= assertEqual "independence +→×: an operand is fed only its dispatched cases" [ .x 1 ]
+    Ref.read ins2 >>= assertEqual "independence +→×: a sibling's emission never reaches it" [ .y "b" ]
 
   -- The container action's laxity in `⊑`, exhibited: the two-stage form
   -- re-feeds every q-element per p-element emission where the one-stage
