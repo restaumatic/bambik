@@ -24,6 +24,10 @@
 -- |
 -- | ## Laws of the `+→×` shape
 -- |
+-- | These are the three laws of Data.Profunctor.Row ("The laws, stated
+-- | once") read at `+→×`, kept spelled out here because each line is
+-- | what a test or a starvation message names.
+-- |
 -- | For a citizen `w :: p [ | i ] { | o }` — a **fold** of occurrences into
 -- | retained state, or at `o = {}` a **status** — with `occur e` an input
 -- | occurrence, `emit y` an emission, `≈`/`⊑` from

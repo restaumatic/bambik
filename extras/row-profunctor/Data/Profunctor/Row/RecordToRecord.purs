@@ -31,6 +31,10 @@
 -- |
 -- | ## Laws of the `×→×` shape
 -- |
+-- | These are the three laws of Data.Profunctor.Row ("The laws, stated
+-- | once") read at `×→×`, kept spelled out here because each line is
+-- | what a test or a starvation message names.
+-- |
 -- | For a citizen `w :: p { | i } { | o }`, with `feed x` a feed, `emit y`
 -- | an emission, `≈` observational equivalence and `⊑` refinement
 -- | (doc/observational-semantics.md, whose §3.2 derives the gate from

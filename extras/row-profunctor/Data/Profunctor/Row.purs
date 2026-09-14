@@ -189,8 +189,59 @@
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.
 -- |
--- | Two laws govern every shape (the four merges here and the container
--- | action in `Data.Profunctor.Acting` alike), both decided by the
+-- | ## The laws, stated once
+-- |
+-- | One principle and three laws; the four shape modules' law sets
+-- | (`Data.Profunctor.Row.RecordToRecord` and its siblings, each header's
+-- | "Laws of the shape") are these read at one shape, kept per shape
+-- | because each line there is what a test or a starvation message names.
+-- |
+-- | **The kinds.** A record is **knowledge**, a variant is an **event**.
+-- | Knowledge is idempotent (twice is once), has a value between inputs,
+-- | and is whole or nothing. An event counts (twice is two), has no value
+-- | between occurrences, and is caused or nothing.
+-- |
+-- |   1. **Nothing fabricated.** An emission carries only what its citizen
+-- |      has. A record output is a whole row from retained knowledge,
+-- |      withheld until that knowledge exists. A variant output is an
+-- |      event with a cause, and a feed is knowledge, not a cause — so a
+-- |      feed never emits, and what an event carries is the whole row last
+-- |      fed (replay).
+-- |   2. **Nothing private.** What a record-output citizen would release,
+-- |      it releases when it changes. At a feed the feed *is* the change,
+-- |      so every feed is answered, once; at an occurrence, release when
+-- |      the state changed. No fields, nothing owed.
+-- |   3. **The merge.** Knowledge is shared on the way in and owned on the
+-- |      way out; events are owned on the way in and shared on the way out.
+-- |      Given operands obeying 1 and 2, the merge obeys them, takes each
+-- |      field only from its owner, feeds neither operand with the other's
+-- |      emissions, and is symmetric and associative up to `≈`. Its unit is
+-- |      the shape's wire at the unit object, exact — except at `×→+`,
+-- |      where no wire exists and the unit is `silence`.
+-- |
+-- | Read at the four shapes:
+-- |
+-- | ```
+-- |              record out                                  variant out
+-- | -----------  ------------------------------------------  ---------------------------------
+-- | record in    must answer, once, whole — the gate,        must not emit — arming, replay
+-- |              retention, the step, the pre-feed drop
+-- | variant in   may release — dispatch in, gate out,        may respond — causality,
+-- |              no torn row possible                        stateless dispatch
+-- | ```
+-- |
+-- | Idempotence and counting are the kinds. Inheritance over owned fields
+-- | is law 1 at the merge (a withholding owner cannot be fabricated around)
+-- | and law 2's zero-field clause is why a display never enters a gate.
+-- | Exactness is "owned out". Tearing is the one cell with shared-in and
+-- | owned-out, and the step is law 2 applied to that merge. Two facts stay
+-- | outside, being about the carrier rather than the shape: the pre-feed
+-- | emission is *dropped* rather than delayed (the named `Strong`
+-- | deviation), and only the `+→+` loop's retraction holds raw (the trace
+-- | asymmetry theorem) — doc/observational-semantics.md §4–5.
+-- |
+-- | Law 3's consequences, seen per shape (the four merges here and the
+-- | container action in `Data.Profunctor.Acting` alike), all decided by the
 -- | **output side**:
 -- |
 -- |   * **units are forced, not designed** — a shape's nullary merge is
