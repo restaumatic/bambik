@@ -475,7 +475,66 @@ glitch-freedom is guaranteed by the writing contract, not by the carrier — a
 diamond an application builds anyway is a style violation before it is a
 runtime surprise.
 
-## 9. Where the tests live
+## 9. The gate as a Mealy machine, and why a bounded check is complete
+
+The output gate the two record-output merges run on is one **pure step**,
+`PUI.Gate.gateStep :: GateConfig -> GateState -> GateInput -> Tuple GateState
+GateOutput`, in a module that imports no `Effect`. The effectful part of the
+gate is a single function, `driveGate` in `PUI`: read the state, step, write
+the new state, act on the output (a `Released` row goes downstream and marks
+the starvation guards fed; a `Withheld` contribution arms the guard of the
+side that spoke and is traced; `Quiet` is nothing). `recordToRecord` and
+`variantToRecord` differ only in what drives the step — a broadcast
+bracketed by `StepBegun`/`StepEnded`, or one dispatched operand between the
+same brackets. The two variant-output merges have no state at all: their
+`toUser`/`fromUser` are pure routing (`contract` and sequencing) and hold
+nothing between events.
+
+**Data independence with finite control.** No branch of `gateStep` inspects
+a payload: the two retained contributions are stored and re-emitted, never
+compared or read. The control is whether each side has spoken (born
+satisfied when it owns no field), the step depth, and whether a
+contribution landed during the step. Outside a step, the reachable control
+states are one per subset of sides that has spoken.
+
+**Why a bounded exhaustive check is a proof.** Two deterministic machines
+driven in lockstep by one script differ, if at all, on a script no longer
+than the number of reachable *joint* control states: a shortest
+distinguishing script never revisits a joint state, or the loop could be
+cut. Driven with a **fresh token per event**, a data-independent machine's
+output values are stored tokens re-emitted, so whether two outputs agree is
+decided by control and by which event's token each slot holds — and every
+rig compared stores the latest token of each operand, so with agreeing
+control the slots agree. The joint control states are therefore one per
+subset of operands that has spoken: **four** for a two-operand law,
+**eight** for a three-operand one. Scripts of length six and eight exhaust
+them with margin.
+
+**What is checked** (test/Exhaustive.purs, run from `spago test`, about 35
+seconds): at each of the four shapes, symmetry, associativity, both unit
+laws and `⊑`-monotonicity (a `quieter` operand, minus its first emission);
+at the two record-output shapes, exactness against an operand whose every
+emission carries a stale runtime copy of the sibling's field, and
+**conformance** — the effectful merge's boundary stream equals the pure
+`gateStep` driven by the same script; at `×→+`, arming (replacing every feed
+by a no-op leaves the stream unchanged); at `×→×`, feed-idempotence of the
+merge (deleting a `FeedAgain` directly after a feed leaves the stream
+unchanged up to stutter). Twenty-six laws, about three hundred thousand
+scripts, no distinguishing script. Because the pure step is the very
+function the carrier runs, and conformance pins the wrapper to it, a law
+that holds on the step holds on the merge.
+
+**What stays outside.** Scripts drive the boundary and the operands; they do
+not contain re-entrant feeds during a release, so the nested-step path
+(`depth > 1`) is exercised only by the `looped` probes. Registration
+ordering, that the widening coercion only forgets and never fabricates,
+`Effect`'s sequencing, and the timed instance `resolve` are checked by the
+named probes of §10 and by inspection, not by enumeration. The pure module
+is also the port target for a mechanised proof: its four constructors and
+one step function transcribe to Agda or Lean unchanged, and theorems there
+are about the function the carrier runs.
+
+## 10. Where the tests live
 
 test/Main.purs, in order: the merge unit/zero-field/exactness/gating laws; the
 trace quartet and its row forms; the Category laws; the container-action
@@ -498,6 +557,7 @@ once": the three citizen axes at each shape on its own wire, replay source
 or merge — `repetition`/`emission`/`answer ×→×`, `×→+`, `+→+`, `+→×` — the
 `×→+` and `+→+` symmetries, the free exactness cell at `×→+`, and
 `independence` at all four with `looped` as the cross-feed contrast), the
+bounded exhaustive check of §9 (test/Exhaustive.purs), the
 container action's laxity at the inner surface, `bracketed`'s retraction on the
 order-form pair, the Ocular admission law for a node-wrapping ocular and its
 failure for a capturing decorator, and `announce`'s naturality.

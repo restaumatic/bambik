@@ -115,7 +115,10 @@
 -- | 7 (`×→+ broadcast: either operand's case exits, ungated`),
 -- | 8 (`exactness ×→+`), 9 (the same `×→+ broadcast` probe: a feed
 -- | reaching both, exits ungated, nothing retained), 10 (`enrichment at
--- | ×→+`), 11 (`independence ×→+`). Law 3 is why this shape has no
+-- | ×→+`), 11 (`independence ×→+`). Beyond the probes, laws 4–6, 10 and
+-- | the merge's own law 3 (arming) are checked over **every script** to
+-- | length 6 (two operands) or 8 (three) in test/Exhaustive.purs
+-- | (doc/observational-semantics.md §9). Law 3 is why this shape has no
 -- | starvation: a silent source is lawful, and an absent one is `silence`
 -- | (below).
 -- |

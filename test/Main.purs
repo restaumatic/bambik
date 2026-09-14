@@ -37,6 +37,7 @@ import Effect.Ref as Ref
 import OrderFormLogic (fulfillmentCase, fulfillmentState)
 import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
+import Test.Exhaustive as Exhaustive
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
 assertEqual msg expected actual =
@@ -2095,6 +2096,9 @@ main = do
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { s: 5 }
     Ref.read outs >>= assertEqual "disjoint operands are the merge's reachable shape, and release once" [ { a: 5, b: 105 } ]
+
+  -- == Every script to a bound, exhaustively — test/Exhaustive.purs. ==
+  Exhaustive.run
 
 
 -- The reachable parallel-merge shape: two operands owning disjoint labels.

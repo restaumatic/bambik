@@ -119,7 +119,11 @@
 -- | associativity`), 6 (`+→× dispatch`, the no-tear prediction of doc
 -- | §8.0), 7 (`+→× gating`), 8 (`+→× exactness`), 9 (`+→× gating` for the
 -- | withholding, `+→× dispatch` for no torn row), 10 (`enrichment at
--- | +→×`), 11 (`independence +→×`). Starvation reads off the set as at
+-- | +→×`), 11 (`independence +→×`). Beyond the probes, laws 4–8 and 10 are
+-- | checked over **every script** to length 6 (two operands) or 8 (three)
+-- | with a fresh token per event, and the effectful gate against
+-- | `PUI.Gate`'s pure step, in test/Exhaustive.purs (doc/observational-
+-- | semantics.md §9). Starvation reads off the set as at
 -- | `×→×`: a merge silent once both sides have spoken has an operand
 -- | breaking law 3; one silent before that is waiting on an owned field's
 -- | first occurrence — prime it (`unfolding`'s seed, `seeded`).

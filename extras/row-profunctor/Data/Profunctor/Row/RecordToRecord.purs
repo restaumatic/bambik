@@ -121,9 +121,13 @@
 -- | exactness`), 9 (`one feed, one release`, `disjoint operands … release
 -- | once`, `Strong deviation` for the drop), 10 (`enrichment: p ⊑ p' ⇒
 -- | p ⊗ r ⊑ p' ⊗ r`), 11 (`independence ×→×`, with `looped` as the
--- | cross-feed contrast). Starvation reads off the set: a merge silent
--- | after its first feed has an operand breaking or refining law 3; one
--- | silent before any feed is unprimed.
+-- | cross-feed contrast). Beyond the probes, laws 4–10 and the merge's own
+-- | law 1 are checked over **every script** to length 6 (two operands) or
+-- | 8 (three) with a fresh token per event, and the effectful gate against
+-- | `PUI.Gate`'s pure step, in test/Exhaustive.purs — complete, not
+-- | sampled (doc/observational-semantics.md §9). Starvation reads off the
+-- | set: a merge silent after its first feed has an operand breaking or
+-- | refining law 3; one silent before any feed is unprimed.
 module Data.Profunctor.Row.RecordToRecord
   ( bind
   , recordToRecord

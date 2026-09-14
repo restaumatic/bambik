@@ -99,7 +99,10 @@
 -- | 7 (`+→+ dispatch: outputs may overlap, both exit`), 8 (the same
 -- | probe — `ok` declared by both handlers, both exits unmarked),
 -- | 9 (`+→+ dispatch`), 10 (`enrichment at +→+`), 11 (`independence
--- | +→+`; the raw retraction `unleft (left g) = g`). The background
+-- | +→+`; the raw retraction `unleft (left g) = g`). Beyond the probes,
+-- | laws 4–6 and 10 are checked over **every script** to length 6 (two
+-- | operands) or 8 (three) in test/Exhaustive.purs
+-- | (doc/observational-semantics.md §9). The background
 -- | transparency of `subChoice` — `identity` on every case outside its
 -- | focus — is a law of the strength, not of the merge: stated at
 -- | `subChoice` below, as at its three siblings, and pinned by the

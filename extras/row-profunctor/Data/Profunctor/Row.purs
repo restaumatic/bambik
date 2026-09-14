@@ -198,7 +198,10 @@
 -- | axis and subtitled by the shape's reading — kept per shape because
 -- | each line there is what a test or a starvation message names. Every
 -- | cell of the grid has a probe in test/Main.purs, listed in each
--- | header's footer.
+-- | header's footer, and the merge laws are checked over every script to
+-- | a bound in test/Exhaustive.purs — complete, since the gate is a
+-- | data-independent machine with finite control (doc/observational-
+-- | semantics.md §9).
 -- |
 -- | **The kinds.** A record is **knowledge**, a variant is an **event**.
 -- | Knowledge is idempotent (twice is once), has a value between inputs,

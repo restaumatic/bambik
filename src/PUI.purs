@@ -80,6 +80,13 @@
 -- | containers it is generic over; nominal types live below the UI (recursive
 -- | ASTs, `Aff` actions) and enter only as rows projected by business
 -- | functions.
+-- |
+-- | **The gate is a pure machine.** The output gate the two record-output
+-- | merges run on is `PUI.Gate.gateStep`, a total step over a small state in
+-- | a module with no `Effect`; `driveGate` below is its whole effectful
+-- | part (read, step, write, act). That separation is what lets the merge
+-- | laws be checked exhaustively rather than sampled
+-- | (doc/observational-semantics.md §9, test/Exhaustive.purs).
 module PUI
   ( Action
   , Ocular
@@ -174,7 +181,8 @@ import Effect.Aff (Aff, attempt, delay, error, forkAff, killFiber, launchAff_, m
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import Record (get, insert, union) as Record
+import PUI.Gate (GateConfig, GateInput(..), GateOutput(..), GateState, gateStep, initialGate)
+import Record (get, insert) as Record
 import Record.Unsafe.Union (unsafeUnion)
 
 --------------------------------------------------------------------------------
@@ -671,9 +679,10 @@ instance MonadEffect m => VariantToRecord (PUI m) where
 -- | so a withholding gate says exactly which sibling it is waiting for. The
 -- | gate's state arrives allocated (`newRecordGate`, in the merge's
 -- | construction monad): this function is the streaming-phase subscription
--- | only — a contribution lands in its side's slot and, outside a step,
--- | releases at once (`releaseRecordGate`); inside a step (`steppedFeed`) it
--- | is held for the step's single release.
+-- | only — each contribution is one `Contributed` input to the gate machine
+-- | (`PUI.Gate.gateStep`, run by `driveGate`), which releases it at once
+-- | outside a step and holds it for the step's single release inside one
+-- | (`steppedFeed`).
 gatedRecordOutputs
   :: forall e1 e2 o1 o2 o
    . Union o1 o2 o
@@ -692,51 +701,46 @@ gatedRecordOutputs direction labels1 labels2 gate exact1 exact2 sub1 sub2 prop =
   -- written before the operands subscribe: a registration-time announcement
   -- releases into a listening channel
   Ref.write (Just prop) gate.prop
-  -- a side owning zero fields contributes nothing: its only possible
-  -- emission is the informationless {}, pre-known in the gate, so it neither
-  -- opens the gate nor re-fires it — `identity @{}`, a silent display and
-  -- an announcing one are indistinguishable as operands
-  sub1 \partial -> unless (Array.null labels1) do
-    Ref.write (Just (exact1 partial)) gate.p1Last
-    contributed
-  sub2 \partial -> unless (Array.null labels2) do
-    Ref.write (Just (exact2 partial)) gate.p2Last
-    contributed
-  where
-  contributed = do
-    batching <- Ref.read gate.batching
-    if batching
-      then Ref.write true gate.pending
-      else releaseRecordGate direction labels1 labels2 gate
+  -- a side owning zero fields contributes nothing (`GateConfig.owns`): its
+  -- only possible emission is the informationless {}, pre-known in the gate,
+  -- so it neither opens the gate nor re-fires it — `identity @{}`, a silent
+  -- display and an announcing one are indistinguishable as operands
+  sub1 \partial -> driveGate direction labels1 labels2 gate (Contributed1 (exact1 partial))
+  sub2 \partial -> driveGate direction labels1 labels2 gate (Contributed2 (exact2 partial))
 
--- | The gate's **release**: both slots known → the union of the two exact
--- | contributions goes downstream (left-biased, immaterial on disjoint
--- | rows); one side still unknown → the starvation guard of the side that
--- | spoke is armed, naming the sibling fields it waits for; nothing known →
--- | nothing to say.
-releaseRecordGate
+-- | One transition of the gate machine (`PUI.Gate.gateStep`), run: read the
+-- | state, step, write the new state **before** acting on the output — so a
+-- | re-entrant feed provoked by the release sees the post-release state —
+-- | then act: a `Released` row goes to the downstream continuation and marks
+-- | both starvation guards fed; a `Withheld` contribution arms the guard of
+-- | the side that spoke, naming the sibling fields it waits for, and is
+-- | traced; `Quiet` is nothing. This is the whole of the effectful part of
+-- | the gate: everything decided is decided in the pure step.
+driveGate
   :: forall o1 o2 o
    . Union o1 o2 o
   => String
   -> Array String
   -> Array String
   -> RecordGate o1 o2 o
+  -> GateInput o1 o2
   -> Effect Unit
-releaseRecordGate direction labels1 labels2 gate = do
-  mp1 <- Ref.read gate.p1Last
-  mp2 <- Ref.read gate.p2Last
-  case mp1, mp2 of
-    Just p1val, Just p2val -> do
+driveGate direction labels1 labels2 gate input = do
+  s <- Ref.read gate.state
+  let Tuple s' out = gateStep gate.config s input
+  Ref.write s' gate.state
+  case out of
+    Released o -> do
       gate.guard1.fed *> gate.guard2.fed
       mProp <- Ref.read gate.prop
-      for_ mProp \prop -> prop (Record.union p1val p2val)
-    Just p1val, Nothing -> do
+      for_ mProp \prop -> prop o
+    Withheld1 p1val -> do
       gate.guard1.blocked (starving fields1 fields2) labels2
       tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields2 <> " not heard from yet)") p1val
-    Nothing, Just p2val -> do
+    Withheld2 p2val -> do
       gate.guard2.blocked (starving fields2 fields1) labels1
       tr ("merge " <> direction <> ": contribution withheld (sibling fields " <> fields1 <> " not heard from yet)") p2val
-    Nothing, Nothing -> pure unit
+    Quiet -> pure unit
   where
   fields1 = renderFieldNames labels1
   fields2 = renderFieldNames labels2
@@ -772,20 +776,14 @@ steppedFeed
   -> Effect Unit
   -> Effect Unit
 steppedFeed direction labels1 labels2 gate feed = do
-  already <- Ref.read gate.batching
-  if already
-    then feed
-    else do
-      Ref.write true gate.batching
-      feed
-      Ref.write false gate.batching
-      pending <- Ref.read gate.pending
-      when pending do
-        Ref.write false gate.pending
-        releaseRecordGate direction labels1 labels2 gate
+  driveGate direction labels1 labels2 gate StepBegun
+  feed
+  driveGate direction labels1 labels2 gate StepEnded
 
--- | The per-merge gate state both record-output merges allocate: each side's
--- | retained last contribution and its starvation guard, created in the
+-- | The per-merge gate both record-output merges allocate: the pure
+-- | machine's state (`PUI.Gate.GateState` — each side's retained last
+-- | contribution and the step bookkeeping) in one `Ref`, its configuration,
+-- | and a starvation guard per side, created in the
 -- | merge's construction monad at instantiation (the phase state belongs to
 -- | — doc/observational-semantics.md §1). A side that owns zero fields is
 -- | born satisfied: `{}` is the informationless record, always known (L6),
@@ -793,14 +791,10 @@ steppedFeed direction labels1 labels2 gate feed = do
 -- | its siblings whether or not it has spoken (the zero-field law in
 -- | test/Main.purs).
 type RecordGate o1 o2 o =
-  { p1Last :: Ref.Ref (Maybe { | o1 })
-  , p2Last :: Ref.Ref (Maybe { | o2 })
+  { state :: Ref.Ref (GateState o1 o2)
+  , config :: GateConfig
   , guard1 :: GateGuard
   , guard2 :: GateGuard
-  -- the step: contributions arriving while a broadcast is in progress are
-  -- held (`pending`) for the step's single release (`steppedFeed`)
-  , batching :: Ref.Ref Boolean
-  , pending :: Ref.Ref Boolean
   -- the downstream continuation, written at registration, read at release
   , prop :: Ref.Ref (Maybe ({ | o } -> Effect Unit))
   }
@@ -809,15 +803,14 @@ type GateGuard = { blocked :: String -> Array String -> Effect Unit, fed :: Effe
 
 newRecordGate :: forall o1 o2 o. Array String -> Array String -> Effect (RecordGate o1 o2 o)
 newRecordGate labels1 labels2 = do
-  p1Last <- Ref.new (prime labels1)
-  p2Last <- Ref.new (prime labels2)
+  state <- Ref.new (initialGate (prime labels1) (prime labels2))
   guard1 <- gateGuard
   guard2 <- gateGuard
-  batching <- Ref.new false
-  pending <- Ref.new false
   prop <- Ref.new Nothing
-  pure { p1Last, p2Last, guard1, guard2, batching, pending, prop }
+  pure { state, config: { owns1: not (Array.null labels1), owns2: not (Array.null labels2) }, guard1, guard2, prop }
   where
+  -- a side owning no field is born known: its row is `{}`, the one record
+  -- that is always known — the coercion witnesses `labels = [] ⇒ r = ()`
   prime :: forall r. Array String -> Maybe { | r }
   prime labels = if Array.null labels then Just (unsafeCoerce {}) else Nothing
 
