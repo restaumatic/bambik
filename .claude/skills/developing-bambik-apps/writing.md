@@ -453,9 +453,10 @@ dialog and flows on — and keep echoing displays off the content's final
 stage, since an echo would close the dialog on open. Cashbox is the
 worked example.
 
-`drawer`'s nav slot is live: nav and content are sibling stages over the
-same types, so a selectable nav merges its selector with static chrome
-in one `RecordToRecord.do`.
+`drawer`'s nav slot is live: nav is the first stage and content the
+second — what the nav releases feeds the content — so a selectable nav
+merges its selector with static chrome in one `RecordToRecord.do`, and
+its pick reaches the content before the loop re-broadcasts it.
 
 ## Collections
 
@@ -1021,7 +1022,10 @@ are rarely needed.
 The compiler proves the wiring; it does not prove data reaches the
 screen. A blank pane or a stale readout is almost always a **knowledge
 gate withholding**: a merge emits only once every operand has spoken, so
-one unfed sibling silences the whole record.
+one unfed sibling silences the whole record. The unfed sibling is always
+an operand that *owns* fields — an editor, a source, a seed. A display owns
+none and never enters a gate, so no echo on a display ever fixes a
+starving merge; the fix is a seed for the owned field.
 
 Three aids diagnose this in the browser, and reading them is part of
 writing the app, not an afterthought:

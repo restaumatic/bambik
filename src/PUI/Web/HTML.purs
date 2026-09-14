@@ -176,9 +176,9 @@ shownWhen f content = recordToRecord (provided @l (\(r :: { | row }) -> f (unsaf
 -- | its `field @l` lift already re-attaches the rest of the row. The
 -- | classifier reads a closed narrow row (the row-stating exception:
 -- | `fulfillment :: { selected :: [ … ] } -> [ … ]`), exactly as
--- | `shownWhen`'s does. Two releases per feed while attached — the wire's
--- | and the editor's own echo — idempotent under the loop, which swallows
--- | the re-fed one. What the edit does to the rest of the row is a `settled`
+-- | `shownWhen`'s does. One release per feed either way: attached, the
+-- | editor's own echo is the release; detached, the wire speaks for the
+-- | absent editor. What the edit does to the rest of the row is a `settled`
 -- | normalization on the same stage when it is a state invariant
 -- | (meeting-booker's `seatsInRoom`, circle-drawer's `resizeSelected`).
 inCase
@@ -192,11 +192,14 @@ inCase f w = wrap do
   pure
     { toUser: \row -> do
         case prj (Proxy @l) (f (unsafeCoerce row :: { | read })) of
-          Nothing -> ensureDetached
+          Nothing -> do
+            ensureDetached
+            -- the wire speaks only for the absent editor: attached, the
+            -- editor's own echo is the release (one feed, one release)
+            mProp <- Ref.read propRef
+            for_ mProp \prop -> prop row
           -- attach before feeding, as `provided` does
           Just _ -> ensureAttached *> pane.toUser row
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> prop row
     , fromUser: \prop -> do
         Ref.write (Just prop) propRef
         pane.fromUser prop
@@ -260,6 +263,13 @@ textOf f = wrap do
   pure
     { toUser: \s -> do
         setTextNodeValue node (f s)
+        -- the display's answer to the feed (record-echo totality: the whole
+        -- of a `{}` output row is `{}`). Inert to every gate — a zero-field
+        -- side is pre-satisfied, so a display never enters one — but real to
+        -- sequencing: a stage after the display is fed it (`simpleDialog`'s
+        -- confirm replays what its content last answered). Nothing at
+        -- registration, since an answer needs a feed. Every `{}`-output
+        -- display follows this protocol ("display echo, like `text`").
         prop <- Ref.read propRef
         prop {}
     , fromUser: \prop -> Ref.write prop propRef
@@ -280,7 +290,8 @@ textOf f = wrap do
 input :: forall @l r rest. IsSymbol l => Cons l String rest r => String -> PUI Web { | r } { | r }
 input type_ = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ wrap do
   -- focus guard: skip the write while the user is in the field, but still
-  -- echo, so downstream stages keep flowing
+  -- echo — an editor owes every feed its answer (record-echo totality), and
+  -- its field is one the gates wait for
   element "input" (pure unit)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new $ Nothing
@@ -437,12 +448,10 @@ progress f = wrap do
   pure
     { toUser: \r -> do
         setAttribute node "value" (show (f r))
-        -- display echo (like `text`)
+        -- display echo (like `text`): the feed's answer, inert to gates
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        prop {}
+    , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
 -- | What just happened, told in place — the native `<output>`, HTML's

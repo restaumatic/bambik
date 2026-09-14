@@ -122,22 +122,24 @@ discard :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
   p { | i1 } { | o1 } -> (Unit -> p { | i2 } { | o2 }) -> p { | i } { | o }
 discard first cont = bind first (\_ -> cont unit)
 
--- | The **faceless leaf**: reads nothing — stated as subsumption in its
--- | own signature, like the gated displays' — and contributes nothing. The
--- | wire's `lcmap`-closure (so a `Category` carrier),
+-- | The **faceless leaf**: reads nothing and contributes nothing. The
+-- | wire's `lcmap`-closure (so a `Category` carrier), defined at **every**
+-- | input because `{}` is terminal — there is one map to it from anything:
 -- |
 -- | ```
--- | blank = lcmap (const {}) identity    -- accept any record input
+-- | blank = lcmap (const {}) identity    -- accept any input
 -- | ```
 -- |
--- | The leaf for elements whose whole face is decorators — a channel-fed
--- | SVG shape or styled `div` (`circle >>> attrWith "fill" f $ blank`):
--- | the decorators read the fed row, the leaf under them reads `()` of it,
--- | which is always exact — `action`'s progress slot included, when a
--- | vocabulary has no indicator (`blank # action f`). An *element* with
--- | nothing in it is the other static, `PUI.static` (an ocular applied to
--- | the wire at `{} → {}`).
-blank :: forall p i. Category p => Profunctor p => p { | i } {}
+-- | At record input it is the display that reads `()` of the fed row —
+-- | stated as subsumption, like the gated displays' — the leaf for
+-- | elements whose whole face is decorators, a channel-fed SVG shape or
+-- | styled `div` (`circle >>> attrWith "fill" f $ blank`). At variant
+-- | input it is the status that renders no occurrence: `action`'s progress
+-- | slot when a vocabulary has no indicator (`blank # action f`). One word
+-- | for both, since neither the record merges nor the variant merges await
+-- | a zero-field contribution. An *element* with nothing in it is the other
+-- | static, `PUI.static` (an ocular applied to the wire at `{} → {}`).
+blank :: forall p a. Category p => Profunctor p => p a {}
 blank = lcmap (const {}) identity
 
 -- | **Discharge a UI component's initial-state obligation**: `with a w` supplies

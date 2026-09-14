@@ -1272,21 +1272,25 @@ type Ocular p = forall a b. Optic p a b a b
 static :: forall p. Category p => Ocular p -> p {} {}
 static o = o identity
 
--- | The progress slot is row-shaped like every component interface: the
--- | UI component is a `{ busy :: Boolean } → {}` display citizen — and the
--- | slot is exactly that row, so a stage with no indicator passes `blank`,
--- | the faceless leaf: `blank # action …`.
+-- | The progress slot is a **status**, `[ started :: {}, ended :: {} ] → {}`
+-- | — a `+→×` citizen like `snackbar`, because what it is fed is not a model
+-- | field but the run's two lifecycle **occurrences**: no application owns a
+-- | "busy" (the slot's earlier `{ busy :: Boolean }` was a two-case phase
+-- | written as the Boolean nobody edits), so the indicator shows between
+-- | `started` and `ended` and, like every status, owes the channel nothing.
+-- | A stage with no indicator passes `blank`, the faceless leaf, which
+-- | stands at variant input as it does at record input: `blank # action …`.
 -- |
--- | A failing action is **reported, not swallowed**: the progress slot is
--- | cleared whichever way the `Aff` ends — so a throw cannot strand the
--- | spinner — and the error reaches the diagnostics sink by name. Nothing is
--- | posted onward, since there is no output to post.
-action :: forall s t. (s -> Aff t) -> Action s t { busy :: Boolean } {}
+-- | A failing action is **reported, not swallowed**: `ended` is dispatched
+-- | whichever way the `Aff` ends — so a throw cannot strand the spinner —
+-- | and the error reaches the diagnostics sink by name. Nothing is posted
+-- | onward, since there is no output to post.
+action :: forall s t. (s -> Aff t) -> Action s t [ started :: {}, ended :: {} ] {}
 action arr w = action'
   (\i pro post -> do
-    liftEffect $ pro { busy: true }
+    liftEffect $ pro (inj (Proxy @"started") {})
     result <- attempt (arr i)
-    liftEffect $ pro { busy: false }
+    liftEffect $ pro (inj (Proxy @"ended") {})
     case result of
       Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
       Right o -> liftEffect $ post o)

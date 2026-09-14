@@ -87,17 +87,36 @@ combinator laws below fail without them.
    `seeded a >>> seeded a ≈ seeded a`. The focus-guarded text fields and
    `settled`'s idempotence contract are both instances of this law.
 2. **Record-echo totality** — a *behavior-kinded* citizen answers every
-   feed with at least one emission (displays release the fed row, editors
-   echo, `identity` is the echo wire — every record-shaped leaf but the
-   occurrence source `clicked`, which only ever lives under `toCase`). What
-   keeps the gated merges live and what the seeded `×`-retraction laws
-   quantify over.
+   feed with one emission of the **whole** fed row (displays release it,
+   editors echo it with the background re-attached, `identity` is the echo
+   wire — every record-shaped leaf but the occurrence source `clicked`,
+   which only ever lives under `toCase`). What keeps the gated merges live
+   and what the seeded `×`-retraction laws quantify over. The law has two
+   halves of different strength (2026-09-11, from an audit of every
+   `toUser` in the six vocabularies): **row totality** — whatever is
+   released is the whole fed row — holds on the nose for every published
+   stage; **feed liveness** — every feed is answered, once — holds for
+   every leaf and the instant rungs and is *refined*, not broken, at
+   exactly two kinds of place: in **time** by the witness rung
+   (`confirmed` releases on confirmation; a declined reading withholds) and
+   the gather gate (`acted` releases once every element has spoken), and in
+   **value** by the type-changing selectors, whose `Just`-only echo is
+   silent on `Nothing` and is completed by `required`/`optional` before the
+   leaf can be a stage — the type forbids a bare selector in any
+   `Category.do` over one row. "Once" is exact since the same audit:
+   `inCase` echoes only while its pane is detached (attached, the editor's
+   own echo is the release) and `drawer` sequences its nav into its content
+   instead of fanning one feed out to two echoing sides.
 3. **No synchronous event echo** — an *event-kinded* citizen (an occurrence
    source: `button`, `clicked`, `menuItem`, a status's event input) never
    emits from inside its own `toUser`. Events are occurrences, not
    responses; this is the termination argument for `Cochoice`'s re-entry
    (an event loop, not a busy loop) and for `iterate`, and what lets
    `updated`/`applied` *arm* an emitter by feeding it without firing it.
+   Forwarding an occurrence that *arrived* — `identity`, `observed` and
+   `subChoice`'s background cases at `+→+` all emit inside `toUser` — is a
+   response to an input event, not an echo of a feed, and is not what this
+   law forbids; the law is about sources (§3.1).
 
    The law is about **kind, not shape**. Its first statement here said
    "`+`-output citizen" and was too strong: `bracketed`'s variant editor is
@@ -122,6 +141,112 @@ combinator laws below fail without them.
    on components while its `×` sibling sits in the carrier — not a
    difference in how much each is trusted, but in what a pass-through can
    absorb.
+
+### 3.1 Echo by shape: must, must not, may, may
+
+The three laws read off per direction give one **modality** each — what a
+component of that shape owes on `toUser` (2026-09-11, from the vocabulary
+audit; "echo" is an emission produced by a feed, "release" the same act
+over retained state):
+
+| shape | on input | modality | what stays obligatory | unit |
+| --- | --- | --- | --- | --- |
+| `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | `identity`, the echo wire |
+| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol, `armed`, `# with patch`) or at quiescence (`resolve`) (law 3) | `silence` |
+| `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is `iterate`'s well-foundedness | `identity`, the forward wire |
+| `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is whole, and the retained state **is** the released state, so a change can never stay private | `lcmap case_ identity`, the never-fed wire |
+
+The criterion behind the column: **the output kind decides whether anything
+is owed, the input kind decides how it is discharged.** A record output must
+be whole however its input arrived. With a feed on the input side the
+background is the retained feed and the wire is echo (`field @l` re-attaches
+it); with an occurrence there is no feed to re-attach, so the background is
+the retained *contributions* and the wire is retention (`retain` withholds
+until its state channel has a value, `variantToRecord` retains the other
+side's last contribution, `accumulated`/`unfolding` take a seed). A variant
+output cannot be re-said, so no echo can be mandated: from a feed it would be
+a fabricated event, forbidden; from an occurrence it is a response,
+permitted. The two off-diagonal "wires", replay and retention, are carrier
+structure rather than `Category`'s — one needs time, the other a `Ref` —
+which is §5's asymmetry seen from the components.
+
+The two record-output rows differ in modality for one reason. At `×→×` the
+input *is* the state, so an unanswered feed is state hidden from downstream
+and the echo is owed. At `+→×` the input is an occurrence, and whether it
+changes anything is the handler's decision; an occurrence that leaves the
+state unchanged has nothing to say, and by law 1 saying it anyway is a
+no-op. The carrier's policy of releasing on every occurrence once the row is
+whole is therefore a **permitted choice** (made so that no row ever needs
+`Eq`), not the law, and a carrier that released only on change would
+satisfy the same laws. The degenerate case is every status, `[ event ] → {}`:
+state that never changes, each occurrence rendered to the user, nothing to
+the channel — a zero-field contribution is pre-satisfied and inert. The same
+inertness means the `{}`-output displays' per-feed `{}` emission is never
+awaited by any **gate**: the rung (`shown`) releases the row, not the leaf.
+It is still the display's lawful answer under law 2 (the whole of a `{}`
+output row is `{}`), and *sequencing* may depend on it — `simpleDialog`'s
+confirm replays what its content last answered, so a bare `text` content
+is what arms it (§3.2).
+The modality is also a **detector**: a `×→×` display whose field no model
+owns is a status in disguise. `action`'s progress slot was one until
+2026-09-13 — `{ busy :: Boolean } → {}`, fed `true` then `false` around the
+`Aff`, every `×→×` obligation vacuous (a `{}` echo of a row nobody awaited)
+— and is now `[ started :: {}, ended :: {} ] → {}`, the run's two
+occurrences dispatched to an indicator that owes nothing back; `blank`, the
+faceless leaf, stands at that input as at any other, since `{}` is terminal.
+
+Two facts sit outside the table. The modalities are about **kind**, exactly
+as law 3 is: `bracketed` is variant-shaped yet echoes, `clicked` is
+record-shaped yet never does. And `action` is the one `+→+` form that can be
+*misplaced*: it responds through an `AVar` inside `launchAff_`, so an `Aff`
+that completes without suspending emits within the feed — a response under
+`# atCase`, where every demo puts it, but an echo if an application placed
+it after an editor in a `Category.do`; the guard is writing.md's rule that
+effects run on occurrences, not the type.
+
+### 3.2 What a `×→×` gate waits for
+
+A `×→×` gate is the set of **owned** output fields not yet known. A feed
+shrinks it as one step and releases once when it is empty; a display never
+enters it; an emitter or status never sees it. Stated for the carrier as it
+stands (2026-09-14, after `action`'s progress slot left the `×` side):
+
+- **Two granularities, one principle.** `recordToRecord` gates on owned
+  fields across its operands: each side's last contribution is retained and
+  the union released only when both are known. `field @l` gates the
+  background around one field: `Strong.first` withholds until the pair
+  state has been fed once, then re-attaches what it retained. A leaf is a
+  whole-row citizen because the lens supplies the background and the merge
+  supplies the sibling's fields — the same rule at two granularities.
+- **A feed is one step.** The inclusive input side makes a feed a
+  broadcast; it runs with the gate batching and the gate releases once
+  afterwards, if anything arrived (`steppedFeed`). A user emission arrives
+  outside any step and releases at once with the sibling's retained
+  contribution. Each contribution is trimmed to its declared row before the
+  union, so a stale runtime copy on an echo wire never shadows the sibling
+  (runtime-exactness).
+- **A zero-field side is born satisfied.** Its slot is primed with `{}` at
+  construction and its emissions neither open nor re-fire the gate.
+  `identity @{}`, `blank`, an announcing static and a `{}`-output display
+  are indistinguishable as operands (the zero-field law, test/Main.purs).
+- **No cross-feed inside the merge.** An operand's emission goes
+  downstream, not to its sibling. Freshness across siblings is the
+  enclosing loop's job: `looped` re-broadcasts every emission and each lens
+  re-retains its background within the turn.
+- **A display never enters the gate.** It owns no field. Its `{}` per feed
+  is its answer under law 2, inert to every gate and consumed only by
+  sequencing (§3.1); as a *stage* a display is integrated by the rung,
+  `recordToRecord content identity`, and it is the rung that releases the
+  row. An emitter (`×→+`) never sees a `×→×` gate — its fed row leaves only
+  as replay — and neither does a status (`+→×`), which is dispatched.
+- **Starvation is a priming failure of an owned field**, always: an editor
+  or source never fed, never seeded, or sitting after a stage that never
+  released. The cure is `with`/`mvu`/`seeded` or a trace form's seed
+  argument — never an echo added to a display, which no gate would hear.
+  The watchdog names the missing fields for exactly this reason.
+- **The named cost.** Every `×`-side gate drops, not delays, a pre-feed
+  emission, so the ecosystem `Strong` law holds only as primed equivalence
+  (§4). The `+` side has no such gate — §5's asymmetry seen from the merge.
 
 ## 4. Named deviations from ecosystem laws
 

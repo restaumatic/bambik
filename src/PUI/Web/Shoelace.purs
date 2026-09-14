@@ -328,12 +328,10 @@ progressBar f = wrap do
     { toUser: \r -> do
         -- sl-progress-bar runs 0–100
         setNumberProp "value" node (f r * 100.0)
-        -- display echo (like `text`)
+        -- display echo (like `text`): the feed's answer, inert to gates
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        prop {}
+    , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
 -- | The **toast**: a brief message at the bottom of the screen that

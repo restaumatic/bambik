@@ -107,7 +107,14 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   The deadlocks, the seeded laws and every other statement below are stated
   against **doc/observational-semantics.md** — the two-phase protocol, the
   equivalence `≈` / refinement `⊑`, the three component laws
-  (feed-idempotence, record-echo totality, no synchronous event echo), and
+  (feed-idempotence, record-echo totality, no synchronous event echo) with
+  their per-shape modalities (§3.1: `×→×` **must** echo, `×→+` **must not**,
+  `+→+` and `+→×` **may** — output kind decides whether an echo is owed,
+  input kind how it is discharged), §3.2's account of what a `×→×` gate
+  waits for (**owned fields only** — a display never enters it, its `{}`
+  per feed being the feed's answer, inert to gates and real only to
+  sequencing; starvation is always a priming failure of an owned field,
+  never cured by an echo on a display), and
   the named deviations (the gated `Strong` law holds only as primed
   equivalence; interchange is observation-level-relative — at the inner
   surfaces it fails on the nose and holds as `⊑`, at the boundary it holds
@@ -144,7 +151,7 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   | Word | What it is |
   | --- | --- |
   | `silence` | the silent UI component, `×→+` shaped `{ \| i } → [ \| o ]`; silence forced by parametricity — the event merge's unit, and what an emitter removed by `provided` observationally *is* (not an operand `provided` is built from: copairing with silence leaves the source's emission channel connected, so absence is `Hosting`'s); a class member because the type (variant output only) is the honesty boundary |
-  | `blank` | the faceless *record*-output leaf `{ \| i } → {}`, the wire's `lcmap`-closure; for elements whose whole face is decorators, and `action`'s slot when there is no indicator |
+  | `blank` | the faceless leaf `a → {}`, the wire's `lcmap`-closure at **every** input since `{}` is terminal: at record input the display reading `()` of the row (elements whose whole face is decorators), at variant input the status rendering no occurrence (`action`'s progress slot when there is no indicator, `blank # action …`); neither merge family awaits a zero-field contribution, so one word serves both |
   | `static` | an element with nothing in it — an ocular applied to the wire, pinned `{} → {}` (`static (span >>> cl "ripple")`); with `staticText`/`staticHTML` the three statics |
   | `announce` | the **point**, `Seeding`'s one primitive: one registration emission of `a` out of the terminal record, feeds ignored — what `with`/`mvu` close over |
   | `with` | discharge the initial-state obligation, `announce a >>> w`; record-shaped on the **input** side only and output-polymorphic, so it closes record pipelines *and* seeds a `×→+` emitter's replay payload — `button @l {…} # with patch`, leaf leading the line |
@@ -273,8 +280,10 @@ design-system **umbrella**. What they share, stated once:
   fields and `select`, plain `label:` elsewhere.
 - **Leaf-echo protocols** are identical across all five: focus-guarded text
   fields (model updates never clobber the field being typed in, and the channel
-  stays live), per-feed display echo, `Just`-only echo on type-changing
-  selectors, and `clicked`'s replay-last-value protocol on emitters.
+  stays live), per-feed display echo (the `{}` answer to a feed and nothing
+  at registration — inert to every gate, real to sequencing), `Just`-only
+  echo on type-changing selectors, and `clicked`'s replay-last-value
+  protocol on emitters.
 - **The `dimap` round-trip contract for editors** (stated in each module
   header): an editor bracketed by `dimap f g` behaves as an iso lens; lossy or
   failing conversions belong in the model (`settled` on the whole-row stage), never
@@ -299,7 +308,7 @@ Per-catalogue deltas:
 
 | Module | Basis | Deltas worth knowing |
 | --- | --- | --- |
-| `PUI.Web.MDC2` | `material-components-web`: documented markup + a foundation instance (`newComponent material.x."MDCX"`) wired through its documented properties/events; text fields write through the foundation's `value` so label float stays foundation-managed | the fullest catalogue: `listOf` (a **dynamic collection component**, `{ \\| provided } -> (i -> Array { \\| r }) -> PUI Web { \\| r } o -> PUI Web i { \\| r }` — keyed `foreach` retention, MD2 selected styling via an optional `selected` predicate), `dataTable`/`dataRow`/`dataCell`, `imageList`/`imagePane` (the channel-fed sibling of the static `imageListItem`), `layoutGrid`, `topAppBar`, `drawer` (permanent, with a **live nav slot**: nav and content are sibling stages over the same types), `tooltip`, `banner`, `tabBar` (the same-type selector with unconditional echo — the `looped`-ensemble citizen), `menu`/`menuItem`, `chipSet`/`filterChip`, `iconToggle`, `dialog`/`simpleDialog` (modal protocol: **open on feed, close on emission**), `group @l` (the labelled model group — card surface + heading + `field @l` in one word, label stamped as the accessible group name; mirrored in MDC3) |
+| `PUI.Web.MDC2` | `material-components-web`: documented markup + a foundation instance (`newComponent material.x."MDCX"`) wired through its documented properties/events; text fields write through the foundation's `value` so label float stays foundation-managed | the fullest catalogue: `indeterminateLinearProgress`/`indeterminateCircularProgress` are **statuses** (`[ started :: {}, ended :: {} ] → {}`, mirrored in MDC3 — 2026-09-13: `action`'s progress slot dispatches the run's two occurrences, no model owns a `busy`, and a status owes the channel nothing, so the slot left the gated broadcast entirely; the earlier `{ busy :: Boolean }` was a two-case phase written as a Boolean nobody edits), `listOf` (a **dynamic collection component**, `{ \\| provided } -> (i -> Array { \\| r }) -> PUI Web { \\| r } o -> PUI Web i { \\| r }` — keyed `foreach` retention, MD2 selected styling via an optional `selected` predicate), `dataTable`/`dataRow`/`dataCell`, `imageList`/`imagePane` (the channel-fed sibling of the static `imageListItem`), `layoutGrid`, `topAppBar`, `drawer` (permanent, with a **live nav slot**: nav is the first stage and content the second, so the nav's release feeds the content and a feed is released once), `tooltip`, `banner`, `tabBar` (the same-type selector with unconditional echo — the `looped`-ensemble citizen), `menu`/`menuItem`, `chipSet`/`filterChip`, `iconToggle`, `dialog`/`simpleDialog` (modal protocol: **open on feed, close on emission**), `group @l` (the labelled model group — card surface + heading + `field @l` in one word, label stamped as the accessible group name; mirrored in MDC3) |
 | `PUI.Web.MDC3` | Google's `@material/web` custom elements — a leaf is `element "md-…"` plus property/event wiring: no foundation classes, no hand-fused ripple/label chrome | structured to **mirror MDC2** (same helper shapes, same definition order). MD3 renames arrive as the catalogue does: the MD3 typescale (`displayLarge`…`labelSmall`), four emphasis siblings (`elevatedButton`/`tonalButton`/`outlinedButton`/`textButton`), `elevation1/3/5`, and **no `banner`** (MD3 dropped it). Catalogue entries `@material/web` lacks (segmented button, snackbar, card, top app bar, drawer, data table, image list, tooltip) are hand-rolled over the `--md-sys-*` tokens, each injecting its stylesheet once via `ensureStyle`, the `md-typescale-*` stylesheet adopted by its `body` at mount; pages need only the Roboto + Material Symbols fonts |
 | `PUI.Web.Shoelace` | `@shoelace-style/shoelace` custom elements, Lit-based so no bind deferral | the MDC3 recipe verbatim. Exclusive: the star `rating` editor. Shoelace's own names where the concept differs — `textField`/`textArea` (no fill/outline split, plain `label`), `toast` (`<sl-alert>`), `progressBar`, `sliderLive` (`<sl-range>`). Page links the light-theme CSS from the CDN; icons from the CDN base path its `body` sets at mount. Typography is deliberately absent — Shoelace styles plain HTML, so the HTML oculars *are* the type scale |
 | `PUI.Web.Fluent` | Microsoft's `@fluentui/web-components` v3; tokens set from `webLightTheme` by its `body` at mount, so pages need no CSS link; labels associate via `<fluent-field>` wrappers | exclusives `ratingDisplay` (read-only — the catalogue has no star *editor*, and this vocabulary does not invent one) and `messageBar`; type ramp `title3`/`body1`/`caption1` over `<fluent-text>`. **Caveat**: FAST binds a beat after DOM insertion and replays pre-bind property writes at bind, and its update queue is rAF-driven (starving in frameless headless sessions) — so the dropdown/radio-group leaves defer writes on a **timer** poll (`whenBoundDo` in Fluent.js) and finish the two starvable registrations themselves; the dropdown's options must be wrapped in `<fluent-listbox>` (v3's markup contract) |

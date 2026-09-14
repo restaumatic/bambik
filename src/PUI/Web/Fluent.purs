@@ -326,12 +326,10 @@ progressBar f = wrap do
   pure
     { toUser: \r -> do
         setNumberProp "value" node (f r)
-        -- display echo (like `text`)
+        -- display echo (like `text`): the feed's answer, inert to gates
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        prop {}
+    , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
 -- | A **read-only star rating**: someone else's score, shown but not
@@ -350,12 +348,10 @@ ratingDisplay f = wrap do
   pure
     { toUser: \r -> do
         setNumberProp "value" node (f r)
-        -- display echo (like `text`)
+        -- display echo (like `text`): the feed's answer, inert to gates
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        prop {}
+    , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
 -- | The **message bar**: a brief success message at the bottom of the

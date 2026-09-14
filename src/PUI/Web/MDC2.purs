@@ -132,7 +132,6 @@ import PUI.Web (Node, Web, OptCaption(..), staticHTML, addClass, addEventListene
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Record (get) as Record
 import Type.Proxy (Proxy(..))
 
 -- Implementation notes — the reference above is the contract.
@@ -156,16 +155,17 @@ import Type.Proxy (Proxy(..))
 --         `slider @l`, `select @l` (the MD2 exposed dropdown),
 --         `segmentedButton @l`, `tabBar @l` (the same-type selector — the
 --         `looped`-ensemble citizen), `filterChip @l`, `iconToggle @l`;
---       `×→×` displays — `indeterminateLinearProgress`,
---         `indeterminateCircularProgress` (both `{ busy } → {}`, the shape
---         `PUI.action`'s progress slot expects) and the determinate
---         `linearProgress` (`{ value } → {}`);
+--       `×→×` displays — the determinate `linearProgress`
+--         (`{ | reads } → {}` over a read function);
 --       `×→+` events — `button @l` (the contained/raised button — the
 --         high-emphasis default; `outlinedButton`, `textButton` are the
 --         other two MD2 emphasis levels), `fab @l`, `iconButton @l`,
 --         `menuItem @l`;
---       `+→×` statuses — `snackbar @l`, `banner @l` (MD2 still has the
---         banner; MD3 dropped it, so `PUI.Web.MDC3` has no citizen for it).
+--       `+→×` statuses — `snackbar`, `banner` (MD2 still has the banner;
+--         MD3 dropped it, so `PUI.Web.MDC3` has no citizen for it), and
+--         `indeterminateLinearProgress @l`/`indeterminateCircularProgress @l`
+--         (`[ started, ended ] → {}` — the run's two occurrences, the shape
+--         `PUI.action`'s progress slot dispatches).
 --     No scalar or polymorphic component interfaces. Variant *editing* has
 --     no `+→+` component citizens: it goes through record-shaped editor
 --     state (`dimap`-bracketed `looped` pipelines — a selection component
@@ -995,26 +995,23 @@ tabBarLeaf options = wrap do
       <> "</button>"
 
 -- | The **indeterminate progress bar**: work is under way and there is no
--- | telling how long — a request in flight, a file being processed. Shown
--- | while `busy`, gone when it isn't, so it is driven by the app's own
--- | notion of being busy rather than by a separate visibility flag.
-indeterminateLinearProgress :: forall @l r. IsSymbol l => Cons l Boolean () r => PUI Web { | r } {}
+-- | telling how long — a request in flight, a file being processed. A
+-- | **status**, not a display: it is fed the run's two occurrences,
+-- | `started` and `ended`, and shows between them — exactly what
+-- | `PUI.action`'s progress slot dispatches (`indeterminateLinearProgress
+-- | @"busy" # action submit`). No model owns a "busy" field, so nothing
+-- | here is state; the label is the accessible name, and nothing else.
+indeterminateLinearProgress :: forall @l. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateLinearProgress = wrap do
   _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   liftEffect $ close comp
-  mPropRef <- liftEffect $ Ref.new Nothing
   pure
-    { toUser: \r -> do
-        if Record.get (Proxy @l) r then open comp else close comp
-        -- display echo (like `text`): announce the `{}` per feed, so gated
-        -- merges and whole-row editor stages keep flowing
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop {}
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        prop {}
+    { toUser: Variant.match { started: \_ -> open comp, ended: \_ -> close comp }
+    -- a `{}` status has nothing to say: each occurrence is rendered, and a
+    -- zero-field contribution is pre-known to every gate
+    , fromUser: const (pure unit)
     }
 
 -- | The **determinate progress bar**: how far along something is, `value`
@@ -1037,12 +1034,10 @@ linearProgress f = wrap do
   pure
     { toUser: \r -> do
         setNumberProp "progress" comp (f r)
-        -- display echo (like `text`)
+        -- display echo (like `text`): the feed's answer, inert to gates
         mProp <- Ref.read mPropRef
         for_ mProp \prop -> prop {}
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        prop {}
+    , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 
 -- the documented buffer/bar innards shared by both linear variants
@@ -1059,22 +1054,15 @@ linearProgressInnards = RecordToRecord.do
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
 -- | the width would be too much.
-indeterminateCircularProgress :: forall @l r. IsSymbol l => Cons l Boolean () r => PUI Web { | r } {}
+indeterminateCircularProgress :: forall @l. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateCircularProgress = wrap do
   _ <- unwrap $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.circularProgress."MDCCircularProgress" node
   liftEffect $ close comp
-  mPropRef <- liftEffect $ Ref.new Nothing
   pure
-    { toUser: \r -> do
-        if Record.get (Proxy @l) r then open comp else close comp
-        -- display echo (like `text`)
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop {}
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        prop {}
+    { toUser: Variant.match { started: \_ -> open comp, ended: \_ -> close comp }
+    , fromUser: const (pure unit)
     }
   where
   innards = """
@@ -1498,23 +1486,18 @@ topAppBar config content = wrap do
   unwrap (div >>> cl "mdc-top-app-bar--fixed-adjust" $ content)
 
 -- | The permanent **navigation drawer**: a titled nav panel pinned beside
--- | the content. The nav is live, not a static menu — both sides see the
--- | same data and either can report, so a selectable nav (a `listOf` of
--- | sections) drives what is shown next to it.
-drawer :: forall i o. { title :: String, subtitle :: String } -> PUI Web i o -> PUI Web i o -> PUI Web i o
-drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
-  nav' <- unwrap (aside >>> cl "mdc-drawer" $ wrap do
-    _ <- unwrap (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> config.subtitle <> "</h6></div>"))
-    unwrap (div >>> cl "mdc-drawer__content" $ nav))
-  content' <- unwrap (div >>> cl "mdc-drawer-app-content" >>> "style" := "flex: 1; padding: 16px;" $ content)
-  pure
-    { toUser: \i' -> do
-        nav'.toUser i'
-        content'.toUser i'
-    , fromUser: \prop -> do
-        nav'.fromUser prop
-        content'.fromUser prop
-    }
+-- | the content. The nav is live, not a static menu — it is the **first
+-- | stage**, the content the second: what the nav releases feeds the
+-- | content, so a selectable nav (a `listOf` of sections) drives what is
+-- | shown next to it, and a feed is released once, by the content. (Two
+-- | sibling stages fed the same row would each echo it — two releases
+-- | per feed, the parallel shape `recordToRecord`'s type forbids.)
+drawer :: forall i x o. { title :: String, subtitle :: String } -> PUI Web i x -> PUI Web x o -> PUI Web i o
+drawer config nav content = div >>> "style" := "display: flex;" $
+  ( aside >>> cl "mdc-drawer" $ wrap do
+      _ <- unwrap (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> config.subtitle <> "</h6></div>"))
+      unwrap (div >>> cl "mdc-drawer__content" $ nav) )
+  >>> ( div >>> cl "mdc-drawer-app-content" >>> "style" := "flex: 1; padding: 16px;" $ content )
 
 -- | Attach a **tooltip** to a control: the short explanation that appears
 -- | on hover or keyboard focus. For clarification only — never for
