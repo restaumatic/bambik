@@ -158,7 +158,7 @@ import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
-import Data.Profunctor.Row (class OwnedRecordOutputs, class OwnedVariantInputs, class SharedRecordInputs, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row (class RowLabels, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
@@ -520,36 +520,29 @@ instance MonadEffect m => Looping (PUI m) where
                 prop u
       }
 
-instance MonadEffect m => RecordToRecord (PUI m) where
-  recordToRecord = recordToRecordPUI
+-- The four row merges, one instance per shape, in the order of the grid in
+-- Data.Profunctor.Row ("The laws, stated once"): ×→×, ×→+, +→+, +→×. The
+-- two record-output ones share the gate machinery that follows the block.
 
--- Hoisted so the merge's `RowList` variables are in scope: the starvation
--- diagnostics reify each side's field names (`rowLabels`, a
--- `MergeableRecords` superclass) to say exactly which sibling fields a
--- withholding gate is still waiting for.
-recordToRecordPUI :: forall m i1 o1 i2 o2 i12 i1x i2x i o o1l o2l.
-  MonadEffect m =>
-  SharedRecordInputs i1 i2 i i12 i1x i2x =>
-  OwnedRecordOutputs o1 o2 o o1l o2l =>
-  PUI m { | i1 } { | o1 } -> PUI m { | i2 } { | o2 } -> PUI m { | i } { | o }
-recordToRecordPUI p1 p2 = wrap do
-  p1' <- unwrap (widenRecordInput p1)
-  p2' <- unwrap (widenRecordInput p2)
-  gate <- liftEffect $ newRecordGate labels1 labels2
-  pure
-    -- one feed is one step. The input side is INCLUSIVE (`SharedRecordInputs`),
-    -- so a feed is a broadcast — both operands may answer it — which is the
-    -- whole cause of the law: the broadcast runs batched and the gate
-    -- releases once afterwards (`steppedFeed`), so a feed changing several
-    -- fields never emits a row that never existed
-    { toUser: \new -> steppedFeed "×→×" labels1 labels2 gate do
-          p1'.toUser new
-          p2'.toUser new
-    , fromUser: gatedRecordOutputs "×→×" labels1 labels2 gate exactRow exactRow p1'.fromUser p2'.fromUser
-    }
-  where
-  labels1 = rowLabels (Proxy @o1l)
-  labels2 = rowLabels (Proxy @o2l)
+instance MonadEffect m => RecordToRecord (PUI m) where
+  recordToRecord p1 p2 = wrap do
+    p1' <- unwrap (widenRecordInput p1)
+    p2' <- unwrap (widenRecordInput p2)
+    gate <- liftEffect $ newRecordGate labels1 labels2
+    pure
+      -- one feed is one step. The input side is INCLUSIVE (`SharedRecordInputs`),
+      -- so a feed is a broadcast — both operands may answer it — which is the
+      -- whole cause of the law: the broadcast runs batched and the gate
+      -- releases once afterwards (`steppedFeed`), so a feed changing several
+      -- fields never emits a row that never existed
+      { toUser: \new -> steppedFeed "×→×" labels1 labels2 gate do
+            p1'.toUser new
+            p2'.toUser new
+      , fromUser: gatedRecordOutputs "×→×" labels1 labels2 gate exactRow exactRow p1'.fromUser p2'.fromUser
+      }
+    where
+    labels1 = labelsOf p1
+    labels2 = labelsOf p2
 
 instance Applicative m => RecordToVariant (PUI m) where
   -- the one unit no wire reaches (terminal → initial): silent at any rows
@@ -582,84 +575,64 @@ instance Applicative m => RecordToVariant (PUI m) where
           p2'.fromUser prop
       }
 
--- | The loop step, with transiency **derived from time**: the input
--- | `Tuple a c` shows `a` to the inner UI component and retains `c`. Every
--- | emission of the inner UI component loops immediately — `Right c`, the
--- | retained state escapes (withheld until a first `c` exists) — and
--- | (re)arms a quiescence timer; when the UI component stays quiet for the
--- | window, the last emission resolves: `Left b`. **Loop = still moving,
--- | Done = quiescence** — which is the definition of debouncing, so the
--- | seeded retraction reads
--- | `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g` — the tied
--- | loop IS debouncing. The window is `resolveFor`'s parameter; the
--- | instance fixes the carrier's **quiescence quantum**, 300ms — a semantic
--- | constant of this instance, not of the class (`resolveFor` re-scopes it
--- | per stage).
-instance MonadEffect m => Resolving (PUI m) where
-  resolve = resolveFor { ms: 300.0 }
-
--- | `resolve` with an explicit quiescence window — see the `Resolving`
--- | instance. `Done` needs no state and fires (after the window) even
--- | unprimed; only the `Loop` branch is gated on a first `c`.
-resolveFor :: forall m a b c. MonadEffect m => { ms :: Number } -> PUI m a b -> PUI m (Tuple a c) (Either b c)
-resolveFor millis p = wrap do
-  p' <- unwrap p
-  cRef <- liftEffect $ Ref.new Nothing
-  mFiberRef <- liftEffect $ Ref.new Nothing
-  guard <- liftEffect gateGuard
-  pure
-    { toUser: \(Tuple a c) -> do
-        guard.fed
-        Ref.write (Just c) cRef
-        p'.toUser a
-    , fromUser: \prop ->
-        p'.fromUser \b -> do
-          -- (re)arm the quiescence timer: a newer emission supersedes the
-          -- pending Done, so only the last value of a burst resolves
-          launchAff_ do
-            mFiber <- liftEffect $ Ref.read mFiberRef
-            for_ mFiber $ killFiber (error "Superseded by a newer emission")
-            newFiber <- forkAff do
-              delay (Milliseconds millis.ms)
-              liftEffect $ prop $ Left b
-            liftEffect $ Ref.write (Just newFiber) mFiberRef
-          -- loop immediately with the retained state
-          mc <- Ref.read cRef
-          case mc of
-            Nothing -> do
-              guard.blocked "Resolving.resolve: loop-branch emissions dropped for 3s — no input has primed the retained state (only quiescence resolutions pass). Feed the stage a first value." []
-              tr "Resolving.resolve: loop branch withheld (state unprimed)" b
-            Just c -> prop $ Right c
-    }
-
--- | The Mealy step: a fresh `Left a` feeds the inner UI component, a `Right c`
--- | (re)places the retained state. When the inner UI component emits `b`, the
--- | output pairs it with the retained `c` — and is **withheld until a `c`
--- | has arrived** (a `Tuple b c` with unknown `c` would be a fabrication),
--- | mirroring the knowledge-gated record merges.
-instance MonadEffect m => Retaining (PUI m) where
-  retain p = wrap do
-    p' <- unwrap p
-    cRef <- liftEffect $ Ref.new Nothing
-    guard <- liftEffect gateGuard
-    pure
-      { toUser: case _ of
-          Left a -> p'.toUser a
-          Right c -> do
-            guard.fed
-            Ref.write (Just c) cRef
-      , fromUser: \prop ->
-          p'.fromUser \b -> do
-            mc <- Ref.read cRef
-            case mc of
-              Nothing -> do
-                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: `unfolding` takes the unfold's initial state as an argument and feeds it as a first resume; raw chains seed the state case (`seeded`)." []
-                tr "Retaining.retain: emission withheld (state unprimed)" b
-              Just c -> prop $ Tuple b c
+-- The one merge carrying NEITHER feed obligation, and both absences follow
+-- from its sides. Input is exclusive (`OwnedVariantInputs`): every case has
+-- exactly one handler, so a feed is dispatched and exactly one operand
+-- answers — no broadcast, so no "one feed, several answers" to discipline.
+-- Output is a variant: nothing to gate, nothing to tear. Hence no gate, no
+-- step, no `MonadEffect` — this instance is stateless, and that is the
+-- structural reading of why (Data.Profunctor.Row, "What an inclusive input
+-- side obliges").
+instance Applicative m => VariantToVariant (PUI m) where
+  variantToVariant p1 p2 = wrap ado
+    p1' <- unwrap (widenVariantOutput p1)
+    p2' <- unwrap (widenVariantOutput p2)
+    in
+      { toUser: \v -> do
+          for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
+          for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
+      , fromUser: \prop -> do
+          p1'.fromUser prop
+          p2'.fromUser prop
       }
 
 instance MonadEffect m => VariantToRecord (PUI m) where
-  variantToRecord = variantToRecordPUI
+  variantToRecord p1 p2 = wrap do
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    gate <- liftEffect $ newRecordGate labels1 labels2
+    pure
+      -- the input side is what differs from `recordToRecord`, and it differs
+      -- in the way that matters: `OwnedVariantInputs` gives every case exactly
+      -- one handler (`DisjointLabels`), so a feed is DISPATCHED, not
+      -- broadcast — exactly one operand answers it. The torn row is a
+      -- broadcast hazard, so this merge does not have it (Data.Profunctor.Row,
+      -- "What an inclusive input side obliges"). The output side is
+      -- nonetheless the same gate, held until both operands have contributed,
+      -- because a record output must be whole however its input arrived. The
+      -- step is kept for that reason and for one it does carry: an operand
+      -- echoing re-entrantly during its own feed is coalesced rather than
+      -- released twice.
+      { toUser: \v -> steppedFeed "+→×" labels1 labels2 gate do
+          for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
+          for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
+      , fromUser: gatedRecordOutputs "+→×" labels1 labels2 gate exactRow exactRow p1'.fromUser p2'.fromUser
+      }
+    where
+    labels1 = labelsOf p1
+    labels2 = labelsOf p2
+
+-- The gate the two record-output merges share: the pure machine is
+-- `PUI.Gate`; this is its runner and its per-merge state.
+
+-- | The rendered output labels of an operand, read off its type: a
+-- | `RowToList` over its output row, resolved from the operand value rather
+-- | than from a named `RowList` variable, which is what lets the two
+-- | record-output merges be written directly as instance methods (an
+-- | instance member cannot restate the class signature, so the method's
+-- | `RowList` variables are not in scope in its body).
+labelsOf :: forall m i o ol. RowToList o ol => RowLabels ol => PUI m i { | o } -> Array String
+labelsOf _ = rowLabels (Proxy @ol)
 
 -- | The **output gate** both record-output merges run on, stated once.
 -- |
@@ -814,57 +787,80 @@ newRecordGate labels1 labels2 = do
   prime :: forall r. Array String -> Maybe { | r }
   prime labels = if Array.null labels then Just (unsafeCoerce {}) else Nothing
 
--- Hoisted like `recordToRecordPUI`, for the same reason: the starvation
--- diagnostics name the sibling fields a withholding gate is waiting for.
-variantToRecordPUI :: forall m i1 i1l i2 i2l o1 o2 i o o1l o2l.
-  MonadEffect m =>
-  OwnedVariantInputs i1 i2 i i1l i2l =>
-  OwnedRecordOutputs o1 o2 o o1l o2l =>
-  PUI m [ | i1 ] { | o1 } -> PUI m [ | i2 ] { | o2 } -> PUI m [ | i ] { | o }
-variantToRecordPUI p1 p2 = wrap do
-  p1' <- unwrap p1
-  p2' <- unwrap p2
-  gate <- liftEffect $ newRecordGate labels1 labels2
-  pure
-    -- the input side is what differs from `recordToRecord`, and it differs
-    -- in the way that matters: `OwnedVariantInputs` gives every case exactly
-    -- one handler (`DisjointLabels`), so a feed is DISPATCHED, not
-    -- broadcast — exactly one operand answers it. The torn row is a
-    -- broadcast hazard, so this merge does not have it (Data.Profunctor.Row,
-    -- "What an inclusive input side obliges"). The output side is
-    -- nonetheless the same gate, held until both operands have contributed,
-    -- because a record output must be whole however its input arrived. The
-    -- step is kept for that reason and for one it does carry: an operand
-    -- echoing re-entrantly during its own feed is coalesced rather than
-    -- released twice.
-    { toUser: \v -> steppedFeed "+→×" labels1 labels2 gate do
-        for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
-        for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
-    , fromUser: gatedRecordOutputs "+→×" labels1 labels2 gate exactRow exactRow p1'.fromUser p2'.fromUser
-    }
-  where
-  labels1 = rowLabels (Proxy @o1l)
-  labels2 = rowLabels (Proxy @o2l)
+-- | The loop step, with transiency **derived from time**: the input
+-- | `Tuple a c` shows `a` to the inner UI component and retains `c`. Every
+-- | emission of the inner UI component loops immediately — `Right c`, the
+-- | retained state escapes (withheld until a first `c` exists) — and
+-- | (re)arms a quiescence timer; when the UI component stays quiet for the
+-- | window, the last emission resolves: `Left b`. **Loop = still moving,
+-- | Done = quiescence** — which is the definition of debouncing, so the
+-- | seeded retraction reads
+-- | `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g` — the tied
+-- | loop IS debouncing. The window is `resolveFor`'s parameter; the
+-- | instance fixes the carrier's **quiescence quantum**, 300ms — a semantic
+-- | constant of this instance, not of the class (`resolveFor` re-scopes it
+-- | per stage).
+instance MonadEffect m => Resolving (PUI m) where
+  resolve = resolveFor { ms: 300.0 }
 
--- The one merge carrying NEITHER feed obligation, and both absences follow
--- from its sides. Input is exclusive (`OwnedVariantInputs`): every case has
--- exactly one handler, so a feed is dispatched and exactly one operand
--- answers — no broadcast, so no "one feed, several answers" to discipline.
--- Output is a variant: nothing to gate, nothing to tear. Hence no gate, no
--- step, no `MonadEffect` — this instance is stateless, and that is the
--- structural reading of why (Data.Profunctor.Row, "What an inclusive input
--- side obliges").
-instance Applicative m => VariantToVariant (PUI m) where
-  variantToVariant p1 p2 = wrap ado
-    p1' <- unwrap (widenVariantOutput p1)
-    p2' <- unwrap (widenVariantOutput p2)
-    in
-      { toUser: \v -> do
-          for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
-          for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
-      , fromUser: \prop -> do
-          p1'.fromUser prop
-          p2'.fromUser prop
+-- | `resolve` with an explicit quiescence window — see the `Resolving`
+-- | instance. `Done` needs no state and fires (after the window) even
+-- | unprimed; only the `Loop` branch is gated on a first `c`.
+resolveFor :: forall m a b c. MonadEffect m => { ms :: Number } -> PUI m a b -> PUI m (Tuple a c) (Either b c)
+resolveFor millis p = wrap do
+  p' <- unwrap p
+  cRef <- liftEffect $ Ref.new Nothing
+  mFiberRef <- liftEffect $ Ref.new Nothing
+  guard <- liftEffect gateGuard
+  pure
+    { toUser: \(Tuple a c) -> do
+        guard.fed
+        Ref.write (Just c) cRef
+        p'.toUser a
+    , fromUser: \prop ->
+        p'.fromUser \b -> do
+          -- (re)arm the quiescence timer: a newer emission supersedes the
+          -- pending Done, so only the last value of a burst resolves
+          launchAff_ do
+            mFiber <- liftEffect $ Ref.read mFiberRef
+            for_ mFiber $ killFiber (error "Superseded by a newer emission")
+            newFiber <- forkAff do
+              delay (Milliseconds millis.ms)
+              liftEffect $ prop $ Left b
+            liftEffect $ Ref.write (Just newFiber) mFiberRef
+          -- loop immediately with the retained state
+          mc <- Ref.read cRef
+          case mc of
+            Nothing -> do
+              guard.blocked "Resolving.resolve: loop-branch emissions dropped for 3s — no input has primed the retained state (only quiescence resolutions pass). Feed the stage a first value." []
+              tr "Resolving.resolve: loop branch withheld (state unprimed)" b
+            Just c -> prop $ Right c
+    }
+
+-- | The Mealy step: a fresh `Left a` feeds the inner UI component, a `Right c`
+-- | (re)places the retained state. When the inner UI component emits `b`, the
+-- | output pairs it with the retained `c` — and is **withheld until a `c`
+-- | has arrived** (a `Tuple b c` with unknown `c` would be a fabrication),
+-- | mirroring the knowledge-gated record merges.
+instance MonadEffect m => Retaining (PUI m) where
+  retain p = wrap do
+    p' <- unwrap p
+    cRef <- liftEffect $ Ref.new Nothing
+    guard <- liftEffect gateGuard
+    pure
+      { toUser: case _ of
+          Left a -> p'.toUser a
+          Right c -> do
+            guard.fed
+            Ref.write (Just c) cRef
+      , fromUser: \prop ->
+          p'.fromUser \b -> do
+            mc <- Ref.read cRef
+            case mc of
+              Nothing -> do
+                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: `unfolding` takes the unfold's initial state as an argument and feeds it as a first resume; raw chains seed the state case (`seeded`)." []
+                tr "Retaining.retain: emission withheld (state unprimed)" b
+              Just c -> prop $ Tuple b c
       }
 
 
