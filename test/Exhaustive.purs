@@ -1,29 +1,36 @@
 -- | Bounded exhaustive checking of the merge laws — every script up to a
 -- | stated length, with a fresh token per event — on the `PUI Effect`
--- | carrier, and conformance of the effectful record gate to its pure step
--- | (`PUI.Gate`). Why a bound is a proof here and not a sample:
--- | doc/observational-semantics.md, "The gate as a Mealy machine".
+-- | carrier, and conformance of every effectful gate to the one pure step
+-- | (`PUI.Gate`): the two record-output merges over their labels, the
+-- | container action's gather over its keys. Why a bound is a proof here
+-- | and not a sample: doc/observational-semantics.md, "The gate as a Mealy
+-- | machine".
 -- |
--- | A **script** is a sequence of events at the boundary of a merge: `Feed`
--- | (a fresh token fed), `FeedAgain` (the last token fed again), `FireK`
--- | (operand K emits a fresh token). A **rig** is a merge term wired to
--- | collect its boundary output stream as text; a **law** names two rigs, the
--- | event alphabet and length to enumerate, and the relation the two output
--- | streams must stand in at every prefix. Beside the paired laws, three
--- | single-rig checks: repetition of the `×→×` merge (deleting a repeated
--- | feed changes nothing up to stutter), its answer (one release per feed,
--- | untorn) and projection's input half at every shape (each operand is
--- | fed exactly its projection of the boundary feeds) — the laws of
--- | Data.Profunctor.Row ("The laws") the merge must preserve or provide.
+-- | A **script** is a sequence of events at the boundary of a term: `Feed`
+-- | (a fresh token fed), `FeedAgain` (the last feed repeated, token and
+-- | shape), `FireK` (operand or element K emits a fresh token), and for the
+-- | collection the two other feed shapes — `FeedOnly1` (an array holding
+-- | element 1 alone) and `FeedNone` (the empty array), which rekey the
+-- | gate. A **rig** is a term wired to collect its boundary output stream as
+-- | text; a **law** names two rigs, the event alphabet and length to
+-- | enumerate, and the relation the two output streams must stand in at
+-- | every prefix. Beside the paired laws, three single-rig checks:
+-- | repetition (deleting a repeated feed changes nothing up to stutter),
+-- | answer (one release per feed, untorn — `[]` for the empty array) and
+-- | projection's input half at every shape (each operand is fed exactly its
+-- | projection of the boundary feeds) — the laws of Data.Profunctor.Row
+-- | ("The laws") the merge must preserve or provide.
 module Test.Exhaustive (run) where
 
 import Prelude
 
 import Data.Array as Array
 import Data.Foldable (foldl, for_)
-import Data.Maybe (Maybe(..))
+import Data.Map as Map
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
 import Data.Profunctor (lcmap)
+import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Row.RecordToRecord (recordToRecord)
 import Data.Profunctor.Row.RecordToVariant (recordToVariant)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)
@@ -34,11 +41,11 @@ import Effect (Effect, foreachE)
 import Effect.Class.Console (log)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), silence)
+import PUI (PUI(..), acted, silence)
 import PUI.Gate (GateInput(..), GateOutput(..), GateState, gateStep, initialGate)
 import Unsafe.Coerce (unsafeCoerce)
 
-data Event = Feed | FeedAgain | Fire1 | Fire2 | Fire3
+data Event = Feed | FeedAgain | FeedOnly1 | FeedNone | Fire1 | Fire2 | Fire3
 
 derive instance Eq Event
 
@@ -46,14 +53,29 @@ instance Show Event where
   show = case _ of
     Feed -> "Feed"
     FeedAgain -> "FeedAgain"
+    FeedOnly1 -> "FeedOnly1"
+    FeedNone -> "FeedNone"
     Fire1 -> "Fire1"
     Fire2 -> "Fire2"
     Fire3 -> "Fire3"
 
--- | A merge term at its boundary: feed it a token, fire operand K with a
--- | token, read what it emitted so far.
+isFeed :: Event -> Boolean
+isFeed = case _ of
+  Feed -> true
+  FeedAgain -> true
+  FeedOnly1 -> true
+  FeedNone -> true
+  _ -> false
+
+-- | The shape of a feed: the whole value, or — for a collection, whose fed
+-- | array is its participant set — element 1 alone, or nothing. A merge
+-- | rig ignores the shape.
+data Shape = Whole | Only1 | None
+
+-- | A term at its boundary: feed it a token in a shape, fire operand K with
+-- | a token, read what it emitted so far.
 type Rig =
-  { feed :: Int -> Effect Unit
+  { feed :: Shape -> Int -> Effect Unit
   , fires :: Array (Int -> Effect Unit)
   , outs :: Ref.Ref (Array String)
   }
@@ -108,18 +130,20 @@ foldOp g f = do
 
 -- The refinement witness: the operand minus its first emission.
 quieter :: forall i o. Op i o -> Effect (Op i o)
-quieter op = do
+quieter op = pure { p: quieterP op.p, fire: op.fire }
+
+-- The same on a bare component, per instance — so a collection element
+-- lifted with it drops the first emission of each of its instances.
+quieterP :: forall i o. PUI Effect i o -> PUI Effect i o
+quieterP w = PUI do
+  inner <- unwrap w
   spoken <- Ref.new false
-  let
-    p = PUI do
-      inner <- unwrap op.p
-      pure
-        { toUser: inner.toUser
-        , fromUser: \prop -> inner.fromUser \o -> do
-            already <- Ref.read spoken
-            if already then prop o else Ref.write true spoken
-        }
-  pure { p, fire: op.fire }
+  pure
+    { toUser: inner.toUser
+    , fromUser: \prop -> inner.fromUser \o -> do
+        already <- Ref.read spoken
+        if already then prop o else Ref.write true spoken
+    }
 
 -- An operand that records the tokens it is fed: projection's witness.
 type Traced i o = { p :: PUI Effect i o, fire :: Int -> Effect Unit, ins :: Ref.Ref (Array Int) }
@@ -144,28 +168,31 @@ rig mkFeed m fires = do
   m' <- unwrap m
   outs <- Ref.new []
   m'.fromUser \o -> Ref.modify_ (_ <> [ show o ]) outs
-  pure { feed: m'.toUser <<< mkFeed, fires, outs }
+  pure { feed: \_ n -> m'.toUser (mkFeed n), fires, outs }
 
 -- A rig whose feeds are no-ops: equal streams mean feeds never emit.
 deaf :: Effect Rig -> Effect Rig
-deaf mk = mk <#> _ { feed = \_ -> pure unit }
+deaf mk = mk <#> _ { feed = \_ _ -> pure unit }
 
 runScript :: Effect Rig -> Array Event -> Effect (Array (Array String))
 runScript mk script = do
   r <- mk
   counter <- Ref.new 0
-  lastFed <- Ref.new 0
+  lastFed <- Ref.new (Tuple Whole 0)
   snaps <- Ref.new []
   let
     fresh = Ref.modify (_ + 1) counter
     fireAt k n = for_ (Array.index r.fires k) \f -> f n
+    feedIn shape = do
+      n <- fresh
+      Ref.write (Tuple shape n) lastFed
+      r.feed shape n
   for_ script \ev -> do
     case ev of
-      Feed -> do
-        n <- fresh
-        Ref.write n lastFed
-        r.feed n
-      FeedAgain -> Ref.read lastFed >>= r.feed
+      Feed -> feedIn Whole
+      FeedOnly1 -> feedIn Only1
+      FeedNone -> feedIn None
+      FeedAgain -> Ref.read lastFed >>= \(Tuple shape n) -> r.feed shape n
       Fire1 -> fresh >>= fireAt 0
       Fire2 -> fresh >>= fireAt 1
       Fire3 -> fresh >>= fireAt 2
@@ -216,7 +243,7 @@ checkRepetition name alphabet len mk = do
   let scripts = scriptsOf alphabet len
   foreachE scripts \script ->
     for_ (Array.range 1 (Array.length script - 1)) \i ->
-      when (Array.index script i == Just FeedAgain && (Array.index script (i - 1) == Just Feed || Array.index script (i - 1) == Just FeedAgain)) do
+      when (Array.index script i == Just FeedAgain && maybe false isFeed (Array.index script (i - 1))) do
         full <- runScript mk script
         for_ (Array.deleteAt i script) \shorter -> do
           less <- runScript mk shorter
@@ -231,9 +258,9 @@ fromMaybeEmpty dflt = case _ of
   Just xs -> xs
   Nothing -> dflt
 
--- Preservation of the answer law at `×→×`: with operands answering every
--- feed, every feed of the merge is answered by exactly one release —
--- which is at least one, and none torn.
+-- Preservation of the answer law at `×→×` and at the collection: with
+-- operands (elements) answering every feed, every feed of the term is
+-- answered by exactly one release — which is at least one, and none torn.
 checkAnswer :: String -> Array Event -> Int -> Effect Rig -> Effect Int
 checkAnswer name alphabet len mk = do
   log ("Exhaustive: " <> name)
@@ -241,7 +268,7 @@ checkAnswer name alphabet len mk = do
   foreachE scripts \script -> do
     snaps <- runScript mk script
     for_ (Array.range 0 (Array.length script - 1)) \i ->
-      when (Array.index script i == Just Feed || Array.index script i == Just FeedAgain) do
+      when (maybe false isFeed (Array.index script i)) do
         let
           before = if i == 0 then [] else fromMaybeEmpty [] (Array.index snaps (i - 1))
           answer = Array.drop (Array.length before) (fromMaybeEmpty [] (Array.index snaps i))
@@ -267,7 +294,7 @@ checkProjection law = do
     built <- law.build
     let
       r0 = built.rig
-      mk = pure (r0 { feed = \n -> Ref.modify_ (_ <> [ n ]) fed *> r0.feed n })
+      mk = pure (r0 { feed = \shape n -> Ref.modify_ (_ <> [ n ]) fed *> r0.feed shape n })
     _ <- runScript mk script
     feeds <- Ref.read fed
     for_ (Array.zip built.ins built.owns) \(Tuple insRef owns) -> do
@@ -317,22 +344,29 @@ rrThree merge = do
   rig recordFeed (merge a.p b.p c.p) [ a.fire, b.fire, c.fire ]
 
 -- the pure gate driven directly by the same script: the conformance oracle
-pureGateRR :: Effect Rig
-pureGateRR = do
-  st <- Ref.new (initialGate Nothing Nothing :: GateState (a :: Int) (b :: Int))
+-- The pure step, enrolled with the two labels and run by hand; a release
+-- is assembled into the row the merge would emit.
+pureRecordGate :: Effect { step :: GateInput String Int -> Effect Unit, outs :: Ref.Ref (Array String) }
+pureRecordGate = do
+  st <- Ref.new (initialGate [ "a", "b" ] :: GateState String Int)
   outs <- Ref.new []
   let
     step inp = do
       s <- Ref.read st
-      let Tuple s' out = gateStep { owns1: true, owns2: true } s inp
+      let Tuple s' out = gateStep s inp
       Ref.write s' st
       case out of
-        Released (o :: { a :: Int, b :: Int }) -> Ref.modify_ (_ <> [ show o ]) outs
+        Released [ Tuple _ a, Tuple _ b ] -> Ref.modify_ (_ <> [ show { a, b } ]) outs
         _ -> pure unit
+  pure { step, outs }
+
+pureGateRR :: Effect Rig
+pureGateRR = do
+  g <- pureRecordGate
   pure
-    { feed: \n -> step StepBegun *> step (Contributed1 { a: n }) *> step (Contributed2 { b: n }) *> step StepEnded
-    , fires: [ \n -> step (Contributed1 { a: n }), \n -> step (Contributed2 { b: n }) ]
-    , outs
+    { feed: \_ n -> g.step StepBegun *> g.step (Contributed [ Tuple "a" n ]) *> g.step (Contributed [ Tuple "b" n ]) *> g.step StepEnded
+    , fires: [ \n -> g.step (Contributed [ Tuple "a" n ]), \n -> g.step (Contributed [ Tuple "b" n ]) ]
+    , outs: g.outs
     }
 
 -- +→×
@@ -360,20 +394,11 @@ vrThree merge = do
 
 pureGateVR :: Effect Rig
 pureGateVR = do
-  st <- Ref.new (initialGate Nothing Nothing :: GateState (a :: Int) (b :: Int))
-  outs <- Ref.new []
-  let
-    step inp = do
-      s <- Ref.read st
-      let Tuple s' out = gateStep { owns1: true, owns2: true } s inp
-      Ref.write s' st
-      case out of
-        Released (o :: { a :: Int, b :: Int }) -> Ref.modify_ (_ <> [ show o ]) outs
-        _ -> pure unit
+  g <- pureRecordGate
   pure
-    { feed: \n -> step StepBegun *> (if n `mod` 2 == 0 then step (Contributed1 { a: n }) else step (Contributed2 { b: n })) *> step StepEnded
-    , fires: [ \n -> step (Contributed1 { a: n }), \n -> step (Contributed2 { b: n }) ]
-    , outs
+    { feed: \_ n -> g.step StepBegun *> (if n `mod` 2 == 0 then g.step (Contributed [ Tuple "a" n ]) else g.step (Contributed [ Tuple "b" n ])) *> g.step StepEnded
+    , fires: [ \n -> g.step (Contributed [ Tuple "a" n ]), \n -> g.step (Contributed [ Tuple "b" n ]) ]
+    , outs: g.outs
     }
 
 -- ×→+
@@ -431,6 +456,77 @@ vvThree merge = do
 -- of reachable joint control states of the two rigs compared, which is one
 -- per subset of operands that has spoken — four for two operands, eight for
 -- three.
+-- The container action: the record gate at runtime labels. The fed array is
+-- the participant set — `Whole` enrols elements 1 and 2, `Only1` element 1,
+-- `None` nobody — and each element echoes `{ v: s }` of its feed.
+type Item = { k :: Int, s :: Int }
+
+arrayOf :: Shape -> Int -> Array Item
+arrayOf shape n = case shape of
+  Whole -> [ { k: 1, s: n }, { k: 2, s: n } ]
+  Only1 -> [ { k: 1, s: n } ]
+  None -> []
+
+-- An echo element, firable per key: each instance enrols its emit leg under
+-- the key it is fed, so `fire k` reaches the instance currently holding `k`
+-- (a leaver's stale instance still fires — and is no participant).
+type Elem = { p :: PUI Effect Item { v :: Int }, fire :: Int -> Int -> Effect Unit }
+
+echoElem :: Effect Elem
+echoElem = do
+  registry <- Ref.new Map.empty
+  let
+    p = PUI do
+      e <- emitter
+      pure
+        { toUser: \r -> Ref.modify_ (Map.insert r.k e.emit) registry *> e.emit { v: r.s }
+        , fromUser: e.register
+        }
+  pure { p, fire: \k n -> Ref.read registry >>= \m -> for_ (Map.lookup k m) \emit -> emit { v: n } }
+
+-- `acted @"k"` over the element (wrapped by `wrap`: identity, or the
+-- refinement witness), fed arrays by shape, firing elements 1 and 2.
+actedRig :: (PUI Effect Item { v :: Int } -> PUI Effect Item { v :: Int }) -> Effect Rig
+actedRig wrap = do
+  el <- echoElem
+  m' <- unwrap (acted @"k" (wrap el.p) :: PUI Effect (Array Item) (Array { k :: Int, v :: Int }))
+  outs <- Ref.new []
+  m'.fromUser \o -> Ref.modify_ (_ <> [ show o ]) outs
+  pure { feed: \shape n -> m'.toUser (arrayOf shape n), fires: [ el.fire 1, el.fire 2 ], outs }
+
+-- The pure step enrolled with nothing and rekeyed by each feed, run by hand
+-- the way `actedWith` runs it; a release is the keyed vector.
+pureGather :: Effect Rig
+pureGather = do
+  st <- Ref.new (initialGate [] :: GateState Int Int)
+  outs <- Ref.new []
+  let
+    step inp = do
+      s <- Ref.read st
+      let Tuple s' out = gateStep s inp
+      Ref.write s' st
+      case out of
+        Released kvs -> Ref.modify_ (_ <> [ show (kvs <#> \(Tuple k v) -> { k, v }) ]) outs
+        _ -> pure unit
+  pure
+    { feed: \shape n -> do
+        let items = arrayOf shape n
+        step StepBegun
+        step (Rekeyed (map _.k items))
+        for_ items \r -> step (Contributed [ Tuple r.k r.s ])
+        step StepEnded
+    , fires: [ \n -> step (Contributed [ Tuple 1 n ]), \n -> step (Contributed [ Tuple 2 n ]) ]
+    , outs
+    }
+
+-- A term over the fed array itself, no elements to fire: the wire law's rig.
+arrayRig :: forall o. Show o => PUI Effect (Array Item) o -> Effect Rig
+arrayRig m = do
+  m' <- unwrap m
+  outs <- Ref.new []
+  m'.fromUser \o -> Ref.modify_ (_ <> [ show o ]) outs
+  pure { feed: \shape n -> m'.toUser (arrayOf shape n), fires: [], outs }
+
 two :: Int
 two = 6
 
@@ -448,6 +544,14 @@ evAlphabet = [ Feed, Fire1, Fire2 ]
 
 evAlphabet3 :: Array Event
 evAlphabet3 = [ Feed, Fire1, Fire2, Fire3 ]
+
+-- the collection's alphabets: every feed shape, so the gate is rekeyed to
+-- each reachable participant set
+gatherAlphabet :: Array Event
+gatherAlphabet = [ Feed, FeedOnly1, FeedNone, Fire1, Fire2 ]
+
+gatherFeeds :: Array Event
+gatherFeeds = [ Feed, FeedAgain, FeedOnly1, FeedNone ]
 
 unitRR :: PUI Effect {} {}
 unitRR = identity
@@ -545,6 +649,13 @@ laws =
         b <- vvB
         rig case2 (variantToVariant a.p b.p) [ a.fire, b.fire ]
     , right: vvTwo variantToVariant }
+  -- the container action: the same gate, its labels the fed keys
+  , { name: "acted conformance to PUI.Gate (rekeyed per feed)", alphabet: gatherAlphabet, len: two, rel: Equal
+    , left: actedRig identity, right: pureGather }
+  , { name: "acted monotonicity", alphabet: gatherAlphabet, len: two, rel: Refines
+    , left: actedRig quieterP, right: actedRig identity }
+  , { name: "acted wire (actedBy k identity ≈ identity)", alphabet: gatherFeeds, len: two, rel: Equal
+    , left: arrayRig (actedBy _.k (identity :: PUI Effect Item Item)), right: arrayRig (identity :: PUI Effect (Array Item) (Array Item)) }
   ]
 
 even :: Int -> Boolean
@@ -585,6 +696,8 @@ run = do
   for_ laws \law -> checkLaw law >>= count
   checkRepetition "×→× repetition (feed-idempotence of the merge)" rrAlphabet two (rrTwo recordToRecord) >>= count
   checkAnswer "×→× answer (one untorn release per feed)" rrAlphabet two (rrTwo recordToRecord) >>= count
+  checkRepetition "acted repetition (feed-idempotence of the collection)" [ Feed, FeedAgain, FeedOnly1, Fire1, Fire2 ] two (actedRig identity) >>= count
+  checkAnswer "acted answer (one untorn release per feed, [] included)" gatherAlphabet two (actedRig identity) >>= count
   for_ projections \law -> checkProjection law >>= count
   n <- Ref.read total
-  log ("Exhaustive: " <> show (Array.length laws + 2 + Array.length projections) <> " laws over " <> show n <> " scripts, no distinguishing script found")
+  log ("Exhaustive: " <> show (Array.length laws + 4 + Array.length projections) <> " laws over " <> show n <> " scripts, no distinguishing script found")

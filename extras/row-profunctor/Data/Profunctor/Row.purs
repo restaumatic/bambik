@@ -278,7 +278,9 @@
 -- | equivalence, doc §4); at `+` passage — each emission exits as it
 -- | occurs, nothing retained. The gate is the one canonical way to pair
 -- | two streams into a stream of pairs, so every `(·,×)` shape gates and
--- | no `(·,+)` shape does, and the unit is forced, not designed: the wire
+-- | no `(·,+)` shape does — the container action's `Array b` included,
+-- | gathered by the same machine over the fed keys as labels
+-- | (`Data.Profunctor.Acting`) — and the unit is forced, not designed: the wire
 -- | at the unit object wherever a wire fits (a zero-field side is born
 -- | spoken), `silence` at the one shape no wire reaches. Counting
 -- | renderings a gated merge is premonoidal — interchange at the inner

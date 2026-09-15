@@ -183,7 +183,13 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `identity @{}` is the unit exactly. This is what makes a
   display-side operand unable to starve its siblings, and the
   display-beside-the-wire construction (the gated displays' bodies) a
-  derived form rather than a carrier primitive. A gate MUST NOT be
+  derived form rather than a carrier primitive. There is **one gate**:
+  the record merges and the container action's gather run the same pure
+  machine (`PUI.Gate`), the merges enrolling their owned labels as its
+  participants and `acted` the fed keys — so the zero-field clause above
+  is a consequence of enrolling nothing, the collection's empty law the
+  zero-participant release, and a gating rule proved on the step holds
+  for both (2026-09-15). A gate MUST NOT be
   papered over with invented data. Three designs are permanently
   rejected:
   - **no `Initial`/`Default`-style type-derived seeds** — initial state

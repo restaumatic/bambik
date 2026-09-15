@@ -315,6 +315,21 @@ pure treatments never see.
   structural tag, arriving in the input. Two key forms, two ontologies, and
   the scalar-keyed collections (calculator's keypad, stopwatch's laps,
   restaurant-menu's tags) materialized their identity fields accordingly.
+- **The gather gate is the record gate (2026-09-15).** `acted`'s gather
+  runs the one pure machine `PUI.Gate.gateStep`, whose participants are
+  runtime keys: the record merges enrol their owned field labels, the
+  collection the fed keys, rekeyed per feed (`Rekeyed` — survivors keep
+  their slot, entrants unknown, leavers forgotten). So the collection
+  square's ×-output members are the ×-output merges over a runtime row —
+  `[]` is the zero-participant release, the empty law and L6's zero-field
+  clause the same consequence of enrolling nothing, a feed one step at both
+  (a reconcile whose elements echo gathers once, whole). `acted`'s
+  conformance to the step, monotonicity, wire law, feed-idempotence and
+  one-release-per-feed run over every script to a bound in
+  test/Exhaustive.purs beside the merges' (doc/observational-semantics.md
+  §9). `edited` and `accumulated` stay input-primed and never withhold, so
+  they do not need the gate; `foreach`/`dispatched` are variant-output and
+  gate nothing.
 
 ## Pointers
 

@@ -510,25 +510,41 @@ runtime surprise.
 
 ## 9. The gate as a Mealy machine, and why a bounded check is complete
 
-The output gate the two record-output merges run on is one **pure step**,
-`PUI.Gate.gateStep :: GateConfig -> GateState -> GateInput -> Tuple GateState
-GateOutput`, in a module that imports no `Effect`. The effectful part of the
-gate is a single function, `driveGate` in `PUI`: read the state, step, write
-the new state, act on the output (a `Released` row goes downstream and marks
-the starvation guards fed; a `Withheld` contribution arms the guard of the
-side that spoke and is traced; `Quiet` is nothing). `recordToRecord` and
-`variantToRecord` differ only in what drives the step — a broadcast
-bracketed by `StepBegun`/`StepEnded`, or one dispatched operand between the
-same brackets. The two variant-output merges have no state at all: their
-`toUser`/`fromUser` are pure routing (`contract` and sequencing) and hold
-nothing between events.
+Every product-shaped output the carrier gates runs on one **pure step**,
+`PUI.Gate.gateStep :: Ord k => GateState k v -> GateInput k v -> Tuple
+(GateState k v) (GateOutput k v)`, in a module that imports no `Effect`. Its
+**participants** are keys, each holding one slot: the gate releases the
+slots in participant order once every participant is known, and retains
+last-known values thereafter. The two record-output merges enrol their
+**owned field labels** as participants and contribute each operand emission
+as its labelled fields (a release is assembled back into the row); the
+container action enrols the **fed keys** and contributes each element
+emission as its one slot (a release is the vector). So the gather gate of
+`acted` is the record gate with the row's labels supplied at runtime — the
+same machine, not a sibling of it — and two clauses that were configuration
+or separate code are consequences: an operand owning no field enrols no
+participant, so it is born satisfied and its emissions are no contribution
+(L6's zero-field clause), and the empty array enrols no participant, so it
+releases `[]` (the collection's empty law). The effectful part of the gate
+is a single function, `driveGate` in `PUI`: read the state, step, write the
+new state, act on a `Released` vector, hand the output back (a record merge
+arms the starvation guard of the side that spoke on `Withheld`, naming the
+missing fields; the collection traces it; `Quiet` is nothing).
+`recordToRecord`, `variantToRecord` and `acted` differ only in what drives
+the step — a broadcast bracketed by `StepBegun`/`StepEnded`, one dispatched
+operand between the same brackets, or a `Rekeyed` (survivors keep their
+slot, entrants are unknown, leavers are forgotten — knowledge changed, so it
+lands like a contribution) followed by the reconcile between them. The two
+variant-output merges have no state at all: their `toUser`/`fromUser` are
+pure routing (`contract` and sequencing) and hold nothing between events.
 
 **Data independence with finite control.** No branch of `gateStep` inspects
-a payload: the two retained contributions are stored and re-emitted, never
-compared or read. The control is whether each side has spoken (born
-satisfied when it owns no field), the step depth, and whether a
-contribution landed during the step. Outside a step, the reachable control
-states are one per subset of sides that has spoken.
+a payload: the retained slots are stored and re-emitted, never compared or
+read, and the slot type `v` is polymorphic to say so. The control is the
+participant sequence, which participants are known (`known ⊆ order` is
+invariant), the step depth, and whether a contribution landed during the
+step. Outside a step, the reachable control states are one per reachable
+participant sequence per subset of it that has spoken.
 
 **Why a bounded exhaustive check is a proof.** Two deterministic machines
 driven in lockstep by one script differ, if at all, on a script no longer
@@ -537,13 +553,15 @@ distinguishing script never revisits a joint state, or the loop could be
 cut. Driven with a **fresh token per event**, a data-independent machine's
 output values are stored tokens re-emitted, so whether two outputs agree is
 decided by control and by which event's token each slot holds — and every
-rig compared stores the latest token of each operand, so with agreeing
-control the slots agree. The joint control states are therefore one per
-subset of operands that has spoken: **four** for a two-operand law,
-**eight** for a three-operand one. Scripts of length six and eight exhaust
-them with margin.
+rig compared stores the latest token of each participant, so with agreeing
+control the slots agree. For a merge the participant sequence is fixed, so
+the joint control states are one per subset of operands that has spoken:
+**four** for a two-operand law, **eight** for a three-operand one. For the
+collection the feed shapes reach three participant sequences — both
+elements, element 1 alone, nobody — giving **seven** states (4 + 2 + 1).
+Scripts of length six and eight exhaust them with margin.
 
-**What is checked** (test/Exhaustive.purs, run from `spago test`, about 35
+**What is checked** (test/Exhaustive.purs, run from `spago test`, about 50
 seconds): at each of the four shapes, symmetry, associativity, both unit
 laws and `⊑`-monotonicity (a `quieter` operand, minus its first emission);
 at the two record-output shapes, exactness against an operand whose every
@@ -556,20 +574,28 @@ unchanged up to stutter) and the answer law (every feed of the merge is
 answered by exactly one release — at least one, none torn); at every
 shape, projection's input half (each operand's inner feed stream is
 exactly its projection of the boundary feeds — the whole stream at a
-record input, its own cases at a variant one). Thirty-one laws, about
-three hundred thousand scripts, no distinguishing script. Because the pure step is the very
-function the carrier runs, and conformance pins the wrapper to it, a law
-that holds on the step holds on the merge.
+record input, its own cases at a variant one); and at the container action,
+over scripts whose feeds take every shape, **conformance** of `acted` to the
+step rekeyed per feed, `⊑`-monotonicity (each element instance minus its
+first emission), the wire law (`actedBy k identity` against `identity`),
+feed-idempotence and the answer law with `[]` the empty array's one release.
+Thirty-six laws, about three hundred and eighty thousand scripts, no
+distinguishing script. Because the pure step is the very function the
+carrier runs, and conformance pins each wrapper to it, a law that holds on
+the step holds on the merge and on the collection alike.
 
 **What stays outside.** Scripts drive the boundary and the operands; they do
 not contain re-entrant feeds during a release, so the nested-step path
 (`depth > 1`) is exercised only by the `looped` probes. Registration
 ordering, that the widening coercion only forgets and never fabricates,
-`Effect`'s sequencing, and the timed instance `resolve` are checked by the
-named probes of §10 and by inspection, not by enumeration. The pure module
-is also the port target for a mechanised proof: its four constructors and
-one step function transcribe to Agda or Lean unchanged, and theorems there
-are about the function the carrier runs.
+that the record merge's field assembly is the row's union (`Record.Unsafe`
+under a `Union` witness), `Effect`'s sequencing, DOM placement (the smoke
+suite's identity-follows-key), and the timed instance `resolve` are checked
+by the named probes of §10, the smoke tests and by inspection, not by
+enumeration. The pure module is also the port target for a mechanised
+proof: its four input constructors and one step function transcribe to Agda
+or Lean unchanged, and theorems there are about the function the carrier
+runs — for the merges and the collection at once.
 
 ## 10. Where the tests live
 

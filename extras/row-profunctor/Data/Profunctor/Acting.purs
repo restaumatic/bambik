@@ -28,8 +28,13 @@
 -- |     and emits `[b]` per element emission `b` (yanking at the container).
 -- |   * **gather gate** — `Array b` is withheld until *every* element has
 -- |     emitted at least once; thereafter any element emission re-emits the
--- |     whole array from retained last outputs (the knowledge gate, at
--- |     runtime size).
+-- |     whole array from retained last outputs. This is the record merges'
+-- |     knowledge gate with the row's labels supplied at runtime — on `PUI`
+-- |     literally the one pure machine `PUI.Gate.gateStep`, enrolled with
+-- |     the fed keys as its participants and rekeyed per feed, so a feed is
+-- |     one step (a reconcile whose elements echo gathers once, whole) and
+-- |     the empty law is the zero-participant release. Conformance to the
+-- |     step over every script to a bound: test/Exhaustive.purs.
 -- |   * **identity follows key** (stateful carriers) — re-feeding a surviving
 -- |     key reuses its instance; permuting keys reorders without rebuilding.
 -- |   * **wire** — `actedBy k identity ≈ identity` at `Array` (elements are
