@@ -1,10 +1,10 @@
 module TimerHTML (timerHTML) where
 
-import Prelude ((#), ($), Unit, const, identity)
+import Prelude ((#), ($), Unit, const)
 
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, mvu, toCase, updated, with)
+import PUI (every, mvu, updated, with)
 import PUI.Web.HTML (shown, body, button, div, label, p, progress, rangeInput, staticText, text)
 import QualifiedDo.Category as Category
 import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
@@ -18,5 +18,5 @@ timerHTML =
       (staticText "Duration ") # shown
       rangeInput @"Duration" )
     every tickPeriod tick
-    button (staticText "Reset") # with nothingElapsed # toCase @"Reset" identity # updated (match { "Reset": const })
+    button @"Reset" (staticText "Reset") # with nothingElapsed # updated (match { "Reset": const })
   ) # mvu tenSecondFreshTimer

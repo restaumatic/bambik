@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, foreach, looped, toCase, updated, with, blank)
+import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web.HTML (shown, attrWith, clicked, div, li, text, ul, (:=))
 import PUI.Web.Shoelace (body, button, card, textField)
 import QualifiedDo.Category as Category
@@ -23,7 +23,7 @@ crudShoelace = do
         textField @"Name" {}
         textField @"Surname" {}
         ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--sl-color-neutral-300, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $
-          ( clicked ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key" entries ) # toCase @"picked" _.key # updated (match { picked: pick })
+          ( clicked @"picked" _.key ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key" entries ) # updated (match { picked: pick })
         ( Category.do
           div $ RecordToVariant.do
             button @"Create" {}

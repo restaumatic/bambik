@@ -119,9 +119,9 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
 import Data.Variant (case_, inj, match, on, prj) as Variant
+import Data.Profunctor (rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -303,7 +303,7 @@ buttonOf
   => Maybe String
   -> { | provided }
   -> PUI Web { | r } [ | cl ]
-buttonOf mModifier provided = recordToCase @l $ eventLeaf $
+buttonOf mModifier provided = eventLeaf @l $
   -- aria-label carries the caption VERBATIM: MD2's stylesheet uppercases the
   -- rendered label, and Chrome computes accessible names from rendered text,
   -- so without the stamp this button would announce and match as "COUNT"
@@ -326,8 +326,8 @@ buttonOf mModifier provided = recordToCase @l $ eventLeaf $
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld) —
 -- `clicked` over the input-freed chrome, the last-built element listening
-eventLeaf :: forall r. PUI Web {} {} -> PUI Web { | r } { | r }
-eventLeaf chrome = clicked chrome
+eventLeaf :: forall @l r s. IsSymbol l => Cons l { | r } () s => PUI Web {} {} -> PUI Web { | r } [ | s ]
+eventLeaf chrome = clicked @l identity chrome
 
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
@@ -342,7 +342,7 @@ fab
   => ConvertOptionsWithDefaults OptLabel { label :: Maybe String } { | provided } { icon :: String, label :: Maybe String }
   => { | provided }
   -> PUI Web { | r } [ | cl ]
-fab provided = recordToCase @l $ eventLeaf $
+fab provided = eventLeaf @l $
   -- the announced name is the CASE label even for the glyph-only face —
   -- the business action's word, never the icon ligature
   el "button" >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe (reflectSymbol (Proxy @l)) config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
@@ -364,7 +364,7 @@ fab provided = recordToCase @l $ eventLeaf $
 -- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
 iconButton :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { icon :: String, label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
-iconButton provided = recordToCase @l $ eventLeaf $
+iconButton provided = eventLeaf @l $
   el "button" >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     static (div >>> cl "mdc-icon-button__ripple")
     static (span >>> cl "mdc-icon-button__focus-ring")
@@ -376,7 +376,7 @@ iconButton provided = recordToCase @l $ eventLeaf $
 -- | and the menu closes itself. The line's text defaults to
 -- | the case label verbatim (`label:` overrides with real copy).
 menuItem :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
-menuItem provided = recordToCase @l $ eventLeaf $
+menuItem provided = eventLeaf @l $
   li >>> cl "mdc-deprecated-list-item" >>> "role" := "menuitem" >>> "tabindex" := "-1" $ RecordToRecord.do
     static (span >>> cl "mdc-deprecated-list-item__ripple")
     span >>> cl "mdc-deprecated-list-item__text" $ staticText config.label
@@ -1290,10 +1290,10 @@ simpleDialog { title, confirm } content = wrap do
           wrap do
             _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
             unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
-          div >>> cl "mdc-dialog__actions" $ eventLeaf $
+          div >>> cl "mdc-dialog__actions" $ (eventLeaf @"confirmed" $
             el "button" >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
               static (div >>> cl "mdc-button__ripple")
-              span >>> cl "mdc-button__label" $ staticText confirm
+              span >>> cl "mdc-button__label" $ staticText confirm) # Profunctor.rmap (Variant.match { confirmed: identity })
     _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
@@ -1402,18 +1402,21 @@ listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: 
 -- | Rows are updated in place as the collection changes rather than
 -- | rebuilt, so the list can refresh under the user without flicker.
 listOf
-  :: forall provided i r o
-   . ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
+  :: forall @l provided i r o k s
+   . IsSymbol l
+  => Cons l k () s
+  => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
   -- the subsumption evidence the internal `clicked` needs at the exact
   -- element row (extra = ()); trivially discharged at every concrete call
   => Union r () r
-  => { | provided }
+  => ({ | r } -> k)
+  -> { | provided }
   -> (i -> Array { | r })
   -> PUI Web { | r } o
-  -> PUI Web i { | r }
-listOf provided f item = wrap do
+  -> PUI Web i [ | s ]
+listOf pick provided f item = wrap do
   w <- unwrap $ ul >>> cl "mdc-deprecated-list" >>> "style" := "overflow-y: auto;" $
-    ( inRow ( clicked @r @() $ clWhen config.selected "mdc-deprecated-list-item--selected"
+    ( inRow ( clicked @l @r @() pick $ clWhen config.selected "mdc-deprecated-list-item--selected"
           $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
       ) # foreach @"ix" (mapWithIndex (\ix it -> { ix, item: it }) <<< f)
     )

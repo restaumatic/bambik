@@ -91,7 +91,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
 -- every vocabulary editor is `field @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself (the `widenRecordInput` precedent, one adopter later).
-import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, mvu, subStrong, forProperty, muted, required, settled, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, bracketed, mvu, subStrong, forProperty, muted, required, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
@@ -99,7 +99,7 @@ import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `every`, `settled`, `armed`, `edited`, `acted`), so a UI component's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
-import Data.Profunctor.Row.VariantToVariant (atCase, bracketed, subChoice) as Adopters
+import Data.Profunctor.Row.VariantToVariant (atCase, subChoice) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
@@ -948,7 +948,7 @@ updated handler w = wrap do
 
 -- | The **occurrence stage** — `updated` for an emitter that carries no
 -- | payload of its own. A `× → +` leaf fed the row it acts on (a button,
--- | a `fab`, a `menuItem`, a `clicked` row `# toCase @l identity`)
+-- | a `fab`, a `menuItem`, a `clicked @l identity` row)
 -- | replays that row on click, so its "payload" is the very row the stage
 -- | retains: the Mealy step degenerates to a state transformer, and this
 -- | rung takes it as one — `f :: { | small } -> { | small }` is applied to
@@ -974,7 +974,7 @@ updated handler w = wrap do
 -- | the model is `f`'s row plus the rest).
 -- |
 -- | Not the Mealy form under a second name: an emitter whose payload is
--- | real — a key from `toCase @l _.key`, an `action`'s outcome, a pane's
+-- | real — a key from `clicked @l _.key`, an `action`'s outcome, a pane's
 -- | payload under `provided`, a seeded patch under `# with patch` — keeps
 -- | `updated (match { … })`, as does a stage whose emitters mean different
 -- | things.

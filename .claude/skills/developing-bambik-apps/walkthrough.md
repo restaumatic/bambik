@@ -263,14 +263,14 @@ the logic is the ordinary one.
   (`headline4 (text countLine) # shown`), one button, one fold (`applied`).
   Its whole model is `{ count :: Int }` — every display is a function, so
   nothing in the row exists for the screen's benefit.
-- **timer** — the same at two displays of different kinds:
+- **timer** — the same at two displays of different sorts:
   `progressBar @"Elapsed" elapsedFraction` and `text progressLine` over a
   model of `{ "Duration", elapsed }`, both derived, neither stored.
 - **temperature-converter** — two editors kept consistent with `settled`:
   the surviving job of `settled`, an invariant among *edited* fields.
 - **flight-booker** — this file.
 - **todomvc** — a collection (`listOf`, `foreach`), a selectable list emitting
-  its key with `toCase @l _.key`, a filter selector.
+  its key as `listOf @l _.key`, a filter selector.
 - **checkout** — a wizard: `folding` loops the step state silently, and two
   buttons carry their own cases into one loop case with `toCases`.
 - **order-form** — all four directions in one screen: `looped` form with

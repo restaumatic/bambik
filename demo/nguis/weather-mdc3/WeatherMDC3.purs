@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, mvu, toCase, updated)
+import PUI (action, atCase, mvu, updated)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC3 (body, bodyLarge, bodySmall, card, displayLarge, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Category as Category
@@ -15,7 +15,7 @@ weatherMDC3 =
   body $
     card $ ( Category.do
       ( Category.do
-        listOf { selected: isCurrent } forecastRequests (text _.city) # toCase @"cityPicked" reportRequest
+        listOf @"cityPicked" reportRequest { selected: isCurrent } forecastRequests (text _.city)
         indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked" ) # updated (match { reportServed: rememberReport })
       displayLarge (text temperatureLine) # shown
       headlineMedium (text conditionLine) # shown

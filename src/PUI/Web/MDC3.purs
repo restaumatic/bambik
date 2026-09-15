@@ -130,9 +130,9 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
-import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Traversable (for)
 import Data.Variant (case_, inj, match, on, prj) as Variant
+import Data.Profunctor (rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -314,7 +314,7 @@ buttonOf
   => String
   -> { | provided }
   -> PUI Web { | r } [ | cl ]
-buttonOf tag provided = recordToCase @l $ eventLeaf $ el tag $ RecordToRecord.do
+buttonOf tag provided = eventLeaf @l $ el tag $ RecordToRecord.do
   case config.icon of
     Just icon' -> el "md-icon" >>> "slot" := "icon" $ staticText icon'
     Nothing -> blank
@@ -327,8 +327,8 @@ buttonOf tag provided = recordToCase @l $ eventLeaf $ el tag $ RecordToRecord.do
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld) —
 -- `clicked` over the input-freed chrome, the last-built element listening
-eventLeaf :: forall r. PUI Web {} {} -> PUI Web { | r } { | r }
-eventLeaf chrome = clicked chrome
+eventLeaf :: forall @l r s. IsSymbol l => Cons l { | r } () s => PUI Web {} {} -> PUI Web { | r } [ | s ]
+eventLeaf chrome = clicked @l identity chrome
 
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
@@ -343,7 +343,7 @@ fab
   => ConvertOptionsWithDefaults OptLabel { label :: Maybe String } { | provided } { icon :: String, label :: Maybe String }
   => { | provided }
   -> PUI Web { | r } [ | cl ]
-fab provided = recordToCase @l $ eventLeaf $
+fab provided = eventLeaf @l $
   el "md-fab" >>> "aria-label" := fromMaybe config.icon config.label >>> extended $
     el "md-icon" >>> "slot" := "icon" $ staticText config.icon
   where
@@ -358,7 +358,7 @@ fab provided = recordToCase @l $ eventLeaf $
 -- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
 iconButton :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { icon :: String, label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
-iconButton provided = recordToCase @l $ eventLeaf $
+iconButton provided = eventLeaf @l $
   el "md-icon-button" >>> "aria-label" := config.label $
     el "md-icon" $ staticText config.icon
   where
@@ -368,7 +368,7 @@ iconButton provided = recordToCase @l $ eventLeaf $
 -- | and the menu closes itself. The line's text defaults to
 -- | the case label verbatim (`label:` overrides with real copy).
 menuItem :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
-menuItem provided = recordToCase @l $ eventLeaf $
+menuItem provided = eventLeaf @l $
   el "md-menu-item" $
     div >>> "slot" := "headline" $ staticText config.label
   where
@@ -1112,7 +1112,7 @@ simpleDialog { title, confirm } content =
     wrap do
       _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
       unwrap (div >>> "slot" := "content" $ content)
-    div >>> "slot" := "actions" $ clicked ((el "md-text-button" $ staticText confirm))
+    div >>> "slot" := "actions" $ (clicked @"confirmed" identity (el "md-text-button" $ staticText confirm)) # Profunctor.rmap (Variant.match { confirmed: identity })
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just
@@ -1180,19 +1180,22 @@ listItem = el "md-list-item"
 -- | Rows are updated in place as the collection changes rather than
 -- | rebuilt, so the list can refresh under the user without flicker.
 listOf
-  :: forall provided i r o
-   . ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
+  :: forall @l provided i r o k s
+   . IsSymbol l
+  => Cons l k () s
+  => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
   -- the subsumption evidence the internal `clicked` needs at the exact
   -- element row (extra = ()); trivially discharged at every concrete call
   => Union r () r
-  => { | provided }
+  => ({ | r } -> k)
+  -> { | provided }
   -> (i -> Array { | r })
   -> PUI Web { | r } o
-  -> PUI Web i { | r }
-listOf provided f item = wrap do
+  -> PUI Web i [ | s ]
+listOf pick provided f item = wrap do
   liftEffect $ ensureStyle "md3-list" listCss
   unwrap $ el "md-list" >>> "style" := "overflow-y: auto;" $
-    ( inRow ( clicked @r @() $ clWhen config.selected "md3-list-item--selected"
+    ( inRow ( clicked @l @r @() pick $ clWhen config.selected "md3-list-item--selected"
           $ el "md-list-item" >>> "type" := "button" $ item
       ) # foreach @"ix" (mapWithIndex (\ix it -> { ix, item: it }) <<< f)
     )

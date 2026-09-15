@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
-import PUI (applied, forCase, mvu, observed, toCase, updated, with)
+import PUI (applied, forCase, mvu, observed, updated, with)
 import PUI.Web.HTML (shown, provided, span, text)
 import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, card, dialog, fab, headline6, iconButton, listOf, menu, menuItem)
 import QualifiedDo.Category as Category
@@ -16,7 +16,7 @@ inboxMDC2 =
   body $
     card $ ( Category.do
       ( caption $ text unreadLine ) # shown
-      listOf { selected: highlighted } mailboxRows ( span $ text messageLine # shown ) # toCase @"opened" _.id # updated (match { opened: openMessage })
+      listOf @"opened" _.id { selected: highlighted } mailboxRows ( span $ text messageLine # shown ) # updated (match { opened: openMessage })
       ( Category.do
         headline6 (text subjectLine) # shown
         body2 (text fromLine) # shown

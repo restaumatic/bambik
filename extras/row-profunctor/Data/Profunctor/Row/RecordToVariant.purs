@@ -97,7 +97,7 @@
 -- |      and the merge keeps no state. The broadcast owes the boundary at
 -- |      most one thing per feed; law 3 on the operands is what discharges
 -- |      it here (at `×→×` the carrier discharges the same obligation
--- |      itself, by the step) — one cause, two output kinds
+-- |      itself, by the step) — one cause, two output shapes
 -- |      (Data.Profunctor.Row, "What an inclusive input side obliges").
 -- |   9. **Independence — the loop is `coresolve`.** The operands receive
 -- |      no feeds but `m`'s, and an emission goes downstream, never to the
@@ -309,12 +309,14 @@ recordToCase = rmap (inj (Proxy @l))
 -- | pinned empty background, so it infers with no annotations).
 -- | The payload projection is the mechanism's own argument (import-tower
 -- | rule L16: projections ride mechanisms, applications never map raw
--- | channels): a collection element emitting its identity,
--- | `… # toCase @"picked" _.key`;
--- | `identity` says verbatim (the case-introduction counterpart of
--- | `projected identity`). The
--- | output-side dual of `atCase`
--- | (which renames the canonical `clicked` case).
+-- | channels): an editor's emission adopted as an occurrence — a toggle
+-- | inside a collection, `iconToggle @"Favorite" {…} # foreach @"title"
+-- | rows # toCase @"favored" favoriteMark` (movie-browser) — or a dialog's
+-- | release, `confirmed cfg content # atCase @l # toCase @"refunded"
+-- | identity` (cashbox); `identity` says verbatim. Sources need it no
+-- | longer: `clicked @l f`, `listOf @l f`, `onClickedXY @l` and the HTML
+-- | `button @l` emit their case themselves. The output-side dual of
+-- | `atCase`.
 toCase :: forall @l p i a b s. IsSymbol l => Cons l b () s => Profunctor p => (a -> b) -> p i a -> p i [ | s ]
 toCase f = rmap (\a -> inj (Proxy @l) (f a))
 
@@ -343,7 +345,7 @@ toCases f = rmap (on (Proxy @c) f case_)
 -- | `s'`, `Loop` injects the retained background-record into case `w`. The
 -- | mixed-direction analogue of `RecordToRecord.subStrong` — same sub-record focus, but the
 -- | background is *wrapped* to cross into the variant output rather than
--- | carried same-kind. The `× → +` row combinator over the bare strength
+-- | carried same-shape. The `× → +` row combinator over the bare strength
 -- | `Resolving`, just as `RecordToRecord.subStrong` is the row combinator over
 -- | `Strong`.
 -- |

@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (applied, mvu, required, toCase, updated)
+import PUI (applied, mvu, required, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (shownWhen, clWhen, span, text)
 import PUI.Web.MDC2 (body, button, card, caption, filledTextField, listOf, segmentedButton)
@@ -18,7 +18,7 @@ todoMvcMDC2 =
       Category.do
         filledTextField @"What needs to be done?" {}
         button @"Add" {} # applied addTodo
-      listOf { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # toCase @"todoClicked" _.key # updated (match { todoClicked: toggleTodo })
+      listOf @"todoClicked" _.key { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # updated (match { todoClicked: toggleTodo })
       segmentedButton @"Visibility"
         [ choice @"All", choice @"Active", choice @"Completed" ] # required
       Category.do

@@ -101,7 +101,7 @@ import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (field, recordToRecord)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, widenRecordInput)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant (case_, match, on, prj)
+import Data.Variant (case_, inj, match, on, prj)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -471,15 +471,16 @@ eventText = on (Proxy @"event") identity case_
 
 -- TODO disable button after click?
 -- | A bare `<button>` around fixed content — a label, an icon, both. Its
--- | content is decoration; the button reports that the user asked for
--- | something, carrying whatever it was being shown at the time, so the
--- | request arrives with its subject attached.
+-- | content is decoration; the button reports, as case `l`, that the user
+-- | asked for something, carrying whatever row it was being shown at the
+-- | time, so the request arrives with its subject attached:
+-- | `button @"Count" (staticText "Count")`. An event source, `× → +`.
 -- |
 -- | It is disabled until it has been shown something, and **disables itself
 -- | on click** until the next value reaches it — so a double tap cannot
 -- | send a request twice, and a button that stays dead is a screen whose
 -- | model never came back.
-button :: forall a. PUI Web {} {} -> PUI Web a a
+button :: forall @l r s. IsSymbol l => Cons l { | r } () s => PUI Web {} {} -> PUI Web { | r } [ | s ]
 button w = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ w)
   -- a click before any value arrived has nothing valid to emit — withheld
@@ -494,7 +495,7 @@ button w = wrap do
         mA <- Ref.read mARef
         for_ mA \fed -> do
           setAttribute node "disabled" "true" -- TODO re-think
-          prop fed
+          prop (inj (Proxy @l) fed)
     }
 
 -- | Fixed text: a caption, a unit, the literal words between two values on
@@ -826,20 +827,22 @@ attrWith name valueOf w = wrap do
     , fromUser: w'.fromUser
     }
 
--- | Make any element clickable: it reports whatever it is currently
--- | showing. A grid cell, a list row, a chip, a picture — the content is
--- | the display, the click is the report, so the identity of what was
--- | picked comes from what was on screen and cannot be got wrong. A click
--- | before the element has been shown anything does nothing.
--- | Row-shaped: the click **replays** the last value fed, and replay is
--- | lawful over records only — an entity's value may be re-said, a
--- | one-shot event may not (the `looped`/`observed`/`simpleDialog`
--- | argument). **The content subsumes** (it is a display — the baked-in
--- | reads-narrow rule): it may read a closed sub-row of the replayed row,
--- | and pure chrome states `{}`, so `clicked staticChrome` needs no
--- | adapter.
-clicked :: forall @narrow @extra r o. Union narrow extra r => PUI Web { | narrow } o -> PUI Web { | r } { | r }
-clicked w = wrap do
+-- | Make any element clickable: it reports, as case `l`, `f` of whatever it
+-- | is currently showing. A grid cell, a list row, a chip, a picture — the
+-- | content is the display, the click is the report, so the identity of
+-- | what was picked comes from what was on screen and cannot be got wrong:
+-- | `clicked @"cellPicked" _.key (td $ text _.text)`. A click before the
+-- | element has been shown anything does nothing. An **event source**,
+-- | `× → +` by shape as by behaviour: the click **replays** the last row
+-- | fed — replay is lawful over records only, an entity's value may be
+-- | re-said where a one-shot event may not (the `looped`/`observed`/
+-- | `simpleDialog` argument) — and leaves as an occurrence of `l`, so
+-- | nothing record-shaped ever stands for a click. **The content
+-- | subsumes** (it is a display — the baked-in reads-narrow rule): it may
+-- | read a closed sub-row of the replayed row, and pure chrome states `{}`,
+-- | so `clicked @l f staticChrome` needs no adapter.
+clicked :: forall @l @narrow @extra r o k s. IsSymbol l => Cons l k () s => Union narrow extra r => ({ | r } -> k) -> PUI Web { | narrow } o -> PUI Web { | r } [ | s ]
+clicked f w = wrap do
   w' <- unwrap (widenRecordInput w)
   node <- gets _.sibling
   iRef <- liftEffect $ Ref.new Nothing
@@ -852,15 +855,16 @@ clicked w = wrap do
         w'.fromUser \_ -> pure unit
         void $ addEventListener "click" node $ const do
           mi <- Ref.read iRef
-          for_ mi \fed -> prop fed
+          for_ mi \fed -> prop (inj (Proxy @l) (f fed))
     }
 
 -- | Report *where* the user clicked, in the container's own coordinates —
 -- | inside an `<svg>` those are its drawing coordinates, so a click and the
 -- | shapes are in the same units whatever size the drawing is on screen.
 -- | The canvas gesture, where the place clicked *is* the interaction:
--- | `svg >>> "viewBox" := "0 0 500 300" $ onClickedXY $ …`.
-onClickedXY :: forall i o. PUI Web i o -> PUI Web i { x :: Number, y :: Number }
+-- | `svg >>> "viewBox" := "0 0 500 300" $ onClickedXY @"picked" $ …`. An event
+-- | source: the point leaves as an occurrence of case `l`.
+onClickedXY :: forall @l i o s. IsSymbol l => Cons l { x :: Number, y :: Number } () s => PUI Web i o -> PUI Web i [ | s ]
 onClickedXY content = wrap do
   w' <- unwrap content
   node <- gets _.parent
@@ -868,7 +872,7 @@ onClickedXY content = wrap do
     { toUser: w'.toUser
     , fromUser: \prop -> do
         w'.fromUser \_ -> pure unit
-        onClickXY node \x y -> prop { x, y }
+        onClickXY node \x y -> prop (inj (Proxy @l) { x, y })
     }
 
 -- | Build a UI component per element from a function — for a list whose elements

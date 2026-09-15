@@ -12,7 +12,8 @@ module HelloShutterReel where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Profunctor (lcmap)
+import Data.Profunctor (dimap, lcmap)
+import Data.Variant (match)
 import Data.Lens.Reel (reel)
 import Data.Lens.Shutter (shutter)
 import Effect (Effect)
@@ -47,7 +48,9 @@ greet =
 confirm :: PUI Web String String
 confirm =
   shutter identity (_ <> "!") identity
-    (button $ staticText "Greet")
+    -- the button is an event source over a row, so the scalar rides in a
+    -- one-field row and comes back out of the button's case
+    (dimap { greeting: _ } (match { "Greet": _.greeting }) (button @"Greet" $ staticText "Greet"))
 
 -- | seed prefix (Reel state) → type name → click Greet (Shutter) → `text`
 -- | shows the greeting.

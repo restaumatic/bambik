@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, favoriteShots, isOpen, landscapesOpen, openAlbum)
-import PUI (mvu, toCase, updated)
+import PUI (mvu, updated)
 import PUI.Web.HTML (shownEach, shown, each, span, staticText, text)
 import PUI.Web.MDC2 (body, divider, drawer, headline2, imageList, imageListItem, imagePane, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Category as Category
@@ -17,7 +17,7 @@ photoGalleryMDC2 =
     topAppBar { title: "Photo Gallery" } $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
         ( RecordToRecord.do
-          listOf { selected: isOpen } albumChoices (span (text _.name)) # toCase @"albumPicked" _.name # updated (match { albumPicked: const <<< openAlbum })
+          listOf @"albumPicked" _.name { selected: isOpen } albumChoices (span (text _.name)) # updated (match { albumPicked: const <<< openAlbum })
           divider
           list RecordToRecord.do
             listItem $ staticText "Every photo is an SVG"

@@ -34,7 +34,7 @@
 -- |      occurrences, not one, and nothing in the shape may coalesce them:
 -- |      an event has no value between occurrences, so there is nothing to
 -- |      compare and no `Eq` is ever needed. (The contrast with `×→×`'s
--- |      line 1 is the kind distinction itself.)
+-- |      line 1 is the shape distinction itself.)
 -- |   2. **Emission — a response to an occurrence.** Every `emit e'`
 -- |      descends from an input occurrence. Nothing at registration,
 -- |      nothing spontaneous: a handler never *originates*, so a response
@@ -126,13 +126,11 @@ module Data.Profunctor.Row.VariantToVariant
   , subChoice
   , iterate
   , atCase
-  , bracketed
   )
   where
 
 import Control.Category (identity)
 import Data.Either (Either(..), either)
-import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice, unleft)
@@ -143,33 +141,6 @@ import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
 import Data.Lens.Prism.Existential (prismE)
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs, splitVariant)
-
--- | The **variant-editor bracket**: adopt a record-shaped editor ensemble
--- | (every case's payload retained) as an editor of one-at-a-time variant
--- | state — `stateOf` brackets the variant in (seeding absent payloads
--- | from the retained editor state), `caseOf` projects the selection back
--- | out, and the self-trace in between (`Looping`) keeps the ensemble
--- | consistent. An adopter with a `+ → +` *result* — which is why it
--- | lives here, like a label-indexed emitter lives at its `× → +` result. The demos'
--- | variant editors read
--- | `(Category.do …) # bracketed fulfillmentState fulfillmentCase # field @l`.
--- |
--- | **Law on the arguments** — the pair is a section–retraction:
--- |
--- | ```
--- | caseOf (stateOf v) = v            -- for every variant v
--- | ```
--- |
--- | `stateOf` is the canonical embedding `Σᵢ Aᵢ → Πᵢ Aᵢ` of a sum into the
--- | product of its summands, which exists only because every summand is
--- | **pointed** (a default payload for each absent case — "seeding absent
--- | payloads" is that pointing), and `caseOf` retracts it. The other
--- | composite `stateOf ∘ caseOf` is deliberately *not* the identity: its
--- | kernel — the other cases' payloads — is exactly what the editor retains
--- | across a selection change. Value-level, tested on the demo pair in
--- | test/Main.purs.
-bracketed :: forall p v s v'. Looping p => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> p { | s } { | s } -> p [ | v ] [ | v' ]
-bracketed f g w = dimap f g (looped w)
 
 class Profunctor p <= VariantToVariant p where
   variantToVariant :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.

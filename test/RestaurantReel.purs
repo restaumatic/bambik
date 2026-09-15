@@ -21,9 +21,9 @@ module RestaurantReel where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Profunctor (rmap)
+import Data.Profunctor (dimap)
 import Data.Lens.Reel (reel)
-import Data.Variant (case_, on)
+import Data.Variant (case_, match, on)
 import Type.Proxy (Proxy(..))
 import PUI (PUI)
 import PUI.Web.HTML (button, staticText)
@@ -44,8 +44,8 @@ type OrderEvent =
 -- | (toy menu lookup; a real one would be an interactive picker with modifiers).
 priceDish :: PUI Web DishId PricedLine
 priceDish =
-  rmap (\id -> { name: id, price: 1000 })
-    (button $ staticText "Price dish")
+  dimap { dish: _ } (match { "Price dish": \r -> { name: r.dish, price: 1000 } })
+    (button @"Price dish" $ staticText "Price dish")
 
 -- | The Reel: events folded into the running order. The order is real retained
 -- | state — it lives in the finisher's closure inside the carrier, installed by

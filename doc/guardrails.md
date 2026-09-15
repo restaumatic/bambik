@@ -404,7 +404,7 @@ code below the UI) are algebra-layer material and exempt by location.
   because a display wanted a `String` — or a `Number`. `settled`
   therefore maintains invariants among **edited** fields only (two
   writers inherent, type preservation the point); a `present<App>`
-  normalization that feeds a display, of either kind, is a violation.
+  normalization that feeds a display, of either shape, is a violation.
   Checkable form: every `# settled` in `demo/` sits on an editor
   stage. A context-pinned row (collection item, pane payload)
   carries the **source** fields its producing function built, and the

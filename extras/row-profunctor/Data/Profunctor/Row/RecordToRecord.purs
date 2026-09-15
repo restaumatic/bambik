@@ -27,7 +27,11 @@
 -- |     over the co-strength `Costrong`: `feedback` (the ×-trace at row
 -- |     granularity — a state sub-record loops from output to input, the
 -- |     `Colens` optic's row form; the optic itself is in
--- |     `Data.Lens.Colens`).
+-- |     `Data.Lens.Colens`);
+-- |     over `Looping` and `Strong` together: `bracketed @l` (the sum-typed
+-- |     field editor — a variant-valued field edited through record-shaped
+-- |     state and lifted back into its field, so the result is a whole-row
+-- |     citizen like every other editor leaf).
 -- |
 -- | ## Laws of the `×→×` shape
 -- |
@@ -139,6 +143,7 @@ module Data.Profunctor.Row.RecordToRecord
   , atField
   , forProperty
   , required
+  , bracketed
   , field
   , muted
   , subStrong
@@ -461,3 +466,38 @@ feedback seed g =
       -- guarantees the two typed views are disjoint
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
       (seeded seed >>> g))
+
+-- | The **sum-typed field editor**: edit the variant-valued field `l` of a
+-- | record through record-shaped editor state. `f` embeds the field's
+-- | variant into the state record (every case's payload, absent ones
+-- | seeded), `g` projects the state back to the variant, `w` is the
+-- | `× → ×` ensemble editing the state (a selector and one `inCase` pane
+-- | per case), and the whole is lifted into the field with `field @l` —
+-- | so the result is a **whole-row citizen** of the record like every other
+-- | editor leaf, and the variant never stands at channel position: a
+-- | variant *channel* is an event, a variant *in a field* is a value, and
+-- | this word is where the second becomes editable.
+-- |
+-- | ```
+-- | bracketed @"Fulfillment" fulfillmentState fulfillmentCase $ Category.do
+-- |   tabBar @"selected" [ … ]
+-- |   filledTextField @"Table" {} # inCase @"Dine in" selection
+-- |   …
+-- | ```
+-- |
+-- | **Law on the arguments** — the pair is a section–retraction:
+-- |
+-- | ```
+-- | caseOf (stateOf v) = v            -- for every variant v
+-- | ```
+-- |
+-- | `stateOf` is the canonical embedding `Σᵢ Aᵢ → Πᵢ Aᵢ` of a sum into the
+-- | product of its summands, which exists only because every summand is
+-- | **pointed** (a default payload for each absent case — "seeding absent
+-- | payloads" is that pointing), and `caseOf` retracts it. The other
+-- | composite `stateOf ∘ caseOf` is deliberately *not* the identity: its
+-- | kernel — the other cases' payloads — is exactly what the editor retains
+-- | across a selection change. Value-level, tested on the demo pair in
+-- | test/Main.purs.
+bracketed :: forall @l p v s v' b rs rs'. IsSymbol l => Cons l [ | v ] b rs => Cons l [ | v' ] b rs' => Looping p => Strong p => ([ | v ] -> { | s }) -> ({ | s } -> [ | v' ]) -> p { | s } { | s } -> p { | rs } { | rs' }
+bracketed f g w = field @l (dimap f g (looped w))

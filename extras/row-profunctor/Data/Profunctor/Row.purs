@@ -204,7 +204,7 @@
 -- | data-independent machine with finite control (doc/observational-
 -- | semantics.md §9).
 -- |
--- | **The kinds.** A record is **knowledge**, a variant is an **event**.
+-- | **The shapes.** A record is **knowledge**, a variant is an **event**.
 -- | Knowledge is idempotent (twice is once), has a value between inputs,
 -- | and is whole or nothing. An event counts (twice is two), has no value
 -- | between occurrences, and is caused or nothing.
@@ -256,12 +256,12 @@
 -- |  9  independence            looped          coresolve       iterate (raw)   unfolding
 -- | ```
 -- |
--- | Axes 1 and 5 read off the **input** kind, 2, 6 and 7 off the
--- | **output** kind — two readings each, dual across the anti-diagonal
+-- | Axes 1 and 5 read off the **input** shape, 2, 6 and 7 off the
+-- | **output** shape — two readings each, dual across the anti-diagonal
 -- | (`×→+` and `+→×` are each other's transposes line by line); 3, 4, 8
--- | and 9 read off both kinds and have four. The three citizen lines are
--- | the kinds and the modality table above: repetition *is* the kind of
--- | the input; emission is law 1 at the two output kinds; the answer line
+-- | and 9 read off both shapes and have four. The three citizen lines are
+-- | the shapes and the modality table above: repetition *is* the shape of
+-- | the input; emission is law 1 at the two output shapes; the answer line
 -- | is law 2. On the merge, exactness is "owned out" needing runtime
 -- | evidence, and free at "shared out", where a variant carries its one
 -- | tag. Tearing is the one cell with shared-in and owned-out, and the

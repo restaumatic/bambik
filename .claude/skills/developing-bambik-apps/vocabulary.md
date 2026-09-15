@@ -14,7 +14,7 @@ function** it renders, or **nothing** (chrome) — so each *Write* cell
 below leads with that anchor. Stated in writing.md *The anchor
 invariant*.
 
-## The two kinds of `do` — neither is a monad's
+## The two `do`s — neither is a monad's
 
 | You are writing | Block | What flows | Demo |
 | --- | --- | --- | --- |
@@ -61,20 +61,20 @@ direction module headers.
 | a selection that may still be unmade | `dropdown @l {} […] # optional @"chosen" @"unchosen"` — the field is a named two-case variant, seeded `.unchosen {}`; consumers adopt the made case | meeting-booker | PUI.purs (`optional`) |
 | a bounded quantity | the model holds `{ current, min, max, step }`; `sliderLive @l {}` edits it | timer, circle-drawer | writing.md *Code style → Types and values* |
 | two controls editing **one** field | two successive stages over it, `slider @l {}` then `rangeInput @l` | tip-calculator | writing.md *Component citizenship* |
-| a variant with an editor per case | `( Category.do selector; pane # inCase @l selection; … ) # bracketed stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; VariantToVariant.purs (`bracketed`) |
+| a variant-valued field with an editor per case | `( Category.do selector; pane # inCase @l selection; … ) # bracketed @l stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; RecordToRecord.purs (`bracketed`) |
 
 ## Events into state
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | a button that changes the model | `button @"Count" {} # applied increment` — `increment :: state -> state`, the click's payload unread | counter; todomvc's Add | PUI.purs (`applied`) |
-| an event whose payload the model folds in | `… # toCase @"picked" _.key # updated (match { picked: handler })` | quiz, tic-tac-toe | PUI.purs (`updated`) |
+| an event whose payload the model folds in | `clicked @"picked" _.key content # foreach … # updated (match { picked: handler })` | quiz, tic-tac-toe | PUI.purs (`updated`) |
 | the handler's shape | `payload -> state -> state`, both records exact | cashbox: `applyRefund :: { amount } -> { balance } -> { balance }` | writing.md *Code style → Business functions* |
 | … several payload-less buttons sharing one stage | `const <<< f` per branch | circle-drawer: `"Undo": const <<< undo, "Redo": const <<< redo` | same |
 | … the payload replaces the state | `const` | timer's Reset | same |
 | … the payload is ignored | `const f` | stopwatch: `const recordLap` | same |
 | … a constant patch | `const (const patch)`, or carried on the button: `button @l {} # with patch` and `const` | checkout; cashbox | same |
-| a clicked collection element naming itself | `… # toCase @"picked" _.key` (whole payload: `identity`) | todomvc, cells | RecordToVariant.purs (`toCase`) |
+| a clicked collection element naming itself | `clicked @"picked" _.key content` (whole payload: `identity`) | todomvc, cells | RecordToVariant.purs (`toCase`) |
 | a button whose *outcome* the business computes | `button @l {} # toCases outcomeOf` | checkout's Next/Back; signup-form | RecordToVariant.purs (`toCases`) |
 | one event case routed to its own stage | `stage # atCase @l` inside `VariantToVariant.do` | order-form; reorder | VariantToVariant.purs (`atCase`) |
 | some event cases intercepted, the rest passing straight | `( VariantToVariant.do … ) # subChoice` | cashbox | VariantToVariant.purs (`subChoice`) |
@@ -105,7 +105,7 @@ direction module headers.
 | the whole array → the whole array, edited in place | `editor # edited @"id"` | reorder | PUI.purs (`edited`) |
 | one `{ key, value }` at a time → tagged per-element output | `item # dispatched envelopeOf` | departures | PUI.purs (`dispatched`) |
 | one `{ key, value }` at a time → the growing array | `item # accumulated envelopeOf` | scoreboard | PUI.purs (`accumulated`) |
-| a selectable list (MDC2) | `listOf { selected: _.done } rowsOf item # toCase @l _.key` | todomvc, crud | MDC2.purs (`listOf`) |
+| a selectable list (MDC2) | `listOf @l _.key { selected: _.done } rowsOf item` | todomvc, crud | MDC2.purs (`listOf`) |
 | a collection display that passes the model through | `item # shownEach @l rowsOf` | stopwatch | HTML.purs (`shownEach`) |
 
 ## App shapes
@@ -122,8 +122,9 @@ direction module headers.
 
 ## Where `identity` still appears
 
-In a projection slot `identity` means "the whole value, verbatim": `toCase @l
-identity` (the emitter's whole payload is the case payload — cashbox),
+In a projection slot `identity` means "the whole value, verbatim": `clicked @l
+identity` (the whole row is the case payload), `toCase @l identity` (a
+dialog's whole release — cashbox),
 `foreach @l identity` (the fed value *is* the array — potluck). `shown` and
 `forProperty` take no projection, so it never appears with them. Stated in:
 writing.md *Code style → Wiring*.

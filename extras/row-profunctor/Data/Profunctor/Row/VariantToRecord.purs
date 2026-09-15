@@ -319,7 +319,7 @@ focusCase g =
 -- | `p [ | f ] { | b' }` runs on the focus; the retained background-variant is
 -- | written at field `w`. The sub-variant focus for this direction, and
 -- | the dual of `RecordToVariant.subResolving` — same sub-row focus, but the background is
--- | *wrapped* to cross into the record output rather than carried same-kind.
+-- | *wrapped* to cross into the record output rather than carried same-shape.
 -- | The `+ → ×` row combinator over the bare strength `Retaining`,
 -- | just as `RecordToRecord.subStrong` is the row combinator over `Strong`.
 -- |

@@ -629,7 +629,7 @@ the structural rules above — anonymous view-model types, a view module
 over a logic module, a single exported entry function.
 
 **The anchor invariant.** Every view line names exactly one semantic
-anchor, and the anchor's kind says what the line is:
+anchor, and the anchor's sort says what the line is:
 
 - a **field** — the `@l` on an editor, selector or labelled group: the
   label *is* the model field the line edits (`filledTextField @"First name" {}`,

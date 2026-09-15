@@ -8,7 +8,7 @@
 -- | (a fresh token fed), `FeedAgain` (the last token fed again), `FireK`
 -- | (operand K emits a fresh token). A **rig** is a merge term wired to
 -- | collect its boundary output stream as text; a **law** names two rigs, the
--- | event kinds and length to enumerate, and the relation the two output
+-- | event alphabet and length to enumerate, and the relation the two output
 -- | streams must stand in at every prefix.
 module Test.Exhaustive (run) where
 
@@ -58,7 +58,7 @@ data Rel = Equal | Refines
 
 type Law =
   { name :: String
-  , kinds :: Array Event
+  , alphabet :: Array Event
   , len :: Int
   , left :: Effect Rig
   , right :: Effect Rig
@@ -157,9 +157,9 @@ runScript mk script = do
 
 scriptsOf :: Array Event -> Int -> Array (Array Event)
 scriptsOf _ 0 = [ [] ]
-scriptsOf kinds n = do
-  s <- scriptsOf kinds (n - 1)
-  k <- kinds
+scriptsOf alphabet n = do
+  s <- scriptsOf alphabet (n - 1)
+  k <- alphabet
   pure (Array.snoc s k)
 
 isSubsequence :: forall a. Eq a => Array a -> Array a -> Boolean
@@ -182,7 +182,7 @@ failing name script l r =
 checkLaw :: Law -> Effect Int
 checkLaw law = do
   log ("Exhaustive: " <> law.name)
-  let scripts = scriptsOf law.kinds law.len
+  let scripts = scriptsOf law.alphabet law.len
   -- `foreachE`, not `for_`: a `for_` over sixteen thousand scripts in
   -- `Effect` nests one frame per script and overflows the stack
   foreachE scripts \script -> do
@@ -195,8 +195,8 @@ checkLaw law = do
 -- Feed-idempotence of a term: a `FeedAgain` directly after a feed may be
 -- deleted without changing the stream up to stutter.
 checkRepetition :: String -> Array Event -> Int -> Effect Rig -> Effect Int
-checkRepetition name kinds len mk = do
-  let scripts = scriptsOf kinds len
+checkRepetition name alphabet len mk = do
+  let scripts = scriptsOf alphabet len
   foreachE scripts \script ->
     for_ (Array.range 1 (Array.length script - 1)) \i ->
       when (Array.index script i == Just FeedAgain && (Array.index script (i - 1) == Just Feed || Array.index script (i - 1) == Just FeedAgain)) do
@@ -374,17 +374,17 @@ two = 6
 three :: Int
 three = 8
 
-rrKinds :: Array Event
-rrKinds = [ Feed, FeedAgain, Fire1, Fire2 ]
+rrAlphabet :: Array Event
+rrAlphabet = [ Feed, FeedAgain, Fire1, Fire2 ]
 
-rrKinds3 :: Array Event
-rrKinds3 = [ Feed, Fire1, Fire2, Fire3 ]
+rrAlphabet3 :: Array Event
+rrAlphabet3 = [ Feed, Fire1, Fire2, Fire3 ]
 
-evKinds :: Array Event
-evKinds = [ Feed, Fire1, Fire2 ]
+evAlphabet :: Array Event
+evAlphabet = [ Feed, Fire1, Fire2 ]
 
-evKinds3 :: Array Event
-evKinds3 = [ Feed, Fire1, Fire2, Fire3 ]
+evAlphabet3 :: Array Event
+evAlphabet3 = [ Feed, Fire1, Fire2, Fire3 ]
 
 unitRR :: PUI Effect {} {}
 unitRR = identity
@@ -401,82 +401,82 @@ unitRV = silence
 laws :: Array Law
 laws =
   -- ×→×
-  [ { name: "×→× symmetry", kinds: rrKinds, len: two, rel: Equal
+  [ { name: "×→× symmetry", alphabet: rrAlphabet, len: two, rel: Equal
     , left: rrTwo recordToRecord, right: rrTwo \a b -> recordToRecord b a }
-  , { name: "×→× associativity", kinds: rrKinds3, len: three, rel: Equal
+  , { name: "×→× associativity", alphabet: rrAlphabet3, len: three, rel: Equal
     , left: rrThree \a b c -> recordToRecord (recordToRecord a b) c
     , right: rrThree \a b c -> recordToRecord a (recordToRecord b c) }
-  , { name: "×→× left unit", kinds: rrKinds, len: two, rel: Equal
+  , { name: "×→× left unit", alphabet: rrAlphabet, len: two, rel: Equal
     , left: rrTwo \a b -> recordToRecord (recordToRecord unitRR a) b, right: rrTwo recordToRecord }
-  , { name: "×→× right unit", kinds: rrKinds, len: two, rel: Equal
+  , { name: "×→× right unit", alphabet: rrAlphabet, len: two, rel: Equal
     , left: rrTwo \a b -> recordToRecord (recordToRecord a unitRR) b, right: rrTwo recordToRecord }
-  , { name: "×→× exactness", kinds: rrKinds, len: two, rel: Equal
+  , { name: "×→× exactness", alphabet: rrAlphabet, len: two, rel: Equal
     , left: do
         a <- echoOp fatA
         b <- rrB
         rig recordFeed (recordToRecord a.p b.p) [ a.fire, b.fire ]
     , right: rrTwo recordToRecord }
-  , { name: "×→× monotonicity", kinds: rrKinds, len: two, rel: Refines
+  , { name: "×→× monotonicity", alphabet: rrAlphabet, len: two, rel: Refines
     , left: do
         a <- rrA >>= quieter
         b <- rrB
         rig recordFeed (recordToRecord a.p b.p) [ a.fire, b.fire ]
     , right: rrTwo recordToRecord }
-  , { name: "×→× conformance to PUI.Gate", kinds: rrKinds, len: two, rel: Equal
+  , { name: "×→× conformance to PUI.Gate", alphabet: rrAlphabet, len: two, rel: Equal
     , left: rrTwo recordToRecord, right: pureGateRR }
   -- +→×
-  , { name: "+→× symmetry", kinds: evKinds, len: two, rel: Equal
+  , { name: "+→× symmetry", alphabet: evAlphabet, len: two, rel: Equal
     , left: vrTwo variantToRecord, right: vrTwo \a b -> variantToRecord b a }
-  , { name: "+→× associativity", kinds: evKinds3, len: three, rel: Equal
+  , { name: "+→× associativity", alphabet: evAlphabet3, len: three, rel: Equal
     , left: vrThree \a b c -> variantToRecord (variantToRecord a b) c
     , right: vrThree \a b c -> variantToRecord a (variantToRecord b c) }
-  , { name: "+→× left unit", kinds: evKinds, len: two, rel: Equal
+  , { name: "+→× left unit", alphabet: evAlphabet, len: two, rel: Equal
     , left: vrTwo \a b -> variantToRecord (variantToRecord unitVR a) b, right: vrTwo variantToRecord }
-  , { name: "+→× right unit", kinds: evKinds, len: two, rel: Equal
+  , { name: "+→× right unit", alphabet: evAlphabet, len: two, rel: Equal
     , left: vrTwo \a b -> variantToRecord (variantToRecord a unitVR) b, right: vrTwo variantToRecord }
-  , { name: "+→× exactness", kinds: evKinds, len: two, rel: Equal
+  , { name: "+→× exactness", alphabet: evAlphabet, len: two, rel: Equal
     , left: do
         a <- foldOp (match { x: fatA }) fatA
         b <- vrB
         rig case2 (variantToRecord a.p b.p) [ a.fire, b.fire ]
     , right: vrTwo variantToRecord }
-  , { name: "+→× monotonicity", kinds: evKinds, len: two, rel: Refines
+  , { name: "+→× monotonicity", alphabet: evAlphabet, len: two, rel: Refines
     , left: do
         a <- vrA >>= quieter
         b <- vrB
         rig case2 (variantToRecord a.p b.p) [ a.fire, b.fire ]
     , right: vrTwo variantToRecord }
-  , { name: "+→× conformance to PUI.Gate", kinds: evKinds, len: two, rel: Equal
+  , { name: "+→× conformance to PUI.Gate", alphabet: evAlphabet, len: two, rel: Equal
     , left: vrTwo variantToRecord, right: pureGateVR }
   -- ×→+
-  , { name: "×→+ symmetry", kinds: evKinds, len: two, rel: Equal
+  , { name: "×→+ symmetry", alphabet: evAlphabet, len: two, rel: Equal
     , left: rvTwo recordToVariant, right: rvTwo \a b -> recordToVariant b a }
-  , { name: "×→+ associativity", kinds: evKinds3, len: three, rel: Equal
+  , { name: "×→+ associativity", alphabet: evAlphabet3, len: three, rel: Equal
     , left: rvThree \a b c -> recordToVariant (recordToVariant a b) c
     , right: rvThree \a b c -> recordToVariant a (recordToVariant b c) }
-  , { name: "×→+ left unit", kinds: evKinds, len: two, rel: Equal
+  , { name: "×→+ left unit", alphabet: evAlphabet, len: two, rel: Equal
     , left: rvTwo \a b -> recordToVariant (recordToVariant unitRV a) b, right: rvTwo recordToVariant }
-  , { name: "×→+ right unit", kinds: evKinds, len: two, rel: Equal
+  , { name: "×→+ right unit", alphabet: evAlphabet, len: two, rel: Equal
     , left: rvTwo \a b -> recordToVariant (recordToVariant a unitRV) b, right: rvTwo recordToVariant }
-  , { name: "×→+ monotonicity", kinds: evKinds, len: two, rel: Refines
+  , { name: "×→+ monotonicity", alphabet: evAlphabet, len: two, rel: Refines
     , left: do
         a <- rvA >>= quieter
         b <- rvB
         rig recordFeed (recordToVariant a.p b.p) [ a.fire, b.fire ]
     , right: rvTwo recordToVariant }
-  , { name: "×→+ arming (feeds never emit)", kinds: evKinds, len: two, rel: Equal
+  , { name: "×→+ arming (feeds never emit)", alphabet: evAlphabet, len: two, rel: Equal
     , left: rvTwo recordToVariant, right: deaf (rvTwo recordToVariant) }
   -- +→+
-  , { name: "+→+ symmetry", kinds: evKinds, len: two, rel: Equal
+  , { name: "+→+ symmetry", alphabet: evAlphabet, len: two, rel: Equal
     , left: vvTwo variantToVariant, right: vvTwo \a b -> variantToVariant b a }
-  , { name: "+→+ associativity", kinds: evKinds3, len: three, rel: Equal
+  , { name: "+→+ associativity", alphabet: evAlphabet3, len: three, rel: Equal
     , left: vvThree \a b c -> variantToVariant (variantToVariant a b) c
     , right: vvThree \a b c -> variantToVariant a (variantToVariant b c) }
-  , { name: "+→+ left unit", kinds: evKinds, len: two, rel: Equal
+  , { name: "+→+ left unit", alphabet: evAlphabet, len: two, rel: Equal
     , left: vvTwo \a b -> variantToVariant (variantToVariant unitVV a) b, right: vvTwo variantToVariant }
-  , { name: "+→+ right unit", kinds: evKinds, len: two, rel: Equal
+  , { name: "+→+ right unit", alphabet: evAlphabet, len: two, rel: Equal
     , left: vvTwo \a b -> variantToVariant (variantToVariant a unitVV) b, right: vvTwo variantToVariant }
-  , { name: "+→+ monotonicity", kinds: evKinds, len: two, rel: Refines
+  , { name: "+→+ monotonicity", alphabet: evAlphabet, len: two, rel: Refines
     , left: do
         a <- vvA >>= quieter
         b <- vvB
@@ -490,7 +490,7 @@ run = do
   for_ laws \law -> do
     n <- checkLaw law
     Ref.modify_ (_ + n) total
-  n <- checkRepetition "×→× repetition (feed-idempotence of the merge)" rrKinds two (rrTwo recordToRecord)
+  n <- checkRepetition "×→× repetition (feed-idempotence of the merge)" rrAlphabet two (rrTwo recordToRecord)
   Ref.modify_ (_ + n) total
   count <- Ref.read total
   log ("Exhaustive: " <> show (Array.length laws + 1) <> " laws over " <> show count <> " scripts, no distinguishing script found")

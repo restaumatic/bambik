@@ -27,17 +27,19 @@ orderFormMDC3 =
       group @"Customer" $ Category.do
         filledTextField @"First name" {}
         filledTextField @"Last name" {}
-      group @"Fulfillment" $ ( Category.do
-        tabBar @"selected"
-          [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
-        filledTextField @"Table" {} # inCase @"Dine in" selection
-        filledTextField @"Time" {} # inCase @"Takeaway" selection
+      card $ Category.do
+        ( titleMedium $ staticText "Fulfillment" ) # shown
         ( Category.do
-          filledTextField @"Address" {} # settled staleDistanceForgotten
+          tabBar @"selected"
+            [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
+          filledTextField @"Table" {} # inCase @"Dine in" selection
+          filledTextField @"Time" {} # inCase @"Takeaway" selection
           ( Category.do
-            button @"Estimate distance" { icon: "near_me" }
-            indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-          ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed fulfillmentState fulfillmentCase
+            filledTextField @"Address" {} # settled staleDistanceForgotten
+            ( Category.do
+              button @"Estimate distance" { icon: "near_me" }
+              indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
+            ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed @"Fulfillment" fulfillmentState fulfillmentCase
       card $ Category.do
         ( titleMedium $ staticText "Total" ) # shown
         filledTextField @"Total" {}

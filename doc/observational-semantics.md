@@ -54,13 +54,13 @@ A morphism is a single-use process; reuse is re-instantiation.
   pre-priming difference is permanent, not a delay. This is deliberate UI
   semantics: an event that fired before any model existed refers to nothing
   and must not replay against a later model.
-- **Stutter**: on a **behavior-kinded** channel a consecutive duplicate
+- **Stutter**: on a **record-shaped** channel a consecutive duplicate
   emission is no observation. A behavior is a value at every moment, so
   repeating the current value is the same function of time, and boundary
   streams on behavior channels are compared **up to stutter**. An
-  **event-kinded** channel carries occurrences; there every emission
-  counts. (Kind is not shape — §3 — though for every published leaf record
-  means behavior and variant means event.) This is the inner-feed quotient
+  **variant-shaped** channel carries occurrences; there every emission
+  counts. (Record means behaviour and variant means event, for every
+  component — §3.) This is the inner-feed quotient
   above seen from the other side, and the same fact as feed-idempotence
   (§3): to be a behavior *is* to be stutter-invariant. The carrier's own
   combinators no longer produce stutter — a merge's broadcast is one step,
@@ -86,18 +86,17 @@ combinator laws below fail without them.
    (its `coresolve` re-feeds the last input on every emission), and
    `seeded a >>> seeded a ≈ seeded a`. The focus-guarded text fields and
    `settled`'s idempotence contract are both instances of this law.
-2. **Record-echo totality** — a *behavior-kinded* citizen answers every
+2. **Record-echo totality** — a *record-shaped* citizen answers every
    feed with one emission of the **whole** fed row (displays release it,
    editors echo it with the background re-attached, `identity` is the echo
-   wire — every record-shaped leaf but the occurrence source `clicked`,
-   which only ever lives under `toCase`). What keeps the gated merges live
+   wire — every record-shaped leaf). What keeps the gated merges live
    and what the seeded `×`-retraction laws quantify over. The law has two
    halves of different strength (2026-09-11, from an audit of every
    `toUser` in the six vocabularies): **row totality** — whatever is
    released is the whole fed row — holds on the nose for every published
    stage; **feed liveness** — every feed is answered, once — holds for
    every leaf and the instant rungs and is *refined*, not broken, at
-   exactly two kinds of place: in **time** by the witness rung
+   exactly two sorts of place: in **time** by the witness rung
    (`confirmed` releases on confirmation; a declined reading withholds) and
    the gather gate (`acted` releases once every element has spoken), and in
    **value** by the type-changing selectors, whose `Just`-only echo is
@@ -107,7 +106,7 @@ combinator laws below fail without them.
    `inCase` echoes only while its pane is detached (attached, the editor's
    own echo is the release) and `drawer` sequences its nav into its content
    instead of fanning one feed out to two echoing sides.
-3. **No synchronous event echo** — an *event-kinded* citizen (an occurrence
+3. **No synchronous event echo** — a *variant-shaped* citizen (an occurrence
    source: `button`, `clicked`, `menuItem`, a status's event input) never
    emits from inside its own `toUser`. Events are occurrences, not
    responses; this is the termination argument for `Cochoice`'s re-entry
@@ -118,18 +117,21 @@ combinator laws below fail without them.
    response to an input event, not an echo of a feed, and is not what this
    law forbids; the law is about sources (§3.1).
 
-   The law is about **kind, not shape**. Its first statement here said
-   "`+`-output citizen" and was too strong: `bracketed`'s variant editor is
-   variant-*shaped* yet a *behavior* — its looped record ensemble echoes
-   every feed, projected into a variant emission, exactly as a whole-row
-   operand under `field @l` must — while `clicked` is record-shaped yet an
-   *event*, emitting on click and never answering a feed. Shape and kind
-   coincide for every published leaf, which is the design's bet; these two
-   are where the type cannot see the difference, and why the law cannot be
-   enforced by the present type (`identity` and `clicked` share a type). A
-   kind index orthogonal to shape could enforce it — a design note for a
-   major version, not a patch; today the law is a protocol obligation whose
-   whole proof burden is the finite set of occurrence primitives.
+   The law is about **shape**, and every published component has the
+   shape of its behaviour (2026-09-15). Two used not to. `bracketed`
+   returned a variant *channel* that carried sum-typed *state* — its
+   looped record ensemble echoed every feed, projected into a variant
+   emission — and `clicked` returned a record channel that carried
+   clicks. Both are fixed at the type: `bracketed @l` lifts its editor
+   into the record field it edits, so a variant stands at channel position
+   only as an event and inside a field only as a value; and every
+   occurrence source — `clicked @l f`, `listOf @l f`, `onClickedXY @l`,
+   the HTML floor's `button @l` — emits as case `l`, so no record-shaped
+   source exists and `identity` and `clicked` no longer share a type. What
+   remains a protocol obligation is narrower: the type cannot stop a
+   `× → +` leaf from emitting inside its own `toUser`, so the proof burden
+   is the finite set of occurrence primitives — the vocabulary provider's
+   conformance, not a structural ambiguity in the algebra.
 
    **Why the carrier cannot take this one on.** Laws 2 and 3 are the two
    halves of a single obligation an *inclusive* record input carries — one
@@ -156,8 +158,8 @@ over retained state):
 | `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is `iterate`'s well-foundedness | `identity`, the forward wire |
 | `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is whole, and the retained state **is** the released state, so a change can never stay private | `lcmap case_ identity`, the never-fed wire |
 
-The criterion behind the column: **the output kind decides whether anything
-is owed, the input kind decides how it is discharged.** A record output must
+The criterion behind the column: **the output shape decides whether anything
+is owed, the input shape decides how it is discharged.** A record output must
 be whole however its input arrived. With a feed on the input side the
 background is the retained feed and the wire is echo (`field @l` re-attaches
 it); with an occurrence there is no feed to re-attach, so the background is
@@ -195,9 +197,7 @@ owns is a status in disguise. `action`'s progress slot was one until
 occurrences dispatched to an indicator that owes nothing back; `blank`, the
 faceless leaf, stands at that input as at any other, since `{}` is terminal.
 
-Two facts sit outside the table. The modalities are about **kind**, exactly
-as law 3 is: `bracketed` is variant-shaped yet echoes, `clicked` is
-record-shaped yet never does. And `action` is the one `+→+` form that can be
+One fact sits outside the table. `action` is the one `+→+` form that can be
 *misplaced*: it responds through an `AVar` inside `launchAff_`, so an `Aff`
 that completes without suspending emits within the feed — a response under
 `# atCase`, where every demo puts it, but an echo if an application placed
@@ -365,9 +365,10 @@ principle* (input residuals compose as `c × d`, output residuals as
 
 ## 7. Sums into products: `bracketed`'s law
 
-The variant editor `bracketed stateOf caseOf` embeds a sum into the product
-of its summands and projects back. Its arguments owe one law, stated in
-`Data.Profunctor.Row.VariantToVariant` and tested on the demos' pair:
+The sum-typed field editor `bracketed @l stateOf caseOf` embeds a sum into
+the product of its summands, projects back, and lifts the result into field
+`l`. Its arguments owe one law, stated in
+`Data.Profunctor.Row.RecordToRecord` and tested on the demos' pair:
 
 ```
 caseOf (stateOf v) = v
@@ -386,7 +387,7 @@ other cases' payloads — is what the editor retains across a selection change.
 
 §3's no-synchronous-event-echo law and §4's one-feed-one-release are not two
 facts about two diagonals. They are **one obligation, read off at two output
-kinds**, and their shared cause sits on the *input* side of the merge.
+shapes**, and their shared cause sits on the *input* side of the merge.
 
 A shared record input (`SharedRecordInputs`) is **inclusive**: one feed
 reaches both operands, so both may answer it. A merge that broadcasts owes
@@ -423,7 +424,7 @@ situation to discipline. Nothing to tear, nothing to duplicate.
 | `+→+` | `OwnedVariantInputs` | no — dispatched | none |
 
 The two axes are independent, and `+→×` is the case that separates them:
-**input** inclusivity says whether the obligation exists, **output** kind
+**input** inclusivity says whether the obligation exists, **output** shape
 says what discharges it. `variantToRecord` dispatches its input (so it has
 no torn-row hazard — nothing coalesces, at most one operand answers a case)
 yet still gates and retains its output, because a record must be whole

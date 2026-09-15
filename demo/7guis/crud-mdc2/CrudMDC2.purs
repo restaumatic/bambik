@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, looped, atCase, toCase, updated, with)
+import PUI (action, looped, atCase, updated, with)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, button, card, cardActions, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Category as Category
@@ -22,7 +22,7 @@ crudMDC2 = do
         filledTextField @"Filter prefix (surname)" {}
         filledTextField @"Name" {}
         filledTextField @"Surname" {}
-        listOf { selected: isSelected } entries (text personLine # shown) # toCase @"picked" _.key # updated (match { picked: pick })
+        listOf @"picked" _.key { selected: isSelected } entries (text personLine # shown) # updated (match { picked: pick })
         ( Category.do
           cardActions $ RecordToVariant.do
             button @"Create" {}

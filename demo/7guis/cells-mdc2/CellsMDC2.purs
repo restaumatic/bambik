@@ -5,7 +5,7 @@ import Prelude (Unit, (#), ($), (<>), (>>>))
 import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedLine)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (foreach, mvu, settled, toCase, updated)
+import PUI (foreach, mvu, settled, updated)
 import PUI.Web.HTML (shown, attrWith, clicked, div, table, td, text, tr, (:=))
 import PUI.Web.MDC2 (body, body1, card, filledTextField)
 import QualifiedDo.Category as Category
@@ -18,7 +18,7 @@ cellsMDC2 =
       filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
         ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-          ( tr $ ( clicked ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows ) # toCase @"cellClicked" _.key ) # updated (match { cellClicked: selectCell })
+          ( tr $ ( clicked @"cellClicked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows ) ) # updated (match { cellClicked: selectCell })
     ) # mvu orderSheet
 cellFace :: { text :: String, kind :: [ header :: {}, cell :: {} ], status :: [ selected :: {}, unselected :: {} ] } -> String
 cellFace { kind, status } = match

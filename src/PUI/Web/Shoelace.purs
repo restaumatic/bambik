@@ -42,7 +42,6 @@ import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (field)
-import Data.Profunctor.Row.RecordToVariant (recordToCase)
 import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -106,13 +105,13 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- | action — `button @"Submit the review" {}`. The label defaults to
 -- | the case label verbatim (`label:` overrides with real copy).
 button :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
-button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in recordToCase @l $ eventLeaf $
+button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in eventLeaf @l $
   el "sl-button" >>> "variant" := "primary" $ staticText config.label
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
-eventLeaf :: forall r. PUI Web {} {} -> PUI Web { | r } { | r }
-eventLeaf chrome = clicked chrome
+eventLeaf :: forall @l r s. IsSymbol l => Cons l { | r } () s => PUI Web {} {} -> PUI Web { | r } [ | s ]
+eventLeaf chrome = clicked @l identity chrome
 
 -- | The **text field**: a labelled single-line input. Shows the string it
 -- | is given and reports each edit; typing is never interrupted by values

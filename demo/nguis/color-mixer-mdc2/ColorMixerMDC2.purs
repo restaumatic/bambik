@@ -5,7 +5,7 @@ import Prelude ((#), ($), (<>), (>>>), Unit, const)
 import ColorMixerLogic (applyPreset, duskViolet, hexLine, mixOf, palette, rgb, rgbLine)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (blank, foreach, mvu, toCase, updated)
+import PUI (blank, foreach, mvu, updated)
 import PUI.Web.HTML (shown, attrWith, clicked, div, text, (:=))
 import PUI.Web.MDC2 (body, body2, card, sliderLive)
 import QualifiedDo.Category as Category
@@ -20,7 +20,7 @@ colorMixerMDC2 =
       ( div $ Category.do
         div >>> attrWith "style" swatchStyle $ blank
         div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-          clicked ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" (const palette) ) # toCase @"preset" _.name # updated (match { preset: applyPreset })
+          clicked @"preset" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" (const palette) ) # updated (match { preset: applyPreset })
       ( body2 $ text hexLine ) # shown
       ( body2 $ text rgbLine ) # shown
     ) # mvu duskViolet
