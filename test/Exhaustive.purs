@@ -9,7 +9,12 @@
 -- | (operand K emits a fresh token). A **rig** is a merge term wired to
 -- | collect its boundary output stream as text; a **law** names two rigs, the
 -- | event alphabet and length to enumerate, and the relation the two output
--- | streams must stand in at every prefix.
+-- | streams must stand in at every prefix. Beside the paired laws, three
+-- | single-rig checks: repetition of the `×→×` merge (deleting a repeated
+-- | feed changes nothing up to stutter), its answer (one release per feed,
+-- | untorn) and projection's input half at every shape (each operand is
+-- | fed exactly its projection of the boundary feeds) — the laws of
+-- | Data.Profunctor.Row ("The laws") the merge must preserve or provide.
 module Test.Exhaustive (run) where
 
 import Prelude
@@ -116,6 +121,18 @@ quieter op = do
         }
   pure { p, fire: op.fire }
 
+-- An operand that records the tokens it is fed: projection's witness.
+type Traced i o = { p :: PUI Effect i o, fire :: Int -> Effect Unit, ins :: Ref.Ref (Array Int) }
+
+traced :: forall i o. (i -> Int) -> Op i o -> Effect (Traced i o)
+traced token op = do
+  ins <- Ref.new []
+  let
+    p = PUI do
+      inner <- unwrap op.p
+      pure { toUser: \i -> Ref.modify_ (_ <> [ token i ]) ins *> inner.toUser i, fromUser: inner.fromUser }
+  pure { p, fire: op.fire, ins }
+
 -- The exactness adversary: every emission carries a stale runtime copy of
 -- the sibling's field, typed at the operand's own narrow row — what an echo
 -- wire over the widening coercion hands the gate.
@@ -204,14 +221,60 @@ checkRepetition name alphabet len mk = do
         for_ (Array.deleteAt i script) \shorter -> do
           less <- runScript mk shorter
           let
-            l = dedupConsecutive (fromMaybeEmpty (Array.last full))
-            r = dedupConsecutive (fromMaybeEmpty (Array.last less))
+            l = dedupConsecutive (fromMaybeEmpty [] (Array.last full))
+            r = dedupConsecutive (fromMaybeEmpty [] (Array.last less))
           unless (l == r) (failing name script l r)
   pure (Array.length scripts)
-  where
-  fromMaybeEmpty = case _ of
-    Just xs -> xs
-    Nothing -> []
+
+fromMaybeEmpty :: Array String -> Maybe (Array String) -> Array String
+fromMaybeEmpty dflt = case _ of
+  Just xs -> xs
+  Nothing -> dflt
+
+-- Preservation of the answer law at `×→×`: with operands answering every
+-- feed, every feed of the merge is answered by exactly one release —
+-- which is at least one, and none torn.
+checkAnswer :: String -> Array Event -> Int -> Effect Rig -> Effect Int
+checkAnswer name alphabet len mk = do
+  log ("Exhaustive: " <> name)
+  let scripts = scriptsOf alphabet len
+  foreachE scripts \script -> do
+    snaps <- runScript mk script
+    for_ (Array.range 0 (Array.length script - 1)) \i ->
+      when (Array.index script i == Just Feed || Array.index script i == Just FeedAgain) do
+        let
+          before = if i == 0 then [] else fromMaybeEmpty [] (Array.index snaps (i - 1))
+          answer = Array.drop (Array.length before) (fromMaybeEmpty [] (Array.index snaps i))
+        unless (Array.length answer == 1) (failing name script answer before)
+  pure (Array.length scripts)
+
+-- Projection's input half: under every script, each operand's inner feed
+-- stream is exactly its projection of the boundary feed stream — the whole
+-- stream at a record input, the tokens of its own cases at a variant one.
+type Projection =
+  { name :: String
+  , alphabet :: Array Event
+  , len :: Int
+  , build :: Effect { rig :: Rig, ins :: Array (Ref.Ref (Array Int)), owns :: Array (Int -> Boolean) }
+  }
+
+checkProjection :: Projection -> Effect Int
+checkProjection law = do
+  log ("Exhaustive: " <> law.name)
+  let scripts = scriptsOf law.alphabet law.len
+  foreachE scripts \script -> do
+    fed <- Ref.new []
+    built <- law.build
+    let
+      r0 = built.rig
+      mk = pure (r0 { feed = \n -> Ref.modify_ (_ <> [ n ]) fed *> r0.feed n })
+    _ <- runScript mk script
+    feeds <- Ref.read fed
+    for_ (Array.zip built.ins built.owns) \(Tuple insRef owns) -> do
+      ins <- Ref.read insRef
+      let expected = Array.filter owns feeds
+      unless (ins == expected) (failing law.name script ins expected)
+  pure (Array.length scripts)
 
 --------------------------------------------------------------------------------
 -- The rigs
@@ -484,13 +547,44 @@ laws =
     , right: vvTwo variantToVariant }
   ]
 
+even :: Int -> Boolean
+even n = n `mod` 2 == 0
+
+projections :: Array Projection
+projections =
+  [ { name: "×→× projection (each operand fed every feed, whole)", alphabet: rrAlphabet, len: two
+    , build: do
+        a <- rrA >>= traced _.s
+        b <- rrB >>= traced _.s
+        r <- rig recordFeed (recordToRecord a.p b.p) [ a.fire, b.fire ]
+        pure { rig: r, ins: [ a.ins, b.ins ], owns: [ const true, const true ] } }
+  , { name: "×→+ projection (each operand fed every feed, whole)", alphabet: evAlphabet, len: two
+    , build: do
+        a <- rvA >>= traced _.s
+        b <- rvB >>= traced _.s
+        r <- rig recordFeed (recordToVariant a.p b.p) [ a.fire, b.fire ]
+        pure { rig: r, ins: [ a.ins, b.ins ], owns: [ const true, const true ] } }
+  , { name: "+→+ projection (each operand fed its own cases only)", alphabet: evAlphabet, len: two
+    , build: do
+        a <- vvA >>= traced (match { x: identity })
+        b <- vvB >>= traced (match { y: identity })
+        r <- rig case2 (variantToVariant a.p b.p) [ a.fire, b.fire ]
+        pure { rig: r, ins: [ a.ins, b.ins ], owns: [ even, not <<< even ] } }
+  , { name: "+→× projection (each operand fed its own cases only)", alphabet: evAlphabet, len: two
+    , build: do
+        a <- vrA >>= traced (match { x: identity })
+        b <- vrB >>= traced (match { y: identity })
+        r <- rig case2 (variantToRecord a.p b.p) [ a.fire, b.fire ]
+        pure { rig: r, ins: [ a.ins, b.ins ], owns: [ even, not <<< even ] } }
+  ]
+
 run :: Effect Unit
 run = do
   total <- Ref.new 0
-  for_ laws \law -> do
-    n <- checkLaw law
-    Ref.modify_ (_ + n) total
-  n <- checkRepetition "×→× repetition (feed-idempotence of the merge)" rrAlphabet two (rrTwo recordToRecord)
-  Ref.modify_ (_ + n) total
-  count <- Ref.read total
-  log ("Exhaustive: " <> show (Array.length laws + 1) <> " laws over " <> show count <> " scripts, no distinguishing script found")
+  let count n = Ref.modify_ (_ + n) total
+  for_ laws \law -> checkLaw law >>= count
+  checkRepetition "×→× repetition (feed-idempotence of the merge)" rrAlphabet two (rrTwo recordToRecord) >>= count
+  checkAnswer "×→× answer (one untorn release per feed)" rrAlphabet two (rrTwo recordToRecord) >>= count
+  for_ projections \law -> checkProjection law >>= count
+  n <- Ref.read total
+  log ("Exhaustive: " <> show (Array.length laws + 2 + Array.length projections) <> " laws over " <> show n <> " scripts, no distinguishing script found")

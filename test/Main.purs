@@ -1667,9 +1667,9 @@ main = do
       ungated gProp = lcmap (fst :: Tuple Int Boolean -> Int) (probe gProp :: PUI Effect Int String)
     lower <- run gated
     upper <- run ungated
-    assertEqual "enrichment: p ⊑ p' ⇒ p >>> q ⊑ p' >>> q" true (isSubsequence lower upper)
-    assertEqual "enrichment: the gated side's stage sees the residual only" [ "b" ] lower
-    assertEqual "enrichment: the ungated side's stage sees everything" [ "early", "b" ] upper
+    assertEqual "monotonicity of >>>: p ⊑ p' ⇒ p >>> q ⊑ p' >>> q" true (isSubsequence lower upper)
+    assertEqual "monotonicity of >>>: the gated side's stage sees the residual only" [ "b" ] lower
+    assertEqual "monotonicity of >>>: the ungated side's stage sees everything" [ "early", "b" ] upper
 
   -- and the merge: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r — the gated leaf lift (`field`,
   -- completing each emission from the retained background, so withholding
@@ -1697,9 +1697,9 @@ main = do
       m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
       script m (\n b -> fire gProp { a: n, b }) rProp
       Ref.read outs
-    assertEqual "enrichment: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
-    assertEqual "enrichment: the gated merge emits the residual only" [ { a: 2, b: "fed", c: true } ] lower
-    assertEqual "enrichment: the ungated merge emits everything" [ { a: 1, b: "early", c: true }, { a: 2, b: "fed", c: true } ] upper
+    assertEqual "monotonicity ×→×: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
+    assertEqual "monotonicity ×→×: the gated merge emits the residual only" [ { a: 2, b: "fed", c: true } ] lower
+    assertEqual "monotonicity ×→×: the ungated merge emits everything" [ { a: 1, b: "early", c: true }, { a: 2, b: "fed", c: true } ] upper
 
   -- The same at the two shared-output shapes, where nothing gates: with
   -- `quieter g` (g minus its first emission) as p ⊑ p', the merge's output
@@ -1719,9 +1719,9 @@ main = do
         Ref.read outs
     lower <- run quieter
     upper <- run identity
-    assertEqual "enrichment at ×→+: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
-    assertEqual "enrichment at ×→+: the quieter merge lacks exactly the dropped emission" [ .y "e", .x 2 ] lower
-    assertEqual "enrichment at ×→+: the full merge emits everything" [ .x 1, .y "e", .x 2 ] upper
+    assertEqual "monotonicity at ×→+: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
+    assertEqual "monotonicity at ×→+: the quieter merge lacks exactly the dropped emission" [ .y "e", .x 2 ] lower
+    assertEqual "monotonicity at ×→+: the full merge emits everything" [ .x 1, .y "e", .x 2 ] upper
   do
     let
       run q = do
@@ -1737,9 +1737,9 @@ main = do
         Ref.read outs
     lower <- run quieter
     upper <- run identity
-    assertEqual "enrichment at +→+: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
-    assertEqual "enrichment at +→+: the quieter merge lacks exactly the dropped emission" [ .err "e", .ok 2 ] lower
-    assertEqual "enrichment at +→+: the full merge emits everything" [ .ok 1, .err "e", .ok 2 ] upper
+    assertEqual "monotonicity at +→+: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
+    assertEqual "monotonicity at +→+: the quieter merge lacks exactly the dropped emission" [ .err "e", .ok 2 ] lower
+    assertEqual "monotonicity at +→+: the full merge emits everything" [ .ok 1, .err "e", .ok 2 ] upper
 
   -- and at +→×, the other gated shape: the quieter fold's first emission is
   -- gone, so the gate opens one occurrence later and the residuals agree.
@@ -1759,16 +1759,18 @@ main = do
         Ref.read outs
     lower <- run quieter
     upper <- run identity
-    assertEqual "enrichment at +→×: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
-    assertEqual "enrichment at +→×: the quieter merge opens one occurrence later" [ { a: 2, b: "s" } ] lower
-    assertEqual "enrichment at +→×: the full merge releases on every whole occurrence" [ { a: 1, b: "s" }, { a: 2, b: "s" } ] upper
+    assertEqual "monotonicity at +→×: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
+    assertEqual "monotonicity at +→×: the quieter merge opens one occurrence later" [ { a: 2, b: "s" } ] lower
+    assertEqual "monotonicity at +→×: the full merge releases on every whole occurrence" [ { a: 1, b: "s" }, { a: 2, b: "s" } ] upper
 
-  -- == The nine-axis grid (Data.Profunctor.Row, "The laws, stated once"): ==
-  -- == the cells no earlier probe pins — the three citizen axes at each ==
-  -- == shape on the shape's own wire, source or merge, the two missing ==
-  -- == symmetries, the free exactness cell, and independence at all four. ==
+  -- == The shape laws (Data.Profunctor.Row, "The laws"): the cells no ==
+  -- == earlier probe pins — the component laws at each shape on its own ==
+  -- == wire, source or merge (with the leaf contracts they used to be ==
+  -- == confused with: replay, nothing at registration), the two missing ==
+  -- == symmetries, the identity `exact` at ×→+, and projection's input ==
+  -- == half at all four shapes. ==
 
-  -- Axes 1–3 at ×→×, on the echo wire merged with an owner: feeding the same
+  -- Repetition and answer at ×→×, on the echo wire merged with an owner: feeding the same
   -- row twice is one feed — boundary stream up to stutter and retained
   -- state alike — and each feed is answered once, whole.
   do
@@ -1788,7 +1790,7 @@ main = do
     assertEqual "repetition ×→×: the state retained after two feeds is that after one" [ { a: 1, b: "x" }, { a: 1, b: "y" } ] once
     assertEqual "answer ×→×: each feed answered once — the stutter is exactly the second answer" [ { a: 1, b: "x" }, { a: 1, b: "x" }, { a: 1, b: "y" } ] twice
 
-  -- Axes 1–3 at ×→+, on the replay source: a click before any feed does
+  -- Repetition and answer at ×→+, and `clicked`'s replay contract, on the replay source: a click before any feed does
   -- nothing, a feed emits nothing, two feeds arm the same one row, and a
   -- click replays the whole row last fed.
   do
@@ -1807,7 +1809,7 @@ main = do
     click trigger
     Ref.read outs >>= assertEqual "emission ×→+: the whole row last fed" [ .clicked { a: 1, b: "x" }, .clicked { a: 2, b: "y" } ]
 
-  -- Axes 1–3 at +→+, on the forward wire and its merge: nothing at
+  -- No component law at +→+ — what `≈` counts, on the forward wire and its merge: nothing at
   -- registration, one occurrence forwarded exactly once, two occurrences
   -- forwarded as two.
   do
@@ -1825,7 +1827,7 @@ main = do
     m2.toUser (.x 1) *> m2.toUser (.x 1) *> m2.toUser (.y "e")
     Ref.read outs2 >>= assertEqual "repetition +→+: the merge coalesces nothing either" [ .x 1, .x 1, .y "e" ]
 
-  -- Axes 1–3 at +→×, on the merge of two echo folds and a status beside
+  -- No component law at +→×, and the gate's withholding, on the merge of two echo folds and a status beside
   -- one: nothing at registration, withheld until the knowledge exists,
   -- released whole on a change, stepped again on a repeated occurrence,
   -- and a status owes the channel nothing.
@@ -1856,7 +1858,7 @@ main = do
     mS.toUser (.z unit) *> mS.toUser (.y "s")
     Ref.read outsS >>= assertEqual "answer +→×: a status beside the fold owes nothing — the fold releases without it" [ { b: "s" } ]
 
-  -- Axis 5 at ×→+: operand order is not observable at the boundary.
+  -- Monoid at ×→+: operand order is not observable at the boundary.
   do
     let
       run wrapper = do
@@ -1873,7 +1875,7 @@ main = do
     assertEqual "×→+ symmetry: boundary streams agree under either operand order" ab ba
     assertEqual "×→+ symmetry: the script's stream" [ .x 1, .y "e", .x 2 ] ab
 
-  -- Axis 5 at +→+: likewise, dispatch and exits alike.
+  -- Monoid at +→+: likewise, dispatch and exits alike.
   do
     let
       run wrapper = do
@@ -1895,7 +1897,7 @@ main = do
     assertEqual "+→+ symmetry: boundary streams agree under either operand order" ab ba
     assertEqual "+→+ symmetry: the script's streams" { i1: [ .x 1 ], i2: [ .y "b" ], o: [ .ok 1, .err "e", .ok 2 ] } ab
 
-  -- Axis 8 at ×→+: exactness is free — a case both operands declare exits
+  -- Projection at ×→+: `exact` is the identity — a case both operands declare exits
   -- from either, unmarked, and nothing trims.
   do
     p1Prop <- Ref.new Nothing
@@ -1907,7 +1909,7 @@ main = do
     fire p1Prop (.x 1) *> fire p2Prop (.x 2) *> fire p1Prop (.y "e")
     Ref.read outs >>= assertEqual "exactness ×→+: a shared case exits from either operand, unmarked" [ .x 1, .x 2, .y "e" ]
 
-  -- Axis 11 at all four shapes: an operand is fed only the merge's feeds;
+  -- Projection's input half at all four shapes: an operand is fed only the merge's feeds;
   -- a sibling's emission never reaches it. `looped` is the contrast — the
   -- one place cross-feed happens.
   do
@@ -1919,8 +1921,8 @@ main = do
     m.fromUser \_ -> pure unit
     m.toUser { s: 1 }
     fire p1Prop { a: 1 } *> fire p2Prop { b: "x" } *> fire p1Prop { a: 2 }
-    Ref.read ins1 >>= assertEqual "independence ×→×: an operand is fed only the merge's feeds" [ { s: 1 } ]
-    Ref.read ins2 >>= assertEqual "independence ×→×: a sibling's emission never reaches it" [ { s: 1 } ]
+    Ref.read ins1 >>= assertEqual "projection ×→×: an operand is fed only the merge's feeds" [ { s: 1 } ]
+    Ref.read ins2 >>= assertEqual "projection ×→×: a sibling's emission never reaches it" [ { s: 1 } ]
     lIns1 <- Ref.new ([] :: Array { a :: Int, b :: String })
     lIns2 <- Ref.new ([] :: Array { a :: Int, b :: String })
     l1Prop <- Ref.new Nothing
@@ -1929,7 +1931,7 @@ main = do
     l.fromUser \_ -> pure unit
     l.toUser { a: 0, b: "x" }
     fire l1Prop { a: 1 } *> fire l2Prop { b: "y" } *> fire l1Prop { a: 2 }
-    Ref.read lIns2 >>= assertEqual "independence ×→×: under `looped`, and only there, the sibling is re-fed" [ { a: 0, b: "x" }, { a: 1, b: "y" }, { a: 2, b: "y" } ]
+    Ref.read lIns2 >>= assertEqual "projection ×→×: under `looped`, and only there, the sibling is re-fed" [ { a: 0, b: "x" }, { a: 1, b: "y" }, { a: 2, b: "y" } ]
   do
     ins1 <- Ref.new ([] :: Array { s :: Int })
     ins2 <- Ref.new ([] :: Array { s :: Int })
@@ -1939,8 +1941,8 @@ main = do
     m.fromUser \_ -> pure unit
     m.toUser { s: 1 }
     fire p1Prop (.x 1) *> fire p2Prop (.y "e")
-    Ref.read ins1 >>= assertEqual "independence ×→+: an operand is fed only the merge's feeds" [ { s: 1 } ]
-    Ref.read ins2 >>= assertEqual "independence ×→+: a sibling's emission never reaches it" [ { s: 1 } ]
+    Ref.read ins1 >>= assertEqual "projection ×→+: an operand is fed only the merge's feeds" [ { s: 1 } ]
+    Ref.read ins2 >>= assertEqual "projection ×→+: a sibling's emission never reaches it" [ { s: 1 } ]
   do
     ins1 <- Ref.new ([] :: Array [ x :: Int ])
     ins2 <- Ref.new ([] :: Array [ y :: String ])
@@ -1950,8 +1952,8 @@ main = do
     m.fromUser \_ -> pure unit
     m.toUser (.x 1) *> m.toUser (.y "b")
     fire p1Prop (.ok 1) *> fire p2Prop (.ok 2)
-    Ref.read ins1 >>= assertEqual "independence +→+: an operand is fed only its dispatched cases" [ .x 1 ]
-    Ref.read ins2 >>= assertEqual "independence +→+: a sibling's emission never reaches it, even on a case it also declares" [ .y "b" ]
+    Ref.read ins1 >>= assertEqual "projection +→+: an operand is fed only its dispatched cases" [ .x 1 ]
+    Ref.read ins2 >>= assertEqual "projection +→+: a sibling's emission never reaches it, even on a case it also declares" [ .y "b" ]
   do
     ins1 <- Ref.new ([] :: Array [ x :: Int ])
     ins2 <- Ref.new ([] :: Array [ y :: String ])
@@ -1961,8 +1963,8 @@ main = do
     m.fromUser \_ -> pure unit
     m.toUser (.x 1) *> m.toUser (.y "b")
     fire p1Prop { a: 1 } *> fire p2Prop { b: "s" } *> fire p1Prop { a: 2 }
-    Ref.read ins1 >>= assertEqual "independence +→×: an operand is fed only its dispatched cases" [ .x 1 ]
-    Ref.read ins2 >>= assertEqual "independence +→×: a sibling's emission never reaches it" [ .y "b" ]
+    Ref.read ins1 >>= assertEqual "projection +→×: an operand is fed only its dispatched cases" [ .x 1 ]
+    Ref.read ins2 >>= assertEqual "projection +→×: a sibling's emission never reaches it" [ .y "b" ]
 
   -- The container action's laxity in `⊑`, exhibited: the two-stage form
   -- re-feeds every q-element per p-element emission where the one-stage

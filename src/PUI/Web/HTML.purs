@@ -841,6 +841,12 @@ attrWith name valueOf w = wrap do
 -- | subsumes** (it is a display — the baked-in reads-narrow rule): it may
 -- | read a closed sub-row of the replayed row, and pure chrome states `{}`,
 -- | so `clicked @l f staticChrome` needs no adapter.
+-- |
+-- | The **replay contract**, a law of this word rather than of the shape
+-- | (the shape's two are Data.Profunctor.Row's Repetition and Answer, both
+-- | held: a feed rewrites the replay slot, and a feed never fires): a click
+-- | emits `f` of the row last fed, as case `l`; before the first feed a
+-- | click emits nothing.
 clicked :: forall @l @narrow @extra r o k s. IsSymbol l => Cons l k () s => Union narrow extra r => ({ | r } -> k) -> PUI Web { | narrow } o -> PUI Web { | r } [ | s ]
 clicked f w = wrap do
   w' <- unwrap (widenRecordInput w)

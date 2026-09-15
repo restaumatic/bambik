@@ -189,146 +189,118 @@
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.
 -- |
--- | ## The laws, stated once
+-- | ## The laws
 -- |
--- | One principle and three laws; the four shape modules' law sets
--- | (`Data.Profunctor.Row.RecordToRecord` and its siblings, each header's
--- | "Laws of the shape") are these read at one shape — **nine lines each,
--- | on the nine axes of the grid below**, each line titled by its axis and
--- | subtitled by the shape's reading, plus **two laws stated only here**
--- | because they read the same at every shape — kept per shape because
--- | each line there is what a test or a starvation message names. Every
--- | cell of the grid has a probe in test/Main.purs, listed in each
--- | header's footer, and the merge laws are checked over every script to
--- | a bound in test/Exhaustive.purs — complete, since the gate is a
--- | data-independent machine with finite control (doc/observational-
--- | semantics.md §9).
+-- | Six statements, stated here once and read at each shape in the four
+-- | shape modules ("Laws at `×→×`" and its siblings). All are stated
+-- | against doc/observational-semantics.md §1–2: a **script** is a finite
+-- | interleaving of registration, feeds (`feed x`, at a record input),
+-- | occurrences (`occur e`, at a variant input) and inner firings; an
+-- | **emission** is an output on the boundary channel; a **step** is one
+-- | feed's synchronous cascade; `≈` is equality of boundary emission
+-- | streams under every script — up to stutter (consecutive duplicates)
+-- | on a record channel, exact on a variant channel; `⊑` is "emits a
+-- | subsequence of, under every script". A record is **knowledge** (a
+-- | value between inputs), a variant an **event** (none).
 -- |
--- | **The shapes.** A record is **knowledge**, a variant is an **event**.
--- | Knowledge is idempotent (twice is once), has a value between inputs,
--- | and is whole or nothing. An event counts (twice is two), has no value
--- | between occurrences, and is caused or nothing.
+-- | **Component laws** — what a component `w` owes its carrier. Both are
+-- | obligations of a **record input**: a record input is shared, one feed
+-- | reaches every operand of a merge, so the boundary can be owed at most
+-- | one thing back. A variant input is dispatched to one owner and owes
+-- | nothing. The type cannot carry either law, so they are the protocol a
+-- | vocabulary provider discharges at its leaves.
 -- |
--- |   1. **Nothing fabricated.** An emission carries only what its citizen
--- |      has. A record output is a whole row from retained knowledge,
--- |      withheld until that knowledge exists. A variant output is an
--- |      event with a cause, and a feed is knowledge, not a cause — so a
--- |      feed never emits, and what an event carries is the whole row last
--- |      fed (replay).
--- |   2. **Nothing private.** What a record-output citizen would release,
--- |      it releases when it changes. At a feed the feed *is* the change,
--- |      so every feed is answered, once; at an occurrence, release when
--- |      the state changed. No fields, nothing owed.
--- |   3. **The merge.** Knowledge is shared on the way in and owned on the
--- |      way out; events are owned on the way in and shared on the way out.
--- |      Given operands obeying 1 and 2, the merge obeys them, takes each
--- |      field only from its owner, feeds neither operand with the other's
--- |      emissions, and is symmetric and associative up to `≈`. Its unit is
--- |      the shape's wire at the unit object, exact — except at `×→+`,
--- |      where no wire exists and the unit is `silence`.
+-- |   1. **Repetition.** `feed x ; feed x ≈ feed x`.
+-- |   2. **Answer.** Every `feed x` is answered within its step:
+-- |      at `×→×` by a row — at least one emission, every emission of the
+-- |      step equal to the step's last (no torn row), and counting
+-- |      renderings rather than up to stutter, exactly one;
+-- |      at `×→+` by nothing — a feed arms a source and never fires it.
 -- |
--- | Read at the four shapes:
+-- | **Merge laws** — for each of the four merge classes, `m = merge w1 w2`,
+-- | `u` the shape's unit and `π_k` the projection of the merge's input onto
+-- | operand `k`: the whole row at a record input, the occurrences of `k`'s
+-- | own cases at a variant input.
 -- |
--- | ```
--- |              record out                                  variant out
--- | -----------  ------------------------------------------  ---------------------------------
--- | record in    must answer, once, whole — the gate,        must not emit — arming, replay
--- |              retention, the step, the pre-feed drop
--- | variant in   may release — dispatch in, gate out,        may respond — causality,
--- |              no torn row possible                        stateless dispatch
--- | ```
+-- |   3. **Monoid.** `merge u w = w = merge w u`, on the nose;
+-- |      `merge w1 w2 ≈ merge w2 w1`;
+-- |      `merge (merge w1 w2) w3 ≈ merge w1 (merge w2 w3)`.
+-- |   4. **Projection.** Each operand sees exactly its projection and
+-- |      counts exactly at its declared labels: the inner feed stream of
+-- |      `w_k` under `m` is `π_k` of `m`'s boundary input stream — a
+-- |      sibling's emission never reaches it — and
+-- |      `merge w1 w2 ≈ merge (exact w1) w2`, `exact` trimming an emission
+-- |      to the operand's declared output labels.
+-- |   5. **Preservation.** If `w1` and `w2` satisfy 1 and 2, so does `m`.
+-- |   6. **Monotonicity.** `w1 ⊑ w1'` implies `merge w1 w2 ⊑ merge w1' w2`.
 -- |
--- | The four law sets are the same **nine lines** — three on the citizen,
--- | six on the merge — each line one axis read at one shape, the axis its
--- | title and the reading its subtitle:
+-- | Read at the four shapes — the slots the shapes differ in:
 -- |
 -- | ```
--- |  #  axis                    ×→×             ×→+             +→+             +→×
--- | --  ----------------------  --------------  --------------  --------------  --------------
--- |  1  repetition              twice is once   twice is once   twice is two    twice is two
--- |  2  emission                whole row       row last fed    a response      whole row
--- |  3  answer                  exactly once    never           any number      on change
--- |  4  unit                    wire at {}      silence         wire at 1_+     wire 1_+ → {}
--- |  5  input side              broadcast       broadcast       dispatch        dispatch
--- |  6  output side             gate            passage         passage         gate
--- |  7  exactness               enforced        free            free            enforced
--- |  8  closure                 step, drop      stateless       stateless       withhold, no tear
--- |  9  independence            looped          coresolve       iterate (raw)   unfolding
+-- |                 ×→×               ×→+             +→+                     +→×
+-- | --------------  ----------------  --------------  ----------------------  ---------------------
+-- | 1 repetition    owed              owed            —                       —
+-- | 2 answer        a row, once       nothing         —                       —
+-- | 3 unit u        identity @{}      silence         identity @(Variant ())  lcmap case_ identity
+-- | 4 π_k           whole row         whole row       own cases               own cases
+-- |   exact         trim              identity        identity                trim
+-- | 5 preservation  of 1 and 2        of 1 and 2      vacuous                 vacuous
+-- | 6 monotonicity  the same at every shape
 -- | ```
 -- |
--- | Axes 1 and 5 read off the **input** shape, 2, 6 and 7 off the
--- | **output** shape — two readings each, dual across the anti-diagonal
--- | (`×→+` and `+→×` are each other's transposes line by line); 3, 4, 8
--- | and 9 read off both shapes and have four. The three citizen lines are
--- | the shapes and the modality table above: repetition *is* the shape of
--- | the input; emission is law 1 at the two output shapes; the answer line
--- | is law 2. On the merge, exactness is "owned out" needing runtime
--- | evidence, and free at "shared out", where a variant carries its one
--- | tag. Tearing is the one cell with shared-in and owned-out, and the
--- | step is law 2 applied to that merge.
+-- | `exact` is the identity at a variant output because a variant carries
+-- | its one tag: `widenVariantOutput` is `rmap expand`, and
+-- | `SharedVariantOutputs` carries no evidence. At a record output the
+-- | trim is `exactRow`, the runtime evidence `OwnedRecordOutputs` carries,
+-- | so an operand's stale runtime copy of a sibling's field never shadows
+-- | the sibling. Law 2's liveness half is a **leaf** law: a stage may
+-- | refine it in time (`confirmed` releases on confirmation, the gather
+-- | gate once every element has spoken), and by 6 the merge refines with
+-- | it. `{}` is always known, so a `{}` output is answered by `{}` — which
+-- | no gate awaits — and a `{}`-input component counts registration as
+-- | its feed (`announce`, the point).
 -- |
--- | **Two laws read the same at every shape and are stated only here.**
--- | For `m = merge w1 w2` at any of the four:
+-- | **What is not a law here.** That an emitted `{ | o }` is whole is the
+-- | type. That `field @l` re-attaches the background, that `clicked`
+-- | replays the row last fed, that `settled`'s normalizer is idempotent
+-- | are laws of those words, stated at them. That an occurrence twice is
+-- | two, that a handler answers any number of times, that a fold releases
+-- | when its state allows, is the absence of a quotient at a variant
+-- | input, not an obligation. Broadcast, dispatch, gate and passage are
+-- | how `PUI` satisfies 3–6 (below), not what the classes demand: `(->)`
+-- | satisfies the two diagonal merges' laws with none of them.
 -- |
--- |   * **Symmetry and associativity**, up to `≈`:
--- |     `merge w1 w2 ≈ merge w2 w1` and
--- |     `merge (merge w1 w2) w3 ≈ merge w1 (merge w2 w3)` — operand order
--- |     and nesting are not observable at the boundary.
--- |   * **Monotonicity.** `w1 ⊑ w1'` implies `m ⊑ m'`. Vacuous for an
--- |     operand owning no field — a display `w1 ⊑ w1'` gives `m ≈ m'`
--- |     outright — which is law 1 at the merge (a withholding owner cannot
--- |     be fabricated around) and law 2's zero-field clause, and why a
--- |     display never enters a gate and a status never withholds a fold.
+-- | **How `PUI` discharges them.** Input, law 4's first half: broadcast in
+-- | one step at `×`, dispatch to the one owner at `+`. Output: at `×` the
+-- | gate `PUI.Gate.gateStep` — retain each side's last contribution,
+-- | release their union once every owned side has spoken, once per step;
+-- | before that withhold, and **drop** rather than delay (the primed
+-- | equivalence, doc §4); at `+` passage — each emission exits as it
+-- | occurs, nothing retained. The gate is the one canonical way to pair
+-- | two streams into a stream of pairs, so every `(·,×)` shape gates and
+-- | no `(·,+)` shape does, and the unit is forced, not designed: the wire
+-- | at the unit object wherever a wire fits (a zero-field side is born
+-- | spoken), `silence` at the one shape no wire reaches. Counting
+-- | renderings a gated merge is premonoidal — interchange at the inner
+-- | surfaces holds as `⊑` — and counting channels monoidal; at the
+-- | boundary interchange holds on the nose because a feed is one step
+-- | (doc §4). Starvation reads off the laws: a gated merge silent after
+-- | every owned side has been fed has an operand breaking 2; one silent
+-- | before that has an unprimed owned field (`with`/`mvu`, `seeded`, the
+-- | seed of a trace form).
 -- |
--- | Both are probed at every shape in test/Main.purs (`×→× symmetry` and
--- | its three siblings, the four `… associativity` probes, `enrichment:
--- | p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r` and `enrichment at ×→+`/`+→+`/`+→×`) and
--- | checked over every script to a bound in test/Exhaustive.purs.
--- |
--- | Two facts stay outside, being about the carrier rather than the
--- | shape: the pre-feed
--- | emission is *dropped* rather than delayed (the named `Strong`
--- | deviation), and only the `+→+` loop's retraction holds raw (the trace
--- | asymmetry theorem) — doc/observational-semantics.md §4–5.
--- |
--- | Law 3's consequences, seen per shape (the four merges here and the
--- | container action in `Data.Profunctor.Acting` alike), all decided by the
--- | **output side**:
--- |
--- |   * **units are forced, not designed** — a shape's nullary merge is
--- |     `Category`'s `identity` at the unit object wherever a wire fits
--- |     (`1_× = {}`, `1_+ = Variant ()`; the record gates treat a
--- |     contribution of zero fields as no contribution, so the wire is the
--- |     unit exactly), and `silence` for the one shape no wire reaches,
--- |     `×→+` (terminal → initial). Pointing — emitting the canonical
--- |     value of the inhabited `1_×` — is `Seeding`'s `announce`, not a
--- |     unit's. Every starvation symptom is a sum-behaviour standing where
--- |     a product-behaviour was required.
--- |   * **gates are the cost of laxity over streams** — pairing two output
--- |     streams into one stream of pairs has one canonical implementation:
--- |     retain each side's last value, withhold until every side has spoken.
--- |     So every (·,×)-shape gates and retains (`recordToRecord`,
--- |     `variantToRecord`, `acted`'s gather) and no (·,+)-shape does
--- |     (injections need no pairing).
--- |   * **the gates' further price is bifunctoriality — at the inner
--- |     surfaces**: interchange `(f ⊗ g) >>> (h ⊗ k) = (f >>> h) ⊗ (g >>> k)`
--- |     fails on the nose when stage feeds are observed (the merged-first
--- |     side withholds `h` until every operand has spoken) and holds there
--- |     as refinement `⊑` in feed timing; at the **boundary**, for operands
--- |     honoring the component protocol, it holds **on the nose**. Counting
--- |     only channels the gated merge is monoidal; counting renderings it
--- |     is premonoidal — unit, associativity and symmetry hold outright
--- |     either way (doc/observational-semantics.md §4; both levels tested
--- |     in test/Main.purs).
--- |   * **a feed is one step** — on a stateful carrier a gated merge's
--- |     broadcast is batched and released **once**: a feed that changes
--- |     several fields emits one row with every field fresh, never a
--- |     `{ a: fresh, b: stale }` between two echoes; a user emission,
--- |     arriving outside any step, releases at once. It is what makes the
--- |     boundary interchange exact rather than up to stutter, and the merge
--- |     the exact product of Mealy machines (one input, one output pair).
--- |
--- | See doc/collections-profunctor-algebra.md §1.
+-- | **Coverage.** Laws 3, 4 and 6 and the gate's conformance to its pure
+-- | step are checked over every script to a bound at every shape in
+-- | test/Exhaustive.purs — complete, since the gate is a data-independent
+-- | machine with finite control (doc §9); so is 5 wherever it has content
+-- | (arming at `×→+`; repetition and the one untorn release per feed at
+-- | `×→×`). The component laws at each shape's own wire or source, the
+-- | `{}` clauses and the `looped` contrast are named probes in
+-- | test/Main.purs, each carrying its law and shape (`repetition ×→×`,
+-- | `answer ×→+`, `projection +→+`, `monotonicity at +→×`). Outside the
+-- | laws, being about the carrier: the trace asymmetry (doc §5) and the
+-- | named ecosystem deviations (doc §4). See
+-- | doc/collections-profunctor-algebra.md §1.
 -- |
 -- | Reshape vs focus: a
 -- | reshape *drops* the complement — extra record fields are simply never

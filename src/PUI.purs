@@ -19,11 +19,12 @@
 -- | stateful instance allocates its state — hence `MonadEffect m` on
 -- | exactly those instances, and `Functor`/`Apply` on the rest saying *no
 -- | state here* — then `fromUser` registered once, then feeds and emissions
--- | interleaving. The protocol, `≈`, `⊑` and the citizen laws every
+-- | interleaving. The protocol, `≈`, `⊑` and the component laws every
 -- | instance below is stated against are doc/observational-semantics.md
--- | §1–3, read per shape in the four `Data.Profunctor.Row.*` headers
--- | ("Laws of the shape", nine axes each plus two shared laws, the grid in
--- | `Data.Profunctor.Row`); nothing of them is restated here.
+-- | §1–3; the six laws — two on components, four on merges — are stated
+-- | once in `Data.Profunctor.Row` ("The laws") and read per shape in the
+-- | four `Data.Profunctor.Row.*` headers ("Laws at `×→×`" and siblings);
+-- | nothing of them is restated here.
 -- |
 -- | How applications are written over this module — the presentation rows,
 -- | copy as a read function at the leaf, no nominal types in UI, the
@@ -468,7 +469,7 @@ instance MonadEffect m => Looping (PUI m) where
       }
 
 -- The four row merges, one instance per shape, in the order of the grid in
--- Data.Profunctor.Row ("The laws, stated once"): ×→×, ×→+, +→+, +→×. The
+-- Data.Profunctor.Row ("The laws"): ×→×, ×→+, +→+, +→×. The
 -- two record-output ones share the gate machinery that follows the block.
 
 instance MonadEffect m => RecordToRecord (PUI m) where
@@ -477,8 +478,9 @@ instance MonadEffect m => RecordToRecord (PUI m) where
     p2' <- unwrap (widenRecordInput p2)
     gate <- liftEffect $ newRecordGate labels1 labels2
     pure
-      -- broadcast in, gate out, one feed one step — RecordToRecord's axes 5,
-      -- 6 and 8; the carrier's part is `steppedFeed`, the batched broadcast
+      -- broadcast in, gate out, one feed one step — the shape's projection
+      -- and preservation laws; the carrier's part is `steppedFeed`, the
+      -- batched broadcast
       { toUser: \new -> steppedFeed "×→×" labels1 labels2 gate do
             p1'.toUser new
             p2'.toUser new
@@ -494,10 +496,10 @@ instance Applicative m => RecordToVariant (PUI m) where
     { toUser: mempty
     , fromUser: mempty
     }
-  -- broadcast in, passage out — RecordToVariant's axes 5 and 6. A variant
+  -- broadcast in, passage out — the shape's projection law. A variant
   -- output has nothing to gate, so the merge is a bare pass-through and
-  -- the one-thing-per-feed obligation falls on the operands (axis 3,
-  -- arming); hence `Applicative m`: no state here.
+  -- the one-thing-per-feed obligation falls on the operands (the answer
+  -- law at ×→+, arming); hence `Applicative m`: no state here.
   recordToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput (widenRecordInput p1))
     p2' <- unwrap (widenVariantOutput (widenRecordInput p2))
@@ -510,7 +512,7 @@ instance Applicative m => RecordToVariant (PUI m) where
           p2'.fromUser prop
       }
 
--- dispatch in, passage out — VariantToVariant's axes 5 and 6: no
+-- dispatch in, passage out — the shape's projection law: no
 -- broadcast, so nothing to step; a variant out, so nothing to gate. Hence
 -- `Applicative m`: the one merge with no state at all.
 instance Applicative m => VariantToVariant (PUI m) where
@@ -532,7 +534,7 @@ instance MonadEffect m => VariantToRecord (PUI m) where
     p2' <- unwrap p2
     gate <- liftEffect $ newRecordGate labels1 labels2
     pure
-      -- dispatch in, the same gate out — VariantToRecord's axes 5 and 6. The
+      -- dispatch in, the same gate out — the shape's projection law. The
       -- step is kept for the one thing dispatch still carries: an operand
       -- echoing re-entrantly during its own feed is coalesced into one
       -- release, not released twice
@@ -558,8 +560,8 @@ labelsOf :: forall m i o ol. RowToList o ol => RowLabels ol => PUI m i { | o } -
 labelsOf _ = rowLabels (Proxy @ol)
 
 -- | The streaming-phase subscription of the gate both record-output merges
--- | run on (the machine is `PUI.Gate.gateStep`; its laws are the output
--- | side and exactness axes of the two shape headers). Each operand
+-- | run on (the machine is `PUI.Gate.gateStep`; its laws are the
+-- | projection and preservation laws of the two record-output shapes). Each operand
 -- | emission, trimmed to its declared row by `exact1`/`exact2`, becomes one
 -- | `Contributed` input, run by `driveGate`. `direction` names the merge in
 -- | the trace and starvation copy ("×→×", "+→×"); `labels1`/`labels2` are

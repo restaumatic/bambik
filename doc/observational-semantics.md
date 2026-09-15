@@ -144,6 +144,19 @@ combinator laws below fail without them.
    difference in how much each is trusted, but in what a pass-through can
    absorb.
 
+**How the headers state these.** `Data.Profunctor.Row` ("The laws") states
+the three as **two laws of a record input** — *Repetition* (law 1) and
+*Answer* (laws 2 and 3 as one law read by output shape: a row at `×→×`,
+nothing at `×→+`) — beside four merge laws (monoid, projection,
+preservation, monotonicity); a variant input owes nothing, since dispatch
+reaches one owner. The headers also make one thing precise that "once"
+above leaves loose: at the boundary `≈` is up to stutter on a record
+channel, so it cannot count. What `≈` states is that every feed is
+answered and every emission of its step equals the step's last (no torn
+row); "exactly once" is the renderings-level guarantee of the step (§4),
+and the liveness half is a leaf law a stage may refine in time (`confirmed`,
+the gather gate).
+
 ### 3.1 Echo by shape: must, must not, may, may
 
 The three laws read off per direction give one **modality** each — what a
@@ -520,8 +533,12 @@ emission carries a stale runtime copy of the sibling's field, and
 `gateStep` driven by the same script; at `×→+`, arming (replacing every feed
 by a no-op leaves the stream unchanged); at `×→×`, feed-idempotence of the
 merge (deleting a `FeedAgain` directly after a feed leaves the stream
-unchanged up to stutter). Twenty-six laws, about three hundred thousand
-scripts, no distinguishing script. Because the pure step is the very
+unchanged up to stutter) and the answer law (every feed of the merge is
+answered by exactly one release — at least one, none torn); at every
+shape, projection's input half (each operand's inner feed stream is
+exactly its projection of the boundary feeds — the whole stream at a
+record input, its own cases at a variant one). Thirty-one laws, about
+three hundred thousand scripts, no distinguishing script. Because the pure step is the very
 function the carrier runs, and conformance pins the wrapper to it, a law
 that holds on the step holds on the merge.
 
@@ -553,11 +570,12 @@ releasing once, the disjoint-operand shape it is reachable from, and §8.0's
 prediction — `+→×` dispatch carrying every ingredient of the torn row except
 a broadcast, and provably not tearing: each operand sees only its own cases,
 a re-fed case releases once beside its retained sibling), `⊑`-monotonicity of `>>>` and `⊗` (the merge at all four shapes), the
-nine-axis grid's remaining cells (Data.Profunctor.Row, "The laws, stated
-once": the three citizen axes at each shape on its own wire, replay source
-or merge — `repetition`/`emission`/`answer ×→×`, `×→+`, `+→+`, `+→×` — the
-`×→+` and `+→+` symmetries, the free exactness cell at `×→+`, and
-`independence` at all four with `looped` as the cross-feed contrast), the
+shape laws' remaining cells (Data.Profunctor.Row, "The laws": the component
+laws at each shape on its own wire, replay source or merge —
+`repetition`/`emission`/`answer ×→×`, `×→+`, `+→+`, `+→×`, the `emission`
+probes pinning the leaf contracts (replay, nothing at registration) — the
+`×→+` and `+→+` symmetries, the identity `exact` at `×→+`, and
+`projection` at all four with `looped` as the cross-feed contrast), the
 bounded exhaustive check of §9 (test/Exhaustive.purs), the
 container action's laxity at the inner surface, `bracketed`'s retraction on the
 order-form pair, the Ocular admission law for a node-wrapping ocular and its

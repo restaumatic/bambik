@@ -22,109 +22,51 @@
 -- |     co-strength `Coretaining`: `unfolding @w` (the productive unfold,
 -- |     the `Coreel` optic's row form).
 -- |
--- | ## Laws of the `+→×` shape
+-- | ## Laws at `+→×`
 -- |
--- | These are the three laws of Data.Profunctor.Row ("The laws, stated
--- | once") read at `+→×`, on the **nine axes** every shape's law set
--- | shares — each line's title is the axis, its subtitle this shape's
--- | reading (the floor's grid has all four; the two laws that read the
--- | same at every shape, symmetry-and-associativity and monotonicity, are
--- | stated once on the floor) — kept spelled out here because each line
--- | is what a test or a starvation message names.
+-- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
+-- | a component `w :: p [ | i ] { | o }` is a **fold** of occurrences into
+-- | retained state, or at `o = {}` a **status**; the merge is
+-- | `m = variantToRecord w1 w2`, inputs owned (`OwnedVariantInputs`),
+-- | outputs owned (`OwnedRecordOutputs`).
 -- |
--- | For a citizen `w :: p [ | i ] { | o }` — a **fold** of occurrences into
--- | retained state, or at `o = {}` a **status** — with `occur e` an input
--- | occurrence, `emit y` an emission, `≈`/`⊑` from
--- | doc/observational-semantics.md (§3.1 is this shape's modality, **may**
--- | release). The first three are protocol obligations; the rest are
--- | carrier guarantees given them.
+-- |   1–2. **Repetition, Answer** — not owed. A variant input is
+-- |      dispatched to one owner and `≈` counts every occurrence: a fold
+-- |      steps on each, a status renders each, and whether an occurrence
+-- |      releases is the fold's; a status owes the channel nothing. What
+-- |      is released is a `{ | o }` — whole by type — and before the
+-- |      retained state exists a release needing it is withheld, not
+-- |      invented, which is why `unfolding`/`accumulated` take a seed.
+-- |   3. **Monoid** — unit `lcmap case_ identity :: p (Variant ()) {}`,
+-- |      exact: `variantToRecord (lcmap case_ identity) g = g =
+-- |      variantToRecord g (lcmap case_ identity)`; symmetric and
+-- |      associative up to `≈`. Never fed and owning no field, the unit's
+-- |      side is born spoken, so any silent element of that type serves
+-- |      equally (`silence` at `b = ()` is one). The merge pinned at it —
+-- |      one case folding into the record — is derivable and not exported.
+-- |   4. **Projection** — `π_k` is the operand's own cases: an occurrence
+-- |      of case `l` reaches the one operand owning `l` and no other
+-- |      (`DisjointLabels`), and nothing else reaches an operand. `exact`
+-- |      trims: `variantToRecord w1 w2 ≈ variantToRecord (rmap exactRow w1) w2`.
+-- |   5. **Preservation** — vacuous at the input: nothing is owed. What
+-- |      the shape adds is that no torn row is reachable: dispatch feeds
+-- |      one owner per occurrence, so a release is one fresh contribution
+-- |      beside retained ones — every ingredient of tearing but a
+-- |      broadcast.
+-- |   6. **Monotonicity** — `w1 ⊑ w1'` implies
+-- |      `variantToRecord w1 w2 ⊑ variantToRecord w1' w2`.
 -- |
--- | **Citizen laws** — repetition, emission, answer:
--- |
--- |   1. **Repetition — twice is two.** `occur e ; occur e` is two
--- |      occurrences, not one — a fold steps twice, a status renders twice
--- |      — and nothing in the shape may coalesce them: an event has no
--- |      value between occurrences, so no `Eq` is ever needed.
--- |   2. **Emission — a whole retained row.** Every `emit y` is a whole
--- |      `{ | o }`, completed from retained knowledge — never fabricated,
--- |      never partial. Before the knowledge exists (a `retain` whose
--- |      state case has not arrived) an emission needing it is withheld,
--- |      not invented; `unfolding`/`accumulated` take a seed so that moment
--- |      is registration. Nothing else is emitted at registration and
--- |      nothing spontaneously: every emission answers an occurrence.
--- |   3. **Answer — on change.** The retained state **is** the released
--- |      state: an occurrence that changes what would be released,
--- |      releases, so a change can never stay private. One that leaves the
--- |      state unchanged owes nothing (releasing anyway is the carrier's
--- |      permitted choice, made so no row needs `Eq`; a carrier releasing
--- |      only on change satisfies the same laws). If `o` is empty, nothing
--- |      is owed ever — a status (`[ event ] → {}`) renders each occurrence
--- |      and owes the channel nothing.
--- |
--- | **Merge laws** — for `m = variantToRecord w1 w2`, inputs owned
--- | (`OwnedVariantInputs`), outputs owned (`OwnedRecordOutputs`):
--- |
--- |   4. **Unit — the wire from `Variant ()` to `{}`.** Conditional on the
--- |      carrier — *if* `p` is a `Category`, the wire at the unit row
--- |      entered from the empty variant is the unit exactly:
--- |
--- |      ```
--- |      variantToRecord (lcmap case_ identity) g = g = variantToRecord g (lcmap case_ identity)   -- :: p (Variant ()) {}
--- |      ```
--- |
--- |      Never fed and owning no field, its side of the gate is
--- |      pre-satisfied, so any silent element of that type serves equally —
--- |      `PUI`'s parametric `silence` at `b = ()` is one. The merge has no
--- |      unit of its own; this completes the arity ladder downward. The
--- |      unary form — one case folding into the record — is the merge
--- |      pinned at `silence`, derivable and therefore not exported (L14):
--- |
--- |      ```
--- |      reduce @l g = variantToRecord (lcmap unwrap g) silence
--- |        where unwrap :: [ l :: f ] -> f
--- |      ```
--- |
--- |      with the cross-operand **retention** the merge performs on non-`l`
--- |      occurrences supplied, in the free-function form, by `Retaining`.
--- |   5. **Input side — dispatch.** An occurrence of case `l` is delivered
--- |      to the one operand owning `l` and to no other (`DisjointLabels`
--- |      makes a duplicated case a compile error naming it). Exactly one
--- |      operand answers each occurrence — so no torn row is possible:
--- |      every ingredient of tearing but a broadcast.
--- |   6. **Output side — gate.** `m`'s emission is the union of the
--- |      operands' last contributions, released once both have spoken and
--- |      withheld before — the gate shared with `×→×`.
--- |   7. **Exactness — enforced.** An operand counts only at its declared
--- |      fields, and the carrier must see to it:
--- |      `variantToRecord w1 w2 ≈ variantToRecord (rmap exact w1) w2` — the
--- |      runtime trim `exactRow`, the evidence `OwnedRecordOutputs`
--- |      carries.
--- |   8. **Closure — withhold, no torn row.** If `w1`, `w2` satisfy 1–3, so
--- |      does `m` from the moment both operands have contributed; before
--- |      that `m` withholds, never fabricates. The step is kept so a
--- |      re-entrant echo during an occurrence coalesces into one release.
--- |   9. **Independence — the loop is `unfolding`.** An emission goes
--- |      downstream, never to the sibling; the state channel across cases
--- |      is `Retaining`'s `retain`, the loop `Coretaining`'s `unfolding`,
--- |      whose retraction is seeded
--- |      (`coretain (seeded (Right c0) >>> retain g) ≈ g`).
--- |
--- | Every cell has a probe in test/Main.purs: 1–3 (`repetition +→×`,
--- | `emission +→×`, `answer +→×` on the merge of two echo folds and a
--- | status beside one; 2's seed clause is `unfolding: seed enters as a
--- | first resume`), 4 (`unit law +→×`), 5 (`+→× dispatch`, the no-tear
--- | prediction of doc §8.0), 6 (`+→× gating`), 7 (`+→× exactness`),
--- | 8 (`+→× gating` for the withholding, `+→× dispatch` for no torn row),
--- | 9 (`independence +→×`); the floor's two shared laws at this shape are
--- | `+→× symmetry`/`+→× associativity` and `enrichment at +→×`. Beyond
--- | the probes, laws 4–8 and the shared laws are checked over **every
--- | script** to length 6 (two operands) or 8 (three) with a fresh token
--- | per event, and the effectful gate against `PUI.Gate`'s pure step, in
--- | test/Exhaustive.purs (doc/observational-semantics.md §9). Starvation
--- | reads off the set as at `×→×`: a merge silent once both sides have
--- | spoken has an operand breaking law 3; one silent before that is
--- | waiting on an owned field's first occurrence — prime it
--- | (`unfolding`'s seed, `seeded`).
+-- | On `PUI`: dispatch in, gate out — the gate shared with `×→×`
+-- | (`PUI.Gate.gateStep`): retain each side's last contribution, release
+-- | their union once both owned sides have spoken, withhold before; the
+-- | step is kept so a re-entrant echo during an occurrence coalesces into
+-- | one release. Releasing on every occurrence once the row is whole is
+-- | the carrier's permitted choice (no row needs `Eq`), not a law. A merge
+-- | silent once both sides have spoken has an operand that never
+-- | releases; one silent before that waits on an owned field's first
+-- | occurrence — prime it (`unfolding`'s seed, `seeded`). Probes carry law
+-- | and shape in test/Main.purs; 3, 4 and 6 and the gate's conformance to
+-- | its pure step run over every script to a bound in test/Exhaustive.purs.
 module Data.Profunctor.Row.VariantToRecord
   ( bind
   , variantToRecord
@@ -337,8 +279,8 @@ focusCase g =
 -- | background untouched — an occurrence outside `w`'s focus row crosses
 -- | into output field `l` verbatim, `w` never seeing it. This is
 -- | `Retaining`'s `retain` law read at the row, a law of the strength
--- | rather than of the merge (which is why it is not among the header's
--- | nine).
+-- | rather than of the merge (which is why it is not among the shape's
+-- | laws).
 subRetaining
   :: forall @w p f b s b' s'
    . Retaining p
