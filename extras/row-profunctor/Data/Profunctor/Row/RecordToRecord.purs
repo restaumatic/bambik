@@ -32,10 +32,12 @@
 -- | ## Laws of the `×→×` shape
 -- |
 -- | These are the three laws of Data.Profunctor.Row ("The laws, stated
--- | once") read at `×→×`, on the **eleven axes** every shape's law set
+-- | once") read at `×→×`, on the **nine axes** every shape's law set
 -- | shares — each line's title is the axis, its subtitle this shape's
--- | reading (the floor's grid has all four) — kept spelled out here
--- | because each line is what a test or a starvation message names.
+-- | reading (the floor's grid has all four; the two laws that read the
+-- | same at every shape, symmetry-and-associativity and monotonicity, are
+-- | stated once on the floor) — kept spelled out here because each line
+-- | is what a test or a starvation message names.
 -- |
 -- | For a citizen `w :: p { | i } { | o }` — an **editor** of knowledge, or
 -- | at `o = {}` a **display** — with `feed x` a feed, `emit y` an
@@ -73,27 +75,27 @@
 -- |
 -- |      The merge has no unit of its own; the wire at `{}` owns no field,
 -- |      so a lawful merge treats its side as known from the start and
--- |      ignores whatever it echoes (law 10). The same wire is
+-- |      ignores whatever it echoes (the floor's monotonicity law: an operand
+-- |      owning no field refines nothing). The same wire is
 -- |      `VariantToVariant`'s unit at `Variant ()`. Pointing is not a
 -- |      unit's job: it is `Seeding`'s `announce`, which `with`/`mvu`
 -- |      below close over. The unary form — the merge pinned at its unit —
 -- |      is the operand itself, `recordToRecord g identity = g`, so this
 -- |      shape names no introducer; where the unit is `silence` (`×→+`,
 -- |      `+→×`) the pinned merge is a real word, `recordToCase`/`reduce`.
--- |   5. **Symmetry and associativity**, up to `≈`.
--- |   6. **Input side — broadcast.** Every feed of `m` reaches both
+-- |   5. **Input side — broadcast.** Every feed of `m` reaches both
 -- |      operands, whole and in one step. Neither operand is fed anything
--- |      else (law 11).
--- |   7. **Output side — gate.** `m`'s emission is the union of the
+-- |      else (law 9).
+-- |   6. **Output side — gate.** `m`'s emission is the union of the
 -- |      operands' last contributions, released once both have spoken and
 -- |      withheld before.
--- |   8. **Exactness — enforced.** An operand counts only at its declared
+-- |   7. **Exactness — enforced.** An operand counts only at its declared
 -- |      fields, and the carrier must see to it:
 -- |      `recordToRecord w1 w2 ≈ recordToRecord (rmap exact w1) w2` — the
 -- |      runtime trim `exactRow`, the evidence `OwnedRecordOutputs`
 -- |      carries — so a runtime copy of a sibling's field never shadows
 -- |      the sibling.
--- |   9. **Closure — the step and the pre-feed drop.** If `w1`, `w2` satisfy
+-- |   8. **Closure — the step and the pre-feed drop.** If `w1`, `w2` satisfy
 -- |      1–3, so does `m` from its first feed on. Law 3 for `m` is the
 -- |      **step**: one release per feed, after both operands answered — a
 -- |      feed changing several fields emits one fresh row, never a torn
@@ -101,13 +103,7 @@
 -- |      completed with the sibling's last contribution. Before the first
 -- |      feed `m` drops, never fabricates — the primed equivalence, the
 -- |      named `Strong` deviation.
--- |  10. **Monotonicity.** `w1 ⊑ w1'` implies `m ⊑ m'`. For an operand
--- |      owning no field the implication is vacuous — a display `w1 ⊑ w1'`
--- |      gives `m ≈ m'` outright, whatever it emits or withholds — which is
--- |      why a display never enters a gate, and why `shownWhen`'s detached
--- |      pane (a `{}`-output `provided`, silent while absent) never
--- |      withholds the row.
--- |  11. **Independence — the loop is `looped`.** The operands receive no
+-- |   9. **Independence — the loop is `looped`.** The operands receive no
 -- |      feeds but `m`'s, and an emission goes downstream, never to the
 -- |      sibling. Cross-feed is the loop's — `looped m` — and only there.
 -- |
@@ -115,18 +111,19 @@
 -- | 2 (`field: emission over carried background`, `×→× gating: incomplete
 -- | record withheld`), 3 (`answer ×→×`, `one feed, one release`,
 -- | `announce`, `display beside the wire` for the `{}` clause), 4 (`unit
--- | law ×→×`, `zero-field law ×→×`), 5 (`×→× symmetry`, `×→×
--- | associativity`), 6 (`×→× associativity: the script reached every
--- | operand`, `one feed, one release`), 7 (`×→× gating`), 8 (`×→×
--- | exactness`), 9 (`one feed, one release`, `disjoint operands … release
--- | once`, `Strong deviation` for the drop), 10 (`enrichment: p ⊑ p' ⇒
--- | p ⊗ r ⊑ p' ⊗ r`), 11 (`independence ×→×`, with `looped` as the
--- | cross-feed contrast). Beyond the probes, laws 4–10 and the merge's own
--- | law 1 are checked over **every script** to length 6 (two operands) or
--- | 8 (three) with a fresh token per event, and the effectful gate against
--- | `PUI.Gate`'s pure step, in test/Exhaustive.purs — complete, not
--- | sampled (doc/observational-semantics.md §9). Starvation reads off the
--- | set: a merge silent after its first feed has an operand breaking or
+-- | law ×→×`, `zero-field law ×→×`), 5 (`×→× associativity: the script
+-- | reached every operand`, `one feed, one release`), 6 (`×→× gating`),
+-- | 7 (`×→× exactness`), 8 (`one feed, one release`, `disjoint operands …
+-- | release once`, `Strong deviation` for the drop), 9 (`independence
+-- | ×→×`, with `looped` as the cross-feed contrast); the floor's two
+-- | shared laws at this shape are `×→× symmetry`/`×→× associativity` and
+-- | `enrichment: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r`. Beyond the probes, laws 4–8,
+-- | the shared laws and the merge's own law 1 are checked over **every
+-- | script** to length 6 (two operands) or 8 (three) with a fresh token
+-- | per event, and the effectful gate against `PUI.Gate`'s pure step, in
+-- | test/Exhaustive.purs — complete, not sampled
+-- | (doc/observational-semantics.md §9). Starvation reads off the set: a
+-- | merge silent after its first feed has an operand breaking or
 -- | refining law 3; one silent before any feed is unprimed.
 module Data.Profunctor.Row.RecordToRecord
   ( bind
@@ -291,7 +288,7 @@ mvu seed w = with seed (looped w)
 -- | every field outside `w`'s focus row — a feed's background fields are
 -- | re-attached to `w`'s emission verbatim, `w` never seeing them. This is
 -- | `Strong`'s `first` law read at the row, a law of the strength rather
--- | than of the merge (which is why it is not among the header's eleven);
+-- | than of the merge (which is why it is not among the header's nine);
 -- | the parcel demo is its contract.
 subStrong
   :: forall p f f' f'l b s s'

@@ -22,7 +22,7 @@
 -- | interleaving. The protocol, `≈`, `⊑` and the citizen laws every
 -- | instance below is stated against are doc/observational-semantics.md
 -- | §1–3, read per shape in the four `Data.Profunctor.Row.*` headers
--- | ("Laws of the shape", eleven axes each, the grid in
+-- | ("Laws of the shape", nine axes each plus two shared laws, the grid in
 -- | `Data.Profunctor.Row`); nothing of them is restated here.
 -- |
 -- | How applications are written over this module — the presentation rows,
@@ -477,8 +477,8 @@ instance MonadEffect m => RecordToRecord (PUI m) where
     p2' <- unwrap (widenRecordInput p2)
     gate <- liftEffect $ newRecordGate labels1 labels2
     pure
-      -- broadcast in, gate out, one feed one step — RecordToRecord's axes 6,
-      -- 7 and 9; the carrier's part is `steppedFeed`, the batched broadcast
+      -- broadcast in, gate out, one feed one step — RecordToRecord's axes 5,
+      -- 6 and 8; the carrier's part is `steppedFeed`, the batched broadcast
       { toUser: \new -> steppedFeed "×→×" labels1 labels2 gate do
             p1'.toUser new
             p2'.toUser new
@@ -494,7 +494,7 @@ instance Applicative m => RecordToVariant (PUI m) where
     { toUser: mempty
     , fromUser: mempty
     }
-  -- broadcast in, passage out — RecordToVariant's axes 6 and 7. A variant
+  -- broadcast in, passage out — RecordToVariant's axes 5 and 6. A variant
   -- output has nothing to gate, so the merge is a bare pass-through and
   -- the one-thing-per-feed obligation falls on the operands (axis 3,
   -- arming); hence `Applicative m`: no state here.
@@ -510,7 +510,7 @@ instance Applicative m => RecordToVariant (PUI m) where
           p2'.fromUser prop
       }
 
--- dispatch in, passage out — VariantToVariant's axes 6 and 7: no
+-- dispatch in, passage out — VariantToVariant's axes 5 and 6: no
 -- broadcast, so nothing to step; a variant out, so nothing to gate. Hence
 -- `Applicative m`: the one merge with no state at all.
 instance Applicative m => VariantToVariant (PUI m) where
@@ -532,7 +532,7 @@ instance MonadEffect m => VariantToRecord (PUI m) where
     p2' <- unwrap p2
     gate <- liftEffect $ newRecordGate labels1 labels2
     pure
-      -- dispatch in, the same gate out — VariantToRecord's axes 6 and 7. The
+      -- dispatch in, the same gate out — VariantToRecord's axes 5 and 6. The
       -- step is kept for the one thing dispatch still carries: an operand
       -- echoing re-entrantly during its own feed is coalesced into one
       -- release, not released twice
@@ -633,7 +633,7 @@ driveGate direction labels1 labels2 gate input = do
 -- | Bracket a feed's broadcast as one gate step: `StepBegun`, the feed,
 -- | `StepEnded`. Contributions landing inside the brackets are held and
 -- | released once at the end, so a feed changing several fields emits one
--- | whole row (closure, axis 9, at both record-output shapes). Steps nest:
+-- | whole row (closure, axis 8, at both record-output shapes). Steps nest:
 -- | a re-entrant feed provoked by a release only feeds, and the outermost
 -- | `StepEnded` releases.
 steppedFeed

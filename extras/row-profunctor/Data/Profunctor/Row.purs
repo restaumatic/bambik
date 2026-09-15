@@ -193,9 +193,10 @@
 -- |
 -- | One principle and three laws; the four shape modules' law sets
 -- | (`Data.Profunctor.Row.RecordToRecord` and its siblings, each header's
--- | "Laws of the shape") are these read at one shape — **eleven lines
--- | each, on the eleven axes of the grid below**, each line titled by its
--- | axis and subtitled by the shape's reading — kept per shape because
+-- | "Laws of the shape") are these read at one shape — **nine lines each,
+-- | on the nine axes of the grid below**, each line titled by its axis and
+-- | subtitled by the shape's reading, plus **two laws stated only here**
+-- | because they read the same at every shape — kept per shape because
 -- | each line there is what a test or a starvation message names. Every
 -- | cell of the grid has a probe in test/Main.purs, listed in each
 -- | header's footer, and the merge laws are checked over every script to
@@ -237,9 +238,9 @@
 -- |              no torn row possible                        stateless dispatch
 -- | ```
 -- |
--- | The four law sets are the same **eleven lines** — three on the
--- | citizen, eight on the merge — each line one axis read at one shape,
--- | the axis its title and the reading its subtitle:
+-- | The four law sets are the same **nine lines** — three on the citizen,
+-- | six on the merge — each line one axis read at one shape, the axis its
+-- | title and the reading its subtitle:
 -- |
 -- | ```
 -- |  #  axis                    ×→×             ×→+             +→+             +→×
@@ -248,28 +249,42 @@
 -- |  2  emission                whole row       row last fed    a response      whole row
 -- |  3  answer                  exactly once    never           any number      on change
 -- |  4  unit                    wire at {}      silence         wire at 1_+     wire 1_+ → {}
--- |  5  symmetry, assoc.        ≈               ≈               ≈               ≈
--- |  6  input side              broadcast       broadcast       dispatch        dispatch
--- |  7  output side             gate            passage         passage         gate
--- |  8  exactness               enforced        free            free            enforced
--- |  9  closure                 step, drop      stateless       stateless       withhold, no tear
--- | 10  monotonicity            ⊑               ⊑               ⊑               ⊑
--- | 11  independence            looped          coresolve       iterate (raw)   unfolding
+-- |  5  input side              broadcast       broadcast       dispatch        dispatch
+-- |  6  output side             gate            passage         passage         gate
+-- |  7  exactness               enforced        free            free            enforced
+-- |  8  closure                 step, drop      stateless       stateless       withhold, no tear
+-- |  9  independence            looped          coresolve       iterate (raw)   unfolding
 -- | ```
 -- |
--- | Axes 1 and 6 read off the **input** kind, 2, 7 and 8 off the
+-- | Axes 1 and 5 read off the **input** kind, 2, 6 and 7 off the
 -- | **output** kind — two readings each, dual across the anti-diagonal
--- | (`×→+` and `+→×` are each other's transposes line by line); 3, 4, 9
--- | and 11 read off both kinds and have four; 5 and 10 are the same at
--- | every shape. The three citizen lines are the kinds and the modality
--- | table above: repetition *is* the kind of the input; emission is law 1
--- | at the two output kinds; the answer line is law 2. On the merge,
--- | monotonicity is law 1 at the merge (a withholding owner cannot be
--- | fabricated around), vacuous for an operand owning no field — law 2's
--- | zero-field clause, and why a display never enters a gate; exactness
--- | is "owned out" needing runtime evidence, and free at "shared out",
--- | where a variant carries its one tag. Tearing is the one cell with
--- | shared-in and owned-out, and the step is law 2 applied to that merge.
+-- | (`×→+` and `+→×` are each other's transposes line by line); 3, 4, 8
+-- | and 9 read off both kinds and have four. The three citizen lines are
+-- | the kinds and the modality table above: repetition *is* the kind of
+-- | the input; emission is law 1 at the two output kinds; the answer line
+-- | is law 2. On the merge, exactness is "owned out" needing runtime
+-- | evidence, and free at "shared out", where a variant carries its one
+-- | tag. Tearing is the one cell with shared-in and owned-out, and the
+-- | step is law 2 applied to that merge.
+-- |
+-- | **Two laws read the same at every shape and are stated only here.**
+-- | For `m = merge w1 w2` at any of the four:
+-- |
+-- |   * **Symmetry and associativity**, up to `≈`:
+-- |     `merge w1 w2 ≈ merge w2 w1` and
+-- |     `merge (merge w1 w2) w3 ≈ merge w1 (merge w2 w3)` — operand order
+-- |     and nesting are not observable at the boundary.
+-- |   * **Monotonicity.** `w1 ⊑ w1'` implies `m ⊑ m'`. Vacuous for an
+-- |     operand owning no field — a display `w1 ⊑ w1'` gives `m ≈ m'`
+-- |     outright — which is law 1 at the merge (a withholding owner cannot
+-- |     be fabricated around) and law 2's zero-field clause, and why a
+-- |     display never enters a gate and a status never withholds a fold.
+-- |
+-- | Both are probed at every shape in test/Main.purs (`×→× symmetry` and
+-- | its three siblings, the four `… associativity` probes, `enrichment:
+-- | p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r` and `enrichment at ×→+`/`+→+`/`+→×`) and
+-- | checked over every script to a bound in test/Exhaustive.purs.
+-- |
 -- | Two facts stay outside, being about the carrier rather than the
 -- | shape: the pre-feed
 -- | emission is *dropped* rather than delayed (the named `Strong`

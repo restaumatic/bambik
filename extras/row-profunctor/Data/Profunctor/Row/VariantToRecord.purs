@@ -25,10 +25,12 @@
 -- | ## Laws of the `+→×` shape
 -- |
 -- | These are the three laws of Data.Profunctor.Row ("The laws, stated
--- | once") read at `+→×`, on the **eleven axes** every shape's law set
+-- | once") read at `+→×`, on the **nine axes** every shape's law set
 -- | shares — each line's title is the axis, its subtitle this shape's
--- | reading (the floor's grid has all four) — kept spelled out here
--- | because each line is what a test or a starvation message names.
+-- | reading (the floor's grid has all four; the two laws that read the
+-- | same at every shape, symmetry-and-associativity and monotonicity, are
+-- | stated once on the floor) — kept spelled out here because each line
+-- | is what a test or a starvation message names.
 -- |
 -- | For a citizen `w :: p [ | i ] { | o }` — a **fold** of occurrences into
 -- | retained state, or at `o = {}` a **status** — with `occur e` an input
@@ -84,29 +86,24 @@
 -- |
 -- |      with the cross-operand **retention** the merge performs on non-`l`
 -- |      occurrences supplied, in the free-function form, by `Retaining`.
--- |   5. **Symmetry and associativity**, up to `≈`.
--- |   6. **Input side — dispatch.** An occurrence of case `l` is delivered
+-- |   5. **Input side — dispatch.** An occurrence of case `l` is delivered
 -- |      to the one operand owning `l` and to no other (`DisjointLabels`
 -- |      makes a duplicated case a compile error naming it). Exactly one
 -- |      operand answers each occurrence — so no torn row is possible:
 -- |      every ingredient of tearing but a broadcast.
--- |   7. **Output side — gate.** `m`'s emission is the union of the
+-- |   6. **Output side — gate.** `m`'s emission is the union of the
 -- |      operands' last contributions, released once both have spoken and
 -- |      withheld before — the gate shared with `×→×`.
--- |   8. **Exactness — enforced.** An operand counts only at its declared
+-- |   7. **Exactness — enforced.** An operand counts only at its declared
 -- |      fields, and the carrier must see to it:
 -- |      `variantToRecord w1 w2 ≈ variantToRecord (rmap exact w1) w2` — the
 -- |      runtime trim `exactRow`, the evidence `OwnedRecordOutputs`
 -- |      carries.
--- |   9. **Closure — withhold, no torn row.** If `w1`, `w2` satisfy 1–3, so
+-- |   8. **Closure — withhold, no torn row.** If `w1`, `w2` satisfy 1–3, so
 -- |      does `m` from the moment both operands have contributed; before
 -- |      that `m` withholds, never fabricates. The step is kept so a
 -- |      re-entrant echo during an occurrence coalesces into one release.
--- |  10. **Monotonicity.** `w1 ⊑ w1'` implies `m ⊑ m'`. For an operand
--- |      owning no field the implication is vacuous — every status owns
--- |      none, so a status beside a fold never withholds it, whatever it
--- |      renders.
--- |  11. **Independence — the loop is `unfolding`.** An emission goes
+-- |   9. **Independence — the loop is `unfolding`.** An emission goes
 -- |      downstream, never to the sibling; the state channel across cases
 -- |      is `Retaining`'s `retain`, the loop `Coretaining`'s `unfolding`,
 -- |      whose retraction is seeded
@@ -115,18 +112,19 @@
 -- | Every cell has a probe in test/Main.purs: 1–3 (`repetition +→×`,
 -- | `emission +→×`, `answer +→×` on the merge of two echo folds and a
 -- | status beside one; 2's seed clause is `unfolding: seed enters as a
--- | first resume`), 4 (`unit law +→×`), 5 (`+→× symmetry`, `+→×
--- | associativity`), 6 (`+→× dispatch`, the no-tear prediction of doc
--- | §8.0), 7 (`+→× gating`), 8 (`+→× exactness`), 9 (`+→× gating` for the
--- | withholding, `+→× dispatch` for no torn row), 10 (`enrichment at
--- | +→×`), 11 (`independence +→×`). Beyond the probes, laws 4–8 and 10 are
--- | checked over **every script** to length 6 (two operands) or 8 (three)
--- | with a fresh token per event, and the effectful gate against
--- | `PUI.Gate`'s pure step, in test/Exhaustive.purs (doc/observational-
--- | semantics.md §9). Starvation reads off the set as at
--- | `×→×`: a merge silent once both sides have spoken has an operand
--- | breaking law 3; one silent before that is waiting on an owned field's
--- | first occurrence — prime it (`unfolding`'s seed, `seeded`).
+-- | first resume`), 4 (`unit law +→×`), 5 (`+→× dispatch`, the no-tear
+-- | prediction of doc §8.0), 6 (`+→× gating`), 7 (`+→× exactness`),
+-- | 8 (`+→× gating` for the withholding, `+→× dispatch` for no torn row),
+-- | 9 (`independence +→×`); the floor's two shared laws at this shape are
+-- | `+→× symmetry`/`+→× associativity` and `enrichment at +→×`. Beyond
+-- | the probes, laws 4–8 and the shared laws are checked over **every
+-- | script** to length 6 (two operands) or 8 (three) with a fresh token
+-- | per event, and the effectful gate against `PUI.Gate`'s pure step, in
+-- | test/Exhaustive.purs (doc/observational-semantics.md §9). Starvation
+-- | reads off the set as at `×→×`: a merge silent once both sides have
+-- | spoken has an operand breaking law 3; one silent before that is
+-- | waiting on an owned field's first occurrence — prime it
+-- | (`unfolding`'s seed, `seeded`).
 module Data.Profunctor.Row.VariantToRecord
   ( bind
   , variantToRecord
@@ -340,7 +338,7 @@ focusCase g =
 -- | into output field `l` verbatim, `w` never seeing it. This is
 -- | `Retaining`'s `retain` law read at the row, a law of the strength
 -- | rather than of the merge (which is why it is not among the header's
--- | eleven).
+-- | nine).
 subRetaining
   :: forall @w p f b s b' s'
    . Retaining p

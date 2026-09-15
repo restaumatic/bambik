@@ -1763,7 +1763,7 @@ main = do
     assertEqual "enrichment at +→×: the quieter merge opens one occurrence later" [ { a: 2, b: "s" } ] lower
     assertEqual "enrichment at +→×: the full merge releases on every whole occurrence" [ { a: 1, b: "s" }, { a: 2, b: "s" } ] upper
 
-  -- == The eleven-axis grid (Data.Profunctor.Row, "The laws, stated once"): ==
+  -- == The nine-axis grid (Data.Profunctor.Row, "The laws, stated once"): ==
   -- == the cells no earlier probe pins — the three citizen axes at each ==
   -- == shape on the shape's own wire, source or merge, the two missing ==
   -- == symmetries, the free exactness cell, and independence at all four. ==

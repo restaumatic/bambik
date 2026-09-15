@@ -25,10 +25,12 @@
 -- | ## Laws of the `×→+` shape
 -- |
 -- | These are the three laws of Data.Profunctor.Row ("The laws, stated
--- | once") read at `×→+`, on the **eleven axes** every shape's law set
+-- | once") read at `×→+`, on the **nine axes** every shape's law set
 -- | shares — each line's title is the axis, its subtitle this shape's
--- | reading (the floor's grid has all four) — kept spelled out here
--- | because each line is what a test or a starvation message names.
+-- | reading (the floor's grid has all four; the two laws that read the
+-- | same at every shape, symmetry-and-associativity and monotonicity, are
+-- | stated once on the floor) — kept spelled out here because each line
+-- | is what a test or a starvation message names.
 -- |
 -- | For a citizen `w :: p { | i } [ | o ]` — an **event source** fed a
 -- | row — with `feed x` a feed, `emit e` an emission, `≈` observational
@@ -80,28 +82,24 @@
 -- |
 -- |      which is why `recordToCase` (and `toCase`/`toCases` over it)
 -- |      needs only `Profunctor`.
--- |   5. **Symmetry and associativity**, up to `≈`.
--- |   6. **Input side — broadcast.** Every feed of `m` reaches both
+-- |   5. **Input side — broadcast.** Every feed of `m` reaches both
 -- |      operands, whole; each arms. Neither operand is fed anything else
--- |      (law 11).
--- |   7. **Output side — passage.** Each emission exits **as it occurs**,
+-- |      (law 9).
+-- |   6. **Output side — passage.** Each emission exits **as it occurs**,
 -- |      ungated: an event has no value between occurrences, so there is
 -- |      nothing to retain, nothing to gate and nothing to tear.
--- |   8. **Exactness — free.** An operand counts only at its declared
+-- |   7. **Exactness — free.** An operand counts only at its declared
 -- |      cases, and nothing need enforce it: a variant carries its one tag,
 -- |      so `widenVariantOutput` is `rmap expand` and there is no trim
 -- |      (`SharedVariantOutputs` carries no evidence). Two operands may
 -- |      declare the same case; the merge forwards each, unmarked.
--- |   9. **Closure — stateless.** If `w1`, `w2` satisfy 1–3, so does `m`,
+-- |   8. **Closure — stateless.** If `w1`, `w2` satisfy 1–3, so does `m`,
 -- |      and the merge keeps no state. The broadcast owes the boundary at
 -- |      most one thing per feed; law 3 on the operands is what discharges
 -- |      it here (at `×→×` the carrier discharges the same obligation
 -- |      itself, by the step) — one cause, two output kinds
 -- |      (Data.Profunctor.Row, "What an inclusive input side obliges").
--- |  10. **Monotonicity.** `w1 ⊑ w1'` implies `m ⊑ m'`. Nothing gates, so
--- |      a quieter operand makes only a quieter merge, and the quietest,
--- |      `silence`, is the unit.
--- |  11. **Independence — the loop is `coresolve`.** The operands receive
+-- |   9. **Independence — the loop is `coresolve`.** The operands receive
 -- |      no feeds but `m`'s, and an emission goes downstream, never to the
 -- |      sibling. The loop at this shape is `Resolving`'s:
 -- |      `resolve`/`coresolve`, whose seeded retraction is `debounced`
@@ -110,17 +108,17 @@
 -- | Every cell has a probe in test/Main.purs: 1–3 (`repetition ×→+`,
 -- | `emission ×→+`, `answer ×→+` on the probe carrier's `replaySource` —
 -- | `clicked`'s protocol as a probe; the real source is walked by the
--- | smoke suite), 4 (`unit law ×→+`), 5 (`×→+ symmetry`, `×→+
--- | associativity`), 6 (`×→+ broadcast: … operand sees the record`),
--- | 7 (`×→+ broadcast: either operand's case exits, ungated`),
--- | 8 (`exactness ×→+`), 9 (the same `×→+ broadcast` probe: a feed
--- | reaching both, exits ungated, nothing retained), 10 (`enrichment at
--- | ×→+`), 11 (`independence ×→+`). Beyond the probes, laws 4–6, 10 and
--- | the merge's own law 3 (arming) are checked over **every script** to
--- | length 6 (two operands) or 8 (three) in test/Exhaustive.purs
--- | (doc/observational-semantics.md §9). Law 3 is why this shape has no
--- | starvation: a silent source is lawful, and an absent one is `silence`
--- | (below).
+-- | smoke suite), 4 (`unit law ×→+`), 5 (`×→+ broadcast: … operand sees
+-- | the record`), 6 (`×→+ broadcast: either operand's case exits,
+-- | ungated`), 7 (`exactness ×→+`), 8 (the same `×→+ broadcast` probe: a
+-- | feed reaching both, exits ungated, nothing retained),
+-- | 9 (`independence ×→+`); the floor's two shared laws at this shape are
+-- | `×→+ symmetry`/`×→+ associativity` and `enrichment at ×→+`. Beyond
+-- | the probes, laws 4–5, the shared laws and the merge's own law 3
+-- | (arming) are checked over **every script** to length 6 (two operands)
+-- | or 8 (three) in test/Exhaustive.purs (doc/observational-semantics.md
+-- | §9). Law 3 is why this shape has no starvation: a silent source is
+-- | lawful, and an absent one is `silence` (below).
 -- |
 -- | `silence` is also what an **absent event source is**. A `×→+` component that
 -- | exists in one state and not in another
@@ -363,7 +361,7 @@ toCases f = rmap (on (Proxy @c) f case_)
 -- | background untouched — a feed's background fields cross into output
 -- | case `l` verbatim, `w` never seeing them. This is `Resolving`'s
 -- | `resolve` law read at the row, a law of the strength rather than of
--- | the merge (which is why it is not among the header's eleven).
+-- | the merge (which is why it is not among the header's nine).
 subResolving
   :: forall @w p f b s b' s' mix
    . Resolving p
