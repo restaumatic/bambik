@@ -14,72 +14,22 @@
 -- | made into a pass-through stage precisely by its gate. See
 -- | doc/collections-profunctor-algebra.md §0.
 -- |
--- | **The carrier contract** (doc/observational-semantics.md — the one
--- | definition every law below is stated against): a `PUI` value denotes,
--- | per instantiation, one process reached in three phases — constructed in
--- | `m`, where every stateful instance allocates its state (hence
--- | `MonadEffect m` on exactly those instances; `Functor`/`Apply` on the
--- | rest says *no state here*), `fromUser` registered once, then feeds and
--- | emissions interleave, and a feed into a gated merge is one **step** —
--- | the broadcast is batched and the gate releases once, so a multi-field
--- | feed never emits a torn row. Law equality `≈` is observational
--- | equivalence of the boundary channels under that protocol
--- | (behavior-kinded channels up to stutter — a repeated value is no
--- | change); refinement `⊑` is emitting a withholding-subsequence, and
--- | `>>>`/the merges are monotone in it; primed equivalence is equality of
--- | the residuals once every gate has been fed. UI components owe the
--- | protocol three laws the algebra leans on: **feed-idempotence** (feeding
--- | the same value twice ≈ once — what lets `looped`'s idempotence and
--- | `debounced`'s re-feeds be lawful), **record-echo totality** (a
--- | behavior-kinded citizen answers every feed — what keeps the gates and
--- | the seeded `×`-traces live), and **no synchronous event echo** (an
--- | event-kinded citizen — an occurrence source — never emits from inside
--- | its own feed; kind, not shape: `bracketed`'s variant editor echoes
--- | lawfully, `clicked`'s record output never does — what makes `Cochoice`'s
--- | re-entry an event loop, not a busy loop, and lets `updated` arm an
--- | emitter without firing it).
+-- | **The carrier contract.** A `PUI` value denotes, per instantiation, one
+-- | process reached in three phases: constructed in `m`, where every
+-- | stateful instance allocates its state — hence `MonadEffect m` on
+-- | exactly those instances, and `Functor`/`Apply` on the rest saying *no
+-- | state here* — then `fromUser` registered once, then feeds and emissions
+-- | interleaving. The protocol, `≈`, `⊑` and the citizen laws every
+-- | instance below is stated against are doc/observational-semantics.md
+-- | §1–3, read per shape in the four `Data.Profunctor.Row.*` headers
+-- | ("Laws of the shape", eleven axes each, the grid in
+-- | `Data.Profunctor.Row`); nothing of them is restated here.
 -- |
--- | **How to read an app.** An app is `mvu seed pipeline`: the pipeline's
--- | stages are composed with `Category.do`, every emission travels
--- | left-to-right through the stages, and `mvu` loops the final emission
--- | back to the top — so a stage placed *before* another is not "above" it
--- | semantically; all stages see every model value on the next loop turn.
--- |
--- | A trace of a counter (a `shown` display stage, then an event
--- | emitter `# applied increment`, under `mvu { count: 0 }`):
--- |
--- |  1. registration: the seed `{ count: 0 }` is fed to the first stage;
--- |  2. the display shows `0` and releases the fed row, which flows on
--- |     and arms the emitter's replay value
--- |     and `applied`'s retained state;
--- |  3. the user acts: the emitter fires, `applied` steps the retained
--- |     model by `increment` and emits `{ count: 1 }`;
--- |  4. the loop re-feeds `{ count: 1 }` to the top; the display re-renders;
--- |     the re-feed's own echoes are swallowed by the loop's re-entrancy
--- |     guard, so exactly one turn happens per event.
--- |
--- | **The rows are a presentation model.** What a `PUI` pipeline operates
--- | over is not the domain model but its presentation: source fields and
--- | the derived fields they render as — formatted readouts, unit-suffixed
--- | quantities, composed sentence lines — side by side in one row.
--- | Displays are **verbatim** (no leaf takes a formatter); the derived
--- | fields are written by one normalization per app
--- | (`present<App> :: row -> row`, run as `# settled present<App>`, the
--- | seed pre-normalized), so everything the user reads is a model field
--- | and the screen's copy is a pure function under `spago test`, no
--- | browser required. Context-pinned rows (collection items, pane
--- | payloads) carry their copy from the business function producing them.
--- | See doc/research-presentation-model.md.
--- |
--- | **No nominal types in UI.** A view-model
--- | type is one-off and specific to its UI, so it earns no name: applications
--- | write anonymous Record rows, anonymous Variant rows, and `{}` unit
--- | payloads in place, and this vocabulary never forces a nominal type into
--- | UI code — canonical rows adopted by label, anonymous-record configs,
--- | `{ ms :: Number }` durations. `Array` and `Maybe` are the two generic
--- | containers it is generic over; nominal types live below the UI (recursive
--- | ASTs, `Aff` actions) and enter only as rows projected by business
--- | functions.
+-- | How applications are written over this module — the presentation rows,
+-- | copy as a read function at the leaf, no nominal types in UI, the
+-- | `mvu` loop and how to read a pipeline — is
+-- | `.claude/skills/developing-bambik-apps/writing.md` and
+-- | doc/research-copy-is-a-function.md, stated once there.
 -- |
 -- | **The gate is a pure machine.** The output gate the two record-output
 -- | merges run on is `PUI.Gate.gateStep`, a total step over a small state in
@@ -452,13 +402,10 @@ instance Apply m => Semigroupoid (PUI m) where
             p2'.toUser x
       }
 
--- | `identity` forwards its input straight to its output: a wire. The unit
--- | of `compose`, the element the diagonal unary laws pin, and the unit of
--- | both diagonal merges at their unit object — `identity @{}` for `×→×`,
--- | `identity @(Variant ())` for `+→+` — exactly, since the record gates
--- | ignore a contribution of zero fields; those merges have no unit of their
--- | own, and `VariantToRecord`'s is this wire entered from the empty
--- | variant, `lcmap case_ identity`.
+-- | `identity` forwards its input straight to its output: the echo wire, and
+-- | the unit of `compose`. It is also the unit of both diagonal merges at
+-- | their unit object and, entered from the empty variant, of `+→×` — the
+-- | unit axis of each shape header.
 instance MonadEffect m => Category (PUI m) where
   -- the ref is allocated in the construction monad, per instantiation:
   -- `identity` is a constant, and a top-level `let` would be evaluated
@@ -530,11 +477,8 @@ instance MonadEffect m => RecordToRecord (PUI m) where
     p2' <- unwrap (widenRecordInput p2)
     gate <- liftEffect $ newRecordGate labels1 labels2
     pure
-      -- one feed is one step. The input side is INCLUSIVE (`SharedRecordInputs`),
-      -- so a feed is a broadcast — both operands may answer it — which is the
-      -- whole cause of the law: the broadcast runs batched and the gate
-      -- releases once afterwards (`steppedFeed`), so a feed changing several
-      -- fields never emits a row that never existed
+      -- broadcast in, gate out, one feed one step — RecordToRecord's axes 6,
+      -- 7 and 9; the carrier's part is `steppedFeed`, the batched broadcast
       { toUser: \new -> steppedFeed "×→×" labels1 labels2 gate do
             p1'.toUser new
             p2'.toUser new
@@ -550,19 +494,10 @@ instance Applicative m => RecordToVariant (PUI m) where
     { toUser: mempty
     , fromUser: mempty
     }
-  -- The `×→×` merge's sibling under one cause: the input side is inclusive
-  -- here too (`SharedRecordInputs`), so a feed is a broadcast reaching both
-  -- operands, and the merge owes the boundary at most ONE thing per feed.
-  -- What discharges that differs with the output kind. A record output can
-  -- be gated and retained, so `recordToRecord` batches and releases a whole
-  -- row (`steppedFeed`). A variant output cannot: an event has no value
-  -- between occurrences, so there is nothing to retain and nothing to gate,
-  -- and the broadcast is a bare pass-through. The obligation therefore
-  -- falls on the OPERANDS instead — no synchronous event echo — since a
-  -- pass-through has no way to absorb a second emission, and one that
-  -- arrived would be indistinguishable from a fresh occurrence.
-  -- doc/observational-semantics.md §3 states it as a component law (by
-  -- kind, not shape); the type cannot enforce it.
+  -- broadcast in, passage out — RecordToVariant's axes 6 and 7. A variant
+  -- output has nothing to gate, so the merge is a bare pass-through and
+  -- the one-thing-per-feed obligation falls on the operands (axis 3,
+  -- arming); hence `Applicative m`: no state here.
   recordToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput (widenRecordInput p1))
     p2' <- unwrap (widenVariantOutput (widenRecordInput p2))
@@ -575,14 +510,9 @@ instance Applicative m => RecordToVariant (PUI m) where
           p2'.fromUser prop
       }
 
--- The one merge carrying NEITHER feed obligation, and both absences follow
--- from its sides. Input is exclusive (`OwnedVariantInputs`): every case has
--- exactly one handler, so a feed is dispatched and exactly one operand
--- answers — no broadcast, so no "one feed, several answers" to discipline.
--- Output is a variant: nothing to gate, nothing to tear. Hence no gate, no
--- step, no `MonadEffect` — this instance is stateless, and that is the
--- structural reading of why (Data.Profunctor.Row, "What an inclusive input
--- side obliges").
+-- dispatch in, passage out — VariantToVariant's axes 6 and 7: no
+-- broadcast, so nothing to step; a variant out, so nothing to gate. Hence
+-- `Applicative m`: the one merge with no state at all.
 instance Applicative m => VariantToVariant (PUI m) where
   variantToVariant p1 p2 = wrap ado
     p1' <- unwrap (widenVariantOutput p1)
@@ -602,17 +532,10 @@ instance MonadEffect m => VariantToRecord (PUI m) where
     p2' <- unwrap p2
     gate <- liftEffect $ newRecordGate labels1 labels2
     pure
-      -- the input side is what differs from `recordToRecord`, and it differs
-      -- in the way that matters: `OwnedVariantInputs` gives every case exactly
-      -- one handler (`DisjointLabels`), so a feed is DISPATCHED, not
-      -- broadcast — exactly one operand answers it. The torn row is a
-      -- broadcast hazard, so this merge does not have it (Data.Profunctor.Row,
-      -- "What an inclusive input side obliges"). The output side is
-      -- nonetheless the same gate, held until both operands have contributed,
-      -- because a record output must be whole however its input arrived. The
-      -- step is kept for that reason and for one it does carry: an operand
-      -- echoing re-entrantly during its own feed is coalesced rather than
-      -- released twice.
+      -- dispatch in, the same gate out — VariantToRecord's axes 6 and 7. The
+      -- step is kept for the one thing dispatch still carries: an operand
+      -- echoing re-entrantly during its own feed is coalesced into one
+      -- release, not released twice
       { toUser: \v -> steppedFeed "+→×" labels1 labels2 gate do
           for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
           for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
@@ -634,28 +557,14 @@ instance MonadEffect m => VariantToRecord (PUI m) where
 labelsOf :: forall m i o ol. RowToList o ol => RowLabels ol => PUI m i { | o } -> Array String
 labelsOf _ = rowLabels (Proxy @ol)
 
--- | The **output gate** both record-output merges run on, stated once.
--- |
--- | `recordToRecord` and `variantToRecord` differ only in how the *input*
--- | reaches the operands (broadcast to both, versus dispatched by case); the
--- | output side is one algorithm: hold each operand's contribution until the
--- | sibling has spoken at least once, then emit their left-biased union,
--- | retaining the last contribution of each thereafter.
--- |
--- | Runtime-exactness: each contribution is trimmed to its declared output
--- | row before the union, so stale runtime copies of sibling fields (echo
--- | wires, lens rebuilds over the widening-coerced input) can never shadow
--- | the other side's genuine contribution.
--- |
--- | `direction` names the merge in the trace and starvation copy ("×→×",
--- | "+→×"), and `fields1`/`fields2` are the operands' rendered output labels,
--- | so a withholding gate says exactly which sibling it is waiting for. The
--- | gate's state arrives allocated (`newRecordGate`, in the merge's
--- | construction monad): this function is the streaming-phase subscription
--- | only — each contribution is one `Contributed` input to the gate machine
--- | (`PUI.Gate.gateStep`, run by `driveGate`), which releases it at once
--- | outside a step and holds it for the step's single release inside one
--- | (`steppedFeed`).
+-- | The streaming-phase subscription of the gate both record-output merges
+-- | run on (the machine is `PUI.Gate.gateStep`; its laws are the output
+-- | side and exactness axes of the two shape headers). Each operand
+-- | emission, trimmed to its declared row by `exact1`/`exact2`, becomes one
+-- | `Contributed` input, run by `driveGate`. `direction` names the merge in
+-- | the trace and starvation copy ("×→×", "+→×"); `labels1`/`labels2` are
+-- | the operands' rendered output labels, so a withholding gate names the
+-- | sibling fields it waits for.
 gatedRecordOutputs
   :: forall e1 e2 o1 o2 o
    . Union o1 o2 o
@@ -721,24 +630,12 @@ driveGate direction labels1 labels2 gate input = do
     <> " keeps emitting, but its sibling operand producing " <> sibling
     <> " never has, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
 
--- | **One feed is one step** — the obligation an *inclusive* input side
--- | carries. A shared record input broadcasts one feed to both operands, so
--- | both may answer it; the merge owes the boundary at most one thing back,
--- | and a record must be whole. (The same inclusivity obliges `×→+` in the
--- | other direction: no synchronous event echo, or its pass-through
--- | broadcast would manufacture a second emission. One cause, two output
--- | kinds — Data.Profunctor.Row, "What an inclusive input side obliges".)
--- |
--- | The broadcast runs with the gate batching:
--- | every operand's answer lands in its slot without releasing, and the gate
--- | releases **once** afterwards, if anything arrived. So a feed that
--- | changes several fields never emits a row that never existed (the
--- | per-operand release used to emit `{ a: fresh, b: stale }` between the
--- | two echoes), the boundary sees one emission per feed instead of one per
--- | echoing operand, and interchange holds on the nose at the boundary
--- | (doc/observational-semantics.md §4). A user emission arrives outside any
--- | step and releases at once, as before. Re-entered while already stepping
--- | (a synchronous cycle), it only feeds — the outer step releases.
+-- | Bracket a feed's broadcast as one gate step: `StepBegun`, the feed,
+-- | `StepEnded`. Contributions landing inside the brackets are held and
+-- | released once at the end, so a feed changing several fields emits one
+-- | whole row (closure, axis 9, at both record-output shapes). Steps nest:
+-- | a re-entrant feed provoked by a release only feeds, and the outermost
+-- | `StepEnded` releases.
 steppedFeed
   :: forall o1 o2 o
    . Union o1 o2 o
@@ -753,16 +650,11 @@ steppedFeed direction labels1 labels2 gate feed = do
   feed
   driveGate direction labels1 labels2 gate StepEnded
 
--- | The per-merge gate both record-output merges allocate: the pure
--- | machine's state (`PUI.Gate.GateState` — each side's retained last
--- | contribution and the step bookkeeping) in one `Ref`, its configuration,
--- | and a starvation guard per side, created in the
--- | merge's construction monad at instantiation (the phase state belongs to
--- | — doc/observational-semantics.md §1). A side that owns zero fields is
--- | born satisfied: `{}` is the informationless record, always known (L6),
--- | so the gate never waits for it — a display-side operand cannot starve
--- | its siblings whether or not it has spoken (the zero-field law in
--- | test/Main.purs).
+-- | The per-merge gate: the pure machine's state in one `Ref`, its
+-- | configuration, a starvation guard per side and the downstream
+-- | continuation, allocated in the merge's construction monad (the phase
+-- | state belongs to). A side owning no field is born satisfied, so it can
+-- | never starve its sibling — the unit axis's zero-field clause.
 type RecordGate o1 o2 o =
   { state :: Ref.Ref (GateState o1 o2)
   , config :: GateConfig

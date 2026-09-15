@@ -253,6 +253,22 @@ with a w = announce a >>> w
 -- | The result is **closed** (input `{}`): supplying the seed discharges
 -- | the pipeline's initial-state obligation, which is what a mount entry
 -- | demands. The standalone app reads `body $ ... $ mvu seed pipeline`.
+-- |
+-- | How to read one: stages compose with `Category.do`, every emission
+-- | travels left to right through them, and `mvu` loops the final emission
+-- | back to the top — so a stage placed *before* another is not "above" it;
+-- | all stages see every model value on the next loop turn. A counter (a
+-- | `shown` display, then an emitter `# applied increment`, under
+-- | `mvu { count: 0 }`) runs so:
+-- |
+-- |  1. registration: the seed `{ count: 0 }` is fed to the first stage;
+-- |  2. the display shows `0` and releases the fed row, which flows on and
+-- |     arms the emitter's replay value and `applied`'s retained state;
+-- |  3. the user acts: the emitter fires, `applied` steps the retained
+-- |     model by `increment` and emits `{ count: 1 }`;
+-- |  4. the loop re-feeds `{ count: 1 }` to the top; the display
+-- |     re-renders; the re-feed's own echoes are swallowed by the loop's
+-- |     re-entrancy guard, so exactly one turn happens per event.
 mvu :: forall p model. Looping p => Seeding p => { | model } -> p { | model } { | model } -> p {} { | model }
 mvu seed w = with seed (looped w)
 
