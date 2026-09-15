@@ -99,7 +99,7 @@ import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (field, recordToRecord)
-import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, widenRecordInput)
+import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (case_, inj, match, on, prj)
 import Effect (Effect)
@@ -108,7 +108,7 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (Nil) as RL
 import Type.Proxy (Proxy(..))
-import PUI (Ocular, PUI, diagnosticsOn, foreach, muted)
+import PUI (Ocular, PUI, diagnosticsOn, foreach, muted, replaying)
 import Unsafe.Coerce (unsafeCoerce)
 import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createCommentNode, createElementNS, createTextNode, documentBody, element, getValue, htmlNS, isFocused, onClickXY, removeAllChildren, removeAttribute, removeClass, runDomInNode, setAttribute, setChecked, setTextNodeValue, setValue)
 
@@ -848,20 +848,27 @@ attrWith name valueOf w = wrap do
 -- | emits `f` of the row last fed, as case `l`; before the first feed a
 -- | click emits nothing.
 clicked :: forall @l @narrow @extra r o k s. IsSymbol l => Cons l k () s => Union narrow extra r => ({ | r } -> k) -> PUI Web { | narrow } o -> PUI Web { | r } [ | s ]
-clicked f w = wrap do
-  w' <- unwrap (widenRecordInput w)
+clicked f w = replaying @l f (occurrences w)
+
+-- The click source `clicked` is built from: each click on the last-built
+-- element (the content's own node) leaves as an occurrence carrying nothing;
+-- the content is fed the row and its output written off. The `× → +`
+-- leaf's occurrence half — at the closed empty row, `occurrences chrome ::
+-- PUI Web {} [ occurred :: {} ]` is the point's dual, an occurrence out of
+-- the terminal record (`ticks` is its timer sibling in `PUI`). Private, with
+-- one fixed case: the business label is `clicked @l`'s to state, and
+-- `replaying @l` relabels while it attaches the row — replay is `Strong`'s
+-- retention, so no source keeps a copy of the row it was shown.
+occurrences :: forall i o. PUI Web i o -> PUI Web i [ occurred :: {} ]
+occurrences w = wrap do
+  w' <- unwrap w
   node <- gets _.sibling
-  iRef <- liftEffect $ Ref.new Nothing
   pure
-    { toUser: \fed -> do
-        Ref.write (Just fed) iRef
-        w'.toUser fed
+    { toUser: w'.toUser
     , fromUser: \prop -> do
         -- content is display-only: give its wiring a sink so echoes flow
         w'.fromUser \_ -> pure unit
-        void $ addEventListener "click" node $ const do
-          mi <- Ref.read iRef
-          for_ mi \fed -> prop (inj (Proxy @l) (f fed))
+        void $ addEventListener "click" node $ const $ prop (inj (Proxy @"occurred") {})
     }
 
 -- | Report *where* the user clicked, in the container's own coordinates —
@@ -937,13 +944,22 @@ each items build = wrap $ unwrap (foreachWith build) <#> \w ->
 -- | from the first frame, and `with`/`mvu` are where that starting state is
 -- | supplied. Anything left unsupplied is reported here as a compile error
 -- | naming the missing pieces — a screen can't reach a user half-filled.
+-- |
+-- | Mounting registers the wiring and then feeds `{}` **once** — the
+-- | terminal record's one value — so "closed to `{}`" is literal: the app
+-- | is fed exactly what its type says it needs, which is nothing. A
+-- | `{}`-input display (`text (const "…")`) renders on that feed; a point
+-- | (`announce`, `with`, `mvu`) has already answered at registration and,
+-- | by Repetition at `{}`, has nothing more to say (`Data.Profunctor.Seeding`).
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
   adoptHostDiagnostics
   node <- documentBody
   runDomInNode node do
-    { fromUser } <- unwrap ui
-    liftEffect $ fromUser \_ -> pure unit
+    { toUser, fromUser } <- unwrap ui
+    liftEffect do
+      fromUser \_ -> pure unit
+      toUser {}
 
 -- | Mount a UI component into an existing element rather than taking over the
 -- | page — for embedding into a page bambik does not own. The starting value

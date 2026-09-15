@@ -89,6 +89,7 @@ module Data.Profunctor.Row.RecordToVariant
   , armed
   , recordToVariant
   , recordToCase
+  , replaying
   , toCase
   , toCases
   , backgroundProperty
@@ -100,6 +101,7 @@ import Data.Either (Either(..), either)
 import Control.Semigroupoid ((>>>))
 import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Profunctor.Seeding (class Seeding, seeded)
+import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
@@ -275,6 +277,26 @@ toCase f = rmap (\a -> inj (Proxy @l) (f a))
 -- | both takes and returns a row profunctor.
 toCases :: forall c p i a o s. RowToList s (RL.Cons c a RL.Nil) => IsSymbol c => Cons c a () s => Profunctor p => (a -> [ | o ]) -> p i [ | s ] -> p i [ | o ]
 toCases f = rmap (on (Proxy @c) f case_)
+
+-- | **Replay is `Strong`'s retention.** An occurrence source emits case `l`
+-- | with no payload of its own (`[ l :: {} ]` — a click, a tick), and the
+-- | `× → +` leaf's replay-last-value protocol is `first` around it: the row
+-- | fed rides the state channel, is retained there, and joins each
+-- | occurrence, which then leaves as case `l` carrying `f` of it. So a
+-- | `button @l {}` is `replaying @l identity` of its click source, and the
+-- | protocol's law — a source never emits inside its own feed, and before
+-- | any feed an occurrence is withheld, not delayed — is the primed `Strong`
+-- | law, not a leaf's private discipline. The source's input row
+-- | **subsumes** (its content may read a sub-row of the row replayed); at
+-- | the closed empty row the source is the point's dual, an occurrence out
+-- | of the terminal record.
+replaying
+  :: forall @l p narrow extra r o k s
+   . Strong p => IsSymbol l => Cons l k () s => Union narrow extra r
+  => ({ | r } -> k)
+  -> p { | narrow } [ | o ]
+  -> p { | r } [ | s ]
+replaying f src = dimap (\r -> Tuple (unsafeCoerce r) r) (\(Tuple _ r) -> inj (Proxy @l) (f r)) (first src)
 
 -- | Row existential `Shutter` focusing a whole **sub-Record** — the row-valued
 -- | **focus** `f` — of the input **shot** `s`; the residual is the **background**

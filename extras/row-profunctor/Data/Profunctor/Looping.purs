@@ -39,6 +39,23 @@
 -- |     back to it exactly once, before propagating; the echoes that
 -- |     re-feed provokes are swallowed.
 -- |
+-- | **Where rows end and the carrier begins**, stated so the primitive is
+-- | not larger than it must be. Two of `looped`'s three facts are row
+-- | consequences: the re-entry guard is the Repetition law of a record
+-- | input made operational — the re-fed row is the row just emitted, so
+-- | the echoes the re-feed provokes are repetitions, and swallowing them is
+-- | the quotient `≈` already takes; and the knot does not deadlock where
+-- | positional `unfirst` does because a record **input is shared** — the
+-- | loop-back and the outside are two feeders of one inclusive input row,
+-- | and shared inputs are ungated (`SharedRecordInputs`), where `unfirst`'s
+-- | `Tuple` input waits for both halves. What is not a row consequence is
+-- | the cycle itself: an emission becoming a feed. That is the class. It is
+-- | also why `looped` is not `feedback` at the degenerate case (state row =
+-- | input row): `feedback` hides its state fields and takes a seed, while
+-- | `looped` exposes the whole row and is primed by its first feed
+-- | (`bracketed` loops the editor state the fed variant supplies) — the
+-- | unseeded diagonal is the primitive, `feedback` the seeded, hidden form.
+-- |
 -- | What the carrier-agnostic layer builds on it: `mvu` (the app shape, in
 -- | `Data.Profunctor.Row.RecordToRecord`) and `bracketed` (the
 -- | variant-editor bracket, in `Data.Profunctor.Row.VariantToVariant`).

@@ -55,6 +55,7 @@ module PUI
   , diagnosticsOn
   , action
   , static
+  , ticks
   , accumulated
   , applied
   , debounced
@@ -78,7 +79,7 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (elem, foldl, for_)
 import Data.Lens (Optic)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
@@ -95,7 +96,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself (the `widenRecordInput` precedent, one adopter later).
 import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, bracketed, mvu, subStrong, forProperty, muted, required, settled, with) as Adopters
-import Data.Profunctor.Row.RecordToVariant (armed, silence, toCase, toCases) as Adopters
+import Data.Profunctor.Row.RecordToVariant (armed, replaying, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (the gated displays, `updated`,
@@ -104,25 +105,25 @@ import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Row.VariantToVariant (atCase, subChoice) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
-import Data.Profunctor.Looping (class Looping)
+import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
 import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, replaying, silence, toCases)
 import Data.Profunctor.Row (class RowLabels, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
-import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
+import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, variantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, contract, inj, prj)
+import Data.Variant (class Contractable, contract, inj, match, prj)
 import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -929,6 +930,17 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | handler's footprint plus the rest — and `Union narrow extra big`
 -- | likewise for the fed row. With `small ≡ big` and `narrow ≡ big` this is
 -- | the plain diagonal stage.
+-- |
+-- | **Not `Strong`'s diagonal** (a derivation considered and rejected
+-- | 2026-09-15): `dimap (\s -> Tuple s s) fold (first w)` has the fold but
+-- | neither of the stage's two other facts. `first` retains the last row
+-- | *fed*, so two events with no re-feed between them would both fold into
+-- | the same base where this stage folds the second into the first's
+-- | result; and `first w` emits only on `w`'s emissions, while this stage
+-- | passes every fed value on — and that pass-through is not a record merge
+-- | with the wire, since two owners of the same row are a type error
+-- | (`OwnedRecordOutputs`). The occurrence sources do get their retention
+-- | from `Strong` (`replaying`); the fold's own state does not.
 updated
   :: forall m small rest big narrow extra e
    . MonadEffect m
@@ -1081,13 +1093,40 @@ optional p = field @l scalar
           p'.fromUser \o -> prop (inj (Proxy @c) (Record.get (Proxy @l) o))
       }
 
+-- | The **tick source**: an occurrence of case `l` every `interval`, out of
+-- | the terminal record — the timer's `× → +` leaf, exactly as a click
+-- | source is a button's, and the point's dual (`announce` is one
+-- | occurrence at registration; this is one per period). Feeds are ignored
+-- | (`{}` carries nothing), and nothing is emitted inside a feed. The loop
+-- | runs for the UI component's whole life (no cancellation — a prototype
+-- | limitation shared with `action'`).
+ticks :: forall @l m s. IsSymbol l => Cons l {} () s => MonadEffect m => { ms :: Number } -> PUI m {} [ | s ]
+ticks interval = wrap $ pure
+  { toUser: mempty
+  , fromUser: \prop -> do
+      let
+        loop = do
+          delay (Milliseconds interval.ms)
+          liftEffect $ prop (inj (Proxy @l) {})
+          loop
+      launchAff_ loop
+  }
+
 -- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.
--- | Retains the last value flowing through; every `interval`, applies
--- | `step` to it — `Just` advances (retained and emitted), `Nothing`
--- | pauses until fresh input arrives. Inside a `looped` chain this is a
--- | tick source: the 7GUIs Timer is `every { ms: 100.0 } tick`.
--- | The loop runs for the UI component's whole life (no cancellation — a
--- | prototype limitation shared with `action'`).
+-- | Every `interval`, applies `step` to the last value flowing through —
+-- | `Just` advances (retained and emitted), `Nothing` pauses until fresh
+-- | input arrives. Inside a `looped` chain this is a tick source: the
+-- | 7GUIs Timer is `every { ms: 100.0 } tick`.
+-- |
+-- | **Derived, not primitive**: a tick source under the update stage. The
+-- | source `ticks` replays the row it is fed (`replaying`, `Strong`'s
+-- | retention), the step classifies each replayed row into a `stepped`
+-- | or an `idle` occurrence (`toCases`), the idle case is handled by
+-- | `silence` in a `+ → +` merge so a pause emits nothing, and the stepped
+-- | row is folded in by `updated`; `looped` re-feeds each step so the
+-- | next tick reads the value just stepped, as it would inside `mvu`. So
+-- | the heartbeat is source ∘ adopters ∘ stage with no retention of its
+-- | own — the same words a button's pipeline is written in.
 -- |
 -- | The step **subsumes** (like `updated`'s handler): it may read and rebuild
 -- | a sub-row of the model, merged back over the last full value on each
@@ -1099,32 +1138,15 @@ every
   => { ms :: Number }
   -> ({ | small } -> Maybe { | small })
   -> PUI m { | big } { | big }
-every interval step = heartbeat interval \big -> (\s -> unsafeUnion s big :: { | big }) <$> step (unsafeCoerce big)
-
--- | The type-agnostic heartbeat `every` is built from — private, because the
--- | vocabulary's stages carry rows while this one is exact at any type.
-heartbeat :: forall m a. MonadEffect m => { ms :: Number } -> (a -> Maybe a) -> PUI m a a
-heartbeat interval step = wrap do
-  lastRef <- liftEffect $ Ref.new Nothing
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \a -> do
-        Ref.write (Just a) lastRef
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop a
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        let
-          loop = do
-            delay (Milliseconds interval.ms)
-            liftEffect do
-              ma <- Ref.read lastRef
-              for_ (ma >>= step) \a' -> do
-                Ref.write (Just a') lastRef
-                prop a'
-            loop
-        launchAff_ loop
-    }
+every interval step = looped (updated (\e _ -> match { stepped: identity } e) (classified >>> stepsOnly))
+  where
+  classified :: PUI m { | small } [ stepped :: { | small }, idle :: {} ]
+  classified = ticks @"tick" interval
+    # replaying @"tick" identity
+    # toCases (\s -> maybe (inj (Proxy @"idle") {}) (inj (Proxy @"stepped")) (step s))
+  -- a pause is the idle case handled by silence: nothing leaves
+  stepsOnly :: PUI m [ stepped :: { | small }, idle :: {} ] [ stepped :: { | small } ]
+  stepsOnly = variantToVariant (lcmap (const {}) silence :: PUI m [ idle :: {} ] [ | () ]) identity
 
 
 -- Optics

@@ -24,7 +24,10 @@ channels, reached in three phases:
 1. **Registration**: `fromUser` is called **exactly once**, wiring the
    emission channel. Registration-time emissions (announcements, seeds) are
    part of this phase — `compose` registers downstream first so they are
-   heard.
+   heard. The mount then feeds the closed app `{}` once (the terminal
+   record's one value): a point has answered at registration and, by
+   Repetition at `{}`, says nothing more, while a `{}`-input display
+   renders on it.
 2. **Streaming**: `toUser` feeds and channel emissions interleave, each a
    finite synchronous cascade. A feed into a gated merge is one **step**:
    the broadcast runs with the gate batching and the gate releases once
@@ -167,7 +170,7 @@ over retained state):
 | shape | on input | modality | what stays obligatory | unit |
 | --- | --- | --- | --- | --- |
 | `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | `identity`, the echo wire |
-| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol, `armed`, `# with patch`) or at quiescence (`resolve`) (law 3) | `silence` |
+| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `replaying`, `first` around a payload-less source, so the replay is `Strong`'s retention and the protocol its primed law; `armed`, `# with patch`) or at quiescence (`resolve`) (law 3) | `silence` |
 | `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is `iterate`'s well-foundedness | `identity`, the forward wire |
 | `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is whole, and the retained state **is** the released state, so a change can never stay private | `lcmap case_ identity`, the never-fed wire |
 
@@ -363,6 +366,13 @@ This is the operational face of a classical fact: coproduct iteration
 starting point — **the seeds are the operational ⊥**. It is also why
 `Looping` is a class of its own: the gated `unfirst` cannot self-feed, so
 the diagonal self-trace is carrier structure, not a `Costrong` derivation.
+It fixes, too, exactly what `Seeding` adds beyond rows: the point's *value*
+is row-forced (`announce a ≈ lcmap (const a) identity` — `{}` has one
+value, and Repetition makes once and every time the same answer, so `(->)`
+and `Cont` have lawful points), and only its *earliness* — the answer given
+at registration, before the loop's first input — is carrier time. The
+seeded wire composed into a positional loop is primed by that earliness
+alone; a point that answered only when fed would never be reached there.
 
 **The denotational home.** A `PUI` component is a Mealy machine with an
 asynchronous emission channel — state, a feed transition, an output stream —

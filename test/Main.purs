@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude
 
-import Data.Array (last, length, uncons, (!!))
+import Data.Array (last, length, nub, uncons, (!!))
 import Data.Either (Either(..))
 import Data.Foldable (foldl, for_)
 import Data.Lens (over, set, view)
@@ -27,15 +27,16 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
-import Data.Variant (Variant, case_, match)
+import Data.Variant (Variant, case_, inj, match)
 import Data.Variant.Case (caseText)
+import Type.Proxy (Proxy(..))
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import OrderFormLogic (fulfillmentCase, fulfillmentState)
-import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, resolveFor, seeded, silence, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, replaying, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -802,6 +803,51 @@ main = do
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser {}
     Ref.read outs >>= assertEqual "announce: exactly one registration emission" [ { n: 42 } ]
+
+  -- Seeding's answer law: the point is the wire's answer to the terminal
+  -- record's one value, announce a ≈ lcmap (const a) identity — under the
+  -- mount's protocol (register, feed {} once) the streams agree, and a
+  -- further {} feed differs only by stutter (Repetition at {}).
+  do
+    let
+      stream :: PUI Effect {} { n :: Int } -> Effect (Array { n :: Int })
+      stream w = do
+        outs <- Ref.new []
+        m <- unwrap w
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser {}
+        m.toUser {}
+        Ref.read outs
+    point <- stream (announce { n: 7 })
+    wire <- stream (lcmap (const { n: 7 }) identity)
+    assertEqual "Seeding/answer: the point emits the wire's answer, early" [ { n: 7 } ] point
+    assertEqual "Seeding/answer: the wire answers every {} feed alike" [ { n: 7 }, { n: 7 } ] wire
+    assertEqual "Seeding/answer: announce a ≈ lcmap (const a) identity up to stutter" (nub point) (nub wire)
+
+  -- Seeding on (->): the timeless point is const, with is application,
+  -- the seeded wire is identity (the seed invisible, as a timeless wire
+  -- should have it).
+  assertEqual "Seeding/(->): announce a = const a" 5 (announce 5 {})
+  assertEqual "Seeding/(->): with a w = w a" 1 (with { n: 1 } _.n {})
+  assertEqual "Seeding/(->): seeded a = identity" 9 (seeded 3 9)
+
+  -- replaying: the ×→+ leaf's replay-last-value protocol as Strong's
+  -- retention — an occurrence before any feed is withheld, a feed never
+  -- emits, and each occurrence leaves as case l carrying f of the row last
+  -- fed (the source's input subsumes: it reads a sub-row of the row replayed).
+  do
+    outs <- Ref.new ([] :: Array (Variant (picked :: Int)))
+    src <- Ref.new Nothing
+    m <- unwrap (replaying @"picked" _.k (probe src :: PUI Effect { k :: Int } (Variant (occurred :: {}))) :: PUI Effect { k :: Int, extra :: Boolean } (Variant (picked :: Int)))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    fire src (inj (Proxy @"occurred") {})
+    Ref.read outs >>= assertEqual "replaying: an occurrence before any feed is withheld" []
+    m.toUser { k: 1, extra: true }
+    Ref.read outs >>= assertEqual "replaying: a feed never emits" []
+    fire src (inj (Proxy @"occurred") {})
+    m.toUser { k: 2, extra: false }
+    fire src (inj (Proxy @"occurred") {})
+    Ref.read outs >>= assertEqual "replaying: each occurrence replays f of the row last fed, as case l" [ .picked 1, .picked 2 ]
 
   -- compose registers downstream first, so an upstream registration
   -- announcement finds downstream's wiring already listening.

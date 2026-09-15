@@ -61,15 +61,14 @@
 -- |
 -- | **Law-level** (a body typechecks; the class's temporal laws refuse it):
 -- |
--- |   * `Seeding` — `announce a = wrap \k _ -> k a` typechecks, but the
--- |     point law is about a registration moment a CPS run does not have:
--- |     that "point" would fire once per run, not once at t=0. Declining
--- |     the instance is a semantic refusal, not a parametricity theorem
 -- |   * `Looping` — `looped = identity` typechecks and even satisfies the
 -- |     equational trace triple (which is exactly why the class also states
 -- |     the behavioral re-entry law); what fails is re-entry itself — a CPS
 -- |     run is a single pass through one continuation, nothing to feed back
--- |     into (`Seeding`'s sibling impossibility: no beginning, no feedback)
+-- |     into. (`Seeding`, once listed here beside it, is inhabited since
+-- |     2026-09-15: its law is the wire's answer at `{}`, which a CPS run
+-- |     gives; only the *early* answer is carrier time, and nothing here
+-- |     needs it — see the instance.)
 module Data.Profunctor.Cont where
 
 import Prelude
@@ -86,6 +85,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.Seeding (class Seeding)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Traversable (traverse)
@@ -139,6 +139,15 @@ instance Semigroupoid (Cont r) where
 
 instance Category (Cont r) where
   identity = wrap identity
+
+-- The point as the wire's answer to the terminal record's one value
+-- (`Data.Profunctor.Seeding`): a CPS run answers each feed, and at `{}`
+-- every feed is the same one, so "once" and "every time" coincide. What
+-- `Cont` lacks is the *early* answer — a registration moment before any
+-- feed — which only the seeded `×`-trace forms need, and they need
+-- `Costrong` too, which `Cont` cannot have: nothing is left half-inhabited.
+instance Seeding (Cont r) where
+  announce a = wrap \k _ -> k a
 
 instance Wander (Cont r) where
   wander trav p = unstar (trav (star p))

@@ -207,9 +207,16 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - A record input row is an initial-state obligation; `{}` is the one
   self-pointed record. `body` MUST demand a closed app (`PUI Web {} o`) —
   every vocabulary's `body`, the design-system roots sharing
-  `PUI.Web.HTML.body`'s signature — and every knot-tying record-channel form (`feedback`, `folding`,
+  `PUI.Web.HTML.body`'s signature — and MUST feed it `{}` exactly once
+  after registration (the terminal record's one value, so "closed" is
+  literal; a point has answered already and by Repetition at `{}` answers
+  no further — 2026-09-15). Every knot-tying record-channel form (`feedback`, `folding`,
   `unfolding`, `mvu`/`with`) MUST take its t=0 value as an argument the
-  caller cannot omit.
+  caller cannot omit. The point's *value* is row-forced (`announce a ≈
+  lcmap (const a) identity`, `Data.Profunctor.Seeding`); what the class
+  adds is its *earliness*, the one moment a stateful carrier has and a
+  timeless one lacks — so a proposal to derive `announce` from the wire is
+  right about the value and wrong about the moment the trace forms need.
 - Events MUST NOT be primed — no canonical first occurrence exists;
   `iterate` stays seedless deliberately (events occur, they don't
   pre-exist). The carrier tells you the shape axis, not the time axis:
