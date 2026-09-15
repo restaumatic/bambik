@@ -1017,6 +1017,55 @@ A vocabulary twin inverts the loop: its logic module already exists
 verbatim, so the view is written against known signatures and holes
 are rarely needed.
 
+## What the laws guarantee
+
+The row modules state six laws (`Data.Profunctor.Row`, "The laws"; read
+per shape in `RecordToRecord.purs` and its siblings). They are a contract
+between three parties: the vocabulary provider owes the two **component
+laws** at every leaf — *Repetition* (feeding the same row twice is one
+feed) and *Answer* (a `×→×` leaf echoes every feed with one whole row, a
+`×→+` leaf never emits from a feed) — and the carrier owes the four **merge
+laws**: *Monoid*, *Projection*, *Preservation*, *Monotonicity*. What you
+get in return, writing over conforming leaves:
+
+- **A `.do` block is again a component.** The merge returns a component
+  of its operands' shape obeying the same laws (preservation), so blocks
+  nest to any depth and each one can be read as a single stage.
+- **Order and grouping are not observable.** Reordering the lines of a
+  merge, extracting a sub-block, adding chrome or a display (a zero-field
+  operand is the unit) changes DOM order and nothing else (monoid).
+- **Faults are local.** An operand is fed exactly its part of the input
+  and never a sibling's emission, and a stale runtime copy of a sibling's
+  field never shadows the sibling (projection). A misbehaving stage is
+  found by reading that stage alone; cross-feed happens only where you
+  wrote `looped`.
+- **Knowledge is whole or nothing.** A feed changing several fields is
+  released once, every field fresh, never a half-updated row (answer,
+  preserved by the merge). Business functions read consistent state.
+- **Showing state never fires an event.** A `×→+` leaf arms on a feed and
+  fires only on its cause, so `updated`, `applied` and the `mvu`
+  re-broadcast feed emitters freely; and a repeated feed is one feed, so
+  the self-trace settles instead of looping (answer, repetition).
+- **Gating anywhere is safe.** Replacing a stage with a quieter one —
+  `confirmed`, the gather gate of `acted`, a debounce — only withholds;
+  it never produces a new or inconsistent emission (monotonicity).
+- **Starvation is a diagnosis.** A gated merge silent after its owned
+  fields were fed has an operand breaking *Answer*; one silent before
+  that has an unprimed field — and the watchdog below names it.
+- **Design systems are interchangeable.** The laws mention shapes, not
+  catalogues, so a twin over another vocabulary behaves identically at
+  the boundary; the library's twin-swept smokes are that guarantee run.
+
+What they do **not** guarantee: leaf conformance itself (the type cannot
+stop a `×→+` leaf emitting during its feed — the provider's burden, walked
+by the smoke suite), payload contracts (that a click carries the row last
+fed is `clicked`'s law, that an editor re-attaches its background is
+`field`'s), rendering counts (the laws hold up to stutter at the
+boundary; one rendering per feed is this carrier's step), and anything
+about a variant input's response policy or your business functions'
+correctness. On `PUI` the merge laws are checked over every script to a
+bound that makes the check complete (`test/Exhaustive.purs`).
+
 ## When it does not propagate
 
 The compiler proves the wiring; it does not prove data reaches the

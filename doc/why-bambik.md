@@ -283,6 +283,23 @@ composition is a live UI component — which is perhaps the neatest summary of t
 whole design: in Bambik there is no boundary where "the algebra" ends and
 "the UI" begins.
 
+## What the laws buy
+
+The algebra above comes with six laws, stated once in `Data.Profunctor.Row`
+and read at each of the four directions: two on components — a record
+input is idempotent, and every feed is answered once at `×→×` and never at
+`×→+` — and four on the merges: monoid, projection (each operand sees only
+its part, counts only at its labels), preservation (a merge is again a
+lawful component) and monotonicity (a quieter operand gives a quieter
+merge). What they buy the person writing an app is stated in the authoring
+skill, [writing.md, *What the laws guarantee*](../.claude/skills/developing-bambik-apps/writing.md):
+blocks nest as components, line order is not observable, faults are local,
+knowledge is released whole, showing never fires, gating anywhere is safe,
+starvation is a named diagnosis, and design systems are interchangeable at
+the boundary. On `PUI` the merge laws are not aspirations: the record gate
+is a pure Mealy step, and the laws are checked over every script to a bound
+that makes the check complete ([observational-semantics.md](observational-semantics.md) §9).
+
 ## The story in one line
 
 Four **directions** give the map; the binary **merges** lay UI components side by

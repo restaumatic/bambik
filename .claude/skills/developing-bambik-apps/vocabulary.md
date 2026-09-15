@@ -129,6 +129,15 @@ dialog's whole release — cashbox),
 `forProperty` take no projection, so it never appears with them. Stated in:
 writing.md *Code style → Wiring*.
 
+## What you may rely on
+
+A `.do` block is again a component; line order and grouping are not
+observable; an operand is fed only its part and never a sibling's emission;
+a multi-field feed is released once, whole; showing state never fires an
+event; a quieter stage anywhere only withholds; design systems are
+interchangeable at the boundary. Stated in: writing.md *What the laws
+guarantee*; the six laws themselves in `Data.Profunctor.Row` ("The laws").
+
 ## The one runtime rule
 
 A record merge, and every stage built on one, emits only once every field of

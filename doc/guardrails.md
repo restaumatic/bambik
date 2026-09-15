@@ -277,7 +277,13 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   vocabulary. Value-level laws run in `spago test` on probe carriers;
   carrier-only laws (DOM identity, live gates) run in the smoke
   harness. The module headers are the single source of truth for
-  contracts (`npm run api-docs` renders them).
+  contracts (`npm run api-docs` renders them). The shape laws are six,
+  stated once in `Data.Profunctor.Row` ("The laws") and read per shape;
+  what they guarantee an application — blocks nest as components, order
+  is unobservable, faults are local, knowledge is released whole, showing
+  never fires, gating anywhere is safe, starvation is named — is stated
+  for application authors in writing.md *What the laws guarantee* and
+  for the semantics in doc/observational-semantics.md §3.3.
 - Wrong programs MUST fail with names, as early as possible: compile
   errors where the types can carry the judgment (unclosed app at `body`,
   duplicated label via `DisjointLabels`); named runtime watchdogs where they

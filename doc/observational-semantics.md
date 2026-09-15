@@ -261,6 +261,25 @@ stands (2026-09-14, after `action`'s progress slot left the `×` side):
   emission, so the ecosystem `Strong` law holds only as primed equivalence
   (§4). The `+` side has no such gate — §5's asymmetry seen from the merge.
 
+### 3.3 What the laws guarantee
+
+Read as a contract: the provider owes §3's protocol at every leaf (the
+headers' *Repetition* and *Answer*), the carrier owes the four merge laws
+(monoid, projection, preservation, monotonicity — `Data.Profunctor.Row`,
+"The laws"), and the application gets, for free and at every depth:
+a merge is again a lawful component; operand order and nesting are not
+boundary-observable; an operand is fed exactly its projection of the input
+and never a sibling's emission; a multi-field feed is released once and
+whole; a feed never fires a source, so re-broadcast loops settle; a
+quieter stage substituted anywhere only withholds; and a silent gate is
+either an operand breaking *Answer* (after its owned fields were fed) or
+an unprimed owned field (before), which the watchdog names. What stays
+outside: leaf conformance itself, the payload contracts of `clicked` and
+`field`, rendering counts (the boundary laws hold up to stutter; the step's
+one release per feed is this carrier's, §4), and a variant input's response
+policy. The application-side statement is writing.md *What the laws
+guarantee*.
+
 ## 4. Named deviations from ecosystem laws
 
 - **`Strong`**: `lmap fst = rmap fst <<< first` holds only as primed

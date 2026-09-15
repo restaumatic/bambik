@@ -111,7 +111,8 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   stated in the shape headers as the **two laws of a record input**,
   Repetition and Answer, beside the **four merge laws** monoid, projection,
   preservation and monotonicity, all six once in `Data.Profunctor.Row`
-  "The laws" and read per shape) with
+  "The laws" and read per shape; what they guarantee an application is
+  writing.md *What the laws guarantee*, doc §3.3 for the semantics) with
   their per-shape modalities (§3.1: `×→×` **must** echo, `×→+` **must not**,
   `+→+` and `+→×` **may** — output shape decides whether an echo is owed,
   input shape how it is discharged), §3.2's account of what a `×→×` gate
