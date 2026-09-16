@@ -6,7 +6,7 @@ import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web.HTML (body, button, div, h4, shown, staticText, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 counterHTML :: Effect Unit
 counterHTML =

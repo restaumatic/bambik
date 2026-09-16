@@ -8,7 +8,7 @@ import PUI (action, atCase, debounced, forCases, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 flightBookerMDC3 :: Effect Unit
 flightBookerMDC3 =

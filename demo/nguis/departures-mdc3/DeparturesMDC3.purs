@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (dispatched, every, mvu)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, card, list, listItem)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 departuresMDC3 :: Effect Unit
 departuresMDC3 =

@@ -24,7 +24,7 @@ import PUI (action, atCase, debounced, forCases, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 flightBookerMDC2 :: Effect Unit
 flightBookerMDC2 =
@@ -54,7 +54,7 @@ dressing the page for its catalogue before it mounts.
 The MDC3 twin differs from this file in exactly the last import (and the
 typography names it pulls from it); the logic module is shared verbatim.
 No merge block appears: each displayed line is one read function at one
-leaf, so no stage here reads more than one leaf. `QualifiedDo.Category as Category`
+leaf, so no stage here reads more than one leaf. `QualifiedDo.Semigroupoid as Category`
 gives `Category.do`: sequential composition, not a monad.
 
 **`body $ card $ Category.do`.** Mount at the document body, dressed for

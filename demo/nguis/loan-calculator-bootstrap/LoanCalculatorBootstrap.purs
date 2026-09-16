@@ -9,7 +9,7 @@ import PUI (armed, forCase, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (shown, div, staticText, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 loanCalculatorBootstrap :: Effect Unit
 loanCalculatorBootstrap =

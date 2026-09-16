@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC3 (body, button, card, headlineLarge)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 counterMDC3 :: Effect Unit
 counterMDC3 =

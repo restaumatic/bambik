@@ -10,7 +10,7 @@ import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web.Fluent (body, button, card, textField)
 import PUI.Web.HTML (shown, attrWith, clicked, div, li, text, ul, (:=))
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 crudFluent :: Effect Unit
 crudFluent = do

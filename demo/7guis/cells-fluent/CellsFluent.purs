@@ -8,7 +8,7 @@ import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
 import PUI.Web.Fluent (body, body1, card, textField)
 import PUI.Web.HTML (shown, attrWith, clicked, div, table, td, text, tr, (:=))
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 cellsFluent :: Effect Unit
 cellsFluent =

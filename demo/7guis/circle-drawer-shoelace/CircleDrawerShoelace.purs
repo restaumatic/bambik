@@ -10,7 +10,7 @@ import PUI (blank, foreach, mvu, settled, updated)
 import PUI.Web.HTML (attrWith, div, onClickedXY, inCase, (:=))
 import PUI.Web.Shoelace (body, button, card, sliderLive)
 import PUI.Web.SVG (circle, svg)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 circleDrawerShoelace :: Effect Unit
 circleDrawerShoelace =

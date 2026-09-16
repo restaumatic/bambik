@@ -8,7 +8,7 @@ import PUI (action, atCase, debounced, forCases, mvu, required, blank)
 import PUI.Web (choice)
 import PUI.Web.Bootstrap (body, button, card, select, textField, toast)
 import PUI.Web.HTML (inCase, shownWhen, p, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 flightBookerBootstrap :: Effect Unit
 flightBookerBootstrap =

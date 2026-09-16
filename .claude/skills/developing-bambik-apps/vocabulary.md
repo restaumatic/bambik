@@ -18,7 +18,7 @@ invariant*.
 
 | You are writing | Block | What flows | Demo |
 | --- | --- | --- | --- |
-| stages in sequence — an editor after an editor, a display after a form, a fold after a button | `Category.do` (`import QualifiedDo.Category as Category`) | each stage's output is the next one's input; code order = DOM order = data order | every demo — start with counter |
+| stages in sequence — an editor after an editor, a display after a form, a fold after a button | `Category.do` (`import QualifiedDo.Semigroupoid as Category`) | each stage's output is the next one's input; code order = DOM order = data order | every demo — start with counter |
 | chrome and displays reading **one record** together | `RecordToRecord.do` (×→×) | the record broadcast to every operand; displays and static chrome only — never an editor, and never `staticText` glue in one text run with a `text @l` leaf (a composed line is one derived field) | order-form's summary stages |
 | several buttons over one record | `RecordToVariant.do` (×→+) | record in, one case out per emitter | cashbox |
 | one stage per event case | `VariantToVariant.do` (+→+) | each case to its own stage (backend actions) | order-form's dispatch |

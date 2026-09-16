@@ -9,7 +9,7 @@ import Effect (Effect)
 import PUI (blank, foreach, mvu, settled, updated)
 import PUI.Web.HTML (shown, attrWith, body, button, div, label, onClickedXY, p, inCase, rangeInput, staticText, (:=))
 import PUI.Web.SVG (circle, svg)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 circleDrawerHTML :: Effect Unit
 circleDrawerHTML =

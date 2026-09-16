@@ -7,7 +7,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, input, label, p, staticText, table, td, text, tr, (:=))
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 cellsHTML :: Effect Unit
 cellsHTML =

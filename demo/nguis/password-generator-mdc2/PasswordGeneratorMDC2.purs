@@ -8,7 +8,7 @@ import PasswordGeneratorLogic (passwordText, rememberPassword, samplePassword, s
 import PUI (action, mvu, atCase, updated)
 import PUI.Web.HTML (shown, attr, code, text)
 import PUI.Web.MDC2 (body, body2, button, card, indeterminateLinearProgress, slider, toggleSwitch)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 passwordGeneratorMDC2 :: Effect Unit
 passwordGeneratorMDC2 =

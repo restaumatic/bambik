@@ -5,7 +5,7 @@ import Prelude (Unit, (#), ($))
 import Effect (Effect)
 import PUI (mvu, settled)
 import PUI.Web.MDC3 (body, card, filledTextField)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import TemperatureConverterLogic (fromCelsius, fromFahrenheit, roomTemperature)
 
 temperatureConverterMDC3 :: Effect Unit

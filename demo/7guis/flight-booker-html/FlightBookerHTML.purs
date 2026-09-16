@@ -8,7 +8,7 @@ import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWay
 import PUI (action, atCase, debounced, forCases, mvu, required, blank)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shown, shownWhen, body, button, div, input, label, output, p, select, staticText, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 flightBookerHTML :: Effect Unit
 flightBookerHTML =

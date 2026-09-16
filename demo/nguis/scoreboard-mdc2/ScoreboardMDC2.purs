@@ -6,7 +6,7 @@ import Effect (Effect)
 import PUI (muted, accumulated, every, foreach, mvu)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, body2, card, list, listItem)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import ScoreboardLogic (boardSummary, gameStart, goal, scoreLine, summaryLine, tick, tickPeriod)
 
 scoreboardMDC2 :: Effect Unit

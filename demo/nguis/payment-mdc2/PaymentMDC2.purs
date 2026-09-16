@@ -9,7 +9,7 @@ import PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCha
 import PUI (action, atCase, forCase, mvu, observed, toCases, updated)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, body2, button, card, headline6, indeterminateCircularProgress, snackbar)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 paymentMDC2 :: Effect Unit
 paymentMDC2 =

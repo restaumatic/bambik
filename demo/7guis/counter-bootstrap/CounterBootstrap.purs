@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web.Bootstrap (body, button, card)
 import PUI.Web.HTML (h4, shown, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 counterBootstrap :: Effect Unit
 counterBootstrap =

@@ -298,7 +298,11 @@ What changed:
   `QualifiedDo.Semigroupoid`; then, `PUI` being a `Category` whose unit is
   the wire, `QualifiedDo.Category as Category` — bambik's complement under
   `extras/qualified-do/`, the ecosystem's sugar stopping at `Semigroupoid`.
-  The four merges keep their direction names.
+  The four merges keep their direction names. (Reversed 2026-09-16: the
+  complement was the ecosystem's own `bind`/`discard` under a constraint the
+  bodies never used, so `QualifiedDo.Category` was deleted and applications
+  import `QualifiedDo.Semigroupoid as Category` — the spelling at every call
+  site is unchanged.)
 - **86 dead logic exports deleted** — `*Line`/`*Text` formatters left over
   from the `told line` era, exported by 29 logic modules and used by no
   view (the sentences are `RecordToRecord.do` merges of

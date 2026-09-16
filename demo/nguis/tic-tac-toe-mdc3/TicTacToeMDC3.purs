@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (foreach, mvu, updated, with)
 import PUI.Web.HTML (shownWhen, attrWith, clicked, div, staticText, text, (:=))
 import PUI.Web.MDC3 (body, button, card, headlineSmall)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import TicTacToeLogic (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine)
 
 ticTacToeMDC3 :: Effect Unit

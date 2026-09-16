@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (action, atCase, mvu, updated)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, body1, caption, card, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, reportRequest, servedLine, temperatureLine, warsawBulletin)
 
 weatherMDC2 :: Effect Unit

@@ -8,7 +8,7 @@ import Effect (Effect)
 import PUI (blank, foreach, mvu, updated)
 import PUI.Web.HTML (shown, attrWith, clicked, div, text, (:=))
 import PUI.Web.MDC2 (body, body2, card, sliderLive)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 colorMixerMDC2 :: Effect Unit
 colorMixerMDC2 =

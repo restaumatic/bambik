@@ -9,7 +9,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web.HTML (shown, attrWith, body, button, clicked, div, input, label, li, p, staticText, text, ul, (:=))
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 crudHTML :: Effect Unit
 crudHTML = do

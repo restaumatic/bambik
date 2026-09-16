@@ -8,7 +8,7 @@ import PUI (applied, mvu, required, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (shownWhen, clWhen, span, text)
 import PUI.Web.MDC2 (body, button, card, caption, filledTextField, listOf, segmentedButton)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import TodoMvcLogic (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, toggleTodo, visibleEntries)
 
 todoMvcMDC2 :: Effect Unit

@@ -10,7 +10,7 @@ import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, textField)
 import PUI.Web.HTML (cl, clWhen, clicked, div, text, (:=))
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 crudBootstrap :: Effect Unit
 crudBootstrap = do

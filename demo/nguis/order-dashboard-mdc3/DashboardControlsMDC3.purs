@@ -22,7 +22,7 @@ import PUI.Web (OptCaption(..), Web)
 import PUI.Web.HTML (attrWith, div, shown, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import Type.Proxy (Proxy(..))
 
 board :: Ocular (PUI Web)

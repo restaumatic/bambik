@@ -9,7 +9,7 @@ import PUI (every, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown)
 import PUI.Web.MDC3 (body, topAppBar)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 orderDashboardMDC3 :: Effect Unit
 orderDashboardMDC3 =

@@ -8,7 +8,7 @@ import Effect (Effect)
 import PUI (mvu, settled)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, card, headlineSmall, sliderLive)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 auctionMDC3 :: Effect Unit
 auctionMDC3 =

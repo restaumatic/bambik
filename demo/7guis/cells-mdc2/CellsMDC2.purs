@@ -8,7 +8,7 @@ import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
 import PUI.Web.HTML (shown, attrWith, clicked, div, table, td, text, tr, (:=))
 import PUI.Web.MDC2 (body, body1, card, filledTextField)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 cellsMDC2 :: Effect Unit
 cellsMDC2 =

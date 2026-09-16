@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web.Fluent (body, button, card, title3)
 import PUI.Web.HTML (shown, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 counterFluent :: Effect Unit
 counterFluent =

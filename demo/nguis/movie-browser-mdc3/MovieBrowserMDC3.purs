@@ -9,7 +9,7 @@ import PUI (foreach, mvu, toCase, updated)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, span, text)
 import PUI.Web.MDC3 (body, card, chipSet, elevation1, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 movieBrowserMDC3 :: Effect Unit
 movieBrowserMDC3 =

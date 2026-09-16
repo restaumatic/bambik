@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (mvu, toCases, updated)
 import PUI.Web.HTML (shownWhen, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, displaySmall)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import TicketDispenserLogic (displayOf, emptyQueue, firstTicket, servingLine, ticketIssuance, ticketLine, ticketRequested)
 
 ticketDispenserMDC3 :: Effect Unit

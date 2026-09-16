@@ -8,7 +8,7 @@ import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
 import PUI.Web.Bootstrap (body, card, textField)
 import PUI.Web.HTML (shown, attrWith, clicked, div, p, table, td, text, tr, (:=))
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 cellsBootstrap :: Effect Unit
 cellsBootstrap =

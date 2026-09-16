@@ -10,7 +10,7 @@ import Effect (Effect)
 import PUI (action, atCase, blank, edited, mvu, static, updated)
 import PUI.Web.HTML (el, (:=))
 import PUI.Web.MDC3 (body, button, filledTextField, group, list, listItem)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import ReorderLogic (openingSetlist, rotateAction, setOrder, shuffleAction)
 
 reorderMDC3 :: Effect Unit

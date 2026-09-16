@@ -10,7 +10,7 @@ import PUI (blank, foreach, mvu, settled, updated)
 import PUI.Web.HTML (attrWith, onClickedXY, inCase, (:=))
 import PUI.Web.MDC2 (body, button, card, cardActions, sliderLive)
 import PUI.Web.SVG (circle, svg)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 circleDrawerMDC2 :: Effect Unit
 circleDrawerMDC2 =

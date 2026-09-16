@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (mvu, updated)
 import PUI.Web.HTML (shown, provided, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, headlineMedium, headlineSmall, linearProgress, listOf)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import QuizLogic (answer, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizPhase, quizProgress)
 
 quizMDC3 :: Effect Unit

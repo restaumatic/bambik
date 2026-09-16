@@ -8,7 +8,7 @@ import PUI (action, atCase, debounced, forCases, mvu, required, blank)
 import PUI.Web (choice)
 import PUI.Web.Fluent (body, body1, button, card, dropdown, messageBar, textField)
 import PUI.Web.HTML (inCase, shownWhen, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 flightBookerFluent :: Effect Unit
 flightBookerFluent =

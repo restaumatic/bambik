@@ -10,7 +10,7 @@ import Effect (Effect)
 import PUI (action, looped, atCase, updated, with)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, button, card, cardActions, filledTextField, indeterminateLinearProgress, listOf)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 crudMDC2 :: Effect Unit
 crudMDC2 = do

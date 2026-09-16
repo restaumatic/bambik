@@ -9,7 +9,7 @@ import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine,
 import PUI (applied, forCase, mvu, observed, updated, with)
 import PUI.Web.HTML (shown, provided, span, text)
 import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, card, dialog, fab, headline6, iconButton, listOf, menu, menuItem)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 inboxMDC2 :: Effect Unit
 inboxMDC2 =

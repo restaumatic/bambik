@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (every, mvu, updated, with)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, linearProgress, sliderLive)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerMDC3 :: Effect Unit

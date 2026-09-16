@@ -8,7 +8,7 @@ import PUI (action, atCase, debounced, forCases, mvu, required, blank)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, p, text)
 import PUI.Web.Shoelace (body, button, card, select, textField, toast)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 flightBookerShoelace :: Effect Unit
 flightBookerShoelace =

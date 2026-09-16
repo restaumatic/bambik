@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (every, mvu, updated, with)
 import PUI.Web.Bootstrap (body, button, card, progress, sliderLive)
 import PUI.Web.HTML (shown, p, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerBootstrap :: Effect Unit

@@ -9,7 +9,7 @@ import PUI (PUI, atField, mvu)
 import PUI.Web (Web)
 import PUI.Web.HTML (shown, blockquote, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.Web.MDC3 (body, card, filledTextArea, layoutCell, layoutGrid)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 markdownPreviewerMDC3 :: Effect Unit
 markdownPreviewerMDC3 =

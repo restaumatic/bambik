@@ -8,7 +8,7 @@ import PUI (PUI, subStrong, mvu)
 import PUI.Web.MDC2 (body, body1, card, filledTextField)
 import PUI.Web (Web)
 import PUI.Web.HTML (shown, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 parcelMDC2 :: Effect Unit
 parcelMDC2 =

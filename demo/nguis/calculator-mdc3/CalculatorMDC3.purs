@@ -9,7 +9,7 @@ import Effect (Effect)
 import PUI (foreach, mvu, updated)
 import PUI.Web.HTML (shownWhen, attrWith, clicked, div, provided, staticText, text, (:=))
 import PUI.Web.MDC3 (body, card)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 calculatorMDC3 :: Effect Unit
 calculatorMDC3 =

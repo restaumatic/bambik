@@ -10,7 +10,7 @@ import Effect (Effect)
 import PUI (mvu, toCases, updated)
 import PUI.Web.HTML (shownWhen, provided, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, card)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 checkoutMDC3 :: Effect Unit
 checkoutMDC3 =

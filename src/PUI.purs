@@ -1,7 +1,7 @@
 -- | The core profunctor UI type and its combinators.
 -- |
 -- | **The duoidal reading.** `PUI` composes two ways: sequentially
--- | (`Category.do` — `QualifiedDo.Category` as applications import it;
+-- | (`Category.do` — `QualifiedDo.Semigroupoid`, imported `as Category`;
 -- | `⊳`, emissions feed downstream) and in parallel
 -- | (the row merges, `⊗` — the input broadcasts to every operand). The two
 -- | interact as in a duoidal category: a pipeline can only emulate a merge

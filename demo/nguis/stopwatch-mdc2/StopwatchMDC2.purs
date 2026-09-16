@@ -8,7 +8,7 @@ import Effect (Effect)
 import PUI (every, mvu, updated)
 import PUI.Web.HTML (shown, shownEach, provided, li, text, ul)
 import PUI.Web.MDC2 (body, button, card, headline3)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import StopwatchLogic (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
 
 stopwatchMDC2 :: Effect Unit

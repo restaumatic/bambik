@@ -9,7 +9,7 @@ import PUI (forCase, mvu, optional, settled)
 import PUI.Web (choice)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdown, messageBar, progressBar, radioGroup, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (inCase, shownWhen, shown, div, provided, staticText, text)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 meetingBookerFluent :: Effect Unit
 meetingBookerFluent =

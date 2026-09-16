@@ -8,7 +8,7 @@ import PUI (armed, forCase, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, p, text)
 import PUI.Web.Shoelace (body, button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 productReviewShoelace :: Effect Unit
 productReviewShoelace =

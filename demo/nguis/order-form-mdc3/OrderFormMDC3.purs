@@ -12,7 +12,7 @@ import PUI (action, armed, atCase, bracketed, debounced, forCase, looped, requir
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, staticText, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 orderFormMDC3 :: Effect Unit
 orderFormMDC3 =

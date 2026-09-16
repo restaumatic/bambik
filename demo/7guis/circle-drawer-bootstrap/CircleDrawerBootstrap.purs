@@ -10,7 +10,7 @@ import PUI (blank, foreach, mvu, settled, updated)
 import PUI.Web.Bootstrap (body, button, card, sliderLive)
 import PUI.Web.HTML (attrWith, cl, div, onClickedXY, inCase, (:=))
 import PUI.Web.SVG (circle, svg)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 circleDrawerBootstrap :: Effect Unit
 circleDrawerBootstrap =

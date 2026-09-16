@@ -6,7 +6,7 @@ import Effect (Effect)
 import PUI (mvu)
 import PUI.Web.HTML (rangeInput, shown, text)
 import PUI.Web.MDC2 (body, body2, card, filledTextField, slider)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 import TipCalculatorLogic (dinnerBill, perPersonLine, splitLine, tipAmountLine, tipLine, totalLine)
 
 tipCalculatorMDC2 :: Effect Unit

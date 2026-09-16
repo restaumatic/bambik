@@ -10,7 +10,7 @@ import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web.HTML (shown, attrWith, clicked, div, li, text, ul, (:=))
 import PUI.Web.Shoelace (body, button, card, textField)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 crudShoelace :: Effect Unit
 crudShoelace = do

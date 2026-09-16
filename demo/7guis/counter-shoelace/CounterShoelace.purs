@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web.HTML (h4, shown, text)
 import PUI.Web.Shoelace (body, button, card)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 counterShoelace :: Effect Unit
 counterShoelace =

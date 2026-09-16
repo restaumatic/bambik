@@ -9,7 +9,7 @@ import PUI (acted, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, body2, group, headline6, list, listItem, segmentedButton, subtitle1)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 potluckMDC2 :: Effect Unit
 potluckMDC2 =

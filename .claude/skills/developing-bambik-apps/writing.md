@@ -36,10 +36,10 @@ merges (operands over one shared row):
 
 The merges are imported from the row modules
 (`Data.Profunctor.Row.RecordToRecord` and its three siblings), not from
-`QualifiedDo`. The pipeline's sugar is `QualifiedDo.Category` — bambik's
-complement of qualified-do, which stops at `Semigroupoid` — imported
-`as Category` (`import QualifiedDo.Category as Category`), so the block
-names the structure it composes in: a category whose unit is the wire,
+`QualifiedDo`. The pipeline's sugar is the ecosystem's
+`QualifiedDo.Semigroupoid`, imported `as Category`
+(`import QualifiedDo.Semigroupoid as Category`), so the block reads as the
+structure a pipeline composes in: a category whose unit is the wire,
 `identity`. Neither `do` is a monad's.
 
 **The one runtime rule.** A record merge — and every stage built on one

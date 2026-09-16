@@ -11,7 +11,7 @@ import PUI (armed, forCase, mvu, required, updated, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, div, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 espressoBarMDC3 :: Effect Unit
 espressoBarMDC3 =

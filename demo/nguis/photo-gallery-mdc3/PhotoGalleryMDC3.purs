@@ -9,7 +9,7 @@ import PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, favoriteShots, 
 import PUI (mvu, updated)
 import PUI.Web.HTML (shownEach, shown, each, span, staticText, text)
 import PUI.Web.MDC3 (body, displayMedium, divider, drawer, imageList, imageListItem, imagePane, labelSmall, list, listItem, listOf, topAppBar)
-import QualifiedDo.Category as Category
+import QualifiedDo.Semigroupoid as Category
 
 photoGalleryMDC3 :: Effect Unit
 photoGalleryMDC3 =
