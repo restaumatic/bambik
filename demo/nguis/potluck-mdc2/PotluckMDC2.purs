@@ -9,11 +9,11 @@ import PUI (acted, with)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, body2, group, headline6, list, listItem, segmentedButton, subtitle1)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 potluckMDC2 :: Effect Unit
 potluckMDC2 =
-  body $ ( Category.do
+  body $ ( Semigroupoid.do
     body2 (text guestCountLine) # shown
     group @"Guests" $ list $
       ( listItem $ RecordToRecord.do

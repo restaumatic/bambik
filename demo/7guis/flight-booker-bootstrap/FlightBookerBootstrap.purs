@@ -8,19 +8,19 @@ import PUI (action, atCase, debounced, forCases, mvu, required, blank)
 import PUI.Web (choice)
 import PUI.Web.Bootstrap (body, button, card, select, textField, toast)
 import PUI.Web.HTML (inCase, shownWhen, p, text)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerBootstrap :: Effect Unit
 flightBookerBootstrap =
   body $
-    card $ Category.do
-      ( Category.do
+    card $ Semigroupoid.do
+      ( Semigroupoid.do
         select @"Flight type" {}
           [ choice @"one-way", choice @"return" ] # required
         textField @"Start date (DD.MM.YYYY)" {}
         textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip
-      ( Category.do
+      ( Semigroupoid.do
         p (text problemLine) # shownWhen @"problem" bookingState
         p (text oneWayLine) # shownWhen @"one-way" bookingState
         p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime

@@ -10,14 +10,14 @@ import Effect (Effect)
 import PUI (atCase, mvu, subChoice, toCase, updated, with)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, body1, button, card, headline6, confirmed)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 cashboxMDC2 :: Effect Unit
 cashboxMDC2 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       ( headline6 $ text balanceLine ) # shown
-      ( Category.do
+      ( Semigroupoid.do
         RecordToVariant.do
           button @"Refund a customer" { icon: "undo" } # with standardRefund
           button @"Pay the courier" { icon: "local_shipping" } # with courierFee

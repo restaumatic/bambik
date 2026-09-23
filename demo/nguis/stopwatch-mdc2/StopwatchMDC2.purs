@@ -8,13 +8,13 @@ import Effect (Effect)
 import PUI (every, mvu, updated)
 import PUI.Web.HTML (shown, shownEach, provided, li, text, ul)
 import PUI.Web.MDC2 (body, button, card, headline3)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 import StopwatchLogic (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)
 
 stopwatchMDC2 :: Effect Unit
 stopwatchMDC2 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       headline3 (text elapsedText) # shown
       every tickPeriod tick
       ( RecordToVariant.do

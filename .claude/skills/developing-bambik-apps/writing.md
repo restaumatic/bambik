@@ -20,7 +20,7 @@ matches the app's design system.
 
 ## The pipeline
 
-The app is one profunctor pipeline, composed with `Category.do`
+The app is one profunctor pipeline, composed with `Semigroupoid.do`
 (data-flow stages: each stage's output is the next stage's input, so
 code order is DOM order *and* data order) and the four qualified-do row
 merges (operands over one shared row):
@@ -37,10 +37,10 @@ merges (operands over one shared row):
 The merges are imported from the row modules
 (`Data.Profunctor.Row.RecordToRecord` and its three siblings), not from
 `QualifiedDo`. The pipeline's sugar is the ecosystem's
-`QualifiedDo.Semigroupoid`, imported `as Category`
-(`import QualifiedDo.Semigroupoid as Category`), so the block reads as the
-structure a pipeline composes in: a category whose unit is the wire,
-`identity`. Neither `do` is a monad's.
+`QualifiedDo.Semigroupoid`, imported under its own name
+(`import QualifiedDo.Semigroupoid as Semigroupoid`): the block is `>>>` and
+nothing else, whose unit is the wire, `identity`. Neither `do` is a
+monad's.
 
 **The one runtime rule.** A record merge — and every stage built on one
 — emits only once every field of its row has been fed, then re-emits on
@@ -719,10 +719,10 @@ induces — view first, logic module written to its names — is
   per item). The `lcmap`-only adopter (`forProperty`) is safe either
   side of a shape-preserving ocular.
 - **Indentation is two spaces per step.** A block's lines sit two columns
-  deeper than the line that opens it — `( Category.do` included, so its
+  deeper than the line that opens it — `( Semigroupoid.do` included, so its
   stages are two in from the `(` line — a continuation two deeper than the
   line it continues, and a closer back at its opener's column
-  (`) # mvu seed` under `card $ ( Category.do`); `let` bindings align under
+  (`) # mvu seed` under `card $ ( Semigroupoid.do`); `let` bindings align under
   the first. No four-space steps, no alignment to a token mid-line.
 - **The architecture is readable off the types.** The application is a
   compass walk written as one pipeline — load → form (×→×) → live

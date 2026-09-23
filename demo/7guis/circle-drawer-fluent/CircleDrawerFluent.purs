@@ -10,12 +10,12 @@ import PUI (blank, foreach, mvu, settled, updated)
 import PUI.Web.Fluent (body, button, card, slider)
 import PUI.Web.HTML (attrWith, div, onClickedXY, inCase, (:=))
 import PUI.Web.SVG (circle, svg)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 circleDrawerFluent :: Effect Unit
 circleDrawerFluent =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       slider @"Diameter" {} # inCase @"chosen" selection # settled resizeSelected
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
         ( onClickedXY @"picked"

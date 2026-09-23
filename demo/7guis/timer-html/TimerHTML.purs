@@ -6,15 +6,15 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, updated, with)
 import PUI.Web.HTML (shown, body, button, div, label, p, progress, rangeInput, staticText, text)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerHTML :: Effect Unit
 timerHTML =
-  body $ div $ ( Category.do
+  body $ div $ ( Semigroupoid.do
     progress @"Elapsed" elapsedFraction # shown
     (p $ text progressLine) # shown
-    p ( label $ Category.do
+    p ( label $ Semigroupoid.do
       (staticText "Duration ") # shown
       rangeInput @"Duration" )
     every tickPeriod tick

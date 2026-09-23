@@ -7,12 +7,12 @@ import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web.HTML (h4, shown, text)
 import PUI.Web.Shoelace (body, button, card)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 counterShoelace :: Effect Unit
 counterShoelace =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       h4 (text countLine) # shown
       button @"Count" {} # applied increment
     ) # mvu freshCount

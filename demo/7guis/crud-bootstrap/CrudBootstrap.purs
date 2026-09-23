@@ -10,21 +10,21 @@ import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, textField)
 import PUI.Web.HTML (cl, clWhen, clicked, div, text, (:=))
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudBootstrap :: Effect Unit
 crudBootstrap = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       blank # action (loadPeopleCatalogue catalogue)
-      ( Category.do
+      ( Semigroupoid.do
         textField @"Filter prefix (surname)" {}
         textField @"Name" {}
         textField @"Surname" {}
         ( cl "overflow-auto" >>> "style" := "max-height: 200px;" $ listGroup $
           ( clicked @"picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key" entries ) # updated (match { picked: pick })
-        ( Category.do
+        ( Semigroupoid.do
           ( div $ RecordToVariant.do
             button @"Create" {}
             button @"Update" {}

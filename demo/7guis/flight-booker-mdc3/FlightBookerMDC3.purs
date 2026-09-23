@@ -8,19 +8,19 @@ import PUI (action, atCase, debounced, forCases, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerMDC3 :: Effect Unit
 flightBookerMDC3 =
   body $
-    card $ Category.do
-    ( Category.do
+    card $ Semigroupoid.do
+    ( Semigroupoid.do
       select @"Flight type" {}
         [ choice @"one-way", choice @"return" ] # required
       filledTextField @"Start date (DD.MM.YYYY)" {}
       filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
     ) # mvu plannedTrip
-    ( Category.do
+    ( Semigroupoid.do
       bodyLarge (text problemLine) # shownWhen @"problem" bookingState
       bodyLarge (text oneWayLine) # shownWhen @"one-way" bookingState
       bodyLarge (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime

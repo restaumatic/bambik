@@ -9,16 +9,16 @@ import PUI (every, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown)
 import PUI.Web.MDC3 (body, topAppBar)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderDashboardMDC3 :: Effect Unit
 orderDashboardMDC3 =
   body $
-    topAppBar { title: "Order Dashboard" } $ ( Category.do
+    topAppBar { title: "Order Dashboard" } $ ( Semigroupoid.do
       every tickPeriod ordersArrive
       rangePicker @"Showing" {}
         [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
-      board $ Category.do
+      board $ Semigroupoid.do
         statTile @"Orders" { unit: "placed" } ordersCount # shown
         statTile @"Revenue" { unit: "EUR" } revenue # shown
         gauge @"Kitchen load" kitchenLoad # shown

@@ -10,21 +10,21 @@ import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web.Fluent (body, button, card, textField)
 import PUI.Web.HTML (shown, attrWith, clicked, div, li, text, ul, (:=))
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudFluent :: Effect Unit
 crudFluent = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       blank # action (loadPeopleCatalogue catalogue)
-      ( Category.do
+      ( Semigroupoid.do
         textField @"Filter prefix (surname)" {}
         textField @"Name" {}
         textField @"Surname" {}
         ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--colorNeutralStroke1, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $
           ( clicked @"picked" _.key ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key" entries ) # updated (match { picked: pick })
-        ( Category.do
+        ( Semigroupoid.do
           div $ RecordToVariant.do
             button @"Create" {}
             button @"Update" {}

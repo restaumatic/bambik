@@ -8,12 +8,12 @@ import PasswordGeneratorLogic (passwordText, rememberPassword, samplePassword, s
 import PUI (action, mvu, atCase, updated)
 import PUI.Web.HTML (shown, attr, code, text)
 import PUI.Web.MDC2 (body, body2, button, card, indeterminateLinearProgress, slider, toggleSwitch)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 passwordGeneratorMDC2 :: Effect Unit
 passwordGeneratorMDC2 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       slider @"Length" {}
       toggleSwitch @"Uppercase letters" {}
       toggleSwitch @"Lowercase letters" {}
@@ -21,7 +21,7 @@ passwordGeneratorMDC2 =
       toggleSwitch @"Symbols" {}
       body2 (text strengthLine) # shown
       code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
-      ( Category.do
+      ( Semigroupoid.do
         button @"Generate" {}
         indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate" ) # updated (match { generated: rememberPassword })
     ) # mvu strongMixRecipe

@@ -9,13 +9,13 @@ import PUI (PUI, atField, mvu)
 import PUI.Web (Web)
 import PUI.Web.HTML (shown, blockquote, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
 import PUI.Web.MDC2 (body, card, filledTextArea, layoutCell, layoutGrid)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 markdownPreviewerMDC2 :: Effect Unit
 markdownPreviewerMDC2 =
   body $
     card $
-      layoutGrid $ ( Category.do
+      layoutGrid $ ( Semigroupoid.do
         layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 }
         layoutCell { span: 6 } $ ( dynamic \source -> each (parseMarkdown source) blockView ) # atField @"Source" # shown
       ) # mvu welcomeDocument

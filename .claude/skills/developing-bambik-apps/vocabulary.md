@@ -18,13 +18,13 @@ invariant*.
 
 | You are writing | Block | What flows | Demo |
 | --- | --- | --- | --- |
-| stages in sequence — an editor after an editor, a display after a form, a fold after a button | `Category.do` (`import QualifiedDo.Semigroupoid as Category`) | each stage's output is the next one's input; code order = DOM order = data order | every demo — start with counter |
+| stages in sequence — an editor after an editor, a display after a form, a fold after a button | `Semigroupoid.do` (`import QualifiedDo.Semigroupoid as Semigroupoid`) | each stage's output is the next one's input; code order = DOM order = data order | every demo — start with counter |
 | chrome and displays reading **one record** together | `RecordToRecord.do` (×→×) | the record broadcast to every operand; displays and static chrome only — never an editor, and never `staticText` glue in one text run with a `text @l` leaf (a composed line is one derived field) | order-form's summary stages |
 | several buttons over one record | `RecordToVariant.do` (×→+) | record in, one case out per emitter | cashbox |
 | one stage per event case | `VariantToVariant.do` (+→+) | each case to its own stage (backend actions) | order-form's dispatch |
 | one status per outcome | `VariantToRecord.do` (+→×) | cases in, statuses out | order-form's snackbars |
 
-Rule of thumb: things that *follow* each other → `Category.do`; things that
+Rule of thumb: things that *follow* each other → `Semigroupoid.do`; things that
 *share one value* → a merge, named by the shape of what goes in and out
 (record `×`, variant `+`). Stated in: writing.md *The pipeline*; the four
 direction module headers.
@@ -54,14 +54,14 @@ direction module headers.
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | a field of the model, edited | the leaf with the field as its label: `filledTextField @"First name" {}`, `checkbox @l {}`, `slider @l {}` | every form | writing.md *Component citizenship* |
-| a card-headed group nesting a sub-model | `group @"Customer" $ Category.do …` (MDC2/MDC3) — surface, heading and field in one word, the label stamped as the accessible group name, leading its lines like any container; the focus is anything `field @l` takes (a record, a `bracketed` variant, a collection's array) | order-form; potluck; reorder | MDC2.purs / MDC3.purs (`group`); writing.md *Component citizenship* |
+| a card-headed group nesting a sub-model | `group @"Customer" $ Semigroupoid.do …` (MDC2/MDC3) — surface, heading and field in one word, the label stamped as the accessible group name, leading its lines like any container; the focus is anything `field @l` takes (a record, a `bracketed` variant, a collection's array) | order-form; potluck; reorder | MDC2.purs / MDC3.purs (`group`); writing.md *Component citizenship* |
 | a reusable sub-form over a flat sub-row (no wrapper field) | `addressForm # subStrong` | parcel | RecordToRecord.purs (`subStrong`) |
 | an invariant between **edited** fields — editing one implies the other | `editor # settled normalize` — its only job; every `# settled` in the demos sits on an editor, never feeding a display | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *copy is a function, not a field* |
 | a selection that always has a value | `select @l {} [ choice @"…", … ] # required` | flight-booker | RecordToRecord.purs (`required`) |
 | a selection that may still be unmade | `dropdown @l {} […] # optional @"chosen" @"unchosen"` — the field is a named two-case variant, seeded `.unchosen {}`; consumers adopt the made case | meeting-booker | PUI.purs (`optional`) |
 | a bounded quantity | the model holds `{ current, min, max, step }`; `sliderLive @l {}` edits it | timer, circle-drawer | writing.md *Code style → Types and values* |
 | two controls editing **one** field | two successive stages over it, `slider @l {}` then `rangeInput @l` | tip-calculator | writing.md *Component citizenship* |
-| a variant-valued field with an editor per case | `( Category.do selector; pane # inCase @l selection; … ) # bracketed @l stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; RecordToRecord.purs (`bracketed`) |
+| a variant-valued field with an editor per case | `( Semigroupoid.do selector; pane # inCase @l selection; … ) # bracketed @l stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; RecordToRecord.purs (`bracketed`) |
 
 ## Events into state
 

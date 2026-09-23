@@ -8,18 +8,18 @@ import PUI (PUI, subStrong, mvu)
 import PUI.Web.MDC3 (body, bodyLarge, card, filledTextField)
 import PUI.Web (Web)
 import PUI.Web.HTML (shown, text)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 parcelMDC3 :: Effect Unit
 parcelMDC3 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       filledTextField @"Recipient" {}
       addressForm # subStrong
       ( bodyLarge $ text parcelLine ) # shown
     ) # mvu draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
-addressForm = Category.do
+addressForm = Semigroupoid.do
   filledTextField @"Street" {}
   filledTextField @"City" {}

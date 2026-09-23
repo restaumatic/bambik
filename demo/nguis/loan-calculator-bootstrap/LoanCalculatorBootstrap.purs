@@ -9,13 +9,13 @@ import PUI (armed, forCase, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (shown, div, staticText, text)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 loanCalculatorBootstrap :: Effect Unit
 loanCalculatorBootstrap =
   body $
-    card $ Category.do
-      ( Category.do
+    card $ Semigroupoid.do
+      ( Semigroupoid.do
         textField @"Applicant" {}
         sliderLive @"Amount (€)" {}
         sliderLive @"Term (years)" {}

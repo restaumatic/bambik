@@ -9,17 +9,17 @@ import Effect (Effect)
 import PUI (foreach, mvu, updated)
 import PUI.Web.HTML (shownWhen, attrWith, clicked, div, provided, staticText, text, (:=))
 import PUI.Web.MDC2 (body, card)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 calculatorMDC2 :: Effect Unit
 calculatorMDC2 =
   body $
     card $
-      ( ( div >>> "style" := "display: inline-block; width: 296px;" $ Category.do
+      ( ( div >>> "style" := "display: inline-block; width: 296px;" $ Semigroupoid.do
         div >>> "style"
           := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
             <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
-            <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Category.do
+            <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
             (staticText "Error") # shownWhen @"faulty" readout
             text _.entry # provided @"sound" readout
         div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $

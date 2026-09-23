@@ -7,20 +7,20 @@ import Effect (Effect)
 import PUI (mvu, toCases, updated)
 import PUI.Web.HTML (shownWhen, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, displaySmall)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 import TicketDispenserLogic (displayOf, emptyQueue, firstTicket, servingLine, ticketIssuance, ticketLine, ticketRequested)
 
 ticketDispenserMDC3 :: Effect Unit
 ticketDispenserMDC3 =
   body $
-    card $ ( Category.do
-      displaySmall ( Category.do
+    card $ ( Semigroupoid.do
+      displaySmall ( Semigroupoid.do
         (staticText "—") # shownWhen @"waiting" displayOf
         (text ticketLine) # shownWhen @"serving" displayOf )
-      bodyMedium ( Category.do
+      bodyMedium ( Semigroupoid.do
         (staticText "Press the button to draw the first ticket.") # shownWhen @"waiting" displayOf
         (text servingLine) # shownWhen @"serving" displayOf )
-      ( Category.do
+      ( Semigroupoid.do
         button @"Take a number" {} # toCases ticketRequested
         ticketIssuance identity # unfolding @"resume" firstTicket ) # updated const
     ) # mvu emptyQueue

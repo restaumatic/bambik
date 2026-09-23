@@ -6,15 +6,15 @@ import Effect (Effect)
 import PUI (muted, accumulated, every, foreach, mvu)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, body2, card, list, listItem)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 import ScoreboardLogic (boardSummary, gameStart, goal, scoreLine, summaryLine, tick, tickPeriod)
 
 scoreboardMDC2 :: Effect Unit
 scoreboardMDC2 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       every tickPeriod tick
-      ( Category.do
+      ( Semigroupoid.do
         list $ ( listItem $ text scoreLine ) # shown # accumulated goal
         ( body2 $ text summaryLine # shown ) # foreach @"key" boardSummary # muted ) # shown
     ) # mvu gameStart

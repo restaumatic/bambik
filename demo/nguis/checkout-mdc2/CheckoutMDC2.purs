@@ -10,13 +10,13 @@ import Effect (Effect)
 import PUI (mvu, toCases, updated)
 import PUI.Web.HTML (shownWhen, provided, text)
 import PUI.Web.MDC2 (body, body2, button, card)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkoutMDC2 :: Effect Unit
 checkoutMDC2 =
   body $
-    card $ ( Category.do
-      ( Category.do
+    card $ ( Semigroupoid.do
+      ( Semigroupoid.do
         ( body2 $ text cartLine ) # shownWhen @"cart" checkoutStep
         ( body2 $ text shippingLine ) # shownWhen @"shipping" checkoutStep
         ( body2 $ text paymentLine ) # shownWhen @"payment" checkoutStep

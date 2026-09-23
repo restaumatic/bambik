@@ -9,7 +9,7 @@ import PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, favoriteShots, 
 import PUI (mvu, updated)
 import PUI.Web.HTML (shownEach, shown, each, span, staticText, text)
 import PUI.Web.MDC3 (body, displayMedium, divider, drawer, imageList, imageListItem, imagePane, labelSmall, list, listItem, listOf, topAppBar)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 photoGalleryMDC3 :: Effect Unit
 photoGalleryMDC3 =
@@ -25,7 +25,7 @@ photoGalleryMDC3 =
             listItem $ staticText "No network involved"
           labelSmall $ staticText "Favorites"
           imageList { columns: 2 } $ each favoriteShots imageListItem )
-        ( Category.do
+        ( Semigroupoid.do
           ( displayMedium $ text albumTitle ) # shown
           imageList { columns: 3 } $ imagePane # shownEach @"src" albumPhotos )
       ) # mvu landscapesOpen

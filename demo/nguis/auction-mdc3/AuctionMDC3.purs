@@ -8,14 +8,14 @@ import Effect (Effect)
 import PUI (mvu, settled)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, card, headlineSmall, sliderLive)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 auctionMDC3 :: Effect Unit
 auctionMDC3 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       ( bodyMedium $ text bidLine ) # shown
-      ( Category.do
+      ( Semigroupoid.do
         sliderLive @"Your bid ($)" {} # settled raiseTop
         ( headlineSmall $ text topLine ) # shown ) # feedback noBids
     ) # mvu openingBid

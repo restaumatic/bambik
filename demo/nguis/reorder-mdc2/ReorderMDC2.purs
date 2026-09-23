@@ -10,13 +10,13 @@ import Effect (Effect)
 import PUI (action, atCase, blank, edited, mvu, static, updated)
 import PUI.Web.HTML (el, (:=))
 import PUI.Web.MDC2 (body, button, filledTextField, group, list, listItem)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 import ReorderLogic (openingSetlist, rotateAction, setOrder, shuffleAction)
 
 reorderMDC2 :: Effect Unit
 reorderMDC2 =
-  body $ ( Category.do
-    ( Category.do
+  body $ ( Semigroupoid.do
+    ( Semigroupoid.do
       RecordToVariant.do
         button @"Rotate" { icon: "sync" }
         button @"Shuffle" { icon: "shuffle" }

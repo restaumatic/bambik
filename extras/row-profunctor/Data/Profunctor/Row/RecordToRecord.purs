@@ -199,7 +199,7 @@ with a w = announce a >>> w
 -- | the pipeline's initial-state obligation, which is what a mount entry
 -- | demands. The standalone app reads `body $ ... $ mvu seed pipeline`.
 -- |
--- | How to read one: stages compose with `Category.do`, every emission
+-- | How to read one: stages compose with `Semigroupoid.do`, every emission
 -- | travels left to right through them, and `mvu` loops the final emission
 -- | back to the top — so a stage placed *before* another is not "above" it;
 -- | all stages see every model value on the next loop turn. A counter (a
@@ -428,7 +428,7 @@ feedback seed g =
 -- | this word is where the second becomes editable.
 -- |
 -- | ```
--- | bracketed @"Fulfillment" fulfillmentState fulfillmentCase $ Category.do
+-- | bracketed @"Fulfillment" fulfillmentState fulfillmentCase $ Semigroupoid.do
 -- |   tabBar @"selected" [ … ]
 -- |   filledTextField @"Table" {} # inCase @"Dine in" selection
 -- |   …

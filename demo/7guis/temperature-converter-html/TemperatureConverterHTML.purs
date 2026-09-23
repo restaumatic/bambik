@@ -5,16 +5,16 @@ import Prelude (Unit, (#), ($))
 import Effect (Effect)
 import PUI (mvu, settled)
 import PUI.Web.HTML (shown, body, div, input, label, p, staticText)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 import TemperatureConverterLogic (fromCelsius, fromFahrenheit, roomTemperature)
 
 temperatureConverterHTML :: Effect Unit
 temperatureConverterHTML =
-  body $ div $ ( Category.do
-    p ( label $ Category.do
+  body $ div $ ( Semigroupoid.do
+    p ( label $ Semigroupoid.do
       (staticText "°C ") # shown
       input @"°C" "text" ) # settled fromCelsius
-    p ( label $ Category.do
+    p ( label $ Semigroupoid.do
       (staticText "°F ") # shown
       input @"°F" "text" ) # settled fromFahrenheit
   ) # mvu roomTemperature

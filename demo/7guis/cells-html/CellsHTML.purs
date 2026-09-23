@@ -7,13 +7,13 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
 import PUI.Web.HTML (shown, attrWith, body, clicked, div, input, label, p, staticText, table, td, text, tr, (:=))
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsHTML :: Effect Unit
 cellsHTML =
-  body $ div $ ( Category.do
+  body $ div $ ( Semigroupoid.do
     p (text selectedLine) # shown
-    p ( label $ Category.do
+    p ( label $ Semigroupoid.do
       (staticText "Formula (e.g. =SUM(A0:A5)*2) ") # shown
       "size" := "32" $ input @"Formula (e.g. =SUM(A0:A5)*2)" "text" ) # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $

@@ -302,7 +302,8 @@ What changed:
   complement was the ecosystem's own `bind`/`discard` under a constraint the
   bodies never used, so `QualifiedDo.Category` was deleted and applications
   import `QualifiedDo.Semigroupoid as Category` — the spelling at every call
-  site is unchanged.)
+  site is unchanged. Then 2026-09-23: the alias itself went, the module
+  imported under its own name, so the block reads `Semigroupoid.do`.)
 - **86 dead logic exports deleted** — `*Line`/`*Text` formatters left over
   from the `told line` era, exported by 29 logic modules and used by no
   view (the sentences are `RecordToRecord.do` merges of
@@ -396,7 +397,7 @@ not to need it:
   row, and whole-row citizens compose *sequentially*: each echoes what it
   is fed, so `slider @l {} >>> rangeInput @l` shows the seed in both, a
   slider edit flows through the range, and a range edit reaches the
-  slider on the loop's re-broadcast. `Category.do` already is the
+  slider on the loop's re-broadcast. `Semigroupoid.do` already is the
   "broadcast in, last writer wins" of the joint world, one stage at a
   time.
 * **`inCase`** was `joint (provided caseHolds w) identity`. It is now a
@@ -411,4 +412,4 @@ combined nothing — no union, no dispatch, no gate — so its laws
 (associativity, dinaturality) were laws of scheduling on a duplex
 carrier rather than of the row algebra, and `(->)` could not inhabit it.
 The duoidal reading in `PUI`'s header now names exactly two ways to
-compose: `Category.do` and the four merges.
+compose: `Semigroupoid.do` and the four merges.

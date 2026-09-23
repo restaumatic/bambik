@@ -8,24 +8,24 @@ import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWay
 import PUI (action, atCase, debounced, forCases, mvu, required, blank)
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shown, shownWhen, body, button, div, input, label, output, p, select, staticText, text)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerHTML :: Effect Unit
 flightBookerHTML =
-  body $ div $ Category.do
-    ( Category.do
+  body $ div $ Semigroupoid.do
+    ( Semigroupoid.do
       p ( label $ RecordToRecord.do
         staticText "Flight type "
         select @"Flight type"
           [ choice @"one-way", choice @"return" ] ) # required
-      p ( label $ Category.do
+      p ( label $ Semigroupoid.do
         (staticText "Start date (DD.MM.YYYY) ") # shown
         input @"Start date (DD.MM.YYYY)" "text" )
-      p ( label $ Category.do
+      p ( label $ Semigroupoid.do
         (staticText "Return date (DD.MM.YYYY) ") # shown
         input @"Return date (DD.MM.YYYY)" "text" ) # inCase @"return" tripType
     ) # mvu plannedTrip
-    ( Category.do
+    ( Semigroupoid.do
       p (text problemLine) # shownWhen @"problem" bookingState
       p (text oneWayLine) # shownWhen @"one-way" bookingState
       p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime

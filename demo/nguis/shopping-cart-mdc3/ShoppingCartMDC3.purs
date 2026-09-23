@@ -8,13 +8,13 @@ import Effect (Effect)
 import PUI (foreach, mvu, updated, with)
 import PUI.Web.HTML (shown, clicked, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, dataCell, dataRow, dataTable, listOf)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 import ShoppingCartLogic (addUnit, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine)
 
 shoppingCartMDC3 :: Effect Unit
 shoppingCartMDC3 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       listOf @"productPicked" _.product {} productCatalogue (text catalogueLine) # updated (match { productPicked: addUnit })
       dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
         ( ( clicked @"linePicked" _.product $ dataRow RecordToRecord.do

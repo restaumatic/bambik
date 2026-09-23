@@ -1,7 +1,7 @@
 -- | The core profunctor UI type and its combinators.
 -- |
 -- | **The duoidal reading.** `PUI` composes two ways: sequentially
--- | (`Category.do` — `QualifiedDo.Semigroupoid`, imported `as Category`;
+-- | (`Semigroupoid.do` — the ecosystem's `QualifiedDo.Semigroupoid`;
 -- | `⊳`, emissions feed downstream) and in parallel
 -- | (the row merges, `⊗` — the input broadcasts to every operand). The two
 -- | interact as in a duoidal category: a pipeline can only emulate a merge
@@ -907,7 +907,7 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | cases, no pass-through `state` case in the event merge:
 -- |
 -- | ```
--- | looped Category.do
+-- | looped Semigroupoid.do
 -- |   form                                   -- ×→× editors
 -- |   updates handle RecordToVariant.do ...  -- ×→+ events, bare payloads
 -- | ```

@@ -8,16 +8,16 @@ import Effect (Effect)
 import PUI (blank, foreach, mvu, updated)
 import PUI.Web.HTML (shown, attrWith, clicked, div, text, (:=))
 import PUI.Web.MDC2 (body, body2, card, sliderLive)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 colorMixerMDC2 :: Effect Unit
 colorMixerMDC2 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       sliderLive @"Red" {}
       sliderLive @"Green" {}
       sliderLive @"Blue" {}
-      ( div $ Category.do
+      ( div $ Semigroupoid.do
         div >>> attrWith "style" swatchStyle $ blank
         div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
           clicked @"preset" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" (const palette) ) # updated (match { preset: applyPreset })

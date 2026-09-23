@@ -9,20 +9,20 @@ import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine,
 import PUI (applied, forCase, mvu, observed, updated, with)
 import PUI.Web.HTML (shown, provided, span, text)
 import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, card, dialog, fab, headline6, iconButton, listOf, menu, menuItem)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 inboxMDC2 :: Effect Unit
 inboxMDC2 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       ( caption $ text unreadLine ) # shown
       listOf @"opened" _.id { selected: highlighted } mailboxRows ( span $ text messageLine # shown ) # updated (match { opened: openMessage })
-      ( Category.do
+      ( Semigroupoid.do
         headline6 (text subjectLine) # shown
         body2 (text fromLine) # shown
         body1 (text bodyText) # shown
         iconButton @"Delete message" { icon: "delete" } ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
-      ( Category.do
+      ( Semigroupoid.do
         ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
           button @"Delete" {} # with {}
           button @"Keep" {} # with {} ) # provided @"confirming" deletionOf

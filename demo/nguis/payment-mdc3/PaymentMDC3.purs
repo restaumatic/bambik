@@ -9,17 +9,17 @@ import PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCha
 import PUI (action, atCase, forCase, mvu, observed, toCases, updated)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, headlineSmall, indeterminateCircularProgress, snackbar)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 paymentMDC3 :: Effect Unit
 paymentMDC3 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       ( headlineSmall $ text amountLine ) # shown
       ( bodyMedium $ text statusLine ) # shown
-      ( Category.do
+      ( Semigroupoid.do
         button @"Charge card" { icon: "credit_card" } # toCases startCharge
-        ( Category.do
+        ( Semigroupoid.do
           indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
           snackbar # forCase @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
     ) # mvu unpaidOrder

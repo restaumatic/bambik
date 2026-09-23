@@ -9,26 +9,26 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web.HTML (shown, attrWith, body, button, clicked, div, input, label, li, p, staticText, text, ul, (:=))
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudHTML :: Effect Unit
 crudHTML = do
   catalogue <- sharedPeopleCatalogue
-  body $ div $ ( Category.do
+  body $ div $ ( Semigroupoid.do
     blank # action (loadPeopleCatalogue catalogue)
-    ( Category.do
-      p ( label $ Category.do
+    ( Semigroupoid.do
+      p ( label $ Semigroupoid.do
         (staticText "Filter prefix (surname) ") # shown
         input @"Filter prefix (surname)" "text" )
-      p ( label $ Category.do
+      p ( label $ Semigroupoid.do
         (staticText "Name ") # shown
         input @"Name" "text" )
-      p ( label $ Category.do
+      p ( label $ Semigroupoid.do
         (staticText "Surname ") # shown
         input @"Surname" "text" )
       ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
         ( clicked @"picked" _.key ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key" entries ) # updated (match { picked: pick })
-      ( Category.do
+      ( Semigroupoid.do
         div $ RecordToVariant.do
           button @"Create" (staticText "Create")
           button @"Update" (staticText "Update")

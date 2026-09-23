@@ -6,11 +6,11 @@ import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web.HTML (body, button, div, h4, shown, staticText, text)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 counterHTML :: Effect Unit
 counterHTML =
-  body $ div $ ( Category.do
+  body $ div $ ( Semigroupoid.do
     h4 (text countLine) # shown
     button @"Count" (staticText "Count") # applied increment
   ) # mvu freshCount

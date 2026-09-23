@@ -7,14 +7,14 @@ import Effect (Effect)
 import PUI (dispatched, every, mvu)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC2 (body, body2, card, list, listItem)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 departuresMDC2 :: Effect Unit
 departuresMDC2 =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       every tickPeriod tick
-      ( Category.do
+      ( Semigroupoid.do
         list $ ( listItem $ text flightLine ) # shown # dispatched arrival
         body2 (text updateLine) ) # shown
     ) # mvu boardOpening

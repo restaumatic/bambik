@@ -8,13 +8,13 @@ import PUI (armed, forCase, mvu, required)
 import PUI.Web (choice)
 import PUI.Web.HTML (shown, p, text)
 import PUI.Web.Shoelace (body, button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 productReviewShoelace :: Effect Unit
 productReviewShoelace =
   body $
-    card $ Category.do
-      ( Category.do
+    card $ Semigroupoid.do
+      ( Semigroupoid.do
         rating @"Overall rating" {}
         textField @"Headline" {}
         textArea @"Your review" { rows: 4 }

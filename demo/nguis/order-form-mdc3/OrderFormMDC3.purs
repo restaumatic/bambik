@@ -12,46 +12,46 @@ import PUI (action, armed, atCase, bracketed, debounced, forCase, looped, requir
 import PUI.Web (choice)
 import PUI.Web.HTML (inCase, shownWhen, shown, staticText, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderFormMDC3 :: Effect Unit
 orderFormMDC3 =
-  body $ ( Category.do
+  body $ ( Semigroupoid.do
     indeterminateLinearProgress @"busy" # action loadOrder
-    ( Category.do
+    ( Semigroupoid.do
       ( headlineSmall $ text orderLine ) # shown
-      card $ Category.do
+      card $ Semigroupoid.do
         ( titleMedium $ staticText "Identifier" ) # shown
         filledTextField @"Short ID" {}
         filledTextField @"Unique ID" {}
-      group @"Customer" $ Category.do
+      group @"Customer" $ Semigroupoid.do
         filledTextField @"First name" {}
         filledTextField @"Last name" {}
-      card $ Category.do
+      card $ Semigroupoid.do
         ( titleMedium $ staticText "Fulfillment" ) # shown
-        ( Category.do
+        ( Semigroupoid.do
           tabBar @"selected"
             [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
           filledTextField @"Table" {} # inCase @"Dine in" selection
           filledTextField @"Time" {} # inCase @"Takeaway" selection
-          ( Category.do
+          ( Semigroupoid.do
             filledTextField @"Address" {} # settled staleDistanceForgotten
-            ( Category.do
+            ( Semigroupoid.do
               button @"Estimate distance" { icon: "near_me" }
               indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
             ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed @"Fulfillment" fulfillmentState fulfillmentCase
-      card $ Category.do
+      card $ Semigroupoid.do
         ( titleMedium $ staticText "Total" ) # shown
         filledTextField @"Total" {}
-      group @"Payment" $ Category.do
+      group @"Payment" $ Semigroupoid.do
         segmentedButton @"Method"
           [ choice @"cash", choice @"card" ] # required
         filledTextField @"Paid" {}
         ( bodyLarge $ text payingLine ) # shown
-      card $ Category.do
+      card $ Semigroupoid.do
         ( titleMedium $ staticText "Remarks" ) # shown
         filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
-    bodyLarge ( Category.do
+    bodyLarge ( Semigroupoid.do
       text summaryLine # shown # debounced summarySettleTime
       text dineInLine # shownWhen @"Dine in" fulfillmentOf
       text takeawayLine # shownWhen @"Takeaway" fulfillmentOf

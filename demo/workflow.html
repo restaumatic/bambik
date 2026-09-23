@@ -73,12 +73,12 @@ import Effect (Effect)
 import PUI (forCase, with)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC3 (body, button, card, filledTextField, headlineSmall, snackbar)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderApp :: Effect Unit
 orderApp =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       filledTextField @"Pizza" {}
       headlineSmall (text ?orderLine) # shown
       button @"Order" {}
@@ -269,12 +269,12 @@ import OrderLogic (confirmedLine, orderLine, plainMargherita)
 import PUI (forCase, with)
 import PUI.Web.HTML (shown, text)
 import PUI.Web.MDC3 (body, button, card, filledTextField, headlineSmall, snackbar)
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderApp :: Effect Unit
 orderApp =
   body $
-    card $ ( Category.do
+    card $ ( Semigroupoid.do
       filledTextField @"Pizza" {}
       headlineSmall (text orderLine) # shown
       button @"Order" {}

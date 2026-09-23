@@ -22,7 +22,7 @@ import PUI.Web (OptCaption(..), Web)
 import PUI.Web.HTML (attrWith, div, shown, staticText, text, (:=))
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
-import QualifiedDo.Semigroupoid as Category
+import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
 board :: Ocular (PUI Web)
@@ -30,22 +30,22 @@ board = div >>> "style" := "display: flex; flex-wrap: wrap; gap: 16px; align-ite
 
 statTile :: forall @l r. IsSymbol l => { unit :: String } -> ({ | r } -> String) -> PUI Web { | r } {}
 statTile config f =
-  tile >>> "aria-label" := reflectSymbol (Proxy @l) $ Category.do
+  tile >>> "aria-label" := reflectSymbol (Proxy @l) $ Semigroupoid.do
     ( labelMedium $ staticText (reflectSymbol (Proxy @l)) ) # shown
-    div >>> "style" := "display: flex; align-items: baseline; gap: 6px;" $ Category.do
+    div >>> "style" := "display: flex; align-items: baseline; gap: 6px;" $ Semigroupoid.do
       displaySmall (text f)
       labelMedium $ staticText config.unit
 
 gauge :: forall @l r. IsSymbol l => Union r () r => ({ | r } -> Number) -> PUI Web { | r } {}
 gauge f =
-  tile $ ( Category.do
+  tile $ ( Semigroupoid.do
     ( labelMedium $ staticText (reflectSymbol (Proxy @l)) ) # shown
     linearProgress @l f # shown
     ( labelLarge $ text (percentLine <<< f) ) # shown ) # muted
 
 trendChart :: forall @l r. IsSymbol l => ({ | r } -> Array Number) -> PUI Web { | r } {}
 trendChart f =
-  tile >>> "aria-label" := reflectSymbol (Proxy @l) $ Category.do
+  tile >>> "aria-label" := reflectSymbol (Proxy @l) $ Semigroupoid.do
     ( labelMedium $ staticText (reflectSymbol (Proxy @l)) ) # shown
     SVG.svg >>> "viewBox" := "0 0 120 40" >>> "preserveAspectRatio" := "none" >>> "style" := "width: 100%; height: 40px;" $
       SVG.path >>> "fill" := "none" >>> "stroke" := "var(--md-sys-color-primary, #6750a4)" >>> "stroke-width" := "2"
@@ -54,13 +54,13 @@ trendChart f =
 
 leaderboard :: forall @l r. IsSymbol l => ({ | r } -> Array { name :: String, score :: String }) -> PUI Web { | r } {}
 leaderboard f =
-  tile >>> "aria-label" := reflectSymbol (Proxy @l) $ Category.do
+  tile >>> "aria-label" := reflectSymbol (Proxy @l) $ Semigroupoid.do
     ( labelMedium $ staticText (reflectSymbol (Proxy @l)) ) # shown
     list ( ( listItem $ text entryLine ) # foreach @"name" f ) # muted
 
 rangePicker :: forall @l provided a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
 rangePicker provided options =
-  div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Category.do
+  div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Semigroupoid.do
     ( labelMedium $ staticText config.label ) # shown
     segmentedButton @l options
   where
