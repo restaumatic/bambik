@@ -8,7 +8,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, mvu, settled, updated)
 import PUI.Web.Bootstrap (body, button, card, sliderLive)
-import PUI.Web.HTML (attrWith, cl, div, onClickedXY, inCase, (:=))
+import PUI.Web (attrWith, cl, inCase, onClickedXY, (:=))
+import PUI.Web.HTML (div)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

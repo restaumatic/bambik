@@ -6,7 +6,8 @@ import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web.Bootstrap (body, button, card)
-import PUI.Web.HTML (h4, shown, text)
+import PUI.Web (shown, text)
+import PUI.Web.HTML (h4)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 counterBootstrap :: Effect Unit

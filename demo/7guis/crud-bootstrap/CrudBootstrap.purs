@@ -9,7 +9,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, textField)
-import PUI.Web.HTML (cl, clWhen, clicked, div, text, (:=))
+import PUI.Web (cl, clicked, clWhen, text, (:=))
+import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudBootstrap :: Effect Unit

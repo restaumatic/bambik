@@ -5,9 +5,9 @@ import Prelude (Unit, show, (#), ($), (<>), (>>>))
 import Data.Variant (match)
 import Effect (Effect)
 import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
-import PUI (PUI, atField, mvu)
-import PUI.Web (Web)
-import PUI.Web.HTML (shown, blockquote, code, dynamic, each, el, em, li, p, staticText, strong, ul, (:=))
+import PUI (PUI, mvu)
+import PUI.Web (Web, dynamic, each, el, shown, staticText, (:=))
+import PUI.Web.HTML (blockquote, code, em, li, p, strong, ul)
 import PUI.Web.MDC2 (body, card, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -17,7 +17,7 @@ markdownPreviewerMDC2 =
     card $
       layoutGrid $ ( Semigroupoid.do
         layoutCell { span: 6 } $ filledTextArea @"Source" { columns: 60, rows: 24 }
-        layoutCell { span: 6 } $ ( dynamic \source -> each (parseMarkdown source) blockView ) # atField @"Source" # shown
+        layoutCell { span: 6 } $ ( dynamic \document -> each (parseMarkdown document) blockView ) # shown
       ) # mvu welcomeDocument
 
 blockView :: [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] }, paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ], bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ]), quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] ] -> PUI Web {} {}

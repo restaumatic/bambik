@@ -194,10 +194,10 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   | `settled` | `rmap`-only normalization over a stated sub-row footprint |
   | `updated` | the Mealy update stage: fold each event emission of a wrapped `×→+` component into the retained value; **both sides subsume** |
   | `applied` | the occurrence stage — `updated` for an emitter fed the row it acts on (a button replaying its row): `f :: state -> state` steps the retained row per emission, the emitter's input row pinned to `f`'s footprint by the signature, so `button @"Add" {} # applied addTodo` states label and model once each; law `applied f = updated (const f)`. The subsuming stages (`updated`/`applied`/`every`/`settled`) each state their footprint as one constraint, `Union small rest big` — the model is the footprint plus the rest |
-  | gated displays | displays are pipeline stages natively, typed `p { o \| rest } { o \| rest }` — a pass-through whose **release is the fulfillment witness**, gate policy baked into the component. The family (PUI.Web.HTML unless noted): `shown content` (ambient structured content — chrome registers at build, renders per feed, releases always), `shownWhen @l f content` (display pane: attach on relevance, release always), `inCase @l f editor` (the editor pane — `shownWhen`'s editor sibling; a carrier primitive, the pane's channel beside the wire's, since its content emits the row the owned merge would reject), `shownEach @l proj item` (keyed collection), `confirmed cfg $ content` (MDC2/MDC3 — the witness rung: modal, flow withheld until the user confirms). Content slots accept only `{}`-output components, keeping the no-silent-loss law; `observed` unchanged |
+  | gated displays | displays are pipeline stages natively, typed `p { o \| rest } { o \| rest }` — a pass-through whose **release is the fulfillment witness**, gate policy baked into the component. The family (`PUI.Web` unless noted): `shown content` (ambient structured content — chrome registers at build, renders per feed, releases always), `shownWhen @l f content` (display pane: attach on relevance, release always), `inCase @l f editor` (the editor pane — `shownWhen`'s editor sibling; a carrier primitive, the pane's channel beside the wire's, since its content emits the row the owned merge would reject), `shownEach @l proj item` (keyed collection), `confirmed cfg $ content` (MDC2/MDC3 — the witness rung: modal, flow withheld until the user confirms). Content slots accept only `{}`-output components, keeping the no-silent-loss law; `observed` unchanged |
   | `muted` | the counit: render, and **deliberately discard** the component's output (`rmap (const {})`) — the visible form of what no stage may do silently; `# muted` writes off a genuinely emitting assembly (a `foreach` forwarding its elements inside a packaged control, scoreboard's summary group) so it can end at `{}` |
   | `observed` | the gated displays' `+`-diagonal sibling: every event forwards once at feed time; the status's own emissions are dropped (events are one-shot) |
-  | `required` / `optional` | adopt a type-changing selector as an always-selected / possibly-unselected **whole-row citizen** (label derived from the leaf's closed rows, background carried like `field @l`'s); `optional @c @n` completes the `Just`-only echo and keeps the field as the **named two-case variant** `[ c :: a, n :: {} ]` the application spells (`# optional @"chosen" @"unchosen"`, seeded `.unchosen {}`), so an unmade choice is honest knowledge rather than a starved stage and consumers adopt the made case |
+  | `required` / `optional` | complete a **picker** (`{ l :: Maybe a } → [ l :: a ]`, the `×→+` selector leaf) into the always-selected / possibly-unselected editor of field `l` — a **whole-row citizen** that answers every feed with the row and folds each pick into it (label derived from the picker's closed rows; one private body, `pickedInto`, since 2026-09-23 — before, the selector was a `×→×` leaf silent on `Nothing` and these completed its echo); `optional @c @n` keeps the field as the **named two-case variant** `[ c :: a, n :: {} ]` the application spells (`# optional @"chosen" @"unchosen"`, seeded `.unchosen {}`), so an unmade choice is honest knowledge rather than a starved stage and consumers adopt the made case |
   | `every` | the heartbeat wire: pass-through plus a periodic step over a sub-row, merged back over the last value — **derived** (2026-09-15) from the `ticks @l` source (an occurrence per period out of the terminal record, the timer's `×→+` leaf) under `replaying`, `toCases` into `stepped`/`idle`, `silence` on the idle case and `updated`, in a `looped` so each tick reads the value just stepped; no retention of its own |
   | `ticks @l` | the tick source, `{ ms } -> p {} [ l :: {} ]`: `announce`'s periodic sibling and the click source's timer twin; feeds ignored, nothing emitted inside a feed |
   | `replaying @l f` | **replay is `Strong`'s retention**: `first` around an occurrence source (a source emitting `[ l :: {} ]` with no payload), the fed row riding the state channel and joining each occurrence as `f` of it, leaving as case `l`; the `×→+` leaf's replay-last-value protocol as the primed `Strong` law — `clicked @l f w` *is* `replaying @l f` of a private click source (2026-09-15) |
@@ -209,8 +209,8 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   record merges, and `constantly` was `()`-subsumption in disguise (positions
   whose mechanism subsumes take `blank` directly; constant catalogues enter
   through the consuming mechanism's projection argument).
-- **src/PUI/Web.purs** - the carrier **and the root of the web layer**: DOM monad (`Web = StateT DOM Effect`), `Node`, DOM building blocks (`element`, `attachable`, `runDomInNode`) and FFI — no UI components. Everything browser-specific is a submodule of it: the element vocabularies `PUI.Web.HTML`/`PUI.Web.SVG` and one module per design system (`PUI.Web.MDC2`, `PUI.Web.MDC3`, `PUI.Web.Shoelace`, `PUI.Web.Fluent`, `PUI.Web.Bootstrap`), all under **src/PUI/Web/** — so the carrier-independent algebra (`PUI`, `Data.Profunctor.*`) stays visibly separate from the web specialization
-- **src/PUI/Web/HTML.purs** — the 1-1 HTML vocabulary over the carrier.
+- **src/PUI/Web.purs** - the carrier **and the root of the web layer**: DOM monad (`Web = StateT DOM Effect`), `Node`, DOM building blocks (`element`, `attachable`, `runDomInNode`) and FFI, plus the **element-neutral vocabulary** — every word that names no element: the decorators (`attr`/`:=`, `attrDyn`/`:=>`, `cl`, `attrWith`, `clWhen`, `init`), the text leaves (`text`, `textOf`, `staticText`, `staticHTML`), the occurrence sources (`clicked`, `onClickedXY`), `provided` and the gated rungs (`shown`/`shownWhen`/`inCase`/`shownEach`), and the structure builders (`dynamic`, `each`, `el`) — so SVG and every design system use them without importing the HTML vocabulary (moved out of `PUI.Web.HTML` 2026-09-23; the interaction table under the HTML bullet lists them). No *element* lives here. Everything browser-specific is a submodule of it: the element vocabularies `PUI.Web.HTML`/`PUI.Web.SVG` and one module per design system (`PUI.Web.MDC2`, `PUI.Web.MDC3`, `PUI.Web.Shoelace`, `PUI.Web.Fluent`, `PUI.Web.Bootstrap`), all under **src/PUI/Web/** — so the carrier-independent algebra (`PUI`, `Data.Profunctor.*`) stays visibly separate from the web specialization
+- **src/PUI/Web/HTML.purs** — the 1-1 HTML vocabulary over the carrier: the element oculars and HTML's native controls, and nothing that names no element (that is `PUI.Web`'s).
 
   **Entry**: `body :: PUI Web {} o -> Effect Unit` registers the wiring and
   then feeds `{}` **once** (2026-09-15) — the terminal record's one value,
@@ -227,25 +227,26 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   its entry from its vocabulary like every other word and no vocabulary acts
   on the page at import time.
 
-  **Interaction vocabulary** (the collection combinators `foreach`/`edited`/
-  `acted` live at the **PUI level** — see the container-action bullet):
+  **Interaction vocabulary** — element-neutral, so it lives in **`PUI.Web`**
+  (the collection combinators `foreach`/`edited`/`acted` live one level
+  lower still, at the **PUI level** — see the container-action bullet):
 
   | Word | What it does |
   | --- | --- |
   | `attrWith` | value-computed attribute — the channel-fed counterpart of static `attr`/`:=`, so a cell's style/coord/colour updates in place through the channel rather than by rebuilding a closure |
   | `clicked @l f` | click emitter for any element, emitting `f` of the row last fed as case `l` (`button`'s replay-last-value protocol — replay is lawful over records only, so the payload is a row, and the channel is a variant, so the source is `×→+` by shape); **derived** since 2026-09-15 as `replaying @l f` of a private click source (`occurrences`, `p i [ occurred :: {} ]`, at `{}` the point's dual), so the replay `Ref` is `Strong`'s retention and a click before any feed is the primed `Strong` law's withheld emission; its **content subsumes** — a multi-reader content states its row once in a named closed *face* function |
-  | `provided` | the **one visibility primitive**: case-gated existence — its argument is a classifier (a stored variant field via a closed accessor, or a variant-returning business function), content attached and fed the case payload on case `l`, detached on every other case. There is no `Maybe` form: a state a pane depends on is a variant with named cases, so mutually exclusive states are exclusive by construction and the view line names the state it shows. It **detaches**, so it is a pipeline stage, not a gated-merge operand |
+  | `provided` | the **emitter pane**: case-gated existence of a `×→+` content (`PUI Web { \| a } [ \| o ] -> PUI Web { \| i } [ \| o ]`) — its argument is a classifier (a stored variant field via a closed accessor, or a variant-returning business function), content attached and fed the case payload on case `l`, detached on every other case, where its silence is `×→+`'s answer. Its siblings are the panes for the other contents — `shownWhen` (displays) and `inCase` (editors) — all three over one private mechanism, `attachedOn` (2026-09-23; before, `provided` took any content and broke Answer on a detached display). There is no `Maybe` form: a state a pane depends on is a variant with named cases, so mutually exclusive states are exclusive by construction and the view line names the state it shows. It **detaches**, so it is a pipeline stage, not a gated-merge operand |
   | `clWhen` | value-dependent class — styling, deliberately last-element-only |
   | gated display rungs | `shown content` (ambient structured content, registered at build), `shownWhen @l f content` (display pane), `inCase @l f editor` (editor pane), `shownEach @l proj item` (keyed collection) — each `p { o \| rest } { o \| rest }`, releasing the fed row per its policy; `confirmed` (the witness rung) lives in the design systems |
   | `onClickedXY @l` | container-level pointer-down coordinates (local/viewBox `{ x, y }`) for canvases, emitted as case `l` |
 
-  Announcing statics are `staticText` and the void `hr` (`{} → {}` chrome); the
-  raw-HTML `staticHTML` lives one level up in `PUI.Web`, not here, since L10
-  keeps an HTML-string surface out of the public vocabulary. `input`/`textArea`
+  Announcing statics are `staticText` (`PUI.Web`) and the void `hr` (`{} → {}`
+  chrome); the raw-HTML `staticHTML` sits beside `staticText` in `PUI.Web`,
+  since L10 keeps an HTML-string surface out of the public vocabularies. `input`/`textArea`
   are focus-guarded. The **element oculars** cover the usual set
   (`div`/`span`/`table`/`tr`/`td`/`ul`/`li`/`p`/`h1`–`h6`/`img`/`a`/`label`/
-  `strong`/`em`/`code`/`blockquote`/`header`/`footer`/`section`/…, plus the
-  generic `el` for computed tags) with `attr`/`:=` and `cl` decorators; the
+  `strong`/`em`/`code`/`blockquote`/`header`/`footer`/`section`/…, plus
+  `PUI.Web`'s generic `el` for computed tags) with `PUI.Web`'s `attr`/`:=` and `cl` decorators; the
   **SVG** oculars (`svg`/`circle`/`path`/`text`) live in **`PUI.Web.SVG`**,
   imported qualified when a component needs both the HTML `text` leaf and the
   SVG `<text>` element. SVG works because `element` is namespace-aware
@@ -254,8 +255,8 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   unaffected).
 
   The native elements with a model interface are **label-indexed components**
-  (L3), each stamping its label as the host `name`: the type-changing
-  `select @l` (`Cons l (Maybe a)` in, `Cons l a` out — bare
+  (L3), each stamping its label as the host `name`: the picker
+  `select @l` (`Cons l (Maybe a)` in, case `l` out — bare
   `<select>`/`<option>`s, no caption chrome of its own), `rangeInput @l`
   (`<input type="range">`, the live bounded-quantity slider over
   `Cons l { current, min, max, step }`), the `progress @l` display
@@ -267,8 +268,14 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   own, a caption staying a sibling `label`+`staticText` merge). With that,
   **`field` left the application surface entirely** (no longer re-exported
   from `PUI`): the leaf lift is design-system plumbing in every vocabulary,
-  the plain-HTML floor included, and `radioButton` stays a scalar
-  optic-position leaf.
+  the plain-HTML floor included. The scalar `radioButton` (`Maybe a → a`)
+  is deleted (2026-09-23): **shape is the type** (guardrails L3) — every
+  exported component ends in one of the four row forms, each side a record
+  or a variant — app-packaged controls included. A word that would need
+  two shapes is two words: the selector is a picker (`×→+`) plus
+  `required`/`optional` (`×→×`), the pane is `provided` (emitters),
+  `shownWhen` (displays) or `inCase` (editors). Only the decorators
+  `clWhen`/`attrWith`, like the oculars, keep the shape they decorate.
 
   **Structure computed from data is `PUI Web` all the way down** — no markup
   DSL — in two regimes:
@@ -295,8 +302,9 @@ design-system **umbrella**. What they share, stated once:
   `toggleSwitch`, `slider`/`sliderLive`) and displays (progress/gauge), `×→+`
   events (`button` and its emphasis siblings, `fab`, `iconButton`, `menuItem`),
   `+→×` statuses (`snackbar`/`toast`/`messageBar`/`banner`), plus the
-  type-changing selectors (`select`, `radioButton`/`radioGroup`,
-  `segmentedButton`, `dropdown`) shaped `Cons l (Maybe a)` in → `Cons l a` out.
+  **pickers** (`select`, `radioButton`/`radioGroup`, `segmentedButton`,
+  `dropdown`) — `×→+`, `{ l :: Maybe a } → [ l :: a ]`, lifted with
+  `PUI.Web.pickedAt` and completed into editors by `required`/`optional`.
   *Oculars* are shape-preserving decorators with no model of their own
   (`card`/`cardActions`, dialogs, lists, typography, elevations) — and a
   **surface ocular carries no copy config**: MD2 gives a card twelve optional
@@ -318,9 +326,12 @@ design-system **umbrella**. What they share, stated once:
 - **Leaf-echo protocols** are identical across all five: focus-guarded text
   fields (model updates never clobber the field being typed in, and the channel
   stays live), per-feed display echo (the `{}` answer to a feed and nothing
-  at registration — inert to every gate, real to sequencing), `Just`-only
-  echo on type-changing selectors, and `clicked`'s replay-last-value
-  protocol on emitters.
+  at registration — inert to every gate, real to sequencing), pickers and
+  emitters firing nothing inside a feed, and `clicked`'s replay-last-value
+  protocol on emitters. The leaf-law bench (demo/laws/, one page per
+  vocabulary, `scripts/smoke/tests/leaf-laws.mjs`) mounts every published
+  component alone and checks Repetition and Answer per shape against the
+  real DOM.
 - **The `dimap` round-trip contract for editors** (stated in each module
   header): an editor bracketed by `dimap f g` behaves as an iso lens; lossy or
   failing conversions belong in the model (`settled` on the whole-row stage), never
@@ -345,7 +356,7 @@ Per-catalogue deltas:
 
 | Module | Basis | Deltas worth knowing |
 | --- | --- | --- |
-| `PUI.Web.MDC2` | `material-components-web`: documented markup + a foundation instance (`newComponent material.x."MDCX"`) wired through its documented properties/events; text fields write through the foundation's `value` so label float stays foundation-managed | the fullest catalogue: `indeterminateLinearProgress`/`indeterminateCircularProgress` are **statuses** (`[ started :: {}, ended :: {} ] → {}`, mirrored in MDC3 — 2026-09-13: `action`'s progress slot dispatches the run's two occurrences, no model owns a `busy`, and a status owes the channel nothing, so the slot left the gated broadcast entirely; the earlier `{ busy :: Boolean }` was a two-case phase written as a Boolean nobody edits), `listOf` (a **dynamic collection component**, `{ \\| provided } -> (i -> Array { \\| r }) -> PUI Web { \\| r } o -> PUI Web i { \\| r }` — keyed `foreach` retention, MD2 selected styling via an optional `selected` predicate), `dataTable`/`dataRow`/`dataCell`, `imageList`/`imagePane` (the channel-fed sibling of the static `imageListItem`), `layoutGrid`, `topAppBar`, `drawer` (permanent, with a **live nav slot**: nav is the first stage and content the second, so the nav's release feeds the content and a feed is released once), `tooltip`, `banner`, `tabBar` (the same-type selector with unconditional echo — the `looped`-ensemble citizen), `menu`/`menuItem`, `chipSet`/`filterChip`, `iconToggle`, `dialog`/`simpleDialog` (modal protocol: **open on feed, close on emission**), `group @l` (the labelled model group — card surface + heading + `field @l` in one word, label stamped as the accessible group name; mirrored in MDC3) |
+| `PUI.Web.MDC2` | `material-components-web`: documented markup + a foundation instance (`newComponent material.x."MDCX"`) wired through its documented properties/events; text fields write through the foundation's `value` so label float stays foundation-managed | the fullest catalogue: `indeterminateLinearProgress`/`indeterminateCircularProgress` are **statuses** (`[ started :: {}, ended :: {} ] → {}`, mirrored in MDC3 — 2026-09-13: `action`'s progress slot dispatches the run's two occurrences, no model owns a `busy`, and a status owes the channel nothing, so the slot left the gated broadcast entirely; the earlier `{ busy :: Boolean }` was a two-case phase written as a Boolean nobody edits), `listOf` (a **dynamic collection component**, `({ \\| r } -> k) -> { \\| provided } -> ({ \\| i } -> Array { \\| r }) -> PUI Web { \\| r } o -> PUI Web { \\| i } [ \\| s ]` (`Cons l k () s`: a clicked row leaves as case `l` carrying its pick) — keyed `foreach` retention, MD2 selected styling via an optional `selected` predicate), `dataTable`/`dataRow`/`dataCell`, `imageList`/`imagePane` (the channel-fed sibling of the static `imageListItem`), `layoutGrid`, `topAppBar`, `drawer` (permanent, with a **live nav slot**: nav is the first stage and content the second, so the nav's release feeds the content and a feed is released once), `tooltip`, `banner`, `tabBar` (the same-type selector with unconditional echo — the `looped`-ensemble citizen), `menu`/`menuItem`, `chipSet`/`filterChip`, `iconToggle`, `dialog`/`simpleDialog` (modal protocol: **open on feed, close on emission**), `group @l` (the labelled model group — card surface + heading + `field @l` in one word, label stamped as the accessible group name; mirrored in MDC3) |
 | `PUI.Web.MDC3` | Google's `@material/web` custom elements — a leaf is `element "md-…"` plus property/event wiring: no foundation classes, no hand-fused ripple/label chrome | structured to **mirror MDC2** (same helper shapes, same definition order). MD3 renames arrive as the catalogue does: the MD3 typescale (`displayLarge`…`labelSmall`), four emphasis siblings (`elevatedButton`/`tonalButton`/`outlinedButton`/`textButton`), `elevation1/3/5`, and **no `banner`** (MD3 dropped it). Catalogue entries `@material/web` lacks (segmented button, snackbar, card, top app bar, drawer, data table, image list, tooltip) are hand-rolled over the `--md-sys-*` tokens, each injecting its stylesheet once via `ensureStyle`, the `md-typescale-*` stylesheet adopted by its `body` at mount; pages need only the Roboto + Material Symbols fonts |
 | `PUI.Web.Shoelace` | `@shoelace-style/shoelace` custom elements, Lit-based so no bind deferral | the MDC3 recipe verbatim. Exclusive: the star `rating` editor. Shoelace's own names where the concept differs — `textField`/`textArea` (no fill/outline split, plain `label`), `toast` (`<sl-alert>`), `progressBar`, `sliderLive` (`<sl-range>`). Page links the light-theme CSS from the CDN; icons from the CDN base path its `body` sets at mount. Typography is deliberately absent — Shoelace styles plain HTML, so the HTML oculars *are* the type scale |
 | `PUI.Web.Fluent` | Microsoft's `@fluentui/web-components` v3; tokens set from `webLightTheme` by its `body` at mount, so pages need no CSS link; labels associate via `<fluent-field>` wrappers | exclusives `ratingDisplay` (read-only — the catalogue has no star *editor*, and this vocabulary does not invent one) and `messageBar`; type ramp `title3`/`body1`/`caption1` over `<fluent-text>`. **Caveat**: FAST binds a beat after DOM insertion and replays pre-bind property writes at bind, and its update queue is rAF-driven (starving in frameless headless sessions) — so the dropdown/radio-group leaves defer writes on a **timer** poll (`whenBoundDo` in Fluent.js) and finish the two starvable registrations themselves; the dropdown's options must be wrapped in `<fluent-listbox>` (v3's markup contract) |
@@ -383,7 +394,7 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
 - **extras/row-profunctor/Data/Profunctor/Row/** - Row profunctors over `Record`/`Variant`: four direction modules, each carrying its **direction class** — the binary merge, the one genuine per-carrier primitive; no class carries a unit of its own: the unit laws are conditional on the carrier (*if* `p` is a `Category`, `identity` at the unit object must play well with the merge — `×→×`, `+→+` — and so must that wire entered from the empty variant for `+→×`, `lcmap case_ identity`), and only `×→+` keeps a class-member unit, `silence`, the one no wire reaches — with qualified-do sugar (`bind`/`discard`). Everything kept is reached by a demo or a law test (L14); laws are stated in the module headers. Type variables follow the photographic schema: focus `f`, background `b`, shot `s` (`Cons l f b s`), reality `r`.
   - **`RecordToRecord.purs`** (×→×) — merge `recordToRecord` (`SharedRecordInputs` + `OwnedRecordOutputs`; gated on `PUI`, zero-field sides pre-satisfied and inert — `{}` is always known and a contribution of zero fields is no contribution — and **released once per feed**: the broadcast is one step, so a feed changing several fields emits one fresh row, never a torn one);
 
-    over ecosystem `Strong`: `subStrong` (sub-record focus, background carried), `field` (the type-changing field lens — the leaf lift: an editor lifted with it is a whole-row citizen, background retained and re-attached per emission, which is what dissolved `completed`), `required` (adopt a type-changing selector as an always-selected whole-row citizen, label derived from its closed rows: `select @l config options # required`; its dual `optional` is carrier-level and lives in `PUI`);
+    over ecosystem `Strong`: `subStrong` (sub-record focus, background carried), `field` (the type-changing field lens — the leaf lift: an editor lifted with it is a whole-row citizen, background retained and re-attached per emission, which is what dissolved `completed`), (`required`/`optional`, completing a picker into an editor, are `updated`-shaped and live in `PUI`);
 
     over the **unit** (`identity @{}` — exactly, since the gates ignore a zero-field contribution): `with` (`announce a >>> w` over `Seeding` — discharge the initial-state obligation) with `mvu` (`with seed (looped w)` over `Looping` — the app shape, closed to `{}`), plus the subsuming `settled` (`rmap`-only normalization over a stated sub-row footprint);
 
@@ -503,7 +514,7 @@ focused demo apiece):
 | ticket-dispenser | `unfolding @"resume"` + the `Reel` optic (`Coretaining`) — "take a number", counter seeded and resumed; the reel is assembled in the logic module (`ticketIssuance`), the view supplying only the wire, and the button's caption case is adopted into the business case `requested` via `# toCases`. Also the **`shownWhen`** showcase: state is a payload-carrying variant field (`display`), so the number and hint panes are pure case adoption off one closed accessor (`displayOf`) |
 | parcel | `subStrong` — a reusable address sub-form as a citizen over its own closed row, background field threaded |
 | cashbox | `subChoice` — selective interception as UX: outgoing money detours through confirmation dialogs, incoming posts straight to the fold; every branch a two-record Mealy handler `{ amount } -> { balance } -> { balance }`; payloads via `button @l {…} # with patch` |
-| potluck | `acted` (the container action) — per-guest dish editors under one model; the menu summary is **withheld by the gather gate until every guest has chosen**, one whole-array read (`text menuLine`) over the gathered guests |
+| potluck | `acted` (the container action) — per-guest dish pickers under one model, each `# optional @"chosen" @"unchosen"`; the table's state is the business classifier `menuState` (`complete` with the dishes, `waiting` with the guests still choosing), each case a `shownWhen` pane — the waiting pane names who is left, the menu prints once the table is complete |
 | departures | `dispatched` (+→+ keyed input) — rows appear on first mention, re-feed in place, tagged output drives a last-update line |
 | scoreboard | `accumulated` (+→× keyed input) — board grows to its key set, points update in place, whole array drives the standings |
 | reorder | keyed reconciliation + the `edited` collection editor — a playlist keyed by track id, element output row excluding the key (the carrier re-attaches it); Rotate and effectful Shuffle move each row's DOM node with its track, so tick, title and focus follow |

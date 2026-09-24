@@ -137,9 +137,9 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach)
-import PUI.Web.HTML (aside, attrWith, cl, clWhen, clicked, div, el, h1, h2, h3, img, init, label, p, shown, span, staticText, table, tbody, td, textOf, th, thead, tr, (:=))
+import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, textContent, uniqueId)
+import PUI.Web (pickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, shown, staticHTML, staticText, text, textContent, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -513,8 +513,8 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
 -- | the made case) or `# required` (the model always has one).
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
-radioButton :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-radioButton options = field @l $ "name" := reflectSymbol (Proxy @l) $ (radioLeaf options)
+radioButton :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
+radioButton options = pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ (radioLeaf options)
 
 radioLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 radioLeaf options =
@@ -539,9 +539,6 @@ radioLeaf options =
     pure
       { toUser: \ma -> do
           render ma
-          -- leaf echo (output is the bare selection, so only a `Just` echoes)
-          mProp <- Ref.read mPropRef
-          for_ mProp \prop -> for_ ma \a' -> prop a'
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
@@ -648,8 +645,8 @@ bareSliderLeaf live label = wrap do
 -- | Same contract as `radioButton`: nothing to show until the user picks,
 -- | so say `# optional @"chosen" @"unchosen"` or `# required`; the options are part of the
 -- | control, not of the model.
-select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-select provided options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf config options)
+select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
+select provided options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf config options)
 
 selectLeaf :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 selectLeaf config options = wrap do
@@ -672,9 +669,6 @@ selectLeaf config options = wrap do
           Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setIntProp "selectedIndex" node idx
           Nothing -> setIntProp "selectedIndex" node (-1)
         Ref.write false busyRef
-        -- leaf echo (output is the bare selection, so only a `Just` echoes)
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \a' -> prop a'
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -689,8 +683,8 @@ selectLeaf config options = wrap do
 -- | control, all visible, one selected — a filter row, a view switch, a
 -- | size. Compact where a radio group would be airy and a dropdown would
 -- | hide the alternatives. Same picked/unpicked contract as `select`.
-segmentedButton :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-segmentedButton options = field @l $ "name" := reflectSymbol (Proxy @l) $ (segmentedLeaf options)
+segmentedButton :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
+segmentedButton options = pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ (segmentedLeaf options)
 
 segmentedLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 segmentedLeaf options =
@@ -711,9 +705,6 @@ segmentedLeaf options =
     pure
       { toUser: \ma -> do
           render ma
-          -- leaf echo (output is the bare selection, so only a `Just` echoes)
-          mProp <- Ref.read mPropRef
-          for_ mProp \prop -> for_ ma \a' -> prop a'
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
@@ -1106,7 +1097,7 @@ confirmed cfg content = simpleDialog cfg (shown content)
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the
 -- | `looped`/`observed` argument) — so the content's output is row-shaped.
-simpleDialog :: forall i o. { title :: String, confirm :: String } -> PUI Web i { | o } -> PUI Web i { | o }
+simpleDialog :: forall i o. { title :: String, confirm :: String } -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
 simpleDialog { title, confirm } content =
   el "md-dialog" >>> init pure showDialog closeDialog $ Semigroupoid.do
     wrap do
@@ -1189,9 +1180,9 @@ listOf
   => Union r () r
   => ({ | r } -> k)
   -> { | provided }
-  -> (i -> Array { | r })
+  -> ({ | i } -> Array { | r })
   -> PUI Web { | r } o
-  -> PUI Web i [ | s ]
+  -> PUI Web { | i } [ | s ]
 listOf pick provided f item = wrap do
   liftEffect $ ensureStyle "md3-list" listCss
   unwrap $ el "md-list" >>> "style" := "overflow-y: auto;" $
@@ -1295,7 +1286,7 @@ topAppBarCss = """
 -- | shown next to it, and a feed is released once, by the content. (Two
 -- | sibling stages fed the same row would each echo it — two releases
 -- | per feed, the parallel shape `recordToRecord`'s type forbids.)
-drawer :: forall i x o. { title :: String, subtitle :: String } -> PUI Web i x -> PUI Web x o -> PUI Web i o
+drawer :: forall i x o. { title :: String, subtitle :: String } -> PUI Web { | i } { | x } -> PUI Web { | x } { | o } -> PUI Web { | i } { | o }
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
   liftEffect $ ensureStyle "md3-drawer" drawerCss
   unwrap $
@@ -1367,7 +1358,7 @@ imagePane = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ el "li" >>> cl "md3-image-list__item" $ RecordToRecord.do
     imageFace
-    span >>> cl "md3-image-list__label" $ (textOf _.label :: PUI Web { src :: String, label :: String } {})
+    span >>> cl "md3-image-list__label" $ (text _.label :: PUI Web { src :: String, label :: String } {})
 
 imageFace :: PUI Web { src :: String, label :: String } {}
 imageFace =

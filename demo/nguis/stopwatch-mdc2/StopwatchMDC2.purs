@@ -6,7 +6,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, updated)
-import PUI.Web.HTML (shown, shownEach, provided, li, text, ul)
+import PUI.Web (provided, shown, shownEach, text)
+import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC2 (body, button, card, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import StopwatchLogic (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, stopwatchPhase, tick, tickPeriod, zeroedStopwatch)

@@ -18,8 +18,8 @@ import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons, class Union)
 import PUI (Ocular, PUI, blank, foreach, muted)
-import PUI.Web (OptCaption(..), Web)
-import PUI.Web.HTML (attrWith, div, shown, staticText, text, (:=))
+import PUI.Web (OptCaption(..), Web, attrWith, shown, staticText, text, (:=))
+import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -58,7 +58,7 @@ leaderboard f =
     ( labelMedium $ staticText (reflectSymbol (Proxy @l)) ) # shown
     list ( ( listItem $ text entryLine ) # foreach @"name" f ) # muted
 
-rangePicker :: forall @l provided a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
+rangePicker :: forall @l provided a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
 rangePicker provided options =
   div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Semigroupoid.do
     ( labelMedium $ staticText config.label ) # shown

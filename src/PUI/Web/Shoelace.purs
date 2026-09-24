@@ -47,9 +47,9 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
-import PUI.Web.HTML (clicked, div, el, span, staticText, textOf, (:=))
+import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue)
+import PUI.Web (pickedAt, Node, OptCaption(..), Web, addEventListener, attribute, clicked, el, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, textOf, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -65,8 +65,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- ...), registered by importing the FFI module, so a component leaf is just
 -- `element "sl-..."` plus property/event wiring — exactly the `PUI.Web.MDC3`
 -- recipe, and the leaf-echo protocols are the same (focus-guarded text
--- fields, per-feed display echo, `Just`-only echo on the type-changing
--- selector). Two-sorted, same citizenship, and — where the concept exists
+-- fields, per-feed display echo, a picker firing nothing on a feed). Two-sorted, same citizenship, and — where the concept exists
 -- in both catalogs — the same names and signatures (`textField` carries
 -- Shoelace's plain `label` instead of MD's `floatingLabel`; the catalog has
 -- no fill/outline split), so a demo switches design systems by switching
@@ -272,8 +271,8 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 -- | with `# optional @"chosen" @"unchosen"` (the two states named by the
 -- | application) or `# required`. The options belong to the control,
 -- | not to the model.
-select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-select provided options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
+select provided options = pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -293,9 +292,6 @@ select provided options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap d
           Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setValue node (show idx)
           Nothing -> setValue node ""
         Ref.write false busyRef
-        -- leaf echo (output is the bare selection, so only a `Just` echoes)
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \a' -> prop a'
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where

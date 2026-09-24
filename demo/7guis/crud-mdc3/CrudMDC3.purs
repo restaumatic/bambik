@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, looped, atCase, updated, with)
-import PUI.Web.HTML (shown, text)
+import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, card, cardActions, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

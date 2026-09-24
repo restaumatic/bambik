@@ -6,8 +6,7 @@ import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, 
 import Effect (Effect)
 import OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
 import PUI (every, mvu, required)
-import PUI.Web (choice)
-import PUI.Web.HTML (shown)
+import PUI.Web (choice, shown)
 import PUI.Web.MDC3 (body, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

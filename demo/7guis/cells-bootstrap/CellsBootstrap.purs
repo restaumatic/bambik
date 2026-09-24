@@ -7,7 +7,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
 import PUI.Web.Bootstrap (body, card, textField)
-import PUI.Web.HTML (shown, attrWith, clicked, div, p, table, td, text, tr, (:=))
+import PUI.Web (attrWith, clicked, shown, text, (:=))
+import PUI.Web.HTML (div, p, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsBootstrap :: Effect Unit

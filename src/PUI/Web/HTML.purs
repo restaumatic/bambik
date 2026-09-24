@@ -1,46 +1,28 @@
--- | The HTML vocabulary — one name per HTML element, plus the handful of
--- | leaves that carry data.
+-- | The HTML vocabulary — one name per HTML element, plus HTML's native
+-- | controls.
 -- |
 -- | **Elements** (`div`, `p`, `ul`, `li`, `a`, `table`, `h1`–`h6`, ...) wrap
--- | content and take decorators (`attr`/`:=`, `cl`). **Leaves** are the places
--- | a screen shows or takes a value: `text` shows a string, `input` and
--- | `textArea` edit one, `button`/`clicked`/`onClickedXY` report what the user
--- | did, and `staticText`/`staticHTML`/`hr` are fixed decoration. `body` mounts
--- | the finished screen.
+-- | content. **Native controls** are the places a plain-HTML screen takes a
+-- | value: `input` and `textArea` edit a string, `select`/`rangeInput` a
+-- | choice and a bounded quantity, `progress` shows a fraction, `output`
+-- | narrates an event, `button` reports a click. `hr` is fixed decoration,
+-- | and `body` mounts the finished screen.
 -- |
--- | There are two ways to draw a screen from data, and the choice is visible to
--- | the user. When the **shape is fixed and only the values move** — a
--- | spreadsheet grid, an SVG canvas, a table of orders — build the shape once
--- | and let data flow through it (`foreach` from `PUI` for the repeated part,
--- | `text` for contents, `attrWith`/`clWhen` for anything computed): elements are updated
--- | in place, so nothing loses focus, scroll position or a half-finished
--- | gesture when a value changes. When the **shape itself depends on the data**
--- | — a rendered markdown document, where one block is a heading and the next a
--- | list — `dynamic` and `each` build it from a function and
--- | redraw when it changes.
--- |
--- | The plumbing they are built over lives in the parent module, `PUI.Web`;
--- | the design-system vocabularies are its other children.
+-- | Everything that names no element — the decorators (`attr`/`:=`, `cl`,
+-- | `attrWith`, `clWhen`), the text leaves (`text`, `staticText`), the
+-- | occurrence sources (`clicked`, `onClickedXY`), visibility (`provided`)
+-- | and the gated displays (`shown`, `shownWhen`, `inCase`, `shownEach`),
+-- | and the structure builders (`dynamic`, `each`, `el`) — lives in the
+-- | parent module, `PUI.Web`, shared with SVG and the design systems.
 module PUI.Web.HTML
-  ( (:=)
-  , (:=>)
-  , a
+  ( a
   , article
   , aside
-  , attr
-  , attrDyn
-  , attrWith
   , body
   , button
-  , cl
-  , clWhen
-  , clicked
   , blockquote
   , code
   , div
-  , dynamic
-  , each
-  , el
   , em
   , footer
   , h1
@@ -53,38 +35,27 @@ module PUI.Web.HTML
   , hr
   , i
   , img
-  , init
   , input
   , label
   , li
   , ol
-  , onClickedXY
   , output
   , p
   , progress
-  , radioButton
   , rangeInput
   , runComponentInNode
   , section
   , select
   , span
-  , shown
-  , shownWhen
-  , inCase
-  , shownEach
-  , staticText
   , strong
   , table
   , tbody
   , td
-  , text
-  , textOf
   , textArea
   , th
   , thead
   , tr
   , ul
-  , provided
   )
   where
 
@@ -98,182 +69,18 @@ import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
-import Data.Profunctor.Row.RecordToRecord (field, recordToRecord)
-import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs)
+import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant (case_, inj, match, on, prj)
+import Data.Variant (case_, inj, match, on)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Prim.Row (class Cons, class Union)
-import Prim.RowList (Nil) as RL
+import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
-import PUI (Ocular, PUI, diagnosticsOn, foreach, muted, replaying)
-import Unsafe.Coerce (unsafeCoerce)
-import PUI.Web (Node, Web, adoptHostDiagnostics, addClass, addEventListener, appendChild, attachable, attribute, clazz, createCommentNode, createElementNS, createTextNode, documentBody, element, getValue, htmlNS, isFocused, onClickXY, removeAllChildren, removeAttribute, removeClass, runDomInNode, setAttribute, setChecked, setTextNodeValue, setValue)
+import PUI (Ocular, PUI)
+import PUI.Web (pickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
 
 -- UIs
-
--- | The **ambient rung** — content that is
--- | always there: registered at build (its chrome exists before any
--- | feed), fed the row on every feed, the fed row released always. The
--- | content reads its own *closed* narrow row by subsumption
--- | (`Union read extra row`), so a chrome merge states exactly
--- | the fields it shows — verbatim: a formatted read is a derived field a
--- | `settled` normalization maintains (the presentation-model rule).
--- | The sibling of `shownWhen`/`shownEach` whose policy is
--- | no policy; the rung trails its content like every data concern:
--- | `(headline6 $ …) # shown`.
-shown
-  :: forall read extra row
-   . Union read extra row
-  => PUI Web { | read } {} -> PUI Web { | row } { | row }
-shown content = wrap do
-  content' <- unwrap content
-  -- complete the content's wiring: its only possible emission is the
-  -- informationless {}, discarded lawfully (the content type says so)
-  liftEffect $ content'.fromUser \_ -> pure unit
-  propRef <- liftEffect $ Ref.new Nothing
-  -- the content registers at build (its chrome exists before any feed, like
-  -- every component's); feeding renders the narrow row it reads, then the
-  -- fed row is released — the ambient rung's gate opens instantly
-  pure
-    { toUser: \row -> do
-        content'.toUser (unsafeCoerce row)
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> prop row
-    , fromUser: \prop -> Ref.write (Just prop) propRef
-    }
-
--- | The **case-pane rung** — `provided` merged with the wire: content
--- | attached and fed on case `l` of the classified variant, detached on
--- | any other case, the fed row released always. A hidden pane must never
--- | block the pipe, so this rung's fulfillment is best-effort by
--- | construction. Trails its content: `(…) # shownWhen @l classifier`.
-shownWhen
-  :: forall @l read extra row a b s i12 i1x i2x rowL
-   . IsSymbol l => Cons l a b s
-  => Union read extra row
-  => SharedRecordInputs row row row i12 i1x i2x
-  => OwnedRecordOutputs () row row RL.Nil rowL
-  => ({ | read } -> [ | s ]) -> PUI Web a {} -> PUI Web { | row } { | row }
-shownWhen f content = recordToRecord (provided @l (\(r :: { | row }) -> f (unsafeCoerce r)) content) identity
-
--- | The **editor pane** — `shownWhen`'s
--- | editor sibling. A whole-row citizen (an editor, or a pipeline of them)
--- | that *exists* only while the classifier yields case `l`: attached and
--- | fed the whole row on that case, detached on any other, the fed row
--- | released always. Where `shownWhen` is the pane owned-merged with the
--- | wire (its content emits `{}`), this pane's content emits the **row**,
--- | which the owned merge's disjointness rejects — so the rung is a
--- | carrier primitive: the pane's channel and the wire's, side by side
--- | over one input and one output.
--- |
--- | It dissolves the identity fold: a field that exists only in one mode
--- | is *not* a payload to fold back into the row by hand
--- | (`# provided @l paneOf # updated setField` with `setField`
--- | the identity) — it is a whole-row editor whose existence is gated, and
--- | its `field @l` lift already re-attaches the rest of the row. The
--- | classifier reads a closed narrow row (the row-stating exception:
--- | `fulfillment :: { selected :: [ … ] } -> [ … ]`), exactly as
--- | `shownWhen`'s does. One release per feed either way: attached, the
--- | editor's own echo is the release; detached, the wire speaks for the
--- | absent editor. What the edit does to the rest of the row is a `settled`
--- | normalization on the same stage when it is a state invariant
--- | (meeting-booker's `seatsInRoom`, circle-drawer's `resizeSelected`).
-inCase
-  :: forall @l read extra row a b s
-   . IsSymbol l => Cons l a b s
-  => Union read extra row
-  => ({ | read } -> [ | s ]) -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
-inCase f w = wrap do
-  { result: pane, ensureAttached, ensureDetached } <- attachable $ unwrap w
-  propRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \row -> do
-        case prj (Proxy @l) (f (unsafeCoerce row :: { | read })) of
-          Nothing -> do
-            ensureDetached
-            -- the wire speaks only for the absent editor: attached, the
-            -- editor's own echo is the release (one feed, one release)
-            mProp <- Ref.read propRef
-            for_ mProp \prop -> prop row
-          -- attach before feeding, as `provided` does
-          Just _ -> ensureAttached *> pane.toUser row
-    , fromUser: \prop -> do
-        Ref.write (Just prop) propRef
-        pane.fromUser prop
-    }
-
--- | The **collection rung** — render the keyed,
--- | retained list from the projection, release the fed row per feed.
--- | Derived: the collection, muted, merged with the wire. Trails its
--- | item: `(li $ …) # shownEach @l proj`.
-shownEach
-  :: forall @l read extra row k r a o i12 i1x i2x rowL
-   . IsSymbol l => Cons l k r a => Ord k
-  => Union read extra row
-  => SharedRecordInputs row row row i12 i1x i2x
-  => OwnedRecordOutputs () row row RL.Nil rowL
-  => ({ | read } -> Array { | a }) -> PUI Web { | a } o -> PUI Web { | row } { | row }
-shownEach proj item = recordToRecord (muted (foreach @l (\(r :: { | row }) -> proj (unsafeCoerce r)) item)) identity
-
--- | Show a string that changes — a readout, a total, a sentence, a name in
--- | a list row. (Wording that doesn't change is `staticText`.)
--- |
--- | **Copy is a function, not a field**: the argument is the read — a named
--- | function from the fields it needs to the words on the screen, living in
--- | the logic module where it is one pure function and one unit test
--- | (`text progressLineOf`, `text _.title`). The read function's own
--- | signature states the footprint, and the stage that hosts the display
--- | (`shown`/`shownWhen`/`shownEach`) widens it to the fed row, so no call
--- | site coerces. This is why `text` takes no label:
--- | its content *is* the copy, so there is no field to name and nothing to
--- | caption — a caption is surrounding chrome (`staticText`, a `label`, a
--- | column header). A leaf that renders a *number* keeps its label and
--- | reads its field verbatim (`progressBar @"fraction"`): numbers need no
--- | formatting.
--- |
--- | A whole line is one function, glue included — never several leaves with
--- | `staticText` between them, and never a formatter in the view.
--- | doc/research-copy-is-a-function.md is the rationale.
-text :: forall reads. ({ | reads } -> String) -> PUI Web { | reads } {}
-text = textOf
-
--- | `text` freed of the record shape: the read runs on whatever the position
--- | feeds, so a status can render its own variant payload
--- | (`textOf eventText`). Vocabulary-internal — application code shows copy
--- | with `text`, whose row-shaped read states its footprint.
-textOf :: forall a. (a -> String) -> PUI Web a {}
-textOf f = wrap do
-  parentNode <- gets _.parent
-  newNode <- liftEffect $ do
-    -- a text node carries no attributes, so under host diagnostics a bare
-    -- comment marks it (the leaf has no label to stamp: copy is a function)
-    diag <- diagnosticsOn
-    when diag do
-      marker <- createCommentNode "text"
-      appendChild marker parentNode
-    node <- createTextNode ""
-    appendChild node parentNode
-    pure node
-  modify_ _ { sibling = newNode}
-  node <- gets (_.sibling)
-  propRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  pure
-    { toUser: \s -> do
-        setTextNodeValue node (f s)
-        -- the display's answer to the feed (record-echo totality: the whole
-        -- of a `{}` output row is `{}`). Inert to every gate — a zero-field
-        -- side is pre-satisfied, so a display never enters one — but real to
-        -- sequencing: a stage after the display is fed it (`simpleDialog`'s
-        -- confirm replays what its content last answered). Nothing at
-        -- registration, since an answer needs a feed. Every `{}`-output
-        -- display follows this protocol ("display echo, like `text`").
-        prop <- Ref.read propRef
-        prop {}
-    , fromUser: \prop -> Ref.write prop propRef
-    }
 
 -- | A single-line input of the given `type` ("text", "number",
 -- | "email", ...), label-indexed at the `String` field it edits (L3):
@@ -329,44 +136,14 @@ textArea = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
         prop value
     }
 
--- | A bare radio button, with no chrome and no label of its own: filled
--- | while it is the current choice, and reporting that choice when picked.
--- | One per option; the design-system vocabularies package the whole group
--- | as a single labelled control.
--- |
--- | `picked` is the choice this button stands for until the model supplies
--- | one — stated by the caller, never conjured from the type.
-radioButton :: forall a. { picked :: a } -> PUI Web (Maybe a) a
-radioButton { picked } = "type" := "radio" $ wrap do
-  aRef <- liftEffect $ Ref.new picked
-  mPropRef <- liftEffect $ Ref.new Nothing
-  element "input" (pure unit)
-  node <- gets _.sibling
-  pure
-    { toUser: \ma -> do
-        case ma of
-          Nothing -> setChecked node false
-          Just newa -> do
-            setChecked node true
-            Ref.write newa aRef
-        -- leaf echo (output is the bare selection, so only a `Just` echoes)
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \newa -> prop newa
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        void $ addEventListener "change" node $ const do
-          held <- Ref.read aRef
-          prop held
-    }
-
 -- | One choice out of a fixed list — the native `<select>` of `<option>`s,
 -- | with no chrome and no label of its own. Until the user picks there is
 -- | nothing to show, so the field arrives as "maybe a choice" and leaves as
 -- | the choice itself — say which with `# optional @"chosen" @"unchosen"` or
 -- | `# required`. The
 -- | options belong to the control, not to the model.
-select :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-select options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+select :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
+select options = pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "select" (void $ unwrap optionLeaves)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -380,9 +157,6 @@ select options = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
         case ma of
           Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setValue node (show idx)
           Nothing -> setValue node ""
-        -- leaf echo (output is the bare selection, so only a `Just` echoes)
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \a' -> prop a'
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -498,28 +272,6 @@ button w = wrap do
           prop (inj (Proxy @l) fed)
     }
 
--- | Fixed text: a caption, a unit, the literal words between two values on
--- | a line. It never changes and carries no data, which is what makes it
--- | the piece to reach for when a sentence is assembled in the UI from
--- | model values and wording — the wording is `staticText`, each value its
--- | own `text`.
-staticText :: String -> PUI Web {} {}
-staticText content = wrap do
-  -- decoration contributes nothing: the `{}` it announces is ignored by
-  -- the gates (a zero-field side is pre-known and inert), so this is the
-  -- chrome's own completeness, not a merge requirement
-  parentNode <- gets _.parent
-  newNode <- liftEffect $ do
-    node <- createTextNode content
-    appendChild node parentNode
-    pure node
-  modify_ _ { sibling = newNode}
-  pure
-    { toUser: mempty
-    , fromUser: \prop -> prop {}
-    }
-
-
 -- | A horizontal rule separating sections — fixed decoration, and the one
 -- | element with nothing inside it, so it is written as a leaf rather than
 -- | wrapped around content.
@@ -537,52 +289,6 @@ hr = wrap do
     }
 
 -- UIOculars
-
--- | Set a fixed attribute on the element being decorated, written infix as
--- | `:=`: `"placeholder" := "you@example.com" $ input "email" $ …`. For an
--- | attribute that follows the data (a colour, a coordinate, a width), use
--- | `attrWith`.
-attr :: String -> String -> Ocular (PUI Web)
-attr name value w = wrap do
-  w' <- unwrap w
-  attribute name value
-  pure w'
-
--- | `attr` written infix: `"src" := url $ img $ …`.
-infixr 10 attr as :=
-
--- | Add a fixed class to the element being decorated — how a design
--- | system's stylesheet is applied. For a class that comes and goes with the
--- | data, use `clWhen`.
-cl :: String -> Ocular (PUI Web)
-cl name w = wrap do
-  w' <- unwrap w
-  clazz name
-  pure
-    { toUser: w'.toUser
-    , fromUser: w'.fromUser
-    }
-
--- | Hand the element just built to a third-party component library and run
--- | its hooks around the traffic: the first function receives the element
--- | once and returns whatever handle the library gives back, the second runs
--- | before every value is shown, the third after every report. This is how a
--- | design-system vocabulary attaches an off-the-shelf component — a
--- | dialog's show and close, a ripple. Application code has no use for it.
-init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> Effect Unit) -> Ocular (PUI Web)
-init nodeInitializer pre post w = wrap do
-  w' <- unwrap w
-  node <- gets _.sibling
-  ctx <- liftEffect $ nodeInitializer node
-  pure
-    { toUser: \new -> do
-        pre ctx
-        w'.toUser new
-    , fromUser: \prop -> do
-      w'.fromUser \change -> do
-        prop change
-        post ctx
-    }
 
 -- | The all-purpose box: grouping and layout where no other element carries
 -- | meaning.
@@ -724,213 +430,6 @@ h5 = el "h5"
 h6 :: Ocular (PUI Web)
 h6 = el "h6"
 
--- | An attribute that marks the "nothing to show yet" state. The function
--- | is told whether the element has been given a value yet, and its answer
--- | sets the attribute or removes it — this is how a control stays disabled
--- | until its data arrives. Written infix as `:=>`. For an attribute
--- | computed from the data itself, use `attrWith`.
-attrDyn :: String -> (Maybe {} -> Maybe String) -> Ocular (PUI Web)
-attrDyn name valueFunction w = wrap do
-  w' <- unwrap w
-  node <- gets _.sibling
-  liftEffect $ updateAttribute node Nothing
-  pure
-    { toUser: \mch -> do
-      updateAttribute node $ Just mch
-      w'.toUser mch
-    , fromUser: w'.fromUser
-    }
-    where
-      updateAttribute node mnewa = case valueFunction (mnewa $> {}) of
-        Just value -> setAttribute node name value
-        Nothing -> removeAttribute node name
-
--- | `attrDyn` written infix, and read the same way as `:=` — the value is
--- | computed rather than given.
-infixr 10 attrDyn as :=>
-
--- | Show the pane while the model is in state `l`, fed that state's own
--- | data — visibility is **case adoption**: the argument is a business
--- | function classifying the situation into a variant, and the pane is
--- | attached and fed the payload of case `l`, detached on every other
--- | case. A quiz whose run is either `asking` or `finished` shows its
--- | question pane as `pane # provided @"asking" quizPhase`;
--- | checkout's wizard shows each step's pane off one `checkoutStep`
--- | classifier whose cases carry what their panes review.
--- |
--- | This is the one visibility primitive. A `Maybe`-gated pane is the same
--- | thing with its two cases unnamed, so there is no `Maybe` form: a state a
--- | pane depends on is a variant with **named** cases — `estimated`/`unknown`
--- | for a distance, `reading`/`browsing` for an inbox, `chosen`/`unchosen`
--- | for a selection — which is what makes the view line say which state it
--- | renders. Where several states are **mutually exclusive**, one classifier
--- | states it (`# provided @"taken" usernameStatus`) and each pane
--- | adopts its own case, so two panes can never both be on screen — which
--- | separate "should this be visible?" tests can always accidentally allow.
--- |
--- | The pane is handed exactly the case payload and never the whole model,
--- | and it is removed from the page while the model sits elsewhere. Two
--- | things follow: the rule for *what is on screen when* lives in business
--- | code where it can be tested, and a pane that is absent contributes
--- | nothing — so anything downstream waiting on it waits, rather than
--- | showing a stale or invented value.
-provided :: forall @l i a b s o. IsSymbol l => Cons l a b s => (i -> [ | s ]) -> PUI Web a o -> PUI Web i o
-provided f w = wrap do
-  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
-  pure
-    { toUser: \fed -> case prj (Proxy @l) (f fed) of
-      Nothing -> ensureDetached
-      Just y -> do
-        -- attach before feeding: a UI component that measures itself on toUser (the
-        -- MDC slider positions its thumb from the track width) needs to be in
-        -- the document first, or it lays out against a zero-width detached node
-        ensureAttached
-        toUser y
-    , fromUser
-    }
-
--- | Style by data: the class is on exactly while the test holds for what is
--- | being shown — the strike-through on a done todo, the error colour on an
--- | overdrawn amount, the highlight on the selected row.
--- |
--- | Styling only. To make something *appear and disappear*, use
--- | `provided`, which takes the content away with the pane instead of
--- | leaving it on the page in a different colour. Applies to the last
--- | element built, not to a group of siblings.
-clWhen :: forall i o. (i -> Boolean) -> String -> PUI Web i o -> PUI Web i o
-clWhen pred name w = wrap do
-  w' <- unwrap w
-  node <- gets _.sibling
-  pure
-    { toUser: \fed -> do
-        (if pred fed then addClass else removeClass) node name
-        w'.toUser fed
-    , fromUser: w'.fromUser
-    }
-
--- | An attribute computed from the data being shown — a swatch's colour, a
--- | circle's centre, a bar's width, a cell's inline style
--- | (`circle >>> attrWith "cx" (show <<< _.x)`).
--- |
--- | This is what keeps a drawing or a large grid from being rebuilt: the
--- | element is created once and restyled in place as values arrive, so
--- | selection, focus and scrolling survive every update. Pair it with
--- | `foreach` for a collection whose elements are never torn down.
-attrWith :: forall i o. String -> (i -> String) -> PUI Web i o -> PUI Web i o
-attrWith name valueOf w = wrap do
-  w' <- unwrap w
-  node <- gets _.sibling
-  pure
-    { toUser: \fed -> do
-        setAttribute node name (valueOf fed)
-        w'.toUser fed
-    , fromUser: w'.fromUser
-    }
-
--- | Make any element clickable: it reports, as case `l`, `f` of whatever it
--- | is currently showing. A grid cell, a list row, a chip, a picture — the
--- | content is the display, the click is the report, so the identity of
--- | what was picked comes from what was on screen and cannot be got wrong:
--- | `clicked @"cellPicked" _.key (td $ text _.text)`. A click before the
--- | element has been shown anything does nothing. An **event source**,
--- | `× → +` by shape as by behaviour: the click **replays** the last row
--- | fed — replay is lawful over records only, an entity's value may be
--- | re-said where a one-shot event may not (the `looped`/`observed`/
--- | `simpleDialog` argument) — and leaves as an occurrence of `l`, so
--- | nothing record-shaped ever stands for a click. **The content
--- | subsumes** (it is a display — the baked-in reads-narrow rule): it may
--- | read a closed sub-row of the replayed row, and pure chrome states `{}`,
--- | so `clicked @l f staticChrome` needs no adapter.
--- |
--- | The **replay contract**, a law of this word rather than of the shape
--- | (the shape's two are Data.Profunctor.Row's Repetition and Answer, both
--- | held: a feed rewrites the replay slot, and a feed never fires): a click
--- | emits `f` of the row last fed, as case `l`; before the first feed a
--- | click emits nothing.
-clicked :: forall @l @narrow @extra r o k s. IsSymbol l => Cons l k () s => Union narrow extra r => ({ | r } -> k) -> PUI Web { | narrow } o -> PUI Web { | r } [ | s ]
-clicked f w = replaying @l f (occurrences w)
-
--- The click source `clicked` is built from: each click on the last-built
--- element (the content's own node) leaves as an occurrence carrying nothing;
--- the content is fed the row and its output written off. The `× → +`
--- leaf's occurrence half — at the closed empty row, `occurrences chrome ::
--- PUI Web {} [ occurred :: {} ]` is the point's dual, an occurrence out of
--- the terminal record (`ticks` is its timer sibling in `PUI`). Private, with
--- one fixed case: the business label is `clicked @l`'s to state, and
--- `replaying @l` relabels while it attaches the row — replay is `Strong`'s
--- retention, so no source keeps a copy of the row it was shown.
-occurrences :: forall i o. PUI Web i o -> PUI Web i [ occurred :: {} ]
-occurrences w = wrap do
-  w' <- unwrap w
-  node <- gets _.sibling
-  pure
-    { toUser: w'.toUser
-    , fromUser: \prop -> do
-        -- content is display-only: give its wiring a sink so echoes flow
-        w'.fromUser \_ -> pure unit
-        void $ addEventListener "click" node $ const $ prop (inj (Proxy @"occurred") {})
-    }
-
--- | Report *where* the user clicked, in the container's own coordinates —
--- | inside an `<svg>` those are its drawing coordinates, so a click and the
--- | shapes are in the same units whatever size the drawing is on screen.
--- | The canvas gesture, where the place clicked *is* the interaction:
--- | `svg >>> "viewBox" := "0 0 500 300" $ onClickedXY @"picked" $ …`. An event
--- | source: the point leaves as an occurrence of case `l`.
-onClickedXY :: forall @l i o s. IsSymbol l => Cons l { x :: Number, y :: Number } () s => PUI Web i o -> PUI Web i [ | s ]
-onClickedXY content = wrap do
-  w' <- unwrap content
-  node <- gets _.parent
-  pure
-    { toUser: w'.toUser
-    , fromUser: \prop -> do
-        w'.fromUser \_ -> pure unit
-        onClickXY node \x y -> prop (inj (Proxy @l) { x, y })
-    }
-
--- | Build a UI component per element from a function — for a list whose elements
--- | differ in *shape*, not just in value: the blocks of a rendered markdown
--- | document, where one is a heading and the next a list
--- | (`el ("h" <> show level)`).
--- |
--- | The container is redrawn whenever the list arrives, so use it only when
--- | the shape really does vary. When the shape is fixed and only the values
--- | move, `foreach` with `text` and `attrWith` updates the same elements in
--- | place instead — no flicker, nothing losing focus. It owns the element it
--- | sits in, so give it its own container rather than a shared one.
-foreachWith :: forall a o. (a -> PUI Web {} o) -> PUI Web (Array a) o
-foreachWith build = wrap do
-  parent <- gets _.parent
-  propRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \items -> do
-        removeAllChildren parent
-        for_ items \item -> do
-          w' <- runDomInNode parent (unwrap (build item))
-          mProp <- Ref.read propRef
-          for_ mProp \prop -> w'.fromUser prop
-          void $ w'.toUser {}
-    , fromUser: \prop -> Ref.write (Just prop) propRef
-    }
-
--- | Draw a UI component from a function for a single value and
--- | redraw when the value changes — the scene whose whole composition
--- | depends on the data. `div $ dynamic renderSwatch`. Owns the element it
--- | sits in.
-dynamic :: forall a o. (a -> PUI Web {} o) -> PUI Web a o
-dynamic build = wrap $ unwrap (foreachWith build) <#> \w ->
-  { toUser: \value -> w.toUser [ value ], fromUser: w.fromUser }
-
--- | Lay out a list that is known up front and never changes — the courses
--- | on a menu, the keys of a keypad, a row of preset swatches:
--- | `ul $ each courses renderCourse`, `tr $ each keys keyComponent`. Nothing
--- | about it comes from the model, so it sits among fixed decoration.
-each :: forall a o. Array a -> (a -> PUI Web {} o) -> PUI Web {} o
-each items build = wrap $ unwrap (foreachWith build) <#> \w ->
-  { toUser: \_ -> w.toUser items, fromUser: w.fromUser }
-
--- Entry point
-
 -- | Mount the app in the page's `<body>` — the one call an application
 -- | makes: `body $ with initialOrder $ …` or `body $ … $ screen # mvu
 -- | initialGame`. This is the plain-HTML floor's entry; every design-system
@@ -971,10 +470,3 @@ runComponentInNode node initial callback ui = do
     { toUser, fromUser } <- unwrap ui
     liftEffect $ fromUser callback
     void $ liftEffect $ toUser initial
-
--- | Any element by name — for a tag this vocabulary has no name for, and
--- | for a tag computed at runtime (`el ("h" <> show level)`). The named
--- | oculars above are all `el` at a fixed tag.
-el :: String -> Ocular (PUI Web)
-el tagName = wrap <<< element tagName <<< unwrap
-

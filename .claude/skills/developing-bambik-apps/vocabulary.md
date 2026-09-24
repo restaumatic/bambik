@@ -38,7 +38,7 @@ direction module headers.
 | a sentence, a prefixed or unit-suffixed value, text composed from several fields | one named function, glue included: `headlineSmall (text balanceLine) # shown` | order-form's summary; cashbox's balance line | writing.md *A composed line is one function* |
 | a **number** as a bar, gauge or stars | the quantity leaf: label = accessible name, value = read function — `progressBar @"Elapsed" elapsedFraction` | timer, quiz, meeting-booker | writing.md *copy is a function, not a field* |
 | pure chrome inside a pipeline (a card's caption) | `(subtitle1 $ staticText "…") # shown` | order-form | writing.md *Pass-through stages* |
-| content that exists only in one state | `content # shownWhen @l classifierOf` — the one visibility primitive: one classifier names every state, each case carrying its pane's payload; a projection never decides, and no pane is gated on a `Maybe` | flight-booker's three `bookingState` panes; checkout: `# shownWhen @"placed" orderStatus`; calculator: `# shownWhen @"faulty" readout` | writing.md *Conditional visibility* |
+| content that exists only in one state | `content # shownWhen @l classifierOf` (a display; an emitter takes `# provided @l classifierOf`, an editor `# inCase @l classifierOf`): one classifier names every state, each case carrying its pane's payload; a projection never decides, and no pane is gated on a `Maybe` | flight-booker's three `bookingState` panes; checkout: `# shownWhen @"placed" orderStatus`; calculator: `# shownWhen @"faulty" readout` | writing.md *Conditional visibility* |
 | an **editor** that exists in one mode | `editor # inCase @l classifier` | flight-booker's return date; meeting-booker's slider | writing.md *Conditional visibility* |
 | a list, displayed | `item # shownEach @l rowsOf` inside its container ocular | stopwatch's laps | writing.md *Pass-through stages*, *Collections* |
 | a labelled leaf reading one field of a wider row | `# forProperty` (selection, never formatting) | packaged controls | RecordToRecord.purs (`forProperty`) |
@@ -101,7 +101,7 @@ direction module headers.
 | What comes in → what goes out | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | the whole array → each element's own event | `item # foreach @"id" rowsOf` (keyed by a model field) | cells, tic-tac-toe, crud (plain HTML) | PUI.purs (`foreach`); writing.md *Collections* |
-| the whole array → the whole array, decided jointly (withheld until every element spoke) | `item # acted @"name"` | potluck | PUI.purs (`acted`) |
+| the whole array → the whole array, decided jointly (withheld until every element spoke) | `item # acted @"name"` | potluck (per-guest `# optional` pickers) | PUI.purs (`acted`) |
 | the whole array → the whole array, edited in place | `editor # edited @"id"` | reorder | PUI.purs (`edited`) |
 | one `{ key, value }` at a time → tagged per-element output | `item # dispatched envelopeOf` | departures | PUI.purs (`dispatched`) |
 | one `{ key, value }` at a time → the growing array | `item # accumulated envelopeOf` | scoreboard | PUI.purs (`accumulated`) |

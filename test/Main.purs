@@ -236,6 +236,43 @@ main = do
     fire gProp { a: 3 }
     Ref.read outs >>= assertEqual "zero-field law ×→×: a zero-field operand never starves the gate" [ { a: 3 } ]
 
+  -- ×→× zero-participant answer: when *no* operand owns a field the merge's
+  -- row is the empty one, always known, so a feed is answered by it exactly
+  -- once — whether both operands echo, one does, or neither (Answer,
+  -- preserved) — and nothing is released at registration, where there is
+  -- no feed. Before 2026-09-23 such a merge never answered at all.
+  do
+    let
+      zeroFieldMerge :: PUI Effect { a :: Int } {} -> PUI Effect { a :: Int } {} -> Effect { registered :: Array {}, fed :: Array {} }
+      zeroFieldMerge l r = do
+        m <- unwrap (recordToRecord l r :: PUI Effect { a :: Int } {})
+        outs <- Ref.new ([] :: Array {})
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        registered <- Ref.read outs
+        m.toUser { a: 1 }
+        m.toUser { a: 1 }
+        fed <- Ref.read outs
+        pure { registered, fed }
+    ins <- Ref.new []
+    both <- join $ zeroFieldMerge <$> (echoProbe (const {}) ins <$> Ref.new Nothing) <*> (echoProbe (const {}) ins <$> Ref.new Nothing)
+    assertEqual "zero-participant ×→×: nothing at registration" [] both.registered
+    assertEqual "zero-participant ×→×: two echoing operands, one answer per feed" [ {}, {} ] both.fed
+    neither <- join $ zeroFieldMerge <$> (probe <$> Ref.new Nothing) <*> (probe <$> Ref.new Nothing)
+    assertEqual "zero-participant ×→×: silent operands, still one answer per feed" [ {}, {} ] neither.fed
+
+  -- +→× zero-participant quiet: a dispatched occurrence owes nothing, so the
+  -- same empty-row gate stays quiet there — the +→× unit law with a silent
+  -- `{}`-output status as g.
+  do
+    p1 <- Ref.new Nothing
+    p2 <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array {})
+    m <- unwrap (variantToRecord (probe p1 :: PUI Effect [ x :: Unit ] {}) (probe p2 :: PUI Effect [ y :: Unit ] {}))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (.x unit)
+    m.toUser (.y unit)
+    Ref.read outs >>= assertEqual "zero-participant +→×: a dispatched occurrence is owed nothing" []
+
   -- a gated display inside feedback: the display renders the seed at
   -- registration — pins the merge-with-wire operand order (display first,
   -- wire second: render before release, since the release may re-enter the

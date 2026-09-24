@@ -7,7 +7,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
 import PUI.Web.Fluent (body, body1, card, textField)
-import PUI.Web.HTML (shown, attrWith, clicked, div, table, td, text, tr, (:=))
+import PUI.Web (attrWith, clicked, shown, text, (:=))
+import PUI.Web.HTML (div, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsFluent :: Effect Unit

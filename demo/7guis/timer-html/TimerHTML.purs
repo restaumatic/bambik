@@ -5,7 +5,8 @@ import Prelude ((#), ($), Unit, const)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, updated, with)
-import PUI.Web.HTML (shown, body, button, div, label, p, progress, rangeInput, staticText, text)
+import PUI.Web (shown, staticText, text)
+import PUI.Web.HTML (body, button, div, label, p, progress, rangeInput)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 

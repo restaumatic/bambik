@@ -12,9 +12,7 @@
 -- |     genuine per-carrier primitive.
 -- |   * **free functions** — over the strength: `subStrong` (sub-record
 -- |     focus), `field` (the field lens — the leaf lift, making every
--- |     label-indexed editor a whole-row citizen), `required` (a
--- |     type-changing selector adopted as an always-selected whole-row
--- |     citizen);
+-- |     label-indexed editor a whole-row citizen);
 -- |     over the **unit**: `announce` (its `rmap`-closure — the announcing
 -- |     constant) and `with` (`announce a >>> w` over `Semigroupoid` —
 -- |     discharge the initial-state obligation), plus the subsuming
@@ -85,7 +83,6 @@ module Data.Profunctor.Row.RecordToRecord
   , asField
   , atField
   , forProperty
-  , required
   , bracketed
   , field
   , muted
@@ -94,7 +91,6 @@ module Data.Profunctor.Row.RecordToRecord
   where
 
 import Data.Lens.Record (prop)
-import Data.Maybe (Maybe(..))
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Costrong (class Costrong, unfirst)
 import Data.Profunctor.Looping (class Looping, looped)
@@ -292,22 +288,6 @@ field
   => Strong p
   => p f f' -> p { | s } { | s' }
 field = prop (Proxy @l)
-
--- | Mark a type-changing selector (`{ l :: Maybe a } → { l :: a }`) as
--- | **always selected**: the `Maybe` input exists for the unselected
--- | display state, so when the model guarantees a selection it is vacuous —
--- | every model value shows as chosen. The result is a **whole-row
--- | citizen** `p { l :: a | rest } { l :: a | rest }`, the same shape
--- | `field @l` gives an editor: the selector's field is wrapped in `Just`
--- | on the way in and re-attached over the retained background on the way
--- | out. The label is not repeated: the selector's closed singleton rows
--- | state it once, and `RowToList`'s row-to-list functional dependency
--- | reads it back out.
--- | Its dual — a selector left possibly-unselected, the model keeping the
--- | `Maybe` — is `PUI.optional` (carrier-level: it must complete the leaf's
--- | `Just`-only echo, which no `dimap` can).
-required :: forall l p a b s si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Cons l (Maybe a) () si => Cons l a () so => Cons l a b s => Strong p => p { | si } { | so } -> p { | s } { | s }
-required w = field @l (dimap (\v -> Record.insert (Proxy @l) (Just v) {}) (Record.get (Proxy @l)) w)
 
 -- | Feed a **structural** UI component the bare field `l` (closed singleton
 -- | row) — the structural read (a display's field arrives ready to draw,

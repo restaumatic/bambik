@@ -50,9 +50,9 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
-import PUI.Web.HTML (cl, clicked, div, el, staticText, text, textOf, (:=))
+import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, Web, OptCaption(..), staticHTML, addEventListener, attribute, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue)
+import PUI.Web (pickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -68,8 +68,8 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- registered by importing the FFI module, so a component leaf is just
 -- `element "fluent-..."` plus property/event wiring — exactly the
 -- `PUI.Web.MDC3` recipe, and the leaf-echo protocols are the same
--- (focus-guarded text field, per-feed display echo, `Just`-only echo on
--- the type-changing selectors). Fluent associates labels through
+-- (focus-guarded text field, per-feed display echo, pickers firing
+-- nothing on a feed). Fluent associates labels through
 -- `<fluent-field>`, so the labeled editors carry that wrapper as chrome.
 -- Two-sorted, same citizenship, and — where the concept exists in both
 -- catalogs — the same names and signatures:
@@ -232,8 +232,8 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: re
 -- | application; nothing preselected, and whatever needs the choice adopts
 -- | the made case) or `# required`. The options belong to
 -- | the control, not to the model.
-dropdown :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-dropdown provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
+dropdown :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
+dropdown provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   element "fluent-dropdown" (void $ unwrap (staticHTML optionsMarkup))
   attribute "slot" "input"
   node <- gets _.sibling
@@ -254,9 +254,6 @@ dropdown provided options = let config = convertOptionsWithDefaults OptCaption {
           Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> selectDropdownOption node (show idx)
           Nothing -> selectDropdownOption node ""
         Ref.write false busyRef
-        -- leaf echo (output is the bare selection, so only a `Just` echoes)
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \a' -> prop a'
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
@@ -266,8 +263,8 @@ dropdown provided options = let config = convertOptionsWithDefaults OptCaption {
 -- | The **radio group**: one choice among a handful, every option visible
 -- | and comparable at a glance. Beyond about five options use `dropdown`.
 -- | Same picked/unpicked contract as `dropdown`.
-radioGroup :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-radioGroup provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
+radioGroup :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
+radioGroup provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   members <- element "fluent-radio-group" do
     forWithIndex options \idx o -> do
       member <- element "fluent-field" do
@@ -299,9 +296,6 @@ radioGroup provided options = let config = convertOptionsWithDefaults OptCaption
         case ma of
           Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> selectGroupValue groupNode (show idx)
           Nothing -> selectGroupValue groupNode ""
-        -- leaf echo (output is the bare selection, so only a `Just` echoes)
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \a' -> prop a'
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 

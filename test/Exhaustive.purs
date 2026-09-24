@@ -42,7 +42,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import PUI (PUI(..), acted, silence)
-import PUI.Gate (GateInput(..), GateOutput(..), GateState, gateStep, initialGate)
+import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
 import Unsafe.Coerce (unsafeCoerce)
 
 data Event = Feed | FeedAgain | FeedOnly1 | FeedNone | Fire1 | Fire2 | Fire3
@@ -364,7 +364,7 @@ pureGateRR :: Effect Rig
 pureGateRR = do
   g <- pureRecordGate
   pure
-    { feed: \_ n -> g.step StepBegun *> g.step (Contributed [ Tuple "a" n ]) *> g.step (Contributed [ Tuple "b" n ]) *> g.step StepEnded
+    { feed: \_ n -> g.step StepBegun *> g.step (Contributed [ Tuple "a" n ]) *> g.step (Contributed [ Tuple "b" n ]) *> g.step (StepEnded Shared)
     , fires: [ \n -> g.step (Contributed [ Tuple "a" n ]), \n -> g.step (Contributed [ Tuple "b" n ]) ]
     , outs: g.outs
     }
@@ -396,7 +396,7 @@ pureGateVR :: Effect Rig
 pureGateVR = do
   g <- pureRecordGate
   pure
-    { feed: \_ n -> g.step StepBegun *> (if n `mod` 2 == 0 then g.step (Contributed [ Tuple "a" n ]) else g.step (Contributed [ Tuple "b" n ])) *> g.step StepEnded
+    { feed: \_ n -> g.step StepBegun *> (if n `mod` 2 == 0 then g.step (Contributed [ Tuple "a" n ]) else g.step (Contributed [ Tuple "b" n ])) *> g.step (StepEnded Dispatched)
     , fires: [ \n -> g.step (Contributed [ Tuple "a" n ]), \n -> g.step (Contributed [ Tuple "b" n ]) ]
     , outs: g.outs
     }
@@ -514,7 +514,7 @@ pureGather = do
         step StepBegun
         step (Rekeyed (map _.k items))
         for_ items \r -> step (Contributed [ Tuple r.k r.s ])
-        step StepEnded
+        step (StepEnded Shared)
     , fires: [ \n -> step (Contributed [ Tuple 1 n ]), \n -> step (Contributed [ Tuple 2 n ]) ]
     , outs
     }

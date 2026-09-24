@@ -8,7 +8,8 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
-import PUI.Web.HTML (shown, attrWith, clicked, div, li, text, ul, (:=))
+import PUI.Web (attrWith, clicked, shown, text, (:=))
+import PUI.Web.HTML (div, li, ul)
 import PUI.Web.Shoelace (body, button, card, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

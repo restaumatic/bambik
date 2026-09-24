@@ -65,6 +65,7 @@ module PUI
   , foreach
   , observed
   , optional
+  , required
   , resolveFor
   , updated
   , module Adopters
@@ -77,7 +78,7 @@ import Prelude
 
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (elem, foldl, for_)
+import Data.Foldable (elem, foldl, for_, traverse_)
 import Data.Lens (Optic)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
@@ -88,14 +89,14 @@ import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, field)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
 -- `field` is deliberately absent: the leaf lift is design-system plumbing —
 -- every vocabulary editor is `field @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself (the `widenRecordInput` precedent, one adopter later).
-import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, bracketed, mvu, subStrong, forProperty, muted, required, settled, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, bracketed, mvu, subStrong, forProperty, muted, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, replaying, silence, toCase, toCases) as Adopters
 import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
@@ -123,7 +124,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, contract, inj, match, prj)
+import Data.Variant (class Contractable, case_, contract, inj, match, on, prj)
 import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -135,8 +136,8 @@ import Effect.Aff (Aff, attempt, delay, error, forkAff, killFiber, launchAff_, m
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import PUI.Gate (GateInput(..), GateOutput(..), GateState, gateStep, initialGate)
-import Record (get, insert) as Record
+import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
+import Record (get, insert, set) as Record
 import Record.Unsafe (unsafeGet, unsafeSet)
 import Record.Unsafe.Union (unsafeUnion)
 
@@ -485,7 +486,7 @@ instance MonadEffect m => RecordToRecord (PUI m) where
       -- broadcast in, gate out, one feed one step — the shape's projection
       -- and preservation laws; the carrier's part is `steppedFeed`, the
       -- batched broadcast
-      { toUser: \new -> steppedRecordFeed gate do
+      { toUser: \new -> steppedRecordFeed Shared gate do
             p1'.toUser new
             p2'.toUser new
       , fromUser: gatedRecordOutputs gate exactRow exactRow p1'.fromUser p2'.fromUser
@@ -542,7 +543,7 @@ instance MonadEffect m => VariantToRecord (PUI m) where
       -- step is kept for the one thing dispatch still carries: an operand
       -- echoing re-entrantly during its own feed is coalesced into one
       -- release, not released twice
-      { toUser: \v -> steppedRecordFeed gate do
+      { toUser: \v -> steppedRecordFeed Dispatched gate do
           for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
           for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
       , fromUser: gatedRecordOutputs gate exactRow exactRow p1'.fromUser p2'.fromUser
@@ -603,11 +604,11 @@ driveGate gate input = do
 -- | every gated shape). Steps nest: a re-entrant feed provoked by a release
 -- | only feeds, and the outermost `StepEnded` releases — its output is what
 -- | comes back.
-steppedFeed :: forall k v. Ord k => Gate k v -> Effect Unit -> Effect (GateOutput k v)
-steppedFeed gate feed = do
+steppedFeed :: forall k v. Ord k => StepKind -> Gate k v -> Effect Unit -> Effect (GateOutput k v)
+steppedFeed kind gate feed = do
   _ <- driveGate gate StepBegun
   feed
-  driveGate gate StepEnded
+  driveGate gate (StepEnded kind)
 
 -- | A record merge's enrolment: the gate over the two operands' owned
 -- | labels, a starvation guard per side, and the copy naming the merge
@@ -673,8 +674,8 @@ fieldsOf labels r = labels <#> \l -> Tuple l (unsafeGet l r)
 contributed :: RecordGate -> Array (Tuple String Field) -> Effect Unit
 contributed rg fields = driveGate rg.gate (Contributed fields) >>= reported rg
 
-steppedRecordFeed :: RecordGate -> Effect Unit -> Effect Unit
-steppedRecordFeed rg feed = steppedFeed rg.gate feed >>= reported rg
+steppedRecordFeed :: StepKind -> RecordGate -> Effect Unit -> Effect Unit
+steppedRecordFeed kind rg feed = steppedFeed kind rg.gate feed >>= reported rg
 
 -- | What a record merge does with its gate's output beyond the release
 -- | itself: a release marks both starvation guards fed; a withheld
@@ -838,7 +839,7 @@ setDiagnostics :: Boolean -> Effect Unit
 setDiagnostics on = Ref.write on diagnosticsRef
 
 -- | Whether development diagnostics are on — for a carrier's own
--- | dev-only annotations (`PUI.Web.HTML.text`'s comment marker).
+-- | dev-only annotations (`PUI.Web.text`'s comment marker).
 diagnosticsOn :: Effect Boolean
 diagnosticsOn = Ref.read diagnosticsRef
 
@@ -1054,44 +1055,55 @@ observed status = wrap do
     }
 
 
--- | Mark a type-changing selector as **possibly unselected** — the dual of
--- | `required`. The selection state is an entity always known from the
--- | input, *including* "nothing picked yet", so `optional` completes the
--- | selector's `Just`-only leaf echo with the missing half (fed the unmade
--- | case it announces that case; fed the made case the leaf's own echo
--- | speaks — exactly one echo per feed either way) and wraps every user
--- | pick in the made case. The model keeps a **named two-case variant**,
+-- | Complete a **picker** — a selector leaf, `{ l :: Maybe a } → [ l :: a ]`,
+-- | an emitter showing the choice it is fed and reporting each pick — into
+-- | the editor of field `l`, **always selected**: the model holds a choice
+-- | at all times, so the picker is shown it (`Just`) and every pick replaces
+-- | it. The result is a **whole-row citizen** `p { l :: a | rest }
+-- | { l :: a | rest }`: it answers every feed with the row (Answer at
+-- | `×→×`, owed by the stage since a picker answers nothing) and emits the
+-- | row with the pick folded in on every pick — `updated`'s shape, with the
+-- | fold fixed. The label is not repeated: `RowToList`'s fundep reads it
+-- | from the picker's closed row. `select @"Milk" {} milks # required`.
+required :: forall l m a b s si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Cons l (Maybe a) () si => Cons l a () so => Cons l a b s => MonadEffect m => PUI m { | si } [ | so ] -> PUI m { | s } { | s }
+required = pickedInto @l (Just <<< Record.get (Proxy @l)) (Record.set (Proxy @l))
+
+-- | Complete a picker into the editor of field `l`, **possibly unselected**
+-- | — `required`'s dual. The model keeps a **named two-case variant**,
 -- | never a `Maybe`: the application names both states —
 -- | `dropdown @l config options # optional @"chosen" @"unchosen"` — and its
--- | seed spells the unmade one (`"Room": .unchosen {}`), so an unmade choice
--- | flows as honest knowledge instead of starving anything downstream, the
--- | stages demanding the selection adopt the made case
--- | (`# inCase @"chosen" roomOf`, `# provided @"complete" plan`), and
--- | only a genuine pick can ever produce the bare value. The field label is
--- | not repeated — `RowToList`'s fundep reads it from the leaf's row. Like
--- | `required`, the result is a **whole-row citizen**
--- | `p { l :: [ c :: a, n :: {} ] | rest } { l :: [ c :: a, n :: {} ] | rest }` —
--- | the echo-completed selector lifted under `field @l`, background carried.
-optional :: forall @c @n l m a b s v cr nr ri ro. RowToList ri (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => IsSymbol c => IsSymbol n => Cons l (Maybe a) () ri => Cons l a () ro => Cons c a cr v => Cons n {} nr v => Cons l [ | v ] b s => MonadEffect m => PUI m { | ri } { | ro } -> PUI m { | s } { | s }
-optional p = field @l scalar
-  where
-  scalar :: PUI m [ | v ] [ | v ]
-  scalar = wrap do
-    p' <- unwrap p
-    mPropRef <- liftEffect $ Ref.new Nothing
-    pure
-      { toUser: \i -> do
-          let picked = prj (Proxy @c) i
-          p'.toUser (Record.insert (Proxy @l) picked {})
-          case picked of
-            Nothing -> do
-              mProp <- Ref.read mPropRef
-              for_ mProp \prop -> prop (inj (Proxy @n) {})
-            Just _ -> pure unit
-      , fromUser: \prop -> do
-          Ref.write (Just prop) mPropRef
-          p'.fromUser \o -> prop (inj (Proxy @c) (Record.get (Proxy @l) o))
-      }
+-- | seed spells the unmade one (`"Room": .unchosen {}`). The picker is
+-- | shown nothing while the field is unmade and the choice once made; every
+-- | feed is answered with the row, so an unmade choice flows as honest
+-- | knowledge instead of starving anything downstream, the stages demanding
+-- | the selection adopt the made case (`# inCase @"chosen" roomOf`,
+-- | `# provided @"complete" plan`), and only a genuine pick produces it.
+optional :: forall @c @n l m a b s v cr nr si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => IsSymbol c => IsSymbol n => Cons l (Maybe a) () si => Cons l a () so => Cons c a cr v => Cons n {} nr v => Cons l [ | v ] b s => MonadEffect m => PUI m { | si } [ | so ] -> PUI m { | s } { | s }
+optional = pickedInto @l (prj (Proxy @c) <<< Record.get (Proxy @l)) (Record.set (Proxy @l) <<< inj (Proxy @c))
+
+-- The one body `required` and `optional` share: answer each feed with the
+-- row, show the picker the choice the row holds, fold each pick into the
+-- row last fed (a pick before any feed has no row to land in and is
+-- dropped, traced).
+pickedInto :: forall @l m a si so r. IsSymbol l => Cons l (Maybe a) () si => Cons l a () so => MonadEffect m => ({ | r } -> Maybe a) -> (a -> { | r } -> { | r }) -> PUI m { | si } [ | so ] -> PUI m { | r } { | r }
+pickedInto shown fold w = wrap do
+  w' <- unwrap w
+  rowRef <- liftEffect $ Ref.new Nothing
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \r -> do
+        Ref.write (Just r) rowRef
+        w'.toUser (Record.insert (Proxy @l) (shown r) {})
+        Ref.read mPropRef >>= traverse_ (_ $ r)
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        w'.fromUser \picked -> Ref.read rowRef >>= case _ of
+          Nothing -> tr "picker: pick withheld (no row fed yet)" picked
+          Just r -> do
+            let r' = fold (on (Proxy @l) identity case_ picked) r
+            Ref.write (Just r') rowRef
+            prop r'
+    }
 
 -- | The **tick source**: an occurrence of case `l` every `interval`, out of
 -- | the terminal record — the timer's `× → +` leaf, exactly as a click
@@ -1588,7 +1600,7 @@ actedWith key hooks = do
     onEmit k _ b = driveGate gate (Contributed [ Tuple k b ]) >>= traced
   pure
     { toUser: \items -> actingGuarded busyRef do
-        out <- steppedFeed gate do
+        out <- steppedFeed Shared gate do
           _ <- driveGate gate (Rekeyed (map key items))
           reconcileKeyed key hooks onEmit busyRef entriesRef items
         traced out

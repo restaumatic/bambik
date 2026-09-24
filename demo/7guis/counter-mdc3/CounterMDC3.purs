@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (applied, mvu)
-import PUI.Web.HTML (shown, text)
+import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, card, headlineLarge)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

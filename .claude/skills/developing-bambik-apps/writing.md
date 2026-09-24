@@ -26,9 +26,9 @@ code order is DOM order *and* data order) and the four qualified-do row
 merges (operands over one shared row):
 
 - `RecordToRecord.do` (×→×) — all-at-once **content merges**: chrome
-  beside displays (a gated rung's structured content), and bare
-  type-changing selectors beside the displays that read them (potluck's
-  guest line). Editors are never its operands — an editor is a whole-row
+  beside displays (a gated rung's structured content), and a completed
+  selector beside the displays that read its row (potluck's guest line).
+  Editors are never its operands — an editor is a whole-row
   pipeline stage (see *Component citizenship*)
 - `RecordToVariant.do` (×→+) — model in, events out: button rows
 - `VariantToVariant.do` (+→+) — event dispatch: backend actions
@@ -57,6 +57,30 @@ business label once, as the leaf's own type argument** — no canonical
 label (`value`/`clicked`/`event`) ever appears in application code, and
 adopters that need a leaf's label derive it from the closed singleton
 row.
+
+**Shape is the type.** A component's type says which direction it is a
+citizen of, and there are exactly four — each side a record (knowledge)
+or a variant (an event), never a bare value:
+
+```purescript
+PUI Web { | a } { | b }   -- ×→×  editors, displays, selectors, stages
+PUI Web { | a } [ | b ]   -- ×→+  emitters: button, listOf, clicked
+PUI Web [ | a ] { | b }   -- +→×  statuses: snackbar, toast
+PUI Web [ | a ] [ | b ]   -- +→+  handlers: backend dispatch
+```
+
+Every component the vocabularies publish has one of these types, and so
+must every component an application packages itself (order-dashboard's
+`DashboardControlsMDC3`: `statTile @"Orders" { unit: "placed" }
+ordersCount :: PUI Web { | r } {}`). A word that would need two shapes
+is two words, each lawful at its own — the library's own selectors are
+pickers (`×→+`) completed by `# required`/`# optional` (`×→×`), and its
+pane is `provided` for emitters, `shownWhen` for displays, `inCase` for
+editors. Only decorators (`clWhen`, `attrWith`), like oculars, keep the
+shape of what they decorate. A signature with a bare `a`, `String` or `Maybe a` on either
+side is the smell: the value belongs in a field of the row, read by a
+business function whose footprint names it (`parseMarkdown ::
+{ "Source" :: String } -> …`, fed the whole document by `dynamic`).
 
 **A label is the copy it draws.** Captions are never derived from an
 identifier — the library has no humanizing step — so a labelled leaf
@@ -200,12 +224,17 @@ syntax (`r { "Name" = … }`) all work unchanged.
   `# observed` (payment's retry toast narrates the retry loop); the
   status may consume a narrower variant than the stage carries,
   background cases pass untouched.
-- **type-changing selectors** (`select`, `radioButton`,
-  `segmentedButton`) carry the business label through both rows
-  (`select @"Milk" cfg opts :: { "Milk" :: Maybe _ } → { "Milk" :: _ }`);
-  always-selected ones take `# required`, possibly-unselected ones
-  `# optional @"chosen" @"unchosen"` (both derive the label; `optional`
-  takes the two state names from the application) — the model keeps a
+- **pickers** (`select`, `radioButton`, `segmentedButton`, `dropdown`,
+  `radioGroup`) are **emitters**, not editors: shown the choice the field
+  holds, they report each pick as the field's case
+  (`select @"Milk" cfg opts :: { "Milk" :: Maybe _ } → [ "Milk" :: _ ]`),
+  and a feed fires nothing. A picker is completed into the editor of its
+  field by the stage that folds its picks in — `# required` when the
+  model always holds a choice, `# optional @"chosen" @"unchosen"` when
+  it may not (both derive the label; `optional` takes the two state
+  names from the application), each answering every feed with the row —
+  so the one line reads as an editor, `select @"Milk" {} milks #
+  required`, and a bare picker never stands where a row is owed. The model keeps a
   named two-case variant, never a `Maybe`, seeded at the unmade case
   (`"Room": .unchosen {}`, no default pick), and the stages demanding
   the bare selection adopt the made case (`# inCase @"chosen" roomOf`,
@@ -366,12 +395,15 @@ Worked examples, by shape:
 ## Conditional visibility
 
 Conditional visibility is **case adoption**, never an in-UI predicate —
-and never a `Maybe`. The vocabulary has exactly one visibility
-primitive, `provided @l classifier` (its display rung
-`shownWhen @l classifier`, its editor rung `inCase @l classifier`): the
-argument is a business function classifying the situation into a
-variant, and the pane exists while the variant sits at case `l`, fed
-that case's payload.
+and never a `Maybe`. The vocabulary has one pane per kind of content,
+all over one mechanism: `shownWhen @l classifier` for a display,
+`inCase @l classifier` for an editor, `provided @l classifier` for an
+emitter (a button, a `listOf`) — the argument is a business function
+classifying the situation into a variant, and the pane exists while the
+variant sits at case `l`, fed that case's payload. Each answers as its
+content's shape owes: a display pane releases the row whether shown or
+not, an editor pane is the wire while detached, and a detached emitter
+fires nothing, which is all an emitter ever owes a feed.
 
 When the model field is itself a payload-carrying variant, the pane
 adopts it through a closed accessor — the pane's argument is a
@@ -405,12 +437,12 @@ with no `Maybe` anywhere in the booking; checkout's wizard buttons
 adopt `onward`/`back` off `onwardFrom`/`previousOf`. `Maybe` stays
 below the UI — an `index`/`find` lookup, an `Aff` result — and a
 classifier converts it at the boundary (inbox's `messageView` turns
-`find`'s `Maybe` into `reading`/`browsing`). The one `Maybe` a demo row
-still carries is potluck's `"Dish"`: the type-changing selector's *input
-protocol* (`Cons l (Maybe a)`) used bare inside `acted`, because the
-gather gate must wait for a genuine pick and `# optional`'s `unchosen`
-echo would open it — the leaf protocol showing through, not view-model
-state, and the allow-list of `scripts/check-view-model.mjs` names it.
+`find`'s `Maybe` into `reading`/`browsing`). No demo row carries a
+`Maybe`: potluck's dishes are `[ chosen :: dish, unchosen :: {} ]` under
+`# optional`, and "the menu once everyone has chosen" is its business
+classifier `menuState` (`complete` with the dishes, `waiting` with the
+names still choosing), each case a `shownWhen` pane — a rule stated in
+the logic module, not a gate left waiting on a leaf that never answers.
 
 A pane whose content only exists sometimes is exactly this — for
 *displays*. An **editor** that exists only in one mode is not a payload
@@ -758,7 +790,7 @@ induces — view first, logic module written to its names — is
   highlighted }`), never a bare accessor. The rule is mechanically
   checkable (`scripts/check-view-model.mjs`): `:: Maybe` and `:: Boolean`
   may appear as a field in a logic module only on the allow-list of
-  Boolean-editor labels (plus potluck's leaf-protocol exception). The
+  Boolean-editor labels. The
   library's own rows obey it too: a bounded quantity's `step` is
   `[ discrete :: Number, continuous :: {} ]`, and `checkbox @l @c @n`
   edits a two-case variant the application names. `Maybe` keeps its place
@@ -1137,8 +1169,8 @@ read them, not a summary. Paths are inside the fetched library,
   combinators: `mvu`/`with`/`looped`/`updated`/`applied`/`settled`/`action`,
   the adopter family re-exports (`atCase` among them), and the collection
   combinators `foreach @l`/`edited @l`/`acted @l`/`dispatched`/
-  `accumulated`. The gated display family lives in `PUI.Web.HTML`
-  (`shown`/`shownWhen`/`shownEach`) and the
+  `accumulated`. The gated display family lives in `PUI.Web`
+  (`shown`/`shownWhen`/`inCase`/`shownEach`) and the
   design systems (`confirmed`).
 - `src/PUI/Web/HTML.purs` — HTML vocabulary, `body` (the plain-floor
   entry; each design-system module exports its own of the same

@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, const)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (mvu, updated)
-import PUI.Web.HTML (shown, provided, text)
+import PUI.Web (provided, shown, text)
 import PUI.Web.MDC2 (body, body1, button, card, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import QuizLogic (answer, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizPhase, quizProgress)

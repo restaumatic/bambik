@@ -117,6 +117,16 @@ export const sets = {
     'scoreboard-mdc3': ['ScoreboardMDC3', 'scoreboardMDC3'],
     'reorder-mdc3': ['ReorderMDC3', 'reorderMDC3'],
   },
+  // the leaf-law bench (scripts/smoke/tests/leaf-laws.mjs): every published
+  // component mounted alone and fed from outside — not a demo, never deployed
+  laws: {
+    'mdc2': ['LawBenchMDC2', 'lawBenchMDC2'],
+    'mdc3': ['LawBenchMDC3', 'lawBenchMDC3'],
+    'shoelace': ['LawBenchShoelace', 'lawBenchShoelace'],
+    'fluent': ['LawBenchFluent', 'lawBenchFluent'],
+    'bootstrap': ['LawBenchBootstrap', 'lawBenchBootstrap'],
+    'html': ['LawBenchHTML', 'lawBenchHTML'],
+  },
 }
 
 // Every demo as { set, name, dir, mod, fn } — dir is repo-relative, and also

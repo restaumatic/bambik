@@ -6,9 +6,9 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
 import PUI (armed, forCase, mvu, required)
-import PUI.Web (choice)
+import PUI.Web (choice, shown, staticText, text)
 import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
-import PUI.Web.HTML (shown, div, staticText, text)
+import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 loanCalculatorBootstrap :: Effect Unit

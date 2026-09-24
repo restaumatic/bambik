@@ -7,7 +7,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
 import PUI (applied, forCase, mvu, observed, updated, with)
-import PUI.Web.HTML (shown, provided, span, text)
+import PUI.Web (provided, shown, text)
+import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, bodyLarge, bodyMedium, bodySmall, button, card, dialog, fab, headlineSmall, iconButton, listOf, menu, menuItem, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

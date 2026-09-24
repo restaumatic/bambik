@@ -5,7 +5,8 @@ import Prelude ((#), ($), Unit)
 import CounterLogic (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (applied, mvu)
-import PUI.Web.HTML (body, button, div, h4, shown, staticText, text)
+import PUI.Web (shown, staticText, text)
+import PUI.Web.HTML (body, button, div, h4)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 counterHTML :: Effect Unit

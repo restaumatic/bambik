@@ -8,8 +8,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
 import PUI (armed, forCase, mvu, required, updated, with)
-import PUI.Web (choice)
-import PUI.Web.HTML (shown, div, staticText, text)
+import PUI.Web (choice, shown, staticText, text)
+import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

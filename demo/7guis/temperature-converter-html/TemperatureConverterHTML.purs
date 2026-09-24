@@ -4,7 +4,8 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import PUI (mvu, settled)
-import PUI.Web.HTML (shown, body, div, input, label, p, staticText)
+import PUI.Web (shown, staticText)
+import PUI.Web.HTML (body, div, input, label, p)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TemperatureConverterLogic (fromCelsius, fromFahrenheit, roomTemperature)
 

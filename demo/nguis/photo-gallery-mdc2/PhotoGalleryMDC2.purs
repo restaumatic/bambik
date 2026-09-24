@@ -7,7 +7,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, favoriteShots, isOpen, landscapesOpen, openAlbum)
 import PUI (mvu, updated)
-import PUI.Web.HTML (shownEach, shown, each, span, staticText, text)
+import PUI.Web (each, shown, shownEach, staticText, text)
+import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (body, divider, drawer, headline2, imageList, imageListItem, imagePane, list, listItem, listOf, overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

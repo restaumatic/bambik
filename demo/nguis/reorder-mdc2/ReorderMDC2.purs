@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, blank, edited, mvu, static, updated)
-import PUI.Web.HTML (el, (:=))
+import PUI.Web (el, (:=))
 import PUI.Web.MDC2 (body, button, filledTextField, group, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import ReorderLogic (openingSetlist, rotateAction, setOrder, shuffleAction)

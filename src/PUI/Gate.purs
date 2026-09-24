@@ -15,7 +15,14 @@
 -- | owning no field enrols no participant, so its emissions are no
 -- | contribution — `{}` is always known — and it can neither open the gate
 -- | nor starve a sibling. Fed `[]`, the collection has no participant left
--- | unknown and releases `[]`.
+-- | unknown and releases `[]`. A gate with **no participants at all** — a
+-- | record merge whose operands own no field — has its whole row, the empty
+-- | one, always known, so a step that broadcast a shared record input
+-- | releases it once whether or not an operand spoke: a `{}`-output merge
+-- | answers each feed with `{}` exactly as each of its operands does
+-- | (Answer, preserved), and `identity @{} ⊗ identity @{}` is
+-- | `identity @{}` on the nose. A dispatched step owes nothing and stays
+-- | quiet, so the `+→×` unit law is untouched (`StepKind`).
 -- |
 -- | The machine is **data-independent with finite control**. Its control is
 -- | the participant sequence, which participants are known, how deep inside
@@ -54,13 +61,14 @@ module PUI.Gate
   ( GateState
   , GateInput(..)
   , GateOutput(..)
+  , StepKind(..)
   , initialGate
   , gateStep
   ) where
 
 import Prelude
 
-import Data.Array (filter) as Array
+import Data.Array (filter, null) as Array
 import Data.Foldable (elem, foldl)
 import Data.Map (Map)
 import Data.Map (empty, filterKeys, insert, lookup, member) as Map
@@ -81,7 +89,16 @@ data GateInput k v
   = Contributed (Array (Tuple k v))
   | Rekeyed (Array k)
   | StepBegun
-  | StepEnded
+  | StepEnded StepKind
+
+-- | What the step just ended broadcast: a **shared** record input, which
+-- | owes the boundary an answer (Answer, Data.Profunctor.Row), or a
+-- | **dispatched** variant input, which owes nothing. The two differ only
+-- | where the gate has no participants: the empty row is always known, so a
+-- | shared step answers with it and a dispatched one stays quiet.
+data StepKind = Shared | Dispatched
+
+derive instance Eq StepKind
 
 data GateOutput k v
   = Released (Array (Tuple k v))
@@ -118,9 +135,9 @@ gateStep s = case _ of
   Rekeyed order ->
     landed s { order = order, known = Map.filterKeys (_ `elem` order) s.known }
   StepBegun -> Tuple s { depth = s.depth + 1 } Quiet
-  StepEnded
+  StepEnded kind
     | s.depth > 1 -> Tuple s { depth = s.depth - 1 } Quiet
-    | s.pending -> release s { depth = 0, pending = false }
+    | s.pending || kind == Shared && Array.null s.order -> release s { depth = 0, pending = false }
     | otherwise -> Tuple s { depth = 0 } Quiet
   where
   participant k = k `elem` s.order

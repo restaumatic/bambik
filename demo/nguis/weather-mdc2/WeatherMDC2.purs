@@ -5,7 +5,7 @@ import Prelude (Unit, (#), ($))
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, mvu, updated)
-import PUI.Web.HTML (shown, text)
+import PUI.Web (shown, text)
 import PUI.Web.MDC2 (body, body1, caption, card, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, reportRequest, servedLine, temperatureLine, warsawBulletin)

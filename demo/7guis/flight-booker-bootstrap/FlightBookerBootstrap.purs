@@ -5,9 +5,9 @@ import Prelude (Unit, (#), ($))
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, forCases, mvu, required, blank)
-import PUI.Web (choice)
+import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.Bootstrap (body, button, card, select, textField, toast)
-import PUI.Web.HTML (inCase, shownWhen, p, text)
+import PUI.Web.HTML (p)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerBootstrap :: Effect Unit

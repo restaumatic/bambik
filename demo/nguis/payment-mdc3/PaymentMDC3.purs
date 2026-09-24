@@ -7,7 +7,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder)
 import PUI (action, atCase, forCase, mvu, observed, toCases, updated)
-import PUI.Web.HTML (shown, text)
+import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, headlineSmall, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

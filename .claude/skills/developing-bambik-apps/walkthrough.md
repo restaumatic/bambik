@@ -21,8 +21,7 @@ import Prelude (Unit, (#), ($))
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, forCases, mvu, required)
-import PUI.Web (choice)
-import PUI.Web.HTML (inCase, shownWhen, text)
+import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -47,8 +46,8 @@ flightBookerMDC2 =
 
 **The imports.** Three vocabularies and nothing else: `PUI` for the words
 that shape data flow (`mvu`, `required`, `debounced`, `action`, `atCase`,
-`forCases`), `PUI.Web.HTML` for the display stages (`shownWhen`, `inCase`,
-`text`), and `PUI.Web.MDC2` for the design system — its `body` included:
+`forCases`), `PUI.Web` for the words every vocabulary shares (`choice`,
+and the display stages `shownWhen`, `inCase`, `text`), and `PUI.Web.MDC2` for the design system — its `body` included:
 every vocabulary exports the entry under that one name and signature,
 dressing the page for its catalogue before it mounts.
 The MDC3 twin differs from this file in exactly the last import (and the

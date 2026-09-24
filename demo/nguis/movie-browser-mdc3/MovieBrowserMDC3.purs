@@ -6,8 +6,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import MovieBrowserLogic (favoriteMark, favoritesLine, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
 import PUI (foreach, mvu, toCase, updated)
-import PUI.Web (choice)
-import PUI.Web.HTML (shown, span, text)
+import PUI.Web (choice, shown, text)
+import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, card, chipSet, elevation1, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

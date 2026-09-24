@@ -5,8 +5,8 @@ import Prelude (Unit, ($), (#))
 import Effect (Effect)
 import ProductReviewLogic (freshImpression, previewLine, submittedLine)
 import PUI (armed, forCase, mvu, required)
-import PUI.Web (choice)
-import PUI.Web.HTML (shown, p, text)
+import PUI.Web (choice, shown, text)
+import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

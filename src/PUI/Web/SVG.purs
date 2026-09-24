@@ -1,5 +1,5 @@
 -- | The drawing vocabulary: shapes for charts, diagrams and canvases, used
--- | exactly like the `PUI.Web.HTML` elements — decorated with `attr`/`:=` for
+-- | exactly like the `PUI.Web.HTML` elements — decorated with `PUI.Web`'s `attr`/`:=` for
 -- | anything fixed and `attrWith` for anything that follows the data, so a
 -- | sparkline or a scatter of circles is drawn once and moved in place as
 -- | values arrive.
@@ -14,8 +14,8 @@ module PUI.Web.SVG
   ) where
 
 import PUI (PUI, Ocular)
-import PUI.Web.HTML (el)
-import PUI.Web (Web)
+
+import PUI.Web (Web, el)
 
 -- | The drawing surface everything else goes inside. Its `viewBox` sets the
 -- | coordinate system the shapes are written in — and the coordinates
@@ -35,7 +35,7 @@ path :: Ocular (PUI Web)
 path = el "path"
 
 -- | Text inside a drawing, placed by `x`/`y`: an axis tick, a data label.
--- | (For text in a page, `PUI.Web.HTML`'s `text` and `staticText` are the
+-- | (For text in a page, `PUI.Web`'s `text` and `staticText` are the
 -- | leaves.)
 text :: Ocular (PUI Web)
 text = el "text"

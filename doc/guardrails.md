@@ -79,6 +79,32 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   internal payload case private and derived. Components MUST NOT have
   scalar or polymorphic model interfaces; raw scalar leaves stay private
   or in optic positions.
+- **Shape is the type.** Every exported component MUST end in exactly
+  one of the four row forms, each side a record or a variant:
+
+  | Type | Direction | Sort |
+  | --- | --- | --- |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors, displays, completed selectors (`# required`/`# optional`), panes that answer (`shownWhen`, `inCase`), stages |
+  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), pickers (`select`, `radioButton`, `segmentedButton`, `dropdown`, `radioGroup`), the emitter pane `provided` |
+  | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`) |
+  | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers |
+
+  A closed row (`{}`, `[ event :: String ]`) is a row. A word that
+  would need two shapes is two words, each lawful at its own: a
+  selector is a **picker** (`×→+`, a feed fires nothing) completed into
+  an editor by `required`/`optional` (`×→×`, every feed answered with
+  the row), and a pane is `provided` for emitters (a detached one's
+  silence is `×→+`'s answer), `shownWhen` for displays, `inCase` for
+  editors (2026-09-23 — each once an exception to Answer, none now).
+  **Decorators** are outside the rule, as oculars (`Ocular (PUI Web)`)
+  are: `clWhen`/`attrWith` read the row (`{ | i }`) to style the element
+  just built and keep whatever shape they decorate, an emitter's or an
+  editor's alike. A bare `i`/`a`/`Maybe a` side on an exported word is a
+  violation, whether a scalar leaf left public (HTML's `radioButton`,
+  deleted 2026-09-23) or a combinator reading a bare value (`dynamic`,
+  now fed the row). The type cannot enforce this — `forall i o` compiles —
+  so it is a review rule: a new or changed signature MUST be read against
+  this table before it is accepted.
 - A **label is the copy it draws**: a captioned leaf's caption defaults
   to its label verbatim — nothing derives copy from an identifier — so
   labels are written as the words they render and are therefore usually
@@ -189,7 +215,13 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   participants and `acted` the fed keys — so the zero-field clause above
   is a consequence of enrolling nothing, the collection's empty law the
   zero-participant release, and a gating rule proved on the step holds
-  for both (2026-09-15). A gate MUST NOT be
+  for both (2026-09-15). A merge whose operands own **no field at all**
+  enrols no participant, and its row — the empty one — is always known,
+  so each step that broadcast a shared record input MUST release it once
+  (`StepEnded Shared`): a `{}`-output merge answers every feed, whether
+  or not its operands spoke, and a dispatched `+→×` step, owed nothing,
+  stays quiet (2026-09-23; before it, `imagePane`'s merge of two
+  answering displays never answered — the leaf-law bench found it). A gate MUST NOT be
   papered over with invented data. Three designs are permanently
   rejected:
   - **no `Initial`/`Default`-style type-derived seeds** — initial state
@@ -199,7 +231,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
     is a bogus first model, and it would flow;
   - **no `Maybe initial` slot in the wiring** — re-encoding optionality
     the types were supposed to eliminate.
-- The gate is UX, not overhead (potluck's withheld menu). Any proposal
+- The gate is UX, not overhead (a summary withheld until its inputs are
+  known, never shown half-invented). Any proposal
   whose effect is "gates open at registration" is wrong by construction.
 
 ### L7. Pointedness is a typing discipline, supplied by terms.
@@ -382,7 +415,12 @@ The codebase is three floors, each greppable:
   stays visibly apart from it.
 - **Application layer** — vocabulary only: no `Data.Profunctor`, no
   carrier internals (Part II, and the rule as applications read it in
-  writing.md's *Wiring*).
+  writing.md's *Wiring*). `PUI.Web` holds both: its **internals** are the
+  building blocks (`element`, `attachable`, `runDomInNode`, `Node`, the
+  DOM FFI, `staticHTML`), its **vocabulary** the element-neutral words
+  every vocabulary shares (`choice`, the decorators, `text`/`staticText`,
+  `clicked`, `provided` and the gated rungs, `dynamic`/`each`/`el`) —
+  an application imports the second and never the first.
 
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/

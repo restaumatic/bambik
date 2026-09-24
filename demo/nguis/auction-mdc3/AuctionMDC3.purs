@@ -6,7 +6,7 @@ import AuctionLogic (bidLine, noBids, openingBid, raiseTop, topLine)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Effect (Effect)
 import PUI (mvu, settled)
-import PUI.Web.HTML (shown, text)
+import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, card, headlineSmall, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

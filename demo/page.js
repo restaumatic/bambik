@@ -24,10 +24,13 @@ const groupDemoWithNote = () => {
     document.getElementById("source-panel"),
     column,
   ])
+  // Comments move too: a pane's placeholders are comment nodes, and a pane
+  // mounted at the top level must stay between its own placeholders or it
+  // can never be detached again.
   const collect = () => {
     const mounted = [...document.body.childNodes].filter(n =>
       !chrome.has(n) && n.nodeName !== "SCRIPT" &&
-      (n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim())))
+      (n.nodeType === 1 || n.nodeType === 8 || (n.nodeType === 3 && n.textContent.trim())))
     if (!mounted.length) return false
     column.append(...mounted, note)
     return true

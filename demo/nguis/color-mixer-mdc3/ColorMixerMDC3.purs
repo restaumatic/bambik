@@ -6,7 +6,8 @@ import ColorMixerLogic (applyPreset, duskViolet, hexLine, mixOf, palette, rgb, r
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, mvu, updated)
-import PUI.Web.HTML (shown, attrWith, clicked, div, text, (:=))
+import PUI.Web (attrWith, clicked, shown, text, (:=))
+import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, card, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

@@ -1,0 +1,37 @@
+module LawBenchBootstrap (lawBenchBootstrap) where
+
+import Prelude
+
+import Data.Maybe (Maybe(..))
+import Effect (Effect)
+import LawBench (bench, runBench)
+import PUI (optional, required)
+import PUI.Web (choice, staticText)
+import PUI.Web.Bootstrap (body, button, progress, select, sliderLive, textField, toast, toggleSwitch)
+
+lawBenchBootstrap :: Effect Unit
+lawBenchBootstrap = do
+  body (staticText "Leaf-law bench · Bootstrap")
+  runBench
+    [ bench "textField" "×→×" texts (textField @"Name" {})
+    , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
+    , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
+    , bench "progress" "×→×" fractions (progress @"Progress" _.fraction)
+    , bench "select (raw)" "×→+" picks (select @"Pick" {} options)
+    , bench "select # required" "×→×" chosen (select @"Pick" {} options # required)
+    , bench "select # optional" "×→×" optionals (select @"Pick" {} options # optional @"chosen" @"unchosen")
+    , bench "button" "×→+" rows (button @"Go" {})
+    , bench "toast" "+→×" events toast
+    ]
+  where
+  texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
+  flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]
+  quantity current = { current, min: 0.0, max: 10.0, step: .discrete 1.0 }
+  quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
+  fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
+  options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
+  picks = [ { "Pick": Nothing }, { "Pick": Just (.one {}) }, { "Pick": Just (.two {}) } ]
+  chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
+  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ]
+  rows = [ { n: 1 }, { n: 2 } ]
+  events = [ .event "hello", .event "world" ]

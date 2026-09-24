@@ -26,8 +26,8 @@ import Data.Lens.Reel (reel)
 import Data.Variant (case_, match, on)
 import Type.Proxy (Proxy(..))
 import PUI (PUI)
-import PUI.Web.HTML (button, staticText)
-import PUI.Web (Web)
+import PUI.Web.HTML (button)
+import PUI.Web (Web, staticText)
 
 type Money = Int
 type DishId = String

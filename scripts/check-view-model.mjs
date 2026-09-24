@@ -10,13 +10,8 @@ const walk = (dir) => readdirSync(dir).flatMap((n) => {
   return statSync(p).isDirectory() ? walk(p) : p.endsWith(".purs") ? [p] : [];
 });
 
-// Boolean fields edited by a Boolean editor, plus the one leaf-protocol
-// exception — each carries its reason.
+// Boolean fields edited by a Boolean editor.
 const allow = new Set([
-  // potluck: the type-changing selector's *input protocol* (`Cons l (Maybe a)`)
-  // used bare inside `acted` — the gather gate must wait for a genuine pick,
-  // and `# optional`'s `unchosen` echo would open it early
-  '"Dish" :: Maybe',
   ...['"Favorite"', '"Payment protection insurance"', '"Extra shot"', '"Decaf"', '"Uppercase letters"',
       '"Symbols"', '"Lowercase letters"', '"Include a Teams link"', '"Digits"', '"Takeaway cup"',
       "\"I'd recommend it to a friend\"", '"Oscar"', '"Mark as favorite"', '"Cult"', '"Classic"']

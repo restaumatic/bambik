@@ -29,14 +29,14 @@ This paragraph shows **bold**, *italic* and `inline code` text.
   }
 
 parseMarkdown
-  :: String
+  :: { "Source" :: String }
   -> Array
     [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] }
     , paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
     , bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ])
     , quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
     ]
-parseMarkdown source = blocks (split (Pattern "\n") source)
+parseMarkdown document = blocks (split (Pattern "\n") document."Source")
 
 blocks
   :: Array String

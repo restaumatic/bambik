@@ -6,7 +6,8 @@ import Data.Variant (match)
 import Effect (Effect)
 import PasswordGeneratorLogic (passwordText, rememberPassword, samplePassword, strengthLine, strongMixRecipe)
 import PUI (action, mvu, atCase, updated)
-import PUI.Web.HTML (shown, attr, code, text)
+import PUI.Web (attr, shown, text)
+import PUI.Web.HTML (code)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, indeterminateLinearProgress, slider, toggleSwitch)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

@@ -101,11 +101,13 @@ combinator laws below fail without them.
    every leaf and the instant rungs and is *refined*, not broken, at
    exactly two sorts of place: in **time** by the witness rung
    (`confirmed` releases on confirmation; a declined reading withholds) and
-   the gather gate (`acted` releases once every element has spoken), and in
-   **value** by the type-changing selectors, whose `Just`-only echo is
-   silent on `Nothing` and is completed by `required`/`optional` before the
-   leaf can be a stage — the type forbids a bare selector in any
-   `Semigroupoid.do` over one row. "Once" is exact since the same audit:
+   the gather gate (`acted` releases once every element has spoken). There
+   is no refinement in **value** any more (2026-09-23): the selectors,
+   whose echo was silent on `Nothing`, are now **pickers** — `×→+`,
+   `{ l :: Maybe a } → [ l :: a ]`, answering no feed as every emitter
+   does — and `required`/`optional` are the stages completing a picker
+   into the editor of its field, answering every feed with the row.
+   "Once" is exact since the same audit:
    `inCase` echoes only while its pane is detached (attached, the editor's
    own echo is the release) and `drawer` sequences its nav into its content
    instead of fanning one feed out to two echoing sides.

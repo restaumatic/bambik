@@ -50,9 +50,9 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
-import PUI.Web.HTML (cl, clicked, div, el, label, span, staticText, text, textOf, (:=))
+import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, Web, OptCaption(..), addEventListener, attribute, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, uniqueId)
+import PUI.Web (pickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticText, text, textOf, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -70,8 +70,8 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- no custom elements, no foundation instances, and no FFI beyond the
 -- toast's dismissal timer (the one behavior Bootstrap's own JS plugin
 -- would supply). The leaf-echo protocols are the same as the MDC modules'
--- (focus-guarded text field, per-feed display echo, `Just`-only echo on
--- the type-changing selector). Two-sorted, same citizenship, and — where
+-- (focus-guarded text field, per-feed display echo, a picker firing
+-- nothing on a feed). Two-sorted, same citizenship, and — where
 -- the concept exists in both catalogs — the same names and signatures:
 --
 --   * **components** — UI components with a model interface, every one a citizen
@@ -196,8 +196,8 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
 -- | choice" and leaves as the choice itself — say which with
 -- | `# optional @"chosen" @"unchosen"` (the two states named by the
 -- | application) or `# required`. The options belong to the control, not to the model.
-select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } { | ro }
-select provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
+select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
+select provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "select" (void $ unwrap (optionLeaves))
   node <- gets _.sibling
@@ -213,9 +213,6 @@ select provided options = let config = convertOptionsWithDefaults OptCaption { l
         case ma of
           Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setValue node (show idx)
           Nothing -> setValue node ""
-        -- leaf echo (output is the bare selection, so only a `Just` echoes)
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> for_ ma \a' -> prop a'
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where

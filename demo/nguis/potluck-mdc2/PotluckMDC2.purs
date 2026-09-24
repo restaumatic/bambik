@@ -4,10 +4,9 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PotluckLogic (guestCountLine, guestName, invitation, menuLine)
-import PUI (acted, with)
-import PUI.Web (choice)
-import PUI.Web.HTML (shown, text)
+import PotluckLogic (guestCountLine, guestName, invitation, menuLine, menuState, waitingLine)
+import PUI (acted, optional, with)
+import PUI.Web (choice, shown, shownWhen, text)
 import PUI.Web.MDC2 (body, body2, group, headline6, list, listItem, segmentedButton, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -19,6 +18,7 @@ potluckMDC2 =
       ( listItem $ RecordToRecord.do
         subtitle1 (text guestName)
         segmentedButton @"Dish"
-          [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name"
-    headline6 (text menuLine) # shown
+          [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] # optional @"chosen" @"unchosen" ) # acted @"name"
+    headline6 (text menuLine) # shownWhen @"complete" menuState
+    body2 (text waitingLine) # shownWhen @"waiting" menuState
   ) # with invitation

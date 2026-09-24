@@ -7,7 +7,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, mvu, settled, updated)
-import PUI.Web.HTML (shown, attrWith, body, button, div, label, onClickedXY, p, inCase, rangeInput, staticText, (:=))
+import PUI.Web (attrWith, inCase, onClickedXY, shown, staticText, (:=))
+import PUI.Web.HTML (body, button, div, label, p, rangeInput)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
 

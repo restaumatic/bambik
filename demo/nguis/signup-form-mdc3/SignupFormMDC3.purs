@@ -5,8 +5,7 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (armed, forCase, mvu, required, toCases)
-import PUI.Web (choice)
-import PUI.Web.HTML (shown, shownWhen, staticText, text)
+import PUI.Web (choice, shown, shownWhen, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, checkbox, debouncedTextField, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, register, rejectionLine, takenLine, usernameSettleTime, usernameStatus, validation, welcomeLine)

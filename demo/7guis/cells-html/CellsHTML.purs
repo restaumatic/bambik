@@ -6,7 +6,8 @@ import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedLine)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
-import PUI.Web.HTML (shown, attrWith, body, clicked, div, input, label, p, staticText, table, td, text, tr, (:=))
+import PUI.Web (attrWith, clicked, shown, staticText, text, (:=))
+import PUI.Web.HTML (body, div, input, label, p, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsHTML :: Effect Unit

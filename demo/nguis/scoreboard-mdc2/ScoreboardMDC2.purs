@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import PUI (muted, accumulated, every, foreach, mvu)
-import PUI.Web.HTML (shown, text)
+import PUI.Web (shown, text)
 import PUI.Web.MDC2 (body, body2, card, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import ScoreboardLogic (boardSummary, gameStart, goal, scoreLine, summaryLine, tick, tickPeriod)
