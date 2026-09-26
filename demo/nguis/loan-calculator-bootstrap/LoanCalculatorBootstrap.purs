@@ -19,8 +19,8 @@ loanCalculatorBootstrap =
         textField @"Applicant" {}
         sliderLive @"Amount (€)" {}
         sliderLive @"Term (years)" {}
-        select @"Purpose" {}
-          [ choice @"Car", choice @"Home improvement", choice @"Holiday" ] # required
+        select @"Purpose" {} required
+          [ choice @"Car", choice @"Home improvement", choice @"Holiday" ]
         toggleSwitch @"Payment protection insurance" {}
       ) # mvu cityCarLoan
       ( listGroup $ RecordToRecord.do

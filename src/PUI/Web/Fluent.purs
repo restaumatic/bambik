@@ -46,13 +46,14 @@ import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (case_, match, on) as Variant
+import Data.Lens (Prism')
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (pickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
+import PUI.Web (selectedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -68,8 +69,8 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- registered by importing the FFI module, so a component leaf is just
 -- `element "fluent-..."` plus property/event wiring — exactly the
 -- `PUI.Web.MDC3` recipe, and the leaf-echo protocols are the same
--- (focus-guarded text field, per-feed display echo, pickers firing
--- nothing on a feed). Fluent associates labels through
+-- (focus-guarded text field, per-feed display echo, selection
+-- editors answering every feed with their row). Fluent associates labels through
 -- `<fluent-field>`, so the labeled editors carry that wrapper as chrome.
 -- Two-sorted, same citizenship, and — where the concept exists in both
 -- catalogs — the same names and signatures:
@@ -80,7 +81,8 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --         (`<fluent-switch>`), `slider @l` (`<fluent-slider>` — Fluent's
 --         slider emits on every value change; the catalog has no
 --         commit/live split), and the type-changing `dropdown @l` and
---         `radioGroup @l` (`{ value :: Maybe a } → { value :: a }`);
+--         `radioGroup @l` (`{ l :: f } → { l :: f }`, `f` the option under `required` or a
+--         variant around it under `optional @c`);
 --       `×→×` displays — `progressBar` (`{ value :: Number } → {}`, the
 --         filled fraction 0–1) and `ratingDisplay`
 --         (`{ value :: Number } → {}` — Fluent's read-only star display,
@@ -226,14 +228,16 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: re
     }
 
 -- | The **dropdown**: one choice out of a list too long to lay out in the
--- | open. Until the user picks there is nothing to show, so the field
--- | arrives as "maybe a choice" and leaves as the choice itself — say which
--- | with `# optional @"chosen" @"unchosen"` (the two states named by the
--- | application; nothing preselected, and whatever needs the choice adopts
--- | the made case) or `# required`. The options belong to
--- | the control, not to the model.
-dropdown :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
-dropdown provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
+-- | open.
+-- | The selection argument says what the field holds: `required` (the
+-- | option itself — the model always has one) or `optional @"chosen"` (a
+-- | variant whose case `chosen` is the made choice, seeded at an unmade case
+-- | the application names; nothing is checked until the user picks, and
+-- | whatever needs the choice adopts the made case). Either way the control
+-- | is an editor: every feed is answered with the row, every pick stored.
+-- | The options belong to the control, not to the model.
+dropdown :: forall @l f a rest r provided. IsSymbol l => Cons l f rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+dropdown provided selection options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   element "fluent-dropdown" (void $ unwrap (staticHTML optionsMarkup))
   attribute "slot" "input"
   node <- gets _.sibling
@@ -262,9 +266,9 @@ dropdown provided options = let config = convertOptionsWithDefaults OptCaption {
 
 -- | The **radio group**: one choice among a handful, every option visible
 -- | and comparable at a glance. Beyond about five options use `dropdown`.
--- | Same picked/unpicked contract as `dropdown`.
-radioGroup :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
-radioGroup provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
+-- | Same selection contract as `dropdown`.
+radioGroup :: forall @l f a rest r provided. IsSymbol l => Cons l f rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioGroup provided selection options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   members <- element "fluent-radio-group" do
     forWithIndex options \idx o -> do
       member <- element "fluent-field" do

@@ -43,8 +43,8 @@ orderFormMDC3 =
         ( titleMedium $ staticText "Total" ) # shown
         filledTextField @"Total" {}
       group @"Payment" $ Semigroupoid.do
-        segmentedButton @"Method"
-          [ choice @"cash", choice @"card" ] # required
+        segmentedButton @"Method" required
+          [ choice @"cash", choice @"card" ]
         filledTextField @"Paid" {}
         ( bodyLarge $ text payingLine ) # shown
       card $ Semigroupoid.do

@@ -2,7 +2,6 @@ module LawBenchShoelace (lawBenchShoelace) where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI (optional, required)
@@ -19,9 +18,8 @@ lawBenchShoelace = do
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
     , bench "rating" "×→×" ratings (rating @"Stars" {})
     , bench "progressBar" "×→×" fractions (progressBar @"Progress" _.fraction)
-    , bench "select (raw)" "×→+" picks (select @"Pick" {} options)
-    , bench "select # required" "×→×" chosen (select @"Pick" {} options # required)
-    , bench "select # optional" "×→×" optionals (select @"Pick" {} options # optional @"chosen" @"unchosen")
+    , bench "select required" "×→×" chosen (select @"Pick" {} required options)
+    , bench "select optional" "×→×" optionals (select @"Pick" {} (optional @"chosen") options)
     , bench "button" "×→+" rows (button @"Go" {})
     , bench "toast" "+→×" events toast
     ]
@@ -33,8 +31,7 @@ lawBenchShoelace = do
   ratings = [ { "Stars": { current: 2.0, max: 5 }, other: 1 }, { "Stars": { current: 4.0, max: 5 }, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
-  picks = [ { "Pick": Nothing }, { "Pick": Just (.one {}) }, { "Pick": Just (.two {}) } ]
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
-  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ]
+  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]
   events = [ .event "hello", .event "world" ]

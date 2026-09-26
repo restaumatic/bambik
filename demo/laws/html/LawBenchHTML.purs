@@ -2,7 +2,6 @@ module LawBenchHTML (lawBenchHTML) where
 
 import Prelude hiding (div)
 
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI (optional, required)
@@ -17,9 +16,8 @@ lawBenchHTML = do
     , bench "textArea" "×→×" texts (textArea @"Name")
     , bench "rangeInput" "×→×" quantities (rangeInput @"Amount")
     , bench "progress" "×→×" fractions (progress @"Progress" _.fraction)
-    , bench "select (raw)" "×→+" picks (select @"Pick" options)
-    , bench "select # required" "×→×" chosen (select @"Pick" options # required)
-    , bench "select # optional" "×→×" optionals (select @"Pick" options # optional @"chosen" @"unchosen")
+    , bench "select required" "×→×" chosen (select @"Pick" required options)
+    , bench "select optional" "×→×" optionals (select @"Pick" (optional @"chosen") options)
     , bench "text" "×→×" titled (text _.title)
     , bench "dynamic" "×→×" titled (dynamic \r -> staticText r.title)
     , bench "each" "×→×" units (each [ "a", "b" ] staticText)
@@ -39,9 +37,8 @@ lawBenchHTML = do
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
-  picks = [ { "Pick": Nothing }, { "Pick": Just (.one {}) }, { "Pick": Just (.two {}) } ]
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
-  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ]
+  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   titled = [ { title: "first", other: 1 }, { title: "second", other: 2 } ]
   units = [ {}, {} ]
   gated = [ { mode: .on { n: "shown" }, "Name": "alpha", other: 1 }, { mode: .off {}, "Name": "beta", other: 2 } ]

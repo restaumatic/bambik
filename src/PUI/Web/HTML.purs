@@ -72,13 +72,14 @@ import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (case_, inj, match, on)
+import Data.Lens (Prism')
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
-import PUI.Web (pickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
+import PUI.Web (selectedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
 
 -- UIs
 
@@ -137,13 +138,16 @@ textArea = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
     }
 
 -- | One choice out of a fixed list — the native `<select>` of `<option>`s,
--- | with no chrome and no label of its own. Until the user picks there is
--- | nothing to show, so the field arrives as "maybe a choice" and leaves as
--- | the choice itself — say which with `# optional @"chosen" @"unchosen"` or
--- | `# required`. The
--- | options belong to the control, not to the model.
-select :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
-select options = pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+-- | with no chrome and no label of its own.
+-- | The selection argument says what the field holds: `required` (the
+-- | option itself — the model always has one) or `optional @"chosen"` (a
+-- | variant whose case `chosen` is the made choice, seeded at an unmade case
+-- | the application names; nothing is checked until the user picks, and
+-- | whatever needs the choice adopts the made case). Either way the control
+-- | is an editor: every feed is answered with the row, every pick stored.
+-- | The options belong to the control, not to the model.
+select :: forall @l f a rest r. IsSymbol l => Cons l f rest r => Eq a => Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select selection options = selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "select" (void $ unwrap optionLeaves)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing

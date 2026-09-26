@@ -38,7 +38,7 @@ module PUI.Web
   , Node
   , OptCaption(..)
   , choice
-  , pickedAt
+  , selectedAt
   , Web
   , addClass
   , addEventListener
@@ -109,10 +109,11 @@ import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
+import Data.Lens (Prism', preview, review)
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (class Hosting, Ocular, PUI, Logged, diagnosticsOn, foreach, muted, replaying, setDiagnostics, setSink, setTracing)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs)
-import Data.Profunctor.Row.RecordToRecord (recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (field, recordToRecord)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (Nil) as RL
 import Unsafe.Coerce (unsafeCoerce)
@@ -371,21 +372,32 @@ instance ConvertOption OptCaption sym a a where
 choice :: forall @l tail r. IsSymbol l => Row.Cons l {} tail r => { value :: Variant r, label :: String }
 choice = { value: inj (Proxy :: Proxy l) {}, label: reflectSymbol (Proxy :: Proxy l) }
 
--- | Lift a bare picker leaf — `Maybe a` in, the pick out — to the
--- | **selector shape** `{ l :: Maybe a } → [ l :: a ]`: it shows the choice
--- | the field holds (none yet, on `Nothing`) and reports each pick the user
--- | makes as case `l`. A picker is an emitter (`×→+`): a feed shows the
--- | choice and fires nothing, so it owes no answer, and the model it picks
--- | for is completed outside the leaf — `# required` (a choice always
--- | exists) or `# optional @c @n` (named "chosen" and "unchosen" states),
--- | each an `updated` stage that answers every feed with the row and folds
--- | each pick into field `l`. Vocabulary plumbing, beside `field @l`: every
--- | selector in every vocabulary is its leaf lifted with this.
-pickedAt :: forall @l a ri ro. IsSymbol l => Row.Cons l (Maybe a) () ri => Row.Cons l a () ro => PUI Web (Maybe a) a -> PUI Web { | ri } (Variant ro)
-pickedAt w = wrap $ unwrap w <#> \w' ->
-  { toUser: w'.toUser <<< Record.get (Proxy @l)
-  , fromUser: \prop -> w'.fromUser (prop <<< inj (Proxy @l))
-  }
+-- | Lift a bare selection leaf — the option to check in (`Nothing`: none),
+-- | the option the user checked out — to the **selection editor** of field
+-- | `l`, a whole-row citizen `{ l :: f | rest } → { l :: f | rest }` like
+-- | every other editor: the widget stores a value, so it has an editor's
+-- | shape and owes an editor's answer — every feed is answered with the row,
+-- | and every pick is stored into field `l`. What the field holds is the
+-- | `selection` prism's business: its preview is the option the widget
+-- | shows, its review what a pick stores — `required` (`identity`: the
+-- | field is the option, always chosen) or `optional @c` (the field is a
+-- | variant whose case `c` is the made choice and whose other cases show
+-- | nothing checked). The prism laws are the leaf's: `preview (review a) =
+-- | Just a` is what makes a pick's echo the pick. Vocabulary plumbing,
+-- | beside `field @l`: every selector in every vocabulary is its leaf lifted
+-- | with this.
+selectedAt :: forall @l f a rest r. IsSymbol l => Row.Cons l f rest r => Prism' f a -> PUI Web (Maybe a) a -> PUI Web { | r } { | r }
+selectedAt selection w = field @l $ wrap do
+  w' <- unwrap w
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \v -> do
+        w'.toUser (preview selection v)
+        Ref.read mPropRef >>= traverse_ (_ $ v)
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        w'.fromUser (prop <<< review selection)
+    }
 
 -- The element-neutral vocabulary (see the module header).
 

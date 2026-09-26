@@ -17,10 +17,10 @@ meetingBookerFluent =
     card $ Semigroupoid.do
       ( Semigroupoid.do
         textField @"Meeting title" {}
-        dropdown @"Room" {}
-          [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # optional @"chosen" @"unchosen" # settled seatsInRoom
-        radioGroup @"Duration (min)" {}
-          [ choice @"15", choice @"30", choice @"60" ] # optional @"chosen" @"unchosen"
+        dropdown @"Room" {} (optional @"chosen")
+          [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # settled seatsInRoom
+        radioGroup @"Duration (min)" {} (optional @"chosen")
+          [ choice @"15", choice @"30", choice @"60" ]
         toggleSwitch @"Include a Teams link" {}
         divider # shown
         slider @"Attendees" {} # inCase @"chosen" roomOf

@@ -197,7 +197,7 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   | gated displays | displays are pipeline stages natively, typed `p { o \| rest } { o \| rest }` — a pass-through whose **release is the fulfillment witness**, gate policy baked into the component. The family (`PUI.Web` unless noted): `shown content` (ambient structured content — chrome registers at build, renders per feed, releases always), `shownWhen @l f content` (display pane: attach on relevance, release always), `inCase @l f editor` (the editor pane — `shownWhen`'s editor sibling; a carrier primitive, the pane's channel beside the wire's, since its content emits the row the owned merge would reject), `shownEach @l proj item` (keyed collection), `confirmed cfg $ content` (MDC2/MDC3 — the witness rung: modal, flow withheld until the user confirms). Content slots accept only `{}`-output components, keeping the no-silent-loss law; `observed` unchanged |
   | `muted` | the counit: render, and **deliberately discard** the component's output (`rmap (const {})`) — the visible form of what no stage may do silently; `# muted` writes off a genuinely emitting assembly (a `foreach` forwarding its elements inside a packaged control, scoreboard's summary group) so it can end at `{}` |
   | `observed` | the gated displays' `+`-diagonal sibling: every event forwards once at feed time; the status's own emissions are dropped (events are one-shot) |
-  | `required` / `optional` | complete a **picker** (`{ l :: Maybe a } → [ l :: a ]`, the `×→+` selector leaf) into the always-selected / possibly-unselected editor of field `l` — a **whole-row citizen** that answers every feed with the row and folds each pick into it (label derived from the picker's closed rows; one private body, `pickedInto`, since 2026-09-23 — before, the selector was a `×→×` leaf silent on `Nothing` and these completed its echo); `optional @c @n` keeps the field as the **named two-case variant** `[ c :: a, n :: {} ]` the application spells (`# optional @"chosen" @"unchosen"`, seeded `.unchosen {}`), so an unmade choice is honest knowledge rather than a starved stage and consumers adopt the made case |
+  | `required` / `optional` | the **selection prisms** a selector takes as its argument, saying what its field holds (2026-09-26): `required = identity` (the field is the option, always chosen — `select @"Milk" {} required milks`), `optional @c` the case prism at `c` (the field is a variant whose case `c` is the made choice, the other cases showing nothing checked — `dropdown @"Room" {} (optional @"chosen") rooms`, seeded `.unchosen {}`), so an unmade choice is honest knowledge rather than a starved stage and consumers adopt the made case. The selector itself is a `×→×` editor (`PUI.Web.selectedAt`), the prism laws its leaf laws. History: a `×→×` leaf silent on `Nothing` until 2026-09-23, then a `×→+` picker completed by `# required`/`# optional` stages until 2026-09-26 — a stored value misread as an occurrence |
   | `every` | the heartbeat wire: pass-through plus a periodic step over a sub-row, merged back over the last value — **derived** (2026-09-15) from the `ticks @l` source (an occurrence per period out of the terminal record, the timer's `×→+` leaf) under `replaying`, `toCases` into `stepped`/`idle`, `silence` on the idle case and `updated`, in a `looped` so each tick reads the value just stepped; no retention of its own |
   | `ticks @l` | the tick source, `{ ms } -> p {} [ l :: {} ]`: `announce`'s periodic sibling and the click source's timer twin; feeds ignored, nothing emitted inside a feed |
   | `replaying @l f` | **replay is `Strong`'s retention**: `first` around an occurrence source (a source emitting `[ l :: {} ]` with no payload), the fed row riding the state channel and joining each occurrence as `f` of it, leaving as case `l`; the `×→+` leaf's replay-last-value protocol as the primed `Strong` law — `clicked @l f w` *is* `replaying @l f` of a private click source (2026-09-15) |
@@ -255,8 +255,8 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   unaffected).
 
   The native elements with a model interface are **label-indexed components**
-  (L3), each stamping its label as the host `name`: the picker
-  `select @l` (`Cons l (Maybe a)` in, case `l` out — bare
+  (L3), each stamping its label as the host `name`: the selector
+  `select @l required|(optional @c) opts` (an editor of field `l` — bare
   `<select>`/`<option>`s, no caption chrome of its own), `rangeInput @l`
   (`<input type="range">`, the live bounded-quantity slider over
   `Cons l { current, min, max, step }`), the `progress @l` display
@@ -272,8 +272,7 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   is deleted (2026-09-23): **shape is the type** (guardrails L3) — every
   exported component ends in one of the four row forms, each side a record
   or a variant — app-packaged controls included. A word that would need
-  two shapes is two words: the selector is a picker (`×→+`) plus
-  `required`/`optional` (`×→×`), the pane is `provided` (emitters),
+  two shapes is two words: the pane is `provided` (emitters),
   `shownWhen` (displays) or `inCase` (editors). Only the decorators
   `clWhen`/`attrWith`, like the oculars, keep the shape they decorate.
 
@@ -302,9 +301,10 @@ design-system **umbrella**. What they share, stated once:
   `toggleSwitch`, `slider`/`sliderLive`) and displays (progress/gauge), `×→+`
   events (`button` and its emphasis siblings, `fab`, `iconButton`, `menuItem`),
   `+→×` statuses (`snackbar`/`toast`/`messageBar`/`banner`), plus the
-  **pickers** (`select`, `radioButton`/`radioGroup`, `segmentedButton`,
-  `dropdown`) — `×→+`, `{ l :: Maybe a } → [ l :: a ]`, lifted with
-  `PUI.Web.pickedAt` and completed into editors by `required`/`optional`.
+  **selectors** (`select`, `radioButton`/`radioGroup`, `segmentedButton`,
+  `dropdown`) — `×→×` editors of field `l`, lifted with
+  `PUI.Web.selectedAt` and told what the field holds by their selection
+  prism, `required` or `optional @c`.
   *Oculars* are shape-preserving decorators with no model of their own
   (`card`/`cardActions`, dialogs, lists, typography, elevations) — and a
   **surface ocular carries no copy config**: MD2 gives a card twelve optional
@@ -326,8 +326,8 @@ design-system **umbrella**. What they share, stated once:
 - **Leaf-echo protocols** are identical across all five: focus-guarded text
   fields (model updates never clobber the field being typed in, and the channel
   stays live), per-feed display echo (the `{}` answer to a feed and nothing
-  at registration — inert to every gate, real to sequencing), pickers and
-  emitters firing nothing inside a feed, and `clicked`'s replay-last-value
+  at registration — inert to every gate, real to sequencing), selectors
+  answering every feed with the row, emitters firing nothing inside a feed, and `clicked`'s replay-last-value
   protocol on emitters. The leaf-law bench (demo/laws/, one page per
   vocabulary, `scripts/smoke/tests/leaf-laws.mjs`) mounts every published
   component alone and checks Repetition and Answer per shape against the
@@ -374,7 +374,7 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
 
   every canonical-row leaf is **label-indexed**: the business label is a visible type argument on the leaf itself — `filledTextField @"First name" {}`, `select @"Milk" cfg opts`, `button @"Submit order" {}` — so a merge operand or emitter states its row once, at the leaf, and nothing in application code ever says `value`/`clicked`/`event`.
 
-  Adopters that need the leaf's label **derive it** from the closed singleton row via `RowToList`'s fundep instead of taking it as an argument: `# forProperty` (context-pinned wider row — the one read adopter, selection not formatting), `# required`/`# optional` (selector completion), `# toCases f` (emitter case into business outcomes), `# forCase @l line`/`# forCases classifier` (statuses derive their own case; `forCase @l f = forCases { l: f }` by law, the `@l`-grammar single-case convenience; `forCases` takes the handler record directly). `forField` and `asCase` are DELETED — their rename job moved onto the leaf. `projection`/`projected` are DELETED too (2026-08-31 and 2026-09-02): **copy is a function, not a field** — a display whose content is copy takes its read function at the leaf and carries no label at all (`text progressLine`, `text _.title`; `forProperty` survives for *labelled* leaves reading one field of a wider row), so the screen's copy is one pure logic function under unit test and the view line names its writer (doc/research-copy-is-a-function.md).
+  Adopters that need the leaf's label **derive it** from the closed singleton row via `RowToList`'s fundep instead of taking it as an argument: `# forProperty` (context-pinned wider row — the one read adopter, selection not formatting), `# toCases f` (emitter case into business outcomes), `# forCase @l line`/`# forCases classifier` (statuses derive their own case; `forCase @l f = forCases { l: f }` by law, the `@l`-grammar single-case convenience; `forCases` takes the handler record directly). `forField` and `asCase` are DELETED — their rename job moved onto the leaf. `projection`/`projected` are DELETED too (2026-08-31 and 2026-09-02): **copy is a function, not a field** — a display whose content is copy takes its read function at the leaf and carries no label at all (`text progressLine`, `text _.title`; `forProperty` survives for *labelled* leaves reading one field of a wider row), so the screen's copy is one pure logic function under unit test and the view line names its writer (doc/research-copy-is-a-function.md).
 
   The label also names **and captions** the component: every label-indexed leaf **stamps its label on its host element** — `name` on form citizens, `aria-label` on quantity displays — whose label is that accessible name and nothing else, the value arriving as a read function (the stamp invariant, stated at `OptCaption` in `PUI.Web` — whose second half is the accessible name, the caption **verbatim**: browsers compute names from rendered text, so faces whose catalogue styling transforms the caption stamp `aria-label` with it verbatim — MDC2's button family, tabs, segments and menu anchor, whose MD2 uppercase once computed `@"Count"` as "COUNT" — and so do faces the platform cannot name by itself: MD3's checkbox and switch sit inside a wrapping `<label>` whose association never reaches the input in their shadow root, so the switch stamps its label and the checkbox the rendered text of its content; `text` is outside the family entirely — no label at all, and under host diagnostics a bare `text` comment marker) — and every captioned leaf — editors' `floatingLabel`/`label` and the whole `×→+` emitter family (`button`/`outlinedButton`/`textButton`/`elevatedButton`/`tonalButton`/`fab`/`iconButton`/`menuItem`, in all six vocabularies) — defaults its caption to the label **verbatim** (`OptCaption` in `PUI.Web`, shared by all six vocabularies; the MDC modules add their own `OptLabelIcon`/`OptLabel`/`OptIcon`/`OptSelected` for their richer faces). **Nothing derives a caption from an identifier** — `humanizeLabel` is DELETED: a label *is* the copy it draws, so it is written as such and is usually a quoted string, since human copy is no identifier (`filledTextField @"First name" {}`, `button @"Submit order" {}` drawing those words and emitting `[ "Submit order" :: _ ]`, quoted at every mention — `atCase @"Submit order"`, `match { "Submit order": … }`). Because a leaf's label is the model field it edits, **the business rows carry the same quoted labels** (`{ "First name" :: String }`), whose one syntactic cost is that a quoted label cannot appear in a **record pun** — the logic modules bind explicitly instead (`createPerson { "Name": name, "Surname": surname, people }`), while field access, accessor sections and update syntax are unaffected. **No demo passes an emitter `label:`**: where a trace form's loop case would force two buttons to share one case under different words, the buttons are two business actions — each takes its own self-describing case and `# toCases` adopts it into the loop case, so the fold still sees one case while each button reads as what it does (checkout's `button @"Next" {} # toCases goneOn`, `button @"Back" {} # toCases goneBack` over `folding @"next"`). For emitters `label:` is left only for a glyph-only face (`fab { label: Nothing }`).
 
@@ -394,7 +394,7 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
 - **extras/row-profunctor/Data/Profunctor/Row/** - Row profunctors over `Record`/`Variant`: four direction modules, each carrying its **direction class** — the binary merge, the one genuine per-carrier primitive; no class carries a unit of its own: the unit laws are conditional on the carrier (*if* `p` is a `Category`, `identity` at the unit object must play well with the merge — `×→×`, `+→+` — and so must that wire entered from the empty variant for `+→×`, `lcmap case_ identity`), and only `×→+` keeps a class-member unit, `silence`, the one no wire reaches — with qualified-do sugar (`bind`/`discard`). Everything kept is reached by a demo or a law test (L14); laws are stated in the module headers. Type variables follow the photographic schema: focus `f`, background `b`, shot `s` (`Cons l f b s`), reality `r`.
   - **`RecordToRecord.purs`** (×→×) — merge `recordToRecord` (`SharedRecordInputs` + `OwnedRecordOutputs`; gated on `PUI`, zero-field sides pre-satisfied and inert — `{}` is always known and a contribution of zero fields is no contribution — and **released once per feed**: the broadcast is one step, so a feed changing several fields emits one fresh row, never a torn one);
 
-    over ecosystem `Strong`: `subStrong` (sub-record focus, background carried), `field` (the type-changing field lens — the leaf lift: an editor lifted with it is a whole-row citizen, background retained and re-attached per emission, which is what dissolved `completed`), (`required`/`optional`, completing a picker into an editor, are `updated`-shaped and live in `PUI`);
+    over ecosystem `Strong`: `subStrong` (sub-record focus, background carried), `field` (the type-changing field lens — the leaf lift: an editor lifted with it is a whole-row citizen, background retained and re-attached per emission, which is what dissolved `completed`);
 
     over the **unit** (`identity @{}` — exactly, since the gates ignore a zero-field contribution): `with` (`announce a >>> w` over `Seeding` — discharge the initial-state obligation) with `mvu` (`with seed (looped w)` over `Looping` — the app shape, closed to `{}`), plus the subsuming `settled` (`rmap`-only normalization over a stated sub-row footprint);
 
@@ -475,7 +475,7 @@ the dev server). Two suites: **demo/7guis/** (the
 | --- | --- |
 | counter | the floor: one editor, one emitter, one fold |
 | temperature-converter | both fields in the model; non-numeric input leaves the other untouched |
-| flight-booker | type-changing `select` over an anonymous variant row `# required`; both outcomes carry bare payloads into **one** `snackbar # forCases bookingLine` |
+| flight-booker | type-changing `select @"Flight type" {} required` over an anonymous variant row; both outcomes carry bare payloads into **one** `snackbar # forCases bookingLine` |
 | timer | `every` heartbeat; `sliderLive` duration re-scoped at runtime |
 | crud | `MDC2.listOf @l` (keyed `foreach` of `clicked @l` rows elsewhere); Aff catalogue actions |
 | circle-drawer | **channel-fed SVG canvas** — built once, updated via `attrWith`; container-level `onClickedXY @l`; the diameter a bounded quantity in the model, its slider `# inCase @"chosen" selection # settled resizeSelected` — live-preview resize as a state invariant, an `adjusting` flag coalescing a drag into one undo transaction |
@@ -514,7 +514,7 @@ focused demo apiece):
 | ticket-dispenser | `unfolding @"resume"` + the `Reel` optic (`Coretaining`) — "take a number", counter seeded and resumed; the reel is assembled in the logic module (`ticketIssuance`), the view supplying only the wire, and the button's caption case is adopted into the business case `requested` via `# toCases`. Also the **`shownWhen`** showcase: state is a payload-carrying variant field (`display`), so the number and hint panes are pure case adoption off one closed accessor (`displayOf`) |
 | parcel | `subStrong` — a reusable address sub-form as a citizen over its own closed row, background field threaded |
 | cashbox | `subChoice` — selective interception as UX: outgoing money detours through confirmation dialogs, incoming posts straight to the fold; every branch a two-record Mealy handler `{ amount } -> { balance } -> { balance }`; payloads via `button @l {…} # with patch` |
-| potluck | `acted` (the container action) — per-guest dish pickers under one model, each `# optional @"chosen" @"unchosen"`; the table's state is the business classifier `menuState` (`complete` with the dishes, `waiting` with the guests still choosing), each case a `shownWhen` pane — the waiting pane names who is left, the menu prints once the table is complete |
+| potluck | `acted` (the container action) — per-guest dish selectors under one model, each `optional @"chosen"`; the table's state is the business classifier `menuState` (`complete` with the dishes, `waiting` with the guests still choosing), each case a `shownWhen` pane — the waiting pane names who is left, the menu prints once the table is complete |
 | departures | `dispatched` (+→+ keyed input) — rows appear on first mention, re-feed in place, tagged output drives a last-update line |
 | scoreboard | `accumulated` (+→× keyed input) — board grows to its key set, points update in place, whole array drives the standings |
 | reorder | keyed reconciliation + the `edited` collection editor — a playlist keyed by track id, element output row excluding the key (the carrier re-attaches it); Rotate and effectful Shuffle move each row's DOM node with its track, so tick, title and focus follow |
@@ -556,7 +556,7 @@ suffix naming the vocabulary rather than a twin (so a suffix means
 too, while only helloworld and restaurant-menu, which use no design system at
 all, carry no suffix): product-review (Shoelace's
 exclusive star `rating`), meeting-booker (Fluent; also the **no-defaults
-showcase** — nothing pre-picked, `# optional @"chosen" @"unchosen"` selectors
+showcase** — nothing pre-picked, `optional @"chosen"` selectors
 over named two-case fields seeded `.unchosen {}`, no `Maybe` in the booking, the
 attendees a bounded quantity *in the model*: the slider exists only once a
 room is chosen (`# inCase @"chosen" roomOf`) and the room dropdown

@@ -17,10 +17,10 @@ signupFormMDC3 =
       ( Semigroupoid.do
         (headlineLarge $ staticText "Create account") # shown
         debouncedTextField @"Username" { ms: usernameSettleTime }
-        radioButton @"Plan"
-          [ choice @"Free", choice @"Pro", choice @"Team" ] # required
-        select @"Country" {}
-          [ choice @"Poland", choice @"Germany", choice @"France", choice @"Spain" ] # required
+        radioButton @"Plan" required
+          [ choice @"Free", choice @"Pro", choice @"Team" ]
+        select @"Country" {} required
+          [ choice @"Poland", choice @"Germany", choice @"France", choice @"Spain" ]
         filledTextField @"Email" {}
         checkbox @"Terms" @"accepted" @"declined" { ticked: {} } (staticText "I accept the terms of service") # tooltip { text: "You must accept the terms of service to sign up" }
       ) # mvu newApplicant

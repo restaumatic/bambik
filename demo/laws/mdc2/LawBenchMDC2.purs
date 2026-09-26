@@ -2,7 +2,6 @@ module LawBenchMDC2 (lawBenchMDC2) where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI (optional, required)
@@ -27,13 +26,12 @@ lawBenchMDC2 = do
     , bench "linearProgress" "×→×" fractions (linearProgress @"Progress" _.fraction)
     , bench "imagePane" "×→×" images imagePane
     , bench "group" "×→×" grouped (group @"Customer" (filledTextField @"Name" {}))
-    , bench "select (raw)" "×→+" picks (select @"Pick" {} options)
-    , bench "select # required" "×→×" chosen (select @"Pick" {} options # required)
-    , bench "select # optional" "×→×" optionals (select @"Pick" {} options # optional @"chosen" @"unchosen")
-    , bench "radioButton (raw)" "×→+" picks (radioButton @"Pick" options)
-    , bench "radioButton # required" "×→×" chosen (radioButton @"Pick" options # required)
-    , bench "segmentedButton (raw)" "×→+" picks (segmentedButton @"Pick" options)
-    , bench "segmentedButton # required" "×→×" chosen (segmentedButton @"Pick" options # required)
+    , bench "select required" "×→×" chosen (select @"Pick" {} required options)
+    , bench "select optional" "×→×" optionals (select @"Pick" {} (optional @"chosen") options)
+    , bench "radioButton required" "×→×" chosen (radioButton @"Pick" required options)
+    , bench "radioButton optional" "×→×" optionals (radioButton @"Pick" (optional @"chosen") options)
+    , bench "segmentedButton required" "×→×" chosen (segmentedButton @"Pick" required options)
+    , bench "segmentedButton optional" "×→×" optionals (segmentedButton @"Pick" (optional @"chosen") options)
     , bench "button" "×→+" rows (button @"Go" {})
     , bench "outlinedButton" "×→+" rows (outlinedButton @"Go" {})
     , bench "textButton" "×→+" rows (textButton @"Go" {})
@@ -59,9 +57,8 @@ lawBenchMDC2 = do
   images = [ { src: "a.png", label: "A" }, { src: "b.png", label: "B" } ]
   grouped = [ { "Customer": { "Name": "alpha" }, other: 1 }, { "Customer": { "Name": "beta" }, other: 2 } ]
   options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
-  picks = [ { "Pick": Nothing }, { "Pick": Just (.one {}) }, { "Pick": Just (.two {}) } ]
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
-  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ]
+  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]
   lists = [ { items: [ { id: 1, title: "first" }, { id: 2, title: "second" } ] }, { items: [ { id: 2, title: "second" } ] } ]
   events = [ .event "hello", .event "world" ]

@@ -15,7 +15,7 @@ flightBookerHTML =
     ( Semigroupoid.do
       p ( label $ Semigroupoid.do
         (staticText "Flight type ") # shown
-        select @"Flight type" [ choice @"one-way", choice @"return" ] # required )
+        select @"Flight type" required [ choice @"one-way", choice @"return" ] )
       p ( label $ Semigroupoid.do
         (staticText "Start date (DD.MM.YYYY) ") # shown
         input @"Start date (DD.MM.YYYY)" "text" )

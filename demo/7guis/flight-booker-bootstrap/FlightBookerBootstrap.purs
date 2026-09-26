@@ -15,8 +15,8 @@ flightBookerBootstrap =
   body $
     card $ Semigroupoid.do
       ( Semigroupoid.do
-        select @"Flight type" {}
-          [ choice @"one-way", choice @"return" ] # required
+        select @"Flight type" {} required
+          [ choice @"one-way", choice @"return" ]
         textField @"Start date (DD.MM.YYYY)" {}
         textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip

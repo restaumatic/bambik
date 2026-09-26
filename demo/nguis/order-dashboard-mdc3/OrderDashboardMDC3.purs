@@ -15,8 +15,8 @@ orderDashboardMDC3 =
   body $
     topAppBar { title: "Order Dashboard" } $ ( Semigroupoid.do
       every tickPeriod ordersArrive
-      rangePicker @"Showing" {}
-        [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ] # required
+      rangePicker @"Showing" {} required
+        [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ]
       board $ Semigroupoid.do
         statTile @"Orders" { unit: "placed" } ordersCount # shown
         statTile @"Revenue" { unit: "EUR" } revenue # shown

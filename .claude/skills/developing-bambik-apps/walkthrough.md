@@ -30,8 +30,8 @@ flightBookerMDC2 =
   body $
     card $ Semigroupoid.do
     ( Semigroupoid.do
-      select @"Flight type" {}
-        [ choice @"one-way", choice @"return" ] # required
+      select @"Flight type" {} required
+        [ choice @"one-way", choice @"return" ]
       filledTextField @"Start date (DD.MM.YYYY)" {}
       filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
     ) # mvu plannedTrip
@@ -70,11 +70,12 @@ shows the outcome. Code order is DOM order *and* data order.
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed with
 `# mvu plannedTrip`.
 
-- `select @"Flight type" {} [ choice @"one-way", choice @"return" ] # required`
+- `select @"Flight type" {} required [ choice @"one-way", choice @"return" ]`
   — the leaf's type argument is the caption *and* the model field, so this
   edits `{ "Flight type" :: [ "one-way" :: {}, "return" :: {} ] }`. Each
-  `choice @l` states an option's copy once, as its case. `# required` says a
-  selection always exists: the model holds the variant, not a `Maybe`.
+  `choice @l` states an option's copy once, as its case. `required` says a
+  selection always exists: the model holds the variant itself, not a
+  `Maybe` — the selector is an editor of that field, answering every feed.
 - `filledTextField @"Start date (DD.MM.YYYY)" {}` — the label carries the
   whole copy, format hint included; the `{}` is empty presentation config.
 - `filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType`

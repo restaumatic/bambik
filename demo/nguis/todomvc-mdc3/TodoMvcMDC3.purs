@@ -19,8 +19,8 @@ todoMvcMDC3 =
         filledTextField @"What needs to be done?" {}
         button @"Add" {} # applied addTodo
       listOf @"todoClicked" _.key { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # updated (match { todoClicked: toggleTodo })
-      segmentedButton @"Visibility"
-        [ choice @"All", choice @"Active", choice @"Completed" ] # required
+      segmentedButton @"Visibility" required
+        [ choice @"All", choice @"Active", choice @"Completed" ]
       Semigroupoid.do
         bodySmall (text soleLine) # shownWhen @"sole" remainingItems
         bodySmall (text severalLine) # shownWhen @"several" remainingItems

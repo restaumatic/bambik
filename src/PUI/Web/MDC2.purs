@@ -122,13 +122,14 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Traversable (for)
 import Data.Variant (case_, inj, match, on, prj) as Variant
 import Data.Profunctor (rmap) as Profunctor
+import Data.Lens (Prism')
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (pickedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, shown, staticHTML, staticText, text, textOf, uniqueId, (:=))
+import PUI.Web (selectedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, shown, staticHTML, staticText, text, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -557,15 +558,16 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
 -- | visible and comparable at a glance. Beyond about five options, or where
 -- | the options don't deserve the space, use `select`.
 -- |
--- | Until the user picks there is no choice to show, so the field arrives as
--- | "maybe a choice" and leaves as the choice itself — say which with
--- | `# optional @"chosen" @"unchosen"` (the two states named by the
--- | application; nothing preselected, and whatever needs the choice adopts
--- | the made case) or `# required` (the model always has one).
+-- | The selection argument says what the field holds: `required` (the
+-- | option itself — the model always has one) or `optional @"chosen"` (a
+-- | variant whose case `chosen` is the made choice, seeded at an unmade case
+-- | the application names; nothing is checked until the user picks, and
+-- | whatever needs the choice adopts the made case). Either way the control
+-- | is an editor: every feed is answered with the row, every pick stored.
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
-radioButton :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
-radioButton options = pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ (radioLeaf options)
+radioButton :: forall @l f a rest r. IsSymbol l => Cons l f rest r => Eq a => Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioButton selection options = selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ (radioLeaf options)
 
 radioLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 radioLeaf options =
@@ -747,11 +749,10 @@ sliderLeaf live label = wrap do
 -- | above the choice once one is made. For a handful of options worth
 -- | comparing side by side, prefer `radioButton` or `segmentedButton`.
 -- |
--- | Same contract as `radioButton`: nothing to show until the user picks,
--- | so say `# optional @"chosen" @"unchosen"` or `# required`; the options are part of the
--- | control, not of the model.
-select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
-select provided options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf config options)
+-- | Same selection contract as `radioButton` (`required` or `optional
+-- | @"chosen"`); the options are part of the control, not of the model.
+select :: forall @l f a rest r provided. IsSymbol l => Cons l f rest r => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select provided selection options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf config options)
 
 selectLeaf :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 selectLeaf config options = wrap do
@@ -809,9 +810,9 @@ selectLeaf config options = wrap do
 -- | The Material **segmented button**: two to five options joined in one
 -- | control, all visible, one selected — a filter row, a view switch, a
 -- | size. Compact where a radio group would be airy and a dropdown would
--- | hide the alternatives. Same picked/unpicked contract as `select`.
-segmentedButton :: forall @l a ri ro. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
-segmentedButton options = pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ (segmentedLeaf options)
+-- | hide the alternatives. Same selection contract as `select`.
+segmentedButton :: forall @l f a rest r. IsSymbol l => Cons l f rest r => Eq a => Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+segmentedButton selection options = selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ (segmentedLeaf options)
 
 segmentedLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
 segmentedLeaf options =

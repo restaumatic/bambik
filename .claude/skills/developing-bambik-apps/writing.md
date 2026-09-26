@@ -73,8 +73,7 @@ Every component the vocabularies publish has one of these types, and so
 must every component an application packages itself (order-dashboard's
 `DashboardControlsMDC3`: `statTile @"Orders" { unit: "placed" }
 ordersCount :: PUI Web { | r } {}`). A word that would need two shapes
-is two words, each lawful at its own — the library's own selectors are
-pickers (`×→+`) completed by `# required`/`# optional` (`×→×`), and its
+is two words, each lawful at its own — the library's
 pane is `provided` for emitters, `shownWhen` for displays, `inCase` for
 editors. Only decorators (`clWhen`, `attrWith`), like oculars, keep the
 shape of what they decorate. A signature with a bare `a`, `String` or `Maybe a` on either
@@ -224,17 +223,17 @@ syntax (`r { "Name" = … }`) all work unchanged.
   `# observed` (payment's retry toast narrates the retry loop); the
   status may consume a narrower variant than the stage carries,
   background cases pass untouched.
-- **pickers** (`select`, `radioButton`, `segmentedButton`, `dropdown`,
-  `radioGroup`) are **emitters**, not editors: shown the choice the field
-  holds, they report each pick as the field's case
-  (`select @"Milk" cfg opts :: { "Milk" :: Maybe _ } → [ "Milk" :: _ ]`),
-  and a feed fires nothing. A picker is completed into the editor of its
-  field by the stage that folds its picks in — `# required` when the
-  model always holds a choice, `# optional @"chosen" @"unchosen"` when
-  it may not (both derive the label; `optional` takes the two state
-  names from the application), each answering every feed with the row —
-  so the one line reads as an editor, `select @"Milk" {} milks #
-  required`, and a bare picker never stands where a row is owed. The model keeps a
+- **selectors** (`select`, `radioButton`, `segmentedButton`, `dropdown`,
+  `radioGroup`) are **editors**: the widget stores a value — the option
+  it shows checked — so it has an editor's shape and answers every feed
+  with the row. What the field holds is the selector's **selection**
+  argument, a prism: `required` when the model always holds a choice
+  (the field is the option — `select @"Milk" {} required milks`),
+  `optional @"chosen"` when it may not (the field is a variant whose
+  case `chosen` is the made choice, the other cases showing nothing
+  checked — `radioGroup @"Duration (min)" {} (optional @"chosen")
+  durations`; the application names the made case, and the unmade one
+  in its seed). The model keeps a
   named two-case variant, never a `Maybe`, seeded at the unmade case
   (`"Room": .unchosen {}`, no default pick), and the stages demanding
   the bare selection adopt the made case (`# inCase @"chosen" roomOf`,
@@ -431,7 +430,7 @@ the pane shows. Name the cases: order-form's distance is
 `[ estimated :: { km, to }, unknown :: {} ]`, not `Maybe`, so
 `staleDistanceForgotten` is a `match` and the summary pane is
 `# shownWhen @"estimated" distanceOf`; a selector left unmade is
-`# optional @"chosen" @"unchosen"`, so meeting-booker's panes are
+`optional @"chosen"` over `[ chosen :: …, unchosen :: {} ]`, so meeting-booker's panes are
 `# shownWhen @"rated" ratedRoom` and `# provided @"complete" plan`
 with no `Maybe` anywhere in the booking; checkout's wizard buttons
 adopt `onward`/`back` off `onwardFrom`/`previousOf`. `Maybe` stays
@@ -439,7 +438,7 @@ below the UI — an `index`/`find` lookup, an `Aff` result — and a
 classifier converts it at the boundary (inbox's `messageView` turns
 `find`'s `Maybe` into `reading`/`browsing`). No demo row carries a
 `Maybe`: potluck's dishes are `[ chosen :: dish, unchosen :: {} ]` under
-`# optional`, and "the menu once everyone has chosen" is its business
+`optional @"chosen"`, and "the menu once everyone has chosen" is its business
 classifier `menuState` (`complete` with the dishes, `waiting` with the
 names still choosing), each case a `shownWhen` pane — a rule stated in
 the logic module, not a gate left waiting on a leaf that never answers.

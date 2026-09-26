@@ -84,18 +84,22 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
   | Type | Direction | Sort |
   | --- | --- | --- |
-  | `PUI Web { \| a } { \| b }` | `×→×` | editors, displays, completed selectors (`# required`/`# optional`), panes that answer (`shownWhen`, `inCase`), stages |
-  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), pickers (`select`, `radioButton`, `segmentedButton`, `dropdown`, `radioGroup`), the emitter pane `provided` |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — `required`/`optional @c` is their selection argument), displays, panes that answer (`shownWhen`, `inCase`), stages |
+  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided` |
   | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`) |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers |
 
   A closed row (`{}`, `[ event :: String ]`) is a row. A word that
-  would need two shapes is two words, each lawful at its own: a
-  selector is a **picker** (`×→+`, a feed fires nothing) completed into
-  an editor by `required`/`optional` (`×→×`, every feed answered with
-  the row), and a pane is `provided` for emitters (a detached one's
+  would need two shapes is two words, each lawful at its own: a pane is `provided` for emitters (a detached one's
   silence is `×→+`'s answer), `shownWhen` for displays, `inCase` for
   editors (2026-09-23 — each once an exception to Answer, none now).
+  A selector is one word because it is one shape: the widget stores
+  the option it shows, so it is an editor (`×→×`, every feed answered
+  with the row) — the 2026-09-23 split into a `×→+` picker plus a
+  completing stage misread a stored value as an occurrence, and was
+  undone 2026-09-26 once the unmade state was a value: what the field
+  holds is the selector's **selection prism** (`required = identity`,
+  `optional @c` the case prism), whose laws are the leaf's.
   **Decorators** are outside the rule, as oculars (`Ocular (PUI Web)`)
   are: `clWhen`/`attrWith` read the row (`{ | i }`) to style the element
   just built and keep whatever shape they decorate, an emitter's or an

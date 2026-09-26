@@ -102,11 +102,14 @@ combinator laws below fail without them.
    exactly two sorts of place: in **time** by the witness rung
    (`confirmed` releases on confirmation; a declined reading withholds) and
    the gather gate (`acted` releases once every element has spoken). There
-   is no refinement in **value** any more (2026-09-23): the selectors,
-   whose echo was silent on `Nothing`, are now **pickers** — `×→+`,
-   `{ l :: Maybe a } → [ l :: a ]`, answering no feed as every emitter
-   does — and `required`/`optional` are the stages completing a picker
-   into the editor of its field, answering every feed with the row.
+   is no refinement in **value** any more: the selectors, whose echo was
+   silent on `Nothing`, were split (2026-09-23) into `×→+` pickers
+   completed by stages, and are now (2026-09-26) plain editors —
+   `{ l :: f | r } → { l :: f | r }`, answering every feed with the row,
+   the unmade state a value of `f` rather than a missing one (`f` a
+   variant with a made case under `optional @c`, the option itself under
+   `required`); the selection prism's law `preview (review a) = Just a`
+   is what makes a pick's echo the pick.
    "Once" is exact since the same audit:
    `inCase` echoes only while its pane is detached (attached, the editor's
    own echo is the release) and `drawer` sequences its nav into its content

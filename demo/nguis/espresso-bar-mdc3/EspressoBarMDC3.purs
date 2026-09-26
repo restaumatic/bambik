@@ -22,12 +22,12 @@ espressoBarMDC3 =
           tabBar @"Drink"
             [ choice @"Espresso", choice @"Cappuccino", choice @"Latte" ]
           filledTextField @"Your name" {}
-          segmentedButton @"Size"
-            [ choice @"Small", choice @"Medium", choice @"Large" ] # required
-          select @"Milk" {}
-            [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ] # required
-          radioButton @"Roast"
-            [ choice @"Light", choice @"Medium", choice @"Dark" ] # required
+          segmentedButton @"Size" required
+            [ choice @"Small", choice @"Medium", choice @"Large" ]
+          select @"Milk" {} required
+            [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ]
+          radioButton @"Roast" required
+            [ choice @"Light", choice @"Medium", choice @"Dark" ]
           sliderLive @"Sugar" {}
           chipSet Semigroupoid.do
             filterChip @"Extra shot" {}

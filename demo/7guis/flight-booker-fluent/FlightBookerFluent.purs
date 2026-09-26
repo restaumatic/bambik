@@ -14,8 +14,8 @@ flightBookerFluent =
   body $
     card $ Semigroupoid.do
       ( Semigroupoid.do
-        dropdown @"Flight type" {}
-          [ choice @"one-way", choice @"return" ] # required
+        dropdown @"Flight type" {} required
+          [ choice @"one-way", choice @"return" ]
         textField @"Start date (DD.MM.YYYY)" {}
         textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
       ) # mvu plannedTrip

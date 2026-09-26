@@ -46,13 +46,14 @@ import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Variant (case_, match, on) as Variant
+import Data.Lens (Prism')
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (pickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticText, text, textOf, uniqueId, (:=))
+import PUI.Web (selectedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticText, text, textOf, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -70,8 +71,8 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- no custom elements, no foundation instances, and no FFI beyond the
 -- toast's dismissal timer (the one behavior Bootstrap's own JS plugin
 -- would supply). The leaf-echo protocols are the same as the MDC modules'
--- (focus-guarded text field, per-feed display echo, a picker firing
--- nothing on a feed). Two-sorted, same citizenship, and — where
+-- (focus-guarded text field, per-feed display echo, a selection
+-- editor answering every feed with its row). Two-sorted, same citizenship, and — where
 -- the concept exists in both catalogs — the same names and signatures:
 --
 --   * **components** — UI components with a model interface, every one a citizen
@@ -82,7 +83,8 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --         live numeric readout, the counterpart of MD's labeled handle),
 --         `toggleSwitch @l`
 --         (`.form-check.form-switch`), and the type-changing `select @l`
---         (`.form-select`, `{ value :: Maybe a } → { value :: a }`);
+--         (`.form-select`, `{ l :: f } → { l :: f }`, `f` the option under
+--         `required` or a variant around it under `optional @c`);
 --       `×→×` displays — `progress` (`{ value :: Number } → {}`, the
 --         filled fraction 0–1 — `.progress` over `.progress-bar`);
 --       `×→+` events — `button @l` (`.btn.btn-primary`);
@@ -191,13 +193,16 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
           for_ mq \q -> for_ (Number.fromString value) \v -> prop (q { current = v })
     }
 
--- | The **select**: one choice out of a list, under its label. Until the
--- | user picks there is nothing to show, so the field arrives as "maybe a
--- | choice" and leaves as the choice itself — say which with
--- | `# optional @"chosen" @"unchosen"` (the two states named by the
--- | application) or `# required`. The options belong to the control, not to the model.
-select :: forall @l a ri ro provided. IsSymbol l => Cons l (Maybe a) () ri => Cons l a () ro => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | ri } [ | ro ]
-select provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in pickedAt @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
+-- | The **select**: one choice out of a list, under its label.
+-- | The selection argument says what the field holds: `required` (the
+-- | option itself — the model always has one) or `optional @"chosen"` (a
+-- | variant whose case `chosen` is the made choice, seeded at an unmade case
+-- | the application names; nothing is checked until the user picks, and
+-- | whatever needs the choice adopts the made case). Either way the control
+-- | is an editor: every feed is answered with the row, every pick stored.
+-- | The options belong to the control, not to the model.
+select :: forall @l f a rest r provided. IsSymbol l => Cons l f rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select provided selection options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "select" (void $ unwrap (optionLeaves))
   node <- gets _.sibling

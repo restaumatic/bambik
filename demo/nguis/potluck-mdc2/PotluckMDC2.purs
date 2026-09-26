@@ -17,8 +17,8 @@ potluckMDC2 =
     group @"Guests" $ list $
       ( listItem $ RecordToRecord.do
         subtitle1 (text guestName)
-        segmentedButton @"Dish"
-          [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] # optional @"chosen" @"unchosen" ) # acted @"name"
+        segmentedButton @"Dish" (optional @"chosen")
+          [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name"
     headline6 (text menuLine) # shownWhen @"complete" menuState
     body2 (text waitingLine) # shownWhen @"waiting" menuState
   ) # with invitation

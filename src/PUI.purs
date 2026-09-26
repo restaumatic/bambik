@@ -65,6 +65,7 @@ module PUI
   , foreach
   , observed
   , optional
+  , module Selections
   , required
   , resolveFor
   , updated
@@ -78,8 +79,9 @@ import Prelude
 
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (elem, foldl, for_, traverse_)
-import Data.Lens (Optic)
+import Data.Foldable (elem, foldl, for_)
+import Data.Lens (Optic, Prism', prism')
+import Data.Lens (Prism') as Selections
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
@@ -124,10 +126,9 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, case_, contract, inj, match, on, prj)
+import Data.Variant (class Contractable, contract, inj, match, prj)
 import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
-import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Effect (Effect)
@@ -137,7 +138,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
-import Record (get, insert, set) as Record
+import Record (get, insert) as Record
 import Record.Unsafe (unsafeGet, unsafeSet)
 import Record.Unsafe.Union (unsafeUnion)
 
@@ -1055,55 +1056,23 @@ observed status = wrap do
     }
 
 
--- | Complete a **picker** — a selector leaf, `{ l :: Maybe a } → [ l :: a ]`,
--- | an emitter showing the choice it is fed and reporting each pick — into
--- | the editor of field `l`, **always selected**: the model holds a choice
--- | at all times, so the picker is shown it (`Just`) and every pick replaces
--- | it. The result is a **whole-row citizen** `p { l :: a | rest }
--- | { l :: a | rest }`: it answers every feed with the row (Answer at
--- | `×→×`, owed by the stage since a picker answers nothing) and emits the
--- | row with the pick folded in on every pick — `updated`'s shape, with the
--- | fold fixed. The label is not repeated: `RowToList`'s fundep reads it
--- | from the picker's closed row. `select @"Milk" {} milks # required`.
-required :: forall l m a b s si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => Cons l (Maybe a) () si => Cons l a () so => Cons l a b s => MonadEffect m => PUI m { | si } [ | so ] -> PUI m { | s } { | s }
-required = pickedInto @l (Just <<< Record.get (Proxy @l)) (Record.set (Proxy @l))
+-- | The **always-chosen** selection: a selector leaf's field holds the
+-- | option itself, so the model has a choice at all times and every pick
+-- | replaces it — `select @"Milk" {} required milks`. It is `identity`, the
+-- | prism whose preview never misses: the widget always shows the field.
+required :: forall a. Prism' a a
+required = identity
 
--- | Complete a picker into the editor of field `l`, **possibly unselected**
--- | — `required`'s dual. The model keeps a **named two-case variant**,
--- | never a `Maybe`: the application names both states —
--- | `dropdown @l config options # optional @"chosen" @"unchosen"` — and its
--- | seed spells the unmade one (`"Room": .unchosen {}`). The picker is
--- | shown nothing while the field is unmade and the choice once made; every
--- | feed is answered with the row, so an unmade choice flows as honest
--- | knowledge instead of starving anything downstream, the stages demanding
+-- | The **possibly-unmade** selection: the field is a variant whose case `c`
+-- | is the made choice — `radioGroup @"Duration (min)" {} (optional @"chosen")
+-- | durations` over `[ chosen :: … , unchosen :: {} ]`, seeded at the unmade
+-- | case the application names. The widget shows nothing checked on every
+-- | other case, a pick stores case `c`, and every feed is answered with the
+-- | row, so an unmade choice flows as honest knowledge; the stages demanding
 -- | the selection adopt the made case (`# inCase @"chosen" roomOf`,
--- | `# provided @"complete" plan`), and only a genuine pick produces it.
-optional :: forall @c @n l m a b s v cr nr si so. RowToList si (RL.Cons l (Maybe a) RL.Nil) => IsSymbol l => IsSymbol c => IsSymbol n => Cons l (Maybe a) () si => Cons l a () so => Cons c a cr v => Cons n {} nr v => Cons l [ | v ] b s => MonadEffect m => PUI m { | si } [ | so ] -> PUI m { | s } { | s }
-optional = pickedInto @l (prj (Proxy @c) <<< Record.get (Proxy @l)) (Record.set (Proxy @l) <<< inj (Proxy @c))
-
--- The one body `required` and `optional` share: answer each feed with the
--- row, show the picker the choice the row holds, fold each pick into the
--- row last fed (a pick before any feed has no row to land in and is
--- dropped, traced).
-pickedInto :: forall @l m a si so r. IsSymbol l => Cons l (Maybe a) () si => Cons l a () so => MonadEffect m => ({ | r } -> Maybe a) -> (a -> { | r } -> { | r }) -> PUI m { | si } [ | so ] -> PUI m { | r } { | r }
-pickedInto shown fold w = wrap do
-  w' <- unwrap w
-  rowRef <- liftEffect $ Ref.new Nothing
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \r -> do
-        Ref.write (Just r) rowRef
-        w'.toUser (Record.insert (Proxy @l) (shown r) {})
-        Ref.read mPropRef >>= traverse_ (_ $ r)
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        w'.fromUser \picked -> Ref.read rowRef >>= case _ of
-          Nothing -> tr "picker: pick withheld (no row fed yet)" picked
-          Just r -> do
-            let r' = fold (on (Proxy @l) identity case_ picked) r
-            Ref.write (Just r') rowRef
-            prop r'
-    }
+-- | `# provided @"complete" plan`). It is the case prism at `c`.
+optional :: forall @c a b s. IsSymbol c => Cons c a b s => Prism' [ | s ] a
+optional = prism' (inj (Proxy @c)) (prj (Proxy @c))
 
 -- | The **tick source**: an occurrence of case `l` every `interval`, out of
 -- | the terminal record — the timer's `× → +` leaf, exactly as a click

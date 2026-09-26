@@ -2,7 +2,6 @@ module LawBenchFluent (lawBenchFluent) where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI (optional, required)
@@ -18,11 +17,10 @@ lawBenchFluent = do
     , bench "slider" "×→×" quantities (slider @"Amount" {})
     , bench "ratingDisplay" "×→×" fractions (ratingDisplay @"Stars" _.fraction)
     , bench "progressBar" "×→×" fractions (progressBar @"Progress" _.fraction)
-    , bench "dropdown (raw)" "×→+" picks (dropdown @"Pick" {} options)
-    , bench "dropdown # required" "×→×" chosen (dropdown @"Pick" {} options # required)
-    , bench "dropdown # optional" "×→×" optionals (dropdown @"Pick" {} options # optional @"chosen" @"unchosen")
-    , bench "radioGroup (raw)" "×→+" picks (radioGroup @"Pick" {} options)
-    , bench "radioGroup # required" "×→×" chosen (radioGroup @"Pick" {} options # required)
+    , bench "dropdown required" "×→×" chosen (dropdown @"Pick" {} required options)
+    , bench "dropdown optional" "×→×" optionals (dropdown @"Pick" {} (optional @"chosen") options)
+    , bench "radioGroup required" "×→×" chosen (radioGroup @"Pick" {} required options)
+    , bench "radioGroup optional" "×→×" optionals (radioGroup @"Pick" {} (optional @"chosen") options)
     , bench "button" "×→+" rows (button @"Go" {})
     , bench "messageBar" "+→×" events messageBar
     ]
@@ -33,8 +31,7 @@ lawBenchFluent = do
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
-  picks = [ { "Pick": Nothing }, { "Pick": Just (.one {}) }, { "Pick": Just (.two {}) } ]
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
-  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ]
+  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]
   events = [ .event "hello", .event "world" ]

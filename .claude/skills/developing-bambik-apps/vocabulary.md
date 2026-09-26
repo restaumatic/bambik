@@ -57,8 +57,8 @@ direction module headers.
 | a card-headed group nesting a sub-model | `group @"Customer" $ Semigroupoid.do …` (MDC2/MDC3) — surface, heading and field in one word, the label stamped as the accessible group name, leading its lines like any container; the focus is anything `field @l` takes (a record, a `bracketed` variant, a collection's array) | order-form; potluck; reorder | MDC2.purs / MDC3.purs (`group`); writing.md *Component citizenship* |
 | a reusable sub-form over a flat sub-row (no wrapper field) | `addressForm # subStrong` | parcel | RecordToRecord.purs (`subStrong`) |
 | an invariant between **edited** fields — editing one implies the other | `editor # settled normalize` — its only job; every `# settled` in the demos sits on an editor, never feeding a display | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *copy is a function, not a field* |
-| a selection that always has a value | `select @l {} [ choice @"…", … ] # required` | flight-booker | RecordToRecord.purs (`required`) |
-| a selection that may still be unmade | `dropdown @l {} […] # optional @"chosen" @"unchosen"` — the field is a named two-case variant, seeded `.unchosen {}`; consumers adopt the made case | meeting-booker | PUI.purs (`optional`) |
+| a selection that always has a value | `select @l {} required [ choice @"…", … ]` — the field is the option | flight-booker | PUI.purs (`required`) |
+| a selection that may still be unmade | `dropdown @l {} (optional @"chosen") […]` — the field is a named two-case variant, seeded `.unchosen {}`; consumers adopt the made case | meeting-booker | PUI.purs (`optional`) |
 | a bounded quantity | the model holds `{ current, min, max, step }`; `sliderLive @l {}` edits it | timer, circle-drawer | writing.md *Code style → Types and values* |
 | two controls editing **one** field | two successive stages over it, `slider @l {}` then `rangeInput @l` | tip-calculator | writing.md *Component citizenship* |
 | a variant-valued field with an editor per case | `( Semigroupoid.do selector; pane # inCase @l selection; … ) # bracketed @l stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; RecordToRecord.purs (`bracketed`) |
@@ -101,7 +101,7 @@ direction module headers.
 | What comes in → what goes out | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | the whole array → each element's own event | `item # foreach @"id" rowsOf` (keyed by a model field) | cells, tic-tac-toe, crud (plain HTML) | PUI.purs (`foreach`); writing.md *Collections* |
-| the whole array → the whole array, decided jointly (withheld until every element spoke) | `item # acted @"name"` | potluck (per-guest `# optional` pickers) | PUI.purs (`acted`) |
+| the whole array → the whole array, decided jointly (withheld until every element spoke) | `item # acted @"name"` | potluck (per-guest `optional @"chosen"` selectors) | PUI.purs (`acted`) |
 | the whole array → the whole array, edited in place | `editor # edited @"id"` | reorder | PUI.purs (`edited`) |
 | one `{ key, value }` at a time → tagged per-element output | `item # dispatched envelopeOf` | departures | PUI.purs (`dispatched`) |
 | one `{ key, value }` at a time → the growing array | `item # accumulated envelopeOf` | scoreboard | PUI.purs (`accumulated`) |
