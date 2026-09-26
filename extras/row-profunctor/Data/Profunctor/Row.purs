@@ -75,7 +75,7 @@
 -- | ```
 -- | shape        Profunctor only                 over the strength            over the co-strength
 -- | -----------  ------------------------------  ---------------------------  --------------------
--- | p {|a} {|b}  atField, forProperty,           subStrong, field, required  feedback
+-- | p {|a} {|b}  atField, forProperty,           subStrong, field            feedback
 -- |              asField
 -- | p [|a] [|b]  atCase, splitVariant            subChoice, focusCase         iterate
 -- | p {|a} [|b]  toCase, recordToCase,           subResolving,                folding
@@ -95,7 +95,7 @@
 -- | mixed ones. The rest name a single label (`field`/`focusCase`)
 -- | or that label's complement (`backgroundProperty`/`backgroundCase`);
 -- | `field` is also the leaf lift, making every label-indexed editor a
--- | whole-row citizen, and `required` its selector sibling. The
+-- | whole-row citizen. The
 -- | **right** column ties a state channel off with
 -- | the co-strength — one trace row form per shape, each seeded but `iterate`
 -- | (entities pre-exist, events occur).
@@ -152,8 +152,7 @@
 -- | want (a fixed core row renamed at the surface), and the deliberately
 -- | absent `+ → +` fusion is `atCase @l # toCase @l' f`. The one entry
 -- | outside the grid is `splitVariant`, a plain function rather than a
--- | placement (`required`'s dual `optional` needs the carrier and lives in
--- | `PUI`).
+-- | placement.
 -- |
 -- | The merge's two obligations are per-side and dual, and they are what the
 -- | constraint vocabulary below spells out: on an **input** side, where does

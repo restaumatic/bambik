@@ -31,7 +31,7 @@ Verification stack: `spago test` (value-level law tests over probes — merge un
 ## Building & Deploying Demos
 
 1. Verify the forked compiler: `node_modules/.bin/purs --version` must report `0.15.16 [development build ...]`; if it shows stock `0.15.15`, run `npm install` (stock purs fails with "Module Prim.Variant was not found").
-2. Bundle for deploy: `npm run bundle-demos` (minified, all demos; `node scripts/bundle.mjs <name|set>` for a subset) — use `npm run dev` for watch mode, not for deploys. **Every** demo is a named module (`OrderForm`, `Counter`, `Cells`, `TodoMvc`, ...) entered at its own function (`orderForm`, `counter`, `cells`, `todoMvc`, ...) — no module is `Main`, so they all compile together under one plain `spago build` — and each bundles from the shared registry in **scripts/demos.mjs** (the single source of truth for directory + module + entry, shared with the dev server), which synthesizes the esbuild entry per demo because `spago bundle-app` can only call `Main.main`.
+2. Bundle for deploy: `npm run bundle-demos` (minified, all demos; `node scripts/bundle.mjs <name|set>` for a subset) — use `npm run dev` for watch mode, not for deploys. **Every** demo is a named module (`OrderForm`, `Counter`, `Cells`, `TodoList`, ...) entered at its own function (`orderForm`, `counter`, `cells`, `todoList`, ...) — no module is `Main`, so they all compile together under one plain `spago build` — and each bundles from the shared registry in **scripts/demos.mjs** (the single source of truth for directory + module + entry, shared with the dev server), which synthesizes the esbuild entry per demo because `spago bundle-app` can only call `Main.main`.
 3. Deploy: `npm run deploy-demos` — scps demo/index.html, demo/workflow.html and both suite directories to host `xyz` (root@erykciepiela.xyz, see `~/.ssh/config`) at `/var/www/html/bambik/demo/`.
 4. Verify: `http://erykciepiela.xyz/bambik/demo/<d>/` returns 200 (plain HTTP only).
 
@@ -197,7 +197,6 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   | gated displays | displays are pipeline stages natively, typed `p { o \| rest } { o \| rest }` — a pass-through whose **release is the fulfillment witness**, gate policy baked into the component. The family (`PUI.Web` unless noted): `shown content` (ambient structured content — chrome registers at build, renders per feed, releases always), `shownWhen @l f content` (display pane: attach on relevance, release always), `inCase @l f editor` (the editor pane — `shownWhen`'s editor sibling; a carrier primitive, the pane's channel beside the wire's, since its content emits the row the owned merge would reject), `shownEach @l proj item` (keyed collection), `confirmed cfg $ content` (MDC2/MDC3 — the witness rung: modal, flow withheld until the user confirms). Content slots accept only `{}`-output components, keeping the no-silent-loss law; `observed` unchanged |
   | `muted` | the counit: render, and **deliberately discard** the component's output (`rmap (const {})`) — the visible form of what no stage may do silently; `# muted` writes off a genuinely emitting assembly (a `foreach` forwarding its elements inside a packaged control, scoreboard's summary group) so it can end at `{}` |
   | `observed` | the gated displays' `+`-diagonal sibling: every event forwards once at feed time; the status's own emissions are dropped (events are one-shot) |
-  | `required` / `optional` | the **selection prisms** a selector takes as its argument, saying what its field holds (2026-09-26): `required = identity` (the field is the option, always chosen — `select @"Milk" {} required milks`), `optional @c` the case prism at `c` (the field is a variant whose case `c` is the made choice, the other cases showing nothing checked — `dropdown @"Room" {} (optional @"chosen") rooms`, seeded `.unchosen {}`), so an unmade choice is honest knowledge rather than a starved stage and consumers adopt the made case. The selector itself is a `×→×` editor (`PUI.Web.selectedAt`), the prism laws its leaf laws. History: a `×→×` leaf silent on `Nothing` until 2026-09-23, then a `×→+` picker completed by `# required`/`# optional` stages until 2026-09-26 — a stored value misread as an occurrence |
   | `every` | the heartbeat wire: pass-through plus a periodic step over a sub-row, merged back over the last value — **derived** (2026-09-15) from the `ticks @l` source (an occurrence per period out of the terminal record, the timer's `×→+` leaf) under `replaying`, `toCases` into `stepped`/`idle`, `silence` on the idle case and `updated`, in a `looped` so each tick reads the value just stepped; no retention of its own |
   | `ticks @l` | the tick source, `{ ms } -> p {} [ l :: {} ]`: `announce`'s periodic sibling and the click source's timer twin; feeds ignored, nothing emitted inside a feed |
   | `replaying @l f` | **replay is `Strong`'s retention**: `first` around an occurrence source (a source emitting `[ l :: {} ]` with no payload), the fed row riding the state channel and joining each occurrence as `f` of it, leaving as case `l`; the `×→+` leaf's replay-last-value protocol as the primed `Strong` law — `clicked @l f w` *is* `replaying @l f` of a private click source (2026-09-15) |
@@ -256,7 +255,7 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
 
   The native elements with a model interface are **label-indexed components**
   (L3), each stamping its label as the host `name`: the selector
-  `select @l required|(optional @c) opts` (an editor of field `l` — bare
+  `select @l opts` / `selectUnpicked @l @c opts` / `selectOptional @l @c @n opts` (editors of field `l` — bare
   `<select>`/`<option>`s, no caption chrome of its own), `rangeInput @l`
   (`<input type="range">`, the live bounded-quantity slider over
   `Cons l { current, min, max, step }`), the `progress @l` display
@@ -302,9 +301,23 @@ design-system **umbrella**. What they share, stated once:
   events (`button` and its emphasis siblings, `fab`, `iconButton`, `menuItem`),
   `+→×` statuses (`snackbar`/`toast`/`messageBar`/`banner`), plus the
   **selectors** (`select`, `radioButton`/`radioGroup`, `segmentedButton`,
-  `dropdown`) — `×→×` editors of field `l`, lifted with
-  `PUI.Web.selectedAt` and told what the field holds by their selection
-  prism, `required` or `optional @c`.
+  `dropdown`) — `×→×` editors of field `l`, each in three words
+  (2026-09-26): the plain word's field holds the option itself (lifted
+  by `PUI.Web.selectedAt`); the `…Unpicked` sibling's is a variant whose
+  case `c` is the made choice, every other case showing nothing checked
+  and a pick never taken back — a choice **owed** but not yet made
+  (`selectUnpicked @l @c`, lifted by `PUI.Web.selectedUnpickedAt`); the
+  `…Optional` sibling's is the same variant shape with a named none case
+  `n` the face clears back to — a choice the user **may leave** unmade
+  (`selectOptional @l @c @n`, lifted by `PUI.Web.selectedOptionalAt`;
+  selects get an empty first option, Shoelace its clear button, radios
+  and segments clear on a second press of the checked one via
+  `PUI.Web.clearedOnRepress`). Unpicked and optional share a view model
+  and differ in behaviour, so they are two words; consumers adopt the
+  made case either way.
+  History: a `×→×` leaf silent on `Nothing` until 2026-09-23, then a
+  `×→+` picker completed by stages, then briefly a selection-prism
+  argument (`required`/`optional @c`).
   *Oculars* are shape-preserving decorators with no model of their own
   (`card`/`cardActions`, dialogs, lists, typography, elevations) — and a
   **surface ocular carries no copy config**: MD2 gives a card twelve optional
@@ -475,7 +488,7 @@ the dev server). Two suites: **demo/7guis/** (the
 | --- | --- |
 | counter | the floor: one editor, one emitter, one fold |
 | temperature-converter | both fields in the model; non-numeric input leaves the other untouched |
-| flight-booker | type-changing `select @"Flight type" {} required` over an anonymous variant row; both outcomes carry bare payloads into **one** `snackbar # forCases bookingLine` |
+| flight-booker | type-changing `select @"Flight type" {}` over an anonymous variant row; both outcomes carry bare payloads into **one** `snackbar # forCases bookingLine` |
 | timer | `every` heartbeat; `sliderLive` duration re-scoped at runtime |
 | crud | `MDC2.listOf @l` (keyed `foreach` of `clicked @l` rows elsewhere); Aff catalogue actions |
 | circle-drawer | **channel-fed SVG canvas** — built once, updated via `attrWith`; container-level `onClickedXY @l`; the diameter a bounded quantity in the model, its slider `# inCase @"chosen" selection # settled resizeSelected` — live-preview resize as a state invariant, an `adjusting` flag coalescing a drag into one undo transaction |
@@ -514,13 +527,13 @@ focused demo apiece):
 | ticket-dispenser | `unfolding @"resume"` + the `Reel` optic (`Coretaining`) — "take a number", counter seeded and resumed; the reel is assembled in the logic module (`ticketIssuance`), the view supplying only the wire, and the button's caption case is adopted into the business case `requested` via `# toCases`. Also the **`shownWhen`** showcase: state is a payload-carrying variant field (`display`), so the number and hint panes are pure case adoption off one closed accessor (`displayOf`) |
 | parcel | `subStrong` — a reusable address sub-form as a citizen over its own closed row, background field threaded |
 | cashbox | `subChoice` — selective interception as UX: outgoing money detours through confirmation dialogs, incoming posts straight to the fold; every branch a two-record Mealy handler `{ amount } -> { balance } -> { balance }`; payloads via `button @l {…} # with patch` |
-| potluck | `acted` (the container action) — per-guest dish selectors under one model, each `optional @"chosen"`; the table's state is the business classifier `menuState` (`complete` with the dishes, `waiting` with the guests still choosing), each case a `shownWhen` pane — the waiting pane names who is left, the menu prints once the table is complete |
+| potluck | `acted` (the container action) — per-guest dish selectors under one model, each `segmentedButtonUnpicked @"Dish" @"chosen"`; the table's state is the business classifier `menuState` (`complete` with the dishes, `waiting` with the guests still choosing), each case a `shownWhen` pane — the waiting pane names who is left, the menu prints once the table is complete |
 | departures | `dispatched` (+→+ keyed input) — rows appear on first mention, re-feed in place, tagged output drives a last-update line |
 | scoreboard | `accumulated` (+→× keyed input) — board grows to its key set, points update in place, whole array drives the standings |
 | reorder | keyed reconciliation + the `edited` collection editor — a playlist keyed by track id, element output row excluding the key (the carrier re-attaches it); Rotate and effectful Shuffle move each row's DOM node with its track, so tick, title and focus follow |
 | order-dashboard | **custom components** (MDC3-only): the demo ships its own `DashboardControlsMDC3` module — five label-indexed display controls + a `board` ocular, each taking its read function like the library's own displays (`statTile @"Orders" { unit: "placed" } ordersCount`, the label stamped as the tile's accessible name), including the packaged-collection-display protocol (`leaderboard`, its `foreach` written off with `# muted`); the model holds only the order stream, every tile a function of it |
 
-**The rest**, grouped by what they exercise: todomvc (`listOf` toggle, `clWhen`,
+**The rest**, grouped by what they exercise: todo-list (`listOf` toggle, `clWhen`,
 `segmentedButton` filter), tip-calculator (all-`×→×`, sliders, gated money
 readouts), quiz (`provided` panes over one `quizPhase` classifier,
 `linearProgress`), tic-tac-toe / calculator (**channel-fed `foreach` grids** —
@@ -556,8 +569,9 @@ suffix naming the vocabulary rather than a twin (so a suffix means
 too, while only helloworld and restaurant-menu, which use no design system at
 all, carry no suffix): product-review (Shoelace's
 exclusive star `rating`), meeting-booker (Fluent; also the **no-defaults
-showcase** — nothing pre-picked, `optional @"chosen"` selectors
-over named two-case fields seeded `.unchosen {}`, no `Maybe` in the booking, the
+showcase** — nothing pre-picked, `…Unpicked @"chosen"` selectors
+over named two-case fields seeded `.unchosen {}` beside an optional catering
+(`dropdownOptional @"Catering" @"ordered" @"none"`, clearable back to none), no `Maybe` in the booking, the
 attendees a bounded quantity *in the model*: the slider exists only once a
 room is chosen (`# inCase @"chosen" roomOf`) and the room dropdown
 re-scopes its bounds as an invariant (`# settled seatsInRoom`), so an

@@ -39,6 +39,9 @@ module PUI.Web
   , OptCaption(..)
   , choice
   , selectedAt
+  , clearedOnRepress
+  , selectedOptionalAt
+  , selectedUnpickedAt
   , Web
   , addClass
   , addEventListener
@@ -99,17 +102,15 @@ import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (Variant, inj, prj)
-import Record (get) as Record
 import Prim.Row as Row
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
-import Data.Lens (Prism', preview, review)
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (class Hosting, Ocular, PUI, Logged, diagnosticsOn, foreach, muted, replaying, setDiagnostics, setSink, setTracing)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs)
@@ -243,6 +244,7 @@ foreign import appendChild :: Node -> Node -> Effect Unit
 foreign import removeAllNodesBetweenSiblings :: Node -> Node -> Effect Unit
 foreign import appendRawHtml :: String -> Node -> Effect Node
 foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Unit
+foreign import afterTask :: Effect Unit -> Effect Unit
 foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
 foreign import createCommentNode :: String -> Effect Node
 foreign import setAttribute :: Node -> String -> String -> Effect Unit
@@ -373,30 +375,70 @@ choice :: forall @l tail r. IsSymbol l => Row.Cons l {} tail r => { value :: Var
 choice = { value: inj (Proxy :: Proxy l) {}, label: reflectSymbol (Proxy :: Proxy l) }
 
 -- | Lift a bare selection leaf — the option to check in (`Nothing`: none),
--- | the option the user checked out — to the **selection editor** of field
--- | `l`, a whole-row citizen `{ l :: f | rest } → { l :: f | rest }` like
--- | every other editor: the widget stores a value, so it has an editor's
--- | shape and owes an editor's answer — every feed is answered with the row,
--- | and every pick is stored into field `l`. What the field holds is the
--- | `selection` prism's business: its preview is the option the widget
--- | shows, its review what a pick stores — `required` (`identity`: the
--- | field is the option, always chosen) or `optional @c` (the field is a
--- | variant whose case `c` is the made choice and whose other cases show
--- | nothing checked). The prism laws are the leaf's: `preview (review a) =
--- | Just a` is what makes a pick's echo the pick. Vocabulary plumbing,
--- | beside `field @l`: every selector in every vocabulary is its leaf lifted
--- | with this.
-selectedAt :: forall @l f a rest r. IsSymbol l => Row.Cons l f rest r => Prism' f a -> PUI Web (Maybe a) a -> PUI Web { | r } { | r }
-selectedAt selection w = field @l $ wrap do
+-- | the option the user checked out (`Nothing`: cleared) — to the
+-- | **selection editor** of field `l`, a whole-row citizen
+-- | `{ l :: a | rest } → { l :: a | rest }` like every other editor: the
+-- | widget stores a value, so it has an editor's shape and owes an editor's
+-- | answer — every feed is answered with the row, and every pick is stored
+-- | into field `l`. Here the field is the option itself, so the model has a
+-- | choice at all times. Vocabulary plumbing, beside `field @l`: every
+-- | plain selector in every vocabulary is its leaf lifted with this.
+selectedAt :: forall @l a rest r. IsSymbol l => Row.Cons l a rest r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
+selectedAt = selectedWith @l Just identity
+
+-- | `selectedAt` for a choice owed but not yet made: field `l` is a variant
+-- | whose case `c` is the made choice, seeded at an unpicked case the
+-- | application names. Every other case shows nothing checked, a pick
+-- | stores case `c` and there is no way back, so the stages demanding the
+-- | selection adopt the made case. Every `…Unpicked` selector is its leaf
+-- | lifted with this.
+selectedUnpickedAt :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Row.Cons c a b s => Row.Cons l (Variant s) rest r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
+selectedUnpickedAt = selectedWith @l (prj (Proxy @c)) (map (inj (Proxy @c)))
+
+-- | `selectedAt` for a choice the user may leave unmade: field `l` is a
+-- | variant whose case `c` is the made choice and whose case `n` is none,
+-- | and clearing the widget stores case `n`. Every `…Optional` selector is
+-- | its leaf lifted with this.
+selectedOptionalAt :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Row.Cons c a b s => Row.Cons n {} t s => Row.Cons l (Variant s) rest r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
+selectedOptionalAt = selectedWith @l (prj (Proxy @c)) (Just <<< maybe (inj (Proxy @n) {}) (inj (Proxy @c)))
+
+-- | The clearing gesture of an optional radio group: the platform's radios
+-- | cannot be unchecked, so pressing the checked member again (pointer or
+-- | key, on `press`) and letting its `click` land clears the group. The
+-- | press snapshots the selection, so a click the platform synthesizes for
+-- | an arrow-key move to another member never clears; the clear runs after
+-- | the element's own click handling, which re-checks it. Vocabulary plumbing
+-- | for the `…Optional` radio leaves.
+clearedOnRepress :: forall a m. Eq a => Ref.Ref (Maybe a) -> Array { press :: Node, click :: Node, value :: a | m } -> Effect Unit -> Effect Unit
+clearedOnRepress selRef members clear = do
+  pressedRef <- Ref.new Nothing
+  for_ members \m -> do
+    let
+      snapshot = do
+        sel <- Ref.read selRef
+        Ref.write (if sel == Just m.value then sel else Nothing) pressedRef
+    void $ addEventListener "pointerdown" m.press (const snapshot)
+    void $ addEventListener "keydown" m.press (const snapshot)
+    void $ addEventListener "click" m.click $ const do
+      pressed <- Ref.read pressedRef
+      Ref.write Nothing pressedRef
+      -- after the element's own click handling, which re-checks it
+      when (pressed == Just m.value) (afterTask clear)
+
+-- checkedOf: the option the field shows checked; stored: what a pick (`Just`)
+-- or a clear (`Nothing`) stores, if anything; `checkedOf <=< stored` must give
+-- back the pick, so a pick's echo is the pick
+selectedWith :: forall @l f a rest r. IsSymbol l => Row.Cons l f rest r => (f -> Maybe a) -> (Maybe a -> Maybe f) -> PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
+selectedWith checkedOf stored w = field @l $ wrap do
   w' <- unwrap w
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \v -> do
-        w'.toUser (preview selection v)
+        w'.toUser (checkedOf v)
         Ref.read mPropRef >>= traverse_ (_ $ v)
     , fromUser: \prop -> do
         Ref.write (Just prop) mPropRef
-        w'.fromUser (prop <<< review selection)
+        w'.fromUser (traverse_ prop <<< stored)
     }
 
 -- The element-neutral vocabulary (see the module header).

@@ -1,6 +1,7 @@
 // PUI.Web.Fluent design-system vocabulary on a live page, and the no-defaults
-// discipline: nothing is pre-picked — the unmade choices flow as Nothing
-// (`optional` selectors), the attendees slider exists only once a room
+// discipline: nothing is pre-picked — the owed choices start unpicked
+// (`…Unpicked` selectors), catering is optional and clears back to none
+// (`dropdownOptional`), the attendees slider exists only once a room
 // gives it bounds, and the plan/booking stage exists only once the pick is
 // complete. Fluent's internal update queue is rAF-driven and this harness
 // runs frameless, so the leaves' timer-based bind deferral is exercised
@@ -36,6 +37,16 @@ export const run = async ({ ev, assertEq, sleep }) => {
   await sleep(200)
   const plan = await ev(planText)
   assertEq(plan, 'Plan: All hands in the boardroom, 60 min, 8 attendees, with a Teams link', `the complete pick materializes the plan (${plan})`)
+
+  const catering = `[...document.querySelectorAll('fluent-dropdown')][1]`
+  await ev(`(() => { const d = ${catering}; d.value = '1'; d.dispatchEvent(new Event('change')) })()`)
+  await sleep(200)
+  const catered = await ev(planText)
+  assertEq(catered, 'Plan: All hands in the boardroom, 60 min, 8 attendees, with a Teams link, sandwich lunch', `the optional catering joins the plan (${catered})`)
+  await ev(`(() => { const d = ${catering}; d.value = ''; d.dispatchEvent(new Event('change')) })()`)
+  await sleep(200)
+  const uncatered = await ev(planText)
+  assertEq(uncatered, plan, `clearing the optional catering takes it back out, the plan staying complete (${uncatered})`)
 
   await ev(`(() => { const d = document.querySelector('fluent-dropdown'); d.value = '0'; d.dispatchEvent(new Event('change')) })()`)
   await sleep(200)

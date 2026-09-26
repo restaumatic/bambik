@@ -71,8 +71,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `button @"Submit order" {}`, `select @"Milk" cfg opts`). No canonical
   label (`value`/`clicked`/`event`) appears in application code: adopters
   that need a leaf's label derive it from the closed singleton row via
-  `RowToList`'s fundep (`forProperty`/`required`/
-  `optional`/`toCases`/`forCase`/`forCases`; the view-side read adopters
+  `RowToList`'s fundep (`forProperty`/`toCases`/
+  `forCase`/`forCases`; the view-side read adopters
   `projection`/`projected` and the singular `forCase` are deleted —
   displays are verbatim under the presentation-model rule,
   doc/research-presentation-model.md). Statuses keep their
@@ -84,7 +84,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
   | Type | Direction | Sort |
   | --- | --- | --- |
-  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — `required`/`optional @c` is their selection argument), displays, panes that answer (`shownWhen`, `inCase`), stages |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes that answer (`shownWhen`, `inCase`), stages |
   | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided` |
   | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`) |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers |
@@ -97,9 +97,18 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the option it shows, so it is an editor (`×→×`, every feed answered
   with the row) — the 2026-09-23 split into a `×→+` picker plus a
   completing stage misread a stored value as an occurrence, and was
-  undone 2026-09-26 once the unmade state was a value: what the field
-  holds is the selector's **selection prism** (`required = identity`,
-  `optional @c` the case prism), whose laws are the leaf's.
+  undone 2026-09-26 once the unmade state was a value. What the field
+  holds is three words, all editors: the selector's field holds the
+  option itself; its `…Unpicked` sibling's (`selectUnpicked @l @c`) a
+  variant whose case `c` is the made choice, a choice owed and never
+  taken back; its `…Optional` sibling's (`selectOptional @l @c @n`) the
+  same shape with a none case `n` the face clears back to, a choice the
+  user may leave unmade. The last two share a view model and differ in
+  behaviour, which is exactly why they are two words: a name says what
+  the component does, not only what it stores. Lifted by
+  `PUI.Web.selectedAt`/`selectedUnpickedAt`/`selectedOptionalAt`; a
+  pick's echo is the pick. (A selection-prism argument,
+  `required`/`optional @c`, preceded the words the same day.)
   **Decorators** are outside the rule, as oculars (`Ocular (PUI Web)`)
   are: `clWhen`/`attrWith` read the row (`{ | i }`) to style the element
   just built and keep whatever shape they decorate, an emitter's or an
@@ -433,7 +442,7 @@ rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l copyOf`,
 `forProperty`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
-the next `required` waiting to be coined — never a reason to import the
+the next word waiting to be coined — never a reason to import the
 module one floor down. Business optics (`Shutter`/`Reel` in business
 code below the UI) are algebra-layer material and exempt by location.
 
@@ -509,7 +518,7 @@ The library's obligations to it are one-way and concrete:
   "application code never imports `Data.Profunctor`". The checkable
   form: `grep "import Data.Profunctor (" demo/` is empty, always.
 - A shape no mechanism fits is a **missing-vocabulary signal** addressed
-  to the library — the next `required` waiting to be coined — and is
+  to the library — the next word waiting to be coined — and is
   answered here, by admitting vocabulary through the gates below, never
   by relaxing a rule in writing.md.
 - When a library change alters what application code should look like,

@@ -54,7 +54,7 @@ export const sets = {
   },
   'nguis': {
     'order-form-mdc2': ['OrderFormMDC2', 'orderFormMDC2'],
-    'todomvc-mdc2': ['TodoMvcMDC2', 'todoMvcMDC2'],
+    'todo-list-mdc2': ['TodoListMDC2', 'todoListMDC2'],
     'tip-calculator-mdc2': ['TipCalculatorMDC2', 'tipCalculatorMDC2'],
     'quiz-mdc2': ['QuizMDC2', 'quizMDC2'],
     'tic-tac-toe-mdc2': ['TicTacToeMDC2', 'ticTacToeMDC2'],
@@ -91,7 +91,7 @@ export const sets = {
     'loan-calculator-bootstrap': ['LoanCalculatorBootstrap', 'loanCalculatorBootstrap'],
     // MDC3 (PUI.Web.MDC3) siblings of the MDC2 demos — same app, import switched
     'order-form-mdc3': ['OrderFormMDC3', 'orderFormMDC3'],
-    'todomvc-mdc3': ['TodoMvcMDC3', 'todoMvcMDC3'],
+    'todo-list-mdc3': ['TodoListMDC3', 'todoListMDC3'],
     'tip-calculator-mdc3': ['TipCalculatorMDC3', 'tipCalculatorMDC3'],
     'quiz-mdc3': ['QuizMDC3', 'quizMDC3'],
     'tic-tac-toe-mdc3': ['TicTacToeMDC3', 'ticTacToeMDC3'],

@@ -226,14 +226,17 @@ syntax (`r { "Name" = … }`) all work unchanged.
 - **selectors** (`select`, `radioButton`, `segmentedButton`, `dropdown`,
   `radioGroup`) are **editors**: the widget stores a value — the option
   it shows checked — so it has an editor's shape and answers every feed
-  with the row. What the field holds is the selector's **selection**
-  argument, a prism: `required` when the model always holds a choice
-  (the field is the option — `select @"Milk" {} required milks`),
-  `optional @"chosen"` when it may not (the field is a variant whose
-  case `chosen` is the made choice, the other cases showing nothing
-  checked — `radioGroup @"Duration (min)" {} (optional @"chosen")
-  durations`; the application names the made case, and the unmade one
-  in its seed). The model keeps a
+  with the row. What the choice *is* picks the word: the selector
+  itself when the model always holds one (the field is the option —
+  `select @"Milk" {} milks`); its `…Unpicked` sibling when a choice is
+  owed but not yet made (the field is a variant whose case `chosen` is
+  the made choice, the other cases showing nothing checked, and a pick
+  cannot be taken back — `radioGroupUnpicked @"Duration (min)"
+  @"chosen" {} durations`); its `…Optional` sibling when the user may
+  leave it unmade (the same variant shape, and the face clears back to
+  the none case the application names — `dropdownOptional @"Catering"
+  @"ordered" @"none" {} caterings`). The last two share a view model
+  and differ in behaviour, so they are two words, not one. The model keeps a
   named two-case variant, never a `Maybe`, seeded at the unmade case
   (`"Room": .unchosen {}`, no default pick), and the stages demanding
   the bare selection adopt the made case (`# inCase @"chosen" roomOf`,
@@ -368,7 +371,7 @@ Worked examples, by shape:
   key via `clicked` + `toCase @l _.key`. No `data-*`, no wholesale
   rebuild. `onClickedXY` is the container-level coordinate emitter for
   canvases.
-- **collections** — todomvc (`listOf` click-to-toggle plus `clWhen`
+- **collections** — todo-list (`listOf` click-to-toggle plus `clWhen`
   styling), shopping-cart (`dataTable`/`dataRow`/`dataCell` over
   `foreach`, catalogue fed by `listOf`'s projection argument), reorder
   (keyed reconciliation and the `edited` collection editor), potluck
@@ -430,7 +433,7 @@ the pane shows. Name the cases: order-form's distance is
 `[ estimated :: { km, to }, unknown :: {} ]`, not `Maybe`, so
 `staleDistanceForgotten` is a `match` and the summary pane is
 `# shownWhen @"estimated" distanceOf`; a selector left unmade is
-`optional @"chosen"` over `[ chosen :: …, unchosen :: {} ]`, so meeting-booker's panes are
+an `…Unpicked` selector over `[ chosen :: …, unchosen :: {} ]`, so meeting-booker's panes are
 `# shownWhen @"rated" ratedRoom` and `# provided @"complete" plan`
 with no `Maybe` anywhere in the booking; checkout's wizard buttons
 adopt `onward`/`back` off `onwardFrom`/`previousOf`. `Maybe` stays
@@ -438,7 +441,7 @@ below the UI — an `index`/`find` lookup, an `Aff` result — and a
 classifier converts it at the boundary (inbox's `messageView` turns
 `find`'s `Maybe` into `reading`/`browsing`). No demo row carries a
 `Maybe`: potluck's dishes are `[ chosen :: dish, unchosen :: {} ]` under
-`optional @"chosen"`, and "the menu once everyone has chosen" is its business
+`segmentedButtonUnpicked`, and "the menu once everyone has chosen" is its business
 classifier `menuState` (`complete` with the dishes, `waiting` with the
 names still choosing), each case a `shownWhen` pane — a rule stated in
 the logic module, not a gate left waiting on a leaf that never answers.
@@ -907,7 +910,7 @@ induces — view first, logic module written to its names — is
   Mealy step but a state transformer, and takes the rung that says so:
   `button @"Add" {} # applied addTodo` with `addTodo :: { … } -> { … }`,
   the case untouched and unread (counter's `# applied increment`,
-  todomvc's `# applied clearCompleted`, inbox's
+  todo-list's `# applied clearCompleted`, inbox's
   `fab @"Compose" { icon: "edit" } # applied composeMessage`). Inside a
   `match`, `const <<< f` is that same transformer where several such
   emitters share one stage (circle-drawer's `"Undo": const <<< undo,

@@ -34,7 +34,7 @@ its own if you would rather follow the procedure by hand.
 # Start here
 
 Read the demos in this order — counter, temperature-converter, flight-booker,
-todomvc, checkout, order-form — each adding one idea to the last.
+todo-list, checkout, order-form — each adding one idea to the last.
 [walkthrough.md](/.claude/skills/developing-bambik-apps/walkthrough.md) reads
 flight-booker line by line, and
 [vocabulary.md](/.claude/skills/developing-bambik-apps/vocabulary.md) is the

@@ -26,6 +26,8 @@ module PUI.Web.Bootstrap
   , listGroupItem
   , progress
   , select
+  , selectUnpicked
+  , selectOptional
   , sliderLive
   , textField
   , toast
@@ -46,14 +48,13 @@ import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Variant (case_, match, on) as Variant
-import Data.Lens (Prism')
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticText, text, textOf, uniqueId, (:=))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticText, text, textOf, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -83,8 +84,8 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --         live numeric readout, the counterpart of MD's labeled handle),
 --         `toggleSwitch @l`
 --         (`.form-check.form-switch`), and the type-changing `select @l`
---         (`.form-select`, `{ l :: f } → { l :: f }`, `f` the option under
---         `required` or a variant around it under `optional @c`);
+--         (`.form-select`, `{ l :: f } → { l :: f }`, `f` the option itself,
+--         or a variant around it for the `…Unpicked`/`…Optional` siblings);
 --       `×→×` displays — `progress` (`{ value :: Number } → {}`, the
 --         filled fraction 0–1 — `.progress` over `.progress-bar`);
 --       `×→+` events — `button @l` (`.btn.btn-primary`);
@@ -194,15 +195,29 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
     }
 
 -- | The **select**: one choice out of a list, under its label.
--- | The selection argument says what the field holds: `required` (the
--- | option itself — the model always has one) or `optional @"chosen"` (a
--- | variant whose case `chosen` is the made choice, seeded at an unmade case
--- | the application names; nothing is checked until the user picks, and
--- | whatever needs the choice adopts the made case). Either way the control
--- | is an editor: every feed is answered with the row, every pick stored.
+-- | The field holds the option itself, so the model always has one.
+-- | Two siblings hold a variant instead: `selectUnpicked @l @c` for a
+-- | choice owed but not yet made, `selectOptional @l @c @n` for one
+-- | the user may leave unmade. Every one is an editor: every feed is
+-- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-select :: forall @l f a rest r provided. IsSymbol l => Cons l f rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-select provided selection options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
+select :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select provided options = selectWith @l false (selectedAt @l) provided options
+
+-- | `select` for a choice owed but not yet made: field `l` is a variant
+-- | whose case `c` is the made choice, seeded at an unpicked case; nothing
+-- | is checked until the user picks, and a pick cannot be taken back.
+selectUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectUnpicked provided options = selectWith @l false (selectedUnpickedAt @l @c) provided options
+
+-- | `select` for a choice the user may leave unmade: field `l` is a variant
+-- | whose case `c` is the made choice and case `n` none, seeded at `n`;
+-- | an empty first option clears it, storing `n` again.
+selectOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectOptional provided options = selectWith @l true (selectedOptionalAt @l @c @n) provided options
+
+selectWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
+selectWith clearable lift provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in lift $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "select" (void $ unwrap (optionLeaves))
   node <- gets _.sibling
@@ -210,9 +225,8 @@ select provided selection options = let config = convertOptionsWithDefaults OptC
   mPropRef <- liftEffect $ Ref.new Nothing
   liftEffect $ void $ addEventListener "change" node $ const do
     picked <- getValue node
-    for_ (Int.fromString picked >>= (options !! _)) \o -> do
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop o.value
+    mProp <- Ref.read mPropRef
+    for_ mProp \prop -> prop (_.value <$> (Int.fromString picked >>= (options !! _)))
   pure
     { toUser: \ma -> do
         case ma of
@@ -223,6 +237,10 @@ select provided selection options = let config = convertOptionsWithDefaults OptC
   where
   optionLeaves :: PUI Web {} {}
   optionLeaves = wrap do
+    when clearable do
+      element "option" (pure unit)
+      noneNode <- gets _.sibling
+      liftEffect $ setAttribute noneNode "value" ""
     forWithIndex_ options \idx o -> do
       element "option" (void $ unwrap (staticText o.label))
       optionNode <- gets _.sibling

@@ -4,9 +4,8 @@ import Prelude
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI (optional, required)
 import PUI.Web (choice, staticText, text)
-import PUI.Web.MDC2 (body, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, menuItem, outlinedButton, outlinedTextField, radioButton, segmentedButton, select, slider, sliderLive, snackbar, tabBar, textButton, banner, toggleSwitch)
+import PUI.Web.MDC2 (body, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, textButton, banner, toggleSwitch)
 
 lawBenchMDC2 :: Effect Unit
 lawBenchMDC2 = do
@@ -26,12 +25,15 @@ lawBenchMDC2 = do
     , bench "linearProgress" "×→×" fractions (linearProgress @"Progress" _.fraction)
     , bench "imagePane" "×→×" images imagePane
     , bench "group" "×→×" grouped (group @"Customer" (filledTextField @"Name" {}))
-    , bench "select required" "×→×" chosen (select @"Pick" {} required options)
-    , bench "select optional" "×→×" optionals (select @"Pick" {} (optional @"chosen") options)
-    , bench "radioButton required" "×→×" chosen (radioButton @"Pick" required options)
-    , bench "radioButton optional" "×→×" optionals (radioButton @"Pick" (optional @"chosen") options)
-    , bench "segmentedButton required" "×→×" chosen (segmentedButton @"Pick" required options)
-    , bench "segmentedButton optional" "×→×" optionals (segmentedButton @"Pick" (optional @"chosen") options)
+    , bench "select" "×→×" chosen (select @"Pick" {} options)
+    , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)
+    , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" {} options)
+    , bench "radioButton" "×→×" chosen (radioButton @"Pick" options)
+    , bench "radioButtonUnpicked" "×→×" picks (radioButtonUnpicked @"Pick" @"chosen" options)
+    , bench "radioButtonOptional" "×→×" picks (radioButtonOptional @"Pick" @"chosen" @"unchosen" options)
+    , bench "segmentedButton" "×→×" chosen (segmentedButton @"Pick" options)
+    , bench "segmentedButtonUnpicked" "×→×" picks (segmentedButtonUnpicked @"Pick" @"chosen" options)
+    , bench "segmentedButtonOptional" "×→×" picks (segmentedButtonOptional @"Pick" @"chosen" @"unchosen" options)
     , bench "button" "×→+" rows (button @"Go" {})
     , bench "outlinedButton" "×→+" rows (outlinedButton @"Go" {})
     , bench "textButton" "×→+" rows (textButton @"Go" {})
@@ -58,7 +60,7 @@ lawBenchMDC2 = do
   grouped = [ { "Customer": { "Name": "alpha" }, other: 1 }, { "Customer": { "Name": "beta" }, other: 2 } ]
   options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
-  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
+  picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]
   lists = [ { items: [ { id: 1, title: "first" }, { id: 2, title: "second" } ] }, { items: [ { id: 2, title: "second" } ] } ]
   events = [ .event "hello", .event "world" ]

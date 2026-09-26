@@ -91,8 +91,14 @@ module PUI.Web.MDC2
   , outlinedTextField
   , overline
   , radioButton
+  , radioButtonUnpicked
+  , radioButtonOptional
   , segmentedButton
+  , segmentedButtonUnpicked
+  , segmentedButtonOptional
   , select
+  , selectUnpicked
+  , selectOptional
   , confirmed
   , simpleDialog
   , slider
@@ -113,7 +119,7 @@ import Prelude hiding (div)
 import Control.Monad.State (gets)
 import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Data.Array (findIndex, mapWithIndex, (!!))
-import Data.Foldable (foldMap, for_)
+import Data.Foldable (foldMap, for_, traverse_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap, wrap)
@@ -122,14 +128,13 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Traversable (for)
 import Data.Variant (case_, inj, match, on, prj) as Variant
 import Data.Profunctor (rmap) as Profunctor
-import Data.Lens (Prism')
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, shown, staticHTML, staticText, text, textOf, uniqueId, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, shown, staticHTML, staticText, text, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -558,19 +563,33 @@ checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l)
 -- | visible and comparable at a glance. Beyond about five options, or where
 -- | the options don't deserve the space, use `select`.
 -- |
--- | The selection argument says what the field holds: `required` (the
--- | option itself — the model always has one) or `optional @"chosen"` (a
--- | variant whose case `chosen` is the made choice, seeded at an unmade case
--- | the application names; nothing is checked until the user picks, and
--- | whatever needs the choice adopts the made case). Either way the control
--- | is an editor: every feed is answered with the row, every pick stored.
+-- | The field holds the option itself, so the model always has one.
+-- | Two siblings hold a variant instead: `radioButtonUnpicked @l @c` for a
+-- | choice owed but not yet made, `radioButtonOptional @l @c @n` for one
+-- | the user may leave unmade. Every one is an editor: every feed is
+-- | answered with the row, every pick stored.
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
-radioButton :: forall @l f a rest r. IsSymbol l => Cons l f rest r => Eq a => Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioButton selection options = selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ (radioLeaf options)
+radioButton :: forall @l a rest r. IsSymbol l => Cons l a rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioButton options = radioButtonWith @l false (selectedAt @l) options
 
-radioLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
-radioLeaf options =
+-- | `radioButton` for a choice owed but not yet made: field `l` is a variant
+-- | whose case `c` is the made choice, seeded at an unpicked case; nothing
+-- | is checked until the user picks, and a pick cannot be taken back.
+radioButtonUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioButtonUnpicked options = radioButtonWith @l false (selectedUnpickedAt @l @c) options
+
+-- | `radioButton` for a choice the user may leave unmade: field `l` is a variant
+-- | whose case `c` is the made choice and case `n` none, seeded at `n`;
+-- | pressing the checked option again clears it, storing `n` again.
+radioButtonOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioButtonOptional options = radioButtonWith @l true (selectedOptionalAt @l @c @n) options
+
+radioButtonWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
+radioButtonWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ (radioLeaf clearable options)
+
+radioLeaf :: forall a. Eq a => Boolean -> Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
+radioLeaf clearable options =
   div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start;" $ wrap do
     groupName <- liftEffect uniqueId
     members <- for options \o -> do
@@ -583,12 +602,21 @@ radioLeaf options =
         radioComp <- newComponent material.radio."MDCRadio" radioNode
         ffComp <- newComponent material.formField."MDCFormField" root
         setFormFieldInput ffComp radioComp
-      pure { inputNode, value: o.value }
+      pure { press: root, click: inputNode, inputNode, value: o.value }
     mPropRef <- liftEffect $ Ref.new Nothing
-    let render ma = for_ members \m -> setChecked m.inputNode (Just m.value == ma)
+    selRef <- liftEffect $ Ref.new Nothing
+    let
+      render ma = do
+        Ref.write ma selRef
+        for_ members \m -> setChecked m.inputNode (Just m.value == ma)
+      emit ma = Ref.read mPropRef >>= traverse_ (_ $ ma)
     liftEffect $ for_ members \m -> listenNode m.inputNode "change" do
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop m.value
+      checked <- getChecked m.inputNode
+      sel <- Ref.read selRef
+      when (checked && sel /= Just m.value) do
+        Ref.write (Just m.value) selRef
+        emit (Just m.value)
+    liftEffect $ when clearable $ clearedOnRepress selRef members (render Nothing *> emit Nothing)
     pure
       { toUser: \ma -> do
           render ma
@@ -749,13 +777,29 @@ sliderLeaf live label = wrap do
 -- | above the choice once one is made. For a handful of options worth
 -- | comparing side by side, prefer `radioButton` or `segmentedButton`.
 -- |
--- | Same selection contract as `radioButton` (`required` or `optional
--- | @"chosen"`); the options are part of the control, not of the model.
-select :: forall @l f a rest r provided. IsSymbol l => Cons l f rest r => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-select provided selection options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf config options)
+-- | Same selection contract as `radioButton`, with the same two siblings
+-- | (`selectUnpicked`, `selectOptional`); the options are part of the
+-- | control, not of the model.
+select :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select provided options = selectWith @l false (selectedAt @l) provided options
 
-selectLeaf :: forall a. Eq a => { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) a
-selectLeaf config options = wrap do
+-- | `select` for a choice owed but not yet made: field `l` is a variant
+-- | whose case `c` is the made choice, seeded at an unpicked case; nothing
+-- | is checked until the user picks, and a pick cannot be taken back.
+selectUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectUnpicked provided options = selectWith @l false (selectedUnpickedAt @l @c) provided options
+
+-- | `select` for a choice the user may leave unmade: field `l` is a variant
+-- | whose case `c` is the made choice and case `n` none, seeded at `n`;
+-- | an empty first option clears it, storing `n` again.
+selectOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectOptional provided options = selectWith @l true (selectedOptionalAt @l @c @n) provided options
+
+selectWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
+selectWith clearable lift provided options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in lift $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf clearable config options)
+
+selectLeaf :: forall a. Eq a => Boolean -> { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
+selectLeaf clearable config options = wrap do
   labelId <- liftEffect uniqueId
   textId <- liftEffect uniqueId
   _ <- unwrap (staticHTML (markup labelId textId))
@@ -768,19 +812,19 @@ selectLeaf config options = wrap do
     busy <- Ref.read busyRef
     unless busy do
       idx <- getIntProp "selectedIndex" comp
-      for_ (options !! idx) \o -> do
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop o.value
+      mProp <- Ref.read mPropRef
+      for_ mProp \prop -> prop (_.value <$> (options !! (idx - offset)))
   pure
     { toUser: \ma -> do
         Ref.write true busyRef
         case ma of
-          Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setIntProp "selectedIndex" comp idx
+          Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setIntProp "selectedIndex" comp (idx + offset)
           Nothing -> setIntProp "selectedIndex" comp (-1)
         Ref.write false busyRef
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
+  offset = if clearable then 1 else 0
   markup labelId textId =
     "<div class=\"mdc-select mdc-select--filled\" style=\"min-width: 200px;\">"
       <> "<div class=\"mdc-select__anchor\" role=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-labelledby=\"" <> labelId <> " " <> textId <> "\">"
@@ -797,6 +841,7 @@ selectLeaf config options = wrap do
       <> "</div>"
       <> "<div class=\"mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth\">"
       <> "<ul class=\"mdc-deprecated-list\" role=\"listbox\">"
+      <> (if clearable then "<li class=\"mdc-deprecated-list-item\" data-value=\"\" role=\"option\" aria-selected=\"false\"><span class=\"mdc-deprecated-list-item__ripple\"></span></li>" else "")
       <> foldMapWithIndex optionMarkup options
       <> "</ul>"
       <> "</div>"
@@ -811,11 +856,26 @@ selectLeaf config options = wrap do
 -- | control, all visible, one selected — a filter row, a view switch, a
 -- | size. Compact where a radio group would be airy and a dropdown would
 -- | hide the alternatives. Same selection contract as `select`.
-segmentedButton :: forall @l f a rest r. IsSymbol l => Cons l f rest r => Eq a => Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-segmentedButton selection options = selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ (segmentedLeaf options)
+segmentedButton :: forall @l a rest r. IsSymbol l => Cons l a rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+segmentedButton options = segmentedButtonWith @l false (selectedAt @l) options
 
-segmentedLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) a
-segmentedLeaf options =
+-- | `segmentedButton` for a choice owed but not yet made: field `l` is a variant
+-- | whose case `c` is the made choice, seeded at an unpicked case; nothing
+-- | is checked until the user picks, and a pick cannot be taken back.
+segmentedButtonUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+segmentedButtonUnpicked options = segmentedButtonWith @l false (selectedUnpickedAt @l @c) options
+
+-- | `segmentedButton` for a choice the user may leave unmade: field `l` is a variant
+-- | whose case `c` is the made choice and case `n` none, seeded at `n`;
+-- | clicking the selected segment again clears it, storing `n` again.
+segmentedButtonOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+segmentedButtonOptional options = segmentedButtonWith @l true (selectedOptionalAt @l @c @n) options
+
+segmentedButtonWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
+segmentedButtonWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ (segmentedLeaf clearable options)
+
+segmentedLeaf :: forall a. Eq a => Boolean -> Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
+segmentedLeaf clearable options =
   div >>> cl "mdc-segmented-button" >>> cl "mdc-segmented-button--single-select" >>> "role" := "radiogroup" $ wrap do
     segments <- for options \o -> do
       -- aria-label = the choice label verbatim (MD2 uppercases the rendered
@@ -824,13 +884,18 @@ segmentedLeaf options =
       node <- gets _.sibling
       pure { node, value: o.value }
     mPropRef <- liftEffect $ Ref.new Nothing
-    let render msel = for_ segments \seg -> do
-          setClassIf seg.node "mdc-segmented-button__segment--selected" (Just seg.value == msel)
-          setAttribute seg.node "aria-checked" (if Just seg.value == msel then "true" else "false")
+    selRef <- liftEffect $ Ref.new Nothing
+    let render msel = do
+          Ref.write msel selRef
+          for_ segments \seg -> do
+            setClassIf seg.node "mdc-segmented-button__segment--selected" (Just seg.value == msel)
+            setAttribute seg.node "aria-checked" (if Just seg.value == msel then "true" else "false")
     liftEffect $ for_ segments \seg -> listenNode seg.node "click" do
-      render (Just seg.value)
+      sel <- Ref.read selRef
+      let picked = if clearable && sel == Just seg.value then Nothing else Just seg.value
+      render picked
       mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop seg.value
+      for_ mProp \prop -> prop picked
     pure
       { toUser: \ma -> do
           render ma

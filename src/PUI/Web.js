@@ -338,3 +338,11 @@ export function onClickXY(node) {
   };
 }
 
+
+// afterTask :: Effect Unit -> Effect Unit — run once the current task (and
+// the microtasks custom elements defer their own click handling to) is done
+export function afterTask(action) {
+  return function () {
+    setTimeout(action, 0);
+  };
+}

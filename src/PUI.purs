@@ -64,9 +64,6 @@ module PUI
   , every
   , foreach
   , observed
-  , optional
-  , module Selections
-  , required
   , resolveFor
   , updated
   , module Adopters
@@ -80,8 +77,7 @@ import Prelude
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (elem, foldl, for_)
-import Data.Lens (Optic, Prism', prism')
-import Data.Lens (Prism') as Selections
+import Data.Lens (Optic)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
@@ -126,7 +122,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, contract, inj, match, prj)
+import Data.Variant (class Contractable, contract, inj, match)
 import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
@@ -1054,25 +1050,6 @@ observed status = wrap do
         st.fromUser \_ -> pure unit
         Ref.write (Just prop) mPropRef
     }
-
-
--- | The **always-chosen** selection: a selector leaf's field holds the
--- | option itself, so the model has a choice at all times and every pick
--- | replaces it — `select @"Milk" {} required milks`. It is `identity`, the
--- | prism whose preview never misses: the widget always shows the field.
-required :: forall a. Prism' a a
-required = identity
-
--- | The **possibly-unmade** selection: the field is a variant whose case `c`
--- | is the made choice — `radioGroup @"Duration (min)" {} (optional @"chosen")
--- | durations` over `[ chosen :: … , unchosen :: {} ]`, seeded at the unmade
--- | case the application names. The widget shows nothing checked on every
--- | other case, a pick stores case `c`, and every feed is answered with the
--- | row, so an unmade choice flows as honest knowledge; the stages demanding
--- | the selection adopt the made case (`# inCase @"chosen" roomOf`,
--- | `# provided @"complete" plan`). It is the case prism at `c`.
-optional :: forall @c a b s. IsSymbol c => Cons c a b s => Prism' [ | s ] a
-optional = prism' (inj (Proxy @c)) (prj (Proxy @c))
 
 -- | The **tick source**: an occurrence of case `l` every `interval`, out of
 -- | the terminal record — the timer's `× → +` leaf, exactly as a click

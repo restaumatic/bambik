@@ -46,6 +46,8 @@ module PUI.Web.HTML
   , runComponentInNode
   , section
   , select
+  , selectUnpicked
+  , selectOptional
   , span
   , strong
   , table
@@ -72,14 +74,13 @@ import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (case_, inj, match, on)
-import Data.Lens (Prism')
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
-import PUI.Web (selectedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
 
 -- UIs
 
@@ -139,23 +140,36 @@ textArea = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
 
 -- | One choice out of a fixed list — the native `<select>` of `<option>`s,
 -- | with no chrome and no label of its own.
--- | The selection argument says what the field holds: `required` (the
--- | option itself — the model always has one) or `optional @"chosen"` (a
--- | variant whose case `chosen` is the made choice, seeded at an unmade case
--- | the application names; nothing is checked until the user picks, and
--- | whatever needs the choice adopts the made case). Either way the control
--- | is an editor: every feed is answered with the row, every pick stored.
+-- | The field holds the option itself, so the model always has one.
+-- | Two siblings hold a variant instead: `selectUnpicked @l @c` for a
+-- | choice owed but not yet made, `selectOptional @l @c @n` for one
+-- | the user may leave unmade. Every one is an editor: every feed is
+-- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-select :: forall @l f a rest r. IsSymbol l => Cons l f rest r => Eq a => Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-select selection options = selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ wrap do
+select :: forall @l a rest r. IsSymbol l => Cons l a rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select options = selectWith @l false (selectedAt @l) options
+
+-- | `select` for a choice owed but not yet made: field `l` is a variant
+-- | whose case `c` is the made choice, seeded at an unpicked case; nothing
+-- | is checked until the user picks, and a pick cannot be taken back.
+selectUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectUnpicked options = selectWith @l false (selectedUnpickedAt @l @c) options
+
+-- | `select` for a choice the user may leave unmade: field `l` is a variant
+-- | whose case `c` is the made choice and case `n` none, seeded at `n`;
+-- | an empty first option clears it, storing `n` again.
+selectOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectOptional options = selectWith @l true (selectedOptionalAt @l @c @n) options
+
+selectWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
+selectWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "select" (void $ unwrap optionLeaves)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   liftEffect $ void $ addEventListener "change" node $ const do
     picked <- getValue node
-    for_ (Int.fromString picked >>= (options !! _)) \o -> do
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop o.value
+    mProp <- Ref.read mPropRef
+    for_ mProp \prop -> prop (_.value <$> (Int.fromString picked >>= (options !! _)))
   pure
     { toUser: \ma -> do
         case ma of
@@ -166,6 +180,10 @@ select selection options = selectedAt @l selection $ "name" := reflectSymbol (Pr
   where
   optionLeaves :: PUI Web {} {}
   optionLeaves = wrap do
+    when clearable do
+      element "option" (pure unit)
+      noneNode <- gets _.sibling
+      liftEffect $ setAttribute noneNode "value" ""
     forWithIndex_ options \idx o -> do
       element "option" (void $ unwrap (staticText o.label))
       optionNode <- gets _.sibling

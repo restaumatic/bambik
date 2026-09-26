@@ -4,9 +4,8 @@ import Prelude hiding (div)
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI (optional, required)
 import PUI.Web (choice, clicked, dynamic, each, inCase, onClickedXY, provided, shown, shownEach, shownWhen, staticText, text)
-import PUI.Web.HTML (body, button, div, input, output, progress, rangeInput, select, textArea)
+import PUI.Web.HTML (body, button, div, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
 lawBenchHTML = do
@@ -16,8 +15,9 @@ lawBenchHTML = do
     , bench "textArea" "×→×" texts (textArea @"Name")
     , bench "rangeInput" "×→×" quantities (rangeInput @"Amount")
     , bench "progress" "×→×" fractions (progress @"Progress" _.fraction)
-    , bench "select required" "×→×" chosen (select @"Pick" required options)
-    , bench "select optional" "×→×" optionals (select @"Pick" (optional @"chosen") options)
+    , bench "select" "×→×" chosen (select @"Pick" options)
+    , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" options)
+    , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
     , bench "text" "×→×" titled (text _.title)
     , bench "dynamic" "×→×" titled (dynamic \r -> staticText r.title)
     , bench "each" "×→×" units (each [ "a", "b" ] staticText)
@@ -38,7 +38,7 @@ lawBenchHTML = do
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
-  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
+  picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   titled = [ { title: "first", other: 1 }, { title: "second", other: 2 } ]
   units = [ {}, {} ]
   gated = [ { mode: .on { n: "shown" }, "Name": "alpha", other: 1 }, { mode: .off {}, "Name": "beta", other: 2 } ]

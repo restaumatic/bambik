@@ -12,12 +12,11 @@ import Prelude (class Eq, otherwise, show, (#), ($), (*), (-), (/), (<), (<<<), 
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Data.Array (foldl, length, mapWithIndex)
 import Data.Int (round, toNumber)
-import Data.Maybe (Maybe)
 import Data.Number (max)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons, class Union)
-import PUI (Ocular, PUI, Prism', blank, foreach, muted)
+import PUI (Ocular, PUI, blank, foreach, muted)
 import PUI.Web (OptCaption(..), Web, attrWith, shown, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
@@ -58,11 +57,11 @@ leaderboard f =
     ( labelMedium $ staticText (reflectSymbol (Proxy @l)) ) # shown
     list ( ( listItem $ text entryLine ) # foreach @"name" f ) # muted
 
-rangePicker :: forall @l provided f a rest r. IsSymbol l => Cons l f rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-rangePicker provided selection options =
+rangePicker :: forall @l provided a rest r. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+rangePicker provided options =
   div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Semigroupoid.do
     ( labelMedium $ staticText config.label ) # shown
-    segmentedButton @l selection options
+    segmentedButton @l options
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 

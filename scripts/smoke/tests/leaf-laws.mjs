@@ -8,6 +8,8 @@
 //   2 Answer      ×→× — every feed answered within its step by exactly one
 //                 row; ×→+ — a feed answers nothing, it arms the source
 //
+// Optional selectors are then cleared by their face's own gesture and must
+// store the none case (the bench's first sample) exactly once.
 // Variant-input shapes (+→×, +→+) owe nothing; their entries are only
 // checked to register and accept a feed. Emitters are then clicked once to
 // check the replay half of the ×→+ protocol: the click leaves as the leaf's
@@ -26,7 +28,33 @@ const clickable = [
   'sl-button', 'fluent-button', 'button', '.mdc-deprecated-list-item', 'li',
 ].join(', ')
 
+// The clearing gesture of each optional selector face, on its bench section:
+// press the checked radio again, click the selected segment, or pick the
+// empty option (Shoelace: its clear button).
+const clear = `(section) => {
+  const radio = [...section.querySelectorAll('input[type=radio], md-radio, fluent-radio')].find(r => r.checked)
+  if (radio) {
+    ;(radio.closest('.mdc-form-field, label, fluent-field') ?? radio).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    radio.click()
+    return 'radio'
+  }
+  const segment = section.querySelector('.mdc-segmented-button__segment--selected, .md3-segmented-button__segment--selected')
+  if (segment) { segment.click(); return 'segment' }
+  const native = section.querySelector('select')
+  if (native) { native.value = ''; native.dispatchEvent(new Event('change')); return 'select' }
+  const shoelace = section.querySelector('sl-select')
+  if (shoelace) { shoelace.shadowRoot.querySelector('[part~="clear-button"]').click(); return 'sl-select' }
+  const fluent = section.querySelector('fluent-dropdown')
+  if (fluent) { fluent.value = ''; fluent.dispatchEvent(new Event('change')); return 'fluent-dropdown' }
+  const md3 = section.querySelector('md-filled-select')
+  if (md3) { md3.selectedIndex = 0; md3.dispatchEvent(new Event('change')); return 'md-filled-select' }
+  const mdc2 = section.querySelector('.mdc-select .mdc-deprecated-list-item[data-value=""]')
+  if (mdc2) { mdc2.click(); return 'mdc-select' }
+  return null
+}`
+
 const drive = (name) => `(async () => {
+  const clear = ${clear}
   const e = window.__laws[${JSON.stringify(name)}]
   const wait = () => new Promise(r => setTimeout(r, ${settle}))
   await wait()
@@ -48,7 +76,17 @@ const drive = (name) => `(async () => {
     await wait()
     click = { host: host.tagName.toLowerCase(), emitted: e.since(at).map(x => x.value) }
   }
-  return { shape: e.shape, samples: e.samples, registration, steps, click }
+  let cleared = null
+  if (${JSON.stringify(name)}.endsWith('Optional')) {
+    const section = document.querySelector('section[data-bench=' + JSON.stringify(${JSON.stringify(name)}) + ']')
+    const at = e.log.length
+    const gesture = clear(section)
+    await wait()
+    const checked = [...section.querySelectorAll('input[type=radio], md-radio, fluent-radio')].filter(r => r.checked).length
+      + section.querySelectorAll('.mdc-segmented-button__segment--selected, .md3-segmented-button__segment--selected').length
+    cleared = { gesture, emitted: e.since(at).map(x => x.value), checked }
+  }
+  return { shape: e.shape, samples: e.samples, registration, steps, click, cleared }
 })()`
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -70,6 +108,10 @@ export const run = async ({ ev, assertEq, sleep, page }) => {
         assertEq(same(s.second, s.first), true, `${at} Repetition: feeding sample ${s.k} again answers the same (${JSON.stringify(s.first)} then ${JSON.stringify(s.second)})`)
         assertEq(s.late.length, 0, `${at} Answer within the step: nothing arrives after feed ${s.k} returns (late ${JSON.stringify(s.late)})`)
       }
+    }
+    if (r.cleared) {
+      assertEq(same(r.cleared.emitted, [r.samples[0]]), true, `${at} clearing (${r.cleared.gesture}) stores the none case once (got ${JSON.stringify(r.cleared.emitted)})`)
+      assertEq(r.cleared.checked, 0, `${at} clearing (${r.cleared.gesture}) leaves nothing checked`)
     }
     if (r.shape === '×→+') {
       for (const s of r.steps) {

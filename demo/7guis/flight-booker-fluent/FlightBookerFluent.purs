@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, atCase, debounced, forCases, mvu, required, blank)
+import PUI (action, atCase, debounced, forCases, mvu, blank)
 import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.Fluent (body, body1, button, card, dropdown, messageBar, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,7 +14,7 @@ flightBookerFluent =
   body $
     card $ Semigroupoid.do
       ( Semigroupoid.do
-        dropdown @"Flight type" {} required
+        dropdown @"Flight type" {}
           [ choice @"one-way", choice @"return" ]
         textField @"Start date (DD.MM.YYYY)" {}
         textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType

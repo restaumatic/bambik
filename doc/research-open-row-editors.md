@@ -368,7 +368,7 @@ row-walking class (the 2026-08-13 rejection), `updated` keeps its name
 and Mealy shape for every real payload and every stage whose emitters
 mean different things (the "second name" decline), and the case stays
 for the trace to print — only its `match` restatement goes. Twelve sites
-in five families (counter ×6, todomvc's Add and Clear completed, inbox's
+in five families (counter ×6, todo-list's Add and Clear completed, inbox's
 Compose) read `# applied f`; six view modules lost their
 `const`/`(<<<)`/`match` imports. The multi-handler `const <<< f`
 branches (circle-drawer's undo/redo, inbox's sort menu and dialog

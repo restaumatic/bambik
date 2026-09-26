@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, atCase, debounced, forCases, mvu, required, blank)
+import PUI (action, atCase, debounced, forCases, mvu, blank)
 import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, card, select, textField, toast)
@@ -15,7 +15,7 @@ flightBookerShoelace =
   body $
     card $ Semigroupoid.do
       ( Semigroupoid.do
-        select @"Flight type" {} required
+        select @"Flight type" {}
           [ choice @"one-way", choice @"return" ]
         textField @"Start date (DD.MM.YYYY)" {}
         textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType

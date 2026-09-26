@@ -4,9 +4,8 @@ import Prelude
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI (optional, required)
 import PUI.Web (choice, staticText)
-import PUI.Web.Shoelace (body, button, progressBar, rating, select, sliderLive, textArea, textField, toast, toggleSwitch)
+import PUI.Web.Shoelace (body, button, progressBar, rating, select, selectOptional, selectUnpicked, sliderLive, textArea, textField, toast, toggleSwitch)
 
 lawBenchShoelace :: Effect Unit
 lawBenchShoelace = do
@@ -18,8 +17,9 @@ lawBenchShoelace = do
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
     , bench "rating" "×→×" ratings (rating @"Stars" {})
     , bench "progressBar" "×→×" fractions (progressBar @"Progress" _.fraction)
-    , bench "select required" "×→×" chosen (select @"Pick" {} required options)
-    , bench "select optional" "×→×" optionals (select @"Pick" {} (optional @"chosen") options)
+    , bench "select" "×→×" chosen (select @"Pick" {} options)
+    , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)
+    , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" {} options)
     , bench "button" "×→+" rows (button @"Go" {})
     , bench "toast" "+→×" events toast
     ]
@@ -32,6 +32,6 @@ lawBenchShoelace = do
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
-  optionals = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
+  picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]
   events = [ .event "hello", .event "world" ]

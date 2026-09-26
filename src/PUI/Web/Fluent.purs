@@ -23,9 +23,13 @@ module PUI.Web.Fluent
   , card
   , divider
   , dropdown
+  , dropdownUnpicked
+  , dropdownOptional
   , messageBar
   , progressBar
   , radioGroup
+  , radioGroupUnpicked
+  , radioGroupOptional
   , ratingDisplay
   , slider
   , textField
@@ -38,7 +42,7 @@ import Prelude hiding (div)
 import Control.Monad.State (gets)
 import Data.Array ((!!), findIndex)
 import Data.FoldableWithIndex (foldMapWithIndex)
-import Data.Foldable (for_)
+import Data.Foldable (for_, traverse_)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
@@ -46,14 +50,13 @@ import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (field)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (case_, match, on) as Variant
-import Data.Lens (Prism')
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -81,8 +84,8 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --         (`<fluent-switch>`), `slider @l` (`<fluent-slider>` — Fluent's
 --         slider emits on every value change; the catalog has no
 --         commit/live split), and the type-changing `dropdown @l` and
---         `radioGroup @l` (`{ l :: f } → { l :: f }`, `f` the option under `required` or a
---         variant around it under `optional @c`);
+--         `radioGroup @l` (`{ l :: f } → { l :: f }`, `f` the option itself, or a
+--         variant around it for the `…Unpicked`/`…Optional` siblings);
 --       `×→×` displays — `progressBar` (`{ value :: Number } → {}`, the
 --         filled fraction 0–1) and `ratingDisplay`
 --         (`{ value :: Number } → {}` — Fluent's read-only star display,
@@ -229,15 +232,29 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: re
 
 -- | The **dropdown**: one choice out of a list too long to lay out in the
 -- | open.
--- | The selection argument says what the field holds: `required` (the
--- | option itself — the model always has one) or `optional @"chosen"` (a
--- | variant whose case `chosen` is the made choice, seeded at an unmade case
--- | the application names; nothing is checked until the user picks, and
--- | whatever needs the choice adopts the made case). Either way the control
--- | is an editor: every feed is answered with the row, every pick stored.
+-- | The field holds the option itself, so the model always has one.
+-- | Two siblings hold a variant instead: `dropdownUnpicked @l @c` for a
+-- | choice owed but not yet made, `dropdownOptional @l @c @n` for one
+-- | the user may leave unmade. Every one is an editor: every feed is
+-- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-dropdown :: forall @l f a rest r provided. IsSymbol l => Cons l f rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-dropdown provided selection options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
+dropdown :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+dropdown provided options = dropdownWith @l false (selectedAt @l) provided options
+
+-- | `dropdown` for a choice owed but not yet made: field `l` is a variant
+-- | whose case `c` is the made choice, seeded at an unpicked case; nothing
+-- | is checked until the user picks, and a pick cannot be taken back.
+dropdownUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+dropdownUnpicked provided options = dropdownWith @l false (selectedUnpickedAt @l @c) provided options
+
+-- | `dropdown` for a choice the user may leave unmade: field `l` is a variant
+-- | whose case `c` is the made choice and case `n` none, seeded at `n`;
+-- | an empty first option clears it, storing `n` again.
+dropdownOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+dropdownOptional provided options = dropdownWith @l true (selectedOptionalAt @l @c @n) provided options
+
+dropdownWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
+dropdownWith clearable lift provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in lift $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   element "fluent-dropdown" (void $ unwrap (staticHTML optionsMarkup))
   attribute "slot" "input"
   node <- gets _.sibling
@@ -248,9 +265,8 @@ dropdown provided selection options = let config = convertOptionsWithDefaults Op
     busy <- Ref.read busyRef
     unless busy do
       picked <- getStringProp "value" node
-      for_ (fromString picked >>= (options !! _)) \o -> do
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop o.value
+      mProp <- Ref.read mPropRef
+      for_ mProp \prop -> prop (_.value <$> (fromString picked >>= (options !! _)))
   pure
     { toUser: \ma -> do
         Ref.write true busyRef
@@ -261,14 +277,29 @@ dropdown provided selection options = let config = convertOptionsWithDefaults Op
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
   where
-  optionsMarkup = "<fluent-listbox>" <> foldMapWithIndex optionMarkup options <> "</fluent-listbox>"
+  optionsMarkup = "<fluent-listbox>" <> (if clearable then "<fluent-option value=\"\"></fluent-option>" else "") <> foldMapWithIndex optionMarkup options <> "</fluent-listbox>"
   optionMarkup idx o = "<fluent-option value=\"" <> show idx <> "\">" <> o.label <> "</fluent-option>"
 
 -- | The **radio group**: one choice among a handful, every option visible
 -- | and comparable at a glance. Beyond about five options use `dropdown`.
 -- | Same selection contract as `dropdown`.
-radioGroup :: forall @l f a rest r provided. IsSymbol l => Cons l f rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Prism' f a -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioGroup provided selection options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in selectedAt @l selection $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
+radioGroup :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioGroup provided options = radioGroupWith @l false (selectedAt @l) provided options
+
+-- | `radioGroup` for a choice owed but not yet made: field `l` is a variant
+-- | whose case `c` is the made choice, seeded at an unpicked case; nothing
+-- | is checked until the user picks, and a pick cannot be taken back.
+radioGroupUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioGroupUnpicked provided options = radioGroupWith @l false (selectedUnpickedAt @l @c) provided options
+
+-- | `radioGroup` for a choice the user may leave unmade: field `l` is a variant
+-- | whose case `c` is the made choice and case `n` none, seeded at `n`;
+-- | pressing the checked option again clears it, storing `n` again.
+radioGroupOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioGroupOptional provided options = radioGroupWith @l true (selectedOptionalAt @l @c @n) provided options
+
+radioGroupWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
+radioGroupWith clearable lift provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in lift $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   members <- element "fluent-radio-group" do
     forWithIndex options \idx o -> do
       member <- element "fluent-field" do
@@ -281,25 +312,33 @@ radioGroup provided selection options = let config = convertOptionsWithDefaults 
         pure { radioNode, value: o.value }
       fieldNode <- gets _.sibling
       liftEffect $ setAttribute fieldNode "label-position" "after"
-      pure member
+      pure { press: fieldNode, click: member.radioNode, radioNode: member.radioNode, value: member.value }
   groupNode <- gets _.sibling
   liftEffect $ setAttribute groupNode "slot" "input"
   mPropRef <- liftEffect $ Ref.new Nothing
+  selRef <- liftEffect $ Ref.new Nothing
+  let
+    -- the group's value setter is the sanctioned selection path, and it
+    -- needs the group bound (its bind-time sync would clear earlier
+    -- per-radio writes)
+    render ma = do
+      Ref.write ma selRef
+      case ma of
+        Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> selectGroupValue groupNode (show idx)
+        Nothing -> selectGroupValue groupNode ""
+    emit ma = Ref.read mPropRef >>= traverse_ (_ $ ma)
   -- listen per radio (the group's own sync can lag); the model echo below
   -- re-feeds through the group's value setter, which restores exclusivity
   liftEffect $ for_ members \m -> listenNode m.radioNode "change" do
     checked <- getChecked m.radioNode
-    when checked do
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop m.value
+    sel <- Ref.read selRef
+    when (checked && sel /= Just m.value) do
+      Ref.write (Just m.value) selRef
+      emit (Just m.value)
+  liftEffect $ when clearable $ clearedOnRepress selRef members (render Nothing *> emit Nothing)
   pure
     { toUser: \ma -> do
-        -- the group's value setter is the sanctioned selection path, and it
-        -- needs the group bound (its bind-time sync would clear earlier
-        -- per-radio writes)
-        case ma of
-          Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> selectGroupValue groupNode (show idx)
-          Nothing -> selectGroupValue groupNode ""
+        render ma
     , fromUser: \prop -> Ref.write (Just prop) mPropRef
     }
 

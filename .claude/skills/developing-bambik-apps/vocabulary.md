@@ -34,7 +34,7 @@ direction module headers.
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | one value, formatted | `text f` — the read function, named in the logic module: `headline4 (text countLine) # shown` | counter | writing.md *copy is a function, not a field*; doc/research-copy-is-a-function.md |
-| one field verbatim (already copy) | `text _.title` — an accessor section, no named function for a bare read | todomvc, inbox | same |
+| one field verbatim (already copy) | `text _.title` — an accessor section, no named function for a bare read | todo-list, inbox | same |
 | a sentence, a prefixed or unit-suffixed value, text composed from several fields | one named function, glue included: `headlineSmall (text balanceLine) # shown` | order-form's summary; cashbox's balance line | writing.md *A composed line is one function* |
 | a **number** as a bar, gauge or stars | the quantity leaf: label = accessible name, value = read function — `progressBar @"Elapsed" elapsedFraction` | timer, quiz, meeting-booker | writing.md *copy is a function, not a field* |
 | pure chrome inside a pipeline (a card's caption) | `(subtitle1 $ staticText "…") # shown` | order-form | writing.md *Pass-through stages* |
@@ -46,7 +46,7 @@ direction module headers.
 | a live readout that should settle before it redraws | `stage # debounced { ms }` | flight-booker's itinerary line | PUI.purs (`debounced`) |
 | the flow must wait for the user's confirmation | `confirmed cfg $ content` (MDC2/MDC3) — the modal leads like any container | cashbox | writing.md *Modals* |
 | a value-computed attribute (style, coordinates, colour) | `attrWith "style" f` on the element | calculator, cells, color-mixer | HTML.purs (`attrWith`) |
-| a class that depends on the value | `# clWhen predicate "class"` | todomvc | HTML.purs (`clWhen`) |
+| a class that depends on the value | `# clWhen predicate "class"` | todo-list | HTML.purs (`clWhen`) |
 | structure that genuinely varies with the value | the `dynamic` / `each` builders | markdown-previewer | HTML.purs; writing.md *Collections* |
 
 ## Editing
@@ -57,8 +57,9 @@ direction module headers.
 | a card-headed group nesting a sub-model | `group @"Customer" $ Semigroupoid.do …` (MDC2/MDC3) — surface, heading and field in one word, the label stamped as the accessible group name, leading its lines like any container; the focus is anything `field @l` takes (a record, a `bracketed` variant, a collection's array) | order-form; potluck; reorder | MDC2.purs / MDC3.purs (`group`); writing.md *Component citizenship* |
 | a reusable sub-form over a flat sub-row (no wrapper field) | `addressForm # subStrong` | parcel | RecordToRecord.purs (`subStrong`) |
 | an invariant between **edited** fields — editing one implies the other | `editor # settled normalize` — its only job; every `# settled` in the demos sits on an editor, never feeding a display | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *copy is a function, not a field* |
-| a selection that always has a value | `select @l {} required [ choice @"…", … ]` — the field is the option | flight-booker | PUI.purs (`required`) |
-| a selection that may still be unmade | `dropdown @l {} (optional @"chosen") […]` — the field is a named two-case variant, seeded `.unchosen {}`; consumers adopt the made case | meeting-booker | PUI.purs (`optional`) |
+| a selection that always has a value | `select @l {} [ choice @"…", … ]` — the field is the option | flight-booker | MDC2.purs (`select`) |
+| a selection owed but not yet made | `dropdownUnpicked @l @"chosen" {} […]` — every selector's `…Unpicked` sibling: the field is a named two-case variant, seeded `.unchosen {}`; a pick cannot be taken back; consumers adopt the made case | meeting-booker's Room | Fluent.purs (`dropdownUnpicked`) |
+| a selection the user may leave unmade | `dropdownOptional @l @"ordered" @"none" {} […]` — every selector's `…Optional` sibling: the same two-case variant, seeded at `none`, and the face can clear back to it (an empty option; pressing the checked radio or selected segment again) | meeting-booker's Catering | Fluent.purs (`dropdownOptional`) |
 | a bounded quantity | the model holds `{ current, min, max, step }`; `sliderLive @l {}` edits it | timer, circle-drawer | writing.md *Code style → Types and values* |
 | two controls editing **one** field | two successive stages over it, `slider @l {}` then `rangeInput @l` | tip-calculator | writing.md *Component citizenship* |
 | a variant-valued field with an editor per case | `( Semigroupoid.do selector; pane # inCase @l selection; … ) # bracketed @l stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; RecordToRecord.purs (`bracketed`) |
@@ -67,14 +68,14 @@ direction module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| a button that changes the model | `button @"Count" {} # applied increment` — `increment :: state -> state`, the click's payload unread | counter; todomvc's Add | PUI.purs (`applied`) |
+| a button that changes the model | `button @"Count" {} # applied increment` — `increment :: state -> state`, the click's payload unread | counter; todo-list's Add | PUI.purs (`applied`) |
 | an event whose payload the model folds in | `clicked @"picked" _.key content # foreach … # updated (match { picked: handler })` | quiz, tic-tac-toe | PUI.purs (`updated`) |
 | the handler's shape | `payload -> state -> state`, both records exact | cashbox: `applyRefund :: { amount } -> { balance } -> { balance }` | writing.md *Code style → Business functions* |
 | … several payload-less buttons sharing one stage | `const <<< f` per branch | circle-drawer: `"Undo": const <<< undo, "Redo": const <<< redo` | same |
 | … the payload replaces the state | `const` | timer's Reset | same |
 | … the payload is ignored | `const f` | stopwatch: `const recordLap` | same |
 | … a constant patch | `const (const patch)`, or carried on the button: `button @l {} # with patch` and `const` | checkout; cashbox | same |
-| a clicked collection element naming itself | `clicked @"picked" _.key content` (whole payload: `identity`) | todomvc, cells | RecordToVariant.purs (`toCase`) |
+| a clicked collection element naming itself | `clicked @"picked" _.key content` (whole payload: `identity`) | todo-list, cells | RecordToVariant.purs (`toCase`) |
 | a button whose *outcome* the business computes | `button @l {} # toCases outcomeOf` | checkout's Next/Back; signup-form | RecordToVariant.purs (`toCases`) |
 | one event case routed to its own stage | `stage # atCase @l` inside `VariantToVariant.do` | order-form; reorder | VariantToVariant.purs (`atCase`) |
 | some event cases intercepted, the rest passing straight | `( VariantToVariant.do … ) # subChoice` | cashbox | VariantToVariant.purs (`subChoice`) |
@@ -105,7 +106,7 @@ direction module headers.
 | the whole array → the whole array, edited in place | `editor # edited @"id"` | reorder | PUI.purs (`edited`) |
 | one `{ key, value }` at a time → tagged per-element output | `item # dispatched envelopeOf` | departures | PUI.purs (`dispatched`) |
 | one `{ key, value }` at a time → the growing array | `item # accumulated envelopeOf` | scoreboard | PUI.purs (`accumulated`) |
-| a selectable list (MDC2) | `listOf @l _.key { selected: _.done } rowsOf item` | todomvc, crud | MDC2.purs (`listOf`) |
+| a selectable list (MDC2) | `listOf @l _.key { selected: _.done } rowsOf item` | todo-list, crud | MDC2.purs (`listOf`) |
 | a collection display that passes the model through | `item # shownEach @l rowsOf` | stopwatch | HTML.purs (`shownEach`) |
 
 ## App shapes

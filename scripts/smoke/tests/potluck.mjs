@@ -1,5 +1,5 @@
 // The container action (Data.Profunctor.Acting `acted`) over per-guest dish
-// selectors under `optional @"chosen"`: every guest's
+// `segmentedButtonUnpicked @"Dish" @"chosen"` selectors: every guest's
 // choice is honest knowledge from the seed on, so the page says who is still
 // choosing (the `waiting` case of `menuState`) and prints the menu once the
 // table is complete (`complete`), a re-choice re-rendering it whole; row

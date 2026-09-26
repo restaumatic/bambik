@@ -20,7 +20,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, atCase, debounced, forCases, mvu, required)
+import PUI (action, atCase, debounced, forCases, mvu)
 import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -30,7 +30,7 @@ flightBookerMDC2 =
   body $
     card $ Semigroupoid.do
     ( Semigroupoid.do
-      select @"Flight type" {} required
+      select @"Flight type" {}
         [ choice @"one-way", choice @"return" ]
       filledTextField @"Start date (DD.MM.YYYY)" {}
       filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
@@ -45,7 +45,7 @@ flightBookerMDC2 =
 ```
 
 **The imports.** Three vocabularies and nothing else: `PUI` for the words
-that shape data flow (`mvu`, `required`, `debounced`, `action`, `atCase`,
+that shape data flow (`mvu`, `debounced`, `action`, `atCase`,
 `forCases`), `PUI.Web` for the words every vocabulary shares (`choice`,
 and the display stages `shownWhen`, `inCase`, `text`), and `PUI.Web.MDC2` for the design system — its `body` included:
 every vocabulary exports the entry under that one name and signature,
@@ -70,12 +70,14 @@ shows the outcome. Code order is DOM order *and* data order.
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed with
 `# mvu plannedTrip`.
 
-- `select @"Flight type" {} required [ choice @"one-way", choice @"return" ]`
+- `select @"Flight type" {} [ choice @"one-way", choice @"return" ]`
   — the leaf's type argument is the caption *and* the model field, so this
   edits `{ "Flight type" :: [ "one-way" :: {}, "return" :: {} ] }`. Each
-  `choice @l` states an option's copy once, as its case. `required` says a
-  selection always exists: the model holds the variant itself, not a
-  `Maybe` — the selector is an editor of that field, answering every feed.
+  `choice @l` states an option's copy once, as its case. The plain
+  `select` says a selection always exists: the model holds the variant
+  itself, not a `Maybe` — the selector is an editor of that field,
+  answering every feed (`selectUnpicked` would hold a choice owed but not
+  yet made, `selectOptional` one the user may leave unmade).
 - `filledTextField @"Start date (DD.MM.YYYY)" {}` — the label carries the
   whole copy, format hint included; the `{}` is empty presentation config.
 - `filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType`
@@ -269,7 +271,7 @@ the logic is the ordinary one.
 - **temperature-converter** — two editors kept consistent with `settled`:
   the surviving job of `settled`, an invariant among *edited* fields.
 - **flight-booker** — this file.
-- **todomvc** — a collection (`listOf`, `foreach`), a selectable list emitting
+- **todo-list** — a collection (`listOf`, `foreach`), a selectable list emitting
   its key as `listOf @l _.key`, a filter selector.
 - **checkout** — a wizard: `folding` loops the step state silently, and two
   buttons carry their own cases into one loop case with `toCases`.

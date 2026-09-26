@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import OrderFormLogic (awayLine, deliveryDistance, deliveryLine, dineInLine, distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentOf, fulfillmentState, loadOrder, orderLine, paidLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime, takeawayLine)
-import PUI (action, armed, atCase, bracketed, debounced, forCase, looped, required, settled, updated, with)
+import PUI (action, armed, atCase, bracketed, debounced, forCase, looped, settled, updated, with)
 import PUI.Web (choice, inCase, shown, shownWhen, staticText, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar, titleMedium)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -43,7 +43,7 @@ orderFormMDC3 =
         ( titleMedium $ staticText "Total" ) # shown
         filledTextField @"Total" {}
       group @"Payment" $ Semigroupoid.do
-        segmentedButton @"Method" required
+        segmentedButton @"Method"
           [ choice @"cash", choice @"card" ]
         filledTextField @"Paid" {}
         ( bodyLarge $ text payingLine ) # shown

@@ -107,9 +107,9 @@ combinator laws below fail without them.
    completed by stages, and are now (2026-09-26) plain editors —
    `{ l :: f | r } → { l :: f | r }`, answering every feed with the row,
    the unmade state a value of `f` rather than a missing one (`f` a
-   variant with a made case under `optional @c`, the option itself under
-   `required`); the selection prism's law `preview (review a) = Just a`
-   is what makes a pick's echo the pick.
+   variant with a made case under the `…Unpicked`/`…Optional` selectors,
+   the option itself otherwise); a pick's echo is the pick, and an
+   optional selector's clear stores its none case.
    "Once" is exact since the same audit:
    `inCase` echoes only while its pane is detached (attached, the editor's
    own echo is the release) and `drawer` sequences its nav into its content

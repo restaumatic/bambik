@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
-import PUI (armed, forCase, mvu, required, updated, with)
+import PUI (armed, forCase, mvu, updated, with)
 import PUI.Web (choice, shown, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
@@ -22,11 +22,11 @@ espressoBarMDC3 =
           tabBar @"Drink"
             [ choice @"Espresso", choice @"Cappuccino", choice @"Latte" ]
           filledTextField @"Your name" {}
-          segmentedButton @"Size" required
+          segmentedButton @"Size"
             [ choice @"Small", choice @"Medium", choice @"Large" ]
-          select @"Milk" {} required
+          select @"Milk" {}
             [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ]
-          radioButton @"Roast" required
+          radioButton @"Roast"
             [ choice @"Light", choice @"Medium", choice @"Dark" ]
           sliderLive @"Sugar" {}
           chipSet Semigroupoid.do

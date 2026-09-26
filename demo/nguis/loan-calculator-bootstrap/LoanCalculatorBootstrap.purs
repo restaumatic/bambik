@@ -5,7 +5,7 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import LoanCalculatorLogic (appliedLine, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
-import PUI (armed, forCase, mvu, required)
+import PUI (armed, forCase, mvu)
 import PUI.Web (choice, shown, staticText, text)
 import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (div)
@@ -19,7 +19,7 @@ loanCalculatorBootstrap =
         textField @"Applicant" {}
         sliderLive @"Amount (€)" {}
         sliderLive @"Term (years)" {}
-        select @"Purpose" {} required
+        select @"Purpose" {}
           [ choice @"Car", choice @"Home improvement", choice @"Holiday" ]
         toggleSwitch @"Payment protection insurance" {}
       ) # mvu cityCarLoan

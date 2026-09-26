@@ -3,8 +3,8 @@
 -- |   * **strength** — `Strong` (ecosystem class, imported): the unary power,
 -- |     minimal and interop-friendly.
 -- |
--- | The adopters here (`forProperty`/`required`)
--- | carry **no canonical label at all**: the leaf states its business label
+-- | The adopter here (`forProperty`)
+-- | carries **no canonical label at all**: the leaf states its business label
 -- | once, as its own type argument, and each adopter reads it back out of
 -- | the closed singleton row via `RowToList`'s fundep — so no layer
 -- | hard-codes a label and none is ever repeated.
