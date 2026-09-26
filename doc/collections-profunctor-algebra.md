@@ -285,7 +285,7 @@ pure treatments never see.
 - **`demo/nguis/potluck-mdc2/`** — the focused `acted` demo: per-guest dish
   editors lifted with `# acted _.name`, the menu summary withheld by the
   gather gate until every guest has chosen, retain-last on re-choices, row
-  nodes surviving every re-feed (`scripts/smoke/tests/potluck.mjs`).
+  nodes surviving every re-feed.
 - **The keyed-input members landed** (§6.3's deferral resolved): `dispatched`
   (+→+) and `accumulated` (+→×) in `PUI`, fed the runtime variant
   `{ key, value }` — the tag arrives in the input, so no key function; an

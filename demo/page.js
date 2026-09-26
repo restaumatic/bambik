@@ -27,19 +27,20 @@ const groupDemoWithNote = () => {
   // Comments move too: a pane's placeholders are comment nodes, and a pane
   // mounted at the top level must stay between its own placeholders or it
   // can never be detached again.
-  const collect = () => {
-    const mounted = [...document.body.childNodes].filter(n =>
-      !chrome.has(n) && n.nodeName !== "SCRIPT" &&
-      (n.nodeType === 1 || n.nodeType === 8 || (n.nodeType === 3 && n.textContent.trim())))
-    if (!mounted.length) return false
-    column.append(...mounted, note)
-    return true
-  }
+  const mounted = () => [...document.body.childNodes].filter(n =>
+    !chrome.has(n) && n.nodeName !== "SCRIPT" &&
+    (n.nodeType === 1 || n.nodeType === 8 || (n.nodeType === 3 && n.textContent.trim())))
+  // Moved a task after mounting, once custom elements have rendered: a
+  // Shoelace range moved before its first render throws from its
+  // disconnectedCallback, unobserving an input it has not built yet.
+  const collect = () => setTimeout(() => column.append(...mounted(), note))
   // Collect once the demo has mounted, then stop: it mutates its own DOM
   // afterwards, and a live observer would keep re-parenting its children.
-  if (!collect()) {
-    new MutationObserver((_, obs) => { if (collect()) obs.disconnect() })
-      .observe(document.body, { childList: true })
+  if (mounted().length) collect()
+  else {
+    new MutationObserver((_, obs) => {
+      if (mounted().length) { obs.disconnect(); collect() }
+    }).observe(document.body, { childList: true })
   }
 }
 

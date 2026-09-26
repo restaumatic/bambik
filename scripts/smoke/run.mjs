@@ -1,14 +1,15 @@
 #!/usr/bin/env node
-// Bambik smoke harness: serves the repo over HTTP, drives demos in headless
-// Chrome via CDP, and runs the assertions in tests/*.mjs. This is where the
-// carrier-only laws get their tests — the container action's keyed reconciliation
-// (identity follows the key), the empty/singleton collection laws, the
-// quiescence-driven event flow — alongside per-demo smokes; the value-level
-// laws live in test/Main.purs (`spago test`).
+// Bambik smoke harness: serves the repo over HTTP, drives pages in headless
+// Chrome via CDP, and runs the assertions in tests/*.mjs. Only what the laws
+// cannot reach lives here: the leaf-law bench (every published component
+// alone, including real input), the every-demo mount check, and the
+// carrier-only laws (the container action's identity following the key in
+// the DOM). The value-level laws live in test/ (`spago test`); an app's
+// wiring is implied by them and its own code, so no demo is walked.
 //
 //   npm run smoke              # all tests (bundle the demos first:
 //                              #   npm run bundle-demos)
-//   npm run smoke -- reorder   # only test files whose name matches
+//   npm run smoke -- leaf-laws # only test files whose name matches
 //
 // Chrome is discovered from $BAMBIK_CHROME, google-chrome, chromium, or
 // chromium-browser, and always launched headless on an ephemeral debug port
@@ -139,7 +140,8 @@ const main = async () => {
         }
         const sleep = ms => new Promise(r => setTimeout(r, ms))
         try {
-          await mod.run({ ev: session.ev, session, assertEq, sleep, page: page.label ?? page.url })
+          const open = url => openSession(cdpBase, base + url)
+          await mod.run({ ev: session.ev, session, assertEq, sleep, open, page: page.label ?? page.url })
         } catch (e) {
           console.log(`  FAIL ${name} crashed: ${e.message}`)
           failures++

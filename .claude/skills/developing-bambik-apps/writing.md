@@ -1088,11 +1088,12 @@ get in return, writing over conforming leaves:
   that has an unprimed field — and the watchdog below names it.
 - **Design systems are interchangeable.** The laws mention shapes, not
   catalogues, so a twin over another vocabulary behaves identically at
-  the boundary; the library's twin-swept smokes are that guarantee run.
+  the boundary; the library's leaf-law bench runs every vocabulary's
+  components against the same laws.
 
 What they do **not** guarantee: leaf conformance itself (the type cannot
-stop a `×→+` leaf emitting during its feed — the provider's burden, walked
-by the smoke suite), payload contracts (that a click carries the row last
+stop a `×→+` leaf emitting during its feed — the provider's burden,
+checked leaf by leaf on the library's bench), payload contracts (that a click carries the row last
 fed is `clicked`'s law, that an editor re-attaches its background is
 `field`'s), rendering counts (the laws hold up to stutter at the
 boundary; one rendering per feed is this carrier's step), and anything
@@ -1141,7 +1142,7 @@ writing the app, not an afterthought:
   "which state is on screen" is answered by the platform's inspector
   with no bambik-specific tooling — and a role + accessible-name
   locator addresses any citizen identically across the vocabulary twins
-  (the library's own twin-swept smokes are written that way).
+  (the library's tooltip walk is written that way).
 
 An unprimed *entry* needs neither: `body` demands input `{}`, so a
 forgotten seed is a compile error at the mount point naming the

@@ -24,7 +24,7 @@ lawBenchBootstrap = do
   where
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
   flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]
-  quantity current = { current, min: 0.0, max: 10.0, step: .discrete 1.0 }
+  quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }

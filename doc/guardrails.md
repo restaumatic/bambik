@@ -391,11 +391,15 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   1. `spago build` — library, tests, and all demos compile together;
   2. `spago test` — the value-level laws on probe carriers;
   3. `npm run bundle-demos` — every demo bundles;
-  4. `npm run smoke` — the headless-Chrome harness walks the live pages
-     (seeded renders, gates, wizards, reconciliation, toasts).
+  4. `npm run smoke` — in headless Chrome, every demo mounts clean (no
+     exception, no warning, no starving gate), every published leaf
+     keeps its laws and takes real input on the leaf-law bench, and the
+     carrier-only laws hold in the DOM.
   All four green is the precondition for merging anything. A demo that
-  compiles but misbehaves is a failure the same as a compile error —
-  which is why behaviour lives in smokes, not in eyeballs.
+  compiles but misbehaves is a failure the same as a compile error. An
+  app's wiring is not walked page by page: it is implied by the laws and
+  the app's own code, so the harness checks only what the laws cannot
+  reach — the carrier in a real browser.
 - A demo may change only when the demo itself is the subject of the
   change. A library change that forces demo edits to stay green is an
   **API break** and must be treated as one: deliberate, documented,
@@ -403,7 +407,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   drive-by fix in one demo to get the build past.
 - Coverage grows with the vocabulary and never shrinks: every new
   combinator or component lands with a demo reaching it *and* a law
-  test or smoke asserting its behaviour, so "the demos pass" is a
+  test or bench row asserting its behaviour, so "the demos pass" is a
   guarantee that tightens over time rather than decays.
 
 ### L16. The import tower: only the algebra layer touches the ecosystem's algebra.
@@ -534,8 +538,8 @@ these gates in order:
    `looped` standard). If it can't be derived and can't be proven
    irreducible, it stays out.
 2. **Laws.** State its laws in the module header before writing demos
-   against it; land value-level tests on the probe carrier, smoke tests
-   for carrier-only behaviour.
+   against it; land value-level tests on the probe carrier, bench rows or
+   smoke tests for carrier-only behaviour.
 3. **Subsumption sweep.** Ask what the new form makes derivable — and
    delete that. A feature that only adds is suspect; the best features
    shrink the library.

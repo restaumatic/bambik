@@ -60,7 +60,7 @@
 -- | is why this shape has no starvation: a silent source is lawful, and
 -- | an absent one is `silence` (below). Probes carry law and shape in
 -- | test/Main.purs (`answer ×→+` on the probe carrier's replay source; the
--- | real sources are walked by the smoke suite); 3–6 run over every
+-- | real sources are clicked on the leaf-law bench); 3–6 run over every
 -- | script to a bound in test/Exhaustive.purs.
 -- |
 -- | `silence` is also what an **absent event source is**. A `×→+` component that
