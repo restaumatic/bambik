@@ -3,7 +3,7 @@
 The 7GUIs flight booker: a one-way/return selector, one or two date fields,
 a live line describing the itinerary (or what is wrong with it), a Book
 button, and a confirmation. It is the smallest demo that crosses three of
-the four directions — editors (`×→×`), an event (`×→+`), an action (`+→+`)
+the four shapes — editors (`×→×`), an event (`×→+`), an action (`+→+`)
 and a status (`+→×`) — so once it reads plainly, every larger demo is the
 same moves repeated. The view is
 `demo/7guis/flight-booker-mdc2/FlightBookerMDC2.purs`, the logic
@@ -20,7 +20,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, atCase, debounced, forCases, mvu)
+import PUI (action, atCase, debounced, mvu)
 import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -41,12 +41,11 @@ flightBookerMDC2 =
       body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
-    snackbar # forCases bookingLine
+    snackbar bookingLine
 ```
 
 **The imports.** Three vocabularies and nothing else: `PUI` for the words
-that shape data flow (`mvu`, `debounced`, `action`, `atCase`,
-`forCases`), `PUI.Web` for the words every vocabulary shares (`choice`,
+that shape data flow (`mvu`, `debounced`, `action`, `atCase`), `PUI.Web` for the words every vocabulary shares (`choice`,
 and the display stages `shownWhen`, `inCase`, `text`), and `PUI.Web.MDC2` for the design system — its `body` included:
 every vocabulary exports the entry under that one name and signature,
 dressing the page for its catalogue before it mounts.
@@ -114,7 +113,7 @@ under one `# debounced itinerarySettleTime`.
 The stage's type is model → model: a display *is* a pass-through stage.
 
 **Stage 3 — `button @"Book" { icon: "flight_takeoff" }`.** The first
-direction change, `×→+`: fed the model, it emits `[ "Book" :: model ]` on
+shape change, `×→+`: fed the model, it emits `[ "Book" :: model ]` on
 click, replaying the last model it was fed. Its case is its caption; `icon`
 is presentation config.
 
@@ -124,8 +123,10 @@ is presentation config.
 bar shows while the `Aff` runs, and the outcome variant emits when it
 settles.
 
-**Stage 5 — `snackbar # forCases bookingLine`.** `+→×`: one snackbar serves
-both outcomes; `bookingLine` renders each case to its line of copy. Its
+**Stage 5 — `snackbar bookingLine`.** `+→×`: one snackbar serves both
+outcomes; its argument `bookingLine` is a record of per-case copy
+functions, rendering each case to its line of copy — the status's
+counterpart of a display's read function. Its
 output is `{}`, which is where every pipeline must end — no emission is
 ever dropped silently.
 
@@ -248,8 +249,8 @@ helper. It compiles and tests without a browser.
   function beside it.
 - `submit` — the `Aff` boundary. `parse` is shared with `bookingState`, so
   what the live line calls a problem is precisely what Book refuses.
-- `bookingLine` — the record of per-case copy functions behind
-  `snackbar # forCases`: every outcome case to its sentence.
+- `bookingLine` — the record of per-case copy functions the snackbar
+  takes: every outcome case to its sentence.
 
 **Two things worth noticing.** The rows are spelled out in full, eight
 times for the itinerary variant — deliberately: there are no `type`
@@ -274,8 +275,9 @@ the logic is the ordinary one.
 - **todo-list** — a collection (`listOf`, `foreach`), a selectable list emitting
   its key as `listOf @l _.key`, a filter selector.
 - **checkout** — a wizard: `folding` loops the step state silently, and two
-  buttons carry their own cases into one loop case with `toCases`.
-- **order-form** — all four directions in one screen: `looped` form with
+  buttons each emit their own case, introduced into one loop case with
+  `toCase`.
+- **order-form** — all four shapes in one screen: `looped` form with
   labelled groups (`group @"Customer" $ …`), a variant editor with
   `bracketed`, the debounced summary, `armed` buttons, dispatch, statuses.
 

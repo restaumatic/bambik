@@ -5,7 +5,7 @@ An index, not a rulebook. Every row points at the section of
 here says anything those do not. Read writing.md once; come back here when you
 know what the screen needs and not yet what the word for it is. Module paths
 are inside the fetched library, `.spago/bambik/<tag>/` — `HTML.purs` is
-`src/PUI/Web/HTML.purs`, `PUI.purs` is `src/PUI.purs`, and the four direction
+`src/PUI/Web/HTML.purs`, `PUI.purs` is `src/PUI.purs`, and the four shape
 modules are `extras/row-profunctor/Data/Profunctor/Row/*.purs`.
 
 One invariant spans every table: a view line names exactly one anchor —
@@ -27,7 +27,7 @@ invariant*.
 Rule of thumb: things that *follow* each other → `Semigroupoid.do`; things that
 *share one value* → a merge, named by the shape of what goes in and out
 (record `×`, variant `+`). Stated in: writing.md *The pipeline*; the four
-direction module headers.
+shape module headers.
 
 ## Showing data
 
@@ -41,7 +41,6 @@ direction module headers.
 | content that exists only in one state | `content # shownWhen @l classifierOf` (a display; an emitter takes `# provided @l classifierOf`, an editor `# inCase @l classifierOf`): one classifier names every state, each case carrying its pane's payload; a projection never decides, and no pane is gated on a `Maybe` | flight-booker's three `bookingState` panes; checkout: `# shownWhen @"placed" orderStatus`; calculator: `# shownWhen @"faulty" readout` | writing.md *Conditional visibility* |
 | an **editor** that exists in one mode | `editor # inCase @l classifier` | flight-booker's return date; meeting-booker's slider | writing.md *Conditional visibility* |
 | a list, displayed | `item # shownEach @l rowsOf` inside its container ocular | stopwatch's laps | writing.md *Pass-through stages*, *Collections* |
-| a labelled leaf reading one field of a wider row | `# forProperty` (selection, never formatting) | packaged controls | RecordToRecord.purs (`forProperty`) |
 | a display inside a collection item or pane payload | `text f` over the item/payload row — the row carries the *source* fields, the function formats them | stopwatch's laps; flight-booker's panes | writing.md *copy is a function, not a field* |
 | a live readout that should settle before it redraws | `stage # debounced { ms }` | flight-booker's itinerary line | PUI.purs (`debounced`) |
 | the flow must wait for the user's confirmation | `confirmed cfg $ content` (MDC2/MDC3) — the modal leads like any container | cashbox | writing.md *Modals* |
@@ -54,7 +53,7 @@ direction module headers.
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
 | a field of the model, edited | the leaf with the field as its label: `filledTextField @"First name" {}`, `checkbox @l {}`, `slider @l {}` | every form | writing.md *Component citizenship* |
-| a card-headed group nesting a sub-model | `group @"Customer" $ Semigroupoid.do …` (MDC2/MDC3) — surface, heading and field in one word, the label stamped as the accessible group name, leading its lines like any container; the focus is anything `field @l` takes (a record, a `bracketed` variant, a collection's array) | order-form; potluck; reorder | MDC2.purs / MDC3.purs (`group`); writing.md *Component citizenship* |
+| a card-headed group nesting a sub-model | `group @"Customer" $ Semigroupoid.do …` (MDC2/MDC3) — surface, heading and field in one word, the label stamped as the accessible group name, leading its lines like any container; the focus is anything `focusField @l` takes (a record, a `bracketed` variant, a collection's array) | order-form; potluck; reorder | MDC2.purs / MDC3.purs (`group`); writing.md *Component citizenship* |
 | a reusable sub-form over a flat sub-row (no wrapper field) | `addressForm # subStrong` | parcel | RecordToRecord.purs (`subStrong`) |
 | an invariant between **edited** fields — editing one implies the other | `editor # settled normalize` — its only job; every `# settled` in the demos sits on an editor, never feeding a display | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *copy is a function, not a field* |
 | a selection that always has a value | `select @l {} [ choice @"…", … ]` — the field is the option | flight-booker | MDC2.purs (`select`) |
@@ -75,8 +74,9 @@ direction module headers.
 | … the payload replaces the state | `const` | timer's Reset | same |
 | … the payload is ignored | `const f` | stopwatch: `const recordLap` | same |
 | … a constant patch | `const (const patch)`, or carried on the button: `button @l {} # with patch` and `const` | checkout; cashbox | same |
-| a clicked collection element naming itself | `clicked @"picked" _.key content` (whole payload: `identity`) | todo-list, cells | RecordToVariant.purs (`toCase`) |
-| a button whose *outcome* the business computes | `button @l {} # toCases outcomeOf` | checkout's Next/Back; signup-form | RecordToVariant.purs (`toCases`) |
+| a clicked collection element naming itself | `clicked @"picked" _.key content` (whole payload: `identity`) | todo-list, cells | VariantToVariant.purs (`toCase`) |
+| a button whose *outcome* the business computes | the button emits its own case; the outcome is decided where it is consumed — the fold's handler, or a status's copy function (`snackbar { "Sign up": signupLine }`) | signup-form | writing.md *emitters* |
+| two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn`, `goneOn` taking the button's own case | checkout's Next/Back | VariantToVariant.purs (`toCase`) |
 | one event case routed to its own stage | `stage # atCase @l` inside `VariantToVariant.do` | order-form; reorder | VariantToVariant.purs (`atCase`) |
 | some event cases intercepted, the rest passing straight | `( VariantToVariant.do … ) # subChoice` | cashbox | VariantToVariant.purs (`subChoice`) |
 | a whole button group made an emit stage | `( RecordToVariant.do … ) # armed` | order-form | RecordToVariant.purs (`armed`) |
@@ -94,8 +94,8 @@ direction module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| one status line per outcome case | `snackbar # forCase @"orderSubmitted" submittedLine` in `VariantToRecord.do` — sibling operands each own their case | order-form | VariantToRecord.purs (`forCase`) |
-| one status for a whole classified variant | `snackbar # forCases bookingLine` | flight-booker | VariantToRecord.purs (`forCases`) |
+| one status line per outcome case | `snackbar { orderSubmitted: submittedLine }` in `VariantToRecord.do` — sibling operands each own their case | order-form | writing.md *statuses* |
+| one status for a whole classified variant | `snackbar bookingLine` (a record of per-case copy functions) | flight-booker | writing.md *statuses* |
 
 ## Collections
 
@@ -117,7 +117,7 @@ direction module headers.
 | any of these, mounted | `body $ …`, `body` imported from the design-system module (`PUI.Web.HTML`'s at the plain floor) — one signature everywhere, each dressing the page for its catalogue before it mounts | every demo | HTML.purs (`body`); each vocabulary's header |
 | a pipeline with no loop of its own, seeded | `pipeline # with initial`; a form section inside it `# looped` | order-form; restaurant-menu | writing.md *App shape* |
 | a wizard whose step state loops silently | `# folding @"next" stepSeed` | checkout | RecordToVariant.purs (`folding`) |
-| a state field that loops output → input, invisible outside | `# feedback stateSeed` | auction | RecordToRecord.purs (`feedback`) |
+| a state field that loops output → input, invisible outside | `# feedback stateStart` (the state fields' starting value only) | auction | RecordToRecord.purs (`feedback`) |
 | an event that retries itself | `# iterate` | payment | VariantToVariant.purs (`iterate`) |
 | a counter that resumes where it left off | `# unfolding @"resume" seed` | ticket-dispenser | VariantToRecord.purs (`unfolding`) |
 
@@ -126,8 +126,8 @@ direction module headers.
 In a projection slot `identity` means "the whole value, verbatim": `clicked @l
 identity` (the whole row is the case payload), `toCase @l identity` (a
 dialog's whole release — cashbox),
-`foreach @l identity` (the fed value *is* the array — potluck). `shown` and
-`forProperty` take no projection, so it never appears with them. Stated in:
+`foreach @l identity` (the fed value *is* the array — potluck). `shown` takes
+no projection, so it never appears with it. Stated in:
 writing.md *Code style → Wiring*.
 
 ## What you may rely on

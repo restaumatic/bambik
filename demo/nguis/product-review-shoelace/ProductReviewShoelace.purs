@@ -4,7 +4,7 @@ import Prelude (Unit, ($), (#))
 
 import Effect (Effect)
 import ProductReviewLogic (freshImpression, previewLine, submittedLine)
-import PUI (armed, forCase, mvu)
+import PUI (armed, mvu)
 import PUI.Web (choice, shown, text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
@@ -26,4 +26,4 @@ productReviewShoelace =
       ) # mvu freshImpression
       p (text previewLine) # shown
       button @"Submit review" {} # armed
-      toast # forCase @"Submit review" submittedLine
+      toast { "Submit review": submittedLine }

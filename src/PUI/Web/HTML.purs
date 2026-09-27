@@ -71,13 +71,16 @@ import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (focusField)
+import Data.Profunctor.Row.VariantToVariant (forCases)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (case_, inj, match, on)
+import Data.Variant (class VariantMatchCases)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Union)
+import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
@@ -89,7 +92,7 @@ import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, a
 -- | shows the string it is given, reports every keystroke, and stamps its
 -- | label as the host `name`. The floor has no caption chrome of its own,
 -- | so a caption stays a sibling `label`+`staticText` merge — and the
--- | `field @l` lift is fused in here as in every vocabulary's editors, so
+-- | `focusField @l` lift is fused in here as in every vocabulary's editors, so
 -- | application code never lifts a scalar leaf itself.
 -- |
 -- | Typing is never interrupted — while the field has focus, values
@@ -97,7 +100,7 @@ import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, a
 -- | swallow a half-typed word; the field picks the model up again the
 -- | moment it loses focus.
 input :: forall @l r rest. IsSymbol l => Cons l String rest r => String -> PUI Web { | r } { | r }
-input type_ = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ wrap do
+input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ wrap do
   -- focus guard: skip the write while the user is in the field, but still
   -- echo — an editor owes every feed its answer (record-echo totality), and
   -- its field is one the gates wait for
@@ -121,7 +124,7 @@ input type_ = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ 
 -- | stamped) and same guarantee: typing is never interrupted by values
 -- | arriving from elsewhere.
 textArea :: forall @l r rest. IsSymbol l => Cons l String rest r => PUI Web { | r } { | r }
-textArea = field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -200,7 +203,7 @@ selectWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ 
 -- | compile error rather than a wrong screen. `step` is `.discrete n`
 -- | or `.continuous {}`, named like every other two-state field.
 rangeInput :: forall @l r rest. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => PUI Web { | r } { | r }
-rangeInput = field @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ wrap do
+rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -256,10 +259,19 @@ progress f = wrap do
 -- | itself).
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the output is built — `output # forCase @"booked" bookedLine` — and
+-- | the output is built — `output { booked: bookedLine }` — and
 -- | let the event carry the bare facts.
-output :: PUI Web [ event :: String ] {}
-output = el "output" $ textOf eventText
+output
+  :: forall r rl s s1
+   . RowToList r rl
+  => VariantMatchCases rl s1 String
+  => Union s1 () s
+  => { | r }
+  -> PUI Web [ | s ] {}
+output copy = outputFace # forCases copy
+
+outputFace :: PUI Web [ event :: String ] {}
+outputFace = el "output" $ textOf eventText
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

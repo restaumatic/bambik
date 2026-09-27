@@ -23,7 +23,7 @@ lawBenchFluent = do
     , bench "radioGroupUnpicked" "×→×" picks (radioGroupUnpicked @"Pick" @"chosen" {} options)
     , bench "radioGroupOptional" "×→×" picks (radioGroupOptional @"Pick" @"chosen" @"unchosen" {} options)
     , bench "button" "×→+" rows (button @"Go" {})
-    , bench "messageBar" "+→×" events messageBar
+    , bench "messageBar" "+→×" events (messageBar { event: identity })
     ]
   where
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]

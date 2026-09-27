@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, atCase, debounced, forCases, mvu)
+import PUI (action, atCase, debounced, mvu)
 import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -25,4 +25,4 @@ flightBookerMDC2 =
       body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
-    snackbar # forCases bookingLine
+    snackbar bookingLine

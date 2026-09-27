@@ -1,4 +1,4 @@
-module SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, register, rejectionLine, takenLine, usernameSettleTime, usernameStatus, validation, welcomeLine) where
+module SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, usernameSettleTime, usernameStatus, validation) where
 
 import Prelude (const, not, (<>), (==))
 
@@ -19,10 +19,8 @@ newApplicant =
 usernameSettleTime :: Number
 usernameSettleTime = 300.0
 
-register :: { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] } -> [ registered :: String, rejected :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] ]
-register applicant = case validate applicant of
-  Left problem -> .rejected problem
-  Right name -> .registered name
+signupLine :: { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] } -> String
+signupLine applicant = either rejectionLine welcomeLine (validate applicant)
 
 welcomeLine :: String -> String
 welcomeLine name = "Welcome, " <> name <> "!"

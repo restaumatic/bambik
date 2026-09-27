@@ -20,8 +20,8 @@ statusLine { amount, approval } = match
 retryLine :: { amount :: Number, attempt :: Int } -> String
 retryLine { attempt } = "Charge declined — retrying (attempt " <> show attempt <> ")"
 
-startCharge :: { amount :: Number } -> [ charge :: { amount :: Number, attempt :: Int } ]
-startCharge { amount } = .charge { amount, attempt: 0 }
+startCharge :: [ "Charge card" :: { amount :: Number } ] -> { amount :: Number, attempt :: Int }
+startCharge = match { "Charge card": \{ amount } -> { amount, attempt: 0 } }
 
 chargeFlaky :: { amount :: Number, attempt :: Int } -> Aff
   [ charged :: { attempt :: Int }

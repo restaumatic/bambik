@@ -21,10 +21,10 @@ unreachable branch in `splitVariant`; it returns a pure value and is not a
 carrier dependency, but a `effect` package pin would ride along.) What this
 root defines is a general algebra:
 
-- **Four merge classes**, one per direction, each the label-strictified
+- **Four merge classes**, one per shape, each the label-strictified
   `(M, N)`-monoidal structure for `M, N ∈ {×, +}`; the units are borrowed
   from `Category` (`identity` at the unit object) wherever a wire fits, so
-  every direction is a monoid on labelled rows.
+  every shape is a monoid on labelled rows.
 - **Row-granularity strengths and co-strengths**, the row forms of the optics
   in `extras/lenses`.
 - **The container action** (`Data.Profunctor.Acting`), one `μ` past the rows —

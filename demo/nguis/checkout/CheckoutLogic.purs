@@ -1,6 +1,6 @@
 module CheckoutLogic (cartLine, cartStep, checkoutStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine) where
 
-import Prelude ((<>))
+import Prelude (identity, (<>))
 
 import Data.Variant (match)
 
@@ -45,11 +45,11 @@ previousOf { step } = match
   , payment: \_ -> .back { step: .shipping {} }
   } step
 
-goneOn :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> [ next :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } ]
-goneOn = .next
+goneOn :: [ "Next" :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } ] -> { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+goneOn = match { "Next": identity }
 
-goneBack :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> [ next :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } ]
-goneBack = .next
+goneBack :: [ "Back" :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } ] -> { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+goneBack = match { "Back": identity }
 
 orderPlaced :: { status :: [ pending :: {}, placed :: {} ] }
 orderPlaced = { status: .placed {} }

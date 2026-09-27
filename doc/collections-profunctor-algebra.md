@@ -1,6 +1,6 @@
 # The collection problem in general profunctor algebra
 
-*Design note. Rejects the bespoke-class route (a `Sequencing` direction, or a
+*Design note. Rejects the bespoke-class route (a `Sequencing` shape, or a
 family of them) an earlier note had taken. Instead it locates
 what the library already does — merges, units, gates, strengths, co-strengths,
 optics, traces — inside **standard algebra**: monoidal profunctors, Tambara
@@ -62,9 +62,9 @@ protocol-respecting operands, it holds on the nose, because a feed is one
 step: the broadcast is batched and the gate releases once
 (doc/observational-semantics.md §4; both tested in test/Main.purs). So a
 gated merge is premonoidal counting renderings and monoidal counting
-channels. All four direction classes are instances:
+channels. All four shape classes are instances:
 
-| direction | (M, N) | binary form on plain types |
+| shape | (M, N) | binary form on plain types |
 |---|---|---|
 | `recordToRecord` | (×, ×) | `p a b -> p c d -> p (a × c) (b × d)` |
 | `recordToVariant` | (×, +) | `p a b -> p c d -> p (a × c) (b + d)` |
@@ -113,7 +113,7 @@ general notion behind the library's strength classes:
 
 - `Strong` = Tambara for the `×` self-action; `Choice` = Tambara for `+`.
   The Pastro–Street correspondence then *generates* the optics: lenses are
-  the optics of the `×` action, prisms of the `+` action — `field`,
+  the optics of the `×` action, prisms of the `+` action — `focusField`,
   `subStrong`, `focusCase` are their row-strict forms.
 - `Resolving`/`Retaining` are the library's genuine addition: Tambara-*like*
   structures for **mixed actions that only a stateful, temporal carrier
@@ -152,8 +152,8 @@ acting :: p a b -> p (F a) (F b)
 ```
 
 for polynomial `F`. At `F = Array` this is `Traversing`/`wander`. So the
-collection is **not a fifth direction and needs no bespoke class**: it is the
-statement that the existing direction algebra is *closed under `μ`*. `Strong`
+collection is **not a fifth shape and needs no bespoke class**: it is the
+statement that the existing shape algebra is *closed under `μ`*. `Strong`
 and `Choice` — which `PUI` already has — generate it. Rows are the finitary,
 `μ`-free, label-strict fragment of the same container grammar; `Array` is
 what the grammar produces one `μ` later. One algebra, two fragments.
@@ -233,7 +233,7 @@ The co-strengths are not a bambik invention either — they are **traces**:
 
 ## 6. What this replaces
 
-Instead of `Sequencing` (or a family of sequence directions), the general
+Instead of `Sequencing` (or a family of sequence shapes), the general
 inventory is:
 
 1. **Duoidal skeleton** — `⊳` and the `(M, N)`-monoidal `⊗`s, with comonoids
@@ -243,7 +243,7 @@ inventory is:
 2. **Tambara modules per action** — `Strong`, `Choice` (ecosystem);
    `Resolving`, `Retaining` (the stateful carrier's extra actions). Already
    implemented.
-3. **One container-action class** in place of any collection direction:
+3. **One container-action class** in place of any collection shape:
    `acting :: p a b -> p (F a) (F b)` for finitary containers, with the
    species/keyed refinement for stateful carriers. Its `(->)` instance is
    `map` — the laws (singleton retraction = yanking at the container,
@@ -259,7 +259,7 @@ The rejected route multiplied bespoke classes to cover the collection's
 cases; this route *deletes* the bespoke class it had and covers the cases
 with three standard notions the library de facto instantiates already. The
 library's real novelty stays visible and gets sharper: it is not the
-directions or the collection — it is being a **duplex, asynchronous, stateful
+shapes or the collection — it is being a **duplex, asynchronous, stateful
 Tambara module**, where more actions (mixed, temporal, keyed) exist than pure
 profunctor algebra provides, and where laxity has a price (the gate) that
 pure treatments never see.

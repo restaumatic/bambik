@@ -43,8 +43,10 @@ import Data.Foldable (for_)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (focusField)
+import Data.Profunctor.Row.VariantToVariant (forCases)
 import Data.Variant (case_, match, on) as Variant
+import Data.Variant (class VariantMatchCases)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -53,7 +55,8 @@ import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, clicked, el, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, textOf, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Union)
+import Prim.RowList (class RowToList)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
@@ -74,7 +77,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- the import:
 --
 --   * **components** — UI components with a model interface, every one a citizen
---     of exactly one row direction:
+--     of exactly one row shape:
 --       `×→×` editors — `textField @l`, `textArea @l`, `rating @l` (the
 --         star editor, `{ value :: Number }` — Shoelace's distinctive
 --         catalog entry), `sliderLive @l` (`<sl-range>` — reports per drag
@@ -85,9 +88,9 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --       `×→×` displays — `progressBar` (`<sl-progress-bar>`,
 --         `{ value :: Number } → {}`, the filled fraction 0–1);
 --       `×→+` events — `button @l` (`<sl-button variant="primary">`);
---       `+→×` statuses — `toast @l` (`<sl-alert>` shown on feed,
---         auto-dismissing via its own `duration`) — canonical
---         `[ event :: String ]` in, adopted via `# forCase @l`.
+--       `+→×` statuses — `toast` (`<sl-alert>` shown on feed,
+--         auto-dismissing via its own `duration`) — each taking
+--         its per-case copy record (`toast { booked: bookedLine }`).
 --   * **oculars** — shape-preserving decorators: `card { caption }`
 --     (`<sl-card>` with a header slot). Typography is deliberately absent:
 --     Shoelace styles plain HTML through its tokens, so the `PUI.Web.HTML`
@@ -120,7 +123,7 @@ eventLeaf chrome = clicked @l identity chrome
 -- | arriving from elsewhere. Attach it to a field of the model with
 -- | `# asField @l`.
 textField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (the shadow input keeps the host as `activeElement`),
   -- but still echo so the channel stays live
@@ -144,7 +147,7 @@ textField provided = let config = convertOptionsWithDefaults OptCaption { label:
 -- | The **multi-line text field**, `rows` lines tall — a note, a review, a
 -- | message. Otherwise `textField`.
 textArea :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
-textArea provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+textArea provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-textarea" (pure unit)
   attribute "label" config.label
   attribute "rows" (show config.rows)
@@ -173,7 +176,7 @@ textArea provided = let config = convertOptionsWithDefaults OptCaption { label: 
 -- | and a scale nobody supplied is a compile error rather than a wrong
 -- | screen. The label is drawn above the stars.
 rating :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, max :: Int } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-rating provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $
+rating provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ wrap do
     _ <- unwrap (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
     element "sl-rating" (pure unit)
@@ -213,7 +216,7 @@ rating provided = let config = convertOptionsWithDefaults OptCaption { label: re
 -- | drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number shows in the control's own tooltip while dragging.
 sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-range" (pure unit)
   attribute "label" config.label
   attribute "style" "width: 100%; min-width: 240px;"
@@ -250,7 +253,7 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
 -- | The label sits beside it and is part of the target, so clicking the
 -- | words toggles it too.
 toggleSwitch :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-switch" (void $ unwrap (staticText config.label))
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -353,10 +356,19 @@ progressBar f = wrap do
 -- | reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast # forCase @"submitted" thanksLine` — and
+-- | the toast is built — `toast { submitted: thanksLine }` — and
 -- | let the event carry the bare facts.
-toast :: PUI Web [ event :: String ] {}
-toast = wrap do
+toast
+  :: forall r rl s s1
+   . RowToList r rl
+  => VariantMatchCases rl s1 String
+  => Union s1 () s
+  => { | r }
+  -> PUI Web [ | s ] {}
+toast copy = toastFace # forCases copy
+
+toastFace :: PUI Web [ event :: String ] {}
+toastFace = wrap do
   w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ wrap do
     _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")

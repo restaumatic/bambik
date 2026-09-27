@@ -1,7 +1,7 @@
 # Why Bambik? A story of profunctor user interfaces
 
 *A long-form introduction: why the library exists at all, and how its
-vocabulary — directions, strengths and co-strengths, the nullary, unary and
+vocabulary — shapes, strengths and co-strengths, the nullary, unary and
 binary operators, the `Category` instance — falls out of one idea taken
 seriously.*
 
@@ -63,15 +63,15 @@ it, `fromUser` registers a callback for the values `o` it emits. The `m` is
 the monad that builds its face (for the DOM, `Web = StateT DOM Effect`).
 Everything below is structure *on* this type, not machinery beside it.
 
-## Directions: the compass
+## Shapes: the compass
 
 The input `i` and output `o` could be anything, but models worth having come
 in exactly two shapes: a **record** (`×`, "all of these at once" — a form, a
 settings page) and a **variant** (`+`, "one of these at a time" — an event,
-a status, a wizard step). Two shapes on each side give **four directions**,
+a status, a wizard step). Two row forms on each side give **four shapes**,
 and each is its own module under `Data.Profunctor.Row`:
 
-| direction | reading | typical citizen |
+| shape | reading | typical citizen |
 |---|---|---|
 | `× → ×` | editor | text field, checkbox, slider |
 | `× → +` | event | button, menu item |
@@ -79,7 +79,7 @@ and each is its own module under `Data.Profunctor.Row`:
 | `+ → +` | dispatch | backend call routing |
 
 Every Material Design component in `PUI/MDC2.purs` is a citizen of exactly one
-direction: `filledTextField @l` is `×→×`, `button @l` is `×→+`,
+shape: `filledTextField @l` is `×→×`, `button @l` is `×→+`,
 `snackbar @l` is `+→×`. An application is a journey around the compass:
 
 ```
@@ -88,10 +88,10 @@ load → form (×→×) → live summary → buttons (×→+) → backend (+→+
 
 ## Binary operators: the merges
 
-Each direction has one binary **merge** — how two UI components of that direction
+Each shape has one binary **merge** — how two UI components of that shape
 sit side by side and become one:
 
-- `recordToRecord` — two record-direction components merge — chrome
+- `recordToRecord` — two record-shape components merge — chrome
   beside displays, a selector beside the lines that read it; inputs may
   overlap (everyone may
   *read* a field), outputs must be disjoint (every field has exactly one
@@ -118,7 +118,7 @@ record field must be *produced* by exactly one operand — responsibility
 cannot be split, so those rows must be disjoint. Records are read-shared
 but write-owned; variants are emit-shared but handle-owned: the two shapes
 swap polarity as you cross from input to output, which is why there are
-genuinely four directions and not two with a flip.
+genuinely four shapes and not two with a flip.
 
 The library's constraint vocabulary spells this out. Each merge signature
 carries exactly two constraints, one per side:
@@ -157,7 +157,7 @@ there is no wrapping at the use site: every component carries its own
 label (`filledTextField @l` is already the whole-row editor at field
 `l` — fed the wide row, it edits its field and re-attaches the rest from
 the background its lens retains). The general lifter
-`field @l` exists for the other cases — lifting a raw scalar leaf, or
+`focusField @l` exists for the other cases — lifting a raw scalar leaf, or
 nesting a whole sub-composite as one field of a larger
 record.
 
@@ -188,14 +188,14 @@ A text field edits a `String`; your model is a whole order. **Strengths**
 are the unary operators that embed the small into the large — and this is
 where optics re-enter, now as UI combinators:
 
-- `Strong` (the `×` strength) gives `field @l` — the field lens, and the
+- `Strong` (the `×` strength) gives `focusField @l` — the field lens, and the
   lift that makes every label-indexed editor a whole-row citizen;
   `subStrong` focuses a whole sub-record while the background row rides
   along.
 - `Choice` (the `+` strength) gives `focusCase @l` — the case prism: handle one
   case, pass the others through.
 
-Those cover the same-shape directions. The mixed directions need strengths
+Those cover the diagonal shapes. The mixed shapes need strengths
 of their own, and here the library coins two:
 
 - **`Resolving`**: `p a b -> p (Tuple a c) (Either b c)` — a UI component that
@@ -222,7 +222,7 @@ the channel is primed. This is the **trace quartet**:
 
 | strength | co-strength | ties into | co-optic | row form | example |
 |---|---|---|---|---|---|
-| `Strong` | `Costrong` / `unfirst` | state feedback | `Colens` | `feedback` | a session-peak readout chasing its own output |
+| `Strong` | `Costrong` / `unfirst` (pointed: `unfirstFrom`) | state feedback | `Colens` | `feedback` | a session-peak readout chasing its own output |
 | `Choice` | `Cochoice` / `unleft` | iteration | `Coprism` | `iterate` | retrying a flaky publish with attempt+1 |
 | `Resolving` | `Coresolving` / `coresolve` | terminating fold | `Coshutter` | `folding @w` | an accumulating multi-step wizard |
 | `Retaining` | `Coretaining` / `coretain` | productive unfold | `Coreel` | `unfolding @w` | an activity meter counting every event |
@@ -273,7 +273,7 @@ subsumed them, which is how you know a design is converging.
 Finally the composition everything hangs on: `PUI m` is a `Semigroupoid` and
 `Category`. `ui1 >>> ui2` pipes one UI component's output into the next UI component's
 input, and `Semigroupoid.do` pipelines read top-to-bottom like the user's
-journey through the app — the compass walk from the Directions section is a
+journey through the app — the compass walk from the Shapes section is a
 single composite wire.
 
 And `identity`? It is not a no-op. It is the **echo wire**: whatever comes
@@ -286,7 +286,7 @@ whole design: in Bambik there is no boundary where "the algebra" ends and
 ## What the laws buy
 
 The algebra above comes with six laws, stated once in `Data.Profunctor.Row`
-and read at each of the four directions: two on components — a record
+and read at each of the four shapes: two on components — a record
 input is idempotent, and every feed is answered once at `×→×` and never at
 `×→+` — and four on the merges: monoid, projection (each operand sees only
 its part, counts only at its labels), preservation (a merge is again a
@@ -302,7 +302,7 @@ that makes the check complete ([observational-semantics.md](observational-semant
 
 ## The story in one line
 
-Four **directions** give the map; the binary **merges** lay UI components side by
+Four **shapes** give the map; the binary **merges** lay UI components side by
 side; the nullary **units** decorate and prime; the unary **strengths** let
 small UI components inhabit big models; the **co-strengths** tie every open
 channel into a living loop; and the **`Category`** instance strings the

@@ -30,7 +30,9 @@ import Data.Tuple (Tuple(..))
 -- | UI component's own last output** — the residual a lens would carry visibly in
 -- | the type is hidden, threaded through state instead. The collapsed form
 -- | shows why the `PUI` carrier gates it (there is no last output before the
--- | first emission). `feedback` is this optic at row granularity.
+-- | first emission). `feedback` is this optic at row granularity, with the
+-- | state channel started at a given value (`Data.Profunctor.PointedCostrong`)
+-- | instead of primed by an emission.
 type Colens s t a b = forall p. Costrong p => p a b -> p s t
 
 colens :: forall s t a b. (s -> b -> a) -> (b -> t) -> Colens s t a b

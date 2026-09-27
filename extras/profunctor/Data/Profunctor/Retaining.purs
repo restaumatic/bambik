@@ -22,7 +22,7 @@ import Data.Either (Either)
 import Data.Profunctor (class Profunctor)
 import Data.Tuple (Tuple)
 
--- | The **unary** sum→product strength for this direction: a **Mealy /
+-- | The **unary** sum→product strength for this shape: a **Mealy /
 -- | coroutine step**, the dual of `RecordToVariant`'s `Resolving`. `retain`
 -- | turns a transformer `p a b` into a step that consumes either a fresh input
 -- | `a` or a resumed state `c`, emitting an output `b` together with the next
@@ -53,7 +53,7 @@ import Data.Tuple (Tuple)
 -- | `Data.Lens.Reel`: existential constructors are sound, completeness is
 -- | not claimed.
 -- |
--- | This is the **bare strength** for the `+ → ×` direction (the analogue of
+-- | This is the **bare strength** for the `+ → ×` shape (the analogue of
 -- | `Strong`/`Choice`); the row combinator built on it is
 -- | `VariantToRecord.subRetaining` — exactly as `RecordToRecord.subStrong` is
 -- | built on `Strong`.

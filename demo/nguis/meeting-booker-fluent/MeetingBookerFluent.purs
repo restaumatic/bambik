@@ -5,7 +5,7 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import MeetingBookerLogic (blankBooking, bookedLine, plan, planLine, ratedRoom, roomOf, roomStars, seatOccupancy, seatsInRoom, seatsTaken)
-import PUI (forCase, mvu, settled)
+import PUI (mvu, settled)
 import PUI.Web (choice, inCase, provided, shown, shownWhen, staticText, text)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdownOptional, dropdownUnpicked, messageBar, progressBar, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (div)
@@ -36,4 +36,4 @@ meetingBookerFluent =
       ( Semigroupoid.do
         body1 (text planLine) # shown
         button @"Book the room" {} ) # provided @"complete" plan
-      messageBar # forCase @"Book the room" bookedLine
+      messageBar { "Book the room": bookedLine }

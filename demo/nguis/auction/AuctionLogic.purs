@@ -7,8 +7,8 @@ import Data.Number.Format (fixed, toStringWith)
 openingBid :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } }
 openingBid = { "Your bid ($)": biddingRange }
 
-noBids :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number }
-noBids = { "Your bid ($)": biddingRange, top: 0.0 }
+noBids :: { top :: Number }
+noBids = { top: 0.0 }
 
 bidLine :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
 bidLine r = "Your current bid: $" <> dollars r."Your bid ($)".current

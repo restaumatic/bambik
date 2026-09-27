@@ -14,7 +14,7 @@ This is a prototype of the idea of *profunctor user interfaces* for Web/Material
 bambik is consumed as a spago git package pinned to a release tag — no clone,
 nothing vendored. The [v0.1.5 release](https://github.com/restaumatic/bambik/releases/tag/v0.1.5)
 ships **`developing-bambik-apps`**, the authoring skill: how to bootstrap a
-project, the vocabulary and its four row directions, separation of concerns, the
+project, the vocabulary and its four row shapes, separation of concerns, the
 definitive code-style contract, and the build/verify workflow — with a scaffold
 that produces a working application, left running in dev mode.
 

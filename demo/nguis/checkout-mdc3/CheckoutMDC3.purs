@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (mvu, toCases, updated)
+import PUI (mvu, toCase, updated)
 import PUI.Web (provided, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, card)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,8 +21,8 @@ checkoutMDC3 =
         ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
         ( bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
         RecordToVariant.do
-          button @"Next" {} # toCases goneOn # provided @"onward" onwardFrom
-          button @"Back" {} # toCases goneBack # provided @"back" previousOf
+          button @"Next" {} # toCase @"next" goneOn # provided @"onward" onwardFrom
+          button @"Back" {} # toCase @"next" goneBack # provided @"back" previousOf
           button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep ) # folding @"next" cartStep # updated (match { "Place order": const (const orderPlaced) })
       ( bodyMedium $ text placedLine ) # shownWhen @"placed" orderStatus
     ) # mvu freshOrder

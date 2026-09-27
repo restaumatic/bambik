@@ -26,7 +26,8 @@
 -- | (doc §5): the seeded `×`-trace forms compose a `seeded` wire into a
 -- | positional loop no feed can reach, and it primes the loop only because
 -- | the answer comes before the first input. On `(->)` earliness is vacuous
--- | (no time), and `feedback`'s `Costrong` is unavailable anyway.
+-- | (no time). `feedback` needs no seeded wire at all: it starts its state
+-- | channel directly (`Data.Profunctor.PointedCostrong`).
 -- |
 -- | The **seeded echo wire** `seeded a :: p a a` — `identity`'s pass-through
 -- | plus the point — is *derived*, through `Choice`: the point sits on the
@@ -40,7 +41,7 @@
 -- | superclass, beside `Category` for the wire); on `(->)` it is `identity`,
 -- | the seed invisible, as a timeless wire should have it. It is the
 -- | initial-state supply the knot-tying row forms build on
--- | (`feedback`/`folding`/`unfolding` prime their state channels by
+-- | (`folding`/`unfolding` prime their state channels by
 -- | composing a `seeded` into the traced chain), while `with a w = announce
 -- | a >>> w` is the discharge form (`Data.Profunctor.Row.RecordToRecord`) —
 -- | and the mount (`PUI.Web.HTML.body`) feeds the closed app `{}` once, the

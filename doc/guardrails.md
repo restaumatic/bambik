@@ -33,7 +33,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   standard algebra first (monoidal structure, Tambara modules, traces,
   container actions — [collections-profunctor-algebra.md](collections-profunctor-algebra.md)).
   A bespoke concept is admitted only with a proof of irreducibility.
-  *Precedents:* the `Sequencing` direction was rejected for the standard
+  *Precedents:* the `Sequencing` shape was rejected for the standard
   container action (`Acting`); `synced`/`latch` dissolved into `looped`;
   debouncing turned out to be a theorem (`coresolve (resolve g) =
   debounced g`), not a gadget. `looped` is the model irreducibility proof
@@ -58,23 +58,24 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   a trivial always-`Done` `resolve`, a `Default`-fabricated `retain` —
   is the cardinal sin: it makes the types lie.
 
-### L3. The compass is closed: four directions, and only four.
+### L3. The compass is closed: four shapes, and only four.
 
 - Models come in exactly two shapes — Record (`×`, all-at-once, entity)
   and Variant (`+`, one-at-a-time, event) — giving exactly four
-  directions. There MUST NOT be a fifth: anything that looks like one is
+  shapes. There MUST NOT be a fifth: anything that looks like one is
   either a corollary of closure (collections = the algebra closed under
   `μ`) or wrongly conceived.
-- Every component MUST be a citizen of exactly one direction, and its
+- Every component MUST be a citizen of exactly one shape, and its
   row MUST speak the **business label**, stated once as the leaf's own
   type argument (`text @"Total"`, `filledTextField @"First name" {}`,
   `button @"Submit order" {}`, `select @"Milk" cfg opts`). No canonical
-  label (`value`/`clicked`/`event`) appears in application code: adopters
-  that need a leaf's label derive it from the closed singleton row via
-  `RowToList`'s fundep (`forProperty`/`toCases`/
-  `forCase`/`forCases`; the view-side read adopters
-  `projection`/`projected` and the singular `forCase` are deleted —
-  displays are verbatim under the presentation-model rule,
+  label (`value`/`clicked`/`event`) appears in application code: business
+  functions are arguments of leaves, never adopters — a display takes its
+  read function, a status its per-case copy record, and an emitter emits
+  its own case (the adopters `toCases`/`forCase` and the application-facing
+  `forCases` are deleted, 2026-09-27; `forCases` survives as the status
+  face's vocabulary plumbing, `focusField`'s variant twin; the view-side
+  read adopters `projection`/`projected` went earlier,
   doc/research-presentation-model.md). Statuses keep their
   internal payload case private and derived. Components MUST NOT have
   scalar or polymorphic model interfaces; raw scalar leaves stay private
@@ -82,7 +83,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - **Shape is the type.** Every exported component MUST end in exactly
   one of the four row forms, each side a record or a variant:
 
-  | Type | Direction | Sort |
+  | Type | Shape | Sort |
   | --- | --- | --- |
   | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes that answer (`shownWhen`, `inCase`), stages |
   | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided` |
@@ -126,8 +127,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   record pun (the compiler forbids it); bind explicitly instead. An
   emitter MUST NOT be given a `label:` config: where a trace form's loop
   case would force two buttons to share one case under different words,
-  they are two business actions — each takes its own case and `toCases`
-  adopts it into the loop case. An editor's caption config is held to the
+  they are two business actions — each emits its own case and `toCase`
+  introduces the loop case from it. An editor's caption config is held to the
   same rule: the label carries the copy whole — punctuation, format hints
   and units included (`@"Start date (DD.MM.YYYY)"`, `@"Amount (€)"`) — and
   a caption that merely repeats what the label already says MUST move onto
@@ -155,23 +156,23 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   display lines fields would move copy back into state, reversing L17.
 - The **labelled group** `group @l` (MDC2/MDC3, admitted 2026-09-04) is
   the boundary confirmed, not breached: it is a component, not an
-  ocular — its label is the sub-record field it nests (`field @l` fused
+  ocular — its label is the sub-record field it nests (`focusField @l` fused
   with the card surface), doubling as the heading copy verbatim and the
   accessible group name (`role="group"`), so the label is an anchor
   doing work, never a dead parameter. The criterion it instantiates is
   the **leaf-fusion criterion**: `@l` fuses onto a wrapper exactly where
-  the label does work a trailing `# field @l` cannot. Chrome that gains
+  the label does work a trailing `# focusField @l` cannot. Chrome that gains
   a label this way is *renamed into the component sort* — the blind
   `card` stays for surfaces grouping no model, as `subStrong` stays for
   flat sub-row focus. The criterion's closure (2026-09-05): the
   plain-HTML floor's `input @l`/`textArea @l` fused too (the `name`
   stamp was always work the bracket could not do), and with every public
   editor lifted inside its vocabulary and sub-model nesting carried by
-  `group @l`, **`field` left the application surface** — it is no longer
+  `group @l`, **`focusField` left the application surface** — it is no longer
   re-exported from `PUI`, living as design-system plumbing beside
   `widenRecordInput`; a nesting no mechanism fits is a
   missing-vocabulary signal (L16), never a reason to reach for the
-  lens. Checkable form: `grep "field @" demo/` is empty, always.
+  lens. Checkable form: `grep "focusField @" demo/` is empty, always.
 
 ### L4. The merge law: sharing is inclusive, responsibility is exclusive.
 
@@ -357,8 +358,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   Deliberate discarding is its own visible word: `muted`, the counit
   (render and drop), written at the call site (`# muted` on a `foreach`
   that forwards its elements, or a packaged collection display echoing
-  its array); an adopted display keeps its `{}` through the input-side
-  adopter (`atField @l`, not `field @l`). Information may be lost only
+  its array); an adopted display keeps its `{}` by reading its field
+  through its own read function, not through `focusField @l`. Information may be lost only
   in writing.
 
 ### L14. The library stays small by rule, not by accident.
@@ -423,7 +424,7 @@ The codebase is three floors, each greppable:
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
   `wrap`/`unwrap`, `PUI.Web`, FFI) plus the same re-exported vocabulary
-  applications use (`field`, `recordToCase`, `projected`, `blank`).
+  applications use (`focusField`, `toCase`, `blank`).
   It never imports the ecosystem algebra: a design-system module proves
   the vocabulary complete by being its own first customer. **The floor is
   the namespace**: every web vocabulary is a submodule of its carrier
@@ -442,8 +443,8 @@ The codebase is three floors, each greppable:
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf opts
-rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, `forCase @l copyOf`,
-`forProperty`, `toCases outcomeOf`, `forCases lineOf`, `settled normalize`,
+rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, a status's copy record
+(`snackbar { booked: bookedLine }`), `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next word waiting to be coined — never a reason to import the
@@ -471,9 +472,7 @@ code below the UI) are algebra-layer material and exempt by location.
   announce *what* is 42%), so it is copy like an editor's caption, not
   a field reference: `progressBar @"Elapsed" elapsedFraction`.
   Quantity *editors* are untouched — a slider genuinely edits a field,
-  so `sliderLive @l` keeps label-as-field. `forProperty` survives for a
-  *labelled* leaf reading one field of a context-pinned wider row —
-  selection, never formatting.
+  so `sliderLive @l` keeps label-as-field.
 - A model field MUST exist because the app's state needs it, never
   because a display wanted a `String` — or a `Number`. `settled`
   therefore maintains invariants among **edited** fields only (two
@@ -488,11 +487,12 @@ code below the UI) are algebra-layer material and exempt by location.
   Checkable form: `npm run check-view-model` rejects
   `projection`/`projected` anywhere in `demo/` and any lambda in a
   `text` read.
-- Statuses adopt through `forCases` (a whole classified variant — the
-  classifier a record of per-case copy functions, the elimination the
-  mechanism's own) and its derived single-case convenience `forCase @l`
-  (`forCase @l f = forCases { l: f }` by law); their canonical
-  `[ event :: String ]` row stays private to the vocabulary.
+- A status takes its copy as its argument: a record of per-case copy
+  functions (`snackbar { booked: bookedLine }`), the elimination the
+  leaf's own — the status's counterpart of a display's read function.
+  Its canonical `[ event :: String ]` face stays private to the
+  vocabulary, lifted by `forCases` as an editor's face is by
+  `focusField`.
 - Rationale, census and laws: doc/research-copy-is-a-function.md, which
   partially reverses doc/research-presentation-model.md (keeping its
   testability motivation and its `settled` half); the application-side

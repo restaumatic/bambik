@@ -167,7 +167,7 @@ the gather gate).
 
 ### 3.1 Echo by shape: must, must not, may, may
 
-The three laws read off per direction give one **modality** each — what a
+The three laws read off per shape give one **modality** each — what a
 component of that shape owes on `toUser` (2026-09-11, from the vocabulary
 audit; "echo" is an emission produced by a feed, "release" the same act
 over retained state):
@@ -182,7 +182,7 @@ over retained state):
 The criterion behind the column: **the output shape decides whether anything
 is owed, the input shape decides how it is discharged.** A record output must
 be whole however its input arrived. With a feed on the input side the
-background is the retained feed and the wire is echo (`field @l` re-attaches
+background is the retained feed and the wire is echo (`focusField @l` re-attaches
 it); with an occurrence there is no feed to re-attach, so the background is
 the retained *contributions* and the wire is retention (`retain` withholds
 until its state channel has a value, `variantToRecord` retains the other
@@ -234,7 +234,7 @@ stands (2026-09-14, after `action`'s progress slot left the `×` side):
 
 - **Two granularities, one principle.** `recordToRecord` gates on owned
   fields across its operands: each side's last contribution is retained and
-  the union released only when both are known. `field @l` gates the
+  the union released only when both are known. `focusField @l` gates the
   background around one field: `Strong.first` withholds until the pair
   state has been fed once, then re-attaches what it retained. A leaf is a
   whole-row citizen because the lens supplies the background and the merge
@@ -283,7 +283,7 @@ quieter stage substituted anywhere only withholds; and a silent gate is
 either an operand breaking *Answer* (after its owned fields were fed) or
 an unprimed owned field (before), which the watchdog names. What stays
 outside: leaf conformance itself, the payload contracts of `clicked` and
-`field`, rendering counts (the boundary laws hold up to stutter; the step's
+`focusField`, rendering counts (the boundary laws hold up to stutter; the step's
 one release per feed is this carrier's, §4), and a variant input's response
 policy. The application-side statement is writing.md *What the laws
 guarantee*.
@@ -498,7 +498,7 @@ built such a merge — every demo ensemble *sequences* its whole-row editors
 with `Semigroupoid.do`, where each stage echoes once and nothing tears. That is
 not merely idiom: **the merge type forbids the parallel-editor shape
 outright**. `OwnedRecordOutputs` demands the two operands own *disjoint*
-label sets, while `field @l` makes every editor a whole-row citizen
+label sets, while `focusField @l` makes every editor a whole-row citizen
 `p { l | rest } { l | rest }` — input and output the same row `r`, the
 background retained and re-attached per emission. Two whole-row citizens
 therefore both claim the whole row, and no annotation satisfies the

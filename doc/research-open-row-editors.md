@@ -147,7 +147,7 @@ ecosystem's function-like `Semigroup` lifts **pointwise**
 as *the* semigroup of `PUI m a b` would give `<>` a different algebra on
 different carriers. The literature pointer is `ArrowPlus`'s `<+>` (the
 arrows' monoid, minus `arr`); no unit member, deliberately — the lawful
-unit differs by output shape (L5), so the units stay per-direction. No
+unit differs by output shape (L5), so the units stay per-shape. No
 `(->)` instance (a function cannot interleave two emission streams);
 `Semigroup r => Joining (Cont r)` runs both continuations and combines
 the answers, recorded in `Cont`'s exhaustive inventory. Laws (broadcast,
@@ -228,7 +228,7 @@ card row `{ title, year, rating, "Favorite" }` now narrows at the emitter,
 module; circle-drawer's canvas already emitted the exact `{ x, y }`. The
 rule as writing.md states it: a fold handler is the one-record rule's one
 carve-out, its two records being an occurrence and a retained state — two
-directions, not one row in disguise — with the degenerate shapes spelled
+shapes, not one row in disguise — with the degenerate shapes spelled
 by `const` (payload-only `const <<< f`, state-only `const f`, replace
 `const`, neither `const (const patch)`). Nine functions, 22 view lines,
 seven app families; the row layer lost one export and gained nothing.
@@ -298,7 +298,7 @@ What changed:
   `QualifiedDo.Semigroupoid`; then, `PUI` being a `Category` whose unit is
   the wire, `QualifiedDo.Category as Category` — bambik's complement under
   `extras/qualified-do/`, the ecosystem's sugar stopping at `Semigroupoid`.
-  The four merges keep their direction names. (Reversed 2026-09-16: the
+  The four merges keep their shape names. (Reversed 2026-09-16: the
   complement was the ecosystem's own `bind`/`discard` under a constraint the
   bodies never used, so `QualifiedDo.Category` was deleted and applications
   import `QualifiedDo.Semigroupoid as Category` — the spelling at every call

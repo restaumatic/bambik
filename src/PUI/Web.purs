@@ -114,7 +114,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (class Hosting, Ocular, PUI, Logged, diagnosticsOn, foreach, muted, replaying, setDiagnostics, setSink, setTracing)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs)
-import Data.Profunctor.Row.RecordToRecord (field, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (focusField, recordToRecord)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (Nil) as RL
 import Unsafe.Coerce (unsafeCoerce)
@@ -381,7 +381,7 @@ choice = { value: inj (Proxy :: Proxy l) {}, label: reflectSymbol (Proxy :: Prox
 -- | widget stores a value, so it has an editor's shape and owes an editor's
 -- | answer — every feed is answered with the row, and every pick is stored
 -- | into field `l`. Here the field is the option itself, so the model has a
--- | choice at all times. Vocabulary plumbing, beside `field @l`: every
+-- | choice at all times. Vocabulary plumbing, beside `focusField @l`: every
 -- | plain selector in every vocabulary is its leaf lifted with this.
 selectedAt :: forall @l a rest r. IsSymbol l => Row.Cons l a rest r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
 selectedAt = selectedWith @l Just identity
@@ -429,7 +429,7 @@ clearedOnRepress selRef members clear = do
 -- or a clear (`Nothing`) stores, if anything; `checkedOf <=< stored` must give
 -- back the pick, so a pick's echo is the pick
 selectedWith :: forall @l f a rest r. IsSymbol l => Row.Cons l f rest r => (f -> Maybe a) -> (Maybe a -> Maybe f) -> PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
-selectedWith checkedOf stored w = field @l $ wrap do
+selectedWith checkedOf stored w = focusField @l $ wrap do
   w' <- unwrap w
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
@@ -502,7 +502,7 @@ shownWhen f content = recordToRecord (attachedOn @l (\(r :: { | row }) -> f (uns
 -- | is *not* a payload to fold back into the row by hand
 -- | (`# provided @l paneOf # updated setField` with `setField`
 -- | the identity) — it is a whole-row editor whose existence is gated, and
--- | its `field @l` lift already re-attaches the rest of the row. The
+-- | its `focusField @l` lift already re-attaches the rest of the row. The
 -- | classifier reads a closed narrow row (the row-stating exception:
 -- | `fulfillment :: { selected :: [ … ] } -> [ … ]`), exactly as
 -- | `shownWhen`'s does. One release per feed either way: attached, the

@@ -46,8 +46,10 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (focusField)
+import Data.Profunctor.Row.VariantToVariant (forCases)
 import Data.Variant (case_, match, on) as Variant
+import Data.Variant (class VariantMatchCases)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -56,7 +58,8 @@ import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticText, text, textOf, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Union)
+import Prim.RowList (class RowToList)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
@@ -77,7 +80,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- the concept exists in both catalogs — the same names and signatures:
 --
 --   * **components** — UI components with a model interface, every one a citizen
---     of exactly one row direction:
+--     of exactly one row shape:
 --       `×→×` editors — `textField @l` (`.form-control`), `sliderLive @l`
 --         (`.form-range` — the native range input emits per drag step;
 --         Bootstrap has no commit-only slider; the label line carries a
@@ -89,9 +92,9 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --       `×→×` displays — `progress` (`{ value :: Number } → {}`, the
 --         filled fraction 0–1 — `.progress` over `.progress-bar`);
 --       `×→+` events — `button @l` (`.btn.btn-primary`);
---       `+→×` statuses — `toast @l` (`.toast` fixed at the bottom, shown
---         on feed and dismissed by the hand-wired timer) — canonical
---         `[ event :: String ]` in, adopted via `# forCase @l`.
+--       `+→×` statuses — `toast` (`.toast` fixed at the bottom, shown
+--         on feed and dismissed by the hand-wired timer) — each taking
+--         its per-case copy record (`toast { booked: bookedLine }`).
 --   * **oculars** — shape-preserving decorators: `card { caption }`
 --     (`.card` with a `.card-title`), `listGroup`/`listGroupItem`
 --     (`.list-group`), `badge { variant }` (`.badge.text-bg-*`).
@@ -123,7 +126,7 @@ eventLeaf chrome = clicked @l identity chrome
 -- | by values arriving from elsewhere. Attach it to a field of the model
 -- | with `# asField @l`.
 textField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
+textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in, but still echo so the channel stays live
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
@@ -161,7 +164,7 @@ textField provided = let config = convertOptionsWithDefaults OptCaption { label:
 -- | current number is shown at the end of the label line, since the control
 -- | has no readout of its own.
 sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
+sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   readout <- unwrap $ (label $ wrap do
       _ <- unwrap (span $ staticText config.label)
       unwrap ((span $ text _.readout) # cl "text-body-secondary")
@@ -250,7 +253,7 @@ selectWith clearable lift provided options = let config = convertOptionsWithDefa
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label is part of the target, so clicking the words toggles it too.
 toggleSwitch :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (div $ wrap do
+toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (div $ wrap do
   inputId <- liftEffect uniqueId
   element "input" (pure unit)
   node <- gets _.sibling
@@ -312,10 +315,19 @@ progress f = wrap do
 -- | happened and needs no reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast # forCase @"applied" appliedLine` — and let
+-- | the toast is built — `toast { applied: appliedLine }` — and let
 -- | the event carry the bare facts.
-toast :: PUI Web [ event :: String ] {}
-toast = wrap do
+toast
+  :: forall r rl s s1
+   . RowToList r rl
+  => VariantMatchCases rl s1 String
+  => Union s1 () s
+  => { | r }
+  -> PUI Web [ | s ] {}
+toast copy = toastFace # forCases copy
+
+toastFace :: PUI Web [ event :: String ] {}
+toastFace = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
       (div $ textOf eventText) # cl "toast-body")

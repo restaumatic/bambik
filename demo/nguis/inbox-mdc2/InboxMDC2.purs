@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
-import PUI (applied, forCase, mvu, observed, updated, with)
+import PUI (applied, mvu, observed, updated, with)
 import PUI.Web (provided, shown, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, card, dialog, fab, headline6, iconButton, listOf, menu, menuItem)
@@ -27,7 +27,7 @@ inboxMDC2 =
         ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
           button @"Delete" {} # with {}
           button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
-        banner # forCase @"Delete" (const inboxZeroLine) # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
+        banner { "Delete": (const inboxZeroLine) } # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
       fab @"Compose" { icon: "edit" } # applied composeMessage
       ( menu { label: "Sort" } $ RecordToVariant.do
         menuItem @"By sender" {}

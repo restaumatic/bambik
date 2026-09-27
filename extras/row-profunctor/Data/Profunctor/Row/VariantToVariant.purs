@@ -1,15 +1,40 @@
--- | `Variant → Variant` row profunctors: the direction class
--- | `VariantToVariant` — the binary **merge**, the one genuine per-carrier
--- | primitive — with its qualified-do sugar. One-at-a-time events dispatch to
--- | the operand handling their case (`ExclusiveRows` on input: exactly one
--- | handler per case); outputs may overlap (`InclusiveRows`). Over ecosystem
--- | `Choice`: `focusCase` (the value-level case prism, via `prismE`) and
--- | `subChoice` (sub-variant focus); over bare `Profunctor`: `atCase`
--- | (the closed-singleton unwrap, `RecordToRecord.atField`'s transpose);
--- | over `Cochoice`: `iterate` (the `Coprism` optic's row form). The
--- | `Coprism` optic itself is in `Data.Lens.Coprism`, and the
--- | focus/background dispatch `splitVariant` on the floor in
--- | `Data.Profunctor.Row` — neither mentions a row profunctor.
+-- | `Variant → Variant` (+ → +) row profunctors, organized (uniformly across
+-- | the four shape modules) as:
+-- |
+-- |   * **strength** — `Choice` (ecosystem, with a `(->)` instance): the
+-- |     unary power, the case prism. Its co-strength `Cochoice` is the
+-- |     ecosystem's too, and their optics are `Data.Lens.Prism` (existential
+-- |     constructor in `Data.Lens.Prism.Existential`) and
+-- |     `Data.Lens.Coprism` — neither the classes nor the optics mention a
+-- |     row, so none of them lives here, and the focus/background dispatch
+-- |     `splitVariant` sits on the floor, in `Data.Profunctor.Row`.
+-- |   * **shape class** — `VariantToVariant`, the binary **merge**: the
+-- |     one genuine per-carrier primitive, with its qualified-do sugar
+-- |     (`bind`/`discard`).
+-- |   * **free functions** — over the strength: `subChoice` (a sub-variant,
+-- |     the background cases passing) and `focusCase` (one case, the
+-- |     value-level prism); over bare `Profunctor`, the structural
+-- |     adopters `atCase` (the closed-singleton unwrap of an input case)
+-- |     and `toCase` (a bare output introduced as a case), plus
+-- |     `forCases` (each case of a variant rendered into a single-case
+-- |     status's own case); over the co-strength `Cochoice`: `iterate`
+-- |     (the `+`-diagonal trace at row granularity, the `Coprism` optic's
+-- |     row form).
+-- |
+-- | A word lives in the module of the sides it constrains: one polymorphic
+-- | on one side sits in the diagonal module of the side it constrains, so
+-- | the mixed modules hold only their strength, their trace and the words
+-- | that genuinely span both sides.
+-- |
+-- | Business functions are arguments of leaves, never adopters: a display
+-- | takes its read function, a status its per-case copy record
+-- | (`snackbar { booked: bookedLine }`), and an emitter emits its own case,
+-- | which the fold consumes. So the adopters left are structural — `atCase`
+-- | and `toCase` take their case as a type argument, since there the case
+-- | is the caller's to name — and `forCases` is **vocabulary plumbing**, the
+-- | variant-input twin of `RecordToRecord.focusField`: every status is its
+-- | canonical `[ event :: String ]` face under `forCases copy`, so it is
+-- | exported for the vocabularies and not re-exported by `PUI`.
 -- |
 -- | ## Laws at `+→+`
 -- |
@@ -50,7 +75,7 @@
 -- | 6 run over every script to a bound in test/Exhaustive.purs.
 -- |
 -- | One transpose of a `RecordToRecord` name is **deliberately absent**
--- | here: `field`'s
+-- | here: `focusField`'s
 -- | `+ → +` transpose — the closed-singleton case wrap
 -- | `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
 -- | subsumption step: it is already vocabulary-expressible as
@@ -60,80 +85,68 @@
 -- | detouring through an interception stage while the rest pass straight
 -- | through — and it is admitted below.
 module Data.Profunctor.Row.VariantToVariant
-  ( bind
+  ( class VariantToVariant
   , variantToVariant
-  , focusCase
-  , class VariantToVariant
+  , bind
   , discard
   , subChoice
-  , iterate
+  , focusCase
   , atCase
+  , toCase
+  , forCases
+  , iterate
   )
   where
-
 import Control.Category (identity)
 import Data.Either (Either(..), either)
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Lens.Prism.Existential (prismE)
+import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice, unleft)
+import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs, splitVariant)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, case_, expand, inj, on)
+import Data.Variant (class Contractable, class VariantMatchCases, case_, expand, inj, match, on)
 import Prim.Row (class Cons, class Union)
+import Prim.RowList (class RowToList)
+import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
-import Data.Lens.Prism.Existential (prismE)
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs, splitVariant)
 
 class Profunctor p <= VariantToVariant p where
-  variantToVariant :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
-    OwnedVariantInputs i1 i2 i i1l i2l =>
-    SharedVariantOutputs o1 o2 o o12 o1x o2x =>
-    p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ] -> p [ | i ] [ | o ]
+  variantToVariant
+    :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o
+     . OwnedVariantInputs i1 i2 i i1l i2l
+    => SharedVariantOutputs o1 o2 o o12 o1x o2x
+    => p [ | i1 ] [ | o1 ]
+    -> p [ | i2 ] [ | o2 ]
+    -> p [ | i ] [ | o ]
 
--- | The timeless carrier: dispatch to the one handler owning the case,
--- | expand its answer — the (+,+)-monoid on plain functions, which makes
--- | the merge's unit and associativity laws pure equalities (test/Main.purs).
 instance VariantToVariant (->) where
   variantToVariant p1 p2 v = case splitVariant v of
     Left v1 -> expand (p1 v1)
     Right v2 -> expand (p2 v2)
 
-bind :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
-  VariantToVariant p =>
-  OwnedVariantInputs i1 i2 i i1l i2l =>
-  SharedVariantOutputs o1 o2 o o12 o1x o2x =>
-  p [ | i1 ] [ | o1 ] -> (p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ]) -> p [ | i ] [ | o ]
+bind
+  :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o
+   . VariantToVariant p
+  => OwnedVariantInputs i1 i2 i i1l i2l
+  => SharedVariantOutputs o1 o2 o o12 o1x o2x
+  => p [ | i1 ] [ | o1 ]
+  -> (p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ])
+  -> p [ | i ] [ | o ]
 bind first cont = variantToVariant first (cont first)
 
-discard :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o.
-  VariantToVariant p =>
-  OwnedVariantInputs i1 i2 i i1l i2l =>
-  SharedVariantOutputs o1 o2 o o12 o1x o2x =>
-  p [ | i1 ] [ | o1 ] -> (Unit -> p [ | i2 ] [ | o2 ]) -> p [ | i ] [ | o ]
+discard
+  :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o
+   . VariantToVariant p
+  => OwnedVariantInputs i1 i2 i i1l i2l
+  => SharedVariantOutputs o1 o2 o o12 o1x o2x
+  => p [ | i1 ] [ | o1 ]
+  -> (Unit -> p [ | i2 ] [ | o2 ])
+  -> p [ | i ] [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
--- | Focus a **sub-variant**: the wrapped profunctor handles the focus cases
--- | `f → f'`, the **background** cases `b` pass through untouched — the shot
--- | `s` is refocused to `s'`. `RecordToRecord.subStrong`'s transpose, completing the wrap
--- | family's `+ → +` corner:
--- |
--- | ```
--- | subChoice :: p [ | f ] [ | f' ] -> p [ | s ] [ | s' ]
--- |               -- where s = f ∪ b,  s' = f' ∪ b   (ExclusiveRows)
--- | ```
--- |
--- | The labeled analogue of `Choice`'s `left`: instead of a positional
--- | complement `c`, the background *row* `b`, split off by `splitVariant`.
--- | Where `RecordToRecord.subStrong` says "this sub-form edits these fields, the rest of
--- | the model rides along", `subChoice` says "these cases are
--- | intercepted, the rest pass" — the focus cases detour through whatever
--- | the wrapped profunctor does with them, the rest flow straight on.
--- |
--- | Law (**background transparency**): `subChoice w` acts as `identity` on
--- | every case outside `w`'s focus row — a background occurrence passes
--- | untouched, exactly once. This is `Choice`'s `left` law read at the
--- | row, a law of the strength rather than of the merge (which is why it
--- | is not among the shape's laws); the cashbox demo is its contract.
+-- | Focus a sub-variant, passing the background cases through untouched.
 subChoice
   :: forall p f f' b s s'
    . Choice p
@@ -145,26 +158,7 @@ subChoice
   -> p [ | s ] [ | s' ]
 subChoice g = dimap splitVariant (either expand expand) (left g)
 
--- | Adopt a bare-input UI component as the owner of input case `l` — `lcmap`-only,
--- | the **closed-singleton unwrap** at `+`, and so `RecordToRecord.atField`'s
--- | exact transpose (`Cons l a () s` on both): `action createPerson #
--- | atCase @"create"` inside a `VariantToVariant.do` merge, and the input-side
--- | transpose of `RecordToRecord.asField` at `+`.
--- | No subsumption here, deliberately: a case *payload* is pinned by the
--- | action that consumes it as often as by the UI component that emits it, so
--- | widening this position would leave both unknown (the payload-boundary
--- | rule).
-atCase :: forall @l p a b s. IsSymbol l => Cons l a () s => Profunctor p => p a b -> p [ | s ] b
-atCase = lcmap (on (Proxy @l) identity case_)
-
--- | Focus an existing case in place — the standard `Choice` case prism, read
--- | photographically as **refocusing**: the **focus** `f → f'` changes, the
--- | **background** `b` stays, so the **shot** `s` becomes `s'` (`Union b mix s'`
--- | lets the untouched background `expand` into the new row). `f' := f`
--- | recovers the simple `p f f -> p [ | s ] [ | s ]` form. Built via `prismE`
--- | at `c := [ | b ]`. (The *diagonal* re-backgrounder — pass case `l`
--- | untouched, handle everything else — needs no combinator of its own: it is
--- | `subChoice` at the singleton complement `[ l :: f ]`.)
+-- | The case prism: transform the payload of case `l`, passing the other cases through.
 focusCase
   :: forall @l p f f' b s s' mix
    . IsSymbol l
@@ -172,18 +166,44 @@ focusCase
   => Cons l f' b s'
   => Union b mix s'
   => Choice p
-  => p f f' -> p [ | s ] [ | s' ]
+  => p f f'
+  -> p [ | s ] [ | s' ]
 focusCase =
   prismE
     (on (Proxy @l) Left Right)
     (either (inj (Proxy @l)) expand)
 
--- | The `+`-diagonal **trace** at row granularity, over ecosystem `Cochoice`:
--- | loop the `again` cases of the output back into the input, emit only the
--- | `done` cases — **iteration** (retry/wizard flows). `splitVariant` is the
--- | done/again dispatch. Unit law: at `again = ()` (no loop-back cases) the
--- | UI component is unchanged. On `PUI` the re-entry is a `toUser`, so the loop
--- | advances on the UI component's next emission — an event loop, not a busy loop.
+-- | Adopt a bare-input component as the owner of input case `l`.
+atCase :: forall @l p a b s. IsSymbol l => Cons l a () s => Profunctor p => p a b -> p [ | s ] b
+atCase = lcmap (on (Proxy @l) identity case_)
+
+-- | Emit a component's bare output, mapped by the projection, as case `l`.
+toCase
+  :: forall @l p i a b s
+   . IsSymbol l
+  => Cons l b () s
+  => Profunctor p
+  => (a -> b)
+  -> p i a
+  -> p i [ | s ]
+toCase f = rmap (\a -> inj (Proxy @l) (f a))
+
+-- | Render each case of a variant into a single-case status's own case, one copy function per case.
+forCases
+  :: forall c p a o s1 s rl r cs
+   . RowToList cs (RL.Cons c a RL.Nil)
+  => IsSymbol c
+  => Cons c a () cs
+  => Profunctor p
+  => RowToList r rl
+  => VariantMatchCases rl s1 a
+  => Union s1 () s
+  => { | r }
+  -> p [ | cs ] o
+  -> p [ | s ] o
+forCases handlers = lcmap (\v -> inj (Proxy @c) (match handlers v))
+
+-- | Loop the `again` cases of the output back into the input, emitting only the `done` cases.
 iterate
   :: forall p done again out
    . Cochoice p

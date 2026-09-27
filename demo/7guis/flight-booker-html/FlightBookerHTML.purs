@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
-import PUI (action, atCase, debounced, forCases, mvu, blank)
+import PUI (action, atCase, debounced, mvu, blank)
 import PUI.Web (choice, inCase, shown, shownWhen, staticText, text)
 import PUI.Web.HTML (body, button, div, input, label, output, p, select)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -29,4 +29,4 @@ flightBookerHTML =
       p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" (staticText "Book")
     blank # action submit # atCase @"Book"
-    output # forCases bookingLine
+    output bookingLine

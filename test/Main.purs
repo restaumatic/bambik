@@ -11,6 +11,7 @@ import Data.Newtype (unwrap)
 import Data.Profunctor.Choice (left, right)
 import Data.Profunctor.Cochoice (unleft, unright)
 import Data.Profunctor.Costrong (unfirst)
+import Data.Profunctor.PointedCostrong (unfirstFrom)
 import Data.Profunctor.Strong (first)
 import Data.Lens.Colens (colens)
 import Data.Lens.Coprism (coprism)
@@ -18,10 +19,10 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (feedback, field, muted, subStrong, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (feedback, focusField, muted, subStrong, recordToRecord)
 import Data.Profunctor.Row.VariantToRecord (unfolding, variantToRecord)
-import Data.Profunctor.Row.RecordToVariant (folding, recordToCase, recordToVariant, toCase)
-import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, variantToVariant)
+import Data.Profunctor.Row.RecordToVariant (folding, recordToVariant)
+import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, toCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
@@ -175,18 +176,15 @@ main = do
     (subStrong (\(r :: { a :: Int, c :: Int }) -> { a: r.a * 10, c: r.c + 1 }) { a: 5, c: 1, b: "x" })
 
   -- field = the value-level single-field lens — get / set / over.
-  assertEqual "field/view" 7 (view (field @"foo") { foo: 7, bar: "x" })
-  assertEqual "field/set" { foo: 9, bar: "x" } (set (field @"foo") 9 { foo: 7, bar: "x" })
-  assertEqual "field/over" { foo: 14, bar: "x" } (over (field @"foo") (_ * 2) { foo: 7, bar: "x" })
+  assertEqual "focusField/view" 7 (view (focusField @"foo") { foo: 7, bar: "x" })
+  assertEqual "focusField/set" { foo: 9, bar: "x" } (set (focusField @"foo") 9 { foo: 7, bar: "x" })
+  assertEqual "focusField/over" { foo: 14, bar: "x" } (over (focusField @"foo") (_ * 2) { foo: 7, bar: "x" })
 
-  -- recordToCase (x -> +): whole record computes a value, emitted unconditionally
-  -- as case l — the introduce-family member Choice can't have, free on any Profunctor.
-  assertEqual "recordToCase"
-    (.total 8 :: [ total :: Int, other :: String ])
-    (recordToCase @"total" (\r -> r.a + r.b) { a: 3, b: 5 })
-
-  -- toCase: a bare output introduced as case l at the closed singleton row —
-  -- recordToCase without the record-input constraint.
+  -- toCase: a bare output introduced as case l at the closed singleton row;
+  -- over a record-reading component it is the ×→+ merge pinned at its unit.
+  assertEqual "toCase over a record-reading component"
+    (.total 8 :: [ total :: Int ])
+    (toCase @"total" identity (\r -> r.a + r.b) { a: 3, b: 5 })
   assertEqual "toCase"
     (.picked 7 :: [ picked :: Int ])
     (toCase @"picked" _.key identity { key: 7, label: "x" })
@@ -273,17 +271,19 @@ main = do
     m.toUser (.y unit)
     Ref.read outs >>= assertEqual "zero-participant +→×: a dispatched occurrence is owed nothing" []
 
-  -- a gated display inside feedback: the display renders the seed at
-  -- registration — pins the merge-with-wire operand order (display first,
-  -- wire second: render before release, since the release may re-enter the
-  -- loop mid-registration)
+  -- a gated display inside feedback: the display renders the starting
+  -- state on the first input — pins the merge-with-wire operand order
+  -- (display first, wire second: render before release, since the release
+  -- may re-enter the loop)
   do
     shown <- Ref.new ([] :: Array { top :: Int })
     outs <- Ref.new ([] :: Array {})
     let display = PUI (pure { toUser: \s -> Ref.modify_ (_ <> [ s ]) shown, fromUser: \_ -> pure unit }) :: PUI Effect { top :: Int } {}
     m <- unwrap (feedback { top: 0 } (recordToRecord display identity) :: PUI Effect {} {})
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    Ref.read shown >>= assertEqual "feedback + display beside the wire: the seed renders at registration" [ { top: 0 } ]
+    Ref.read shown >>= assertEqual "feedback + display beside the wire: nothing renders before the first input" []
+    m.toUser {}
+    Ref.read shown >>= assertEqual "feedback + display beside the wire: the first input renders the starting state" [ { top: 0 } ]
 
   -- ×→× runtime-exactness: the merge widens each operand's input by coercion,
   -- so an operand that echoes or lens-rebuilds its input emits an object
@@ -440,20 +440,25 @@ main = do
 
   -- == The co-strengths' row forms: labeled channels for each trace. ==
 
-  -- feedback (×-trace at row granularity): the traced chain's initial
-  -- state is the argument — fed once at registration, so the chain renders
-  -- and its first emission primes the loop before any input arrives.
+  -- feedback (×-trace at row granularity): the state's starting value is
+  -- the argument — the first input joins it, and each emission's state
+  -- fields replace it from then on.
   do
     ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { o :: Int })
-    m <- unwrap (feedback { a: 0, acc: 0 } (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
+    m <- unwrap (feedback { acc: 0 } (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    Ref.read ins >>= assertEqual "feedback: seed feeds the chain at registration" [ { a: 0, acc: 0 } ]
+    Ref.read ins >>= assertEqual "feedback: nothing fed before the first input" []
+    m.toUser { a: 1 }
+    Ref.read ins >>= assertEqual "feedback: first input joined with the starting state" [ { a: 1, acc: 0 } ]
     fire gProp { o: 10, acc: 100 }
     Ref.read outs >>= assertEqual "feedback: value fields pass" [ { o: 10 } ]
     m.toUser { a: 2 }
-    Ref.read ins >>= assertEqual "feedback: input joined with looped state" [ { a: 0, acc: 0 }, { a: 2, acc: 100 } ]
+    Ref.read ins >>= assertEqual "feedback: input joined with looped state" [ { a: 1, acc: 0 }, { a: 2, acc: 100 } ]
+
+  -- unfirstFrom (the pointed ×-trace): yanking on the timeless carrier.
+  assertEqual "unfirstFrom/yanking on (->)" 6 (unfirstFrom 0 (first (_ * 2)) 3)
 
   -- folding @w (terminating fold at row granularity): the fold state's
   -- initial value is the argument — emitted once as case w at
@@ -635,16 +640,16 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-    m <- unwrap (field @"a" (probe gProp :: PUI Effect Int Int))
+    m <- unwrap (focusField @"a" (probe gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp 1
-    Ref.read outs >>= assertEqual "field: gated before input" []
+    Ref.read outs >>= assertEqual "focusField: gated before input" []
     m.toUser { a: 0, b: "kept" }
     fire gProp 9
-    Ref.read outs >>= assertEqual "field: emission over carried background" [ { a: 9, b: "kept" } ]
+    Ref.read outs >>= assertEqual "focusField: emission over carried background" [ { a: 9, b: "kept" } ]
     m.toUser { a: 2, b: "fresh" }
     fire gProp 7
-    Ref.read outs >>= assertEqual "field: background follows the latest feed"
+    Ref.read outs >>= assertEqual "focusField: background follows the latest feed"
       [ { a: 9, b: "kept" }, { a: 7, b: "fresh" } ]
 
   -- with (the discharge form, announce's composition closure): the wrapped
@@ -1771,7 +1776,7 @@ main = do
     assertEqual "monotonicity of >>>: the gated side's stage sees the residual only" [ "b" ] lower
     assertEqual "monotonicity of >>>: the ungated side's stage sees everything" [ "early", "b" ] upper
 
-  -- and the merge: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r — the gated leaf lift (`field`,
+  -- and the merge: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r — the gated leaf lift (`focusField`,
   -- completing each emission from the retained background, so withholding
   -- before a first feed) against the ungated whole-row probe.
   do
@@ -1785,7 +1790,7 @@ main = do
       gProp <- Ref.new Nothing
       rProp <- Ref.new Nothing
       outs <- Ref.new ([] :: Array { a :: Int, b :: String, c :: Boolean })
-      m <- unwrap (recordToRecord (field @"a" (probe gProp :: PUI Effect Int Int)) (probe rProp :: PUI Effect { a :: Int, b :: String } { c :: Boolean }))
+      m <- unwrap (recordToRecord (focusField @"a" (probe gProp :: PUI Effect Int Int)) (probe rProp :: PUI Effect { a :: Int, b :: String } { c :: Boolean }))
       m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
       script m (\n _ -> fire gProp n) rProp
       Ref.read outs
@@ -2188,7 +2193,7 @@ main = do
     -- The positive half compiles right here: `disjointOperands` below is the
     -- merge the law is about, and it typechecks. Its negative twin is a type
     -- error and so cannot be written as a test — `OwnedRecordOutputs` wants
-    -- disjoint ownership, while `field @l` makes every editor a whole-row
+    -- disjoint ownership, while `focusField @l` makes every editor a whole-row
     -- citizen `p { l | rest } { l | rest }` claiming the entire row, so two
     -- editors merged in parallel fail with `Prim.Row.Union` having no
     -- instance, at any annotation. That is why this law is pinned by probes
@@ -2205,7 +2210,7 @@ main = do
 
 -- The reachable parallel-merge shape: two operands owning disjoint labels.
 -- A vocabulary-level assembly can build this (a packaged control merging two
--- sub-displays it also feeds); an application merging two `field @l` editors
+-- sub-displays it also feeds); an application merging two `focusField @l` editors
 -- cannot, since both would own the whole row. See doc/observational-semantics.md §8.
 disjointOperands :: PUI Effect { s :: Int } { a :: Int, b :: Int }
 disjointOperands = recordToRecord (rmap (\r -> { a: r.s }) idProbe) (rmap (\r -> { b: r.s + 100 }) idProbe)

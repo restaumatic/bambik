@@ -41,8 +41,8 @@ lawBenchMDC2 = do
     , bench "iconButton" "×→+" rows (iconButton @"Go" { icon: "add" })
     , bench "menuItem" "×→+" rows (menuItem @"Go" {})
     , bench "listOf" "×→+" lists (listOf @"picked" _.id {} _.items (text _.title))
-    , bench "snackbar" "+→×" events snackbar
-    , bench "banner" "+→×" events banner
+    , bench "snackbar" "+→×" events (snackbar { event: identity })
+    , bench "banner" "+→×" events (banner { event: identity })
     , bench "indeterminateLinearProgress" "+→×" runs (indeterminateLinearProgress @"Loading")
     , bench "indeterminateCircularProgress" "+→×" runs (indeterminateCircularProgress @"Loading")
     ]

@@ -34,14 +34,17 @@
 -- |   * `RecordToVariant` — needs `Monoid r`: both operands are fed and both
 -- |     may emit, so two answers must combine, and the unit must be silent
 -- |
--- | `Resolving`/`Coretaining` typecheck but are degenerate and stated here
--- | only to record that: `resolve` can only ever take `Left` (without time
--- | there is no "still moving"), and `coretain` must drop the state.
+-- | `Resolving`/`Coretaining`/`PointedCostrong` typecheck but are degenerate
+-- | and stated here only to record that: `resolve` can only ever take `Left`
+-- | (without time there is no "still moving"), `coretain` must drop the
+-- | state, and `unfirstFrom` feeds its starting state to every run (no next
+-- | input to carry an emitted state to).
 -- |
 -- | The two lists below are **exhaustive** over every profunctor subclass in
 -- | scope — the ecosystem's `Strong`/`Choice`/`Closed`/`Costrong`/`Cochoice`
 -- | plus `Wander`, the `extras/profunctor` complements (the four coined
--- | strengths `Resolving`/`Coresolving`/`Retaining`/`Coretaining`), and bambik's own
+-- | strengths `Resolving`/`Coresolving`/`Retaining`/`Coretaining` and the
+-- | pointed trace `PointedCostrong`), and bambik's own
 -- | `Acting`, `Seeding`, `Looping` and four row merges. Nothing is merely unwritten:
 -- | each class either has an instance here or appears below with its reason.
 -- |
@@ -51,7 +54,8 @@
 -- |   * `Costrong`/`Coresolving` — `unfirst`/`coresolve` need a `c` on the
 -- |     *input* side before any output exists. Contrast `Cochoice`, where
 -- |     `Left a` needs none: that asymmetry is why `looped` is a primitive
--- |     and `feedback`/`folding` take a seed
+-- |     and `folding` takes a seed (`feedback` takes its seed through
+-- |     `PointedCostrong`, which starts the state channel instead)
 -- |   * `Retaining` — must produce a `b` for a `Right c` input; a stateless
 -- |     carrier has none (same reason there is no `(->)` instance)
 -- |   * `VariantToRecord` — an input case reaches one operand only, so the
@@ -83,6 +87,7 @@ import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Row (exactRow, splitVariant, widenRecordInput, widenVariantOutput)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Coretaining (class Coretaining)
+import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Seeding (class Seeding)
@@ -189,6 +194,9 @@ instance Resolving (Cont r) where
 
 instance Coretaining (Cont r) where
   coretain p = wrap \k a -> unwrap p (\(Tuple b _) -> k b) (Left a)
+
+instance PointedCostrong (Cont r) where
+  unfirstFrom c p = wrap \k a -> unwrap p (\(Tuple b _) -> k b) (Tuple a c)
 
 run :: forall a b. Cont b a b -> a -> b
 run cont a = unwrap cont identity a

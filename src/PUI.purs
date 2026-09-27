@@ -82,27 +82,27 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
+import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the trace forms
--- `field` is deliberately absent: the leaf lift is design-system plumbing —
--- every vocabulary editor is `field @l`-lifted inside, the labelled group
+-- `focusField` is deliberately absent: the leaf lift is design-system plumbing —
+-- every vocabulary editor is `focusField @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself (the `widenRecordInput` precedent, one adopter later).
-import Data.Profunctor.Row.RecordToRecord (asField, atField, blank, bracketed, mvu, subStrong, forProperty, muted, settled, with) as Adopters
-import Data.Profunctor.Row.RecordToVariant (armed, replaying, silence, toCase, toCases) as Adopters
-import Data.Profunctor.Row.VariantToRecord (forCase, forCases) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, blank, bracketed, mvu, subStrong, muted, settled, with) as Adopters
+import Data.Profunctor.Row.RecordToVariant (armed, replaying, silence) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
 -- into the stages that consume a row (the gated displays, `updated`,
 -- `every`, `settled`, `armed`, `edited`, `acted`), so a UI component's own row is always
 -- stated by a business function, never coerced at the call site. It stays
 -- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
-import Data.Profunctor.Row.VariantToVariant (atCase, subChoice) as Adopters
+import Data.Profunctor.Row.VariantToVariant (atCase, subChoice, toCase) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
@@ -110,7 +110,7 @@ import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant, replaying, silence, toCases)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant, replaying, silence)
 import Data.Profunctor.Row (class RowLabels, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
@@ -257,7 +257,9 @@ instance MonadEffect m => Choice (PUI m) where
 -- | unfirst (seeded (Tuple a0 c0) >>> first g) ≈ seeded a0 >>> g
 -- | ```
 -- |
--- | — exactly the composite `feedback` builds. Contrast `Cochoice` below,
+-- | — which is why `feedback` is built on the pointed trace
+-- | `PointedCostrong` instead, starting the state rather than the input.
+-- | Contrast `Cochoice` below,
 -- | whose retraction holds raw: this carrier is genuinely traced over `+`
 -- | and only pointed-traced over `×` (doc/observational-semantics.md).
 instance MonadEffect m => Costrong (PUI m) where
@@ -296,6 +298,23 @@ instance MonadEffect m => Costrong (PUI m) where
             guard.fed
             Ref.write (Just a) aRef
             prop c
+      }
+
+-- | The **pointed** `×`-trace: `unfirst` with its state `Ref` starting at
+-- | `c0`, so the first input joins the starting state instead of waiting on
+-- | an emission — `feedback`'s primitive, and why it needs no input seed.
+instance MonadEffect m => PointedCostrong (PUI m) where
+  unfirstFrom c0 p = wrap do
+    p' <- unwrap p
+    cRef <- liftEffect $ Ref.new c0
+    pure
+      { toUser: \a -> do
+          c <- Ref.read cRef
+          p'.toUser $ Tuple a c
+      , fromUser: \prop ->
+          p'.fromUser \(Tuple b c) -> do
+            Ref.write c cRef
+            prop b
       }
 
 -- | The `+`-diagonal **trace** (dual of `Choice`): a looped-branch emission
@@ -425,7 +444,7 @@ instance MonadEffect m => Category (PUI m) where
 -- | The **point** (the `Seeding` instance): one emission of `a` at
 -- | registration, then nothing — the informationless `{}` it is fed is
 -- | ignored. The pointedness primitive; the seeded echo wire the knot-tying
--- | row forms (`feedback`/`folding`/`unfolding`) prime their state channels
+-- | row forms (`folding`/`unfolding`) prime their state channels
 -- | with is derived from it through `Choice` (`Data.Profunctor.Seeding`).
 instance MonadEffect m => Seeding (PUI m) where
   announce a = wrap $ pure
@@ -442,7 +461,7 @@ instance MonadEffect m => Seeding (PUI m) where
 -- | every operand sees every emission re-broadcast, and per-operand
 -- | *retention* falls out of the merge gates (each gate holds its side's
 -- | last contribution). For **whole-row editor stages** the re-broadcast
--- | is what keeps exactness honest: each editor's `field @l` lift
+-- | is what keeps exactness honest: each editor's `focusField @l` lift
 -- | re-attaches the background it retained at its last feed, and the loop
 -- | re-feeds every stage on every emission, so no editor can emit a stale
 -- | sibling for longer than the turn in flight — which is why editor
@@ -615,7 +634,7 @@ steppedFeed kind gate feed = do
 -- | enrolment rather than a configuration of the machine.
 type RecordGate =
   { gate :: Gate String Field
-  , direction :: String
+  , shape :: String
   , labels1 :: Array String
   , labels2 :: Array String
   , guard1 :: GateGuard
@@ -629,11 +648,11 @@ data Field
 type GateGuard = { blocked :: String -> Array String -> Effect Unit, fed :: Effect Unit }
 
 newRecordGate :: String -> Array String -> Array String -> Effect RecordGate
-newRecordGate direction labels1 labels2 = do
+newRecordGate shape labels1 labels2 = do
   gate <- newGate (labels1 <> labels2)
   guard1 <- gateGuard
   guard2 <- gateGuard
-  pure { gate, direction, labels1, labels2, guard1, guard2 }
+  pure { gate, shape, labels1, labels2, guard1, guard2 }
 
 -- | The streaming-phase subscription of a record merge's gate. Each operand
 -- | emission, trimmed to its declared row by `exact1`/`exact2` (the type
@@ -683,7 +702,7 @@ reported :: RecordGate -> GateOutput String Field -> Effect Unit
 reported rg = case _ of
   Released _ -> rg.guard1.fed *> rg.guard2.fed
   Withheld missing -> do
-    tr ("merge " <> rg.direction <> ": contribution withheld (fields " <> renderFieldNames missing <> " not heard from yet)") missing
+    tr ("merge " <> rg.shape <> ": contribution withheld (fields " <> renderFieldNames missing <> " not heard from yet)") missing
     armSpoken missing rg.labels1 rg.guard1
     armSpoken missing rg.labels2 rg.guard2
   Quiet -> pure unit
@@ -692,7 +711,7 @@ reported rg = case _ of
   armSpoken missing labels guard =
     when (not (Array.null labels) && not (Array.any (_ `elem` missing) labels)) $
       guard.blocked (starving (renderFieldNames labels) (renderFieldNames missing)) missing
-  starving mine sibling = rg.direction <> " merge: emissions dropped for 3s — the operand producing " <> mine
+  starving mine sibling = rg.shape <> " merge: emissions dropped for 3s — the operand producing " <> mine
     <> " keeps emitting, but the sibling fields " <> sibling
     <> " have never been heard from, so the merged record cannot complete. Prime the silent operand (`seeded`/`announce`) or check that it renders at all."
 
@@ -1005,7 +1024,7 @@ applied f = updated (const f)
 -- | sibling on
 -- | the `+`-diagonal: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
--- | status consumes are also shown — `status # forCase @"charge" retryLine
+-- | status consumes are also shown — `snackbar { charge: retryLine }
 -- | # observed` narrates a retry loop without interrupting it. Subsumption
 -- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
 -- | `Union` widening): the status may consume a *narrower* row than the
@@ -1057,7 +1076,7 @@ ticks interval = wrap $ pure
 -- | **Derived, not primitive**: a tick source under the update stage. The
 -- | source `ticks` replays the row it is fed (`replaying`, `Strong`'s
 -- | retention), the step classifies each replayed row into a `stepped`
--- | or an `idle` occurrence (`toCases`), the idle case is handled by
+-- | or an `idle` occurrence (an `rmap` over the tick case), the idle case is handled by
 -- | `silence` in a `+ → +` merge so a pause emits nothing, and the stepped
 -- | row is folded in by `updated`; `looped` re-feeds each step so the
 -- | next tick reads the value just stepped, as it would inside `mvu`. So
@@ -1079,7 +1098,7 @@ every interval step = looped (updated (\e _ -> match { stepped: identity } e) (c
   classified :: PUI m { | small } [ stepped :: { | small }, idle :: {} ]
   classified = ticks @"tick" interval
     # replaying @"tick" identity
-    # toCases (\s -> maybe (inj (Proxy @"idle") {}) (inj (Proxy @"stepped")) (step s))
+    # rmap (match { tick: \s -> maybe (inj (Proxy @"idle") {}) (inj (Proxy @"stepped")) (step s) })
   -- a pause is the idle case handled by silence: nothing leaves
   stepsOnly :: PUI m [ stepped :: { | small }, idle :: {} ] [ stepped :: { | small } ]
   stepsOnly = variantToVariant (lcmap (const {}) silence :: PUI m [ idle :: {} ] [ | () ]) identity
@@ -1101,7 +1120,7 @@ type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 -- |
 -- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, carrier
 -- | nesting). Naturality is free, so every ocular commutes with the
--- | `dimap`-only adopters (`asField`, `field`, `toCase`, `forProperty`).
+-- | `dimap`-only adopters (`asField`, `focusField`, `toCase`, `atCase`).
 -- | Commuting with the *strengths* is the extra law, and the admission test
 -- | for anything called an ocular:
 -- |
@@ -1111,7 +1130,7 @@ type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 -- | ```
 -- |
 -- | It holds for everything that merely wraps nodes, which is why chrome
--- | slides freely past `field @l`/`subStrong`. A decorator that captures —
+-- | slides freely past `focusField @l`/`subStrong`. A decorator that captures —
 -- | buffers, replays or withholds a feed — is still a natural transformation
 -- | but breaks these, and needs a stated protocol instead (a modal, say).
 -- | Both halves are tested in test/Main.purs: a node-wrapping ocular (a
@@ -1189,7 +1208,7 @@ debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 -- algebra; instances live with the carriers, like the merge instances above).
 --
 -- Five collection combinators share one instance discipline and fill the
--- 2×2 of the direction square. The element is always a data-model row and
+-- 2×2 of the shape square. The element is always a data-model row and
 -- rows carry their identity: ×-input members are keyed by a **materialized
 -- identity field** `@l` of the row (the whole array broadcasts, identity is
 -- read off each row); +-input members receive the runtime variant
@@ -1297,7 +1316,7 @@ foreach f w = lcmap f $ wrap do
   liftEffect $ collapsedWith (Record.get (Proxy @l)) hooks
 
 -- | The **collection editor** — lift an element *editor* (`p a a`, emitting
--- | its own edited row, the whole-row-citizen shape a `field @l`-lifted
+-- | its own edited row, the whole-row-citizen shape a `focusField @l`-lifted
 -- | leaf produces) over the array: every element emission is folded
 -- | back in **by key** and the whole updated array emits **immediately**.
 -- | It can afford immediacy because it is **input-primed** — the retained fed
@@ -1307,7 +1326,7 @@ foreach f w = lcmap f $ wrap do
 -- | is withheld until every element has spoken). Rule of thumb: the aggregate
 -- | as running state → `edited`; the aggregate as joint decision → `acted`;
 -- | individual emissions → `foreach`. A first-class `Array a → Array a`
--- | editor citizen, nestable like any editor (`# field @l` into a form, or
+-- | editor citizen, nestable like any editor (`# focusField @l` into a form, or
 -- | straight into `# mvu`); element addition, removal and reordering are
 -- | array-level concerns and stay outside.
 -- |

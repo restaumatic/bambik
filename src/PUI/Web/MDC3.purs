@@ -134,10 +134,12 @@ import Data.Foldable (foldMap, for_, traverse_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (focusField)
+import Data.Profunctor.Row.VariantToVariant (forCases)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Traversable (for)
 import Data.Variant (case_, inj, match, on, prj) as Variant
+import Data.Variant (class VariantMatchCases)
 import Data.Profunctor (rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -148,6 +150,7 @@ import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, shown, staticHTML, staticText, text, textContent, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
+import Prim.RowList (class RowToList)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Type.Proxy (Proxy(..))
 
@@ -165,7 +168,7 @@ import Type.Proxy (Proxy(..))
 -- switching the import:
 --
 --   * **components** — UI components with a model interface, every one a citizen
---     of exactly one row direction:
+--     of exactly one row shape:
 --       `×→×` editors — `filledTextField @l`, `outlinedTextField @l` (the
 --         MD3 variant pair), `filledTextArea @l`, `checkbox @l`,
 --         `radioButton @l`, `toggleSwitch @l` (the MD3 Switch),
@@ -388,18 +391,18 @@ menuItem provided = eventLeaf @l $
 -- | interrupted by values arriving from elsewhere. A whole-row citizen:
 -- | fed the wide row, it edits field `l` and carries the rest.
 filledTextField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
-filledTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
+filledTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
 
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.
 outlinedTextField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
-outlinedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
+outlinedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
 debouncedTextField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String, ms :: Number } => { | provided } -> PUI Web { | r } { | r }
-debouncedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (Just config.ms) config.floatingLabel)
+debouncedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (Just config.ms) config.floatingLabel)
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
@@ -434,7 +437,7 @@ textFieldLeaf tag mDebounce floatingLabel = wrap do
 -- | floats (`floatingLabel` overrides it for real copy), shows a string,
 -- | reports each edit, never interrupts typing.
 filledTextArea :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String, columns :: Int, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
-filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "md-filled-text-field" (pure unit)
   attribute "type" "textarea"
   attribute "label" config.floatingLabel
@@ -475,7 +478,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | one — stated by the caller (`{ ticked: {} }` for a plain yes/no fact),
 -- | never conjured from the type.
 checkbox :: forall @l @c @n a r rest v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] rest r => Cons c a cr v => Cons n {} nr v => { ticked :: a } -> PUI Web {} {} -> PUI Web { | r } { | r }
-checkbox { ticked } labelContent = field @l $ "name" := reflectSymbol (Proxy @l) $
+checkbox { ticked } labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l) $
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ wrap do
     aRef <- liftEffect $ Ref.new ticked
     mPropRef <- liftEffect $ Ref.new Nothing
@@ -577,7 +580,7 @@ radioLeaf clearable options =
 -- | flipped — notifications on, dark mode on. (A `checkbox` states a fact
 -- | to be submitted with the rest of a form; a switch acts immediately.)
 toggleSwitch :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (switchLeaf config.label)
+toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (switchLeaf config.label)
 
 switchLeaf :: String -> PUI Web Boolean Boolean
 switchLeaf lbl =
@@ -616,14 +619,14 @@ switchLeaf lbl =
 -- | entry in the history — one undo step, one audit line. For a readout
 -- | that follows the thumb, use `sliderLive`.
 slider :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label)
+slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label)
 
 -- | `slider` reporting continuously while the thumb moves — for a live
 -- | readout or preview that has to follow the drag. Whatever it drives
 -- | should be cheap to redo; a drag that should land in the history as one
 -- | change needs the plain `slider`, or a `debounced` stage downstream.
 sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label)
+sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label)
 
 -- `<md-slider>` ships no text label of its own (`labeled` is the handle's
 -- value indicator), so a non-empty config label renders visibly above the
@@ -789,7 +792,7 @@ segmentedButtonCss = """
 -- | be active at once — dietary tags, categories, facets. Put them in a
 -- | `chipSet`.
 filterChip :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-filterChip provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (chipLeaf config.label)
+filterChip provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (chipLeaf config.label)
 
 chipLeaf :: String -> PUI Web Boolean Boolean
 chipLeaf lbl = wrap do
@@ -819,7 +822,7 @@ chipLeaf lbl = wrap do
 -- | filled, so the same glyph in both slots still reads as off and on. The
 -- | compact form of a `toggleSwitch`, for list rows and toolbars.
 iconToggle :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { onIcon :: String, offIcon :: String, label :: String } => { | provided } -> PUI Web { | r } { | r }
-iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ (iconToggleLeaf config)
+iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (iconToggleLeaf config)
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
 iconToggleLeaf config = wrap do
@@ -861,7 +864,7 @@ tabBar
   => ConvertOptionsWithDefaults OptIcon { icon :: Maybe String } { | provided } { value :: a, label :: String, icon :: Maybe String }
   => Array { | provided }
   -> PUI Web { | r } { | r }
-tabBar options = field @l $ "name" := reflectSymbol (Proxy @l) $ (tabBarLeaf (convertOptionsWithDefaults OptIcon { icon: Nothing } <$> options))
+tabBar options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (tabBarLeaf (convertOptionsWithDefaults OptIcon { icon: Nothing } <$> options))
 
 tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web a a
 tabBarLeaf options = wrap do
@@ -1104,23 +1107,23 @@ cardActions = div >>> "style" := "display: flex; gap: 8px; align-items: center;"
 -- | appear once. It draws the surface, so it **leads its lines like any
 -- | container** (`group @"Customer" $ …`), never trailing as a `#` chain.
 -- | Without it a labelled group is three hand-aligned spellings — the
--- | `card`, a `staticText` heading, a trailing `# field @l` — free to
+-- | `card`, a `staticText` heading, a trailing `# focusField @l` — free to
 -- | drift apart.
 -- |
 -- | Derived, not primitive:
 -- |
 -- | ```
--- | group @l w = card (heading >>> field @l w)      -- + the a11y stamp
+-- | group @l w = card (heading >>> focusField @l w)      -- + the a11y stamp
 -- | ```
 -- |
 -- | well-defined because chrome commutes with the strengths (`Ocular`'s
--- | admission law): `card w # field @l = card (w # field @l)`, so fusing
--- | surface and lens loses nothing. The focus is any type `field @l`
+-- | admission law): `card w # focusField @l = card (w # focusField @l)`, so fusing
+-- | surface and lens loses nothing. The focus is any type `focusField @l`
 -- | accepts — an editor ensemble (`group @"Customer" $ …`), a `bracketed`
 -- | variant editor (`group @"Fulfillment" $ …`), a collection's array
 -- | (potluck's `group @"Guests"` over `acted`, reorder's
 -- | `group @"Setlist"` over `edited`). Fusion is earned by the
--- | leaf criterion — the label does work a trailing `# field @l` cannot
+-- | leaf criterion — the label does work a trailing `# focusField @l` cannot
 -- | (heading copy, accessible name) — so a card grouping no model (a
 -- | display card, a button row) stays the blind `card`, and a flat
 -- | sub-row focus stays `subStrong` under caller-chosen chrome.
@@ -1134,7 +1137,7 @@ group
 group w = wrap do
   headingId <- liftEffect uniqueId
   unwrap $ "role" := "group" $ "aria-labelledby" := headingId $ card $
-    shown ("id" := headingId $ titleMedium $ staticText (reflectSymbol (Proxy @l))) >>> field @l w
+    shown ("id" := headingId $ titleMedium $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
 
 -- | A **modal dialog** — dimmed backdrop, trapped focus, Esc to leave — for
 -- | the decision that must be made before anything else continues.
@@ -1178,11 +1181,20 @@ simpleDialog { title, confirm } content =
 -- | something the user must acknowledge, use a `dialog`.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar # forCase @"brewed" brewedLine` — and
--- | let the event carry the bare facts. One snackbar can serve several
--- | mutually exclusive outcomes with `forCases`.
-snackbar :: PUI Web [ event :: String ] {}
-snackbar = wrap do
+-- | the snackbar is built — `snackbar { brewed: brewedLine }` — and
+-- | let the event carry the bare facts. One snackbar serves several
+-- | mutually exclusive outcomes, one copy function per case.
+snackbar
+  :: forall r rl s s1
+   . RowToList r rl
+  => VariantMatchCases rl s1 String
+  => Union s1 () s
+  => { | r }
+  -> PUI Web [ | s ] {}
+snackbar copy = snackbarFace # forCases copy
+
+snackbarFace :: PUI Web [ event :: String ] {}
+snackbarFace = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $
     textOf eventText

@@ -60,8 +60,8 @@
     toast that confirms. Write exactly that. Three term obligations enter as
     holes — the display's read, the confirmation copy, the seed. Note what is
     <em>not</em> a hole: the field anchor (<code>@"Pizza"</code>), the case
-    anchor (<code>@"Order"</code>, stated once on the button and adopted once
-    by the snackbar), and the chrome (<code>card</code>,
+    anchor (<code>@"Order"</code>, stated once on the button and keyed once in
+    the snackbar's copy record), and the chrome (<code>card</code>,
     <code>headlineSmall</code>) are complete as written.</p>
 
     <h3>src/Order.purs</h3>
@@ -70,7 +70,7 @@
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import PUI (forCase, with)
+import PUI (with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, card, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -82,7 +82,7 @@ orderApp =
       filledTextField @"Pizza" {}
       headlineSmall (text ?orderLine) # shown
       button @"Order" {}
-      snackbar # forCase @"Order" ?confirmedLine
+      snackbar { "Order": ?confirmedLine }
     ) # with ?start
 </code></pre>
 
@@ -93,7 +93,7 @@ orderApp =
 <pre class="compiler">Error 1 of 4:
 
   in module Order
-  at src/Order.purs:17:45 - 17:50 (line 17, column 45 - line 17, column 50)
+  at src/Order.purs:16:41 - 16:46 (line 16, column 41 - line 16, column 46)
 
     No type class instance was found for
 
@@ -114,7 +114,7 @@ orderApp =
 
 <pre class="compiler">Error 2 of 4:
 
-  at src/Order.purs:17:31 - 17:41 (line 17, column 31 - line 17, column 41)
+  at src/Order.purs:16:27 - 16:37 (line 16, column 27 - line 16, column 37)
 
     Hole 'orderLine' has the inferred type
 
@@ -127,16 +127,16 @@ orderApp =
 
 Error 3 of 4:
 
-  at src/Order.purs:19:39 - 19:53 (line 19, column 39 - line 19, column 53)
+  at src/Order.purs:18:27 - 18:41 (line 18, column 27 - line 18, column 41)
 
     Hole 'confirmedLine' has the inferred type
 
-      t0 -&gt; t1
+      t0
   ⋯
 
 Error 4 of 4:
 
-  at src/Order.purs:20:16 - 20:22 (line 20, column 16 - line 20, column 22)
+  at src/Order.purs:19:14 - 19:20 (line 19, column 14 - line 19, column 20)
 
     Hole 'start' has the inferred type
 
@@ -180,7 +180,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 <pre class="compiler">Error 1 of 2:
 
   in module Order
-  at src/Order.purs:20:39 - 20:53 (line 20, column 39 - line 20, column 53)
+  at src/Order.purs:19:27 - 19:41 (line 19, column 27 - line 19, column 41)
 
     Hole 'confirmedLine' has the inferred type
 
@@ -201,7 +201,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
 Error 2 of 2:
 
-  at src/Order.purs:21:16 - 21:22 (line 21, column 16 - line 21, column 22)
+  at src/Order.purs:20:14 - 20:20 (line 20, column 14 - line 20, column 20)
 
     Hole 'start' has the inferred type
 
@@ -228,7 +228,7 @@ confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 
 <pre class="compiler">Error found:
 in module Order
-at src/Order.purs:21:16 - 21:22 (line 21, column 16 - line 21, column 22)
+at src/Order.purs:20:14 - 20:20 (line 20, column 14 - line 20, column 20)
 
   Hole 'start' has the inferred type
 
@@ -266,7 +266,7 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import OrderLogic (confirmedLine, orderLine, plainMargherita)
-import PUI (forCase, with)
+import PUI (with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, card, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -278,7 +278,7 @@ orderApp =
       filledTextField @"Pizza" {}
       headlineSmall (text orderLine) # shown
       button @"Order" {}
-      snackbar # forCase @"Order" confirmedLine
+      snackbar { "Order": confirmedLine }
     ) # with plainMargherita
 </code></pre>
 
@@ -289,7 +289,7 @@ orderApp =
     <code>confirmedLine</code> are pure functions under unit test in the logic
     module, <code>@"Pizza"</code> is both the field's caption and its name in
     the model, <code>@"Order"</code> is both the button's caption and the case
-    the snackbar adopts, and the chrome names nothing because it writes
+    the snackbar's copy record renders, and the chrome names nothing because it writes
     nothing.</p>
 
     <h2>5 · Compile-green is not done — run it</h2>

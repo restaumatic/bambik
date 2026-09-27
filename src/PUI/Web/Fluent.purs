@@ -47,9 +47,11 @@ import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (field)
+import Data.Profunctor.Row.RecordToRecord (focusField)
+import Data.Profunctor.Row.VariantToVariant (forCases)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (case_, match, on) as Variant
+import Data.Variant (class VariantMatchCases)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -58,7 +60,8 @@ import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Union)
+import Prim.RowList (class RowToList)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
@@ -79,7 +82,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- catalogs — the same names and signatures:
 --
 --   * **components** — UI components with a model interface, every one a citizen
---     of exactly one row direction:
+--     of exactly one row shape:
 --       `×→×` editors — `textField @l`, `toggleSwitch @l`
 --         (`<fluent-switch>`), `slider @l` (`<fluent-slider>` — Fluent's
 --         slider emits on every value change; the catalog has no
@@ -92,9 +95,9 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --         honest about MD's missing counterpart: a rating *editor* is not
 --         in the Fluent catalog);
 --       `×→+` events — `button @l` (`<fluent-button appearance="primary">`);
---       `+→×` statuses — `messageBar @l` (`<fluent-message-bar
---         intent="success">` shown on feed, auto-dismissing) — canonical
---         `[ event :: String ]` in, adopted via `# forCase @l`.
+--       `+→×` statuses — `messageBar` (`<fluent-message-bar
+--         intent="success">` shown on feed, auto-dismissing) — each taking
+--         its per-case copy record (`toast { booked: bookedLine }`).
 --   * **oculars** — shape-preserving decorators: `card { caption }`
 --     (hand-rolled over the `--colorNeutral*`/`--shadow*` tokens — the
 --     Fluent card is a React-only catalog entry) and the type-ramp
@@ -134,7 +137,7 @@ fieldWith position lbl editor = el "fluent-field" >>> "label-position" := positi
 -- | arriving from elsewhere. Attach it to a field of the model with
 -- | `# asField @l`.
 textField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
+textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (Fluent keeps the real `<input>` in the light DOM, so
   -- the guard checks containment), but still echo so the channel stays live
@@ -158,7 +161,7 @@ textField provided = let config = convertOptionsWithDefaults OptCaption { label:
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | Its label sits after the control, in Fluent's manner.
 toggleSwitch :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "after" config.label do
+toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "after" config.label do
   element "fluent-switch" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
@@ -192,7 +195,7 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 -- | be `debounced` downstream. The current number is shown at the end of
 -- | the label line, since the control has no readout of its own.
 slider :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in field @l $ "name" := reflectSymbol (Proxy @l) $ el "fluent-field" >>> "label-position" := "above" $ wrap do
+slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ el "fluent-field" >>> "label-position" := "above" $ wrap do
   readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
       _ <- unwrap (staticText config.label)
       unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text _.readout))
@@ -395,10 +398,19 @@ ratingDisplay f = wrap do
 -- | has just happened and needs no reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the message bar is built — `messageBar # forCase @"booked" bookedLine`
+-- | the message bar is built — `messageBar { booked: bookedLine }`
 -- | — and let the event carry the bare facts.
-messageBar :: PUI Web [ event :: String ] {}
-messageBar = wrap do
+messageBar
+  :: forall r rl s s1
+   . RowToList r rl
+  => VariantMatchCases rl s1 String
+  => Union s1 () s
+  => { | r }
+  -> PUI Web [ | s ] {}
+messageBar copy = messageBarFace # forCases copy
+
+messageBarFace :: PUI Web [ event :: String ] {}
+messageBarFace = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
     textOf eventText) # cl "fluent-toast"

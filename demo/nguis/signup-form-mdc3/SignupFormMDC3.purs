@@ -2,13 +2,12 @@ module SignupFormMDC3 (signupFormMDC3) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (armed, forCase, mvu, toCases)
+import PUI (armed, mvu)
 import PUI.Web (choice, shown, shownWhen, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, card, checkbox, debouncedTextField, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, register, rejectionLine, takenLine, usernameSettleTime, usernameStatus, validation, welcomeLine)
+import SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, usernameSettleTime, usernameStatus, validation)
 
 signupFormMDC3 :: Effect Unit
 signupFormMDC3 =
@@ -29,7 +28,5 @@ signupFormMDC3 =
       ( bodyMedium $ text availableLine ) # shownWhen @"available" usernameStatus
       ( titleSmall $ text invalidLine ) # shownWhen @"invalid" validation
       ( titleSmall $ text readyLine ) # shownWhen @"ready" validation
-      button @"Sign up" { icon: "person_add" } # toCases register # armed
-      VariantToRecord.do
-        snackbar # forCase @"registered" welcomeLine
-        snackbar # forCase @"rejected" rejectionLine
+      button @"Sign up" { icon: "person_add" } # armed
+      snackbar { "Sign up": signupLine }

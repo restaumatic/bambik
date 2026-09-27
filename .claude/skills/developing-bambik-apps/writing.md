@@ -52,13 +52,13 @@ the starving gate.
 
 ## Component citizenship
 
-Every component is a citizen of exactly one direction and **states its
+Every component is a citizen of exactly one shape and **states its
 business label once, as the leaf's own type argument** — no canonical
 label (`value`/`clicked`/`event`) ever appears in application code, and
 adopters that need a leaf's label derive it from the closed singleton
 row.
 
-**Shape is the type.** A component's type says which direction it is a
+**Shape is the type.** A component's type says which shape it is a
 citizen of, and there are exactly four — each side a record (knowledge)
 or a variant (an event), never a bare value:
 
@@ -128,7 +128,7 @@ syntax (`r { "Name" = … }`) all work unchanged.
   An editor is a **whole-row citizen** `p { l | rest } { l | rest }` — a
   complete `×→×` stage on its own: fed the wide row it edits field `l`,
   and every emission re-attaches the other fields from the background its
-  `field @l` lift retains. A form is therefore editors written as
+  `focusField @l` lift retains. A form is therefore editors written as
   successive pipeline stages — never `RecordToRecord.do` operands — and
   two controls deliberately writing **one** field are simply two such
   stages in a row (tip-calculator binds an MDC slider and a native range to
@@ -203,22 +203,23 @@ syntax (`r { "Name" = … }`) all work unchanged.
   `match { "Submit order": … }`). **No demo passes an emitter `label:`.**
   When a trace form's loop case would force two buttons to share one
   case under different words, that is a signal the buttons are two
-  business actions: give each its own self-describing case and adopt it
-  into the loop case with `# toCases`, so the fold still sees one case
+  business actions: give each its own self-describing case and introduce
+  the loop case from it with `# toCase`, so the fold still sees one case
   while each button reads as what it does (checkout's
-  `button @"Next" {} # toCases goneOn`). `label:` is left for a
-  glyph-only face (`fab { label: Nothing }`).
-  `# toCases f` fires the business outcomes `f` computes from the
-  payload — `f` returns a *variant* of results, which `toCases` emits
-  directly, deriving the consumed case from the emitter's row.
-- **statuses** (`snackbar`, `banner`) derive their own payload case;
-  adopt with `# forCase @l copyOf` for one business case (sibling
-  operands each own exactly their case), or `# forCases classifier`
-  when one status instance serves several mutually exclusive outcomes —
-  the classifier is a **record of per-case copy functions**
-  (flight-booker's `bookingLine`), the elimination being the mechanism's
-  own, so no `match` appears in the status story. `forCase @l f` is the
-  derived single-case convenience — `forCases { l: f }` by law. A status
+  `button @"Next" {} # toCase @"next" goneOn`, `goneOn` taking the
+  button's own case). `label:` is left for a glyph-only face
+  (`fab { label: Nothing }`). **The outcome is the case**: an emitter
+  emits its own case, as an editor edits its own field, and whatever the
+  business decides about it — which result, which copy — is decided where
+  the case is consumed (the fold's handler, the status's copy function),
+  never by an adopter rewriting the emitter's output.
+- **statuses** (`snackbar`, `banner`) take their copy as their
+  argument: a **record of per-case copy functions**, one per business
+  case the status shows — `snackbar { registered: welcomeLine }` for one
+  case, `snackbar bookingLine` for flight-booker's mutually exclusive
+  outcomes. The copy record is to a status what the read function is to
+  a display: the business function at the leaf, the elimination the
+  leaf's own, so no `match` appears in the status story. A status
   mid-pipeline — showing events that must also flow on — wraps with
   `# observed` (payment's retry toast narrates the retry loop); the
   status may consume a narrower variant than the stage carries,
@@ -257,21 +258,21 @@ order = DOM order.
 
 A card whose content is one model sub-record is not chrome but a
 **labelled group** — `group @"Customer" $ …` (MDC2/MDC3) states the
-surface, the heading and the `field @l` nesting in one word: the label
+surface, the heading and the `focusField @l` nesting in one word: the label
 is the field the group nests, the heading copy verbatim, and the
 accessible group name (`role="group"`). Because it draws the surface,
 the group **leads its lines like any container** (`card $`,
 `confirmed cfg $`) — never trailing as a `#` chain — so the `@l` anchor
 sits at the head of the block it wraps. It is fused for the same reason
-the leaves are — the label does work a trailing `# field @l` cannot
+the leaves are — the label does work a trailing `# focusField @l` cannot
 (heading copy, accessible name) — so hand-spelling the trio (`card`, a
-`staticText` heading, `# field @l`) is the smell `group` deletes. A card
+`staticText` heading, `# focusField @l`) is the smell `group` deletes. A card
 grouping no model (a display card, a button row) stays the blind `card`
 with its heading as typography (order-form's Identifier and Total
 cards); a flat sub-row focus stays `# subStrong` (parcel's address
-form). The bare `field @l` itself is **design-system plumbing, not
+form). The bare `focusField @l` itself is **design-system plumbing, not
 application vocabulary** (not re-exported from `PUI`): every vocabulary
-editor is `field @l`-lifted inside — the plain-HTML floor's
+editor is `focusField @l`-lifted inside — the plain-HTML floor's
 `input @"Name" "text"` included — and sub-model nesting is `group @l`,
 so a nesting no mechanism fits is a missing-vocabulary signal, never a
 reason to reach for the lens.
@@ -307,7 +308,7 @@ interchangeable:
   released per feed), `# shownWhen @l classifier` for display panes
   (attached on relevance, released always), `# inCase @l classifier`
   for an **editor pane** — a
-  whole-row editor that exists only in one mode, its own `field @l` lift
+  whole-row editor that exists only in one mode, its own `focusField @l` lift
   carrying the rest of the row — `item # shownEach @l proj` for keyed
   collections, `confirmed cfg $ content` where the flow
   must wait for the user's confirmation. Content slots accept only
@@ -359,7 +360,7 @@ Worked examples, by shape:
 - **smallest MVU** — counter.
 - **load-fed loop** — order-form (load action → `looped` form and
   summary → events → backend dispatch → statuses); it is also the
-  four-direction showcase. The loop has no seed of its own — the load
+  four-shape showcase. The loop has no seed of its own — the load
   action feeds it — and it is what keeps every editor's retained
   background current.
 - **both combined** — crud (a load action feeding a `looped` form whose
@@ -602,8 +603,7 @@ holds the business functions over the model, seed first.
   click and `toCase @l` introduces the case, closing the row itself.
 - **Named one-liner UI components.** A UI component function whose whole body is one
   pipeline expression — the named toast is the archetype
-  (`submittedToast = snackbar # forCase @"orderSubmitted"
-  submittedLine`) — is glue: inline the expression at its pipeline
+  (`submittedToast = snackbar { orderSubmitted: submittedLine }`) — is glue: inline the expression at its pipeline
   position and delete the function (see the Layout rule). The copy
   function's business name already says what shows.
 
@@ -669,10 +669,10 @@ anchor, and the anchor's sort says what the line is:
   label *is* the model field the line edits (`filledTextField @"First name" {}`,
   `dropdown @"Room" {} […]`, a sub-form's `group @"Customer" $ …`, the
   plain-HTML floor's `input @"Name" "text"`);
-- a **case** — the `@l` on an emitter, pane or status adoption: the
+- a **case** — the `@l` on an emitter or pane, or the key of a status's copy record: the
   label *is* the business case the line emits or shows
   (`button @"Submit order" {}`, `# shownWhen @"estimated" distanceOf`,
-  `# forCase @"registered" welcomeLine`);
+  `snackbar { registered: welcomeLine }`);
 - a **named read function or bare accessor** — a display's content,
   living in the logic module (`text balanceLine`, `text _.title`);
 - **nothing** — chrome: statics and oculars write nothing, so they
@@ -708,7 +708,7 @@ induces — view first, logic module written to its names — is
 - **One-liner `PUI Web`-returning functions are inlined.** A named
   UI component function whose whole body is a single pipeline expression is
   indirection: write the expression at its use site —
-  `snackbar # forCase @"orderSubmitted" submittedLine` sits directly in
+  `snackbar { orderSubmitted: submittedLine }` sits directly in
   the status merge — and delete the function with its annotation. The
   named business argument (`submittedLine`) carries the meaning, and its
   closed signature pins the row the annotation used to pin. A standalone
@@ -750,8 +750,7 @@ induces — view first, logic module written to its names — is
   `foreach` multiplying an ocular-wrapped UI component — the paren must open
   *before* the ocular, never after its `$`, which would put the chain
   inside the element (one container around the collection instead of one
-  per item). The `lcmap`-only adopter (`forProperty`) is safe either
-  side of a shape-preserving ocular.
+  per item).
 - **Indentation is two spaces per step.** A block's lines sit two columns
   deeper than the line that opens it — `( Semigroupoid.do` included, so its
   stages are two in from the `(` line — a continuation two deeper than the
@@ -862,8 +861,8 @@ induces — view first, logic module written to its names — is
   affix needs no conditional, factor it.
 - **Business emissions carry bare data, never UI copy.** Toast and
   banner copy lives in named copy functions from the logic module,
-  handed to the status adopter in place
-  (`snackbar # forCase @"registered" welcomeLine`); the event carries
+  handed to the status in place
+  (`snackbar { registered: welcomeLine }`); the event carries
   the order, the outcome, the reason — the data, not the sentence.
   Validation results are payloads, not strings destined for a particular
   UI component.
@@ -947,8 +946,7 @@ induces — view first, logic module written to its names — is
   vocabulary: the adopters, the merges' qualified-do, and the mechanisms
   with their projection arguments — `provided @l classifierOf`, `foreach @l
   rowsOf`, `listOf opts rowsOf`, `dispatched envelopeOf`,
-  `toCase @l payloadOf`, `forCase @l copyOf`,
-  `toCases outcomeOf`, `forCases lineOf`, `forProperty`,
+  `toCase @l payloadOf`,
   `settled normalize`, `bracketed stateOf caseOf`, with `identity`
   saying verbatim. Every raw `lcmap`/`rmap`/`dimap` an application would
   write has one of those homes. A shape none of them fit is a
@@ -1007,7 +1005,7 @@ module is written to its names. With the watch build running
    written so far — the view computes the model, and the hole spells
    it out — and suggests any in-scope value of that row. Every
    **exact-payload position** reports too:
-   `snackbar # forCase @"Book" ?line` comes back as
+   `snackbar { "Book": ?line }` comes back as
    `{ name :: String } -> String`, suggesting `_.name`.
 3. **Decide the subsumed footprints yourself; the signature is the
    decision.** At every subsuming position — a display read under
@@ -1095,7 +1093,7 @@ What they do **not** guarantee: leaf conformance itself (the type cannot
 stop a `×→+` leaf emitting during its feed — the provider's burden,
 checked leaf by leaf on the library's bench), payload contracts (that a click carries the row last
 fed is `clicked`'s law, that an editor re-attaches its background is
-`field`'s), rendering counts (the laws hold up to stutter at the
+`focusField`'s), rendering counts (the laws hold up to stutter at the
 boundary; one rendering per feed is this carrier's step), and anything
 about a variant input's response policy or your business functions'
 correctness. On `PUI` the merge laws are checked over every script to a
@@ -1117,7 +1115,7 @@ writing the app, not an afterthought:
 - **The starvation watchdog** is on by default. A gate that withholds
   and is never fed within 3s prints one `console.warn` naming the gate,
   the exact missing fields, and the fix — `seeded`/`announce`, or the
-  seed argument of `feedback`/`folding`/`unfolding` — and, where the
+  seed argument of `folding`/`unfolding` — and, where the
   missing fields have rendered editors, logs **those elements
   themselves** beside the message (found through the stamp: `name`/
   `aria-label` is the field label), so clicking the warning's element in

@@ -1,7 +1,7 @@
 -- | The **container action**: lift a UI component over a container of its focus —
 -- | `p a b -> p (F a) (F b)` — here at `F = Array`, the container
 -- | `μ x. 1 + a × x`. Containers are generated from `×`, `+` and fixpoints,
--- | so this class is not a fifth merge direction: its *type* is the closure
+-- | so this class is not a fifth merge shape: its *type* is the closure
 -- | of `Strong` and `Choice` under `μ` (the profunctor traversal,
 -- | Jaskelioff–O'Connor). The keyed, retaining semantics is genuine extra
 -- | carrier structure beyond that closure — a Strong/Choice-derived

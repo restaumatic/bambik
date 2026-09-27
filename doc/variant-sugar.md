@@ -132,7 +132,7 @@ same runtime representation. None of the runtime machinery the library code
 relies on — `inj`, `on`, `case_`, `expand`, `contract`, `class Contractable`,
 `class VariantTags` — has any sugar equivalent, so `Data.Variant` stays a
 dependency (imported across `Data.Profunctor.Row` and the
-`Data.Profunctor.Row.*` direction modules).
+`Data.Profunctor.Row.*` shape modules).
 
 The value sugar can replace `inj`/`on`/`case_` **only where the label is a
 syntactic literal**, which rules out every site in the row-profunctor library

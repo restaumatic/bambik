@@ -21,7 +21,7 @@ lawBenchShoelace = do
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)
     , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" {} options)
     , bench "button" "×→+" rows (button @"Go" {})
-    , bench "toast" "+→×" events toast
+    , bench "toast" "+→×" events (toast { event: identity })
     ]
   where
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]

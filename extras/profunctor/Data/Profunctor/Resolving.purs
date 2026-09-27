@@ -23,7 +23,7 @@ import Data.Either (Either)
 import Data.Profunctor (class Profunctor)
 import Data.Tuple (Tuple)
 
--- | The **unary** product→sum strength for this direction: a single **loop /
+-- | The **unary** product→sum strength for this shape: a single **loop /
 -- | iteration step**. `resolve` runs a transformer `p a b` on an input `a`
 -- | alongside a carried state `c`, returning a `Step`:
 -- |
@@ -64,7 +64,7 @@ import Data.Tuple (Tuple)
 -- | `Data.Lens.Shutter`: existential constructors are sound, completeness
 -- | is not claimed.
 -- |
--- | This is the **bare strength** for the `× → +` direction (the analogue of
+-- | This is the **bare strength** for the `× → +` shape (the analogue of
 -- | `Strong`/`Choice`); the row combinator built on it is
 -- | `RecordToVariant.subResolving` — exactly as `RecordToRecord.subStrong` is
 -- | built on `Strong`.

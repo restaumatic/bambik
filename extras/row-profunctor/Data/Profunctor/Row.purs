@@ -15,13 +15,18 @@
 -- | ```
 -- | shape        strength     strength optic  co-strength    co-strength optic  merge
 -- | -----------  -----------  --------------  -------------  -----------------  -----------------
--- | p {|a} {|b}  Strong       Lens            Costrong       Colens *           RecordToRecord *
+-- | p {|a} {|b}  Strong       Lens            Costrong **    Colens *           RecordToRecord *
 -- | p [|a] [|b]  Choice       Prism           Cochoice       Coprism *          VariantToVariant *
 -- | p {|a} [|b]  Resolving *  Shutter *       Coresolving *  Coshutter *        RecordToVariant *
 -- | p [|a] {|b}  Retaining *  Reel *          Coretaining *  Coreel *           VariantToRecord *
 -- | ```
 -- |
--- | `*` marks what this library introduces; the rest is the ecosystem's
+-- | `*` marks what this library introduces; the rest is the ecosystem's.
+-- | `**`: the row form is built on the pointed trace `PointedCostrong` *
+-- | (`Data.Profunctor.PointedCostrong` — `unfirst` with its state channel
+-- | started at a given value), because the raw `unfirst` composite is dead
+-- | on a gated carrier and priming it from inside would need an input seed
+-- | too
 -- | (`Strong`/`Choice` with their `Lens`/`Prism`, and the duals
 -- | `Costrong`/`Cochoice` — whose optics `Colens`/`Coprism`, however, the
 -- | ecosystem never built). For the ecosystem pairs the optics follow by
@@ -70,89 +75,64 @@
 -- |
 -- | Around each merge sit the functions that place a profunctor **into** a
 -- | row. They divide by what each needs — the same three columns as the
--- | table above, so a function's column is its power:
+-- | table above, so a function's column is its power — and a function lives
+-- | in the module of the sides it constrains: one polymorphic on one side
+-- | sits in the diagonal module of the side it constrains.
 -- |
 -- | ```
 -- | shape        Profunctor only                 over the strength            over the co-strength
 -- | -----------  ------------------------------  ---------------------------  --------------------
--- | p {|a} {|b}  atField, forProperty,           subStrong, field            feedback
--- |              asField
--- | p [|a] [|b]  atCase, splitVariant            subChoice, focusCase         iterate
--- | p {|a} [|b]  toCase, recordToCase,           subResolving,                folding
--- |              toCases                         backgroundProperty
--- | p [|a] {|b}  forCase, forCases              subRetaining, focusCase      unfolding
--- |                                              backgroundCase
+-- | p {|a} {|b}  asField, muted, settled         subStrong, focusField       feedback
+-- | p [|a] [|b]  atCase, toCase, forCases        subChoice, focusCase         iterate
+-- | p {|a} [|b]  armed                           subResolving                 folding
+-- | p [|a] {|b}  —                               subRetaining                 unfolding
 -- | ```
 -- |
 -- | The **left** column is `dimap` alone: renaming and rewrapping labels, with
--- | nothing threaded and no state — `atField` reads, `asField`/`forCase` rename
--- | a canonical row, `toCase` introduces one. The **middle** column carries a
+-- | nothing threaded and no state. The **middle** column carries a
 -- | **background** the strength threads. The sub-row family is named for the
 -- | strength it stands on, so each name is the first constraint in its own
 -- | signature (`subStrong`/`subChoice`/`subResolving`/`subRetaining`) — a
 -- | strength names the carrier *pair*, so no side is privileged, where a
 -- | carrier word would be honest on the pure shapes and half-true on the
--- | mixed ones. The rest name a single label (`field`/`focusCase`)
--- | or that label's complement (`backgroundProperty`/`backgroundCase`);
--- | `field` is also the leaf lift, making every label-indexed editor a
--- | whole-row citizen. The
--- | **right** column ties a state channel off with
--- | the co-strength — one trace row form per shape, each seeded but `iterate`
+-- | mixed ones. The pure shapes add their ecosystem single-label optic
+-- | (`focusField`, the Lens, also the leaf lift making every label-indexed
+-- | editor a whole-row citizen; `focusCase`, the Prism). The mixed shapes
+-- | have none: a single label, or a single label's complement, is the
+-- | sub-row focus at a singleton row plus an adopter. The **right** column
+-- | ties a state channel off with the co-strength — one trace row form per
+-- | shape, each seeded with its state's starting value but `iterate`
 -- | (entities pre-exist, events occur).
 -- |
--- | The **complement** cells are blank on the pure shapes for a reason:
--- | `ExclusiveRows f b s` is symmetric, so `subStrong`/`subChoice` may be
--- | pointed at either half of a split, and "hold `l`, transform the rest" is
--- | already one of them at the singleton complement. Only on the mixed shapes
--- | do the two halves differ, because the escaping half must cross carriers,
--- | and there are two ways to cross: wrapped whole at a synthetic label
--- | (`subResolving` sends the background across as case `w`) or,
--- | when what escapes is a single label, injected under its own
--- | (`backgroundProperty`/`backgroundCase`). So `background*` is not the
--- | complement of `focus*` so much as the **label-preserving** crossing, and
--- | it exists only at single-label granularity.
--- |
--- | The **left** column is generated by three choices: which side is
--- | reshaped (`lcmap` or `rmap`), that side's carrier, and whether the
--- | wrapped side is a bare value, the canonical row, or the whole row.
+-- | The **left** column is generated by two choices: which side is
+-- | reshaped (`lcmap` or `rmap`) and that side's carrier.
 -- |
 -- | ```
 -- |                          input ×      input +    output ×   output +
 -- | -----------------------  -----------  ---------  ---------  ------------
--- | bare, closed singleton   atField      atCase     —          toCase
--- | bare, open row           —            —          —          recordToCase
--- | one field of a wider row forProperty  forCase    —          —
--- | whole row                —            forCases   —          toCases
+-- | bare, closed singleton   —            atCase     —          toCase
+-- | whole row                —            forCases   —          —
 -- | ```
 -- |
--- | These readers carry **no label
--- | argument**: the leaf states the business label once, as its own type
--- | argument, and the adopter reads it back out of the closed singleton
--- | row via `RowToList`'s fundep. There is no formatter cell: a display
--- | whose content is copy takes its **read function** at the leaf
--- | (`text lineOf`), never an adopter bracket
--- | (doc/research-copy-is-a-function.md). Renames (`asField`-style) survive only
--- | where a packaged control fuses a canonical core to a surface label.
+-- | Business functions are arguments of leaves, never adopters: a display
+-- | takes its **read function** (`text lineOf`), a status its per-case copy
+-- | record (`snackbar { booked: bookedLine }`), and an emitter emits its own
+-- | case, which the fold consumes (doc/research-copy-is-a-function.md). So
+-- | the grid holds only the structural `atCase`/`toCase`, and `forCases` —
+-- | the status face's plumbing, reading the face's own case back out of its
+-- | closed singleton row via `RowToList`'s fundep, as `focusField` is the
+-- | editor face's. The rename `asField` survives
+-- | only where a packaged control fuses a canonical core to a surface
+-- | label.
 -- |
--- | The blanks are the **merge law** restated one layer down. A *shared* side
--- | may be touched partially; an *owned* side must be handled or produced
--- | whole — records share their input and own their output, variants own
--- | their input and share their output. So open-row adopters exist at
--- | record-input and variant-output and nowhere else: a partial variant read
--- | is not total, and a partial record build would have to invent the
--- | remaining fields, which only `field @l`'s retained background can
--- | supply over `Strong`.
--- |
--- | The output-`×` bare-value cells are deliberately empty: a record output
--- | is owned, so a bare value could become a field only as the whole row,
--- | and a label-indexed leaf already emits its labelled row (`field @l`
--- | lifts an editor into it) exactly as a label-indexed emitter is
--- | `recordToCase @l` — the closed-singleton field build had nothing left
--- | to do and was pruned (L14). `asField` is the fused both-side rename packaged controls
--- | want (a fixed core row renamed at the surface), and the deliberately
--- | absent `+ → +` fusion is `atCase @l # toCase @l' f`. The one entry
--- | outside the grid is `splitVariant`, a plain function rather than a
--- | placement.
+-- | The record columns are empty. Output `×` is owned, so a bare value could
+-- | become a field only as the whole row, and a label-indexed leaf already
+-- | emits its labelled row (`focusField @l` lifts an editor into it); turning an
+-- | occurrence into a field value needs the rest of the row, which only
+-- | `focusField @l`'s retained background can supply over `Strong`. Input `×`
+-- | is read by the leaf's own read function or through `focusField @l`, so the
+-- | record-input readers were pruned (L14). The one entry outside the grid
+-- | is `splitVariant`, a plain function rather than a placement.
 -- |
 -- | The merge's two obligations are per-side and dual, and they are what the
 -- | constraint vocabulary below spells out: on an **input** side, where does
@@ -260,7 +240,7 @@
 -- | its feed (`announce`, the point).
 -- |
 -- | **What is not a law here.** That an emitted `{ | o }` is whole is the
--- | type. That `field @l` re-attaches the background, that `clicked`
+-- | type. That `focusField @l` re-attaches the background, that `clicked`
 -- | replays the row last fed, that `settled`'s normalizer is idempotent
 -- | are laws of those words, stated at them. That an occurrence twice is
 -- | two, that a handler answers any number of times, that a fold releases
@@ -586,7 +566,7 @@ instance
             (Beside (Beside (Beside (Beside (Text "One operand owns { ") (Text ownDoc)) (Text " }, the other { ")) (Text otherDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `asField`/`field`/`atCase` label in this `do` block.")))
+              (Text "Look for the duplicated `asField`/`focusField`/`atCase` label in this `do` block.")))
       )
   ) => LabelAbsentK EQ l rest own other
 instance LabelAbsent l rest own other => LabelAbsentK LT l rest own other
@@ -618,7 +598,7 @@ instance
             (Beside (Beside (Text "The row is { ") (Text origDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `asField`/`field`/`atCase` label in this `do` block.")))
+              (Text "Look for the duplicated `asField`/`focusField`/`atCase` label in this `do` block.")))
       )
   ) => NoDuplicateLabelsK EQ l rest orig
 instance NoDuplicateLabels rest orig => NoDuplicateLabelsK LT l rest orig
