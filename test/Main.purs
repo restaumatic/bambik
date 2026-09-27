@@ -36,7 +36,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import OrderFormLogic (fulfillmentCase, fulfillmentState)
-import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, optioned, replaying, resolveFor, seeded, silence, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, observed, optioned, replaying, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -590,6 +590,23 @@ main = do
     Ref.read outs >>= assertEqual "updated: value passes through" [ { n: 10 } ]
     fire gProp 3
     Ref.read outs >>= assertEqual "updated: event folded into retained model" [ { n: 10 }, { n: 13 } ]
+    fire gProp 3
+    Ref.read outs >>= assertEqual "updated: a second event with no re-feed folds into the first's result" [ { n: 10 }, { n: 13 }, { n: 16 } ]
+
+  -- observed (the +-diagonal pass-through): every event forwards once at
+  -- feed time; the status is fed exactly the cases it consumes, and its
+  -- own emissions are dropped.
+  do
+    shown <- Ref.new ([] :: Array (Variant ( charge :: Int )))
+    sProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array (Variant ( charge :: Int, done :: String )))
+    m <- unwrap (observed (probeIO shown sProp :: PUI Effect (Variant ( charge :: Int )) {}))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (inj (Proxy @"charge") 1)
+    m.toUser (inj (Proxy @"done") "ok")
+    fire sProp {}
+    Ref.read shown >>= \xs -> assertEqual "observed: the status sees only its cases" [ "charge" ] (map caseText xs)
+    Ref.read outs >>= \xs -> assertEqual "observed: every event forwards once, the status's emission dropped" [ "charge", "done" ] (map caseText xs)
 
   -- applied (the occurrence stage): a state transformer over the retained
   -- row, stepped on every emission — law: applied f ≡ updated (const f).

@@ -82,9 +82,9 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Acting (class Acting)
-import Data.Profunctor.Choice (class Choice)
+import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
@@ -110,14 +110,14 @@ import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, replaying, silence, toCases)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant, replaying, silence, toCases)
 import Data.Profunctor.Row (class RowLabels, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, variantToVariant)
-import Data.Profunctor.Strong (class Strong)
+import Data.Profunctor.Strong (class Strong, first)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -929,16 +929,25 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | likewise for the fed row. With `small ≡ big` and `narrow ≡ big` this is
 -- | the plain diagonal stage.
 -- |
--- | **Not `Strong`'s diagonal** (a derivation considered and rejected
--- | 2026-09-15): `dimap (\s -> Tuple s s) fold (first w)` has the fold but
--- | neither of the stage's two other facts. `first` retains the last row
--- | *fed*, so two events with no re-feed between them would both fold into
--- | the same base where this stage folds the second into the first's
--- | result; and `first w` emits only on `w`'s emissions, while this stage
--- | passes every fed value on — and that pass-through is not a record merge
--- | with the wire, since two owners of the same row are a type error
--- | (`OwnedRecordOutputs`). The occurrence sources do get their retention
--- | from `Strong` (`replaying`); the fold's own state does not.
+-- | **Derived** (2026-09-27), not a carrier primitive: the wire and the
+-- | fold, merged by the `× → +` merge and collapsed back to the row —
+-- |
+-- | ```
+-- | updated h w = dimap { s: _ } (match { fed: identity, folded: identity })
+-- |   (recordToVariant (wire # toCase @"fed") (looped fold # toCase @"folded"))
+-- | fold = dimap (\s -> Tuple (narrow s) s) (\(Tuple e s) -> h e s ∪ s) (first w)
+-- | ```
+-- |
+-- | `first` retains the row the emitter was fed and pairs it with each
+-- | emission; `looped` feeds each folded row straight back, so a second
+-- | event with no re-feed between folds into the first's result, and the
+-- | emitter replays the folded row. The pass-through cannot be a `× → ×`
+-- | merge with the wire — two owners of one row are a type error — but the
+-- | `× → +` merge has no owners on its output side, so the wire's answer
+-- | and the fold's result leave as two cases of one variant. (The same
+-- | derivation without `looped`, rejected 2026-09-15, folded both events
+-- | into the same base.) The nesting under `s` gives the merge's row
+-- | constraints closed rows to solve.
 updated
   :: forall m small rest big narrow extra e
    . MonadEffect m
@@ -947,32 +956,9 @@ updated
   => (e -> { | small } -> { | small })
   -> PUI m { | narrow } e
   -> PUI m { | big } { | big }
-updated handler w = wrap do
-  evts <- unwrap (widenRecordInput w)
-  sRef <- liftEffect $ Ref.new Nothing
-  mPropRef <- liftEffect $ Ref.new Nothing
-  guard <- liftEffect gateGuard
-  pure
-    { toUser: \s -> do
-        guard.fed
-        Ref.write (Just s) sRef
-        evts.toUser s
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop s
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        evts.fromUser \e -> do
-          ms <- Ref.read sRef
-          case ms of
-            Nothing -> do
-              guard.blocked "updated: an event was dropped and no model has arrived for 3s — the update stage has no retained state to fold into. Seed the pipeline (`with initial`/`mvu seed`)." []
-              tr "updated: event withheld (no retained state yet)" e
-            Just s -> do
-              tr "updated: folding event" e
-              let s' = unsafeUnion (handler e (unsafeCoerce s)) s :: { | big }
-              Ref.write (Just s') sRef
-              prop s'
-    }
+updated handler w = dimap (\s -> { s }) (match { fed: identity, folded: identity }) $ recordToVariant
+  (dimap _.s (inj (Proxy @"fed")) identity :: PUI m { s :: { | big } } [ fed :: { | big } ])
+  (dimap _.s (inj (Proxy @"folded")) (looped (dimap (\s -> Tuple (unsafeCoerce s :: { | narrow }) s) (\(Tuple e s) -> unsafeUnion (handler e (unsafeCoerce s)) s :: { | big }) (first w))) :: PUI m { s :: { | big } } [ folded :: { | big } ])
 
 -- | The **occurrence stage** — `updated` for an emitter that carries no
 -- | payload of its own. A `× → +` leaf fed the row it acts on (a button,
@@ -1028,28 +1014,20 @@ applied f = updated (const f)
 -- | events are one-shot, so re-emitting the last event would duplicate it —
 -- | and the drop is lossless by type: like the gated displays, `observed` accepts
 -- | only a status whose output is `{}`.
+-- |
+-- | **Derived** (2026-09-27): the wire and the status, merged by the
+-- | `× → +` merge over the event nested as a record field — the status
+-- | behind `left` so it sees only its contracted cases, `>>> silence` so its
+-- | emissions leave as nothing.
 observed
   :: forall m narrow wider
    . MonadEffect m
   => Contractable wider narrow
   => PUI m [ | narrow ] {}
   -> PUI m [ | wider ] [ | wider ]
-observed status = wrap do
-  st <- unwrap status
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \v -> do
-        case contract v of
-          Just n -> do
-            tr "observed → status" n
-            st.toUser n
-          Nothing -> pure unit
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop v
-    , fromUser: \prop -> do
-        st.fromUser \_ -> pure unit
-        Ref.write (Just prop) mPropRef
-    }
+observed status = dimap (\v -> { event: v }) (match { forwarded: identity }) $ recordToVariant
+  (dimap _.event (inj (Proxy @"forwarded")) identity :: PUI m { event :: [ | wider ] } [ forwarded :: [ | wider ] ])
+  (lcmap (\r -> maybe (Right unit) Left (contract r.event)) (left (status >>> silence)) >>> lcmap (const {}) silence :: PUI m { event :: [ | wider ] } [ forwarded :: [ | wider ] ])
 
 -- | The **tick source**: an occurrence of case `l` every `interval`, out of
 -- | the terminal record — the timer's `× → +` leaf, exactly as a click
@@ -1342,33 +1320,19 @@ foreach f w = lcmap f $ wrap do
 -- | dissolves any need for the element to pass its key
 -- | field through. `Ord k` is the reconciler's indexing requirement;
 -- | identity semantics remain equality — keys must be unique.
+-- |
+-- | **Derived** (2026-09-27): `updated` folding a `foreach` whose elements
+-- | tag their emissions with the key `first` retains from their fed row —
+-- | the keyed reconciliation is `foreach`'s, the input-primed fold
+-- | `updated`'s.
 edited :: forall @l m node k r a narrow extra. Hosting m node => IsSymbol l => Cons l k r a => Lacks l r => Ord k => Union narrow extra a => PUI m { | narrow } { | r } -> PUI m (Array { | a }) (Array { | a })
-edited item0 = let item = widenRecordInput item0 in wrap do
-  hooks <- hosting item
-  liftEffect do
-    propRef <- Ref.new Nothing
-    entriesRef <- Ref.new []
-    busyRef <- Ref.new false
-    arrRef <- Ref.new []
-    let
-      keyOf = Record.get (Proxy @l)
-      emitAll = do
-        arr <- Ref.read arrRef
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> prop arr
-      -- complete the key-less emission with ITS OWN row's key — the return
-      -- address is supplied by the carrier, never by the element
-      onEmit k _ freshRow = do
-        Ref.modify_ (map \x -> if keyOf x == k then Record.insert (Proxy @l) (Record.get (Proxy @l) x) freshRow else x) arrRef
-        busy <- Ref.read busyRef
-        unless busy emitAll
-    pure
-      { toUser: \arr -> do
-          Ref.write arr arrRef
-          reconcileKeyed keyOf hooks onEmit busyRef entriesRef arr
-          emitAll
-      , fromUser: \prop -> Ref.write (Just prop) propRef
-      }
+edited item0 = dimap (\xs -> { xs }) _.xs $ updated folded (lcmap _.xs (foreach @l identity keyed) :: PUI m { xs :: Array { | a } } { key :: k, row :: { | r } })
+  where
+  keyOf = Record.get (Proxy @l)
+  keyed :: PUI m { | a } { key :: k, row :: { | r } }
+  keyed = dimap (\x -> Tuple (unsafeCoerce x :: { | narrow }) (keyOf x)) (\(Tuple row key) -> { key, row }) (first item0)
+  folded :: { key :: k, row :: { | r } } -> { xs :: Array { | a } } -> { xs :: Array { | a } }
+  folded e s = { xs: map (\x -> if keyOf x == e.key then Record.insert (Proxy @l) e.key e.row else x) s.xs }
 
 -- | The **keyed dispatch** — the +→+ member: one runtime case at a time.
 -- | A fed `{ key, value }` reaches exactly the instance whose key matches —
