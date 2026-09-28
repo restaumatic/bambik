@@ -1,4 +1,4 @@
-module PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, favoriteShots, isOpen, landscapesOpen, openAlbum) where
+module PhotoGalleryLogic (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum) where
 
 import Prelude (($), (*), (+), (<#>), (<>), (==), mod, show)
 
@@ -51,10 +51,13 @@ openAlbum album = { album }
 favoriteShots :: Array { src :: String, label :: String }
 favoriteShots = [ "Dawn Ridge", "Half Smile", "Orbit Study", "Quiet Lake" ] <#> \label -> { src: developedPhoto label, label }
 
-albumPhotos :: { album :: String } -> Array { src :: String, label :: String }
-albumPhotos { album } =
-  maybe [] (\a -> a.shots <#> \label -> { src: developedPhoto label, label })
+albumShots :: { album :: String } -> Array { shot :: String }
+albumShots { album } =
+  maybe [] (\a -> a.shots <#> \shot -> { shot })
     (find (\a -> a.name == album) albumCatalogue)
+
+developedShot :: { shot :: String } -> { src :: String, alt :: String }
+developedShot { shot } = { src: developedPhoto shot, alt: shot }
 
 developedPhoto :: String -> String
 developedPhoto caption =

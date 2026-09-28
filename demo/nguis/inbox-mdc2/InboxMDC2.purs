@@ -24,12 +24,12 @@ inboxMDC2 =
         body1 (text bodyText) # shown
         iconButton @"Delete message" { icon: "delete" } ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
       ( Semigroupoid.do
-        ( dialog { title: "Delete the last message?" } $ RecordToVariant.do
+        ( dialog "Delete the last message?" $ RecordToVariant.do
           button @"Delete" {} # with {}
           button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
-        banner { "Delete": (const inboxZeroLine) } # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
+        banner @"Delete" (const inboxZeroLine) # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
       fab @"Compose" { icon: "edit" } # applied composeMessage
-      ( menu { label: "Sort" } $ RecordToVariant.do
+      ( menu "Sort" $ RecordToVariant.do
         menuItem @"By sender" {}
         menuItem @"By subject" {}
         menuItem @"Unread first" {} ) # updated (match { "By sender": const <<< sortBySender, "By subject": const <<< sortBySubject, "Unread first": const <<< sortUnreadFirst })

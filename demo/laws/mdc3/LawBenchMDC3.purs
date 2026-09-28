@@ -15,7 +15,7 @@ lawBenchMDC3 = do
     , bench "outlinedTextField" "×→×" texts (outlinedTextField @"Name" {})
     , bench "debouncedTextField" "×→×" texts (debouncedTextField @"Name" { ms: 200.0 })
     , bench "filledTextArea" "×→×" texts (filledTextArea @"Name" { columns: 20, rows: 2 })
-    , bench "checkbox" "×→×" ticks (checkbox @"Terms" @"accepted" @"declined" { ticked: {} } (staticText "I accept"))
+    , bench "checkbox" "×→×" ticks (checkbox @"Terms" @"accepted" @"declined" {} (staticText "I accept"))
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
     , bench "filterChip" "×→×" flags (filterChip @"On" {})
     , bench "iconToggle" "×→×" flags (iconToggle @"On" { onIcon: "star", offIcon: "star_border" })
@@ -23,7 +23,7 @@ lawBenchMDC3 = do
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
     , bench "tabBar" "×→×" tabs (tabBar @"Tab" [ { value: tabA, label: "A" }, { value: tabB, label: "B" } ])
     , bench "linearProgress" "×→×" fractions (linearProgress @"Progress" _.fraction)
-    , bench "imagePane" "×→×" images imagePane
+    , bench "imagePane" "×→×" images (imagePane identity)
     , bench "group" "×→×" grouped (group @"Customer" (filledTextField @"Name" {}))
     , bench "select" "×→×" chosen (select @"Pick" {} options)
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)
@@ -43,7 +43,7 @@ lawBenchMDC3 = do
     , bench "iconButton" "×→+" rows (iconButton @"Go" { icon: "add" })
     , bench "menuItem" "×→+" rows (menuItem @"Go" {})
     , bench "listOf" "×→+" lists (listOf @"picked" _.id {} _.items (text _.title))
-    , bench "snackbar" "+→×" events (snackbar { event: identity })
+    , bench "snackbar" "+→×" events (snackbar @"event" identity)
     , bench "indeterminateLinearProgress" "+→×" runs (indeterminateLinearProgress @"Loading")
     , bench "indeterminateCircularProgress" "+→×" runs (indeterminateCircularProgress @"Loading")
     ]
@@ -57,7 +57,7 @@ lawBenchMDC3 = do
   tabB = .b {} :: [ a :: {}, b :: {} ]
   tabs = [ { "Tab": tabA, other: 1 }, { "Tab": tabB, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
-  images = [ { src: "a.png", label: "A" }, { src: "b.png", label: "B" } ]
+  images = [ { src: "a.png", alt: "A" }, { src: "b.png", alt: "B" } ]
   grouped = [ { "Customer": { "Name": "alpha" }, other: 1 }, { "Customer": { "Name": "beta" }, other: 2 } ]
   options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]

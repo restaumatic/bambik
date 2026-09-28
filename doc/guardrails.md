@@ -71,10 +71,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `button @"Submit order" {}`, `select @"Milk" cfg opts`). No canonical
   label (`value`/`clicked`/`event`) appears in application code: business
   functions are arguments of leaves, never adopters — a display takes its
-  read function, a status its per-case copy record, and an emitter emits
-  its own case (the adopters `toCases`/`forCase` and the application-facing
-  `forCases` are deleted, 2026-09-27; `forCases` survives as the status
-  face's vocabulary plumbing, `focusField`'s variant twin; the view-side
+  read function, a status its business case and copy function
+  (`snackbar @"booked" bookedLine`), and an emitter emits its own case
+  (the adopters `toCases`/`forCases` are deleted, 2026-09-27; `forCase`
+  survives as the status face's vocabulary plumbing, `focusField`'s
+  variant twin, no longer re-exported; the view-side
   read adopters `projection`/`projected` went earlier,
   doc/research-presentation-model.md). Statuses keep their
   internal payload case private and derived. Components MUST NOT have
@@ -443,8 +444,8 @@ The codebase is three floors, each greppable:
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf opts
-rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, a status's copy record
-(`snackbar { booked: bookedLine }`), `settled normalize`,
+rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, a status's copy function
+(`snackbar @"booked" bookedLine`), `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next word waiting to be coined — never a reason to import the
@@ -487,12 +488,12 @@ code below the UI) are algebra-layer material and exempt by location.
   Checkable form: `npm run check-view-model` rejects
   `projection`/`projected` anywhere in `demo/` and any lambda in a
   `text` read.
-- A status takes its copy as its argument: a record of per-case copy
-  functions (`snackbar { booked: bookedLine }`), the elimination the
-  leaf's own — the status's counterpart of a display's read function.
-  Its canonical `[ event :: String ]` face stays private to the
-  vocabulary, lifted by `forCases` as an editor's face is by
-  `focusField`.
+- A status is label-indexed at its business case and takes that case's
+  copy function (`snackbar @"booked" bookedLine`) — the status's
+  counterpart of a display's read function. Mutually exclusive outcomes
+  are sibling statuses, each owning its case. Its canonical
+  `[ event :: String ]` face stays private to the vocabulary, lifted by
+  `forCase @l` as an editor's face is by `focusField @l`.
 - Rationale, census and laws: doc/research-copy-is-a-function.md, which
   partially reverses doc/research-presentation-model.md (keeping its
   testability motivation and its `settled` half); the application-side

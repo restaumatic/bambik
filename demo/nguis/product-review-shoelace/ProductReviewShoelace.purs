@@ -26,4 +26,4 @@ productReviewShoelace =
       ) # mvu freshImpression
       p (text previewLine) # shown
       button @"Submit review" {} # armed
-      toast { "Submit review": submittedLine }
+      toast @"Submit review" submittedLine

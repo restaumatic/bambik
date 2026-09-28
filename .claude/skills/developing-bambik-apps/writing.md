@@ -213,13 +213,15 @@ syntax (`r { "Name" = … }`) all work unchanged.
   business decides about it — which result, which copy — is decided where
   the case is consumed (the fold's handler, the status's copy function),
   never by an adopter rewriting the emitter's output.
-- **statuses** (`snackbar`, `banner`) take their copy as their
-  argument: a **record of per-case copy functions**, one per business
-  case the status shows — `snackbar { registered: welcomeLine }` for one
-  case, `snackbar bookingLine` for flight-booker's mutually exclusive
-  outcomes. The copy record is to a status what the read function is to
-  a display: the business function at the leaf, the elimination the
-  leaf's own, so no `match` appears in the status story. A status
+- **statuses** (`snackbar`, `banner`) are label-indexed at the business
+  case they show and take its copy function: `snackbar @"registered"
+  welcomeLine` reads "the registered snackbar", nothing buried in a
+  trailing record. The copy function is to a status what the read
+  function is to a display — the business function at the leaf. Mutually
+  exclusive outcomes are sibling statuses in a `VariantToRecord.do`, each
+  owning its case (flight-booker's `snackbar @"booked" bookedLine` beside
+  `snackbar @"rejected" rejectedLine`), so no `match` appears in the
+  status story. A status
   mid-pipeline — showing events that must also flow on — wraps with
   `# observed` (payment's retry toast narrates the retry loop); the
   status may consume a narrower variant than the stage carries,
@@ -262,7 +264,7 @@ surface, the heading and the `focusField @l` nesting in one word: the label
 is the field the group nests, the heading copy verbatim, and the
 accessible group name (`role="group"`). Because it draws the surface,
 the group **leads its lines like any container** (`card $`,
-`confirmed cfg $`) — never trailing as a `#` chain — so the `@l` anchor
+`confirmed @l title $`) — never trailing as a `#` chain — so the `@l` anchor
 sits at the head of the block it wraps. It is fused for the same reason
 the leaves are — the label does work a trailing `# focusField @l` cannot
 (heading copy, accessible name) — so hand-spelling the trio (`card`, a
@@ -310,7 +312,7 @@ interchangeable:
   for an **editor pane** — a
   whole-row editor that exists only in one mode, its own `focusField @l` lift
   carrying the rest of the row — `item # shownEach @l proj` for keyed
-  collections, `confirmed cfg $ content` where the flow
+  collections, `confirmed @l title $ content` where the flow
   must wait for the user's confirmation. Content slots accept only
   `{}`-output components — an editor inside fails to unify; a genuinely
   emitting assembly is discarded **in writing** with `# muted`.
@@ -603,7 +605,7 @@ holds the business functions over the model, seed first.
   click and `toCase @l` introduces the case, closing the row itself.
 - **Named one-liner UI components.** A UI component function whose whole body is one
   pipeline expression — the named toast is the archetype
-  (`submittedToast = snackbar { orderSubmitted: submittedLine }`) — is glue: inline the expression at its pipeline
+  (`submittedToast = snackbar @"orderSubmitted" submittedLine`) — is glue: inline the expression at its pipeline
   position and delete the function (see the Layout rule). The copy
   function's business name already says what shows.
 
@@ -669,10 +671,10 @@ anchor, and the anchor's sort says what the line is:
   label *is* the model field the line edits (`filledTextField @"First name" {}`,
   `dropdown @"Room" {} […]`, a sub-form's `group @"Customer" $ …`, the
   plain-HTML floor's `input @"Name" "text"`);
-- a **case** — the `@l` on an emitter or pane, or the key of a status's copy record: the
+- a **case** — the `@l` on an emitter, pane or status: the
   label *is* the business case the line emits or shows
   (`button @"Submit order" {}`, `# shownWhen @"estimated" distanceOf`,
-  `snackbar { registered: welcomeLine }`);
+  `snackbar @"registered" welcomeLine`);
 - a **named read function or bare accessor** — a display's content,
   living in the logic module (`text balanceLine`, `text _.title`);
 - **nothing** — chrome: statics and oculars write nothing, so they
@@ -708,7 +710,7 @@ induces — view first, logic module written to its names — is
 - **One-liner `PUI Web`-returning functions are inlined.** A named
   UI component function whose whole body is a single pipeline expression is
   indirection: write the expression at its use site —
-  `snackbar { orderSubmitted: submittedLine }` sits directly in
+  `snackbar @"orderSubmitted" submittedLine` sits directly in
   the status merge — and delete the function with its annotation. The
   named business argument (`submittedLine`) carries the meaning, and its
   closed signature pins the row the annotation used to pin. A standalone
@@ -726,8 +728,8 @@ induces — view first, logic module written to its names — is
   `attrWith` and `tooltip` modify the element they are given, so they are
   composed onto a container with `>>>` (`div >>> attrWith "style" cellFace
   $ …`) or trail a finished leaf with `#` (`span (text _.title) # clWhen
-  isCompleted "todo-done"`, `checkbox @"Loyalty" … # tooltip { text:
-  loyaltyNote }`). Leading with one — `tooltip { … } $ checkbox @"Loyalty"
+  isCompleted "todo-done"`, `checkbox @"Loyalty" … # tooltip
+  loyaltyNote`). Leading with one — `tooltip … $ checkbox @"Loyalty"
   …` — puts chrome, and for a tooltip copy, where the line's anchor
   belongs. A tooltip's note that states a business fact is a named value
   in the logic module (espresso-bar's `loyaltyNote`, derived from the
@@ -862,7 +864,7 @@ induces — view first, logic module written to its names — is
 - **Business emissions carry bare data, never UI copy.** Toast and
   banner copy lives in named copy functions from the logic module,
   handed to the status in place
-  (`snackbar { registered: welcomeLine }`); the event carries
+  (`snackbar @"registered" welcomeLine`); the event carries
   the order, the outcome, the reason — the data, not the sentence.
   Validation results are payloads, not strings destined for a particular
   UI component.
@@ -1005,7 +1007,7 @@ module is written to its names. With the watch build running
    written so far — the view computes the model, and the hole spells
    it out — and suggests any in-scope value of that row. Every
    **exact-payload position** reports too:
-   `snackbar { "Book": ?line }` comes back as
+   `snackbar @"Book" ?line` comes back as
    `{ name :: String } -> String`, suggesting `_.name`.
 3. **Decide the subsumed footprints yourself; the signature is the
    decision.** At every subsuming position — a display read under

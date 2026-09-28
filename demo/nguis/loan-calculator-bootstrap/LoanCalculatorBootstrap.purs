@@ -31,4 +31,4 @@ loanCalculatorBootstrap =
         staticText "Interest share of total repayment"
         progress @"Interest share" interestShare ) # shown
       button @"Apply for this loan" {} # armed
-      toast { "Apply for this loan": appliedLine }
+      toast @"Apply for this loan" appliedLine

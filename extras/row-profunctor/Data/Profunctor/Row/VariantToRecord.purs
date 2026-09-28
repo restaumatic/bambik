@@ -19,7 +19,7 @@
 -- | on one side sits in the diagonal module of the side it constrains, so
 -- | the mixed modules hold only their strength, their trace and the words
 -- | that genuinely span both sides.
--- | The variant-input words `atCase` and `forCases` are therefore
+-- | The variant-input words `atCase` and `forCase` are therefore
 -- | `VariantToVariant`'s. A label `@w` appears exactly where a row is
 -- | wrapped as one field or case to cross the shape change
 -- | (`subRetaining`, `unfolding`).

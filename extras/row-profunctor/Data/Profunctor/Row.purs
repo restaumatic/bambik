@@ -83,7 +83,7 @@
 -- | shape        Profunctor only                 over the strength            over the co-strength
 -- | -----------  ------------------------------  ---------------------------  --------------------
 -- | p {|a} {|b}  asField, muted, settled         subStrong, focusField       feedback
--- | p [|a] [|b]  atCase, toCase, forCases        subChoice, focusCase         iterate
+-- | p [|a] [|b]  atCase, toCase, forCase         subChoice, focusCase         iterate
 -- | p {|a} [|b]  armed                           subResolving                 folding
 -- | p [|a] {|b}  —                               subRetaining                 unfolding
 -- | ```
@@ -111,14 +111,14 @@
 -- |                          input ×      input +    output ×   output +
 -- | -----------------------  -----------  ---------  ---------  ------------
 -- | bare, closed singleton   —            atCase     —          toCase
--- | whole row                —            forCases   —          —
+-- |                                       forCase
 -- | ```
 -- |
 -- | Business functions are arguments of leaves, never adopters: a display
--- | takes its **read function** (`text lineOf`), a status its per-case copy
--- | record (`snackbar { booked: bookedLine }`), and an emitter emits its own
+-- | takes its **read function** (`text lineOf`), a status its business case
+-- | and copy function (`snackbar @"booked" bookedLine`), and an emitter emits its own
 -- | case, which the fold consumes (doc/research-copy-is-a-function.md). So
--- | the grid holds only the structural `atCase`/`toCase`, and `forCases` —
+-- | the grid holds only the structural `atCase`/`toCase`, and `forCase @l` —
 -- | the status face's plumbing, reading the face's own case back out of its
 -- | closed singleton row via `RowToList`'s fundep, as `focusField` is the
 -- | editor face's. The rename `asField` survives

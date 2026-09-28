@@ -13,7 +13,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderDashboardMDC3 :: Effect Unit
 orderDashboardMDC3 =
   body $
-    topAppBar { title: "Order Dashboard" } $ ( Semigroupoid.do
+    topAppBar "Order Dashboard" $ ( Semigroupoid.do
       every tickPeriod ordersArrive
       rangePicker @"Showing" {}
         [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ]

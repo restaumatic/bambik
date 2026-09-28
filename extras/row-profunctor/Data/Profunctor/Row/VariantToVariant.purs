@@ -16,7 +16,7 @@
 -- |     value-level prism); over bare `Profunctor`, the structural
 -- |     adopters `atCase` (the closed-singleton unwrap of an input case)
 -- |     and `toCase` (a bare output introduced as a case), plus
--- |     `forCases` (each case of a variant rendered into a single-case
+-- |     `forCase @l` (business case `l` rendered into a single-case
 -- |     status's own case); over the co-strength `Cochoice`: `iterate`
 -- |     (the `+`-diagonal trace at row granularity, the `Coprism` optic's
 -- |     row form).
@@ -27,13 +27,13 @@
 -- | that genuinely span both sides.
 -- |
 -- | Business functions are arguments of leaves, never adopters: a display
--- | takes its read function, a status its per-case copy record
--- | (`snackbar { booked: bookedLine }`), and an emitter emits its own case,
+-- | takes its read function, a status its business case and copy function
+-- | (`snackbar @"booked" bookedLine`), and an emitter emits its own case,
 -- | which the fold consumes. So the adopters left are structural — `atCase`
 -- | and `toCase` take their case as a type argument, since there the case
--- | is the caller's to name — and `forCases` is **vocabulary plumbing**, the
--- | variant-input twin of `RecordToRecord.focusField`: every status is its
--- | canonical `[ event :: String ]` face under `forCases copy`, so it is
+-- | is the caller's to name — and `forCase @l` is **vocabulary plumbing**,
+-- | the variant-input twin of `RecordToRecord.focusField`: every status is
+-- | its canonical `[ event :: String ]` face under `forCase @l f`, so it is
 -- | exported for the vocabularies and not re-exported by `PUI`.
 -- |
 -- | ## Laws at `+→+`
@@ -93,7 +93,7 @@ module Data.Profunctor.Row.VariantToVariant
   , focusCase
   , atCase
   , toCase
-  , forCases
+  , forCase
   , iterate
   )
   where
@@ -106,7 +106,7 @@ import Data.Profunctor.Cochoice (class Cochoice, unleft)
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs, splitVariant)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, class VariantMatchCases, case_, expand, inj, match, on)
+import Data.Variant (class Contractable, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -188,20 +188,19 @@ toCase
   -> p i [ | s ]
 toCase f = rmap (\a -> inj (Proxy @l) (f a))
 
--- | Render each case of a variant into a single-case status's own case, one copy function per case.
-forCases
-  :: forall c p a o s1 s rl r cs
+-- | Render business case `l` into a single-case status's own case with `f`.
+forCase
+  :: forall @l c p a b o s cs
    . RowToList cs (RL.Cons c a RL.Nil)
   => IsSymbol c
+  => IsSymbol l
   => Cons c a () cs
+  => Cons l b () s
   => Profunctor p
-  => RowToList r rl
-  => VariantMatchCases rl s1 a
-  => Union s1 () s
-  => { | r }
+  => (b -> a)
   -> p [ | cs ] o
   -> p [ | s ] o
-forCases handlers = lcmap (\v -> inj (Proxy @c) (match handlers v))
+forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
 
 -- | Loop the `again` cases of the output back into the input, emitting only the `done` cases.
 iterate

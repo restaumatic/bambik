@@ -36,4 +36,4 @@ meetingBookerFluent =
       ( Semigroupoid.do
         body1 (text planLine) # shown
         button @"Book the room" {} ) # provided @"complete" plan
-      messageBar { "Book the room": bookedLine }
+      messageBar @"Book the room" bookedLine

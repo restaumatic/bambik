@@ -2,8 +2,9 @@ module FlightBookerMDC3 (flightBookerMDC3) where
 
 import Prelude (Unit, (#), ($))
 
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
+import FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, mvu)
 import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
@@ -25,4 +26,6 @@ flightBookerMDC3 =
       bodyLarge (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
-    snackbar bookingLine
+    VariantToRecord.do
+      snackbar @"booked" bookedLine
+      snackbar @"rejected" rejectedLine

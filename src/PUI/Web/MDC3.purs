@@ -135,12 +135,11 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCases)
+import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Traversable (for)
 import Data.Variant (case_, inj, match, on, prj) as Variant
-import Data.Variant (class VariantMatchCases)
-import Data.Profunctor (rmap) as Profunctor
+import Data.Profunctor (lcmap, rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -150,7 +149,6 @@ import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, shown, staticHTML, staticText, text, textContent, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Type.Proxy (Proxy(..))
 
@@ -466,7 +464,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | target.
 -- |
 -- | The field is a **named two-case variant** the application spells:
--- | `checkbox @"Terms" @"accepted" @"declined" { ticked: {} } (staticText …)`
+-- | `checkbox @"Terms" @"accepted" @"declined" {} (staticText …)`
 -- | is ticked exactly while `"Terms"` sits at `accepted`; ticking reports
 -- | `.accepted ticked`, clearing reports `.declined {}` — so an optional part
 -- | of the model *is* the box's state under its own names, with no second
@@ -475,10 +473,10 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | effect at once.
 -- |
 -- | `ticked` is the ticked case's payload before the model has ever supplied
--- | one — stated by the caller (`{ ticked: {} }` for a plain yes/no fact),
+-- | one — stated by the caller (`{}` for a plain yes/no fact),
 -- | never conjured from the type.
-checkbox :: forall @l @c @n a r rest v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] rest r => Cons c a cr v => Cons n {} nr v => { ticked :: a } -> PUI Web {} {} -> PUI Web { | r } { | r }
-checkbox { ticked } labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l) $
+checkbox :: forall @l @c @n a r rest v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] rest r => Cons c a cr v => Cons n {} nr v => a -> PUI Web {} {} -> PUI Web { | r } { | r }
+checkbox ticked labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l) $
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ wrap do
     aRef <- liftEffect $ Ref.new ticked
     mPropRef <- liftEffect $ Ref.new Nothing
@@ -1148,15 +1146,15 @@ group w = wrap do
 -- | and the decision both dismisses the dialog and travels on. So put only
 -- | deciding controls at the end of its content — something that reports
 -- | without the user deciding would dismiss the dialog as it opens.
-dialog :: { title :: String } -> Ocular (PUI Web)
-dialog { title } content =
+dialog :: String -> Ocular (PUI Web)
+dialog title content =
   el "md-dialog" >>> init pure showDialog closeDialog $ wrap do
     _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
     unwrap (div >>> "slot" := "content" $ content)
 
 -- | The witness rung — see `PUI.Web.MDC2.confirmed`.
-confirmed :: forall read extra row. Union read extra row => { title :: String, confirm :: String } -> PUI Web { | read } {} -> PUI Web { | row } { | row }
-confirmed cfg content = simpleDialog cfg (shown content)
+confirmed :: forall @l read extra row. IsSymbol l => Union read extra row => String -> PUI Web { | read } {} -> PUI Web { | row } { | row }
+confirmed title content = simpleDialog @l title (shown content)
 
 -- | `dialog` with a **confirm button** built in — the confirmation step:
 -- | show what is about to happen, and the button reports it. The content
@@ -1167,13 +1165,13 @@ confirmed cfg content = simpleDialog cfg (shown content)
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the
 -- | `looped`/`observed` argument) — so the content's output is row-shaped.
-simpleDialog :: forall i o. { title :: String, confirm :: String } -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
-simpleDialog { title, confirm } content =
+simpleDialog :: forall @l i o. IsSymbol l => String -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
+simpleDialog title content =
   el "md-dialog" >>> init pure showDialog closeDialog $ Semigroupoid.do
     wrap do
       _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
       unwrap (div >>> "slot" := "content" $ content)
-    div >>> "slot" := "actions" $ (clicked @"confirmed" identity (el "md-text-button" $ staticText confirm)) # Profunctor.rmap (Variant.match { confirmed: identity })
+    div >>> "slot" := "actions" $ (clicked @"confirmed" identity (el "md-text-button" $ staticText (reflectSymbol (Proxy @l)))) # Profunctor.rmap (Variant.match { confirmed: identity })
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just
@@ -1181,17 +1179,16 @@ simpleDialog { title, confirm } content =
 -- | something the user must acknowledge, use a `dialog`.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar { brewed: brewedLine }` — and
--- | let the event carry the bare facts. One snackbar serves several
--- | mutually exclusive outcomes, one copy function per case.
+-- | the snackbar is built — `snackbar @"brewed" brewedLine` — and
+-- | let the event carry the bare facts. Mutually exclusive outcomes are
+-- | sibling snackbars, one per business case.
 snackbar
-  :: forall r rl s s1
-   . RowToList r rl
-  => VariantMatchCases rl s1 String
-  => Union s1 () s
-  => { | r }
+  :: forall @l a s
+   . IsSymbol l
+  => Cons l a () s
+  => (a -> String)
   -> PUI Web [ | s ] {}
-snackbar copy = snackbarFace # forCases copy
+snackbar copy = snackbarFace # forCase @l copy
 
 snackbarFace :: PUI Web [ event :: String ] {}
 snackbarFace = wrap do
@@ -1215,10 +1212,10 @@ snackbarCss = """
 -- | A **menu**: a labelled button that opens a short list of `menuItem`
 -- | actions and closes again when one is picked. For actions; for choosing
 -- | a value the model keeps, use `select`.
-menu :: { label :: String } -> Ocular (PUI Web)
-menu config content =
+menu :: String -> Ocular (PUI Web)
+menu anchorCaption content =
   span >>> "style" := "position: relative; display: inline-block;" $ wrap do
-    _ <- unwrap (staticHTML ("<md-outlined-button trailing-icon>" <> config.label <> "<md-icon slot=\"icon\">arrow_drop_down</md-icon></md-outlined-button>"))
+    _ <- unwrap (staticHTML ("<md-outlined-button trailing-icon>" <> anchorCaption <> "<md-icon slot=\"icon\">arrow_drop_down</md-icon></md-outlined-button>"))
     anchorNode <- gets _.sibling
     w <- unwrap (el "md-menu" $ content)
     menuNode <- gets _.sibling
@@ -1322,10 +1319,10 @@ dataCell = td
 -- | An **image list**: pictures laid out in `columns` masonry columns, each
 -- | one an `imageListItem` — a gallery, where the pictures are the content
 -- | rather than an illustration of it.
-imageList :: { columns :: Int } -> Ocular (PUI Web)
-imageList config content = wrap do
+imageList :: Int -> Ocular (PUI Web)
+imageList columns content = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
-  unwrap $ el "ul" >>> cl "md3-image-list" >>> "style" := ("column-count: " <> show config.columns <> "; column-gap: 16px; margin: 0;") $ content
+  unwrap $ el "ul" >>> cl "md3-image-list" >>> "style" := ("column-count: " <> show columns <> "; column-gap: 16px; margin: 0;") $ content
 
 imageListCss :: String
 imageListCss = """
@@ -1341,15 +1338,15 @@ layoutGrid :: Ocular (PUI Web)
 layoutGrid = div >>> "style" := "display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; padding: 16px;"
 
 -- | One region of a `layoutGrid`, `span` columns wide out of twelve.
-layoutCell :: { span :: Int } -> Ocular (PUI Web)
-layoutCell config = div >>> "style" := ("grid-column: span " <> show config.span <> ";")
+layoutCell :: Int -> Ocular (PUI Web)
+layoutCell cellSpan = div >>> "style" := ("grid-column: span " <> show cellSpan <> ";")
 
 -- | The **top app bar**: the band carrying the screen's title, with the
 -- | content laid out beneath it.
-topAppBar :: { title :: String } -> Ocular (PUI Web)
-topAppBar config content = wrap do
+topAppBar :: String -> Ocular (PUI Web)
+topAppBar title content = wrap do
   liftEffect $ ensureStyle "md3-top-app-bar" topAppBarCss
-  _ <- unwrap (staticHTML ("<header class=\"md3-top-app-bar\"><span class=\"md3-top-app-bar__title\">" <> config.title <> "</span></header>"))
+  _ <- unwrap (staticHTML ("<header class=\"md3-top-app-bar\"><span class=\"md3-top-app-bar__title\">" <> title <> "</span></header>"))
   unwrap (div >>> cl "md3-top-app-bar-content" $ content)
 
 topAppBarCss :: String
@@ -1387,14 +1384,14 @@ drawerCss = """
 -- | information the user needs to complete the task, which belongs on the
 -- | screen. Wrap a single control, and write it trailing so the control
 -- | still reads first:
--- | `checkbox @"Loyalty" @"member" @"guest" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }`.
-tooltip :: { text :: String } -> Ocular (PUI Web)
-tooltip config content =
+-- | `checkbox @"Loyalty" @"member" @"guest" {} (staticText "Loyalty member") # tooltip "Members get 10% off"`.
+tooltip :: String -> Ocular (PUI Web)
+tooltip tipText content =
   span >>> cl "md3-tooltip-anchor" $ wrap do
     liftEffect $ ensureStyle "md3-tooltip" tooltipCss
     tipId <- liftEffect uniqueId
     w <- unwrap ("aria-describedby" := tipId $ content)
-    _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> config.text <> "</div>"))
+    _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> tipText <> "</div>"))
     pure w
 
 -- a plain tooltip is transient: it shows while the pointer rests on the anchor
@@ -1426,22 +1423,26 @@ imageListItem config = wrap do
       <> "<span class=\"md3-image-list__label\">" <> config.label <> "</span>"
       <> "</li>"
 
--- | One picture in an `imageList`, **fed through the channel**: the
--- | canonical `{ src, label }` row arrives as data, so a gallery is the
--- | retaining `foreach` over the pictures rather than a wholesale rebuild —
--- | `imagePane # foreach @"src" albumPhotos`, each item built once and its
+-- | One picture in an `imageList`, **fed through the channel**: like any
+-- | display it takes its read function — the business row in, the picture's
+-- | `{ src, alt }` out — so a gallery is the retaining `foreach` over the
+-- | pictures rather than a wholesale rebuild —
+-- | `imagePane developedShot # shownEach @"shot" albumShots`, each item built once and its
 -- | source and caption updated in place. `imageListItem`'s sibling, for the
 -- | collection case; `imageListItem` stays the closure-known static.
-imagePane :: PUI Web { src :: String, label :: String } {}
-imagePane = wrap do
+imagePane :: forall reads. ({ | reads } -> { src :: String, alt :: String }) -> PUI Web { | reads } {}
+imagePane picture = Profunctor.lcmap picture imagePaneFace
+
+imagePaneFace :: PUI Web { src :: String, alt :: String } {}
+imagePaneFace = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ el "li" >>> cl "md3-image-list__item" $ RecordToRecord.do
     imageFace
-    span >>> cl "md3-image-list__label" $ (text _.label :: PUI Web { src :: String, label :: String } {})
+    span >>> cl "md3-image-list__label" $ (text _.alt :: PUI Web { src :: String, alt :: String } {})
 
-imageFace :: PUI Web { src :: String, label :: String } {}
+imageFace :: PUI Web { src :: String, alt :: String } {}
 imageFace =
-  img >>> cl "md3-image-list__image" >>> attrWith "src" _.src >>> attrWith "alt" _.label $ blank
+  img >>> cl "md3-image-list__image" >>> attrWith "src" _.src >>> attrWith "alt" _.alt $ blank
 
 -- the element adapter for the index-keyed internal collection: reads the
 -- item out of the reconciler's { ix, item } row at the wiring level (the

@@ -124,12 +124,11 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCases)
+import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Traversable (for)
 import Data.Variant (case_, inj, match, on, prj) as Variant
-import Data.Variant (class VariantMatchCases)
-import Data.Profunctor (rmap) as Profunctor
+import Data.Profunctor (lcmap, rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -139,7 +138,6 @@ import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, shown, staticHTML, staticText, text, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Type.Proxy (Proxy(..))
 
@@ -501,7 +499,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | target.
 -- |
 -- | The field is a **named two-case variant** the application spells:
--- | `checkbox @"Terms" @"accepted" @"declined" { ticked: {} } (staticText …)`
+-- | `checkbox @"Terms" @"accepted" @"declined" {} (staticText …)`
 -- | is ticked exactly while `"Terms"` sits at `accepted`; ticking reports
 -- | `.accepted ticked`, clearing reports `.declined {}` — so an optional part
 -- | of the model *is* the box's state under its own names, with no second
@@ -510,10 +508,10 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | effect at once.
 -- |
 -- | `ticked` is the ticked case's payload before the model has ever supplied
--- | one — stated by the caller (`{ ticked: {} }` for a plain yes/no fact),
+-- | one — stated by the caller (`{}` for a plain yes/no fact),
 -- | never conjured from the type.
-checkbox :: forall @l @c @n a r rest v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] rest r => Cons c a cr v => Cons n {} nr v => { ticked :: a } -> PUI Web {} {} -> PUI Web { | r } { | r }
-checkbox { ticked } labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+checkbox :: forall @l @c @n a r rest v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] rest r => Cons c a cr v => Cons n {} nr v => a -> PUI Web {} {} -> PUI Web { | r } { | r }
+checkbox ticked labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   checkboxId <- liftEffect uniqueId
   aRef <- liftEffect $ Ref.new ticked
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -1302,8 +1300,8 @@ group w = wrap do
 -- | and the decision both dismisses the dialog and travels on. So put only
 -- | deciding controls at the end of its content — something that reports
 -- | without the user deciding would dismiss the dialog as it opens.
-dialog :: { title :: String } -> Ocular (PUI Web)
-dialog { title } content = wrap do
+dialog :: String -> Ocular (PUI Web)
+dialog title content = wrap do
   titleId <- liftEffect uniqueId
   contentId <- liftEffect uniqueId
   unwrap $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ wrap do
@@ -1316,19 +1314,19 @@ dialog { title } content = wrap do
     pure result
 
 -- | The **witness rung** of the assurance
--- | ladder, baked in as a component. `confirmed cfg content` is a
+-- | ladder, baked in as a component. `confirmed @l title content` is a
 -- | fulfillment-gated pass-through `p { | row } { | row }` over a
 -- | `{}`-output display, like every content slot in the family: feeding
 -- | opens the modal and feeds the content (which reads a sub-row of the
 -- | fed row, the family's subsumption); the flow is **withheld until the
 -- | user confirms**, then the fed row is released — the release is the
 -- | read receipt. Derived entirely from existing machinery,
--- | `simpleDialog cfg (shown content)`: the replay-on-confirm protocol
+-- | `simpleDialog @l title (shown content)`: the replay-on-confirm protocol
 -- | over the instant rung — the ladder composes, witness rung = instant
 -- | rung inside the modal. A dismiss without confirming releases nothing:
 -- | a declined reading withholds, honestly.
-confirmed :: forall read extra row. Union read extra row => { title :: String, confirm :: String } -> PUI Web { | read } {} -> PUI Web { | row } { | row }
-confirmed cfg content = simpleDialog cfg (shown content)
+confirmed :: forall @l read extra row. IsSymbol l => Union read extra row => String -> PUI Web { | read } {} -> PUI Web { | row } { | row }
+confirmed title content = simpleDialog @l title (shown content)
 
 -- | `dialog` with a **confirm button** built in — the confirmation step:
 -- | show what is about to happen, and the button reports it. The content
@@ -1339,8 +1337,8 @@ confirmed cfg content = simpleDialog cfg (shown content)
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the
 -- | `looped`/`observed` argument) — so the content's output is row-shaped.
-simpleDialog :: forall i o. { title :: String, confirm :: String } -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
-simpleDialog { title, confirm } content = wrap do
+simpleDialog :: forall @l i o. IsSymbol l => String -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
+simpleDialog title content = wrap do
   titleId <- liftEffect uniqueId
   contentId <- liftEffect uniqueId
   unwrap $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ wrap do
@@ -1351,9 +1349,9 @@ simpleDialog { title, confirm } content = wrap do
             _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
             unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
           div >>> cl "mdc-dialog__actions" $ (eventLeaf @"confirmed" $
-            el "button" >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
+            el "button" >>> "type" := "button" >>> "aria-label" := reflectSymbol (Proxy @l) >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
               static (div >>> cl "mdc-button__ripple")
-              span >>> cl "mdc-button__label" $ staticText confirm) # Profunctor.rmap (Variant.match { confirmed: identity })
+              span >>> cl "mdc-button__label" $ staticText (reflectSymbol (Proxy @l))) # Profunctor.rmap (Variant.match { confirmed: identity })
     _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
@@ -1363,17 +1361,16 @@ simpleDialog { title, confirm } content = wrap do
 -- | must acknowledge, use `banner` or a `dialog`.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar { booked: bookingLine }` —
--- | and let the event carry the bare facts. One snackbar serves several
--- | mutually exclusive outcomes, one copy function per case.
+-- | the snackbar is built — `snackbar @"booked" bookedLine` —
+-- | and let the event carry the bare facts. Mutually exclusive outcomes are
+-- | sibling snackbars, one per business case.
 snackbar
-  :: forall r rl s s1
-   . RowToList r rl
-  => VariantMatchCases rl s1 String
-  => Union s1 () s
-  => { | r }
+  :: forall @l a s
+   . IsSymbol l
+  => Cons l a () s
+  => (a -> String)
   -> PUI Web [ | s ] {}
-snackbar copy = snackbarFace # forCases copy
+snackbar copy = snackbarFace # forCase @l copy
 
 snackbarFace :: PUI Web [ event :: String ] {}
 snackbarFace = snackbarContainer $ textOf eventText
@@ -1397,13 +1394,12 @@ snackbarContainer content =
 -- | Material Design 2 only — MD3 dropped the banner, so `PUI.Web.MDC3` has
 -- | none.
 banner
-  :: forall r rl s s1
-   . RowToList r rl
-  => VariantMatchCases rl s1 String
-  => Union s1 () s
-  => { | r }
+  :: forall @l a s
+   . IsSymbol l
+  => Cons l a () s
+  => (a -> String)
   -> PUI Web [ | s ] {}
-banner copy = bannerFace # forCases copy
+banner copy = bannerFace # forCase @l copy
 
 bannerFace :: PUI Web [ event :: String ] {}
 bannerFace = bannerContainer $ textOf eventText
@@ -1433,9 +1429,9 @@ bannerContainer content = wrap do
 -- | A **menu**: a labelled button that opens a short list of `menuItem`
 -- | actions and closes again when one is picked. For actions; for choosing
 -- | a value the model keeps, use `select`.
-menu :: { label :: String } -> Ocular (PUI Web)
-menu config content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ wrap do
-  _ <- unwrap (staticHTML ("<button class=\"mdc-button mdc-button--outlined\" aria-label=\"" <> config.label <> "\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> config.label <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
+menu :: String -> Ocular (PUI Web)
+menu anchorCaption content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ wrap do
+  _ <- unwrap (staticHTML ("<button class=\"mdc-button mdc-button--outlined\" aria-label=\"" <> anchorCaption <> "\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> anchorCaption <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
   anchorNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.ripple."MDCRipple" anchorNode
   w <- unwrap (div >>> cl "mdc-menu" >>> cl "mdc-menu-surface" $ ul >>> cl "mdc-deprecated-list" >>> "role" := "menu" >>> "aria-hidden" := "true" >>> "aria-orientation" := "vertical" $ content)
@@ -1543,9 +1539,9 @@ dataCell content = td >>> cl "mdc-data-table__cell" $ content
 -- | An **image list**: pictures laid out in `columns` masonry columns, each
 -- | one an `imageListItem` — a gallery, where the pictures are the content
 -- | rather than an illustration of it.
-imageList :: { columns :: Int } -> Ocular (PUI Web)
-imageList config content =
-  ul >>> cl "mdc-image-list" >>> cl "mdc-image-list--masonry" >>> "style" := ("column-count: " <> show config.columns <> "; column-gap: 16px; margin: 0;") $ content
+imageList :: Int -> Ocular (PUI Web)
+imageList columns content =
+  ul >>> cl "mdc-image-list" >>> cl "mdc-image-list--masonry" >>> "style" := ("column-count: " <> show columns <> "; column-gap: 16px; margin: 0;") $ content
 
 -- | Material's **responsive layout grid**: the column grid a screen's
 -- | regions are placed on, holding `layoutCell`s.
@@ -1554,14 +1550,14 @@ layoutGrid content = div >>> cl "mdc-layout-grid" $ div >>> cl "mdc-layout-grid_
 
 -- | One region of a `layoutGrid`, `span` columns wide out of twelve — the
 -- | grid reflows to fewer columns on narrow screens.
-layoutCell :: { span :: Int } -> Ocular (PUI Web)
-layoutCell config content = div >>> cl "mdc-layout-grid__cell" >>> cl ("mdc-layout-grid__cell--span-" <> show config.span) $ content
+layoutCell :: Int -> Ocular (PUI Web)
+layoutCell cellSpan content = div >>> cl "mdc-layout-grid__cell" >>> cl ("mdc-layout-grid__cell--span-" <> show cellSpan) $ content
 
 -- | The **top app bar**: the band carrying the screen's title, with the
 -- | content laid out beneath it and clear of it.
-topAppBar :: { title :: String } -> Ocular (PUI Web)
-topAppBar config content = wrap do
-  _ <- unwrap (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> config.title <> "</span></section></div></header>"))
+topAppBar :: String -> Ocular (PUI Web)
+topAppBar title content = wrap do
+  _ <- unwrap (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> title <> "</span></section></div></header>"))
   headerNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.topAppBar."MDCTopAppBar" headerNode
   unwrap (div >>> cl "mdc-top-app-bar--fixed-adjust" $ content)
@@ -1585,12 +1581,12 @@ drawer config nav content = div >>> "style" := "display: flex;" $
 -- | information the user needs to complete the task, which belongs on the
 -- | screen. Wrap a single control, and write it trailing so the control
 -- | still reads first:
--- | `checkbox @"Loyalty" @"member" @"guest" { ticked: {} } (staticText "Loyalty member") # tooltip { text: "Members get 10% off" }`.
-tooltip :: { text :: String } -> Ocular (PUI Web)
-tooltip config content = wrap do
+-- | `checkbox @"Loyalty" @"member" @"guest" {} (staticText "Loyalty member") # tooltip "Members get 10% off"`.
+tooltip :: String -> Ocular (PUI Web)
+tooltip tipText content = wrap do
   tipId <- liftEffect uniqueId
   w <- unwrap ("aria-describedby" := tipId $ content)
-  _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"mdc-tooltip\" role=\"tooltip\" aria-hidden=\"true\"><div class=\"mdc-tooltip__surface mdc-tooltip__surface-animation\">" <> config.text <> "</div></div>"))
+  _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"mdc-tooltip\" role=\"tooltip\" aria-hidden=\"true\"><div class=\"mdc-tooltip__surface mdc-tooltip__surface-animation\">" <> tipText <> "</div></div>"))
   tipNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.tooltip."MDCTooltip" tipNode
   pure w
@@ -1612,21 +1608,25 @@ imageListItem config = staticHTML $
     <> "<div class=\"mdc-image-list__supporting\"><span class=\"mdc-image-list__label\">" <> config.label <> "</span></div>"
     <> "</li>"
 
--- | One picture in an `imageList`, **fed through the channel**: the
--- | canonical `{ src, label }` row arrives as data, so a gallery is the
--- | retaining `foreach` over the pictures rather than a wholesale rebuild —
--- | `imagePane # foreach @"src" albumPhotos`, each item built once and its
+-- | One picture in an `imageList`, **fed through the channel**: like any
+-- | display it takes its read function — the business row in, the picture's
+-- | `{ src, alt }` out — so a gallery is the retaining `foreach` over the
+-- | pictures rather than a wholesale rebuild —
+-- | `imagePane developedShot # shownEach @"shot" albumShots`, each item built once and its
 -- | source and caption updated in place. `imageListItem`'s sibling, for the
 -- | collection case; `imageListItem` stays the closure-known static.
-imagePane :: PUI Web { src :: String, label :: String } {}
-imagePane =
+imagePane :: forall reads. ({ | reads } -> { src :: String, alt :: String }) -> PUI Web { | reads } {}
+imagePane picture = Profunctor.lcmap picture imagePaneFace
+
+imagePaneFace :: PUI Web { src :: String, alt :: String } {}
+imagePaneFace =
   li >>> cl "mdc-image-list__item" >>> "style" := "margin-bottom: 16px;" $ RecordToRecord.do
     imageFace
-    div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ (text _.label :: PUI Web { src :: String, label :: String } {})
+    div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ (text _.alt :: PUI Web { src :: String, alt :: String } {})
 
-imageFace :: PUI Web { src :: String, label :: String } {}
+imageFace :: PUI Web { src :: String, alt :: String } {}
 imageFace =
-  img >>> cl "mdc-image-list__image" >>> attrWith "src" _.src >>> attrWith "alt" _.label $ blank
+  img >>> cl "mdc-image-list__image" >>> attrWith "src" _.src >>> attrWith "alt" _.alt $ blank
 
 -- the element adapter for the index-keyed internal collection: reads the
 -- item out of the reconciler's { ix, item } row at the wiring level (the

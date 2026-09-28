@@ -47,9 +47,8 @@ import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCases)
+import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.Variant (case_, match, on) as Variant
-import Data.Variant (class VariantMatchCases)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -58,8 +57,7 @@ import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticText, text, textOf, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
+import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
@@ -94,10 +92,10 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --       `×→+` events — `button @l` (`.btn.btn-primary`);
 --       `+→×` statuses — `toast` (`.toast` fixed at the bottom, shown
 --         on feed and dismissed by the hand-wired timer) — each taking
---         its per-case copy record (`toast { booked: bookedLine }`).
+--         its business case and copy function (`toast @"booked" bookedLine`).
 --   * **oculars** — shape-preserving decorators: `card { caption }`
 --     (`.card` with a `.card-title`), `listGroup`/`listGroupItem`
---     (`.list-group`), `badge { variant }` (`.badge.text-bg-*`).
+--     (`.list-group`), `badge variant` (`.badge.text-bg-*`).
 --     Typography is deliberately absent: Bootstrap styles plain HTML, so
 --     the `PUI.Web.HTML` element oculars are the typography.
 --
@@ -315,16 +313,15 @@ progress f = wrap do
 -- | happened and needs no reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast { applied: appliedLine }` — and let
+-- | the toast is built — `toast @"applied" appliedLine` — and let
 -- | the event carry the bare facts.
 toast
-  :: forall r rl s s1
-   . RowToList r rl
-  => VariantMatchCases rl s1 String
-  => Union s1 () s
-  => { | r }
+  :: forall @l a s
+   . IsSymbol l
+  => Cons l a () s
+  => (a -> String)
   -> PUI Web [ | s ] {}
-toast copy = toastFace # forCases copy
+toast copy = toastFace # forCase @l copy
 
 toastFace :: PUI Web [ event :: String ] {}
 toastFace = wrap do
@@ -368,8 +365,8 @@ listGroupItem w = (el "li" $ w) # cl "list-group-item"
 -- | A **badge**: a value called out inline — a count, a figure, a status
 -- | word. `variant` is the contextual colour ("primary", "success",
 -- | "danger", ...), so the badge carries meaning as well as emphasis.
-badge :: { variant :: String } -> Ocular (PUI Web)
-badge config w = span w # cl "badge" # cl ("text-bg-" <> config.variant)
+badge :: String -> Ocular (PUI Web)
+badge variant w = span w # cl "badge" # cl ("text-bg-" <> variant)
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

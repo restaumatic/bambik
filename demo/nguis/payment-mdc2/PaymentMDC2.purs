@@ -21,5 +21,5 @@ paymentMDC2 =
         button @"Charge card" { icon: "credit_card" } # toCase @"charge" startCharge
         ( Semigroupoid.do
           indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
-          snackbar { charge: retryLine } # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
+          snackbar @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
     ) # mvu unpaidOrder

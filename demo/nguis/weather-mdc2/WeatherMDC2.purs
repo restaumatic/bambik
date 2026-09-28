@@ -23,6 +23,6 @@ weatherMDC2 =
       caption (text servedLine) # shown
       ( Semigroupoid.do
         iconButton @"About this dashboard" { icon: "info" }
-        simpleDialog { title: "About this dashboard", confirm: "Got it" }
+        simpleDialog @"Got it" "About this dashboard"
           ( body1 (text aboutLine) ) # atCase @"About this dashboard" ) # shown
     ) # mvu warsawBulletin

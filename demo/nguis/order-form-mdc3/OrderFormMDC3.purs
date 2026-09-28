@@ -64,7 +64,7 @@ orderFormMDC3 =
       indeterminateLinearProgress @"busy" # action submitOrder # atCase @"Submit order"
       indeterminateLinearProgress @"busy" # action printReceipt # atCase @"Receipt"
     VariantToRecord.do
-      snackbar { orderSubmitted: submittedLine }
-      snackbar { submissionFailed: rejectionLine }
-      snackbar { receiptPrinted: receiptLine }
+      snackbar @"orderSubmitted" submittedLine
+      snackbar @"submissionFailed" rejectionLine
+      snackbar @"receiptPrinted" receiptLine
   ) # with {}

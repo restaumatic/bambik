@@ -29,7 +29,7 @@ lawBenchHTML = do
     , bench "button" "×→+" rows (button @"Go" (staticText "Go"))
     , bench "clicked" "×→+" rows (clicked @"Go" identity (div (staticText "Go")))
     , bench "onClickedXY" "×→+" units (onClickedXY @"at" (div (staticText "canvas")))
-    , bench "output" "+→×" events (output { event: identity })
+    , bench "output" "+→×" events (output @"event" identity)
     ]
   where
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]

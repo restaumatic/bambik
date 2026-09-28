@@ -44,9 +44,8 @@ import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCases)
+import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.Variant (case_, match, on) as Variant
-import Data.Variant (class VariantMatchCases)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -55,8 +54,7 @@ import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, clicked, el, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, textOf, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
+import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
@@ -90,7 +88,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --       `×→+` events — `button @l` (`<sl-button variant="primary">`);
 --       `+→×` statuses — `toast` (`<sl-alert>` shown on feed,
 --         auto-dismissing via its own `duration`) — each taking
---         its per-case copy record (`toast { booked: bookedLine }`).
+--         its business case and copy function (`toast @"booked" bookedLine`).
 --   * **oculars** — shape-preserving decorators: `card { caption }`
 --     (`<sl-card>` with a header slot). Typography is deliberately absent:
 --     Shoelace styles plain HTML through its tokens, so the `PUI.Web.HTML`
@@ -356,16 +354,15 @@ progressBar f = wrap do
 -- | reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast { submitted: thanksLine }` — and
+-- | the toast is built — `toast @"submitted" thanksLine` — and
 -- | let the event carry the bare facts.
 toast
-  :: forall r rl s s1
-   . RowToList r rl
-  => VariantMatchCases rl s1 String
-  => Union s1 () s
-  => { | r }
+  :: forall @l a s
+   . IsSymbol l
+  => Cons l a () s
+  => (a -> String)
   -> PUI Web [ | s ] {}
-toast copy = toastFace # forCases copy
+toast copy = toastFace # forCase @l copy
 
 toastFace :: PUI Web [ event :: String ] {}
 toastFace = wrap do

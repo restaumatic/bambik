@@ -2,8 +2,9 @@ module FlightBookerHTML (flightBookerHTML) where
 
 import Prelude ((#), ($), Unit)
 
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
+import FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, mvu, blank)
 import PUI.Web (choice, inCase, shown, shownWhen, staticText, text)
 import PUI.Web.HTML (body, button, div, input, label, output, p, select)
@@ -29,4 +30,6 @@ flightBookerHTML =
       p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" (staticText "Book")
     blank # action submit # atCase @"Book"
-    output bookingLine
+    VariantToRecord.do
+      output @"booked" bookedLine
+      output @"rejected" rejectedLine

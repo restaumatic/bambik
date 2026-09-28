@@ -16,7 +16,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 espressoBarMDC3 :: Effect Unit
 espressoBarMDC3 =
   body $
-    topAppBar { title: "Espresso Bar" } $
+    topAppBar "Espresso Bar" $
       card $ Semigroupoid.do
         ( Semigroupoid.do
           tabBar @"Drink"
@@ -34,9 +34,9 @@ espressoBarMDC3 =
             filterChip @"Decaf" {}
           toggleSwitch @"Takeaway cup" {}
           iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "heart_plus" }
-          checkbox @"Loyalty" @"member" @"guest" { ticked: {} } (staticText "Loyalty member") # tooltip { text: loyaltyNote }
+          checkbox @"Loyalty" @"member" @"guest" {} (staticText "Loyalty member") # tooltip loyaltyNote
           divider # shown
-          menu { label: "Presets" } ( RecordToVariant.do
+          menu "Presets" ( RecordToVariant.do
             menuItem @"The usual" {} # with theUsual
             menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
         ) # mvu usualOrder
@@ -45,4 +45,4 @@ espressoBarMDC3 =
           labelMedium $ staticText "Caffeine"
           linearProgress @"Caffeine" caffeineFraction ) # shown
         button @"Place order" { icon: "local_cafe" } # armed
-        snackbar { "Place order": brewedLine }
+        snackbar @"Place order" brewedLine

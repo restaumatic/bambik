@@ -72,15 +72,13 @@ import Data.Maybe (Maybe(..), isNothing)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCases)
+import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (case_, inj, match, on)
-import Data.Variant (class VariantMatchCases)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
+import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
@@ -259,16 +257,15 @@ progress f = wrap do
 -- | itself).
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the output is built — `output { booked: bookedLine }` — and
+-- | the output is built — `output @"booked" bookedLine` — and
 -- | let the event carry the bare facts.
 output
-  :: forall r rl s s1
-   . RowToList r rl
-  => VariantMatchCases rl s1 String
-  => Union s1 () s
-  => { | r }
+  :: forall @l a s
+   . IsSymbol l
+  => Cons l a () s
+  => (a -> String)
   -> PUI Web [ | s ] {}
-output copy = outputFace # forCases copy
+output copy = outputFace # forCase @l copy
 
 outputFace :: PUI Web [ event :: String ] {}
 outputFace = el "output" $ textOf eventText

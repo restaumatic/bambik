@@ -43,7 +43,7 @@ shape module headers.
 | a list, displayed | `item # shownEach @l rowsOf` inside its container ocular | stopwatch's laps | writing.md *Pass-through stages*, *Collections* |
 | a display inside a collection item or pane payload | `text f` over the item/payload row — the row carries the *source* fields, the function formats them | stopwatch's laps; flight-booker's panes | writing.md *copy is a function, not a field* |
 | a live readout that should settle before it redraws | `stage # debounced { ms }` | flight-booker's itinerary line | PUI.purs (`debounced`) |
-| the flow must wait for the user's confirmation | `confirmed cfg $ content` (MDC2/MDC3) — the modal leads like any container | cashbox | writing.md *Modals* |
+| the flow must wait for the user's confirmation | `confirmed @l title $ content` (MDC2/MDC3) — the modal leads like any container | cashbox | writing.md *Modals* |
 | a value-computed attribute (style, coordinates, colour) | `attrWith "style" f` on the element | calculator, cells, color-mixer | HTML.purs (`attrWith`) |
 | a class that depends on the value | `# clWhen predicate "class"` | todo-list | HTML.purs (`clWhen`) |
 | structure that genuinely varies with the value | the `dynamic` / `each` builders | markdown-previewer | HTML.purs; writing.md *Collections* |
@@ -75,7 +75,7 @@ shape module headers.
 | … the payload is ignored | `const f` | stopwatch: `const recordLap` | same |
 | … a constant patch | `const (const patch)`, or carried on the button: `button @l {} # with patch` and `const` | checkout; cashbox | same |
 | a clicked collection element naming itself | `clicked @"picked" _.key content` (whole payload: `identity`) | todo-list, cells | VariantToVariant.purs (`toCase`) |
-| a button whose *outcome* the business computes | the button emits its own case; the outcome is decided where it is consumed — the fold's handler, or a status's copy function (`snackbar { "Sign up": signupLine }`) | signup-form | writing.md *emitters* |
+| a button whose *outcome* the business computes | the button emits its own case; the outcome is decided where it is consumed — the fold's handler, or a status's copy function (`snackbar @"Sign up" signupLine`) | signup-form | writing.md *emitters* |
 | two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn`, `goneOn` taking the button's own case | checkout's Next/Back | VariantToVariant.purs (`toCase`) |
 | one event case routed to its own stage | `stage # atCase @l` inside `VariantToVariant.do` | order-form; reorder | VariantToVariant.purs (`atCase`) |
 | some event cases intercepted, the rest passing straight | `( VariantToVariant.do … ) # subChoice` | cashbox | VariantToVariant.purs (`subChoice`) |
@@ -94,8 +94,8 @@ shape module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| one status line per outcome case | `snackbar { orderSubmitted: submittedLine }` in `VariantToRecord.do` — sibling operands each own their case | order-form | writing.md *statuses* |
-| one status for a whole classified variant | `snackbar bookingLine` (a record of per-case copy functions) | flight-booker | writing.md *statuses* |
+| one status line per outcome case | `snackbar @"orderSubmitted" submittedLine` in `VariantToRecord.do` — sibling operands each own their case | order-form | writing.md *statuses* |
+| mutually exclusive outcomes, one status each | `snackbar @"booked" bookedLine` beside `snackbar @"rejected" rejectedLine` in `VariantToRecord.do` | flight-booker | writing.md *statuses* |
 
 ## Collections
 

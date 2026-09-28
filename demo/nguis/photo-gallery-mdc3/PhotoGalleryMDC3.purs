@@ -5,7 +5,7 @@ import Prelude ((#), ($), (<<<), Unit, const)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PhotoGalleryLogic (albumChoices, albumPhotos, albumTitle, favoriteShots, isOpen, landscapesOpen, openAlbum)
+import PhotoGalleryLogic (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
 import PUI (mvu, updated)
 import PUI.Web (each, shown, shownEach, staticText, text)
 import PUI.Web.HTML (span)
@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 photoGalleryMDC3 :: Effect Unit
 photoGalleryMDC3 =
   body $
-    topAppBar { title: "Photo Gallery" } $
+    topAppBar "Photo Gallery" $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
         ( RecordToRecord.do
           listOf @"albumPicked" _.name { selected: isOpen } albumChoices (span (text _.name)) # updated (match { albumPicked: const <<< openAlbum })
@@ -25,8 +25,8 @@ photoGalleryMDC3 =
             listItem $ staticText "developed from its caption"
             listItem $ staticText "No network involved"
           labelSmall $ staticText "Favorites"
-          imageList { columns: 2 } $ each favoriteShots imageListItem )
+          imageList 2 $ each favoriteShots imageListItem )
         ( Semigroupoid.do
           ( displayMedium $ text albumTitle ) # shown
-          imageList { columns: 3 } $ imagePane # shownEach @"src" albumPhotos )
+          imageList 3 $ imagePane developedShot # shownEach @"shot" albumShots )
       ) # mvu landscapesOpen

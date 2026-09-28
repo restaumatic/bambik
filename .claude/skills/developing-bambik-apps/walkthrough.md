@@ -18,8 +18,9 @@ module FlightBookerMDC2 (flightBookerMDC2) where
 
 import Prelude (Unit, (#), ($))
 
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
+import FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, mvu)
 import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
@@ -41,12 +42,17 @@ flightBookerMDC2 =
       body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
-    snackbar bookingLine
+    VariantToRecord.do
+      snackbar @"booked" bookedLine
+      snackbar @"rejected" rejectedLine
 ```
 
-**The imports.** Three vocabularies and nothing else: `PUI` for the words
-that shape data flow (`mvu`, `debounced`, `action`, `atCase`), `PUI.Web` for the words every vocabulary shares (`choice`,
-and the display stages `shownWhen`, `inCase`, `text`), and `PUI.Web.MDC2` for the design system — its `body` included:
+**The imports.** Three vocabularies and one merge sugar: `PUI` for the
+words that shape data flow (`mvu`, `debounced`, `action`, `atCase`),
+`PUI.Web` for the words every vocabulary shares (`choice`, and the display
+stages `shownWhen`, `inCase`, `text`), `VariantToRecord` for the qualified-do
+that sets the two statuses side by side, and `PUI.Web.MDC2` for the design
+system — its `body` included:
 every vocabulary exports the entry under that one name and signature,
 dressing the page for its catalogue before it mounts.
 The MDC3 twin differs from this file in exactly the last import (and the
@@ -123,17 +129,17 @@ is presentation config.
 bar shows while the `Aff` runs, and the outcome variant emits when it
 settles.
 
-**Stage 5 — `snackbar bookingLine`.** `+→×`: one snackbar serves both
-outcomes; its argument `bookingLine` is a record of per-case copy
-functions, rendering each case to its line of copy — the status's
-counterpart of a display's read function. Its
-output is `{}`, which is where every pipeline must end — no emission is
+**Stage 5 — `snackbar @"booked" bookedLine` beside `snackbar @"rejected"
+rejectedLine`.** `+→×`: a `VariantToRecord.do` of two statuses, each owning
+one outcome case of `submit`'s variant and rendering it with its copy
+function — the status's counterpart of a display's read function. Their
+merged output is `{}`, which is where every pipeline must end — no emission is
 ever dropped silently.
 
 ## The logic
 
 ```purescript
-module FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType) where
+module FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType) where
 
 import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, pure, show)
 
@@ -150,11 +156,11 @@ plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
 
-bookingLine :: { booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String, rejected :: String -> String }
-bookingLine =
-  { booked: \itinerary -> "You have booked: " <> summary itinerary
-  , rejected: \problem -> "Cannot book: " <> problem
-  }
+bookedLine :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
+bookedLine itinerary = "You have booked: " <> summary itinerary
+
+rejectedLine :: String -> String
+rejectedLine problem = "Cannot book: " <> problem
 
 returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween { out, back } =
@@ -249,8 +255,8 @@ helper. It compiles and tests without a browser.
   function beside it.
 - `submit` — the `Aff` boundary. `parse` is shared with `bookingState`, so
   what the live line calls a problem is precisely what Book refuses.
-- `bookingLine` — the record of per-case copy functions the snackbar
-  takes: every outcome case to its sentence.
+- `bookedLine`/`rejectedLine` — the copy functions the two snackbars
+  take: each outcome case to its sentence.
 
 **Two things worth noticing.** The rows are spelled out in full, eight
 times for the itinerary variant — deliberately: there are no `type`

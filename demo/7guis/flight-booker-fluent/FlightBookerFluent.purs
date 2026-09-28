@@ -2,8 +2,9 @@ module FlightBookerFluent (flightBookerFluent) where
 
 import Prelude (Unit, (#), ($))
 
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import FlightBookerLogic (bookingLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit, tripType)
+import FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, mvu, blank)
 import PUI.Web (choice, inCase, shownWhen, text)
 import PUI.Web.Fluent (body, body1, button, card, dropdown, messageBar, textField)
@@ -25,4 +26,6 @@ flightBookerFluent =
         body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
       button @"Book" {}
       blank # action submit # atCase @"Book"
-      messageBar bookingLine
+      VariantToRecord.do
+        messageBar @"booked" bookedLine
+        messageBar @"rejected" rejectedLine

@@ -48,10 +48,9 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCases)
+import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (case_, match, on) as Variant
-import Data.Variant (class VariantMatchCases)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -60,8 +59,7 @@ import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
+import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
@@ -97,7 +95,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --       `×→+` events — `button @l` (`<fluent-button appearance="primary">`);
 --       `+→×` statuses — `messageBar` (`<fluent-message-bar
 --         intent="success">` shown on feed, auto-dismissing) — each taking
---         its per-case copy record (`toast { booked: bookedLine }`).
+--         its business case and copy function (`messageBar @"booked" bookedLine`).
 --   * **oculars** — shape-preserving decorators: `card { caption }`
 --     (hand-rolled over the `--colorNeutral*`/`--shadow*` tokens — the
 --     Fluent card is a React-only catalog entry) and the type-ramp
@@ -398,16 +396,15 @@ ratingDisplay f = wrap do
 -- | has just happened and needs no reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the message bar is built — `messageBar { booked: bookedLine }`
+-- | the message bar is built — `messageBar @"booked" bookedLine`
 -- | — and let the event carry the bare facts.
 messageBar
-  :: forall r rl s s1
-   . RowToList r rl
-  => VariantMatchCases rl s1 String
-  => Union s1 () s
-  => { | r }
+  :: forall @l a s
+   . IsSymbol l
+  => Cons l a () s
+  => (a -> String)
   -> PUI Web [ | s ] {}
-messageBar copy = messageBarFace # forCases copy
+messageBar copy = messageBarFace # forCase @l copy
 
 messageBarFace :: PUI Web [ event :: String ] {}
 messageBarFace = wrap do
