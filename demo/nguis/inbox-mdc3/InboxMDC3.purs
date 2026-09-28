@@ -22,13 +22,13 @@ inboxMDC3 =
         headlineSmall (text subjectLine) # shown
         bodyMedium (text fromLine) # shown
         bodyLarge (text bodyText) # shown
-        iconButton @"Delete message" { icon: "delete" } ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
+        iconButton @"Delete message" {} "delete" ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
       ( Semigroupoid.do
         ( dialog "Delete the last message?" $ RecordToVariant.do
           button @"Delete" {} # with {}
           button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
         snackbar @"Delete" (const inboxZeroLine) # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
-      fab @"Compose" { icon: "edit" } # applied composeMessage
+      fab @"Compose" {} "edit" # applied composeMessage
       ( menu "Sort" $ RecordToVariant.do
         menuItem @"By sender" {}
         menuItem @"By subject" {}

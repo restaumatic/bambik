@@ -15,7 +15,7 @@ signupFormMDC3 =
     card $ Semigroupoid.do
       ( Semigroupoid.do
         (headlineLarge $ staticText "Create account") # shown
-        debouncedTextField @"Username" { ms: usernameSettleTime }
+        debouncedTextField @"Username" {} usernameSettleTime
         radioButton @"Plan"
           [ choice @"Free", choice @"Pro", choice @"Team" ]
         select @"Country" {}

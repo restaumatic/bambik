@@ -16,7 +16,7 @@ shoppingCartMDC3 =
   body $
     card $ ( Semigroupoid.do
       listOf @"productPicked" _.product {} productCatalogue (text catalogueLine) # updated (match { productPicked: addUnit })
-      dataTable { label: "Cart", columns: [ "Product", "Qty", "Total" ] }
+      dataTable "Cart" [ "Product", "Qty", "Total" ]
         ( ( clicked @"linePicked" _.product $ dataRow RecordToRecord.do
           dataCell (text productLine)
           dataCell (text quantityLine)

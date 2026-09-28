@@ -17,8 +17,11 @@ markdownPreviewerMDC3 =
     card $
       layoutGrid $ ( Semigroupoid.do
         layoutCell 6 $ filledTextArea @"Source" { columns: 60, rows: 24 }
-        layoutCell 6 $ ( dynamic \document -> each (parseMarkdown document) blockView ) # shown
+        layoutCell 6 $ ( dynamic documentView ) # shown
       ) # mvu welcomeDocument
+
+documentView :: { "Source" :: String } -> PUI Web {} {}
+documentView document = each (parseMarkdown document) blockView
 
 blockView :: [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] }, paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ], bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ]), quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] ] -> PUI Web {} {}
 blockView = match

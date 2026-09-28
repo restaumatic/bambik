@@ -22,7 +22,7 @@ weatherMDC2 =
       body1 (text humidityWindLine) # shown
       caption (text servedLine) # shown
       ( Semigroupoid.do
-        iconButton @"About this dashboard" { icon: "info" }
+        iconButton @"About this dashboard" {} "info"
         simpleDialog @"Got it" "About this dashboard"
           ( body1 (text aboutLine) ) # atCase @"About this dashboard" ) # shown
     ) # mvu warsawBulletin

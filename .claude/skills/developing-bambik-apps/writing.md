@@ -71,7 +71,7 @@ PUI Web [ | a ] [ | b ]   -- +→+  handlers: backend dispatch
 
 Every component the vocabularies publish has one of these types, and so
 must every component an application packages itself (order-dashboard's
-`DashboardControlsMDC3`: `statTile @"Orders" { unit: "placed" }
+`DashboardControlsMDC3`: `statTile @"Orders" "placed"
 ordersCount :: PUI Web { | r } {}`). A word that would need two shapes
 is two words, each lawful at its own — the library's
 pane is `provided` for emitters, `shownWhen` for displays, `inCase` for
@@ -665,20 +665,49 @@ the structural rules above — anonymous view-model types, a view module
 over a logic module, a single exported entry function.
 
 **The anchor invariant.** Every view line names exactly one semantic
-anchor, and the anchor's sort says what the line is:
+anchor, **in the anchor's own position**, and the anchor's sort says
+what the line is:
 
-- a **field** — the `@l` on an editor, selector or labelled group: the
-  label *is* the model field the line edits (`filledTextField @"First name" {}`,
-  `dropdown @"Room" {} […]`, a sub-form's `group @"Customer" $ …`, the
-  plain-HTML floor's `input @"Name" "text"`);
-- a **case** — the `@l` on an emitter, pane or status: the
-  label *is* the business case the line emits or shows
+- a **field** — the leaf's type argument on an editor, selector or
+  labelled group: the label *is* the model field the line edits
+  (`filledTextField @"First name" {}`, `dropdown @"Room" {} […]`, a
+  sub-form's `group @"Customer" $ …`, the plain-HTML floor's
+  `input @"Name" "text"`);
+- a **case** — the leaf's type argument on an emitter, pane or status:
+  the label *is* the business case the line emits or shows
   (`button @"Submit order" {}`, `# shownWhen @"estimated" distanceOf`,
   `snackbar @"registered" welcomeLine`);
-- a **named read function or bare accessor** — a display's content,
-  living in the logic module (`text balanceLine`, `text _.title`);
+- a **named read function or bare accessor** — the positional argument
+  of a display, living in the logic module (`text balanceLine`,
+  `text _.title`, `imagePane developedShot`);
 - **nothing** — chrome: statics and oculars write nothing, so they
-  name nothing (`card`, `(subtitle1 $ staticText "…") # shown`).
+  name nothing (`card`, `(subtitle1 $ staticText "…") # shown`,
+  `tooltip loyaltyNote`).
+
+So every leaf reads as a noun phrase — its word, then its anchor, then
+its one required argument:
+
+```purescript
+snackbar  @"booked"  bookedLine              -- the booked snackbar, saying bookedLine
+confirmed @"Refund"  "Refund the customer?"
+button    @"Sign up" { icon: "person_add" }  -- the record: optional presentation
+tooltip              loyaltyNote             -- chrome: no anchor, one positional argument
+```
+
+**A record never holds an anchor or anything required**:
+`snackbar { "Sign up": signupLine }` or `{ confirm: "Refund" }` would
+hide what the line is about, and a one-field record around a required
+value is a positional argument with ceremony (`tooltip loyaltyNote`,
+`layoutCell 6`). A record stays only where its field names do work —
+optional presentation (`{ icon }`, `{ floatingLabel }`), or two
+same-typed values a positional pair could silently swap
+(`drawer { title, subtitle }`). The test is reading the line aloud: if
+you must open a record to learn what the line is about, the line breaks
+the invariant. Two value types the vocabulary defines are sanctioned in
+application rows, as `Number` is: the **bounded quantity**
+`{ current, min, max, step }`, one row for every slider in every
+vocabulary, carried as model data from the seed, and the **duration**
+`{ ms :: Number }`. They are units, not a leaf's private field names.
 
 The mapping is **line ↔ named symbol** — a field or case of the model,
 or a function of the logic module — deliberately not line ↔ field: a
@@ -912,7 +941,7 @@ induces — view first, logic module written to its names — is
   `button @"Add" {} # applied addTodo` with `addTodo :: { … } -> { … }`,
   the case untouched and unread (counter's `# applied increment`,
   todo-list's `# applied clearCompleted`, inbox's
-  `fab @"Compose" { icon: "edit" } # applied composeMessage`). Inside a
+  `fab @"Compose" {} "edit" # applied composeMessage`). Inside a
   `match`, `const <<< f` is that same transformer where several such
   emitters share one stage (circle-drawer's `"Undo": const <<< undo,
   "Redo": const <<< redo`). The remaining degenerate shapes are spelled

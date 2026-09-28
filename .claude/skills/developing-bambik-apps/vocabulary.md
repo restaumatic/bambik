@@ -11,8 +11,9 @@ modules are `extras/row-profunctor/Data/Profunctor/Row/*.purs`.
 One invariant spans every table: a view line names exactly one anchor —
 the **field** it edits, the **case** it emits or shows, the **read
 function** it renders, or **nothing** (chrome) — so each *Write* cell
-below leads with that anchor. Stated in writing.md *The anchor
-invariant*.
+below leads with that anchor, in its own position: every leaf reads
+word, anchor, one required argument, with records only for optional
+presentation. Stated in writing.md *The anchor invariant*.
 
 ## The two `do`s — neither is a monad's
 

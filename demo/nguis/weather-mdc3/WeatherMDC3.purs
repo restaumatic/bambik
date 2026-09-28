@@ -22,7 +22,7 @@ weatherMDC3 =
       bodyLarge (text humidityWindLine) # shown
       bodySmall (text servedLine) # shown
       ( Semigroupoid.do
-        iconButton @"About this dashboard" { icon: "info" }
+        iconButton @"About this dashboard" {} "info"
         simpleDialog @"Got it" "About this dashboard"
           ( bodyLarge (text aboutLine) ) # atCase @"About this dashboard" ) # shown
     ) # mvu warsawBulletin

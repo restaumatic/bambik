@@ -16,8 +16,8 @@ newApplicant =
   , "Terms": .declined {}
   }
 
-usernameSettleTime :: Number
-usernameSettleTime = 300.0
+usernameSettleTime :: { ms :: Number }
+usernameSettleTime = { ms: 300.0 }
 
 signupLine :: { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] } -> String
 signupLine applicant = either rejectionLine welcomeLine (validate applicant)

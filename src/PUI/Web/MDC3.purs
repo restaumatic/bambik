@@ -347,14 +347,15 @@ fab
   :: forall @l provided r cl
    . IsSymbol l
   => Cons l { | r } () cl
-  => ConvertOptionsWithDefaults OptLabel { label :: Maybe String } { | provided } { icon :: String, label :: Maybe String }
+  => ConvertOptionsWithDefaults OptLabel { label :: Maybe String } { | provided } { label :: Maybe String }
   => { | provided }
+  -> String
   -> PUI Web { | r } [ | cl ]
-fab provided = eventLeaf @l $
-  el "md-fab" >>> "aria-label" := fromMaybe config.icon config.label >>> extended $
-    el "md-icon" >>> "slot" := "icon" $ staticText config.icon
+fab provided icon = eventLeaf @l $
+  el "md-fab" >>> "aria-label" := fromMaybe icon config.label >>> extended $
+    el "md-icon" >>> "slot" := "icon" $ staticText icon
   where
-  config = convertOptionsWithDefaults OptLabel { label: Just (reflectSymbol (Proxy @l)) } provided :: { icon :: String, label :: Maybe String }
+  config = convertOptionsWithDefaults OptLabel { label: Just (reflectSymbol (Proxy @l)) } provided :: { label :: Maybe String }
   extended = case config.label of
     Just label' -> "label" := label'
     Nothing -> identity
@@ -364,12 +365,12 @@ fab provided = eventLeaf @l $
 -- | it is what assistive technology announces, defaulting to
 -- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
-iconButton :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { icon :: String, label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
-iconButton provided = eventLeaf @l $
+iconButton :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> String -> PUI Web { | r } [ | cl ]
+iconButton provided icon = eventLeaf @l $
   el "md-icon-button" >>> "aria-label" := config.label $
-    el "md-icon" $ staticText config.icon
+    el "md-icon" $ staticText icon
   where
-  config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { icon :: String, label :: String }
+  config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 
 -- | One choice in a `menu`: reports the data it was showing when picked,
 -- | and the menu closes itself. The line's text defaults to
@@ -399,8 +400,8 @@ outlinedTextField provided = let config = convertOptionsWithDefaults OptCaption 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
-debouncedTextField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String, ms :: Number } => { | provided } -> PUI Web { | r } { | r }
-debouncedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (Just config.ms) config.floatingLabel)
+debouncedTextField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> { ms :: Number } -> PUI Web { | r } { | r }
+debouncedTextField provided settleTime = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (Just settleTime.ms) config.floatingLabel)
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
@@ -1283,17 +1284,17 @@ md-list-item.md3-list-item--selected { --md-list-item-container-color: var(--md-
 -- | and `label` is what assistive technology announces the table as; the
 -- | body is `dataRow`s of `dataCell`s, usually one row per element of a
 -- | collection.
-dataTable :: { label :: String, columns :: Array String } -> Ocular (PUI Web)
-dataTable config content = wrap do
+dataTable :: String -> Array String -> Ocular (PUI Web)
+dataTable tableName columns content = wrap do
   liftEffect $ ensureStyle "md3-data-table" dataTableCss
   unwrap $ div >>> cl "md3-data-table" $
-    table >>> "aria-label" := config.label $ wrap do
+    table >>> "aria-label" := tableName $ wrap do
       _ <- unwrap (thead $ tr $ headerCells)
       unwrap (tbody $ content)
   where
   headerCells :: PUI Web {} {}
   headerCells = wrap do
-    for_ config.columns \c -> void $ unwrap (th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText c)
+    for_ columns \c -> void $ unwrap (th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText c)
     pure
       { toUser: mempty
       , fromUser: \prop -> prop {}
@@ -1414,13 +1415,13 @@ divider = staticHTML "<md-divider style=\"width: 100%;\"></md-divider>"
 
 -- | One picture in an `imageList`, with `label` shown as its caption and
 -- | used as its alternative text.
-imageListItem :: { src :: String, label :: String } -> PUI Web {} {}
+imageListItem :: { src :: String, alt :: String } -> PUI Web {} {}
 imageListItem config = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ staticHTML $
     "<li class=\"md3-image-list__item\">"
-      <> "<img class=\"md3-image-list__image\" src=\"" <> config.src <> "\" alt=\"" <> config.label <> "\">"
-      <> "<span class=\"md3-image-list__label\">" <> config.label <> "</span>"
+      <> "<img class=\"md3-image-list__image\" src=\"" <> config.src <> "\" alt=\"" <> config.alt <> "\">"
+      <> "<span class=\"md3-image-list__label\">" <> config.alt <> "</span>"
       <> "</li>"
 
 -- | One picture in an `imageList`, **fed through the channel**: like any

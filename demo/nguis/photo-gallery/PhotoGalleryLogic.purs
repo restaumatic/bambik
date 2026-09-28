@@ -48,8 +48,8 @@ isOpen { state } = match { open: \_ -> true, closed: \_ -> false } state
 openAlbum :: String -> { album :: String }
 openAlbum album = { album }
 
-favoriteShots :: Array { src :: String, label :: String }
-favoriteShots = [ "Dawn Ridge", "Half Smile", "Orbit Study", "Quiet Lake" ] <#> \label -> { src: developedPhoto label, label }
+favoriteShots :: Array { src :: String, alt :: String }
+favoriteShots = [ "Dawn Ridge", "Half Smile", "Orbit Study", "Quiet Lake" ] <#> \shot -> developedShot { shot }
 
 albumShots :: { album :: String } -> Array { shot :: String }
 albumShots { album } =

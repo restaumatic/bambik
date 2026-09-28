@@ -77,7 +77,14 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   survives as the status face's vocabulary plumbing, `focusField`'s
   variant twin, no longer re-exported; the view-side
   read adopters `projection`/`projected` went earlier,
-  doc/research-presentation-model.md). Statuses keep their
+  doc/research-presentation-model.md). Nor do the vocabulary's own row **field**
+  names: a leaf reading structured data MUST NOT make the application
+  name its rows `src`/`label`/`event` — it takes a read function, and
+  the logic module translates at the boundary (`imagePane developedShot`,
+  which replaced a canonical `{ src, label }` row, 2026-09-28). Two
+  vocabulary value types are sanctioned in application rows, as units
+  rather than a leaf's private names: the bounded quantity
+  `{ current, min, max, step }` and the duration `{ ms :: Number }`. Statuses keep their
   internal payload case private and derived. Components MUST NOT have
   scalar or polymorphic model interfaces; raw scalar leaves stay private
   or in optic positions.
@@ -139,22 +146,33 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the order MUST be the order written, never the variant row's, which the
   compiler sorts alphabetically.
 - The closure of the discipline is the **anchor invariant**
-  (application-side statement: writing.md's *The anchor invariant*):
-  every view line names exactly one semantic anchor — a model **field**
-  (`@l` on an editor or selector), a business **case** (`@l` on an
-  emitter, pane or status), a **named read function** (a display's
-  content, L17), or **nothing** (chrome — statics and oculars write
-  nothing and so name nothing). The vocabulary MUST keep every line's
-  anchor expressible and singular: an ocular MUST NOT take a label or
-  copy config (no model interface, nothing to anchor — a card's heading
-  is typography in its content), a display MUST NOT carry a label except
-  as an accessible name (L17), and no mechanism may leave a line's
-  meaning in an anonymous position. The stronger rule — *every line a
-  field*, oculars included — was considered and rejected (2026-09-03):
-  a label on an ocular is a parameter that does nothing (gate 4),
-  line ↔ field is no bijection (one `settled` spans fields, two lines
-  may read one field, `+`-side lines anchor at cases), and making
-  display lines fields would move copy back into state, reversing L17.
+  (application-side statement: writing.md's *The anchor invariant*): every
+  view line names exactly one semantic anchor, in the anchor's own
+  position — a model **field** or business **case** as the leaf's type
+  argument (`@l` on an editor, selector, emitter, pane or status), a
+  **named read function** as a display's positional argument (L17), or
+  **nothing** (chrome — statics and oculars write nothing and so name
+  nothing). Every leaf therefore reads as a noun phrase — word, anchor,
+  one required argument — and a published leaf MUST NOT take an anchor or
+  a required value inside a record: records carry only optional
+  presentation or same-typed values whose field names prevent a silent
+  swap. Precedents (2026-09-28): the statuses (`snackbar @"booked"
+  bookedLine`, replacing a per-case copy record), `confirmed @"Refund"
+  title` and `simpleDialog`, and the one-field ocular configs made
+  positional (`tooltip`, `dialog`, `topAppBar`, `menu`, `imageList`,
+  `layoutCell`, `badge`, `checkbox`'s ticked payload). The vocabulary MUST
+  keep every line's anchor expressible and singular: an ocular MUST NOT
+  take a label (no model interface, nothing to anchor) nor copy that has a
+  place in its content (a card's heading is typography in its content) —
+  copy with no content position, a tooltip's text or a dialog's title, is
+  its one positional argument; a display MUST NOT carry a label except as
+  an accessible name (L17); and no mechanism may leave a line's meaning in
+  an anonymous position. The stronger rule — *every line a field*, oculars
+  included — was considered and rejected (2026-09-03): a label on an
+  ocular is a parameter that does nothing (gate 4), line ↔ field is no
+  bijection (one `settled` spans fields, two lines may read one field,
+  `+`-side lines anchor at cases), and making display lines fields would
+  move copy back into state, reversing L17.
 - The **labelled group** `group @l` (MDC2/MDC3, admitted 2026-09-04) is
   the boundary confirmed, not breached: it is a component, not an
   ocular — its label is the sub-record field it nests (`focusField @l` fused
