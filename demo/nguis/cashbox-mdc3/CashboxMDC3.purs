@@ -9,13 +9,13 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (atCase, mvu, subChoice, toCase, updated, with)
 import PUI.Web (shown, text)
-import PUI.Web.MDC3 (body, bodyLarge, button, card, headlineSmall, confirmed)
+import PUI.Web.MDC3 (body, bodyLarge, button, headlineSmall, confirmed)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cashboxMDC3 :: Effect Unit
 cashboxMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       ( headlineSmall $ text balanceLine ) # shown
       ( Semigroupoid.do
         RecordToVariant.do

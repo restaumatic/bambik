@@ -23,13 +23,12 @@ import Effect (Effect)
 import FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, mvu)
 import PUI.Web (choice, inCase, shownWhen, text)
-import PUI.Web.MDC2 (body, body1, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI.Web.MDC2 (body, body1, button, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerMDC2 :: Effect Unit
 flightBookerMDC2 =
-  body $
-    card $ Semigroupoid.do
+  body $ Semigroupoid.do
     ( Semigroupoid.do
       select @"Flight type" {}
         [ choice @"one-way", choice @"return" ]
@@ -61,12 +60,13 @@ No merge block appears: each displayed line is one read function at one
 leaf, so no stage here reads more than one leaf. `QualifiedDo.Semigroupoid as Semigroupoid`
 gives `Semigroupoid.do`: sequential composition, not a monad.
 
-**`body $ card $ Semigroupoid.do`.** Mount at the document body, dressed for
-Material 2 (the `body` is the vocabulary's); `card` is an *ocular* — a
-visual wrapper that touches no data, which is why it is applied with `$`,
-the visual plumbing, and never with `#`, the data plumbing. It is also the
-only wrapper: a card is a surface with its own elevation, so nothing stacks
-another on it. The outer `Semigroupoid.do` has five stages, and data
+**`body $ Semigroupoid.do`.** Mount at the document body, dressed for
+Material 2 (the `body` is the vocabulary's) and applied with `$`, the
+visual plumbing, never with `#`, the data plumbing. There is no wrapper:
+the app takes no surface of its own — the page it is shown on frames it —
+and inside it a card holds either a model sub-record (`group @l`) or
+content that edits nothing (a summary card) — this flat booking needs
+neither. The outer `Semigroupoid.do` has five stages, and data
 flows top to bottom exactly as the code reads: the form emits the model on
 every edit → the itinerary line shows it and passes it on → the button turns
 it into an event → the action turns the event into an outcome → the snackbar
@@ -279,7 +279,7 @@ the logic is the ordinary one.
   the surviving job of `settled`, an invariant among *edited* fields.
 - **flight-booker** — this file.
 - **todo-list** — a collection (`listOf`, `foreach`), a selectable list emitting
-  its key as `listOf @l _.key`, a filter selector.
+  its key as `listOf @l @"key"`, a filter selector.
 - **checkout** — a wizard: `folding` loops the step state silently, and two
   buttons each emit their own case, introduced into one loop case with
   `toCase`.

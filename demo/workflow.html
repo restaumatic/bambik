@@ -61,8 +61,8 @@
     holes — the display's read, the confirmation copy, the seed. Note what is
     <em>not</em> a hole: the field anchor (<code>@"Pizza"</code>), the case
     anchor (<code>@"Order"</code>, stated once on the button and once on the
-    snackbar that renders it), and the chrome (<code>card</code>,
-    <code>headlineSmall</code>) are complete as written.</p>
+    snackbar that renders it), and the chrome (<code>headlineSmall</code>) are complete as
+    written.</p>
 
     <h3>src/Order.purs</h3>
 <pre><code class="language-haskell">module Order (orderApp) where
@@ -72,13 +72,13 @@ import Prelude ((#), ($), Unit)
 import Effect (Effect)
 import PUI (with)
 import PUI.Web (shown, text)
-import PUI.Web.MDC3 (body, button, card, filledTextField, headlineSmall, snackbar)
+import PUI.Web.MDC3 (body, button, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderApp :: Effect Unit
 orderApp =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       filledTextField @"Pizza" {}
       headlineSmall (text ?orderLine) # shown
       button @"Order" {}
@@ -269,13 +269,13 @@ import Effect (Effect)
 import OrderLogic (confirmedLine, orderLine, plainMargherita)
 import PUI (with)
 import PUI.Web (shown, text)
-import PUI.Web.MDC3 (body, button, card, filledTextField, headlineSmall, snackbar)
+import PUI.Web.MDC3 (body, button, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderApp :: Effect Unit
 orderApp =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       filledTextField @"Pizza" {}
       headlineSmall (text orderLine) # shown
       button @"Order" {}

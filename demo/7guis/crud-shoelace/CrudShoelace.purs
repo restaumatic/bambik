@@ -10,14 +10,14 @@ import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, li, ul)
-import PUI.Web.Shoelace (body, button, card, textField)
+import PUI.Web.Shoelace (body, button, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudShoelace :: Effect Unit
 crudShoelace = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       blank # action (loadPeopleCatalogue catalogue)
       ( Semigroupoid.do
         textField @"Filter prefix (surname)" {}

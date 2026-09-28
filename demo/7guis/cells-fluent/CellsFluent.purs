@@ -6,7 +6,7 @@ import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedLine)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
-import PUI.Web.Fluent (body, body1, card, textField)
+import PUI.Web.Fluent (body, body1, textField)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 cellsFluent :: Effect Unit
 cellsFluent =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       body1 (text selectedLine) # shown
       textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $

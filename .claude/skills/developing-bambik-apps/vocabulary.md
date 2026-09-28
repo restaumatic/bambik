@@ -38,7 +38,7 @@ shape module headers.
 | one field verbatim (already copy) | `text _.title` — an accessor section, no named function for a bare read | todo-list, inbox | same |
 | a sentence, a prefixed or unit-suffixed value, text composed from several fields | one named function, glue included: `headlineSmall (text balanceLine) # shown` | order-form's summary; cashbox's balance line | writing.md *A composed line is one function* |
 | a **number** as a bar, gauge or stars | the quantity leaf: label = accessible name, value = read function — `progressBar @"Elapsed" elapsedFraction` | timer, quiz, meeting-booker | writing.md *copy is a function, not a field* |
-| pure chrome inside a pipeline (a card's caption) | `(subtitle1 $ staticText "…") # shown` | order-form | writing.md *Pass-through stages* |
+| pure chrome inside a pipeline (a static caption) | `(headline4 $ staticText "…") # shown` | signup-form | writing.md *Pass-through stages* |
 | content that exists only in one state | `content # shownWhen @l classifierOf` (a display; an emitter takes `# provided @l classifierOf`, an editor `# inCase @l classifierOf`): one classifier names every state, each case carrying its pane's payload; a projection never decides, and no pane is gated on a `Maybe` | flight-booker's three `bookingState` panes; checkout: `# shownWhen @"placed" orderStatus`; calculator: `# shownWhen @"faulty" readout` | writing.md *Conditional visibility* |
 | an **editor** that exists in one mode | `editor # inCase @l classifier` | flight-booker's return date; meeting-booker's slider | writing.md *Conditional visibility* |
 | a list, displayed | `item # shownEach @l rowsOf` inside its container ocular | stopwatch's laps | writing.md *Pass-through stages*, *Collections* |
@@ -107,7 +107,7 @@ shape module headers.
 | the whole array → the whole array, edited in place | `editor # edited @"id"` | reorder | PUI.purs (`edited`) |
 | one `{ key, value }` at a time → tagged per-element output | `item # dispatched envelopeOf` | departures | PUI.purs (`dispatched`) |
 | one `{ key, value }` at a time → the growing array | `item # accumulated envelopeOf` | scoreboard | PUI.purs (`accumulated`) |
-| a selectable list (MDC2) | `listOf @l _.key { selected: _.done } rowsOf item` | todo-list, crud | MDC2.purs (`listOf`) |
+| a selectable list (MDC2) | `listOf @l @"key" { selected: _.done } rowsOf item` — the pick is a named key field of the row, never a function; a pick carrying more than an id gets a field the projection builds (weather's `request`) | todo-list, crud | MDC2.purs (`listOf`) |
 | a collection display that passes the model through | `item # shownEach @l rowsOf` | stopwatch | HTML.purs (`shownEach`) |
 
 ## App shapes

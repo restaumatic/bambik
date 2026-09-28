@@ -5,14 +5,14 @@ import Prelude (Unit, (#), ($))
 import Effect (Effect)
 import ParcelLogic (draftParcel, parcelLine)
 import PUI (PUI, subStrong, mvu)
-import PUI.Web.MDC2 (body, body1, card, filledTextField)
+import PUI.Web.MDC2 (body, body1, filledTextField)
 import PUI.Web (Web, shown, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 parcelMDC2 :: Effect Unit
 parcelMDC2 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       filledTextField @"Recipient" {}
       addressForm # subStrong
       ( body1 $ text parcelLine ) # shown

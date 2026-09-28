@@ -6,14 +6,14 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, updated, with)
 import PUI.Web (shown, text)
-import PUI.Web.MDC3 (body, bodyLarge, button, card, linearProgress, sliderLive)
+import PUI.Web.MDC3 (body, bodyLarge, button, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerMDC3 :: Effect Unit
 timerMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       linearProgress @"Elapsed" elapsedFraction # shown
       (bodyLarge $ text progressLine) # shown
       sliderLive @"Duration" {}

@@ -8,13 +8,13 @@ import Effect (Effect)
 import PaymentLogic (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder)
 import PUI (action, atCase, mvu, observed, toCase, updated)
 import PUI.Web (shown, text)
-import PUI.Web.MDC2 (body, body2, button, card, headline6, indeterminateCircularProgress, snackbar)
+import PUI.Web.MDC2 (body, body2, button, headline6, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 paymentMDC2 :: Effect Unit
 paymentMDC2 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       ( headline6 $ text amountLine ) # shown
       ( body2 $ text statusLine ) # shown
       ( Semigroupoid.do

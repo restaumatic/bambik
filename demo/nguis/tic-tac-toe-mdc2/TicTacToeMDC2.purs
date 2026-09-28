@@ -7,14 +7,14 @@ import Effect (Effect)
 import PUI (foreach, mvu, updated, with)
 import PUI.Web (attrWith, clicked, shownWhen, staticText, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC2 (body, button, card, headline6)
+import PUI.Web.MDC2 (body, button, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TicTacToeLogic (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine)
 
 ticTacToeMDC2 :: Effect Unit
 ticTacToeMDC2 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       headline6 (text wonLine) # shownWhen @"won" gameOutcome
       headline6 (staticText "Draw") # shownWhen @"drawn" gameOutcome
       headline6 (text toMoveLine) # shownWhen @"toMove" gameOutcome

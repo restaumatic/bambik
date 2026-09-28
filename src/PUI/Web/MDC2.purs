@@ -118,7 +118,7 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import Data.Array (findIndex, mapWithIndex, (!!))
+import Data.Array (findIndex, (!!))
 import Data.Foldable (foldMap, for_, traverse_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -139,6 +139,7 @@ import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpick
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
+import Record as Record
 import Type.Proxy (Proxy(..))
 
 -- Implementation notes — the reference above is the contract.
@@ -1471,30 +1472,35 @@ listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: 
 -- | A **list built from data**: one row per element of the collection the
 -- | projection names, each row drawn by the given UI component. Rows matching
 -- | `selected` take Material's selected styling — `listOf {}` selects
--- | nothing — and clicking a row reports *that row*, so the list is both
--- | how a collection is shown and how the user picks from it.
+-- | nothing — and clicking a row reports *that row*, as case `l` carrying
+-- | the row's key field `k` (`listOf @"opened" @"id" …`), so the list is
+-- | both how a collection is shown and how the user picks from it.
 -- |
--- | Rows are updated in place as the collection changes rather than
--- | rebuilt, so the list can refresh under the user without flicker.
+-- | The key is a field the projection builds into each row, named rather
+-- | than computed: the UI decides its view model, so whatever a pick must
+-- | carry is a field of the row. Rows are keyed by it — matched keys are
+-- | updated in place, and a row's node moves with its key — so the list
+-- | can refresh under the user without flicker; keys must be unique.
 listOf
-  :: forall @l provided i r o k s
+  :: forall @l @k provided i r rest o key s
    . IsSymbol l
-  => Cons l k () s
+  => IsSymbol k
+  => Cons l key () s
+  => Cons k key rest r
+  => Ord key
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
   -- the subsumption evidence the internal `clicked` needs at the exact
   -- element row (extra = ()); trivially discharged at every concrete call
   => Union r () r
-  => ({ | r } -> k)
-  -> { | provided }
+  => { | provided }
   -> ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | s ]
-listOf pick provided f item = wrap do
+listOf provided f item = wrap do
   w <- unwrap $ ul >>> cl "mdc-deprecated-list" >>> "style" := "overflow-y: auto;" $
-    ( inRow ( clicked @l @r @() pick $ clWhen config.selected "mdc-deprecated-list-item--selected"
-          $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
-      ) # foreach @"ix" (mapWithIndex (\ix it -> { ix, item: it }) <<< f)
-    )
+    ( clicked @l @r @() (Record.get (Proxy @k)) $ clWhen config.selected "mdc-deprecated-list-item--selected"
+        $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
+    ) # foreach @k f
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.list."MDCList" node
   pure
@@ -1632,8 +1638,6 @@ imageFace =
 -- the element adapter for the index-keyed internal collection: reads the
 -- item out of the reconciler's { ix, item } row at the wiring level (the
 -- closed-singleton adopters deliberately do not read from wider rows)
-inRow :: forall a o. PUI Web a o -> PUI Web { ix :: Int, item :: a } o
-inRow w = wrap $ unwrap w <#> \w' -> { toUser: \r -> w'.toUser r.item, fromUser: w'.fromUser }
 
 -- Private
 

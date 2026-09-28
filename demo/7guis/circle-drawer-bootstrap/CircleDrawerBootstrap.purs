@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (blank, foreach, mvu, settled, updated)
-import PUI.Web.Bootstrap (body, button, card, sliderLive)
+import PUI.Web.Bootstrap (body, button, sliderLive)
 import PUI.Web (attrWith, cl, inCase, onClickedXY, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.SVG (circle, svg)
@@ -16,7 +16,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 circleDrawerBootstrap :: Effect Unit
 circleDrawerBootstrap =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       sliderLive @"Diameter" {} # inCase @"chosen" selection # settled resizeSelected
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
         ( onClickedXY @"picked"

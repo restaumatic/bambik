@@ -182,8 +182,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the **leaf-fusion criterion**: `@l` fuses onto a wrapper exactly where
   the label does work a trailing `# focusField @l` cannot. Chrome that gains
   a label this way is *renamed into the component sort* — the blind
-  `card` stays for surfaces grouping no model, as `subStrong` stays for
-  flat sub-row focus. The criterion's closure (2026-09-05): the
+  `card` stays for surfaces that edit nothing (a summary, a preview, a
+  readout), as `subStrong` stays for flat sub-row focus. Two uses of the
+  blind card are wrong (2026-09-28): around editors, which share a card
+  only by sharing a sub-record (`group @l`); and around the whole app,
+  whose surface is its page's (`body $ …`, never `body $ card $ …`). The criterion's closure (2026-09-05): the
   plain-HTML floor's `input @l`/`textArea @l` fused too (the `name`
   stamp was always work the bracket could not do), and with every public
   editor lifted inside its vocabulary and sub-model nesting carried by
@@ -461,7 +464,7 @@ The codebase is three floors, each greppable:
 
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
-`rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf opts
+`rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf @l @k opts
 rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, a status's copy function
 (`snackbar @"booked" bookedLine`), `settled normalize`,
 `bracketed stateOf caseOf` (`identity` says verbatim). A shape none of

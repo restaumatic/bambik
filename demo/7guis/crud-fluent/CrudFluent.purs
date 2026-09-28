@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
-import PUI.Web.Fluent (body, button, card, textField)
+import PUI.Web.Fluent (body, button, textField)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, li, ul)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,7 +17,7 @@ crudFluent :: Effect Unit
 crudFluent = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       blank # action (loadPeopleCatalogue catalogue)
       ( Semigroupoid.do
         textField @"Filter prefix (surname)" {}

@@ -6,13 +6,13 @@ import DeparturesLogic (arrival, boardOpening, flightLine, tick, tickPeriod, upd
 import Effect (Effect)
 import PUI (dispatched, every, mvu)
 import PUI.Web (shown, text)
-import PUI.Web.MDC2 (body, body2, card, list, listItem)
+import PUI.Web.MDC2 (body, body2, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 departuresMDC2 :: Effect Unit
 departuresMDC2 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       every tickPeriod tick
       ( Semigroupoid.do
         list $ ( listItem $ text flightLine ) # shown # dispatched arrival

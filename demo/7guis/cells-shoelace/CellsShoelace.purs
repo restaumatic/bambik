@@ -8,13 +8,13 @@ import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, p, table, td, tr)
-import PUI.Web.Shoelace (body, card, textField)
+import PUI.Web.Shoelace (body, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsShoelace :: Effect Unit
 cellsShoelace =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       p (text selectedLine) # shown
       textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $

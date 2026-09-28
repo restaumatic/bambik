@@ -13,16 +13,16 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 loanCalculatorBootstrap :: Effect Unit
 loanCalculatorBootstrap =
-  body $
+  body $ Semigroupoid.do
+    ( Semigroupoid.do
+      textField @"Applicant" {}
+      sliderLive @"Amount (€)" {}
+      sliderLive @"Term (years)" {}
+      select @"Purpose" {}
+        [ choice @"Car", choice @"Home improvement", choice @"Holiday" ]
+      toggleSwitch @"Payment protection insurance" {}
+    ) # mvu cityCarLoan
     card $ Semigroupoid.do
-      ( Semigroupoid.do
-        textField @"Applicant" {}
-        sliderLive @"Amount (€)" {}
-        sliderLive @"Term (years)" {}
-        select @"Purpose" {}
-          [ choice @"Car", choice @"Home improvement", choice @"Holiday" ]
-        toggleSwitch @"Payment protection insurance" {}
-      ) # mvu cityCarLoan
       ( listGroup $ RecordToRecord.do
         listGroupItem (text monthlyLine)
         listGroupItem (text rateLine)
@@ -30,5 +30,5 @@ loanCalculatorBootstrap =
       ( div $ RecordToRecord.do
         staticText "Interest share of total repayment"
         progress @"Interest share" interestShare ) # shown
-      button @"Apply for this loan" {} # armed
-      toast @"Apply for this loan" appliedLine
+    button @"Apply for this loan" {} # armed
+    toast @"Apply for this loan" appliedLine

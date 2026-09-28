@@ -6,16 +6,16 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, mvu, updated)
 import PUI.Web (shown, text)
-import PUI.Web.MDC3 (body, bodyLarge, bodySmall, card, displayLarge, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
+import PUI.Web.MDC3 (body, bodyLarge, bodySmall, displayLarge, headlineMedium, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, reportRequest, servedLine, temperatureLine, warsawBulletin)
+import WeatherLogic (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, servedLine, temperatureLine, warsawBulletin)
 
 weatherMDC3 :: Effect Unit
 weatherMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       ( Semigroupoid.do
-        listOf @"cityPicked" reportRequest { selected: isCurrent } forecastRequests (text _.city)
+        listOf @"cityPicked" @"request" { selected: isCurrent } forecastRequests (text _.request.city)
         indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked" ) # updated (match { reportServed: rememberReport })
       displayLarge (text temperatureLine) # shown
       headlineMedium (text conditionLine) # shown

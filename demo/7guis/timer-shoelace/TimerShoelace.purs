@@ -7,14 +7,14 @@ import Effect (Effect)
 import PUI (every, mvu, updated, with)
 import PUI.Web (shown, text)
 import PUI.Web.HTML (p)
-import PUI.Web.Shoelace (body, button, card, progressBar, sliderLive)
+import PUI.Web.Shoelace (body, button, progressBar, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerShoelace :: Effect Unit
 timerShoelace =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       progressBar @"Elapsed" elapsedFraction # shown
       (p $ text progressLine) # shown
       sliderLive @"Duration" {}

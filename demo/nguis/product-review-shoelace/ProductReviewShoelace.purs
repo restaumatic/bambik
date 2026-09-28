@@ -12,18 +12,17 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 productReviewShoelace :: Effect Unit
 productReviewShoelace =
-  body $
-    card $ Semigroupoid.do
-      ( Semigroupoid.do
-        rating @"Overall rating" {}
-        textField @"Headline" {}
-        textArea @"Your review" { rows: 4 }
-        select @"How long have you owned it?" {}
-          [ choice @"less than a month", choice @"1–12 months", choice @"more than a year" ]
-        toggleSwitch @"I'd recommend it to a friend" {}
-        textField @"Nickname" {}
-        divider # shown
-      ) # mvu freshImpression
-      p (text previewLine) # shown
-      button @"Submit review" {} # armed
-      toast @"Submit review" submittedLine
+  body $ Semigroupoid.do
+    ( Semigroupoid.do
+      rating @"Overall rating" {}
+      textField @"Headline" {}
+      textArea @"Your review" { rows: 4 }
+      select @"How long have you owned it?" {}
+        [ choice @"less than a month", choice @"1–12 months", choice @"more than a year" ]
+      toggleSwitch @"I'd recommend it to a friend" {}
+      textField @"Nickname" {}
+      divider # shown
+    ) # mvu freshImpression
+    card $ p (text previewLine) # shown
+    button @"Submit review" {} # armed
+    toast @"Submit review" submittedLine

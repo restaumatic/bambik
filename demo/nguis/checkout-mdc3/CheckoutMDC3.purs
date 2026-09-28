@@ -9,13 +9,13 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (mvu, toCase, updated)
 import PUI.Web (provided, shownWhen, text)
-import PUI.Web.MDC3 (body, bodyMedium, button, card)
+import PUI.Web.MDC3 (body, bodyMedium, button)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkoutMDC3 :: Effect Unit
 checkoutMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       ( Semigroupoid.do
         ( bodyMedium $ text cartLine ) # shownWhen @"cart" checkoutStep
         ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep

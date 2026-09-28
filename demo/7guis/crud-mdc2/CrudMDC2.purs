@@ -9,20 +9,20 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, looped, atCase, updated, with)
 import PUI.Web (shown, text)
-import PUI.Web.MDC2 (body, button, card, cardActions, filledTextField, indeterminateLinearProgress, listOf)
+import PUI.Web.MDC2 (body, button, cardActions, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudMDC2 :: Effect Unit
 crudMDC2 = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       indeterminateLinearProgress @"busy" # action (loadPeopleCatalogue catalogue)
       ( Semigroupoid.do
         filledTextField @"Filter prefix (surname)" {}
         filledTextField @"Name" {}
         filledTextField @"Surname" {}
-        listOf @"picked" _.key { selected: isSelected } entries (text personLine # shown) # updated (match { picked: pick })
+        listOf @"picked" @"key" { selected: isSelected } entries (text personLine # shown) # updated (match { picked: pick })
         ( Semigroupoid.do
           cardActions $ RecordToVariant.do
             button @"Create" {}

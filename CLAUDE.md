@@ -35,7 +35,7 @@ Verification stack: `spago test` (value-level law tests over probes — merge un
 3. Deploy: `npm run deploy-demos` — scps demo/index.html, demo/workflow.html and both suite directories to host `xyz` (root@erykciepiela.xyz, see `~/.ssh/config`) at `/var/www/html/bambik/demo/`.
 4. Verify: `http://erykciepiela.xyz/bambik/demo/<d>/` returns 200 (plain HTTP only).
 
-Every demo page is pure structure over **shared chrome**: `demo/page.js` (loaded as `../../page.js`) fetches the listing named by `<body data-source="CounterMDC2.purs">` (space-separated filenames render several listings — the first fills the existing box, each further file gets a filename heading + listing, the header readout sums the sizes; order-dashboard-mdc3 shows its app and its packaged controls module this way), fills the header's source/bundle size readouts, and groups the running demo with its tracing note into one `#demo-column` — the demo mounts into `<body>` at runtime with no marker class of its own, so it cannot be wrapped in static markup and is collected once, then the observer disconnects. The two notes that used to be pasted into all 34 pages now live once in **demo/index.html** as `#code-style` and `#tracing` sections, linked from beneath the source box and beneath the running demo respectively; the source-box note also links **demo/workflow.html**, the writing-session showcase.
+Every demo page is pure structure over **shared chrome**: `demo/page.js` (loaded as `../../page.js`) fetches the listing named by `<body data-source="CounterMDC2.purs">` (space-separated filenames render several listings — the first fills the existing box, each further file gets a filename heading + listing, the header readout sums the sizes; order-dashboard-mdc3 shows its app and its packaged controls module this way), fills the header's source/bundle size readouts, and groups the running demo with its tracing note into one `#demo-column` — on a page marked `<body data-surface>`, inside the vocabulary's card surface built by page.js (the app's surface is the page's, so no app wraps itself in a card) — the demo mounts into `<body>` at runtime with no marker class of its own, so it cannot be wrapped in static markup and is collected once, then the observer disconnects. The two notes that used to be pasted into all 34 pages now live once in **demo/index.html** as `#code-style` and `#tracing` sections, linked from beneath the source box and beneath the running demo respectively; the source-box note also links **demo/workflow.html**, the writing-session showcase.
 
 ## Cutting a release
 
@@ -132,7 +132,7 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   has the shape of its behaviour: `bracketed @l` lifts its variant editor
   into the record field it edits (a variant at channel position is an
   event, inside a field a value), and every occurrence source — `clicked
-  @l f`, `listOf @l f`, `onClickedXY @l`, HTML's `button @l` — emits as
+  @l f`, `listOf @l @k`, `onClickedXY @l`, HTML's `button @l` — emits as
   case `l`, so no record-shaped source exists; what the type still cannot
   enforce is that a `×→+` leaf never emits inside its own feed, which is
   the vocabulary provider's conformance.
@@ -322,16 +322,19 @@ design-system **umbrella**. What they share, stated once:
   (`card`/`cardActions`, dialogs, lists, typography, elevations) — and a
   **surface ocular carries no copy config**: MD2 gives a card twelve optional
   structure classes and no heading, MD3's card element is a bare `<slot>`, so
-  `card` is a plain `Ocular` in all five vocabularies and a blind card's
-  heading is ordinary typography placed in its content (order-form's
-  Identifier/Total cards lead with `subtitle1`/`titleMedium`). Config on an
-  ocular would put one child of the surface in config position and the rest
-  in content position. A card whose content is one model sub-record is not
-  chrome but the **labelled group** `group @l` (MDC2/MDC3, admitted
-  2026-09-04 — guardrails L3): `focusField @l` fused with the card surface, the
-  label the field, the heading verbatim and the accessible group name
-  (`role="group"`); the fusion criterion (a label fuses exactly where it
-  does work `# focusField @l` alone cannot) is recorded at L3.
+  `card` is a plain `Ocular` in all five vocabularies. A card whose content
+  is one model sub-record is not chrome but the **labelled group** `group @l`
+  (MDC2/MDC3, admitted 2026-09-04 — guardrails L3): `focusField @l` fused with
+  the card surface, the label the field, the heading verbatim and the
+  accessible group name (`role="group"`); the fusion criterion (a label fuses
+  exactly where it does work `# focusField @l` alone cannot) is recorded at
+  L3. The blind `card` is for content that **edits nothing** (2026-09-28):
+  order-form's summary, product-review's preview, meeting-booker's plan,
+  loan-calculator's repayment figures. Editors never share a blind card
+  (they share a sub-record), and an app never wraps itself whole in one: the
+  surface an app is shown on is its **page's** — demo pages opt in with
+  `<body data-surface>` and demo/page.js builds the vocabulary's card around
+  the mounted demo, so an entry reads `body $ …`, never `body $ card $ …`.
 - **Every leaf is label-indexed** (L3) and captions itself from that label
   verbatim; editors also stamp it as the host `name`. Config overrides carry
   real copy the label cannot be — the key is `floatingLabel:` on the MDC text
@@ -369,7 +372,7 @@ Per-catalogue deltas:
 
 | Module | Basis | Deltas worth knowing |
 | --- | --- | --- |
-| `PUI.Web.MDC2` | `material-components-web`: documented markup + a foundation instance (`newComponent material.x."MDCX"`) wired through its documented properties/events; text fields write through the foundation's `value` so label float stays foundation-managed | the fullest catalogue: `indeterminateLinearProgress`/`indeterminateCircularProgress` are **statuses** (`[ started :: {}, ended :: {} ] → {}`, mirrored in MDC3 — 2026-09-13: `action`'s progress slot dispatches the run's two occurrences, no model owns a `busy`, and a status owes the channel nothing, so the slot left the gated broadcast entirely; the earlier `{ busy :: Boolean }` was a two-case phase written as a Boolean nobody edits), `listOf` (a **dynamic collection component**, `({ \\| r } -> k) -> { \\| provided } -> ({ \\| i } -> Array { \\| r }) -> PUI Web { \\| r } o -> PUI Web { \\| i } [ \\| s ]` (`Cons l k () s`: a clicked row leaves as case `l` carrying its pick) — keyed `foreach` retention, MD2 selected styling via an optional `selected` predicate), `dataTable`/`dataRow`/`dataCell`, `imageList`/`imagePane` (the channel-fed sibling of the static `imageListItem`), `layoutGrid`, `topAppBar`, `drawer` (permanent, with a **live nav slot**: nav is the first stage and content the second, so the nav's release feeds the content and a feed is released once), `tooltip`, `banner`, `tabBar` (the same-type selector with unconditional echo — the `looped`-ensemble citizen), `menu`/`menuItem`, `chipSet`/`filterChip`, `iconToggle`, `dialog`/`simpleDialog` (modal protocol: **open on feed, close on emission**), `group @l` (the labelled model group — card surface + heading + `focusField @l` in one word, label stamped as the accessible group name; mirrored in MDC3) |
+| `PUI.Web.MDC2` | `material-components-web`: documented markup + a foundation instance (`newComponent material.x."MDCX"`) wired through its documented properties/events; text fields write through the foundation's `value` so label float stays foundation-managed | the fullest catalogue: `indeterminateLinearProgress`/`indeterminateCircularProgress` are **statuses** (`[ started :: {}, ended :: {} ] → {}`, mirrored in MDC3 — 2026-09-13: `action`'s progress slot dispatches the run's two occurrences, no model owns a `busy`, and a status owes the channel nothing, so the slot left the gated broadcast entirely; the earlier `{ busy :: Boolean }` was a two-case phase written as a Boolean nobody edits), `listOf` (a **dynamic collection component**, `listOf @l @k provided rowsOf item :: PUI Web { \| i } [ \| s ]` (`Cons k key rest r`, `Cons l key () s`: the rows keyed by their field `k` — a named field of the row the projection builds, never a pick function, since the UI decides its view model — and a clicked row leaving as case `l` carrying that key) — keyed `foreach @k` retention, MD2 selected styling an optional `selected` predicate), `dataTable`/`dataRow`/`dataCell`, `imageList`/`imagePane` (the channel-fed sibling of the static `imageListItem`), `layoutGrid`, `topAppBar`, `drawer` (permanent, with a **live nav slot**: nav is the first stage and content the second, so the nav's release feeds the content and a feed is released once), `tooltip`, `banner`, `tabBar` (the same-type selector with unconditional echo — the `looped`-ensemble citizen), `menu`/`menuItem`, `chipSet`/`filterChip`, `iconToggle`, `dialog`/`simpleDialog` (modal protocol: **open on feed, close on emission**), `group @l` (the labelled model group — card surface + heading + `focusField @l` in one word, label stamped as the accessible group name; mirrored in MDC3) |
 | `PUI.Web.MDC3` | Google's `@material/web` custom elements — a leaf is `element "md-…"` plus property/event wiring: no foundation classes, no hand-fused ripple/label chrome | structured to **mirror MDC2** (same helper shapes, same definition order). MD3 renames arrive as the catalogue does: the MD3 typescale (`displayLarge`…`labelSmall`), four emphasis siblings (`elevatedButton`/`tonalButton`/`outlinedButton`/`textButton`), `elevation1/3/5`, and **no `banner`** (MD3 dropped it). Catalogue entries `@material/web` lacks (segmented button, snackbar, card, top app bar, drawer, data table, image list, tooltip) are hand-rolled over the `--md-sys-*` tokens, each injecting its stylesheet once via `ensureStyle`, the `md-typescale-*` stylesheet adopted by its `body` at mount; pages need only the Roboto + Material Symbols fonts |
 | `PUI.Web.Shoelace` | `@shoelace-style/shoelace` custom elements, Lit-based so no bind deferral | the MDC3 recipe verbatim. Exclusive: the star `rating` editor. Shoelace's own names where the concept differs — `textField`/`textArea` (no fill/outline split, plain `label`), `toast` (`<sl-alert>`), `progressBar`, `sliderLive` (`<sl-range>`). Page links the light-theme CSS from the CDN; icons from the CDN base path its `body` sets at mount. Typography is deliberately absent — Shoelace styles plain HTML, so the HTML oculars *are* the type scale |
 | `PUI.Web.Fluent` | Microsoft's `@fluentui/web-components` v3; tokens set from `webLightTheme` by its `body` at mount, so pages need no CSS link; labels associate via `<fluent-field>` wrappers | exclusives `ratingDisplay` (read-only — the catalogue has no star *editor*, and this vocabulary does not invent one) and `messageBar`; type ramp `title3`/`body1`/`caption1` over `<fluent-text>`. **Caveat**: FAST binds a beat after DOM insertion and replays pre-bind property writes at bind, and its update queue is rAF-driven (starving in frameless headless sessions) — so the dropdown/radio-group leaves defer writes on a **timer** poll (`whenBoundDo` in Fluent.js) and finish the two starvable registrations themselves; the dropdown's options must be wrapped in `<fluent-listbox>` (v3's markup contract) |
@@ -503,10 +506,11 @@ merges, native `select` and `output`.
 
 **Flagship.** order-form is the **four-shape showcase**: load action →
 `×→×` `looped` form (whole-row editor stages, sub-records nested as labelled
-groups via `group @l` — Customer/Payment, each label the field,
-the heading and the accessible group name at once — beside blind cards for
-the groups with no sub-record of their own (Fulfillment among them: its
-field editor `bracketed @"Fulfillment"` does its own lift); variant editors as `bracketed @l`
+groups via `group @l` — Identifier, Customer, Fulfillment (its variant
+under `"Mode"`, `bracketed @"Mode"` doing that field's lift), Payment
+(Total beside Method and Paid) and Kitchen (the remarks), each label the
+field, the heading and the accessible group name at once, and the live
+summary on a blind `card`, the one surface that edits nothing; variant editors as `bracketed @l`
 pipelines of `tabBar`/`segmentedButton` + `inCase` editor panes; an **in-form Aff action** — the delivery distance is
 estimated on a button, `button @"Estimate distance" {}` →
 `action estimateDistance # atCase` → `updated`; the estimate records the

@@ -7,13 +7,13 @@ import Data.Profunctor.Row.RecordToRecord (feedback)
 import Effect (Effect)
 import PUI (mvu, settled)
 import PUI.Web (shown, text)
-import PUI.Web.MDC3 (body, bodyMedium, card, headlineSmall, sliderLive)
+import PUI.Web.MDC3 (body, bodyMedium, headlineSmall, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 auctionMDC3 :: Effect Unit
 auctionMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       ( bodyMedium $ text bidLine ) # shown
       ( Semigroupoid.do
         sliderLive @"Your bid ($)" {} # settled raiseTop

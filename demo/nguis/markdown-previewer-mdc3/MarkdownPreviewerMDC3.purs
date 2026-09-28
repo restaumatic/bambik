@@ -8,17 +8,16 @@ import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
 import PUI (PUI, mvu)
 import PUI.Web (Web, dynamic, each, el, shown, staticText, (:=))
 import PUI.Web.HTML (blockquote, code, em, li, p, strong, ul)
-import PUI.Web.MDC3 (body, card, filledTextArea, layoutCell, layoutGrid)
+import PUI.Web.MDC3 (body, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 markdownPreviewerMDC3 :: Effect Unit
 markdownPreviewerMDC3 =
   body $
-    card $
-      layoutGrid $ ( Semigroupoid.do
-        layoutCell 6 $ filledTextArea @"Source" { columns: 60, rows: 24 }
-        layoutCell 6 $ ( dynamic documentView ) # shown
-      ) # mvu welcomeDocument
+    layoutGrid $ ( Semigroupoid.do
+      layoutCell 6 $ filledTextArea @"Source" { columns: 60, rows: 24 }
+      layoutCell 6 $ ( dynamic documentView ) # shown
+    ) # mvu welcomeDocument
 
 documentView :: { "Source" :: String } -> PUI Web {} {}
 documentView document = each (parseMarkdown document) blockView

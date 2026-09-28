@@ -7,13 +7,12 @@ import Effect (Effect)
 import FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, mvu)
 import PUI.Web (choice, inCase, shownWhen, text)
-import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI.Web.MDC3 (body, bodyLarge, button, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerMDC3 :: Effect Unit
 flightBookerMDC3 =
-  body $
-    card $ Semigroupoid.do
+  body $ Semigroupoid.do
     ( Semigroupoid.do
       select @"Flight type" {}
         [ choice @"one-way", choice @"return" ]

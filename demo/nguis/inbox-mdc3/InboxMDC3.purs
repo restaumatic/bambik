@@ -9,15 +9,15 @@ import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine,
 import PUI (applied, mvu, observed, updated, with)
 import PUI.Web (provided, shown, text)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC3 (body, bodyLarge, bodyMedium, bodySmall, button, card, dialog, fab, headlineSmall, iconButton, listOf, menu, menuItem, snackbar)
+import PUI.Web.MDC3 (body, bodyLarge, bodyMedium, bodySmall, button, dialog, fab, headlineSmall, iconButton, listOf, menu, menuItem, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 inboxMDC3 :: Effect Unit
 inboxMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       ( bodySmall $ text unreadLine ) # shown
-      listOf @"opened" _.id { selected: highlighted } mailboxRows ( span $ text messageLine # shown ) # updated (match { opened: openMessage })
+      listOf @"opened" @"id" { selected: highlighted } mailboxRows ( span $ text messageLine # shown ) # updated (match { opened: openMessage })
       ( Semigroupoid.do
         headlineSmall (text subjectLine) # shown
         bodyMedium (text fromLine) # shown

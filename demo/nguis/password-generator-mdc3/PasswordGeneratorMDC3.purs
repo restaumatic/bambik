@@ -8,13 +8,13 @@ import PasswordGeneratorLogic (passwordText, rememberPassword, samplePassword, s
 import PUI (action, mvu, atCase, updated)
 import PUI.Web (attr, shown, text)
 import PUI.Web.HTML (code)
-import PUI.Web.MDC3 (body, bodyMedium, button, card, indeterminateLinearProgress, slider, toggleSwitch)
+import PUI.Web.MDC3 (body, bodyMedium, button, indeterminateLinearProgress, slider, toggleSwitch)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 passwordGeneratorMDC3 :: Effect Unit
 passwordGeneratorMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       slider @"Length" {}
       toggleSwitch @"Uppercase letters" {}
       toggleSwitch @"Lowercase letters" {}

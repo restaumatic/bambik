@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, const)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (every, mvu, updated, with)
-import PUI.Web.Fluent (body, body1, button, card, progressBar, slider)
+import PUI.Web.Fluent (body, body1, button, progressBar, slider)
 import PUI.Web (shown, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
@@ -13,7 +13,7 @@ import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFresh
 timerFluent :: Effect Unit
 timerFluent =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       progressBar @"Elapsed" elapsedFraction # shown
       (body1 $ text progressLine) # shown
       slider @"Duration" {}

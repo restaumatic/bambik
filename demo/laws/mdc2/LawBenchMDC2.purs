@@ -40,7 +40,7 @@ lawBenchMDC2 = do
     , bench "fab" "×→+" rows (fab @"Go" {} "add")
     , bench "iconButton" "×→+" rows (iconButton @"Go" {} "add")
     , bench "menuItem" "×→+" rows (menuItem @"Go" {})
-    , bench "listOf" "×→+" lists (listOf @"picked" _.id {} _.items (text _.title))
+    , bench "listOf" "×→+" lists (listOf @"picked" @"id" {} _.items (text _.title))
     , bench "snackbar" "+→×" events (snackbar @"event" identity)
     , bench "banner" "+→×" events (banner @"event" identity)
     , bench "indeterminateLinearProgress" "+→×" runs (indeterminateLinearProgress @"Loading")

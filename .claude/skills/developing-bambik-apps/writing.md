@@ -263,16 +263,20 @@ A card whose content is one model sub-record is not chrome but a
 surface, the heading and the `focusField @l` nesting in one word: the label
 is the field the group nests, the heading copy verbatim, and the
 accessible group name (`role="group"`). Because it draws the surface,
-the group **leads its lines like any container** (`card $`,
+the group **leads its lines like any container** (`topAppBar title $`,
 `confirmed @l title $`) — never trailing as a `#` chain — so the `@l` anchor
 sits at the head of the block it wraps. It is fused for the same reason
 the leaves are — the label does work a trailing `# focusField @l` cannot
-(heading copy, accessible name) — so hand-spelling the trio (`card`, a
-`staticText` heading, `# focusField @l`) is the smell `group` deletes. A card
-grouping no model (a display card, a button row) stays the blind `card`
-with its heading as typography (order-form's Identifier and Total
-cards); a flat sub-row focus stays `# subStrong` (parcel's address
-form). The bare `focusField @l` itself is **design-system plumbing, not
+(heading copy, accessible name). **Editors that share a card share a
+sub-record**: a blind card around editors is a sub-record nobody named —
+order-form's Total sits in its Payment group, its Remarks in a Kitchen
+group. The blind `card` is for content that **edits nothing** — a
+summary, a preview, a readout (order-form's summary card,
+product-review's preview, meeting-booker's plan with its Book button,
+loan-calculator's repayment figures) — chrome anchoring nothing. And
+the surface an app is shown on is its page's, not the app's: the entry
+is `body $ …`, never `body $ card $ …`. A flat sub-row focus stays
+`# subStrong` (parcel's address form). The bare `focusField @l` itself is **design-system plumbing, not
 application vocabulary** (not re-exported from `PUI`): every vocabulary
 editor is `focusField @l`-lifted inside — the plain-HTML floor's
 `input @"Name" "text"` included — and sub-model nesting is `group @l`,
@@ -320,7 +324,7 @@ interchangeable:
 So: an editor is a stage as it stands; a display stage is the gated rung
 that states its policy (`(…) # shown` for a structured line,
 tip-calculator's money readouts — and for **pure chrome in a pipeline**:
-a blind card's caption is `(subtitle1 $ staticText "…") # shown`,
+a static caption is `(subtitle1 $ staticText "…") # shown`,
 registered at build, releasing every fed row; a card whose content is a
 model sub-record needs no such line — its heading is the label of
 `group @l`). The rung trails like
@@ -500,8 +504,8 @@ its pick reaches the content before the loop re-broadcasts it.
 Collection items may hold stateful stages (whole-row editors,
 `updated`) — refs are per-instance.
 
-`foreach @l` (keyed by the row's materialized identity field; `listOf`
-index-keys internally) **retains** items: it reconciles *by key* —
+`foreach @l` (keyed by the row's materialized identity field; `listOf
+@l @k` keys by its field `k` the same way) **retains** items: it reconciles *by key* —
 matched keys re-fed in place, new built, absent removed, DOM reordered
 only when the key sequence changed — so a channel-fed item keeps its DOM
 and state across feeds. Fixed-key grids never rebuild, growing lists
@@ -786,7 +790,7 @@ induces — view first, logic module written to its names — is
   deeper than the line that opens it — `( Semigroupoid.do` included, so its
   stages are two in from the `(` line — a continuation two deeper than the
   line it continues, and a closer back at its opener's column
-  (`) # mvu seed` under `card $ ( Semigroupoid.do`); `let` bindings align under
+  (`) # mvu seed` under `( Semigroupoid.do`); `let` bindings align under
   the first. No four-space steps, no alignment to a token mid-line.
 - **The architecture is readable off the types.** The application is a
   compass walk written as one pipeline — load → form (×→×) → live
@@ -976,7 +980,7 @@ induces — view first, logic module written to its names — is
 - **Application code never imports `Data.Profunctor`.** Speak the
   vocabulary: the adopters, the merges' qualified-do, and the mechanisms
   with their projection arguments — `provided @l classifierOf`, `foreach @l
-  rowsOf`, `listOf opts rowsOf`, `dispatched envelopeOf`,
+  rowsOf`, `listOf @l @k opts rowsOf`, `dispatched envelopeOf`,
   `toCase @l payloadOf`,
   `settled normalize`, `bracketed stateOf caseOf`, with `identity`
   saying verbatim. Every raw `lcmap`/`rmap`/`dimap` an application would
@@ -1002,7 +1006,7 @@ induces — view first, logic module written to its names — is
   UI component's private state is a residual threaded by the trace forms.
 - **Lean on the design system's defaults; write no custom chrome.**
   Reach for a stock component and its built-in look before any style
-  attribute. Surfaces (`card`, `elevation*`), typography, lists, grids
+  attribute. Surfaces (`card`, `group @l`, `elevation*`), typography, lists, grids
   and the components' own spacing already carry the design language, so
   a flex or border wrapper is a smell: drop the presentational `div` and
   let the components flow inline (buttons and fields are `inline-flex`,
@@ -1011,10 +1015,11 @@ induces — view first, logic module written to its names — is
   data-driven graphics — an SVG canvas, a colour swatch — never for
   layout the design system already gives you. Every avoided style string
   is code you don't write. **Wrappers are minimal**: a surface is stated
-  once — a `card` carries its own elevation, so `elevation* $ card $` stacks
-  a shadow on a shadow and the entry reads `body $ card $ …`; `elevation*`
-  is for a surface that has none of its own, and a pipeline whose groups
-  are already cards needs no outer surface at all (order-form, potluck).
+  once — a `card` or `group @l` carries its own elevation, so
+  `elevation* $ card $` stacks a shadow on a shadow; the app itself takes
+  no surface (the entry reads `body $ …` — the page it is shown on frames
+  it), and `elevation*` is for a panel inside the app that has none of
+  its own.
 
 ## Writing order
 

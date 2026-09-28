@@ -6,14 +6,14 @@ import Effect (Effect)
 import PUI (mvu)
 import PUI.Web (shown, text)
 import PUI.Web.HTML (rangeInput)
-import PUI.Web.MDC2 (body, body2, card, filledTextField, slider)
+import PUI.Web.MDC2 (body, body2, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TipCalculatorLogic (dinnerBill, perPersonLine, splitLine, tipAmountLine, tipLine, totalLine)
 
 tipCalculatorMDC2 :: Effect Unit
 tipCalculatorMDC2 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       filledTextField @"Bill amount" {}
       slider @"Tip percentage" {}
       rangeInput @"Tip percentage"

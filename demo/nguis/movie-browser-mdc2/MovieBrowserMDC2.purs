@@ -8,13 +8,13 @@ import MovieBrowserLogic (favoriteMark, favoritesLine, isFavorite, markFavorite,
 import PUI (foreach, mvu, toCase, updated)
 import PUI.Web (choice, clWhen, shown, text)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC2 (body, card, chipSet, elevation1, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
+import PUI.Web.MDC2 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 movieBrowserMDC2 :: Effect Unit
 movieBrowserMDC2 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       tabBar @"category"
         [ choice @"All", choice @"Action", choice @"Drama", choice @"Comedy" ]
       chipSet ( Semigroupoid.do

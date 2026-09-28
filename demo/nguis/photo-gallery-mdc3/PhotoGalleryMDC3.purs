@@ -18,7 +18,7 @@ photoGalleryMDC3 =
     topAppBar "Photo Gallery" $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
         ( RecordToRecord.do
-          listOf @"albumPicked" _.name { selected: isOpen } albumChoices (span (text _.name)) # updated (match { albumPicked: const <<< openAlbum })
+          listOf @"albumPicked" @"name" { selected: isOpen } albumChoices (span (text _.name)) # updated (match { albumPicked: const <<< openAlbum })
           divider
           list RecordToRecord.do
             listItem $ staticText "Every photo is an SVG"

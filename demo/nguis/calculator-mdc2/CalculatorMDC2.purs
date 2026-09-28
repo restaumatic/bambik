@@ -9,23 +9,22 @@ import Effect (Effect)
 import PUI (foreach, mvu, updated, with)
 import PUI.Web (attrWith, clicked, shownWhen, staticText, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC2 (body, card)
+import PUI.Web.MDC2 (body)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 calculatorMDC2 :: Effect Unit
 calculatorMDC2 =
   body $
-    card $
-      ( div >>> "style" := "display: inline-block; width: 296px;" $ Semigroupoid.do
-        div >>> "style"
-          := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
-            <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
-            <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
-            (staticText "Error") # shownWhen @"faulty" readout
-            text _.entry # shownWhen @"sound" readout
-        ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-          clicked @"keyPressed" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" (const keyPad) ) # with {} # updated (match { keyPressed: pressKey })
-      ) # mvu blankTally
+    ( div >>> "style" := "display: inline-block; width: 296px;" $ Semigroupoid.do
+      div >>> "style"
+        := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
+          <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
+          <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
+          (staticText "Error") # shownWhen @"faulty" readout
+          text _.entry # shownWhen @"sound" readout
+      ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
+        clicked @"keyPressed" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" (const keyPad) ) # with {} # updated (match { keyPressed: pressKey })
+    ) # mvu blankTally
 keyFace :: { key :: String } -> String
 keyFace { key } =
   "height: 52px; display: flex; align-items: center; justify-content: center; "

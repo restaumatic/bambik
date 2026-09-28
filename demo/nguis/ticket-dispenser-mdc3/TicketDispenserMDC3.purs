@@ -6,14 +6,14 @@ import Data.Profunctor.Row.VariantToRecord (unfolding)
 import Effect (Effect)
 import PUI (mvu, updated)
 import PUI.Web (shownWhen, staticText, text)
-import PUI.Web.MDC3 (body, bodyMedium, button, card, displaySmall)
+import PUI.Web.MDC3 (body, bodyMedium, button, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TicketDispenserLogic (displayOf, emptyQueue, firstTicket, servingLine, ticketIssuance, ticketLine)
 
 ticketDispenserMDC3 :: Effect Unit
 ticketDispenserMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       displaySmall ( Semigroupoid.do
         (staticText "—") # shownWhen @"waiting" displayOf
         (text ticketLine) # shownWhen @"serving" displayOf )

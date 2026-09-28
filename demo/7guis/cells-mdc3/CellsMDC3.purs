@@ -8,13 +8,13 @@ import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, table, td, tr)
-import PUI.Web.MDC3 (body, bodyLarge, card, filledTextField)
+import PUI.Web.MDC3 (body, bodyLarge, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsMDC3 :: Effect Unit
 cellsMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       bodyLarge (text selectedLine) # shown
       filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $

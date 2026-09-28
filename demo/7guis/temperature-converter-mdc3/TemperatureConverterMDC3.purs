@@ -4,14 +4,14 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import PUI (mvu, settled)
-import PUI.Web.MDC3 (body, card, filledTextField)
+import PUI.Web.MDC3 (body, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TemperatureConverterLogic (fromCelsius, fromFahrenheit, roomTemperature)
 
 temperatureConverterMDC3 :: Effect Unit
 temperatureConverterMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       filledTextField @"°C" {} # settled fromCelsius
       filledTextField @"°F" {} # settled fromFahrenheit
     ) # mvu roomTemperature

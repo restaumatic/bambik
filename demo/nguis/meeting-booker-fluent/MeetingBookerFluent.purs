@@ -13,27 +13,26 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 meetingBookerFluent :: Effect Unit
 meetingBookerFluent =
-  body $
-    card $ Semigroupoid.do
-      ( Semigroupoid.do
-        textField @"Meeting title" {}
-        dropdownUnpicked @"Room" @"chosen" {}
-          [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # settled seatsInRoom
-        radioGroupUnpicked @"Duration (min)" @"chosen" {}
-          [ choice @"15", choice @"30", choice @"60" ]
-        dropdownOptional @"Catering" @"ordered" @"none" {}
-          [ choice @"coffee and pastries", choice @"sandwich lunch" ]
-        toggleSwitch @"Include a Teams link" {}
-        divider # shown
-        slider @"Attendees" {} # inCase @"chosen" roomOf
-      ) # mvu blankBooking
-      ( div $ RecordToRecord.do
-        caption1 $ staticText "How attendees rated this room"
-        ratingDisplay @"Room rating" roomStars ) # shownWhen @"rated" ratedRoom
-      ( div $ RecordToRecord.do
-        caption1 $ staticText "Seats taken"
-        progressBar @"Seats taken" seatOccupancy ) # shownWhen @"seated" seatsTaken
-      ( Semigroupoid.do
-        body1 (text planLine) # shown
-        button @"Book the room" {} ) # provided @"complete" plan
-      messageBar @"Book the room" bookedLine
+  body $ Semigroupoid.do
+    ( Semigroupoid.do
+      textField @"Meeting title" {}
+      dropdownUnpicked @"Room" @"chosen" {}
+        [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # settled seatsInRoom
+      radioGroupUnpicked @"Duration (min)" @"chosen" {}
+        [ choice @"15", choice @"30", choice @"60" ]
+      dropdownOptional @"Catering" @"ordered" @"none" {}
+        [ choice @"coffee and pastries", choice @"sandwich lunch" ]
+      toggleSwitch @"Include a Teams link" {}
+      divider # shown
+      slider @"Attendees" {} # inCase @"chosen" roomOf
+    ) # mvu blankBooking
+    ( div $ RecordToRecord.do
+      caption1 $ staticText "How attendees rated this room"
+      ratingDisplay @"Room rating" roomStars ) # shownWhen @"rated" ratedRoom
+    ( div $ RecordToRecord.do
+      caption1 $ staticText "Seats taken"
+      progressBar @"Seats taken" seatOccupancy ) # shownWhen @"seated" seatsTaken
+    ( card $ Semigroupoid.do
+      body1 (text planLine) # shown
+      button @"Book the room" {} ) # provided @"complete" plan
+    messageBar @"Book the room" bookedLine

@@ -8,13 +8,13 @@ import Effect (Effect)
 import PUI (blank, foreach, mvu, updated)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC3 (body, bodyMedium, card, sliderLive)
+import PUI.Web.MDC3 (body, bodyMedium, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 colorMixerMDC3 :: Effect Unit
 colorMixerMDC3 =
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       sliderLive @"Red" {}
       sliderLive @"Green" {}
       sliderLive @"Blue" {}

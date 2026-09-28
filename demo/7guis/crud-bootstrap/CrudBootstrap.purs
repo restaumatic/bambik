@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (action, atCase, foreach, looped, updated, with, blank)
-import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, textField)
+import PUI.Web.Bootstrap (body, button, listGroup, listGroupItem, textField)
 import PUI.Web (cl, clicked, clWhen, text, (:=))
 import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,7 +17,7 @@ crudBootstrap :: Effect Unit
 crudBootstrap = do
   catalogue <- sharedPeopleCatalogue
   body $
-    card $ ( Semigroupoid.do
+    ( Semigroupoid.do
       blank # action (loadPeopleCatalogue catalogue)
       ( Semigroupoid.do
         textField @"Filter prefix (surname)" {}
