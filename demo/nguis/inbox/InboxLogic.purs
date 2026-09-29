@@ -74,8 +74,8 @@ deleteOpened m@{ messages, opened } = m { messages = filter (\g -> not (isOpened
 keepMessages :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] }
 keepMessages m = m { deletion = .silent {} }
 
-inboxZeroLine :: String
-inboxZeroLine = "Inbox zero!"
+inboxZeroLine :: {} -> String
+inboxZeroLine _ = "Inbox zero!"
 
 composeMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, nextId :: Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, nextId :: Int }
 composeMessage m@{ messages, nextId } = m

@@ -27,7 +27,7 @@ inboxMDC3 =
         ( dialog "Delete the last message?" $ RecordToVariant.do
           button @"Delete" {} # with {}
           button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
-        snackbar @"Delete" (const inboxZeroLine) # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
+        snackbar @"Delete" inboxZeroLine # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
       fab @"Compose" {} "edit" # applied composeMessage
       ( menu "Sort" $ RecordToVariant.do
         menuItem @"By sender" {}

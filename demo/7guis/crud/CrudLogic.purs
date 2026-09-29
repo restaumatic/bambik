@@ -47,8 +47,8 @@ deletePerson catalogue { people, selected } = match
 refreshPeople :: Array { "Name" :: String, "Surname" :: String } -> { people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] } -> { people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] }
 refreshPeople people m = m { people = people }
 
-peopleDeleted :: Array { "Name" :: String, "Surname" :: String } -> { people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] }
-peopleDeleted people = { people, selected: .none {} }
+peopleDeleted :: Array { "Name" :: String, "Surname" :: String } -> { people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] } -> { people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] }
+peopleDeleted people _ = { people, selected: .none {} }
 
 readPeople :: Ref (Array { "Name" :: String, "Surname" :: String }) -> Aff (Array { "Name" :: String, "Surname" :: String })
 readPeople catalogue = do
@@ -67,7 +67,7 @@ entries { "Filter prefix (surname)": prefix, selected, people } =
     <$> filter (\{ p } -> hasPrefix prefix p."Surname") (mapWithIndex (\i p -> { i, p }) people)
   where
   statusOf i = match { picked: \p -> if p.index == i then .selected {} else .unselected {}, none: \_ -> .unselected {} } selected
-  hasPrefix prefix s = isJust (stripPrefix (Pattern prefix) s)
+  hasPrefix start s = isJust (stripPrefix (Pattern start) s)
 
 personLine :: { "Name" :: String, "Surname" :: String } -> String
 personLine { "Name": name, "Surname": surname } = surname <> ", " <> name

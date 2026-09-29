@@ -25,6 +25,7 @@ colorMixerMDC3 =
       ( bodyMedium $ text hexLine ) # shown
       ( bodyMedium $ text rgbLine ) # shown
     ) # mvu duskViolet
+
 chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipFace { mix } = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb mix <> ";"
 

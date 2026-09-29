@@ -12,8 +12,8 @@ One invariant spans every table: a view line names exactly one anchor —
 the **field** it edits, the **case** it emits or shows, the **read
 function** it renders, or **nothing** (chrome) — so each *Write* cell
 below leads with that anchor, in its own position: every leaf reads
-word, anchor, one required argument, with records only for optional
-presentation. Stated in writing.md *The anchor invariant*.
+word, anchor, then its positional arguments, with records only for
+optional presentation. Stated in writing.md *The anchor invariant*.
 
 ## The two `do`s — neither is a monad's
 
@@ -86,8 +86,8 @@ shape module headers.
 
 | The screen needs | Write | Demo | Stated in |
 | --- | --- | --- | --- |
-| an `Aff` action on an event, with a busy indicator | `indeterminateLinearProgress @"busy" # action (match { "Book": submit })`; `blank # action …` where the vocabulary has no indicator | flight-booker; reorder; order-form's distance estimate (inside a `looped` form the button is the occurrence — an action fed by the broadcast would re-run on every turn) | PUI.purs (`action`) |
-| an action at load, before any input | `indeterminateLinearProgress @"busy" # action loadOrder` as the first stage, the app closed with `# with {}` | order-form | writing.md *App shape* |
+| an `Aff` action on an event, with a busy indicator | `indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"` — the label names the run, since it is the accessible name; `blank # action …` where the vocabulary has no indicator | flight-booker; reorder; order-form's distance estimate (inside a `looped` form the button is the occurrence — an action fed by the broadcast would re-run on every turn) | PUI.purs (`action`) |
+| an action at load, before any input | `indeterminateLinearProgress @"Loading order" # action loadOrder` as the first stage, the app closed with `# with {}` | order-form | writing.md *App shape* |
 | a periodic step | `every tickPeriod tick` as a stage | stopwatch, scoreboard | PUI.purs (`every`) |
 | narrate an event as it passes, without consuming it | `status # observed` | payment's retry toast | PUI.purs (`observed`) |
 

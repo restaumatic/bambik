@@ -15,12 +15,12 @@ shoppingCartMDC2 :: Effect Unit
 shoppingCartMDC2 =
   body $
     ( Semigroupoid.do
-      listOf @"productPicked" @"product" {} productCatalogue (text catalogueLine) # updated (match { productPicked: addUnit })
+      listOf @"added" @"product" {} productCatalogue (text catalogueLine) # updated (match { added: addUnit })
       dataTable "Cart" [ "Product", "Qty", "Total" ]
-        ( ( clicked @"linePicked" _.product $ dataRow RecordToRecord.do
+        ( ( clicked @"removed" _.product $ dataRow RecordToRecord.do
           dataCell (text productLine)
           dataCell (text quantityLine)
-          dataCell (text lineTotalLine) ) # foreach @"product" cartLines ) # updated (match { linePicked: removeUnit })
+          dataCell (text lineTotalLine) ) # foreach @"product" cartLines ) # updated (match { removed: removeUnit })
       body1 (text totalLine) # shown
       button @"Empty cart" {} # with emptyCart # updated (match { "Empty cart": const })
     ) # mvu emptyCart

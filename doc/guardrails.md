@@ -153,7 +153,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   **named read function** as a display's positional argument (L17), or
   **nothing** (chrome — statics and oculars write nothing and so name
   nothing). Every leaf therefore reads as a noun phrase — word, anchor,
-  one required argument — and a published leaf MUST NOT take an anchor or
+  then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
   swap. Precedents (2026-09-28): the statuses (`snackbar @"booked"
@@ -165,7 +165,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   take a label (no model interface, nothing to anchor) nor copy that has a
   place in its content (a card's heading is typography in its content) —
   copy with no content position, a tooltip's text or a dialog's title, is
-  its one positional argument; a display MUST NOT carry a label except as
+  a positional argument; a display MUST NOT carry a label except as
   an accessible name (L17); and no mechanism may leave a line's meaning in
   an anonymous position. The stronger rule — *every line a field*, oculars
   included — was considered and rejected (2026-09-03): a label on an

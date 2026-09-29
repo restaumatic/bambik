@@ -18,7 +18,7 @@ todoListMDC3 =
       Semigroupoid.do
         filledTextField @"What needs to be done?" {}
         button @"Add" {} # applied addTodo
-      listOf @"todoClicked" @"key" { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # updated (match { todoClicked: toggleTodo })
+      listOf @"toggled" @"key" { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # updated (match { toggled: toggleTodo })
       segmentedButton @"Visibility"
         [ choice @"All", choice @"Active", choice @"Completed" ]
       Semigroupoid.do

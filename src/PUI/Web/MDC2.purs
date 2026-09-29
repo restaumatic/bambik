@@ -1059,8 +1059,9 @@ tabBarLeaf options = wrap do
 -- | **status**, not a display: it is fed the run's two occurrences,
 -- | `started` and `ended`, and shows between them — exactly what
 -- | `PUI.action`'s progress slot dispatches (`indeterminateLinearProgress
--- | @"busy" # action submit`). No model owns a "busy" field, so nothing
--- | here is state; the label is the accessible name, and nothing else.
+-- | @"Booking flight" # action submit`). No model owns a "busy" field, so nothing
+-- | here is state; the label is the accessible name, and nothing else — so
+-- | it names the run (`@"Loading order"`), never a generic "busy".
 indeterminateLinearProgress :: forall @l. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateLinearProgress = wrap do
   _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards

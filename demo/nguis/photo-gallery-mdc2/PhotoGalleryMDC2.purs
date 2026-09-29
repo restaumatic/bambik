@@ -1,6 +1,6 @@
 module PhotoGalleryMDC2 (photoGalleryMDC2) where
 
-import Prelude ((#), ($), (<<<), Unit, const)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
@@ -18,7 +18,7 @@ photoGalleryMDC2 =
     topAppBar "Photo Gallery" $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
         ( RecordToRecord.do
-          listOf @"albumPicked" @"name" { selected: isOpen } albumChoices (span (text _.name)) # updated (match { albumPicked: const <<< openAlbum })
+          listOf @"opened" @"name" { selected: isOpen } albumChoices (span (text _.name)) # updated (match { opened: openAlbum })
           divider
           list RecordToRecord.do
             listItem $ staticText "Every photo is an SVG"

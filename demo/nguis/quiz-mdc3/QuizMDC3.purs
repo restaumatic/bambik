@@ -18,7 +18,7 @@ quizMDC3 =
       ( bodyLarge $ text questionLine ) # shown
       ( Semigroupoid.do
         headlineMedium (text askedPrompt) # shown
-        listOf @"picked" @"key" {} _.choices (text _.label) ) # provided @"asking" quizPhase # updated (match { picked: answer })
+        listOf @"answered" @"key" {} _.choices (text _.label) ) # provided @"asking" quizPhase # updated (match { answered: answer })
       ( Semigroupoid.do
         headlineSmall (text finalScoreLine) # shown
         button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase # updated (match { "Restart": const (const freshQuizRun) })

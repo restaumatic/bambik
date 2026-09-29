@@ -45,8 +45,8 @@ albumChoices { album } = albumCatalogue <#> \a -> { name: a.name, state: if a.na
 isOpen :: { name :: String, state :: [ open :: {}, closed :: {} ] } -> Boolean
 isOpen { state } = match { open: \_ -> true, closed: \_ -> false } state
 
-openAlbum :: String -> { album :: String }
-openAlbum album = { album }
+openAlbum :: String -> { album :: String } -> { album :: String }
+openAlbum album _ = { album }
 
 favoriteShots :: Array { src :: String, alt :: String }
 favoriteShots = [ "Dawn Ridge", "Half Smile", "Orbit Study", "Quiet Lake" ] <#> \shot -> developedShot { shot }

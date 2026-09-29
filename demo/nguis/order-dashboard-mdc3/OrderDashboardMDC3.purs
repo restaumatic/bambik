@@ -18,8 +18,8 @@ orderDashboardMDC3 =
       rangePicker @"Showing" {}
         [ choice @"Last minute", choice @"Last 15 min", choice @"Since open" ]
       board $ Semigroupoid.do
-        statTile @"Orders" "placed" ordersCount # shown
-        statTile @"Revenue" "EUR" revenue # shown
+        statTile @"Orders placed" ordersCount # shown
+        statTile @"Revenue (EUR)" revenue # shown
         gauge @"Kitchen load" kitchenLoad # shown
         trendChart @"Order flow" orderFlow # shown
         leaderboard @"Top dishes" topDishes # shown

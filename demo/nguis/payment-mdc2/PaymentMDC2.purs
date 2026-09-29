@@ -1,6 +1,6 @@
 module PaymentMDC2 (paymentMDC2) where
 
-import Prelude ((#), ($), (<<<), Unit, const)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.VariantToVariant (iterate)
 import Data.Variant (match)
@@ -20,6 +20,6 @@ paymentMDC2 =
       ( Semigroupoid.do
         button @"Charge card" { icon: "credit_card" } # toCase @"charge" startCharge
         ( Semigroupoid.do
-          indeterminateCircularProgress @"busy" # action chargeFlaky # atCase @"charge"
-          snackbar @"charge" retryLine # observed ) # iterate ) # updated (match { charged: const <<< recordCharged })
+          indeterminateCircularProgress @"Charging card" # action chargeFlaky # atCase @"charge"
+          snackbar @"charge" retryLine # observed ) # iterate ) # updated (match { charged: recordCharged })
     ) # mvu unpaidOrder

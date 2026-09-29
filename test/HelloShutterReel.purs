@@ -21,7 +21,7 @@ import PUI.Web.MDC2 (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI (PUI, announce, silence)
 import PUI.Web.HTML (body, button)
-import PUI.Web (Web, staticText, text)
+import PUI.Web (Web, text)
 
 -- | The **Reel** (+ → ×), a genuine two-beat: the *retained state* is the
 -- | greeting **prefix**, installed from the model side (`Right` — the app's
@@ -50,7 +50,7 @@ confirm =
   shutter identity (_ <> "!") identity
     -- the button is an event source over a row, so the scalar rides in a
     -- one-field row and comes back out of the button's case
-    (dimap { greeting: _ } (match { "Greet": _.greeting }) (button @"Greet" $ staticText "Greet"))
+    (dimap { greeting: _ } (match { "Greet": _.greeting }) (button @"Greet" {}))
 
 -- | seed prefix (Reel state) → type name → click Greet (Shutter) → `text`
 -- | shows the greeting.

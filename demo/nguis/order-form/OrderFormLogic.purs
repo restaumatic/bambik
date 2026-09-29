@@ -1,4 +1,4 @@
-module OrderFormLogic (awayLine, deliveryDistance, deliveryLine, dineInLine, distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentOf, fulfillmentState, loadOrder, orderLine, paidLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime, takeawayLine) where
+module OrderFormLogic (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime) where
 
 import Prelude ((<>), ($), (==), (/=), bind, const, discard, pure, show)
 
@@ -32,53 +32,6 @@ distanceOf { distance } = match { estimated: \e -> .estimated { km: e.km }, unkn
 distanceLine :: { km :: Int } -> String
 distanceLine { km } = "Distance " <> show km <> " km"
 
-fulfillmentOf ::
-  { "Fulfillment" ::
-    { "Mode" ::
-      [ "Dine in" :: { "Table" :: String }
-      , "Takeaway" :: { "Time" :: String }
-      , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
-      ]
-    }
-  }
-  -> [ "Dine in" :: { "Table" :: String }
-    , "Takeaway" :: { "Time" :: String }
-    , "Delivery" :: { "Address" :: String }
-    ]
-fulfillmentOf r = match
-  { "Dine in": \d -> ."Dine in" { "Table": d."Table" }
-  , "Takeaway": \d -> ."Takeaway" { "Time": d."Time" }
-  , "Delivery": \d -> ."Delivery" { "Address": d."Address" }
-  } r."Fulfillment"."Mode"
-
-dineInLine :: { "Table" :: String } -> String
-dineInLine r = "dine in at table " <> r."Table"
-
-takeawayLine :: { "Time" :: String } -> String
-takeawayLine r = "takeaway at " <> r."Time"
-
-deliveryLine :: { "Address" :: String } -> String
-deliveryLine r = "delivery to " <> r."Address"
-
-deliveryDistance ::
-  { "Fulfillment" ::
-    { "Mode" ::
-      [ "Dine in" :: { "Table" :: String }
-      , "Takeaway" :: { "Time" :: String }
-      , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
-      ]
-    }
-  }
-  -> [ estimated :: { km :: Int }, unknown :: {} ]
-deliveryDistance r = match
-  { "Dine in": const (.unknown {})
-  , "Takeaway": const (.unknown {})
-  , "Delivery": \d -> distanceOf { distance: d.distance }
-  } r."Fulfillment"."Mode"
-
-awayLine :: { km :: Int } -> String
-awayLine { km } = " (" <> show km <> " km away)"
-
 fulfillmentState ::
   [ "Dine in" :: { "Table" :: String }
   , "Takeaway" :: { "Time" :: String }
@@ -108,14 +61,41 @@ selection = _.selected
 orderLine :: { "Identifier" :: { "Short ID" :: String, "Unique ID" :: String } } -> String
 orderLine r = "Order " <> r."Identifier"."Short ID"
 
-summaryLine :: { "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Customer" :: { "First name" :: String, "Last name" :: String } } -> String
-summaryLine r = "Summary: Order " <> r."Identifier"."Short ID" <> " (uniquely " <> r."Identifier"."Unique ID" <> ") for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name" <> ", fulfilled as "
+summaryLine ::
+  { "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+  , "Customer" :: { "First name" :: String, "Last name" :: String }
+  , "Fulfillment" ::
+    { "Mode" ::
+      [ "Dine in" :: { "Table" :: String }
+      , "Takeaway" :: { "Time" :: String }
+      , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+      ]
+    }
+  , "Payment" :: { "Total" :: String, "Method" :: [ "cash" :: {}, "card" :: {} ], "Paid" :: String }
+  }
+  -> String
+summaryLine r = "Summary: Order " <> r."Identifier"."Short ID" <> " (uniquely " <> r."Identifier"."Unique ID" <> ") for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name" <> ", fulfilled as " <> fulfillmentText r."Fulfillment"."Mode" <> ", paid " <> r."Payment"."Paid" <> " by " <> caseText r."Payment"."Method"
+
+fulfillmentText ::
+  [ "Dine in" :: { "Table" :: String }
+  , "Takeaway" :: { "Time" :: String }
+  , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+  ]
+  -> String
+fulfillmentText = match
+  { "Dine in": \d -> "dine in at table " <> d."Table"
+  , "Takeaway": \d -> "takeaway at " <> d."Time"
+  , "Delivery": \d -> "delivery to " <> d."Address" <> awayText d.distance
+  }
+
+awayText :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] -> String
+awayText = match
+  { estimated: \e -> " (" <> show e.km <> " km away)"
+  , unknown: const ""
+  }
 
 payingLine :: { "Method" :: [ "cash" :: {}, "card" :: {} ] } -> String
 payingLine r = "Paying by " <> caseText r."Method"
-
-paidLine :: { "Payment" :: { "Total" :: String, "Method" :: [ "cash" :: {}, "card" :: {} ], "Paid" :: String } } -> String
-paidLine r = ", paid " <> r."Payment"."Paid" <> " by " <> caseText r."Payment"."Method"
 
 loadOrder :: {} -> Aff
   { "Identifier" ::

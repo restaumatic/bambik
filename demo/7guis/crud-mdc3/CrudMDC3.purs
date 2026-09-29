@@ -1,6 +1,6 @@
 module CrudMDC3 (crudMDC3) where
 
-import Prelude (Unit, bind, const, (#), ($), (<<<))
+import Prelude (Unit, bind, (#), ($))
 
 import CrudLogic (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleDeleted, personLine, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -17,7 +17,7 @@ crudMDC3 = do
   catalogue <- sharedPeopleCatalogue
   body $
     ( Semigroupoid.do
-      indeterminateLinearProgress @"busy" # action (loadPeopleCatalogue catalogue)
+      indeterminateLinearProgress @"Loading people" # action (loadPeopleCatalogue catalogue)
       ( Semigroupoid.do
         filledTextField @"Filter prefix (surname)" {}
         filledTextField @"Name" {}
@@ -29,7 +29,7 @@ crudMDC3 = do
             button @"Update" {}
             button @"Delete" {}
           VariantToVariant.do
-            indeterminateLinearProgress @"busy" # action (createPerson catalogue) # atCase @"Create"
-            indeterminateLinearProgress @"busy" # action (updatePerson catalogue) # atCase @"Update"
-            indeterminateLinearProgress @"busy" # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+            indeterminateLinearProgress @"Creating person" # action (createPerson catalogue) # atCase @"Create"
+            indeterminateLinearProgress @"Updating person" # action (updatePerson catalogue) # atCase @"Update"
+            indeterminateLinearProgress @"Deleting person" # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted }) ) # looped
     ) # with {}

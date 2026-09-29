@@ -27,13 +27,11 @@ import Type.Proxy (Proxy(..))
 board :: Ocular (PUI Web)
 board = div >>> "style" := "display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch;"
 
-statTile :: forall @l r. IsSymbol l => String -> ({ | r } -> String) -> PUI Web { | r } {}
-statTile unit f =
+statTile :: forall @l r. IsSymbol l => ({ | r } -> String) -> PUI Web { | r } {}
+statTile f =
   tile >>> "aria-label" := reflectSymbol (Proxy @l) $ Semigroupoid.do
     ( labelMedium $ staticText (reflectSymbol (Proxy @l)) ) # shown
-    div >>> "style" := "display: flex; align-items: baseline; gap: 6px;" $ Semigroupoid.do
-      displaySmall (text f)
-      labelMedium $ staticText unit
+    displaySmall (text f)
 
 gauge :: forall @l r. IsSymbol l => Union r () r => ({ | r } -> Number) -> PUI Web { | r } {}
 gauge f =

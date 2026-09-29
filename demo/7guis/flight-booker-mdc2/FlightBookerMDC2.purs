@@ -24,7 +24,7 @@ flightBookerMDC2 =
       body1 (text oneWayLine) # shownWhen @"one-way" bookingState
       body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
-    indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
+    indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"
     VariantToRecord.do
       snackbar @"booked" bookedLine
       snackbar @"rejected" rejectedLine

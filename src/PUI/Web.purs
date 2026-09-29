@@ -795,7 +795,7 @@ attrWith name valueOf w = wrap do
 -- | is currently showing. A grid cell, a list row, a chip, a picture — the
 -- | content is the display, the click is the report, so the identity of
 -- | what was picked comes from what was on screen and cannot be got wrong:
--- | `clicked @"cellPicked" _.key (td $ text _.text)`. A click before the
+-- | `clicked @"picked" _.key (td $ text _.text)`. A click before the
 -- | element has been shown anything does nothing. An **event source**,
 -- | `× → +` by shape as by behaviour: the click **replays** the last row
 -- | fed — replay is lawful over records only, an entity's value may be

@@ -15,8 +15,8 @@ weatherMDC2 =
   body $
     ( Semigroupoid.do
       ( Semigroupoid.do
-        listOf @"cityPicked" @"request" { selected: isCurrent } forecastRequests (text _.request.city)
-        indeterminateCircularProgress @"busy" # action fetchReport # atCase @"cityPicked" ) # updated (match { reportServed: rememberReport })
+        listOf @"requested" @"request" { selected: isCurrent } forecastRequests (text _.request.city)
+        indeterminateCircularProgress @"Fetching forecast" # action fetchReport # atCase @"requested" ) # updated (match { reportServed: rememberReport })
       headline1 (text temperatureLine) # shown
       headline5 (text conditionLine) # shown
       body1 (text humidityWindLine) # shown

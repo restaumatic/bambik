@@ -28,7 +28,7 @@ flightBookerHTML =
       p (text problemLine) # shownWhen @"problem" bookingState
       p (text oneWayLine) # shownWhen @"one-way" bookingState
       p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
-    button @"Book" (staticText "Book")
+    button @"Book" {}
     blank # action submit # atCase @"Book"
     VariantToRecord.do
       output @"booked" bookedLine

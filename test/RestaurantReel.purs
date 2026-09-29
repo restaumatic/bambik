@@ -27,7 +27,7 @@ import Data.Variant (case_, match, on)
 import Type.Proxy (Proxy(..))
 import PUI (PUI)
 import PUI.Web.HTML (button)
-import PUI.Web (Web, staticText)
+import PUI.Web (Web)
 
 type Money = Int
 type DishId = String
@@ -45,7 +45,7 @@ type OrderEvent =
 priceDish :: PUI Web DishId PricedLine
 priceDish =
   dimap { dish: _ } (match { "Price dish": \r -> { name: r.dish, price: 1000 } })
-    (button @"Price dish" $ staticText "Price dish")
+    (button @"Price dish" {})
 
 -- | The Reel: events folded into the running order. The order is real retained
 -- | state — it lives in the finisher's closure inside the carrier, installed by

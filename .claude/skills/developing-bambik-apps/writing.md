@@ -71,7 +71,7 @@ PUI Web [ | a ] [ | b ]   -- +→+  handlers: backend dispatch
 
 Every component the vocabularies publish has one of these types, and so
 must every component an application packages itself (order-dashboard's
-`DashboardControlsMDC3`: `statTile @"Orders" "placed"
+`DashboardControlsMDC3`: `statTile @"Orders placed"
 ordersCount :: PUI Web { | r } {}`). A word that would need two shapes
 is two words, each lawful at its own — the library's
 pane is `provided` for emitters, `shownWhen` for displays, `inCase` for
@@ -689,13 +689,13 @@ what the line is:
   `tooltip loyaltyNote`).
 
 So every leaf reads as a noun phrase — its word, then its anchor, then
-its one required argument:
+its positional arguments:
 
 ```purescript
 snackbar  @"booked"  bookedLine              -- the booked snackbar, saying bookedLine
 confirmed @"Refund"  "Refund the customer?"
 button    @"Sign up" { icon: "person_add" }  -- the record: optional presentation
-tooltip              loyaltyNote             -- chrome: no anchor, one positional argument
+tooltip              loyaltyNote             -- chrome: no anchor, a positional argument
 ```
 
 **A record never holds an anchor or anything required**:

@@ -19,9 +19,10 @@ ticTacToeMDC3 =
       headlineSmall (staticText "Draw") # shownWhen @"drawn" gameOutcome
       headlineSmall (text toMoveLine) # shownWhen @"toMove" gameOutcome
       ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-        clicked @"cellPicked" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" cells ) ) # updated (match { cellPicked: claimCell })
+        clicked @"claimed" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" cells ) ) # updated (match { claimed: claimCell })
       button @"New game" { icon: "replay" } # with openingPosition # updated (match { "New game": const })
     ) # mvu openingPosition
+
 cellFace :: { mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String
 cellFace { line } = cellStyle <> match { winning: \_ -> "background: #a5d6a7;", plain: \_ -> "background: #eceff1;" } line
 

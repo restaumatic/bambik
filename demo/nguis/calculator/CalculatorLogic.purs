@@ -1,4 +1,4 @@
-module CalculatorLogic (blankTally, keyPad, operatorKeys, pressKey, readout) where
+module CalculatorLogic (blankTally, functionKeys, keyPad, operatorKeys, pressKey, readout) where
 
 import Prelude ((&&), (<$>), (<>), (==), (/=), (+), (-), (*), (/), otherwise, show)
 
@@ -22,6 +22,9 @@ keyPad = { key: _ } <$>
 
 operatorKeys :: Array String
 operatorKeys = [ "÷", "×", "−", "+", "=" ]
+
+functionKeys :: Array String
+functionKeys = [ "C", "±" ]
 
 readout :: { condition :: [ sound :: {}, faulty :: {} ], entry :: String } -> [ sound :: { entry :: String }, faulty :: {} ]
 readout { condition, entry } = match { sound: \_ -> .sound { entry }, faulty: \_ -> .faulty {} } condition

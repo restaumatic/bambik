@@ -24,5 +24,5 @@ passwordGeneratorMDC2 =
       code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
       ( Semigroupoid.do
         button @"Generate" {}
-        indeterminateLinearProgress @"busy" # action samplePassword # atCase @"Generate" ) # updated (match { generated: rememberPassword })
+        indeterminateLinearProgress @"Generating password" # action samplePassword # atCase @"Generate" ) # updated (match { generated: rememberPassword })
     ) # mvu strongMixRecipe

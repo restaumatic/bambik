@@ -1,6 +1,6 @@
 module CrudHTML (crudHTML) where
 
-import Prelude ((#), ($), (<<<), (<>), (>>>), Unit, bind, const)
+import Prelude ((#), ($), (<>), (>>>), Unit, bind)
 
 import CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, personLine, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -31,13 +31,14 @@ crudHTML = do
         ( clicked @"picked" _.key ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key" entries ) # updated (match { picked: pick })
       ( Semigroupoid.do
         div $ RecordToVariant.do
-          button @"Create" (staticText "Create")
-          button @"Update" (staticText "Update")
-          button @"Delete" (staticText "Delete")
+          button @"Create" {}
+          button @"Update" {}
+          button @"Delete" {}
         VariantToVariant.do
           blank # action (createPerson catalogue) # atCase @"Create"
           blank # action (updatePerson catalogue) # atCase @"Update"
-          blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+          blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted }) ) # looped
   ) # with {}
+
 entryFace :: { "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: #cde;", unselected: \_ -> "" } status

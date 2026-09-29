@@ -81,7 +81,8 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
+import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
+import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
 
 -- UIs
 
@@ -275,19 +276,19 @@ eventText :: [ event :: String ] -> String
 eventText = on (Proxy @"event") identity case_
 
 -- TODO disable button after click?
--- | A bare `<button>` around fixed content — a label, an icon, both. Its
--- | content is decoration; the button reports, as case `l`, that the user
--- | asked for something, carrying whatever row it was being shown at the
--- | time, so the request arrives with its subject attached:
--- | `button @"Count" (staticText "Count")`. An event source, `× → +`.
+-- | A bare `<button>`, captioned by its label verbatim (`label:` overrides
+-- | with real copy the label cannot be). It reports, as case `l`, that the
+-- | user asked for something, carrying whatever row it was being shown at
+-- | the time, so the request arrives with its subject attached:
+-- | `button @"Count" {}`. An event source, `× → +`.
 -- |
 -- | It is disabled until it has been shown something, and **disables itself
 -- | on click** until the next value reaches it — so a double tap cannot
 -- | send a request twice, and a button that stays dead is a screen whose
 -- | model never came back.
-button :: forall @l r s. IsSymbol l => Cons l { | r } () s => PUI Web {} {} -> PUI Web { | r } [ | s ]
-button w = wrap do
-  w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ w)
+button :: forall @l provided r s. IsSymbol l => Cons l { | r } () s => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | s ]
+button provided = wrap do
+  w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticText config.label)
   -- a click before any value arrived has nothing valid to emit — withheld
   mARef <- liftEffect $ Ref.new Nothing
   node <- gets _.sibling
@@ -302,6 +303,8 @@ button w = wrap do
           setAttribute node "disabled" "true" -- TODO re-think
           prop (inj (Proxy @l) fed)
     }
+  where
+  config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 
 -- | A horizontal rule separating sections — fixed decoration, and the one
 -- | element with nothing inside it, so it is written as a leaf rather than

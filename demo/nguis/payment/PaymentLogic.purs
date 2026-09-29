@@ -32,5 +32,5 @@ chargeFlaky r@{ attempt } = do
   let tried = attempt + 1
   pure $ if attempt < 2 then .charge r { attempt = tried } else .charged { attempt: tried }
 
-recordCharged :: { attempt :: Int } -> { approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
-recordCharged approved = { approval: .approved approved }
+recordCharged :: { attempt :: Int } -> { approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> { approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
+recordCharged approved _ = { approval: .approved approved }

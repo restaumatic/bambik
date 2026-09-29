@@ -7,7 +7,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import OrderFormLogic (awayLine, deliveryDistance, deliveryLine, dineInLine, distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentOf, fulfillmentState, loadOrder, orderLine, paidLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime, takeawayLine)
+import OrderFormLogic (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
 import PUI (action, armed, atCase, bracketed, debounced, looped, settled, updated, with)
 import PUI.Web (choice, inCase, shown, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
@@ -16,7 +16,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderFormMDC3 :: Effect Unit
 orderFormMDC3 =
   body $ ( Semigroupoid.do
-    indeterminateLinearProgress @"busy" # action loadOrder
+    indeterminateLinearProgress @"Loading order" # action loadOrder
     ( Semigroupoid.do
       ( headlineSmall $ text orderLine ) # shown
       group @"Identifier" $ Semigroupoid.do
@@ -35,7 +35,7 @@ orderFormMDC3 =
             filledTextField @"Address" {} # settled staleDistanceForgotten
             ( Semigroupoid.do
               button @"Estimate distance" { icon: "near_me" }
-              indeterminateLinearProgress @"busy" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
+              indeterminateLinearProgress @"Estimating distance" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
             ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed @"Mode" fulfillmentState fulfillmentCase
       group @"Payment" $ Semigroupoid.do
         filledTextField @"Total" {}
@@ -44,19 +44,13 @@ orderFormMDC3 =
         filledTextField @"Paid" {}
         ( bodyLarge $ text payingLine ) # shown
       group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
-    card $ bodyLarge ( Semigroupoid.do
-      text summaryLine # shown # debounced summarySettleTime
-      text dineInLine # shownWhen @"Dine in" fulfillmentOf
-      text takeawayLine # shownWhen @"Takeaway" fulfillmentOf
-      text deliveryLine # shownWhen @"Delivery" fulfillmentOf
-      text awayLine # shownWhen @"estimated" deliveryDistance
-      text paidLine # shown # debounced summarySettleTime )
+    card $ bodyLarge (text summaryLine) # shown # debounced summarySettleTime
     ( RecordToVariant.do
       button @"Submit order" { icon: "save" }
       button @"Receipt" { icon: "file" } ) # armed
     VariantToVariant.do
-      indeterminateLinearProgress @"busy" # action submitOrder # atCase @"Submit order"
-      indeterminateLinearProgress @"busy" # action printReceipt # atCase @"Receipt"
+      indeterminateLinearProgress @"Submitting order" # action submitOrder # atCase @"Submit order"
+      indeterminateLinearProgress @"Printing receipt" # action printReceipt # atCase @"Receipt"
     VariantToRecord.do
       snackbar @"orderSubmitted" submittedLine
       snackbar @"submissionFailed" rejectionLine

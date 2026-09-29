@@ -1,4 +1,4 @@
-module CellsLogic (commit, gridRows, orderSheet, selectCell, selectedLine) where
+module CellsLogic (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows) where
 
 import Prelude ((<>), bind, identity, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
 
@@ -41,24 +41,22 @@ colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
 refKey :: { c :: Int, r :: Int } -> String
 refKey { c, r } = colName c <> show r
 
-gridRows :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ] } -> Array { rowKey :: String, cells :: Array { domKey :: String, key :: String, kind :: [ header :: {}, cell :: {} ], text :: String, status :: [ selected :: {}, unselected :: {} ] } }
-gridRows m =
+columnHeaders :: {} -> Array { key :: String, text :: String }
+columnHeaders _ = [ { key: "corner", text: "" } ] <> (range 0 (cols - 1) <#> \c -> { key: colName c, text: colName c })
+
+sheetRows :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ] } -> Array { rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } }
+sheetRows m =
   let
     values = evalSheet m.cells
-    colIndices = range 0 (cols - 1)
-    headerCells =
-      [ { domKey: "h", key: "", kind: .header {}, text: "", status: .unselected {} } ]
-        <> (colIndices <#> \c -> { domKey: "h" <> show c, key: "", kind: .header {}, text: colName c, status: .unselected {} })
-    rowCells r =
-      [ { domKey: "l" <> show r, key: "", kind: .header {}, text: show r, status: .unselected {} } ]
-        <> (colIndices <#> \c -> let key = refKey { c, r } in { domKey: key, key, kind: .cell {}, text: fromMaybe "" (lookup key values), status: statusOf key })
+    rowCells r = range 0 (cols - 1) <#> \c -> let key = refKey { c, r } in { key, text: fromMaybe "" (lookup key values), status: statusOf key }
     statusOf key = match { picked: \p -> if p.name == key then .selected {} else .unselected {}, none: \_ -> .unselected {} } m.selected
   in
-    [ { rowKey: "header", cells: headerCells } ]
-      <> (range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r })
+    range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r }
+
+rowLabel :: { rowKey :: String } -> String
+rowLabel { rowKey } = rowKey
 
 selectCell :: String -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }
-selectCell "" m = m
 selectCell key m = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
 
 commit :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }

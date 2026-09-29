@@ -2,7 +2,7 @@ module CellsShoelace (cellsShoelace) where
 
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
-import CellsLogic (commit, gridRows, orderSheet, selectCell, selectedLine)
+import CellsLogic (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, settled, updated)
@@ -18,12 +18,16 @@ cellsShoelace =
       p (text selectedLine) # shown
       textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
-        ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $
-          ( tr $ ( clicked @"cellClicked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"domKey" _.cells ) # foreach @"rowKey" gridRows ) ) # updated (match { cellClicked: selectCell })
+        ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
+          ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" columnHeaders ) # shown
+          ( tr $ Semigroupoid.do
+            ( td >>> "style" := headerFace $ text rowLabel ) # shown
+            ( clicked @"picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" sheetRows ) ) # updated (match { picked: selectCell })
     ) # mvu orderSheet
-cellFace :: { text :: String, kind :: [ header :: {}, cell :: {} ], status :: [ selected :: {}, unselected :: {} ] } -> String
-cellFace { kind, status } = match
-  { header: \_ -> "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
-  , cell: \_ -> "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
-    <> match { selected: \_ -> " background: #cde;", unselected: \_ -> "" } status
-  } kind
+
+headerFace :: String
+headerFace = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
+
+cellFace :: { text :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
+cellFace { status } = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
+  <> match { selected: \_ -> " background: #cde;", unselected: \_ -> "" } status

@@ -40,7 +40,7 @@ flightBookerMDC2 =
       body1 (text oneWayLine) # shownWhen @"one-way" bookingState
       body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
-    indeterminateLinearProgress @"busy" # action submit # atCase @"Book"
+    indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"
     VariantToRecord.do
       snackbar @"booked" bookedLine
       snackbar @"rejected" rejectedLine
@@ -123,7 +123,7 @@ shape change, `×→+`: fed the model, it emits `[ "Book" :: model ]` on
 click, replaying the last model it was fed. Its case is its caption; `icon`
 is presentation config.
 
-**Stage 4 — `indeterminateLinearProgress @"busy" # action submit # atCase @"Book"`.**
+**Stage 4 — `indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"`.**
 `+→+`: `atCase` adopts the button's case, so its payload goes to
 `submit :: model -> Aff [ booked :: …, rejected :: String ]`, the progress
 bar shows while the `Aff` runs, and the outcome variant emits when it

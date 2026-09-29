@@ -1,6 +1,6 @@
 module CrudBootstrap (crudBootstrap) where
 
-import Prelude (Unit, bind, const, (#), ($), (<<<), (>>>))
+import Prelude (Unit, bind, (#), ($), (>>>))
 
 import CrudLogic (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleDeleted, personLine, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -23,7 +23,7 @@ crudBootstrap = do
         textField @"Filter prefix (surname)" {}
         textField @"Name" {}
         textField @"Surname" {}
-        ( cl "overflow-auto" >>> "style" := "max-height: 200px;" $ listGroup $
+        ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
           ( clicked @"picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key" entries ) # updated (match { picked: pick })
         ( Semigroupoid.do
           ( div $ RecordToVariant.do
@@ -33,5 +33,5 @@ crudBootstrap = do
           VariantToVariant.do
             blank # action (createPerson catalogue) # atCase @"Create"
             blank # action (updatePerson catalogue) # atCase @"Update"
-            blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: const <<< peopleDeleted })) # looped
+            blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted }) ) # looped
     ) # with {}
