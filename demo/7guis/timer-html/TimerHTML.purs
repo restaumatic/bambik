@@ -16,7 +16,7 @@ timerHTML =
     progress @"Elapsed" elapsedFraction # shown
     (p $ text progressLine) # shown
     p ( label $ Semigroupoid.do
-      (staticText "Duration ") # shown
+      (staticText @"Duration ") # shown
       rangeInput @"Duration" )
     every tickPeriod tick
     button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })

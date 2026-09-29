@@ -33,7 +33,7 @@ espressoBarMDC2 =
           filterChip @"Decaf" {}
         toggleSwitch @"Takeaway cup" {}
         iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "favorite_border" }
-        checkbox @"Loyalty" @"member" @"guest" {} (staticText "Loyalty member") # tooltip loyaltyNote
+        checkbox @"Loyalty" @"member" @"guest" {} (staticText @"Loyalty member") # tooltip loyaltyNote
         divider # shown
         menu "Presets" ( RecordToVariant.do
           menuItem @"The usual" {} # with theUsual
@@ -41,7 +41,7 @@ espressoBarMDC2 =
       ) # mvu usualOrder
       body2 (text cupLine) # shown
       ( div $ RecordToRecord.do
-        caption $ staticText "Caffeine"
+        caption $ staticText @"Caffeine"
         linearProgress @"Caffeine" caffeineFraction ) # shown
       button @"Place order" { icon: "local_cafe" } # armed
       snackbar @"Place order" brewedLine

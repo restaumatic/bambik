@@ -21,10 +21,10 @@ photoGalleryMDC3 =
           listOf @"opened" @"name" { selected: isOpen } albumChoices (span (text _.name)) # updated (match { opened: openAlbum })
           divider
           list RecordToRecord.do
-            listItem $ staticText "Every photo is an SVG"
-            listItem $ staticText "developed from its caption"
-            listItem $ staticText "No network involved"
-          labelSmall $ staticText "Favorites"
+            listItem $ staticText @"Every photo is an SVG"
+            listItem $ staticText @"developed from its caption"
+            listItem $ staticText @"No network involved"
+          labelSmall $ staticText @"Favorites"
           imageList 2 $ each favoriteShots imageListItem )
         ( Semigroupoid.do
           ( displayMedium $ text albumTitle ) # shown

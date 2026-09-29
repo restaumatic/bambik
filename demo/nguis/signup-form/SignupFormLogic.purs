@@ -1,4 +1,4 @@
-module SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, usernameSettleTime, usernameStatus, validation) where
+module SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, unnamedLine, usernameSettleTime, usernameStatus, validation) where
 
 import Prelude (const, not, (<>), (==))
 
@@ -75,3 +75,6 @@ takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
 
 declined :: [ accepted :: {}, declined :: {} ] -> Boolean
 declined = match { accepted: const false, declined: const true }
+
+unnamedLine :: {} -> String
+unnamedLine _ = "Pick a username to check its availability"

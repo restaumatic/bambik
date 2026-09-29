@@ -1143,7 +1143,7 @@ type Ocular p = forall a b. Optic p a b a b
 -- | rows pinned at `{} → {}` — a ripple, a focus ring, a decorative
 -- | circle, an empty cell. Reads nothing, contributes nothing; the merge
 -- | gates ignore its echo (a zero-field side is pre-known and inert), so it
--- | sits in any `RecordToRecord.do` beside `staticText` and `staticHTML`,
+-- | sits in any `RecordToRecord.do` beside `staticString` and `staticHTML`,
 -- | the other two statics. `static (span >>> cl "mdc-button__ripple")`.
 static :: forall p. Category p => Ocular p -> p {} {}
 static o = o identity

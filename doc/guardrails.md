@@ -152,7 +152,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   argument (`@l` on an editor, selector, emitter, pane or status), a
   **named read function** as a display's positional argument (L17), or
   **nothing** (chrome — statics and oculars write nothing and so name
-  nothing). Every leaf therefore reads as a noun phrase — word, anchor,
+  nothing; a static's type argument, `staticText @"Hours"`, is its own
+  text, known before runtime like every label, not an anchor). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent

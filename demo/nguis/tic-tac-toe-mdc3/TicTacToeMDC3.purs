@@ -5,18 +5,18 @@ import Prelude ((#), ($), (<>), (>>>), Unit, const)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, updated, with)
-import PUI.Web (attrWith, clicked, shownWhen, staticText, text, (:=))
+import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, button, headlineSmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TicTacToeLogic (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine)
+import TicTacToeLogic (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine)
 
 ticTacToeMDC3 :: Effect Unit
 ticTacToeMDC3 =
   body $
     ( Semigroupoid.do
       headlineSmall (text wonLine) # shownWhen @"won" gameOutcome
-      headlineSmall (staticText "Draw") # shownWhen @"drawn" gameOutcome
+      headlineSmall (text drawnLine) # shownWhen @"drawn" gameOutcome
       headlineSmall (text toMoveLine) # shownWhen @"toMove" gameOutcome
       ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
         clicked @"claimed" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" cells ) ) # updated (match { claimed: claimCell })

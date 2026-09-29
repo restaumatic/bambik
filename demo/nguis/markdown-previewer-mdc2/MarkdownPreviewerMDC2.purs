@@ -6,7 +6,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import MarkdownPreviewerLogic (parseMarkdown, welcomeDocument)
 import PUI (PUI, mvu)
-import PUI.Web (Web, dynamic, each, el, shown, staticText, (:=))
+import PUI.Web (Web, dynamic, each, el, shown, staticString, (:=))
 import PUI.Web.HTML (blockquote, code, em, li, p, strong, ul)
 import PUI.Web.MDC2 (body, filledTextArea, layoutCell, layoutGrid)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -32,8 +32,8 @@ blockView = match
 
 inlineViews :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] -> PUI Web {} {}
 inlineViews is = each is $ match
-  { plain: staticText
-  , bold: \s -> strong (staticText s)
-  , italic: \s -> em (staticText s)
-  , code: \s -> code >>> "style" := "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" $ staticText s
+  { plain: staticString
+  , bold: \s -> strong (staticString s)
+  , italic: \s -> em (staticString s)
+  , code: \s -> code >>> "style" := "background: #f0f0f0; padding: 1px 4px; border-radius: 3px;" $ staticString s
   }

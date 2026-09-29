@@ -9,7 +9,7 @@ import PUI.Web.Fluent (body, button, dropdown, dropdownOptional, dropdownUnpicke
 
 lawBenchFluent :: Effect Unit
 lawBenchFluent = do
-  body (staticText "Leaf-law bench · Fluent")
+  body (staticText @"Leaf-law bench · Fluent")
   runBench
     [ bench "textField" "×→×" texts (textField @"Name" {})
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})

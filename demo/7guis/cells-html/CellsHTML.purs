@@ -15,7 +15,7 @@ cellsHTML =
   body $ div $ ( Semigroupoid.do
     p (text selectedLine) # shown
     p ( label $ Semigroupoid.do
-      (staticText "Formula (e.g. =SUM(A0:A5)*2) ") # shown
+      (staticText @"Formula (e.g. =SUM(A0:A5)*2) ") # shown
       input @"Formula (e.g. =SUM(A0:A5)*2)" "text" # "size" := "32" ) # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
       ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do

@@ -14,7 +14,7 @@
 -- |   effect-computed attributes), `cl`, and the channel-fed `attrWith` and
 -- |   `clWhen`; `init` for per-element setup;
 -- | - **text leaves** — `text` (copy from a read function), `textOf` (a
--- |   status's payload), `staticText`, and `staticHTML`, kept off the public
+-- |   status's payload), `staticString`, and `staticHTML`, kept off the public
 -- |   vocabularies (L10);
 -- | - **occurrence sources** — `clicked @l f`, `onClickedXY @l`;
 -- | - **visibility and the gated displays** — `provided`, and the rungs
@@ -78,6 +78,7 @@ module PUI.Web
   , shownEach
   , text
   , textOf
+  , staticString
   , staticText
   , attr
   , (:=)
@@ -302,7 +303,7 @@ instance Hosting Web Node where
       }
 
 -- | Fixed decoration given as a raw markup string — for chrome a design
--- | system only documents as markup. Like `staticText` it never changes and
+-- | system only documents as markup. Like `staticString` it never changes and
 -- | carries no data; unlike it, the string is inserted as markup, so it must
 -- | be written in the source and never assembled from model or user text.
 -- |
@@ -548,7 +549,7 @@ shownEach
 shownEach proj item = recordToRecord (muted (foreach @l (\(r :: { | row }) -> proj (unsafeCoerce r)) item)) identity
 
 -- | Show a string that changes — a readout, a total, a sentence, a name in
--- | a list row. (Wording that doesn't change is `staticText`.)
+-- | a list row. (Wording that doesn't change is `staticString`.)
 -- |
 -- | **Copy is a function, not a field**: the argument is the read — a named
 -- | function from the fields it needs to the words on the screen, living in
@@ -558,13 +559,13 @@ shownEach proj item = recordToRecord (muted (foreach @l (\(r :: { | row }) -> pr
 -- | (`shown`/`shownWhen`/`shownEach`) widens it to the fed row, so no call
 -- | site coerces. This is why `text` takes no label:
 -- | its content *is* the copy, so there is no field to name and nothing to
--- | caption — a caption is surrounding chrome (`staticText`, a `label`, a
+-- | caption — a caption is surrounding chrome (`staticString`, a `label`, a
 -- | column header). A leaf that renders a *number* keeps its label and
 -- | reads its field verbatim (`progressBar @"fraction"`): numbers need no
 -- | formatting.
 -- |
 -- | A whole line is one function, glue included — never several leaves with
--- | `staticText` between them, and never a formatter in the view.
+-- | `staticString` between them, and never a formatter in the view.
 -- | doc/research-copy-is-a-function.md is the rationale.
 text :: forall reads. ({ | reads } -> String) -> PUI Web { | reads } {}
 text = textLeaf
@@ -606,13 +607,22 @@ textLeaf f = wrap do
     , fromUser: \prop -> Ref.write prop propRef
     }
 
--- | Fixed text: a caption, a unit, the literal words between two values on
--- | a line. It never changes and carries no data, which is what makes it
--- | the piece to reach for when a sentence is assembled in the UI from
--- | model values and wording — the wording is `staticText`, each value its
--- | own `text`.
-staticText :: String -> PUI Web {} {}
-staticText content = wrap do
+-- | **Static copy**: text that is part of the structure — on screen before,
+-- | and regardless of, any model value — written as a type, so it is known
+-- | to the compiler like every label: `h3 (staticText @"Hours")`,
+-- | `label $ staticText @"Name "`. Fixed decoration carrying no data,
+-- | rendered at build. Copy that is fixed but shows only through data — a
+-- | pane's message, the glue of a sentence, a formatted value — is a
+-- | *constant*, and lives in a copy function of the logic module
+-- | (`text faultLine`); text that *is* data is `staticString`.
+staticText :: forall @s. IsSymbol s => PUI Web {} {}
+staticText = staticString (reflectSymbol (Proxy @s))
+
+-- | Fixed text given as a runtime string — for vocabulary code captioning
+-- | from its configuration, and for closure-known text that is data (a
+-- | parsed markdown run). Application copy that is static is `staticText @s`.
+staticString :: String -> PUI Web {} {}
+staticString content = wrap do
   -- decoration contributes nothing: the `{}` it announces is ignored by
   -- the gates (a zero-field side is pre-known and inert), so this is the
   -- chrome's own completeness, not a merge requirement

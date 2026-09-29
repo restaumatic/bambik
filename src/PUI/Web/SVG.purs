@@ -35,7 +35,7 @@ path :: Ocular (PUI Web)
 path = el "path"
 
 -- | Text inside a drawing, placed by `x`/`y`: an axis tick, a data label.
--- | (For text in a page, `PUI.Web`'s `text` and `staticText` are the
+-- | (For text in a page, `PUI.Web`'s `text` and `staticString` are the
 -- | leaves.)
 text :: Ocular (PUI Web)
 text = el "text"

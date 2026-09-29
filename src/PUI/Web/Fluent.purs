@@ -57,7 +57,7 @@ import Effect.Ref as Ref
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticString, text, textOf, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -116,7 +116,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- | the case label verbatim (`label:` overrides with real copy).
 button :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
 button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in eventLeaf @l $
-  el "fluent-button" >>> "appearance" := "primary" $ staticText config.label
+  el "fluent-button" >>> "appearance" := "primary" $ staticString config.label
 
 -- the click-emitter protocol over any `{} → {}` element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
@@ -127,7 +127,7 @@ eventLeaf chrome = clicked @l identity chrome
 -- appends (Fluent's label protocol: both are slotted children of the field)
 fieldWith :: forall i o. String -> String -> Web { toUser :: i -> Effect Unit, fromUser :: (o -> Effect Unit) -> Effect Unit } -> PUI Web i o
 fieldWith position lbl editor = el "fluent-field" >>> "label-position" := position $ wrap do
-  _ <- unwrap (el "fluent-label" >>> "slot" := "label" $ staticText lbl)
+  _ <- unwrap (el "fluent-label" >>> "slot" := "label" $ staticString lbl)
   editor
 
 -- | The **text field**: a labelled single-line input. Shows the string it
@@ -195,7 +195,7 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 slider :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 slider provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ el "fluent-field" >>> "label-position" := "above" $ wrap do
   readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
-      _ <- unwrap (staticText config.label)
+      _ <- unwrap (staticString config.label)
       unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text _.readout))
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
@@ -304,7 +304,7 @@ radioGroupWith clearable lift provided options = let config = convertOptionsWith
   members <- element "fluent-radio-group" do
     forWithIndex options \idx o -> do
       member <- element "fluent-field" do
-        _ <- unwrap (el "fluent-label" >>> "slot" := "label" $ staticText o.label)
+        _ <- unwrap (el "fluent-label" >>> "slot" := "label" $ staticString o.label)
         element "fluent-radio" (pure unit)
         radioNode <- gets _.sibling
         liftEffect do

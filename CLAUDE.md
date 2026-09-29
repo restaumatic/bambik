@@ -84,7 +84,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - `toUser` - pushes model updates to UI
 - `fromUser` - captures user interactions
 
-The rows a pipeline operates over hold **state, not copy** (guardrails L17): **copy is a function, not a field** — a display whose content *is* copy takes its read function at the leaf and no label (`text balanceLine`, `text _.title`), the function living in the logic module, so the view line names its own writer and the screen's copy is unit-testable in `spago test`. A display that renders a *number* takes a read function too (`progressBar @"Elapsed" elapsedFraction`) — a fraction is *derived*, and derivation is the same act as formatting — keeping its label as the **accessible name** only; quantity *editors* are untouched (`sliderLive @"Duration"` still names its field). `settled` is left with invariants among *edited* fields, and in the demos every surviving `# settled` sits on an editor. doc/research-copy-is-a-function.md is the rationale (it partially reverses doc/research-presentation-model.md, keeping its testability motivation and its `settled` half).
+The rows a pipeline operates over hold **state, not copy** (guardrails L17): **copy is a function, not a field** — a display whose content *is* copy takes its read function at the leaf and no label (`text balanceLine`, `text _.title`), the function living in the logic module, so the view line names its own writer and the screen's copy is unit-testable in `spago test`. A display that renders a *number* takes a read function too (`progressBar @"Elapsed" elapsedFraction`) — a fraction is *derived*, and derivation is the same act as formatting — keeping its label as the **accessible name** only; quantity *editors* are untouched (`sliderLive @"Duration"` still names its field). `settled` is left with invariants among *edited* fields, and in the demos every surviving `# settled` sits on an editor. doc/research-copy-is-a-function.md is the rationale (it partially reverses doc/research-presentation-model.md, keeping its testability motivation and its `settled` half). Fixed copy is **static or constant** (writing.md): a static is on screen before and regardless of any data and is a type, `staticText @"Hours" :: PUI Web {} {}`, never a model field; a constant shows only through data (a sentence's glue, a pane's message) and lives in a copy function (`text faultLine # shownWhen @"faulty" readout`); the value-level `staticString` is left for text that is data and for vocabulary code captioning from its config.
 
 ### Key Source Files
 
@@ -562,7 +562,7 @@ MDC3 twin shows the honest catalog gap, MD3 having dropped `banner` for
 folds back through `updated`; the MDC3 twin honestly drops the MDC2
 selected-row class, the favorite state riding the toggle),
 weather (Aff service with a canned per-city delay), helloworld
-(`body $ staticText` — the 5 kB bundle floor).
+(`body $ staticText @"Hello, World!"` — the 5 kB bundle floor).
 
 **Vocabulary showcases.** restaurant-menu is the plain-HTML one (no design
 system: element oculars, `cl`/`:=` decorators, `each` from data, seeded

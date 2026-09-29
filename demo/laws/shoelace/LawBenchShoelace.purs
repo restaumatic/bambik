@@ -9,7 +9,7 @@ import PUI.Web.Shoelace (body, button, progressBar, rating, select, selectOption
 
 lawBenchShoelace :: Effect Unit
 lawBenchShoelace = do
-  body (staticText "Leaf-law bench · Shoelace")
+  body (staticText @"Leaf-law bench · Shoelace")
   runBench
     [ bench "textField" "×→×" texts (textField @"Name" {})
     , bench "textArea" "×→×" texts (textArea @"Name" { rows: 2 })

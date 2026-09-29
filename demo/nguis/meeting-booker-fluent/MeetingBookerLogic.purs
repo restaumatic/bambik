@@ -1,4 +1,4 @@
-module MeetingBookerLogic (blankBooking, bookedLine, plan, planLine, ratedRoom, roomOf, roomStars, seatOccupancy, seatsInRoom, seatsTaken) where
+module MeetingBookerLogic (blankBooking, bookedLine, plan, planLine, ratedRoom, roomOf, roomRatingCaption, roomStars, seatOccupancy, seatsInRoom, seatsTaken, seatsTakenCaption) where
 
 import Prelude ((<>), show, (/))
 
@@ -77,3 +77,9 @@ roomStars = _.rating
 
 seatOccupancy :: { occupancy :: Number } -> Number
 seatOccupancy = _.occupancy
+
+roomRatingCaption :: {} -> String
+roomRatingCaption _ = "How attendees rated this room"
+
+seatsTakenCaption :: {} -> String
+seatsTakenCaption _ = "Seats taken"

@@ -1,4 +1,4 @@
-module CalculatorLogic (blankTally, functionKeys, keyPad, operatorKeys, pressKey, readout) where
+module CalculatorLogic (blankTally, faultLine, functionKeys, keyPad, operatorKeys, pressKey, readout) where
 
 import Prelude ((&&), (<$>), (<>), (==), (/=), (+), (-), (*), (/), otherwise, show)
 
@@ -78,3 +78,6 @@ negated entry = case stripPrefix (Pattern "-") entry of
 
 format :: Number -> String
 format n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
+
+faultLine :: {} -> String
+faultLine _ = "Error"

@@ -9,13 +9,13 @@ import PUI.Web.MDC3 (body, button, checkbox, debouncedTextField, elevatedButton,
 
 lawBenchMDC3 :: Effect Unit
 lawBenchMDC3 = do
-  body (staticText "Leaf-law bench · MDC3")
+  body (staticText @"Leaf-law bench · MDC3")
   runBench
     [ bench "filledTextField" "×→×" texts (filledTextField @"Name" {})
     , bench "outlinedTextField" "×→×" texts (outlinedTextField @"Name" {})
     , bench "debouncedTextField" "×→×" texts (debouncedTextField @"Name" {} { ms: 200.0 })
     , bench "filledTextArea" "×→×" texts (filledTextArea @"Name" { columns: 20, rows: 2 })
-    , bench "checkbox" "×→×" ticks (checkbox @"Terms" @"accepted" @"declined" {} (staticText "I accept"))
+    , bench "checkbox" "×→×" ticks (checkbox @"Terms" @"accepted" @"declined" {} (staticText @"I accept"))
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
     , bench "filterChip" "×→×" flags (filterChip @"On" {})
     , bench "iconToggle" "×→×" flags (iconToggle @"On" { onIcon: "star", offIcon: "star_border" })

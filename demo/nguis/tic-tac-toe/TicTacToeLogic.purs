@@ -1,4 +1,4 @@
-module TicTacToeLogic (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine) where
+module TicTacToeLogic (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine) where
 
 import Prelude ((&&), (/=), (<#>), (<>), (==), bind, mod, not, show)
 
@@ -69,3 +69,6 @@ wonLine r = markText r <> " wins"
 
 toMoveLine :: { mark :: [ x :: {}, o :: {}, free :: {} ] } -> String
 toMoveLine r = markText r <> " to move"
+
+drawnLine :: {} -> String
+drawnLine _ = "Draw"

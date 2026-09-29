@@ -9,7 +9,7 @@ import PUI.Web.Bootstrap (body, button, progress, select, selectOptional, select
 
 lawBenchBootstrap :: Effect Unit
 lawBenchBootstrap = do
-  body (staticText "Leaf-law bench · Bootstrap")
+  body (staticText @"Leaf-law bench · Bootstrap")
   runBench
     [ bench "textField" "×→×" texts (textField @"Name" {})
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})

@@ -324,7 +324,7 @@ interchangeable:
 So: an editor is a stage as it stands; a display stage is the gated rung
 that states its policy (`(…) # shown` for a structured line,
 tip-calculator's money readouts — and for **pure chrome in a pipeline**:
-a static caption is `(subtitle1 $ staticText "…") # shown`,
+a static caption is `(subtitle1 $ staticText @"…") # shown`,
 registered at build, releasing every fed row; a card whose content is a
 model sub-record needs no such line — its heading is the label of
 `group @l`). The rung trails like
@@ -685,8 +685,10 @@ what the line is:
   of a display, living in the logic module (`text balanceLine`,
   `text _.title`, `imagePane developedShot`);
 - **nothing** — chrome: statics and oculars write nothing, so they
-  name nothing (`card`, `(subtitle1 $ staticText "…") # shown`,
-  `tooltip loyaltyNote`).
+  name nothing (`card`, `(subtitle1 $ staticText @"…") # shown`,
+  `tooltip loyaltyNote`). A static's type argument is its own text —
+  known before runtime, like every label — not an anchor: it traces to
+  nothing in the model, because a static needs no data to be seen.
 
 So every leaf reads as a noun phrase — its word, then its anchor, then
 its positional arguments:
@@ -868,11 +870,27 @@ induces — view first, logic module written to its names — is
   of the business logic. The copy around the value is part of the
   sentence the user reads, and the sentence is the testable unit:
   composing it in the view splits one assertion across a logic test and
-  an untestable markup run. So `staticText` never appears in the same
-  text run as a display leaf — it survives only for wholly static copy
-  (a heading, a standalone note, a caption merge labelling an editor at
-  the plain-HTML floor). Copy stays out of view code entirely except
-  where a leaf's label *is* the copy.
+  an untestable markup run.
+- **Fixed copy is static or constant.** The two are told apart by
+  whether the copy needs data to be seen. A **static** is part of the
+  structure — on screen before, and regardless of, any model value: a
+  heading, a standalone note, a checkbox's caption, a caption labelling
+  an editor at the plain-HTML floor. It is written as a type,
+  `staticText @"Hours"`, known to the compiler like every label, and
+  never enters the model. A **constant** is fixed too but shows only
+  through data — the glue of a sentence, a unit suffix, a pane's message
+  shown in one state — and lives in a copy function of the logic module:
+
+  ```purescript
+  text faultLine # shownWhen @"faulty" readout
+  ```
+
+  with `faultLine :: {} -> String` (calculator's "Error", tic-tac-toe's
+  `drawnLine`, ticket-dispenser's hint). So `staticText` never shares a
+  text run with a display leaf and never sits in a pane; text that *is*
+  data (a parsed markdown run) is `staticString`. Copy stays out of view
+  code entirely except where it is a type — a field's label, a case's,
+  or a static's own.
 - **A label is read back, never restated.** A case label *is* the copy
   it draws (`choice @l` states it once, at the case), so a `match`
   whose branches merely echo their case labels — verbatim or re-cased —

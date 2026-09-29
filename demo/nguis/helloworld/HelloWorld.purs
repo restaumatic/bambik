@@ -7,4 +7,4 @@ import PUI.Web (staticText)
 import PUI.Web.HTML (body)
 
 helloWorld :: Effect Unit
-helloWorld = body $ staticText "Hello, World!"
+helloWorld = body $ staticText @"Hello, World!"

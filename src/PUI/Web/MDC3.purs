@@ -146,7 +146,7 @@ import Effect.Ref as Ref
 import PUI (Ocular, PUI, blank, foreach)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, shown, staticHTML, staticText, text, textContent, textOf, uniqueId, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, shown, staticHTML, staticString, staticText, text, textContent, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Union)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -324,10 +324,10 @@ buttonOf
   -> PUI Web { | r } [ | cl ]
 buttonOf tag provided = eventLeaf @l $ el tag $ RecordToRecord.do
   case config.icon of
-    Just icon' -> el "md-icon" >>> "slot" := "icon" $ staticText icon'
+    Just icon' -> el "md-icon" >>> "slot" := "icon" $ staticString icon'
     Nothing -> blank
   case config.label of
-    Just label' -> staticText label'
+    Just label' -> staticString label'
     Nothing -> blank
   where
   config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
@@ -354,7 +354,7 @@ fab
   -> PUI Web { | r } [ | cl ]
 fab provided icon = eventLeaf @l $
   el "md-fab" >>> "aria-label" := fromMaybe icon config.label >>> extended $
-    el "md-icon" >>> "slot" := "icon" $ staticText icon
+    el "md-icon" >>> "slot" := "icon" $ staticString icon
   where
   config = convertOptionsWithDefaults OptLabel { label: Just (reflectSymbol (Proxy @l)) } provided :: { label :: Maybe String }
   extended = case config.label of
@@ -369,7 +369,7 @@ fab provided icon = eventLeaf @l $
 iconButton :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> String -> PUI Web { | r } [ | cl ]
 iconButton provided icon = eventLeaf @l $
   el "md-icon-button" >>> "aria-label" := config.label $
-    el "md-icon" $ staticText icon
+    el "md-icon" $ staticString icon
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 
@@ -379,7 +379,7 @@ iconButton provided icon = eventLeaf @l $
 menuItem :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
 menuItem provided = eventLeaf @l $
   el "md-menu-item" $
-    div >>> "slot" := "headline" $ staticText config.label
+    div >>> "slot" := "headline" $ staticString config.label
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 
@@ -461,12 +461,12 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
     }
 
 -- | The Material **checkbox**, with its label beside it: the label is
--- | ordinary content (usually a `staticText`), properly associated, so
+-- | ordinary content (usually a `staticString`), properly associated, so
 -- | clicking the words toggles the box and the whole line is a comfortable
 -- | target.
 -- |
 -- | The field is a **named two-case variant** the application spells:
--- | `checkbox @"Terms" @"accepted" @"declined" {} (staticText …)`
+-- | `checkbox @"Terms" @"accepted" @"declined" {} (staticString …)`
 -- | is ticked exactly while `"Terms"` sits at `accepted`; ticking reports
 -- | `.accepted ticked`, clearing reports `.declined {}` — so an optional part
 -- | of the model *is* the box's state under its own names, with no second
@@ -551,7 +551,7 @@ radioLeaf clearable options =
         liftEffect do
           setAttribute radioNode "name" groupName
           setAttribute radioNode "aria-label" o.label
-        _ <- unwrap (staticText o.label)
+        _ <- unwrap (staticString o.label)
         pure { radioNode, value: o.value }
       attribute "style" "display: inline-flex; align-items: center; gap: 12px;"
       labelNode <- gets _.sibling
@@ -588,7 +588,7 @@ switchLeaf lbl =
     element "md-switch" (pure unit)
     node <- gets _.sibling
     liftEffect $ setAttribute node "aria-label" lbl
-    _ <- unwrap (staticText lbl)
+    _ <- unwrap (staticString lbl)
     mPropRef <- liftEffect $ Ref.new Nothing
     liftEffect $ listenNode node "change" do
       selected <- getBoolProp "selected" node
@@ -636,7 +636,7 @@ sliderLeaf live label
   | label == "" = bareSliderLeaf live label
   | otherwise =
       div >>> "style" := "display: inline-flex; flex-direction: column; align-items: flex-start;" $ wrap do
-        _ <- unwrap (span >>> cl "md-typescale-label-medium" >>> "style" := "color: var(--md-sys-color-on-surface-variant, #49454f); margin-left: 8px;" $ staticText label)
+        _ <- unwrap (span >>> cl "md-typescale-label-medium" >>> "style" := "color: var(--md-sys-color-on-surface-variant, #49454f); margin-left: 8px;" $ staticString label)
         unwrap (bareSliderLeaf live label)
 
 bareSliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
@@ -829,8 +829,8 @@ iconToggleLeaf config = wrap do
   -- the selected icon renders filled (the MD3 selected-state convention),
   -- so a same-glyph pair still reads as off/on
   _ <- unwrap $ el "md-icon-button" >>> "toggle" := "" >>> "aria-label" := config.label $ RecordToRecord.do
-    el "md-icon" $ staticText config.offIcon
-    el "md-icon" >>> "slot" := "selected" >>> "style" := "font-variation-settings: 'FILL' 1;" $ staticText config.onIcon
+    el "md-icon" $ staticString config.offIcon
+    el "md-icon" >>> "slot" := "selected" >>> "style" := "font-variation-settings: 'FILL' 1;" $ staticString config.onIcon
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   liftEffect $ listenNode node "change" do
@@ -1108,7 +1108,7 @@ cardActions = div >>> "style" := "display: flex; gap: 8px; align-items: center;"
 -- | appear once. It draws the surface, so it **leads its lines like any
 -- | container** (`group @"Customer" $ …`), never trailing as a `#` chain.
 -- | Without it a labelled group is three hand-aligned spellings — the
--- | `card`, a `staticText` heading, a trailing `# focusField @l` — free to
+-- | `card`, a `staticString` heading, a trailing `# focusField @l` — free to
 -- | drift apart.
 -- |
 -- | Derived, not primitive:
@@ -1138,7 +1138,7 @@ group
 group w = wrap do
   headingId <- liftEffect uniqueId
   unwrap $ "role" := "group" $ "aria-labelledby" := headingId $ card $
-    shown ("id" := headingId $ titleMedium $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
+    shown ("id" := headingId $ titleMedium $ staticText @l) >>> focusField @l w
 
 -- | A **modal dialog** — dimmed backdrop, trapped focus, Esc to leave — for
 -- | the decision that must be made before anything else continues.
@@ -1152,7 +1152,7 @@ group w = wrap do
 dialog :: String -> Ocular (PUI Web)
 dialog title content =
   el "md-dialog" >>> init pure showDialog closeDialog $ wrap do
-    _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
+    _ <- unwrap (div >>> "slot" := "headline" $ staticString title)
     unwrap (div >>> "slot" := "content" $ content)
 
 -- | The witness rung — see `PUI.Web.MDC2.confirmed`.
@@ -1172,9 +1172,9 @@ simpleDialog :: forall @l i o. IsSymbol l => String -> PUI Web { | i } { | o } -
 simpleDialog title content =
   el "md-dialog" >>> init pure showDialog closeDialog $ Semigroupoid.do
     wrap do
-      _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
+      _ <- unwrap (div >>> "slot" := "headline" $ staticString title)
       unwrap (div >>> "slot" := "content" $ content)
-    div >>> "slot" := "actions" $ (clicked @"confirmed" identity (el "md-text-button" $ staticText (reflectSymbol (Proxy @l)))) # Profunctor.rmap (Variant.match { confirmed: identity })
+    div >>> "slot" := "actions" $ (clicked @"confirmed" identity (el "md-text-button" $ staticText @l)) # Profunctor.rmap (Variant.match { confirmed: identity })
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just
@@ -1301,7 +1301,7 @@ dataTable tableName columns content = wrap do
   where
   headerCells :: PUI Web {} {}
   headerCells = wrap do
-    for_ columns \c -> void $ unwrap (th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText c)
+    for_ columns \c -> void $ unwrap (th >>> "role" := "columnheader" >>> "scope" := "col" $ staticString c)
     pure
       { toUser: mempty
       , fromUser: \prop -> prop {}
@@ -1392,7 +1392,7 @@ drawerCss = """
 -- | information the user needs to complete the task, which belongs on the
 -- | screen. Wrap a single control, and write it trailing so the control
 -- | still reads first:
--- | `checkbox @"Loyalty" @"member" @"guest" {} (staticText "Loyalty member") # tooltip "Members get 10% off"`.
+-- | `checkbox @"Loyalty" @"member" @"guest" {} (staticString "Loyalty member") # tooltip "Members get 10% off"`.
 tooltip :: String -> Ocular (PUI Web)
 tooltip tipText content =
   span >>> cl "md3-tooltip-anchor" $ wrap do

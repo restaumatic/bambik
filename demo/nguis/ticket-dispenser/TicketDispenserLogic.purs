@@ -1,4 +1,4 @@
-module TicketDispenserLogic (displayOf, emptyQueue, firstTicket, servingLine, ticketIssuance, ticketLine) where
+module TicketDispenserLogic (displayOf, emptyQueue, firstTicket, firstTicketHint, noTicketLine, servingLine, ticketIssuance, ticketLine) where
 
 import Prelude ((+), (<>), show)
 
@@ -34,3 +34,9 @@ ticketLine { number } = "#" <> show number
 
 servingLine :: { number :: Int } -> String
 servingLine { number } = "Now serving ticket " <> show number <> "."
+
+noTicketLine :: {} -> String
+noTicketLine _ = "—"
+
+firstTicketHint :: {} -> String
+firstTicketHint _ = "Press the button to draw the first ticket."

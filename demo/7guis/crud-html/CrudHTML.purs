@@ -19,13 +19,13 @@ crudHTML = do
     blank # action (loadPeopleCatalogue catalogue)
     ( Semigroupoid.do
       p ( label $ Semigroupoid.do
-        (staticText "Filter prefix (surname) ") # shown
+        (staticText @"Filter prefix (surname) ") # shown
         input @"Filter prefix (surname)" "text" )
       p ( label $ Semigroupoid.do
-        (staticText "Name ") # shown
+        (staticText @"Name ") # shown
         input @"Name" "text" )
       p ( label $ Semigroupoid.do
-        (staticText "Surname ") # shown
+        (staticText @"Surname ") # shown
         input @"Surname" "text" )
       ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
         ( clicked @"picked" _.key ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key" entries ) # updated (match { picked: pick })
