@@ -53,6 +53,7 @@ module PUI.Web.MDC2
   , chipSet
   , dataCell
   , dataRow
+  , columnHeader
   , dataTable
   , debouncedTextField
   , dialog
@@ -110,6 +111,7 @@ module PUI.Web.MDC2
   , textButton
   , toggleSwitch
   , tooltip
+  , tooltipWith
   , topAppBar
   )
   where
@@ -123,6 +125,7 @@ import Data.Foldable (foldMap, for_, traverse_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap, wrap)
+import Data.Profunctor.Row (widenRecordInput)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -1303,8 +1306,11 @@ group w = wrap do
 -- | and the decision both dismisses the dialog and travels on. So put only
 -- | deciding controls at the end of its content — something that reports
 -- | without the user deciding would dismiss the dialog as it opens.
-dialog :: String -> Ocular (PUI Web)
-dialog title content = wrap do
+dialog :: forall @s. IsSymbol s => Ocular (PUI Web)
+dialog = dialogFace (reflectSymbol (Proxy @s))
+
+dialogFace :: String -> Ocular (PUI Web)
+dialogFace title content = wrap do
   titleId <- liftEffect uniqueId
   contentId <- liftEffect uniqueId
   unwrap $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ wrap do
@@ -1328,8 +1334,8 @@ dialog title content = wrap do
 -- | over the instant rung — the ladder composes, witness rung = instant
 -- | rung inside the modal. A dismiss without confirming releases nothing:
 -- | a declined reading withholds, honestly.
-confirmed :: forall @l read extra row. IsSymbol l => Union read extra row => String -> PUI Web { | read } {} -> PUI Web { | row } { | row }
-confirmed title content = simpleDialog @l title (shown content)
+confirmed :: forall @l @t read extra row. IsSymbol l => IsSymbol t => Union read extra row => PUI Web { | read } {} -> PUI Web { | row } { | row }
+confirmed content = simpleDialog @l @t (shown content)
 
 -- | `dialog` with a **confirm button** built in — the confirmation step:
 -- | show what is about to happen, and the button reports it. The content
@@ -1340,8 +1346,8 @@ confirmed title content = simpleDialog @l title (shown content)
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the
 -- | `looped`/`observed` argument) — so the content's output is row-shaped.
-simpleDialog :: forall @l i o. IsSymbol l => String -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
-simpleDialog title content = wrap do
+simpleDialog :: forall @l @t i o. IsSymbol l => IsSymbol t => PUI Web { | i } { | o } -> PUI Web { | i } { | o }
+simpleDialog content = wrap do
   titleId <- liftEffect uniqueId
   contentId <- liftEffect uniqueId
   unwrap $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ wrap do
@@ -1357,6 +1363,8 @@ simpleDialog title content = wrap do
               span >>> cl "mdc-button__label" $ staticText @l) # Profunctor.rmap (Variant.match { confirmed: identity })
     _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
     pure result
+  where
+  title = reflectSymbol (Proxy @t)
 
 -- | The **snackbar**: a brief message at the bottom of the screen,
 -- | dismissing itself, for something that has just happened and needs no
@@ -1432,8 +1440,11 @@ bannerContainer content = wrap do
 -- | A **menu**: a labelled button that opens a short list of `menuItem`
 -- | actions and closes again when one is picked. For actions; for choosing
 -- | a value the model keeps, use `select`.
-menu :: String -> Ocular (PUI Web)
-menu anchorCaption content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ wrap do
+menu :: forall @s. IsSymbol s => Ocular (PUI Web)
+menu = menuFace (reflectSymbol (Proxy @s))
+
+menuFace :: String -> Ocular (PUI Web)
+menuFace anchorCaption content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ wrap do
   _ <- unwrap (staticHTML ("<button class=\"mdc-button mdc-button--outlined\" aria-label=\"" <> anchorCaption <> "\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> anchorCaption <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
   anchorNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.ripple."MDCRipple" anchorNode
@@ -1515,25 +1526,25 @@ listOf provided f item = wrap do
   config = convertOptionsWithDefaults OptSelected { selected: const false } provided
 
 -- | A **data table**: values in rows and columns, where the column a value
--- | sits in is what says what it means. `columns` are the fixed headings
--- | and `label` is what assistive technology announces the table as; the
+-- | sits in is what says what it means. its header slot holds the
+-- | fixed headings, one `columnHeader @"…"` each, and its type argument is
+-- | what assistive technology announces the table as (`dataTable @"Cart"`); the
 -- | body is `dataRow`s of `dataCell`s, usually one row per element of a
 -- | collection.
-dataTable :: String -> Array String -> Ocular (PUI Web)
-dataTable tableName columns content =
+dataTable :: forall @s. IsSymbol s => PUI Web {} {} -> Ocular (PUI Web)
+dataTable headerCells content =
   div >>> cl "mdc-data-table" $
     div >>> cl "mdc-data-table__table-container" $
       table >>> cl "mdc-data-table__table" >>> "aria-label" := tableName $ wrap do
         _ <- unwrap (thead $ tr >>> cl "mdc-data-table__header-row" $ headerCells)
         unwrap (tbody >>> cl "mdc-data-table__content" $ content)
   where
-  headerCells :: PUI Web {} {}
-  headerCells = wrap do
-    for_ columns \c -> void $ unwrap (th >>> cl "mdc-data-table__header-cell" >>> "role" := "columnheader" >>> "scope" := "col" $ staticString c)
-    pure
-      { toUser: mempty
-      , fromUser: \prop -> prop {}
-      }
+  tableName = reflectSymbol (Proxy @s)
+
+-- | One **column header** of a `dataTable` — static copy naming the column,
+-- | written as a type like every static: `columnHeader @"Qty"`.
+columnHeader :: forall @s. IsSymbol s => PUI Web {} {}
+columnHeader = th >>> cl "mdc-data-table__header-cell" >>> "role" := "columnheader" >>> "scope" := "col" $ staticText @s
 
 -- | One row of a `dataTable` — a single record's line across the columns.
 dataRow :: Ocular (PUI Web)
@@ -1563,8 +1574,11 @@ layoutCell cellSpan content = div >>> cl "mdc-layout-grid__cell" >>> cl ("mdc-la
 
 -- | The **top app bar**: the band carrying the screen's title, with the
 -- | content laid out beneath it and clear of it.
-topAppBar :: String -> Ocular (PUI Web)
-topAppBar title content = wrap do
+topAppBar :: forall @s. IsSymbol s => Ocular (PUI Web)
+topAppBar = topAppBarFace (reflectSymbol (Proxy @s))
+
+topAppBarFace :: String -> Ocular (PUI Web)
+topAppBarFace title content = wrap do
   _ <- unwrap (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> title <> "</span></section></div></header>"))
   headerNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.topAppBar."MDCTopAppBar" headerNode
@@ -1577,27 +1591,49 @@ topAppBar title content = wrap do
 -- | shown next to it, and a feed is released once, by the content. (Two
 -- | sibling stages fed the same row would each echo it — two releases
 -- | per feed, the parallel shape `recordToRecord`'s type forbids.)
-drawer :: forall i x o. { title :: String, subtitle :: String } -> PUI Web { | i } { | x } -> PUI Web { | x } { | o } -> PUI Web { | i } { | o }
-drawer config nav content = div >>> "style" := "display: flex;" $
+drawer :: forall @c t s rest i x o. IsSymbol t => IsSymbol s => Cons "title" t rest c => Cons "subtitle" s () rest => PUI Web { | i } { | x } -> PUI Web { | x } { | o } -> PUI Web { | i } { | o }
+drawer nav content = div >>> "style" := "display: flex;" $
   ( aside >>> cl "mdc-drawer" $ wrap do
       _ <- unwrap (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> config.subtitle <> "</h6></div>"))
       unwrap (div >>> cl "mdc-drawer__content" $ nav) )
   >>> ( div >>> cl "mdc-drawer-app-content" >>> "style" := "flex: 1; padding: 16px;" $ content )
+  where
+  config = { title: reflectSymbol (Proxy @t), subtitle: reflectSymbol (Proxy @s) }
 
 -- | Attach a **tooltip** to a control: the short explanation that appears
 -- | on hover or keyboard focus. For clarification only — never for
 -- | information the user needs to complete the task, which belongs on the
 -- | screen. Wrap a single control, and write it trailing so the control
 -- | still reads first:
--- | `checkbox @"Loyalty" @"member" @"guest" {} (staticString "Loyalty member") # tooltip "Members get 10% off"`.
-tooltip :: String -> Ocular (PUI Web)
-tooltip tipText content = wrap do
+-- | `checkbox @"Loyalty" @"member" @"guest" {} (staticText @"Loyalty member") # tooltip @"Members get 10% off"`.
+tooltip :: forall @s. IsSymbol s => Ocular (PUI Web)
+tooltip = tooltipFace (reflectSymbol (Proxy @s))
+
+tooltipFace :: String -> Ocular (PUI Web)
+tooltipFace tipText content = wrap do
   tipId <- liftEffect uniqueId
   w <- unwrap ("aria-describedby" := tipId $ content)
   _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"mdc-tooltip\" role=\"tooltip\" aria-hidden=\"true\"><div class=\"mdc-tooltip__surface mdc-tooltip__surface-animation\">" <> tipText <> "</div></div>"))
   tipNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.tooltip."MDCTooltip" tipNode
   pure w
+
+-- | `tooltip`'s channel-fed sibling, as `attrWith` is `attr`'s: the tip's
+-- | text is a copy function of the row the decorated element is fed,
+-- | re-read on every feed — for a note formatted from a business value
+-- | (`# tooltipWith loyaltyNote`) or from the model itself. Its footprint
+-- | subsumes, like a display's.
+tooltipWith :: forall narrow extra i o. Union narrow extra i => ({ | narrow } -> String) -> PUI Web { | i } o -> PUI Web { | i } o
+tooltipWith f content = wrap do
+  tipId <- liftEffect uniqueId
+  w <- unwrap ("aria-describedby" := tipId $ content)
+  tip <- unwrap (div >>> "id" := tipId >>> cl "mdc-tooltip" >>> "role" := "tooltip" >>> "aria-hidden" := "true" $ div >>> "class" := "mdc-tooltip__surface mdc-tooltip__surface-animation" $ widenRecordInput (text f))
+  tipNode <- gets _.sibling
+  _ <- liftEffect $ newComponent material.tooltip."MDCTooltip" tipNode
+  pure
+    { toUser: \row -> w.toUser row *> tip.toUser row
+    , fromUser: \prop -> w.fromUser prop *> tip.fromUser (\_ -> pure unit)
+    }
 
 -- announcing statics (`{} → {}` chrome with a face)
 

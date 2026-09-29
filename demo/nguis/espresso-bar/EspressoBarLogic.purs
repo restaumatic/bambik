@@ -67,8 +67,8 @@ price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty": loyalty 
 memberDiscount :: Number
 memberDiscount = 0.1
 
-loyaltyNote :: String
-loyaltyNote = "Members get " <> toStringWith (fixed 0) (memberDiscount * 100.0) <> "% off"
+loyaltyNote :: {} -> String
+loyaltyNote _ = "Members get " <> toStringWith (fixed 0) (memberDiscount * 100.0) <> "% off"
 
 sizePrice :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ] -> Number
 sizePrice = match { "Small": \_ -> 3.0, "Medium": \_ -> 3.5, "Large": \_ -> 4.0 }

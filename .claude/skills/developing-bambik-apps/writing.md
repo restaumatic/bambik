@@ -686,7 +686,8 @@ what the line is:
   `text _.title`, `imagePane developedShot`);
 - **nothing** — chrome: statics and oculars write nothing, so they
   name nothing (`card`, `(subtitle1 $ staticText @"…") # shown`,
-  `tooltip loyaltyNote`). A static's type argument is its own text —
+  `topAppBar @"Espresso Bar"`, `tooltip @"You must accept the terms of
+  service to sign up"`). A static's type argument is its own text —
   known before runtime, like every label — not an anchor: it traces to
   nothing in the model, because a static needs no data to be seen.
 
@@ -695,19 +696,21 @@ its positional arguments:
 
 ```purescript
 snackbar  @"booked"  bookedLine              -- the booked snackbar, saying bookedLine
-confirmed @"Refund"  "Refund the customer?"
+confirmed @"Refund"  @"Refund the customer?"  -- the title a static: a type
 button    @"Sign up" { icon: "person_add" }  -- the record: optional presentation
-tooltip              loyaltyNote             -- chrome: no anchor, a positional argument
+tooltipWith          loyaltyNote             -- chrome: no anchor, a copy function
 ```
 
 **A record never holds an anchor or anything required**:
 `snackbar { "Sign up": signupLine }` or `{ confirm: "Refund" }` would
 hide what the line is about, and a one-field record around a required
-value is a positional argument with ceremony (`tooltip loyaltyNote`,
+value is a positional argument with ceremony (`tooltipWith loyaltyNote`,
 `layoutCell 6`). A record stays only where its field names do work —
 optional presentation (`{ icon }`, `{ floatingLabel }`), or two
 same-typed values a positional pair could silently swap
-(`drawer { title, subtitle }`). The test is reading the line aloud: if
+(`drawer { title, subtitle }` — for statics a type-level record,
+`drawer @( title :: "Darkroom", subtitle :: "photos drawn on the spot" )`,
+the names doing the same work). The test is reading the line aloud: if
 you must open a record to learn what the line is about, the line breaks
 the invariant. Two value types the vocabulary defines are sanctioned in
 application rows, as `Number` is: the **bounded quantity**
@@ -760,16 +763,18 @@ induces — view first, logic module written to its names — is
   alike), and `# with {}` is written inline when the payload is the
   informationless unit, since naming `{}` is ceremony.
 - **A decorator rides its element, never leads the line.** `cl`, `clWhen`,
-  `attrWith` and `tooltip` modify the element they are given, so they are
+  `attrWith` and `tooltip`/`tooltipWith` modify the element they are given, so they are
   composed onto a container with `>>>` (`div >>> attrWith "style" cellFace
   $ …`) or trail a finished leaf with `#` (`span (text _.title) # clWhen
-  isCompleted "todo-done"`, `checkbox @"Loyalty" … # tooltip
+  isCompleted "todo-done"`, `checkbox @"Loyalty" … # tooltipWith
   loyaltyNote`). Leading with one — `tooltip … $ checkbox @"Loyalty"
   …` — puts chrome, and for a tooltip copy, where the line's anchor
-  belongs. A tooltip's note that states a business fact is a named value
-  in the logic module (espresso-bar's `loyaltyNote`, derived from the
-  discount it describes); a wholly static note may stay inline like a
-  heading.
+  belongs. A tooltip, like every piece of fixed copy, is static or
+  constant: a static note is a type, `tooltip @"…"`, and a note formatted
+  from a business value is a copy function read by `tooltipWith`
+  (espresso-bar's `loyaltyNote :: {} -> String`, derived from the
+  discount it describes) — `tooltip` is to `tooltipWith` as `attr` to
+  `attrWith`.
 - **Closing parens and trailing `#` chains never start a line.** A
   trailing chain is written on one line (never one `#` per line) and
   rides at the end of the UI component's last content line — close the paren

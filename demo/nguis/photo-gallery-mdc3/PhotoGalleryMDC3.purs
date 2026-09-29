@@ -15,8 +15,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 photoGalleryMDC3 :: Effect Unit
 photoGalleryMDC3 =
   body $
-    topAppBar "Photo Gallery" $
-      ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
+    topAppBar @"Photo Gallery" $
+      ( drawer @( title :: "Darkroom", subtitle :: "photos drawn on the spot" )
         ( RecordToRecord.do
           listOf @"opened" @"name" { selected: isOpen } albumChoices (span (text _.name)) # updated (match { opened: openAlbum })
           divider

@@ -10,13 +10,13 @@ import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills
 import PUI (armed, mvu, updated, with)
 import PUI.Web (choice, shown, staticText, text)
 import PUI.Web.HTML (div)
-import PUI.Web.MDC2 (body, body2, button, caption, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
+import PUI.Web.MDC2 (body, body2, button, caption, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltipWith, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 espressoBarMDC2 :: Effect Unit
 espressoBarMDC2 =
   body $
-    topAppBar "Espresso Bar" $ Semigroupoid.do
+    topAppBar @"Espresso Bar" $ Semigroupoid.do
       ( Semigroupoid.do
         tabBar @"Drink"
           [ choice @"Espresso", choice @"Cappuccino", choice @"Latte" ]
@@ -33,9 +33,9 @@ espressoBarMDC2 =
           filterChip @"Decaf" {}
         toggleSwitch @"Takeaway cup" {}
         iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "favorite_border" }
-        checkbox @"Loyalty" @"member" @"guest" {} (staticText @"Loyalty member") # tooltip loyaltyNote
+        checkbox @"Loyalty" @"member" @"guest" {} (staticText @"Loyalty member") # tooltipWith loyaltyNote
         divider # shown
-        menu "Presets" ( RecordToVariant.do
+        menu @"Presets" ( RecordToVariant.do
           menuItem @"The usual" {} # with theUsual
           menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
       ) # mvu usualOrder

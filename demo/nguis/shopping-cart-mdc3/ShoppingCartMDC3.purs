@@ -7,7 +7,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import PUI (foreach, mvu, updated, with)
 import PUI.Web (clicked, shown, text)
-import PUI.Web.MDC3 (body, bodyLarge, button, dataCell, dataRow, dataTable, listOf)
+import PUI.Web.MDC3 (body, bodyLarge, button, columnHeader, dataCell, dataRow, dataTable, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import ShoppingCartLogic (addUnit, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine)
 
@@ -16,7 +16,11 @@ shoppingCartMDC3 =
   body $
     ( Semigroupoid.do
       listOf @"added" @"product" {} productCatalogue (text catalogueLine) # updated (match { added: addUnit })
-      dataTable "Cart" [ "Product", "Qty", "Total" ]
+      dataTable @"Cart"
+        ( RecordToRecord.do
+          columnHeader @"Product"
+          columnHeader @"Qty"
+          columnHeader @"Total" )
         ( ( clicked @"removed" _.product $ dataRow RecordToRecord.do
           dataCell (text productLine)
           dataCell (text quantityLine)

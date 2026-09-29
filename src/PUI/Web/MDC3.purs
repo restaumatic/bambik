@@ -59,6 +59,7 @@ module PUI.Web.MDC3
   , chipSet
   , dataCell
   , dataRow
+  , columnHeader
   , dataTable
   , debouncedTextField
   , dialog
@@ -121,6 +122,7 @@ module PUI.Web.MDC3
   , toggleSwitch
   , tonalButton
   , tooltip
+  , tooltipWith
   , topAppBar
   )
   where
@@ -134,6 +136,7 @@ import Data.Foldable (foldMap, for_, traverse_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
+import Data.Profunctor.Row (widenRecordInput)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
@@ -1149,15 +1152,18 @@ group w = wrap do
 -- | and the decision both dismisses the dialog and travels on. So put only
 -- | deciding controls at the end of its content — something that reports
 -- | without the user deciding would dismiss the dialog as it opens.
-dialog :: String -> Ocular (PUI Web)
-dialog title content =
+dialog :: forall @s. IsSymbol s => Ocular (PUI Web)
+dialog = dialogFace (reflectSymbol (Proxy @s))
+
+dialogFace :: String -> Ocular (PUI Web)
+dialogFace title content =
   el "md-dialog" >>> init pure showDialog closeDialog $ wrap do
     _ <- unwrap (div >>> "slot" := "headline" $ staticString title)
     unwrap (div >>> "slot" := "content" $ content)
 
 -- | The witness rung — see `PUI.Web.MDC2.confirmed`.
-confirmed :: forall @l read extra row. IsSymbol l => Union read extra row => String -> PUI Web { | read } {} -> PUI Web { | row } { | row }
-confirmed title content = simpleDialog @l title (shown content)
+confirmed :: forall @l @t read extra row. IsSymbol l => IsSymbol t => Union read extra row => PUI Web { | read } {} -> PUI Web { | row } { | row }
+confirmed content = simpleDialog @l @t (shown content)
 
 -- | `dialog` with a **confirm button** built in — the confirmation step:
 -- | show what is about to happen, and the button reports it. The content
@@ -1168,13 +1174,15 @@ confirmed title content = simpleDialog @l title (shown content)
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the
 -- | `looped`/`observed` argument) — so the content's output is row-shaped.
-simpleDialog :: forall @l i o. IsSymbol l => String -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
-simpleDialog title content =
+simpleDialog :: forall @l @t i o. IsSymbol l => IsSymbol t => PUI Web { | i } { | o } -> PUI Web { | i } { | o }
+simpleDialog content =
   el "md-dialog" >>> init pure showDialog closeDialog $ Semigroupoid.do
     wrap do
       _ <- unwrap (div >>> "slot" := "headline" $ staticString title)
       unwrap (div >>> "slot" := "content" $ content)
     div >>> "slot" := "actions" $ (clicked @"confirmed" identity (el "md-text-button" $ staticText @l)) # Profunctor.rmap (Variant.match { confirmed: identity })
+  where
+  title = reflectSymbol (Proxy @t)
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just
@@ -1215,8 +1223,11 @@ snackbarCss = """
 -- | A **menu**: a labelled button that opens a short list of `menuItem`
 -- | actions and closes again when one is picked. For actions; for choosing
 -- | a value the model keeps, use `select`.
-menu :: String -> Ocular (PUI Web)
-menu anchorCaption content =
+menu :: forall @s. IsSymbol s => Ocular (PUI Web)
+menu = menuFace (reflectSymbol (Proxy @s))
+
+menuFace :: String -> Ocular (PUI Web)
+menuFace anchorCaption content =
   span >>> "style" := "position: relative; display: inline-block;" $ wrap do
     _ <- unwrap (staticHTML ("<md-outlined-button trailing-icon>" <> anchorCaption <> "<md-icon slot=\"icon\">arrow_drop_down</md-icon></md-outlined-button>"))
     anchorNode <- gets _.sibling
@@ -1287,25 +1298,25 @@ md-list-item.md3-list-item--selected { --md-list-item-container-color: var(--md-
 """
 
 -- | A **data table**: values in rows and columns, where the column a value
--- | sits in is what says what it means. `columns` are the fixed headings
--- | and `label` is what assistive technology announces the table as; the
+-- | sits in is what says what it means. its header slot holds the
+-- | fixed headings, one `columnHeader @"…"` each, and its type argument is
+-- | what assistive technology announces the table as (`dataTable @"Cart"`); the
 -- | body is `dataRow`s of `dataCell`s, usually one row per element of a
 -- | collection.
-dataTable :: String -> Array String -> Ocular (PUI Web)
-dataTable tableName columns content = wrap do
+dataTable :: forall @s. IsSymbol s => PUI Web {} {} -> Ocular (PUI Web)
+dataTable headerCells content = wrap do
   liftEffect $ ensureStyle "md3-data-table" dataTableCss
   unwrap $ div >>> cl "md3-data-table" $
     table >>> "aria-label" := tableName $ wrap do
       _ <- unwrap (thead $ tr $ headerCells)
       unwrap (tbody $ content)
   where
-  headerCells :: PUI Web {} {}
-  headerCells = wrap do
-    for_ columns \c -> void $ unwrap (th >>> "role" := "columnheader" >>> "scope" := "col" $ staticString c)
-    pure
-      { toUser: mempty
-      , fromUser: \prop -> prop {}
-      }
+  tableName = reflectSymbol (Proxy @s)
+
+-- | One **column header** of a `dataTable` — static copy naming the column,
+-- | written as a type like every static: `columnHeader @"Qty"`.
+columnHeader :: forall @s. IsSymbol s => PUI Web {} {}
+columnHeader = th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText @s
 
 dataTableCss :: String
 dataTableCss = """
@@ -1351,8 +1362,11 @@ layoutCell cellSpan = div >>> "style" := ("grid-column: span " <> show cellSpan 
 
 -- | The **top app bar**: the band carrying the screen's title, with the
 -- | content laid out beneath it.
-topAppBar :: String -> Ocular (PUI Web)
-topAppBar title content = wrap do
+topAppBar :: forall @s. IsSymbol s => Ocular (PUI Web)
+topAppBar = topAppBarFace (reflectSymbol (Proxy @s))
+
+topAppBarFace :: String -> Ocular (PUI Web)
+topAppBarFace title content = wrap do
   liftEffect $ ensureStyle "md3-top-app-bar" topAppBarCss
   _ <- unwrap (staticHTML ("<header class=\"md3-top-app-bar\"><span class=\"md3-top-app-bar__title\">" <> title <> "</span></header>"))
   unwrap (div >>> cl "md3-top-app-bar-content" $ content)
@@ -1370,14 +1384,16 @@ topAppBarCss = """
 -- | shown next to it, and a feed is released once, by the content. (Two
 -- | sibling stages fed the same row would each echo it — two releases
 -- | per feed, the parallel shape `recordToRecord`'s type forbids.)
-drawer :: forall i x o. { title :: String, subtitle :: String } -> PUI Web { | i } { | x } -> PUI Web { | x } { | o } -> PUI Web { | i } { | o }
-drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
+drawer :: forall @c t s rest i x o. IsSymbol t => IsSymbol s => Cons "title" t rest c => Cons "subtitle" s () rest => PUI Web { | i } { | x } -> PUI Web { | x } { | o } -> PUI Web { | i } { | o }
+drawer nav content = div >>> "style" := "display: flex;" $ wrap do
   liftEffect $ ensureStyle "md3-drawer" drawerCss
   unwrap $
     ( aside >>> cl "md3-drawer" $ wrap do
         _ <- unwrap (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> config.subtitle <> "</h6></div>"))
         unwrap (div $ nav) )
     >>> ( div >>> "style" := "flex: 1; padding: 16px;" $ content )
+  where
+  config = { title: reflectSymbol (Proxy @t), subtitle: reflectSymbol (Proxy @s) }
 
 drawerCss :: String
 drawerCss = """
@@ -1392,15 +1408,35 @@ drawerCss = """
 -- | information the user needs to complete the task, which belongs on the
 -- | screen. Wrap a single control, and write it trailing so the control
 -- | still reads first:
--- | `checkbox @"Loyalty" @"member" @"guest" {} (staticString "Loyalty member") # tooltip "Members get 10% off"`.
-tooltip :: String -> Ocular (PUI Web)
-tooltip tipText content =
+-- | `checkbox @"Loyalty" @"member" @"guest" {} (staticText @"Loyalty member") # tooltip @"Members get 10% off"`.
+tooltip :: forall @s. IsSymbol s => Ocular (PUI Web)
+tooltip = tooltipFace (reflectSymbol (Proxy @s))
+
+tooltipFace :: String -> Ocular (PUI Web)
+tooltipFace tipText content =
   span >>> cl "md3-tooltip-anchor" $ wrap do
     liftEffect $ ensureStyle "md3-tooltip" tooltipCss
     tipId <- liftEffect uniqueId
     w <- unwrap ("aria-describedby" := tipId $ content)
     _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> tipText <> "</div>"))
     pure w
+
+-- | `tooltip`'s channel-fed sibling, as `attrWith` is `attr`'s: the tip's
+-- | text is a copy function of the row the decorated element is fed,
+-- | re-read on every feed — for a note formatted from a business value
+-- | (`# tooltipWith loyaltyNote`) or from the model itself. Its footprint
+-- | subsumes, like a display's.
+tooltipWith :: forall narrow extra i o. Union narrow extra i => ({ | narrow } -> String) -> PUI Web { | i } o -> PUI Web { | i } o
+tooltipWith f content =
+  span >>> cl "md3-tooltip-anchor" $ wrap do
+    liftEffect $ ensureStyle "md3-tooltip" tooltipCss
+    tipId <- liftEffect uniqueId
+    w <- unwrap ("aria-describedby" := tipId $ content)
+    tip <- unwrap (div >>> "id" := tipId >>> cl "md3-tooltip" >>> "role" := "tooltip" $ widenRecordInput (text f))
+    pure
+      { toUser: \row -> w.toUser row *> tip.toUser row
+      , fromUser: \prop -> w.fromUser prop *> tip.fromUser (\_ -> pure unit)
+      }
 
 -- a plain tooltip is transient: it shows while the pointer rests on the anchor
 -- or the anchor has KEYBOARD focus (`:focus-visible`), never for the focus a

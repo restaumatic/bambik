@@ -20,7 +20,7 @@ signupFormMDC3 =
       select @"Country" {}
         [ choice @"Poland", choice @"Germany", choice @"France", choice @"Spain" ]
       filledTextField @"Email" {}
-      checkbox @"Terms" @"accepted" @"declined" {} (staticText @"I accept the terms of service") # tooltip "You must accept the terms of service to sign up"
+      checkbox @"Terms" @"accepted" @"declined" {} (staticText @"I accept the terms of service") # tooltip @"You must accept the terms of service to sign up"
     ) # mvu newApplicant
     ( bodyMedium $ text unnamedLine ) # shownWhen @"unnamed" usernameStatus
     ( bodyMedium $ text takenLine ) # shownWhen @"taken" usernameStatus

@@ -166,7 +166,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   take a label (no model interface, nothing to anchor) nor copy that has a
   place in its content (a card's heading is typography in its content) —
   copy with no content position, a tooltip's text or a dialog's title, is
-  a positional argument; a display MUST NOT carry a label except as
+  a type argument when it is static (`tooltip @"…"`, `dialog @"…"`,
+  `topAppBar @"…"` — the static's own text, not an anchor) and a copy
+  function when it is formatted or read from data (`tooltipWith f`); a display MUST NOT carry a label except as
   an accessible name (L17); and no mechanism may leave a line's meaning in
   an anonymous position. The stronger rule — *every line a field*, oculars
   included — was considered and rejected (2026-09-03): a label on an
