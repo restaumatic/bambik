@@ -28,7 +28,7 @@ movieCatalogue =
     ]
   }
 
-visibleMovies :: { category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> Array { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean }
+visibleMovies :: forall r1. { category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } | r1 } -> Array { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean }
 visibleMovies { category, "Classic": classic, "Cult": cult, "Oscar": oscar, movies } = map listing (filter (\movie -> inCategory movie && taggedAsChosen movie) movies)
   where
   inCategory movie = category == ."All" {} || movie.category == category
@@ -36,25 +36,25 @@ visibleMovies { category, "Classic": classic, "Cult": cult, "Oscar": oscar, movi
   chosenTag = match { "Classic": const classic, "Cult": const cult, "Oscar": const oscar }
   listing { title, year, rating, "Favorite": favorite } = { title, year, rating, "Favorite": favorite }
 
-favoriteMark :: { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean } -> { title :: String, "Favorite" :: Boolean }
+favoriteMark :: forall r1. { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean | r1 } -> { title :: String, "Favorite" :: Boolean }
 favoriteMark { title, "Favorite": favorite } = { title, "Favorite": favorite }
 
-markFavorite :: { title :: String, "Favorite" :: Boolean } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } }
-markFavorite { title, "Favorite": favorite } { movies } = { movies: map (\movie -> if movie.title == title then movie { "Favorite" = favorite } else movie) movies }
+markFavorite :: forall r1 r2. { title :: String, "Favorite" :: Boolean | r1 } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } | r2 } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } | r2 }
+markFavorite { title, "Favorite": favorite } catalogue = catalogue { movies = map (\movie -> if movie.title == title then movie { "Favorite" = favorite } else movie) catalogue.movies }
 
-isFavorite :: { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean } -> Boolean
+isFavorite :: forall r1. { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean | r1 } -> Boolean
 isFavorite { "Favorite": favorite } = favorite
 
-titleLine :: { title :: String } -> String
+titleLine :: forall r1. { title :: String | r1 } -> String
 titleLine { title } = title
 
-yearLine :: { year :: Int } -> String
+yearLine :: forall r1. { year :: Int | r1 } -> String
 yearLine { year } = show year
 
-ratingLine :: { rating :: Number } -> String
+ratingLine :: forall r1. { rating :: Number | r1 } -> String
 ratingLine { rating } = "★ " <> toStringWith (fixed 1) rating
 
-favoritesLine :: { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } } -> String
+favoritesLine :: forall r1. { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } | r1 } -> String
 favoritesLine { movies } =
   let count = length (filter _."Favorite" movies)
   in if count == 1 then "1 favorite" else show count <> " favorites"

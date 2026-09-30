@@ -26,7 +26,7 @@ orderSheet =
   , "Formula (e.g. =SUM(A0:A5)*2)": ""
   }
 
-selectedLine :: { selected :: [ picked :: { name :: String }, none :: {} ] } -> String
+selectedLine :: forall r1. { selected :: [ picked :: { name :: String }, none :: {} ] | r1 } -> String
 selectedLine { selected } = "Cell " <> match { picked: _.name, none: \_ -> "—" } selected
 
 cols :: Int
@@ -38,13 +38,13 @@ rows = 30
 colName :: Int -> String
 colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
 
-refKey :: { c :: Int, r :: Int } -> String
+refKey :: forall r1. { c :: Int, r :: Int | r1 } -> String
 refKey { c, r } = colName c <> show r
 
-columnHeaders :: {} -> Array { key :: String, text :: String }
+columnHeaders :: forall r1. { | r1 } -> Array { key :: String, text :: String }
 columnHeaders _ = [ { key: "corner", text: "" } ] <> (range 0 (cols - 1) <#> \c -> { key: colName c, text: colName c })
 
-sheetRows :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ] } -> Array { rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } }
+sheetRows :: forall r1. { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ] | r1 } -> Array { rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } }
 sheetRows m =
   let
     values = evalSheet m.cells
@@ -53,13 +53,13 @@ sheetRows m =
   in
     range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r }
 
-rowLabel :: { rowKey :: String } -> String
+rowLabel :: forall r1. { rowKey :: String | r1 } -> String
 rowLabel { rowKey } = rowKey
 
-selectCell :: String -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+selectCell :: forall r1. String -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String | r1 } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String | r1 }
 selectCell key m = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
 
-commit :: { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String }
+commit :: forall r1. { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String | r1 } -> { cells :: Object String, selected :: [ picked :: { name :: String }, none :: {} ], "Formula (e.g. =SUM(A0:A5)*2)" :: String | r1 }
 commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = match
   { picked: \p ->
     if lookup p.name m.cells /= Just formula then m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells } else m

@@ -199,11 +199,14 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   missing-vocabulary signal (L16), never a reason to reach for the
   lens. Checkable form: `grep "focusField @" demo/` is empty, always.
 
-### L4. The merge law: sharing is inclusive, responsibility is exclusive.
+### L4. The merge law: sharing is open, responsibility is exclusive.
 
-- Record fields and variant emissions may overlap (data copies freely);
-  variant handling and record production MUST be disjoint (responsibility
-  never splits). Runtime evidence appears exactly where responsibility
+- A shared record input is **one row**: every operand is fed the merge's
+  whole row (an equality), and what it reads is its business functions'
+  open-row footprint (L18). Variant emissions may overlap — a shared
+  variant output is the inclusive union of the operands' cases, so a
+  handler missing for one of them is a type error. Variant handling and
+  record production MUST be disjoint (responsibility never splits). Runtime evidence appears exactly where responsibility
   does (`DispatchableVariants`, `MergeableRecords`) and nowhere else.
 - Merge operands' emissions MUST be runtime-exact: trimmed to their
   declared row before the gates combine them, so no stale sibling field
@@ -214,8 +217,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 - A merge MUST NOT carry a unit of its own where a wire fits. Its unit law
   is conditional on the carrier: *if* `p` is also a `Category`, the wire at
-  the unit object — `identity @{}` for `×→×`, `identity @(Variant ())` for
-  `+→+`, `lcmap case_ identity` for `+→×` — MUST play well with the merge,
+  the unit object — the `{}` wire at the merge's row, `lcmap (const {})
+  identity` (`blank`), for `×→×` (the operands share one input row, so the
+  unit is the terminal arrow out of it: `identity @{}` only at `{}`),
+  `identity @(Variant ())` for `+→+`, `lcmap case_ identity` for `+→×` —
+  MUST play well with the merge,
   exactly, not up to an echo, because a record gate MUST treat
   a contribution of zero fields as no contribution (L6). The one unit no
   wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
@@ -245,7 +251,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   can flow (the zero-field law in test/Main.purs) — and **inert**: a
   zero-field side's emissions neither open nor re-fire the gate, so a
   wire, a silent display and an announcing one are one operand and
-  `identity @{}` is the unit exactly. This is what makes a
+  the `{}` wire is the unit exactly. This is what makes a
   display-side operand unable to starve its siblings, and the
   display-beside-the-wire construction (the gated displays' bodies) a
   derived form rather than a carrier primitive. There is **one gate**:
@@ -284,7 +290,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   literal; a point has answered already and by Repetition at `{}` answers
   no further — 2026-09-15). Every knot-tying record-channel form (`feedback`, `folding`,
   `unfolding`, `mvu`/`with`) MUST take its t=0 value as an argument the
-  caller cannot omit. The point's *value* is row-forced (`announce a ≈
+  caller cannot omit — for the trace forms the value of the one state
+  field their label names (L18). The point's *value* is row-forced (`announce a ≈
   lcmap (const a) identity`, `Data.Profunctor.Seeding`); what the class
   adds is its *earliness*, the one moment a stateful carrier has and a
   timeless one lacks — so a proposal to derive `announce` from the wire is
@@ -312,8 +319,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `+`-members) — never a DOM annotation (`data-*`), never a render
   index, never carrier-private guesswork.
 - Identity MUST be unforgeable where the carrier owns it: in
-  `acted`/`edited` the element's output row excludes the key and the
-  carrier re-attaches it. Stateful carriers MUST make identity follow
+  `acted`/`edited` the element is typed at its whole row, key included,
+  and the carrier **re-sets** the key on every emission, so whatever an
+  element emits in the key field is replaced. Stateful carriers MUST make identity follow
   the key (nodes move with their keys; matched elements re-feed in
   place). Keys are labels, never rendered content.
 
@@ -522,6 +530,76 @@ code below the UI) are algebra-layer material and exempt by location.
   partially reverses doc/research-presentation-model.md (keeping its
   testability motivation and its `settled` half); the application-side
   statement is writing.md's *copy is a function, not a field*.
+
+### L18. A view runs before its logic exists.
+
+- The library MUST let every application view run with its logic
+  **deleted**: each `*Logic` module replaced by a stub whose every export
+  is a bare, untyped `hole` (no signature), **against the real library**
+  — no shadow modules, no changed import, nothing else touched. The
+  result MUST compile, mount clean and render the view's initial UI, and
+  reach no hole — at mount or under any input. This is the writing order
+  (writing.md, *Writing order*) made executable: the view is written
+  first, and it runs before a single business function exists.
+- `hole` (`PUI.Web`) is a value of every type that throws, and marks the
+  page, on any read or call — except the field `__bambikHole`, which
+  answers `true`, so `isHole` (`Data.Profunctor.Seeding`) is a pure field
+  read. A run that reaches no hole proves what the rule wants: **no data
+  reaches logic that is not there**. A user's input stops at the
+  knowledge gates (L6), which have nothing to join it with.
+- **No `Union` where a business function states a footprint.** A stage
+  is typed at **one row**: a read function, a handler, a classifier, a
+  normalizer, an action's function all take the row the stage is fed,
+  and a shared record input is an **equality** (every operand is fed the
+  merge's row, L4). What a business function reads is stated by **row
+  polymorphism** in its own signature
+  (`forall r. { count :: Int | r } -> String`): checked by unification,
+  exactly the fields it names by parametricity, and never stuck on a
+  hole, where a `Union small rest big` is. A shared *variant* output
+  stays an inclusive union (`SharedVariantOutputs`): which operand emits
+  which case is checked, so a view names it (below).
+- **No `Eq`/`Ord` a business type must close.** A selector's options and
+  a keyed collection's keys are compared **structurally**
+  (`Data.Profunctor.Row.Structural`, a key read through the ecosystem's
+  `Foreign`), so an option or key type only a logic function names
+  leaves nothing to solve.
+- **Splits at labels the view names.** A trace form's state is **one
+  field labelled on the view line** (`feedback @"top"`,
+  `folding @"next" @"step"`, `unfolding @"resume" @"next"`), so the
+  split is a `Cons` at a stated label. `subStrong` keeps only its
+  forward `Union`s — the focus is the component's closed row, the
+  background is inferred and cannot overlap it — so the fed row may be
+  open. What a view cannot name — whether a model already has a field
+  of a trace state's name — goes unchecked; the state field is written
+  over the input, so the loop's state wins.
+- **A hole consumed when built is absent.** A word that consumes a logic
+  value at build — a seed it announces, a period it schedules, a settle
+  time — or calls a business function on data a view's own literal
+  supplies (`with {}` feeding a load action) MUST treat a hole as
+  absent: `announce`, the `folding`/`unfolding` seeds, `ticks`,
+  `debouncedTextField`, `action`, `foreach` and `each` do. A new word of
+  that kind MUST do the same.
+- The rule tightens the library itself: an exported signature MUST NOT
+  carry a constraint only a concrete row can discharge, because at a
+  hole the row is not concrete. (`listOf` and order-dashboard's `gauge`
+  once passed `Union r () r` on to every caller — true at every row,
+  provable only at a concrete one; with one row per stage no such
+  constraint is left, and the lemma that discharged it is deleted.)
+- **The application side** is writing.md's: footprints as open rows,
+  folds as record updates, no editor or selector as a merge operand, each
+  action's outcome cases named where the action is, the view handing its
+  logic only arguments called on data.
+- **Checkable form**: `node scripts/holes.mjs` stubs every demo's logic
+  into `.holey/` (gitignored) and builds it under holey.dhall;
+  `npm run bundle-demos` runs it, so L15's stack covers this rule
+  unchanged, and scripts/smoke/tests/holes.mjs mounts every holey view
+  and exercises every control.
+- **Rejected (2026-09-30)**, each on a measured branch: shadow `.Holey`
+  modules a view imports instead (102 of 102, but a second vocabulary no
+  real build checks); leaving read rows and variant outputs free (96 of
+  102, but no footprint was checked anywhere, and it hid a real
+  partial-model bug); a compiler defaulting mode (the toolchain stays as
+  it is). doc/research-holey-weak-types.md has the record.
 
 ---
 

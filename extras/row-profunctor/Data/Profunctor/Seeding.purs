@@ -50,12 +50,15 @@
 -- | the record gates ignore a contribution of zero fields — pointing is
 -- | this class's business alone.
 module Data.Profunctor.Seeding
-  ( class Seeding
+  ( isHole
+  , class Seeding
   , announce
   , seeded
   ) where
 
 import Control.Category (class Category, identity)
+import Data.Eq ((==))
+import Unsafe.Coerce (unsafeCoerce)
 import Data.Either (Either(..), either)
 import Data.Function (const)
 import Data.Profunctor (dimap)
@@ -70,3 +73,11 @@ instance Seeding (->) where
 
 seeded :: forall p a. Seeding p => a -> p a a
 seeded a = dimap Right (either identity identity) (left (announce a))
+
+-- | Whether a value is a **hole** — logic not written yet (guardrails L18):
+-- | `PUI.Web.hole` answers `true` to this one field and throws on every other
+-- | touch, and no other value has it. A word that consumes a logic value when
+-- | built rather than on data — a seed it announces, a period it schedules —
+-- | skips a hole, so a view runs before its logic exists. Pure: a field read.
+isHole :: forall a. a -> Boolean
+isHole a = (unsafeCoerce a :: { "__bambikHole" :: Boolean })."__bambikHole" == true

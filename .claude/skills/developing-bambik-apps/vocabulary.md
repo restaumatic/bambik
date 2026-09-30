@@ -22,7 +22,7 @@ optional presentation. Stated in writing.md *The anchor invariant*.
 | stages in sequence — an editor after an editor, a display after a form, a fold after a button | `Semigroupoid.do` (`import QualifiedDo.Semigroupoid as Semigroupoid`) | each stage's output is the next one's input; code order = DOM order = data order | every demo — start with counter |
 | chrome and displays reading **one record** together | `RecordToRecord.do` (×→×) | the record broadcast to every operand; displays and static chrome only — never an editor, and never `staticText` glue in one text run with a `text @l` leaf (a composed line is one derived field) | order-form's summary stages |
 | several buttons over one record | `RecordToVariant.do` (×→+) | record in, one case out per emitter | cashbox |
-| one stage per event case | `VariantToVariant.do` (+→+) | each case to its own stage (backend actions) | order-form's dispatch |
+| one stage per event case | `VariantToVariant.do` (+→+) | each case to its own stage (backend actions), each operand's outcome cases named on its line | crud's actions |
 | one status per outcome | `VariantToRecord.do` (+→×) | cases in, statuses out | order-form's snackbars |
 
 Rule of thumb: things that *follow* each other → `Semigroupoid.do`; things that
@@ -70,15 +70,16 @@ shape module headers.
 | --- | --- | --- | --- |
 | a button that changes the model | `button @"Count" {} # applied increment` — `increment :: state -> state`, the click's payload unread | counter; todo-list's Add | PUI.purs (`applied`) |
 | an event whose payload the model folds in | `clicked @"picked" _.key content # foreach … # updated (match { picked: handler })` | quiz, tic-tac-toe | PUI.purs (`updated`) |
-| the handler's shape | `payload -> state -> state`, both records exact | cashbox: `applyRefund :: { amount } -> { balance } -> { balance }` | writing.md *Code style → Business functions* |
+| the handler's shape | `payload -> state -> state`, each record an open row, the state updated in place | cashbox: `applyRefund :: { amount :: Number \| r1 } -> { balance :: Number \| r2 } -> { balance :: Number \| r2 }` | writing.md *Code style → Business functions* |
 | … several payload-less buttons sharing one stage | `const <<< f` per branch | circle-drawer: `"Undo": const <<< undo, "Redo": const <<< redo` | same |
-| … the payload replaces the state | `const` | timer's Reset | same |
 | … the payload is ignored | `const f` | stopwatch: `const recordLap` | same |
-| … a constant patch | `const (const patch)`, or carried on the button: `button @l {} # with patch` and `const` | checkout; cashbox | same |
+| … a preset (fields set to constants) | an open-row update in the logic: `const beginTiming`, `# applied restarted`, `const <<< theUsual` — never a constant patch | stopwatch; timer; checkout; espresso-bar | writing.md *No constant patches* |
 | a clicked collection element naming itself | `clicked @"picked" _.key content` (whole payload: `identity`) | todo-list, cells | VariantToVariant.purs (`toCase`) |
 | a button whose *outcome* the business computes | the button emits its own case; the outcome is decided where it is consumed — the fold's handler, or a status's copy function (`snackbar @"Sign up" signupLine`) | signup-form | writing.md *emitters* |
 | two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn`, `goneOn` taking the button's own case | checkout's Next/Back | VariantToVariant.purs (`toCase`) |
-| one event case routed to its own stage | `stage # atCase @l` inside `VariantToVariant.do` | order-form; reorder | VariantToVariant.purs (`atCase`) |
+| one event case routed to its own stage | `stage # atCase @l` inside `VariantToVariant.do` | crud; reorder | VariantToVariant.purs (`atCase`) |
+| an action with one outcome | the logic returns the bare payload; the line names the case: `action createPerson # atCase @"Create" # toCase @"created" identity` | crud; reorder | writing.md *An action's outcome cases are named where the action is* |
+| an action with several outcomes | its statuses right after it: `action submitOrder # atCase @"Submit order" >>> VariantToRecord.do { … }`, the actions' branches merged by `VariantToRecord.do` | order-form | same |
 | some event cases intercepted, the rest passing straight | `( VariantToVariant.do … ) # subChoice` | cashbox | VariantToVariant.purs (`subChoice`) |
 | a whole button group made an emit stage | `( RecordToVariant.do … ) # armed` | order-form | RecordToVariant.purs (`armed`) |
 
@@ -117,10 +118,10 @@ shape module headers.
 | a model, edited and folded, redrawn on every change | `pipeline # mvu seed` | counter and most demos | writing.md *App shape* |
 | any of these, mounted | `body $ …`, `body` imported from the design-system module (`PUI.Web.HTML`'s at the plain floor) — one signature everywhere, each dressing the page for its catalogue before it mounts | every demo | HTML.purs (`body`); each vocabulary's header |
 | a pipeline with no loop of its own, seeded | `pipeline # with initial`; a form section inside it `# looped` | order-form; restaurant-menu | writing.md *App shape* |
-| a wizard whose step state loops silently | `# folding @"next" stepSeed` | checkout | RecordToVariant.purs (`folding`) |
-| a state field that loops output → input, invisible outside | `# feedback stateStart` (the state fields' starting value only) | auction | RecordToRecord.purs (`feedback`) |
+| a wizard whose step state loops silently | `# folding @"next" @"step" firstStep` (loop case, then the state field; its starting value) | checkout | RecordToVariant.purs (`folding`) |
+| a state field that loops output → input, invisible outside | `# feedback @"top" noBids` (the state field, then its starting value) | auction | RecordToRecord.purs (`feedback`) |
 | an event that retries itself | `# iterate` | payment | VariantToVariant.purs (`iterate`) |
-| a counter that resumes where it left off | `# unfolding @"resume" seed` | ticket-dispenser | VariantToRecord.purs (`unfolding`) |
+| a counter that resumes where it left off | `# unfolding @"resume" @"next" firstTicket` (resume case, then the state field; its starting value) | ticket-dispenser | VariantToRecord.purs (`unfolding`) |
 
 ## Where `identity` still appears
 

@@ -1,14 +1,13 @@
 module TimerMDC2 (timerMDC2) where
 
-import Prelude ((#), ($), Unit, const)
+import Prelude (Unit, (#), ($))
 
-import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, mvu, updated, with)
+import PUI (applied, every, mvu)
 import PUI.Web (shown, text)
 import PUI.Web.MDC2 (body, body1, button, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
+import TimerLogic (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerMDC2 :: Effect Unit
 timerMDC2 =
@@ -18,5 +17,5 @@ timerMDC2 =
       (body1 $ text progressLine) # shown
       sliderLive @"Duration" {}
       every tickPeriod tick
-      button @"Reset" { icon: "replay" } # with nothingElapsed # updated (match { "Reset": const })
+      button @"Reset" { icon: "replay" } # applied restarted
     ) # mvu tenSecondFreshTimer

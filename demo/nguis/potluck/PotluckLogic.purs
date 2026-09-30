@@ -17,13 +17,13 @@ invitation =
     ]
   }
 
-guestCountLine :: { "Guests" :: Array { name :: String, "Dish" :: [ chosen :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ], unchosen :: {} ] } } -> String
+guestCountLine :: forall r1. { "Guests" :: Array { name :: String, "Dish" :: [ chosen :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ], unchosen :: {} ] } | r1 } -> String
 guestCountLine { "Guests": guests } = show (length guests) <> " guests invited — everyone picks one dish; the menu prints once the table is complete."
 
-guestName :: { name :: String } -> String
+guestName :: forall r1. { name :: String | r1 } -> String
 guestName { name } = name
 
-menuState :: { "Guests" :: Array { name :: String, "Dish" :: [ chosen :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ], unchosen :: {} ] } } -> [ complete :: { dishes :: Array { name :: String, dish :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }, waiting :: { remaining :: Array String } ]
+menuState :: forall r1. { "Guests" :: Array { name :: String, "Dish" :: [ chosen :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ], unchosen :: {} ] } | r1 } -> [ complete :: { dishes :: Array { name :: String, dish :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }, waiting :: { remaining :: Array String } ]
 menuState { "Guests": guests } = case foldr sorted { dishes: [], remaining: [] } guests of
   { dishes, remaining: [] } -> .complete { dishes }
   { remaining } -> .waiting { remaining }
@@ -33,8 +33,8 @@ menuState { "Guests": guests } = case foldr sorted { dishes: [], remaining: [] }
     , unchosen: \_ -> table { remaining = cons guest.name table.remaining }
     }
 
-menuLine :: { dishes :: Array { name :: String, dish :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } } -> String
+menuLine :: forall r1. { dishes :: Array { name :: String, dish :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } | r1 } -> String
 menuLine { dishes } = "On the table: " <> joinWith ", " (map (\d -> d.name <> "’s " <> caseText d.dish) dishes)
 
-waitingLine :: { remaining :: Array String } -> String
+waitingLine :: forall r1. { remaining :: Array String | r1 } -> String
 waitingLine { remaining } = "Still choosing: " <> joinWith ", " remaining

@@ -12,7 +12,7 @@
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `subRetaining` (a
 -- |     sub-variant, the background wrapped as a field); over the
--- |     co-strength `Coretaining`: `unfolding @w` (the productive unfold at
+-- |     co-strength `Coretaining`: `unfolding @w @l` (the productive unfold at
 -- |     row granularity, the `Coreel` optic's row form).
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
@@ -86,7 +86,7 @@ import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Coretaining (class Coretaining, coretain)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs, splitVariant)
-import Data.Profunctor.Seeding (class Seeding, seeded)
+import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
@@ -144,16 +144,21 @@ subRetaining g =
     (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
     g
 
--- | Resume the state fields of every emission as case `w`, seeded with the unfold's initial state.
+-- | Resume state field `l` of every emission as case `w`, seeded with its initial value.
+-- | The state is one field labelled on the view line (`unfolding @"resume"
+-- | @"next" firstTicket`); case `w` carries `{ l :: a }`. A seed that is a
+-- | hole is not injected (guardrails L18).
 unfolding
-  :: forall @w p i fb iw wx o ow
+  :: forall @w @l p i fb iw wx o a ow
    . Seeding p
   => Coretaining p
   => IsSymbol w
+  => IsSymbol l
+  => Cons l a () fb
   => Cons w { | fb } i iw
   => Union i wx iw
-  => ExclusiveRows o fb ow
-  => { | fb }
+  => Cons l a o ow
+  => a
   -> p [ | iw ] { | ow }
   -> p [ | i ] { | o }
 unfolding seed g =
@@ -161,4 +166,4 @@ unfolding seed g =
     (dimap
       (either expand (inj (Proxy @w)))
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
-      (seeded (inj (Proxy @w) seed) >>> g))
+      (if isHole seed then g else seeded (inj (Proxy @w) (unsafeSet (reflectSymbol (Proxy @l)) seed {} :: { | fb })) >>> g))

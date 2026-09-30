@@ -127,7 +127,9 @@ module PUI.Web.MDC3
   )
   where
 
+import Data.Profunctor.Row.Structural (withStructuralEq, withStructuralOrd)
 import Prelude hiding (div)
+import Unsafe.Coerce (unsafeCoerce)
 
 import Control.Monad.State (gets)
 import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
@@ -146,12 +148,13 @@ import Data.Profunctor (lcmap, rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
+import Data.Profunctor.Seeding (isHole)
 import PUI (Ocular, PUI, blank, foreach)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, shown, staticHTML, staticString, staticText, text, textContent, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Prim.Row (class Cons, class Union)
+import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Record as Record
 import Type.Proxy (Proxy(..))
@@ -192,7 +195,7 @@ import Type.Proxy (Proxy(..))
 --     `imageList`, `layoutGrid`/`layoutCell`, `topAppBar`, `drawer`,
 --     `tooltip`, the MD3 typescale — `displayLarge` ... `labelSmall` —
 --     and elevations): no model of their own, any polarity.
---   * plus **announcing statics** (`{} → {}` chrome with a face):
+--   * plus **announcing statics** (`{}`-output chrome with a face, at any row):
 --     `divider` (the `<md-divider>`), `imageListItem`.
 --
 -- M3 catalog entries `@material/web` does not implement (segmented button,
@@ -335,11 +338,11 @@ buttonOf tag provided = eventLeaf @l $ el tag $ RecordToRecord.do
   where
   config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
 
--- the click-emitter protocol over any `{} → {}` element chrome: replay the
+-- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld) —
 -- `clicked` over the input-freed chrome, the last-built element listening
 eventLeaf :: forall @l r s. IsSymbol l => Cons l { | r } () s => PUI Web {} {} -> PUI Web { | r } [ | s ]
-eventLeaf chrome = clicked @l identity chrome
+eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
 
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
@@ -405,7 +408,7 @@ outlinedTextField provided = let config = convertOptionsWithDefaults OptCaption 
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
 debouncedTextField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> { ms :: Number } -> PUI Web { | r } { | r }
-debouncedTextField provided settleTime = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (Just settleTime.ms) config.floatingLabel)
+debouncedTextField provided settleTime = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel)
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
@@ -525,20 +528,20 @@ checkbox ticked labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l
 -- | answered with the row, every pick stored.
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
-radioButton :: forall @l a rest r. IsSymbol l => Cons l a rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioButton options = radioButtonWith @l false (selectedAt @l) options
+radioButton :: forall @l a rest r. IsSymbol l => Cons l a rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioButton options = withStructuralEq @a (radioButtonWith @l false (selectedAt @l) options)
 
 -- | `radioButton` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-radioButtonUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioButtonUnpicked options = radioButtonWith @l false (selectedUnpickedAt @l @c) options
+radioButtonUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioButtonUnpicked options = withStructuralEq @a (radioButtonWith @l false (selectedUnpickedAt @l @c) options)
 
 -- | `radioButton` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | pressing the checked option again clears it, storing `n` again.
-radioButtonOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioButtonOptional options = radioButtonWith @l true (selectedOptionalAt @l @c @n) options
+radioButtonOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioButtonOptional options = withStructuralEq @a (radioButtonWith @l true (selectedOptionalAt @l @c @n) options)
 
 radioButtonWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
 radioButtonWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ (radioLeaf clearable options)
@@ -682,20 +685,20 @@ bareSliderLeaf live label = wrap do
 -- | Same selection contract as `radioButton`, with the same two siblings
 -- | (`selectUnpicked`, `selectOptional`); the options are part of the
 -- | control, not of the model.
-select :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-select provided options = selectWith @l false (selectedAt @l) provided options
+select :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select provided options = withStructuralEq @a (selectWith @l false (selectedAt @l) provided options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectUnpicked provided options = selectWith @l false (selectedUnpickedAt @l @c) provided options
+selectUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectUnpicked provided options = withStructuralEq @a (selectWith @l false (selectedUnpickedAt @l @c) provided options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-selectOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectOptional provided options = selectWith @l true (selectedOptionalAt @l @c @n) provided options
+selectOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectOptional provided options = withStructuralEq @a (selectWith @l true (selectedOptionalAt @l @c @n) provided options)
 
 selectWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
 selectWith clearable lift provided options = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in lift $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf clearable config options)
@@ -736,20 +739,20 @@ selectLeaf clearable config options = wrap do
 -- | control, all visible, one selected — a filter row, a view switch, a
 -- | size. Compact where a radio group would be airy and a dropdown would
 -- | hide the alternatives. Same selection contract as `select`.
-segmentedButton :: forall @l a rest r. IsSymbol l => Cons l a rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-segmentedButton options = segmentedButtonWith @l false (selectedAt @l) options
+segmentedButton :: forall @l a rest r. IsSymbol l => Cons l a rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+segmentedButton options = withStructuralEq @a (segmentedButtonWith @l false (selectedAt @l) options)
 
 -- | `segmentedButton` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-segmentedButtonUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-segmentedButtonUnpicked options = segmentedButtonWith @l false (selectedUnpickedAt @l @c) options
+segmentedButtonUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+segmentedButtonUnpicked options = withStructuralEq @a (segmentedButtonWith @l false (selectedUnpickedAt @l @c) options)
 
 -- | `segmentedButton` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | clicking the selected segment again clears it, storing `n` again.
-segmentedButtonOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-segmentedButtonOptional options = segmentedButtonWith @l true (selectedOptionalAt @l @c @n) options
+segmentedButtonOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+segmentedButtonOptional options = withStructuralEq @a (segmentedButtonWith @l true (selectedOptionalAt @l @c @n) options)
 
 segmentedButtonWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
 segmentedButtonWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ (segmentedLeaf clearable options)
@@ -859,15 +862,8 @@ iconToggleLeaf config = wrap do
 -- | selector to build a sectioned editor around: the tab bar beside one
 -- | `inCase @l` editor pane per section, each pane editing its own part of
 -- | the model.
-tabBar
-  :: forall @l provided a r rest
-   . IsSymbol l
-  => Cons l a rest r
-  => Eq a
-  => ConvertOptionsWithDefaults OptIcon { icon :: Maybe String } { | provided } { value :: a, label :: String, icon :: Maybe String }
-  => Array { | provided }
-  -> PUI Web { | r } { | r }
-tabBar options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (tabBarLeaf (convertOptionsWithDefaults OptIcon { icon: Nothing } <$> options))
+tabBar :: forall @l provided a r rest . IsSymbol l => Cons l a rest r => ConvertOptionsWithDefaults OptIcon { icon :: Maybe String } { | provided } { value :: a, label :: String, icon :: Maybe String } => Array { | provided } -> PUI Web { | r } { | r }
+tabBar options = withStructuralEq @a (focusField @l $ "name" := reflectSymbol (Proxy @l) $ (tabBarLeaf (convertOptionsWithDefaults OptIcon { icon: Nothing } <$> options)))
 
 tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web a a
 tabBarLeaf options = wrap do
@@ -1162,7 +1158,7 @@ dialogFace title content =
     unwrap (div >>> "slot" := "content" $ content)
 
 -- | The witness rung — see `PUI.Web.MDC2.confirmed`.
-confirmed :: forall @l @t read extra row. IsSymbol l => IsSymbol t => Union read extra row => PUI Web { | read } {} -> PUI Web { | row } { | row }
+confirmed :: forall @l @t row. IsSymbol l => IsSymbol t => PUI Web { | row } {} -> PUI Web { | row } { | row }
 confirmed content = simpleDialog @l @t (shown content)
 
 -- | `dialog` with a **confirm button** built in — the confirmation step:
@@ -1270,19 +1266,15 @@ listOf
   => IsSymbol k
   => Cons l key () s
   => Cons k key rest r
-  => Ord key
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
-  -- the subsumption evidence the internal `clicked` needs at the exact
-  -- element row (extra = ()); trivially discharged at every concrete call
-  => Union r () r
   => { | provided }
   -> ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | s ]
-listOf provided f item = wrap do
+listOf provided f item = withStructuralOrd @key $ wrap do
   liftEffect $ ensureStyle "md3-list" listCss
   unwrap $ el "md-list" >>> "style" := "overflow-y: auto;" $
-    ( clicked @l @r @() (Record.get (Proxy @k)) $ clWhen config.selected "md3-list-item--selected"
+    ( clicked @l (Record.get (Proxy @k)) $ clWhen config.selected "md3-list-item--selected"
         $ el "md-list-item" >>> "type" := "button" $ item
     ) # foreach @k f
   where
@@ -1315,8 +1307,11 @@ dataTable headerCells content = wrap do
 
 -- | One **column header** of a `dataTable` — static copy naming the column,
 -- | written as a type like every static: `columnHeader @"Qty"`.
-columnHeader :: forall @s. IsSymbol s => PUI Web {} {}
-columnHeader = th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText @s
+columnHeaderExact :: forall @s. IsSymbol s => PUI Web {} {}
+columnHeaderExact = th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText @s
+
+columnHeader :: forall @s in_. IsSymbol s => PUI Web { | in_ } {}
+columnHeader = unsafeCoerce (columnHeaderExact @s :: PUI Web {} {})
 
 dataTableCss :: String
 dataTableCss = """
@@ -1424,9 +1419,9 @@ tooltipFace tipText content =
 -- | `tooltip`'s channel-fed sibling, as `attrWith` is `attr`'s: the tip's
 -- | text is a copy function of the row the decorated element is fed,
 -- | re-read on every feed — for a note formatted from a business value
--- | (`# tooltipWith loyaltyNote`) or from the model itself. Its footprint
--- | subsumes, like a display's.
-tooltipWith :: forall narrow extra i o. Union narrow extra i => ({ | narrow } -> String) -> PUI Web { | i } o -> PUI Web { | i } o
+-- | (`# tooltipWith loyaltyNote`) or from the model itself. Its footprint is
+-- | the copy function's own open row, like a display's.
+tooltipWith :: forall i o. ({ | i } -> String) -> PUI Web { | i } o -> PUI Web { | i } o
 tooltipWith f content =
   span >>> cl "md3-tooltip-anchor" $ wrap do
     liftEffect $ ensureStyle "md3-tooltip" tooltipCss
@@ -1448,24 +1443,30 @@ tooltipCss = """
 .md3-tooltip-anchor:hover .md3-tooltip, .md3-tooltip-anchor:has(:focus-visible) .md3-tooltip { visibility: visible; opacity: 1; }
 """
 
--- announcing statics (`{} → {}` chrome with a face)
+-- announcing statics (`{}`-output chrome with a face, at any row)
 
 -- | A **divider**: the hairline rule between list rows or card sections,
 -- | for separating groups that belong to the same surface. Fixed
 -- | decoration, carrying no data.
-divider :: PUI Web {} {}
-divider = staticHTML "<md-divider style=\"width: 100%;\"></md-divider>"
+dividerExact :: PUI Web {} {}
+dividerExact = staticHTML "<md-divider style=\"width: 100%;\"></md-divider>"
+
+divider :: forall in_. PUI Web { | in_ } {}
+divider = unsafeCoerce (dividerExact :: PUI Web {} {})
 
 -- | One picture in an `imageList`, with `label` shown as its caption and
 -- | used as its alternative text.
-imageListItem :: { src :: String, alt :: String } -> PUI Web {} {}
-imageListItem config = wrap do
+imageListItemExact :: { src :: String, alt :: String } -> PUI Web {} {}
+imageListItemExact config = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ staticHTML $
     "<li class=\"md3-image-list__item\">"
       <> "<img class=\"md3-image-list__image\" src=\"" <> config.src <> "\" alt=\"" <> config.alt <> "\">"
       <> "<span class=\"md3-image-list__label\">" <> config.alt <> "</span>"
       <> "</li>"
+
+imageListItem :: forall in_. { src :: String, alt :: String } -> PUI Web { | in_ } {}
+imageListItem = unsafeCoerce (imageListItemExact :: { src :: String, alt :: String } -> PUI Web {} {})
 
 -- | One picture in an `imageList`, **fed through the channel**: like any
 -- | display it takes its read function — the business row in, the picture's

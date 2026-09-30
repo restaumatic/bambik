@@ -17,5 +17,5 @@ auctionMDC3 =
       ( bodyMedium $ text bidLine ) # shown
       ( Semigroupoid.do
         sliderLive @"Your bid ($)" {} # settled raiseTop
-        ( headlineSmall $ text topLine ) # shown ) # feedback noBids
+        ( headlineSmall $ text topLine ) # shown ) # feedback @"top" noBids
     ) # mvu openingBid

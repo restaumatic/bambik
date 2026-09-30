@@ -17,15 +17,15 @@ photoGalleryMDC3 =
   body $
     topAppBar @"Photo Gallery" $
       ( drawer @( title :: "Darkroom", subtitle :: "photos drawn on the spot" )
-        ( RecordToRecord.do
+        ( Semigroupoid.do
           listOf @"opened" @"name" { selected: isOpen } albumChoices (span (text _.name)) # updated (match { opened: openAlbum })
-          divider
-          list RecordToRecord.do
+          divider # shown
+          ( list RecordToRecord.do
             listItem $ staticText @"Every photo is an SVG"
             listItem $ staticText @"developed from its caption"
-            listItem $ staticText @"No network involved"
-          labelSmall $ staticText @"Favorites"
-          imageList 2 $ each favoriteShots imageListItem )
+            listItem $ staticText @"No network involved" ) # shown
+          ( labelSmall $ staticText @"Favorites" ) # shown
+          ( imageList 2 $ each favoriteShots imageListItem ) # shown )
         ( Semigroupoid.do
           ( displayMedium $ text albumTitle ) # shown
           imageList 3 $ imagePane developedShot # shownEach @"shot" albumShots )

@@ -34,7 +34,9 @@ module PUI.Web.Shoelace
   , toggleSwitch
   ) where
 
+import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude hiding (div)
+import Unsafe.Coerce (unsafeCoerce)
 
 import Control.Monad.State (gets)
 import Data.Array ((!!), findIndex)
@@ -49,6 +51,7 @@ import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
+import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
@@ -93,7 +96,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --     (`<sl-card>` with a header slot). Typography is deliberately absent:
 --     Shoelace styles plain HTML through its tokens, so the `PUI.Web.HTML`
 --     element oculars are the typography.
---   * plus **announcing statics** (`{} → {}` chrome with a face):
+--   * plus **announcing statics** (`{}`-output chrome with a face, at any row):
 --     `divider` (`<sl-divider>`).
 --
 -- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
@@ -111,10 +114,10 @@ button :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => Convert
 button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in eventLeaf @l $
   el "sl-button" >>> "variant" := "primary" $ staticString config.label
 
--- the click-emitter protocol over any `{} → {}` element chrome: replay the
+-- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
 eventLeaf :: forall @l r s. IsSymbol l => Cons l { | r } () s => PUI Web {} {} -> PUI Web { | r } [ | s ]
-eventLeaf chrome = clicked @l identity chrome
+eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
 
 -- | The **text field**: a labelled single-line input. Shows the string it
 -- | is given and reports each edit; typing is never interrupted by values
@@ -277,20 +280,20 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-select :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-select provided options = selectWith @l false (selectedAt @l) provided options
+select :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select provided options = withStructuralEq @a (selectWith @l false (selectedAt @l) provided options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectUnpicked provided options = selectWith @l false (selectedUnpickedAt @l @c) provided options
+selectUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectUnpicked provided options = withStructuralEq @a (selectWith @l false (selectedUnpickedAt @l @c) provided options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | its clear button clears it, storing `n` again.
-selectOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectOptional provided options = selectWith @l true (selectedOptionalAt @l @c @n) provided options
+selectOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectOptional provided options = withStructuralEq @a (selectWith @l true (selectedOptionalAt @l @c @n) provided options)
 
 selectWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
 selectWith clearable lift provided options = lift $ "name" := reflectSymbol (Proxy @l) $ wrap do
@@ -391,12 +394,15 @@ card :: Ocular (PUI Web)
 card content = el "sl-card" $
   div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start; gap: var(--sl-spacing-medium);" $ content
 
--- announcing statics ({} → {} chrome with a face)
+-- announcing statics ({}-output chrome with a face, at any row)
 
 -- | A **divider**: the hairline rule between sections of a surface. Fixed
 -- | decoration, carrying no data.
-divider :: PUI Web {} {}
-divider = staticHTML "<sl-divider style=\"width: 100%;\"></sl-divider>"
+dividerExact :: PUI Web {} {}
+dividerExact = staticHTML "<sl-divider style=\"width: 100%;\"></sl-divider>"
+
+divider :: forall in_. PUI Web { | in_ } {}
+divider = unsafeCoerce (dividerExact :: PUI Web {} {})
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

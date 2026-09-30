@@ -17,15 +17,15 @@ freshImpression =
   , "Nickname": ""
   }
 
-previewLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean } -> String
+previewLine :: forall r1. { "Overall rating" :: { current :: Number, max :: Int }, "Headline" :: String, "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ], "I'd recommend it to a friend" :: Boolean | r1 } -> String
 previewLine r =
   "Preview: " <> starGlyphs r."Overall rating" <> headlineQuote r."Headline" <> " · owned " <> caseText r."How long have you owned it?" <> recommendNote r."I'd recommend it to a friend"
 
-submittedLine :: { "Overall rating" :: { current :: Number, max :: Int }, "Nickname" :: String } -> String
+submittedLine :: forall r1. { "Overall rating" :: { current :: Number, max :: Int }, "Nickname" :: String | r1 } -> String
 submittedLine r =
   "Thanks" <> forReviewer { "Nickname": r."Nickname" } <> "! Your " <> starGlyphs r."Overall rating" <> " review is in."
 
-forReviewer :: { "Nickname" :: String } -> String
+forReviewer :: forall r1. { "Nickname" :: String | r1 } -> String
 forReviewer { "Nickname": nickname } = case trim nickname of
   "" -> ""
   name -> ", " <> name
@@ -38,7 +38,7 @@ headlineQuote headline = case trim headline of
   "" -> ""
   quote -> " “" <> quote <> "”"
 
-starGlyphs :: { current :: Number, max :: Int } -> String
+starGlyphs :: forall r1. { current :: Number, max :: Int | r1 } -> String
 starGlyphs { current, max } = power "★" (round current) <> power "☆" (max - round current)
 
 maxStars :: Int

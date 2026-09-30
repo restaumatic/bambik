@@ -142,7 +142,7 @@ combinator laws below fail without them.
    conformance, not a structural ambiguity in the algebra.
 
    **Why the carrier cannot take this one on.** Laws 2 and 3 are the two
-   halves of a single obligation an *inclusive* record input carries — one
+   halves of a single obligation a *shared* record input carries — one
    feed reaches both operands, so a broadcast merge owes the boundary at
    most one thing back (§8.0). At a record output the carrier discharges it
    itself, by gating and releasing once (`steppedFeed`); at a variant output
@@ -174,8 +174,8 @@ over retained state):
 
 | shape | on input | modality | what stays obligatory | unit |
 | --- | --- | --- | --- | --- |
-| `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | `identity`, the echo wire |
-| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `replaying`, `first` around a payload-less source, so the replay is `Strong`'s retention and the protocol its primed law; `armed`, `# with patch`) or at quiescence (`resolve`) (law 3) | `silence` |
+| `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | the `{}` wire at the merge's row (`blank` = `lcmap (const {}) identity`); `identity` only at `{}` |
+| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `replaying`, `first` around a payload-less source, so the replay is `Strong`'s retention and the protocol its primed law; `armed`, `# with payload`) or at quiescence (`resolve`) (law 3) | `silence` |
 | `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is `iterate`'s well-foundedness | `identity`, the forward wire |
 | `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is whole, and the retained state **is** the released state, so a change can never stay private | `lcmap case_ identity`, the never-fed wire |
 
@@ -239,7 +239,7 @@ stands (2026-09-14, after `action`'s progress slot left the `×` side):
   state has been fed once, then re-attaches what it retained. A leaf is a
   whole-row citizen because the lens supplies the background and the merge
   supplies the sibling's fields — the same rule at two granularities.
-- **A feed is one step.** The inclusive input side makes a feed a
+- **A feed is one step.** The shared input side makes a feed a
   broadcast; it runs with the gate batching and the gate releases once
   afterwards, if anything arrived (`steppedFeed`). A user emission arrives
   outside any step and releases at once with the sibling's retained
@@ -248,8 +248,9 @@ stands (2026-09-14, after `action`'s progress slot left the `×` side):
   (runtime-exactness).
 - **A zero-field side is born satisfied.** Its slot is primed with `{}` at
   construction and its emissions neither open nor re-fire the gate.
-  `identity @{}`, `blank`, an announcing static and a `{}`-output display
-  are indistinguishable as operands (the zero-field law, test/Main.purs).
+  `blank` (`identity @{}` at the empty row), an announcing static and a
+  `{}`-output display are indistinguishable as operands (the zero-field law,
+  test/Main.purs).
 - **No cross-feed inside the merge.** An operand's emission goes
   downstream, not to its sibling. Freshness across siblings is the
   enclosing loop's job: `looped` re-broadcasts every emission and each lens
@@ -297,7 +298,10 @@ guarantee*.
   unconditional ecosystem law for the primed one. `Choice` and `Cochoice`
   (the `+` channel) deviate nowhere.
 - **Interchange is observation-level-relative.** For the gated merges,
-  `(f ⊗ g) >>> (h ⊗ k) = (f >>> h) ⊗ (g >>> k)`:
+  `(f ⊗ g) >>> (π₁h ⊗ π₂k) = (f >>> h) ⊗ (g >>> k)` — the operands of a
+  record merge share one input row (`SharedRecordInputs` is an equality,
+  guardrails L4/L18), so the second merge's stages are fed the whole middle
+  row and `π` is the widening (`widenRecordInput`) that states it:
   - at the **inner surfaces** it fails on the nose — the merged-first side
     synchronizes at the middle gate, so `h` sees nothing until *every*
     operand of the first merge has spoken — and holds one-directionally as
@@ -430,14 +434,15 @@ other cases' payloads — is what the editor retains across a selection change.
 
 ## 8. Glitch-freedom is a style theorem
 
-### 8.0 One cause: an inclusive input side
+### 8.0 One cause: a shared input side
 
 §3's no-synchronous-event-echo law and §4's one-feed-one-release are not two
 facts about two diagonals. They are **one obligation, read off at two output
 shapes**, and their shared cause sits on the *input* side of the merge.
 
-A shared record input (`SharedRecordInputs`) is **inclusive**: one feed
-reaches both operands, so both may answer it. A merge that broadcasts owes
+A shared record input (`SharedRecordInputs`) is **one row** — every operand
+is fed the merge's whole row: one feed reaches both operands, so both may
+answer it. A merge that broadcasts owes
 the boundary at most one thing back per feed:
 
 > **one feed in, at most one thing out — and if it is a record, a whole one.**
@@ -456,7 +461,7 @@ is a click that already happened — so the merge is a bare pass-through with
 no way to absorb a second emission, and the obligation falls on the operands
 as a protocol law the type cannot enforce.
 
-**The prediction, and it holds.** Exactly the two merges with inclusive
+**The prediction, and it holds.** Exactly the two merges with shared
 record input carry a feed law; the two with `OwnedVariantInputs` carry
 neither. That is a consequence, not a coincidence: `DisjointLabels` gives
 every case exactly one handler, so a variant-input feed is *dispatched* —

@@ -21,12 +21,12 @@ bookedLine itinerary = "You have booked: " <> summary itinerary
 rejectedLine :: String -> String
 rejectedLine problem = "Cannot book: " <> problem
 
-returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+returnBetween :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
-parse :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } = case parseDate startInput of
   Nothing -> Left ("start date " <> show startInput <> " is not a valid DD.MM.YYYY date")
   Just start ->
@@ -37,21 +37,21 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
         Nothing -> Left "the return date is before the start date"
         Just itinerary -> Right itinerary
 
-bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+bookingState :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> [ problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 bookingState = parse >>> either (\problem -> .problem { problem })
   (match
     { oneWayOn: \out -> ."one-way" { out }
     , returnBetween: ."return"
     })
 
-problemLine :: { problem :: String } -> String
+problemLine :: forall r1. { problem :: String | r1 } -> String
 problemLine { problem } = "⚠ " <> problem
 
-oneWayLine :: { out :: { y :: Int, m :: Int, d :: Int } } -> String
+oneWayLine :: forall r1. { out :: { y :: Int, m :: Int, d :: Int } | r1 } -> String
 oneWayLine { out } = summary (.oneWayOn out)
 
-returnLine :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } -> String
-returnLine r = summary (.returnBetween r)
+returnLine :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> String
+returnLine r = summary (.returnBetween { out: r.out, back: r.back })
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
 summary = match
@@ -59,7 +59,7 @@ summary = match
   , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
   }
 
-submit :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
+submit :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
 submit trip = case parse trip of
   Left problem -> pure (.rejected problem)
   Right itinerary -> expand <$> bookFlight itinerary
@@ -78,13 +78,13 @@ parseDate s = case split (Pattern ".") s of
       else Nothing
   _ -> Nothing
 
-formatDate :: { y :: Int, m :: Int, d :: Int } -> String
+formatDate :: forall r1. { y :: Int, m :: Int, d :: Int | r1 } -> String
 formatDate { y, m, d } = pad d <> "." <> pad m <> "." <> show y
   where
   pad n = (if n < 10 then "0" else "") <> show n
 
-dateKey :: { y :: Int, m :: Int, d :: Int } -> Int
+dateKey :: forall r1. { y :: Int, m :: Int, d :: Int | r1 } -> Int
 dateKey { y, m, d } = y * 10000 + m * 100 + d
 
-tripType :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ] } -> [ "one-way" :: {}, "return" :: {} ]
+tripType :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ] | r1 } -> [ "one-way" :: {}, "return" :: {} ]
 tripType = _."Flight type"

@@ -26,10 +26,11 @@ code order is DOM order *and* data order) and the four qualified-do row
 merges (operands over one shared row):
 
 - `RecordToRecord.do` (×→×) — all-at-once **content merges**: chrome
-  beside displays (a gated rung's structured content), and a completed
-  selector beside the displays that read its row (potluck's guest line).
-  Editors are never its operands — an editor is a whole-row
-  pipeline stage (see *Component citizenship*)
+  beside displays (a gated rung's structured content). Editors and
+  selectors are never its operands — each is a whole-row pipeline stage
+  (see *Component citizenship*), and a display or static beside one is a
+  `# shown` stage before or after it (potluck's guest line, reorder's
+  checkbox)
 - `RecordToVariant.do` (×→+) — model in, events out: button rows
 - `VariantToVariant.do` (+→+) — event dispatch: backend actions
 - `VariantToRecord.do` (+→×) — events in, display out: status snackbars
@@ -171,9 +172,11 @@ syntax (`r { "Name" = … }`) all work unchanged.
   reference. A number the model genuinely *holds* as state is still
   read by the function (`_.rating`), which is where the distinction
   lands: state is in the row, renderings are functions of it. The read function's
-  signature states its footprint as an exact closed row; the stage
-  hosting the display (`shown`/`shownWhen`/`shownEach`) widens it to
-  the fed row, so no call site coerces. For **context-pinned rows** (a
+  signature states its footprint as an **open row**
+  (`elapsedFraction :: forall r. { elapsed :: Number, "Duration" :: … | r } -> Number`);
+  the stage hosting the display (`shown`/`shownWhen`/`shownEach`) is fed
+  the whole row and unification checks the footprint against it, so no
+  call site coerces. For **context-pinned rows** (a
   collection element, a pane payload) nothing changes: the row carries
   the *source* fields the producing function built, and the read
   function selects and formats them (`text _.title`,
@@ -184,16 +187,12 @@ syntax (`r { "Name" = … }`) all work unchanged.
   field exists because the app's state needs it, never because a
   display wanted a `String` — or a `Number`. Across the demos every
   surviving `# settled` sits on an editor; not one feeds a display.
-  A `text` read is a **row-stating position**: the display's footprint
-  is checked against the fed row, so the read must state a closed row.
-  Where a sibling stage already pins it (a `clWhen` beside the leaf, a
-  `foreach`/`listOf` projection above it) a bare accessor infers and is
-  what to write — `text _.title`; where nothing else pins it, a display
-  whose copy *is* one field takes a named closed-row read
-  (`titleLine :: { title :: String, … } -> String`), and that function's
-  signature is the footprint declaration, not a wrapper to delete. The
-  same rule governs mechanism arguments: a feed projection that merely
-  reads a field is the accessor, except at row-stating positions.
+  A `text` read is checked against the fed row by unification, so a
+  display whose copy *is* one field takes the bare accessor wherever it
+  stands (`text _.title`), and a named read function is for copy that
+  formats — its open-row signature is the footprint declaration, not a
+  wrapper to delete. The same rule governs mechanism arguments: a feed
+  projection that merely reads a field is the accessor.
 - **event emitters** (`button`, `fab`, `iconButton`, `menuItem`) are
   label-indexed at their case, and the case label **is the caption**,
   verbatim: `button @"Submit order" {}` emits `[ "Submit order" :: _ ]`
@@ -335,24 +334,21 @@ pipeline stage is just a display whose gate opens instantly.
 A terminal **collection display** — a projection rendered as a list or
 grid, passing the model through — is `item # shownEach @l rowsOf` inside
 its container ocular: keyed, retained, releasing the fed row per feed
-(so an empty array never starves). The rows projection must be a
-**named projection with a closed row**, not an accessor: the gated
-rungs read a *closed* narrow row by `Union` subsumption, so an open one
-leaves no instance and the error lands on the rung. This is the
-row-stating exception to the delete-the-one-field-projection rule.
-Stopwatch's laps list is the worked example. Where a collection's
+(so an empty array never starves). The rows projection is a read like
+any other: the accessor when it reads one field, a named function over
+an open row when it builds the rows. Stopwatch's laps list is the
+worked example. Where a collection's
 forwarding must be written off inside a unit display (a packaged
 control's `foreach`, scoreboard's summary group), the discard is
 written — `# foreach @l rowsOf # muted` — never silent.
 
 A fixed catalogue drives `listOf`/`foreach` through the mechanism's own
 projection argument (`# foreach @"key" (const keyPad)`) — never an
-input-annotated feed. The same closed-row rule serves `clicked`: its
-content subsumes, and a multi-reader content (a leaf plus `attrWith`
-decorators) states its row once, in a named closed **face** function
+input-annotated feed. `clicked`'s content is fed the row it replays,
+and a multi-reader content (a leaf plus `attrWith` decorators) names its
+shared reading once, in a **face** function over an open row
 (`attrWith "style" cellFace` with
-`cellFace :: { text :: String, header :: Boolean, sel :: Boolean } -> String`
-— the row-stating exception again). An element whose whole face is
+`cellFace :: forall r. { text :: String, status :: [ selected :: {}, unselected :: {} ] | r } -> String`). An element whose whole face is
 decorators sits on `blank`, the faceless leaf.
 
 ## App shape
@@ -394,10 +390,12 @@ Worked examples, by shape:
   varies per block.
 - **the floor and the plain-HTML end** — helloworld (bare minimum),
   restaurant-menu (no design system at all: element oculars +
-  `staticText` merged as `{} → {}` chrome, data via `each`, look
+  `staticText` merged as `{}`-output chrome, data via `each`, look
   supplied by page CSS).
-- **one focused combinator each** — auction (`feedback`), checkout
-  (`folding`), payment (`iterate`), ticket-dispenser (`unfolding`),
+- **one focused combinator each** — auction (`feedback @"top"`), checkout
+  (`folding @"next" @"step"`), payment (`iterate`), ticket-dispenser
+  (`unfolding @"resume" @"next"`) — each trace form's state one field the
+  view line names —
   parcel (`subStrong`), cashbox (`subChoice`), departures
   (`dispatched`), scoreboard (`accumulated`).
 
@@ -415,11 +413,10 @@ not, an editor pane is the wire while detached, and a detached emitter
 fires nothing, which is all an emitter ever owes a feed.
 
 When the model field is itself a payload-carrying variant, the pane
-adopts it through a closed accessor — the pane's argument is a
-row-stating position, so the accessor states the field's row
+adopts it through a named accessor over an open row
 (`# shownWhen @"serving" displayOf` in ticket-dispenser,
-`# provided @"halted" stopwatchPhase` in stopwatch; `_.display` would
-leave the rung's row unsolved there). When the
+`# provided @"halted" stopwatchPhase` in stopwatch) — named because the
+same state is read by several panes, not because the rung needs it. When the
 state is *derived*, one classifier derives it: every case named, each
 case carrying exactly the payload its pane displays — checkout's
 `checkoutStep` (`cart { item }`, `shipping { address }`,
@@ -521,16 +518,16 @@ with `attrWith`. Durable state still belongs in the model, with
 `listOf`'s click-replay folding it back.
 
 A **collection editor** is `edited @l` — `foreach`'s editor form. The
-key is a **label**, not a function, and the element editor's output row
-**excludes** it: each emission's key is re-attached as the edit's return
-address, so an element structurally cannot change its key.
-It folds every element emission back into the array by key, emitting the
-whole updated array immediately, input-primed. An element whose merge
-covers less than the full row simply subsumes — `edited` reads the
-element row narrow, so the id is never passed through and there is
-no call-site widening. (The same rule at a linear pipeline's `×→+`
-polarity flip is `# armed`: the emit stage reads the sub-row its
-emitters replay.) The result is a first-class
+key is a **label**, not a function; the element is a whole-row stage
+over its element row, key included, and the carrier **re-sets** the key
+on each emission as the edit's return address, so an element cannot
+change its key whatever it emits. It folds every element emission back
+into the array by key, emitting the whole updated array immediately,
+input-primed. What an element's functions read of its row is their own
+open-row footprint, so the id is never passed through by hand. (The
+same holds at a linear pipeline's `×→+` polarity flip, `# armed`: the
+emitters replay the row they are fed, and a consumer reads its own
+footprint of it.) The result is a first-class
 `Array a → Array a` stage: nest it in a form under `group @l` (reorder's
 `group @"Setlist" $ list …`, the group leading like any container) or
 feed it straight to `# mvu`.
@@ -575,6 +572,26 @@ one-way:
   UI component-shaped part is view. (Business optics — `Shutter`/`Reel` — stay
   the location-exempt algebra usable below the UI; see
   [Wiring](#wiring).)
+- The view hands the logic module **only arguments that are called on
+  data**: every logic value it mentions is an argument of a word — a read
+  function, a handler, a classifier, an action, the seed, a constant
+  like a tick period. It never runs a logic effect at the entry (a
+  stand-in server is the logic's own module-level state, as a real one
+  needs no handle — crud's catalogue), and never applies a logic-built
+  component at build: an optic the view applies is assembled on the
+  view line from the logic's business functions (ticket-dispenser's
+  `reelE issue nextTicket identity`). That is what lets the view run
+  before its logic exists — every logic export a bare hole, the initial
+  UI still on screen (guardrails L18).
+- **An action's outcome cases are named where the action is.** A
+  single-outcome action returns its bare payload and the view line names
+  the case (`action createPerson # atCase @"Create" # toCase @"created"
+  identity`); a multi-outcome action's cases are consumed right after it,
+  by its own statuses or `match` (order-form's
+  `action submitOrder … >>> VariantToRecord.do { … }`). Two actions whose
+  outcomes only their logic names are never merged first: a merge's
+  variant output is the checked union of what each operand emits, and
+  with the logic a hole nothing says which operand emits what.
 
 The dependency arrow makes the design-system choice a view concern by
 construction: **vocabulary siblings are view modules over the exact
@@ -621,9 +638,9 @@ Mealy step's own shape `payload -> state -> state` (see
 [Code style](#business-functions)). Existing model-to-model functions already belong to
 the business class — leave them standalone, in the logic module.
 
-The model row is spelled once, at the seed and the merges; every
-business helper states its own exact narrow footprint as a closed row,
-never the whole model. Values that legitimately live in the logic
+The model row is spelled once, at the seed; every business helper
+states its own footprint as an open row (`forall r. { … | r }`), never
+the whole model. Values that legitimately live in the logic
 module — seed models, tick periods, default payloads — are named there
 in business language.
 
@@ -751,14 +768,14 @@ induces — view first, logic module written to its names — is
   `snackbar @"orderSubmitted" submittedLine` sits directly in
   the status merge — and delete the function with its annotation. The
   named business argument (`submittedLine`) carries the meaning, and its
-  closed signature pins the row the annotation used to pin. A standalone
+  own signature states the row the annotation used to. A standalone
   UI component function earns its name only by genuinely spanning lines: a
   `dynamic`/`each` builder, or a reusable sub-form lifted as a
   citizen (parcel's `addressForm`).
 - **Each UI-related line leads with the visual concern with `$` plumbing
   and trails with the data concern with `#` plumbing.** No data word
   ever leads a line — an emitter's replay payload trails like every
-  other data concern (`button @l { … } # with patch`; `with` is
+  other data concern (`button @l { … } # with payload`; `with` is
   output-polymorphic, so it seeds record pipelines and `×→+` emitters
   alike), and `# with {}` is written inline when the payload is the
   informationless unit, since naming `{}` is ceremony.
@@ -801,7 +818,8 @@ induces — view first, logic module written to its names — is
   the first. No four-space steps, no alignment to a token mid-line.
 - **The architecture is readable off the types.** The application is a
   compass walk written as one pipeline — load → form (×→×) → live
-  summary → events (×→+) → dispatch (+→+) → statuses (+→×) — closed by
+  summary → events (×→+) → each action with its statuses (+→× after
+  +→+) — closed by
   `mvu seed` / `with seed` to `PUI Web {} model`. If the top-level types
   do not tell that story, the structure is wrong, not the types.
   Indirection layers, UI component registries and config objects that assemble
@@ -927,15 +945,25 @@ induces — view first, logic module written to its names — is
 
 ### Business functions
 
-- **Exact footprints.** Every business function states its footprint as
-  a closed narrow row — what it reads ∪ writes, never the whole model.
-  The reading stages (`updated`/the gated displays/`edited`/`acted`/
-  `settled`) absorb the widening, so rows are read narrow while
-  payloads stay exact; never coerce a row at the call site. A handler
-  that reads nothing is not a transformer but a **constant patch**
-  (`beginTiming :: { phase :: [ halted :: {}, timing :: {} ] }`, dispatched
-  with `const (const beginTiming)`, or carried by the button itself:
-  `button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })`).
+- **Footprints as open rows.** Every business function states its
+  footprint as an **open row** — what it reads ∪ writes, and a tail:
+  `countLine :: forall r. { count :: Int | r } -> String`. Never the whole
+  model, never a closed row. A stage feeds a function the row it carries
+  and unification checks the footprint against it; by parametricity the
+  function touches exactly the fields it names; never coerce a row at
+  the call site. This is what lets a view run while its logic is still
+  holes (guardrails L18): a hole unifies with anything, where a closed
+  footprint needed a `Union` a hole leaves stuck. A function returning
+  the row it was given — a handler, a `settled` normalizer, a heartbeat
+  step (`Maybe` around the same row) — **updates** it
+  (`increment m = m { count = m.count + 1 }`), never builds a literal.
+- **No constant patches.** A preset is a field update, even one that
+  reads nothing: `beginTiming sw = sw { phase = .timing {} }`, dispatched
+  with `const beginTiming`; `button @"Reset" {} # applied restarted`;
+  espresso-bar's `"The usual": const <<< theUsual`. A constant that
+  *replaces* part of the model — `const (const patch)`,
+  `# with patch # updated (match { l: const })` — could only stand for
+  all of it, since a stage is typed at one row.
 - **One record of data per business function.** Several record
   parameters that travel together are one row in disguise — merge them
   and let the field labels name the roles that positional currying
@@ -950,31 +978,33 @@ induces — view first, logic module written to its names — is
   not one row in disguise: the payload is an occurrence (`+`), the
   retained state is knowledge (`×`), and `updated`'s Mealy step keeps
   them apart — so a handler takes the step's own shape,
-  `payload -> state -> state`, each record exact:
+  `payload -> state -> state`, each record its own open row:
 
   ```purescript
   # updated (match { refunded: applyRefund })
-  applyRefund :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-  applyRefund { amount } { balance } = { balance: balance - amount }
+  applyRefund :: forall r1 r2. { amount :: Number | r1 } -> { balance :: Number | r2 } -> { balance :: Number | r2 }
+  applyRefund { amount } till = till { balance = till.balance - amount }
   ```
 
-  The payload row is the case's exact payload — a collection element
-  emitting a wider row narrows it at `toCase` with a named projection
-  (movie-browser's `# toCase @"favored" favoriteMark`); the state row is
-  what the handler writes, read from the model by subsumption. An
+  The payload row is the fields the handler reads of the case's payload
+  — a collection element emitting a wider row may still narrow it at
+  `toCase` with a named projection (movie-browser's
+  `# toCase @"favored" favoriteMark`); the state row is what the handler
+  writes, updated in place. An
   emitter that carries **no payload of its own** — a button, `fab` or
   `menuItem` fed the row it acts on, replaying it on click — is not a
   Mealy step but a state transformer, and takes the rung that says so:
-  `button @"Add" {} # applied addTodo` with `addTodo :: { … } -> { … }`,
+  `button @"Add" {} # applied addTodo` with
+  `addTodo :: forall r. { … | r } -> { … | r }`,
   the case untouched and unread (counter's `# applied increment`,
   todo-list's `# applied clearCompleted`, inbox's
   `fab @"Compose" {} "edit" # applied composeMessage`). Inside a
   `match`, `const <<< f` is that same transformer where several such
   emitters share one stage (circle-drawer's `"Undo": const <<< undo,
-  "Redo": const <<< redo`). The remaining degenerate shapes are spelled
-  with `const`: state-only `const f` (`const recordLap`),
-  replace-with-payload `const` (`"Reset": const`), neither
-  `const (const patch)`. Scalar and `Array` payloads (a key, an
+  "Redo": const <<< redo`). The remaining degenerate shape is state-only
+  `const f` (`const recordLap`, `const beginTiming`); replacing the state
+  with the payload (`"Reset": const`) or a constant (`const (const
+  patch)`) is gone, above. Scalar and `Array` payloads (a key, an
   operator symbol, a fetched list) take the same shape positionally;
   they are not rows.
 - **A handler carries no field it does not touch.** Its row is exactly
@@ -1017,15 +1047,17 @@ induces — view first, logic module written to its names — is
   predicate, never a predicate hidden in a projection, and never a
   `Maybe`: a state a pane depends on is a variant with every case named,
   so exclusivity holds by construction and the view line names the state
-  it shows. Where the model field itself is the variant, a closed
+  it shows. Where the model field itself is the variant, a named
   accessor reads it (`# provided @"confirming" deletionOf`,
-  `# shownWhen @"serving" displayOf`) — the pane's argument is a
-  row-stating position, so the accessor's signature is the footprint
-  declaration, as a classifier's is. `clWhen` stays predicate-driven — it toggles styling, not
+  `# shownWhen @"serving" displayOf`) — its open-row signature is the
+  footprint declaration, as a classifier's is. `clWhen` stays predicate-driven — it toggles styling, not
   existence.
 - **State lives in the model or in the algebra's loops. Nowhere else.**
   No FFI stashes, no module-level `Ref`s, no reading the DOM back as
-  state, no window globals. The model under `mvu` holds the entity; a
+  state, no window globals. (An in-memory stand-in for an *external*
+  system is not app state: crud's catalogue plays a server's storage,
+  so it lives in the logic module as a server's would, and the view
+  never holds a handle to it.) The model under `mvu` holds the entity; a
   UI component's private state is a residual threaded by the trace forms.
 - **Lean on the design system's defaults; write no custom chrome.**
   Reach for a stock component and its built-in look before any style
@@ -1057,50 +1089,52 @@ module is written to its names. With the watch build running
    term-level obligation — a read function, a handler, a classifier,
    an action, the seed — enters as a typed hole (`text ?countLine`,
    `# mvu ?start`) for the compiler to speak first.
-2. **Let the compiler type the pinned obligations.** A hole whose row
-   is pinned from outside reports its full inferred type, with
-   substitution suggestions. The **seed** is the showcase:
-   `# mvu ?start` reports the model row accumulated from every anchor
-   written so far — the view computes the model, and the hole spells
-   it out — and suggests any in-scope value of that row. Every
-   **exact-payload position** reports too:
-   `snackbar @"Book" ?line` comes back as
-   `{ name :: String } -> String`, suggesting `_.name`.
-3. **Decide the subsumed footprints yourself; the signature is the
-   decision.** At every subsuming position — a display read under
-   `shown`/`shownWhen`/`shownEach`, a handler under
-   `updated`/`applied`, a classifier, a `settled` normalizer — the
-   sub-row is deliberately the function's own statement, so the
-   compiler cannot fill the hole: the stage reports an ambiguous
-   `Union`, and the hole reports beside it (compiler
-   `0.15.16-variant.7` and later), its type wrapped in the unsolved
-   constraint it shares unknowns with:
+2. **Let the compiler type every obligation.** Each hole reports its
+   full inferred type, and since a stage is typed at one row (guardrails
+   L18) that type is the row the view has named so far, **open**. The
+   **seed** is the showcase: `# mvu ?start` reports the model row
+   accumulated from every anchor written so far — the view computes the
+   model, and the hole spells it out. At temperature-converter
+   (compiler `0.15.16-variant.7`):
 
    ```
-   Hole 'increment' has the inferred type
+   Hole 'fromCelsius' has the inferred type
 
-     Union t0 t1
-       ( count :: Int
-       | t2
-       )
-      => Record t0 -> Record t0
+     { "°C" :: String
+     , "°F" :: String
+     | t0
+     }
+     -> { "°C" :: String
+        , "°F" :: String
+        | t0
+        }
    ```
 
-   Read it as: your function is `Record t0 -> Record t0` for a
-   sub-row `t0` of the fed row `( count :: Int | t2 )` — *which*
-   fields is a business decision the compiler refuses to make. State
-   it: write the function in the logic module under its closed-row
-   signature and both messages dissolve together.
+   A view that names no field (counter's `text ?countLine`) reports
+   `Record t0 -> String`: the model is still wholly the logic's.
+   Every **exact-payload position** reports its payload the same way:
+   `snackbar @"Book" ?line` comes back as `{ name :: String | t0 } ->
+   String`, suggesting `_.name`.
+3. **Decide the footprint yourself; the signature is the decision.**
+   The reported row is everything the view has named, not what the
+   function reads. Keep the fields the function reads and writes, keep
+   the tail, and write it in the logic module under that open-row
+   signature (`fromCelsius :: forall r. { "°C" :: String, "°F" :: String | r } -> { … | r }`);
+   the hole's message dissolves, and unification checks the footprint
+   against the row from then on.
 4. **Work one declaration at a time.** Module checking stops at the
    first failing declaration, so holes in a later top level wait
    their turn — but a bambik app is one pipeline in one declaration,
-   and within it every hole reports together with the ambiguities:
-   the app's whole obligation list is one compile away. Fill the
-   footprint decisions as they arise, the seed hole last — it then
-   reports the finished model row, and one business-named value
-   (`freshCount`, `plannedTrip`) closes the app. The *Type-inference
-   gotchas* above name two more places an ambiguity surfaces away
-   from its own line.
+   and within it every hole reports together: the app's whole
+   obligation list is one compile away. Fill the footprints as they
+   arise, the seed hole last — it then reports the finished model row,
+   and one business-named value (`freshCount`, `plannedTrip`) closes the
+   app. The *Type-inference gotchas* above name two more places an
+   ambiguity surfaces away from its own line. Between these steps the
+   view already **runs**: stub the logic module's exports as bare
+   `hole`s (`PUI.Web.hole`) and the initial UI is on screen before a
+   single business function exists (guardrails L18,
+   `node scripts/holes.mjs` in the bambik repo).
 5. **Compile-green is not done.** The knowledge gates are invisible
    to the compiler — finish by running it (below).
 

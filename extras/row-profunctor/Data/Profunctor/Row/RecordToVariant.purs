@@ -14,8 +14,9 @@
 -- |     sub-record, the background escaping as a case); over `Strong`:
 -- |     `replaying @l` (replay as `Strong`'s retention); over bare
 -- |     `Profunctor`: the emit stage `armed`; over the co-strength
--- |     `Coresolving`: `folding @w` (the terminating fold at row
--- |     granularity, the `Coshutter` optic's row form).
+-- |     `Coresolving`: `folding @w @l` (the terminating fold at row
+-- |     granularity, its state one field `l` labelled on the view line —
+-- |     the `Coshutter` optic's row form).
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
@@ -30,7 +31,8 @@
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
 -- | a component `w :: p { | i } [ | o ]` is an **event source** fed a row;
 -- | the merge is `m = recordToVariant w1 w2`, inputs shared
--- | (`SharedRecordInputs`), outputs shared (`SharedVariantOutputs`).
+-- | (`SharedRecordInputs`: both operands fed the merge's one row), outputs
+-- | shared (`SharedVariantOutputs`: the inclusive union of their cases).
 -- |
 -- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`. A feed writes
 -- |      the replay slot; a second write of the same row changes nothing.
@@ -101,17 +103,17 @@ import Data.Lens.Shutter (shutterE)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class SharedRecordInputs, class SharedVariantOutputs, exactRow, widenRecordInput)
-import Data.Profunctor.Seeding (class Seeding, seeded)
+import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs, widenRecordInput)
+import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
 import Data.Profunctor.Strong (class Strong, first)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Data.Variant (expand, inj, on)
 import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
-import Record (union) as Record
 import Type.Proxy (Proxy(..))
+import Record.Unsafe (unsafeSet)
+import Record.Unsafe.Union (unsafeUnion)
 import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToVariant p where
@@ -126,22 +128,20 @@ class Profunctor p <= RecordToVariant p where
   silence :: forall i o. p { | i } [ | o ]
 
 bind
-  :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o
+  :: forall p o1 o2 o12 o1x o2x i o
    . RecordToVariant p
-  => SharedRecordInputs i1 i2 i i12 i1x i2x
   => SharedVariantOutputs o1 o2 o o12 o1x o2x
-  => p { | i1 } [ | o1 ]
-  -> (p { | i1 } [ | o1 ] -> p { | i2 } [ | o2 ])
+  => p { | i } [ | o1 ]
+  -> (p { | i } [ | o1 ] -> p { | i } [ | o2 ])
   -> p { | i } [ | o ]
 bind first cont = recordToVariant first (cont first)
 
 discard
-  :: forall p i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o
+  :: forall p o1 o2 o12 o1x o2x i o
    . RecordToVariant p
-  => SharedRecordInputs i1 i2 i i12 i1x i2x
   => SharedVariantOutputs o1 o2 o o12 o1x o2x
-  => p { | i1 } [ | o1 ]
-  -> (Unit -> p { | i2 } [ | o2 ])
+  => p { | i } [ | o1 ]
+  -> (Unit -> p { | i } [ | o2 ])
   -> p { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
@@ -162,45 +162,48 @@ subResolving g =
     g
 
 -- | Replay the last fed row, mapped by `f`, as case `l` on each occurrence of the source.
+-- | The source is fed the row it replays, whole.
 replaying
-  :: forall @l p narrow extra r o k s
+  :: forall @l p r o k s
    . Strong p
   => IsSymbol l
   => Cons l k () s
-  => Union narrow extra r
   => ({ | r } -> k)
-  -> p { | narrow } [ | o ]
+  -> p { | r } [ | o ]
   -> p { | r } [ | s ]
 replaying f src = dimap (\r -> Tuple (unsafeCoerce r) r) (\(Tuple _ r) -> inj (Proxy @l) (f r)) (first src)
 
--- | Feed an event ensemble the sub-row its emitters replay, widening its input.
+-- | Mark an event ensemble as fed the row its emitters replay.
+-- | The emitters replay the whole fed row; what a consumer reads of the
+-- | payload is its own open-row footprint.
 armed
-  :: forall p narrow extra wider o
+  :: forall p wider o
    . Profunctor p
-  => Union narrow extra wider
-  => p { | narrow } [ | o ]
+  => p { | wider } [ | o ]
   -> p { | wider } [ | o ]
 armed = widenRecordInput
 
--- | Fold the state sub-record through case `w` until a `done` case exits, seeded with the fold's initial state.
+-- | Fold state field `l` through case `w` until a `done` case exits, seeded with its initial value.
+-- | The state is one field labelled on the view line (`folding @"next"
+-- | @"step" cartStep`); the loop case carries `{ l :: a }`. A seed that is
+-- | a hole is not injected (guardrails L18).
 folding
-  :: forall @w p i il fb iw done ow
+  :: forall @w @l p i a fb iw done ow
    . Seeding p
   => Coresolving p
   => IsSymbol w
-  => ExclusiveRows i fb iw
+  => IsSymbol l
+  => Cons l a () fb
+  => Cons l a i iw
   => Cons w { | fb } done ow
-  => RowToList i il
-  => FieldNames il i i
-  => { | fb }
+  => a
   -> p { | iw } [ | ow ]
   -> p { | i } [ | done ]
 folding seed g =
   coresolve
     (dimap
-      -- the join is left-biased; `exactRow` trims the fresh input to its
-      -- declared row so a fat upstream emission cannot shadow the folded
-      -- state fields with stale runtime copies (runtime-exactness)
-      (\(Tuple i fb) -> Record.union (exactRow i) fb)
+      -- the fold state is written over the fresh input, so a fat upstream
+      -- emission's stale copy of it never shadows the folded state
+      (\(Tuple i fb) -> unsafeUnion fb i :: { | iw })
       (on (Proxy @w) Right Left)
-      (g >>> seeded (inj (Proxy @w) seed)))
+      (if isHole seed then g else g >>> seeded (inj (Proxy @w) (unsafeSet (reflectSymbol (Proxy @l)) seed {} :: { | fb }))))

@@ -19,7 +19,7 @@ newApplicant =
 usernameSettleTime :: { ms :: Number }
 usernameSettleTime = { ms: 300.0 }
 
-signupLine :: { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] } -> String
+signupLine :: forall r1. { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] | r1 } -> String
 signupLine applicant = either rejectionLine welcomeLine (validate applicant)
 
 welcomeLine :: String -> String
@@ -36,7 +36,7 @@ refusalText = match
   , termsUnaccepted: const "accept the terms of service"
   }
 
-validate :: { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] } -> Either [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] String
+validate :: forall r1. { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] | r1 } -> Either [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] String
 validate applicant@{ "Email": email, "Terms": terms } =
   let username = trim applicant."Username"
   in
@@ -46,25 +46,25 @@ validate applicant@{ "Email": email, "Terms": terms } =
     else if declined terms then Left (.termsUnaccepted {})
     else Right username
 
-validation :: { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] } -> [ invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }, ready :: { "Username" :: String } ]
+validation :: forall r1. { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] | r1 } -> [ invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }, ready :: { "Username" :: String } ]
 validation applicant = either (\reason -> .invalid { reason }) (\name -> .ready { "Username": name }) (validate applicant)
 
-invalidLine :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] } -> String
+invalidLine :: forall r1. { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] | r1 } -> String
 invalidLine { reason } = "⚠ " <> refusalText reason
 
-readyLine :: { "Username" :: String } -> String
+readyLine :: forall r1. { "Username" :: String | r1 } -> String
 readyLine { "Username": username } = "Ready to sign up as " <> username
 
-usernameStatus :: { "Username" :: String } -> [ unnamed :: {}, taken :: { "Username" :: String }, available :: { "Username" :: String } ]
+usernameStatus :: forall r1. { "Username" :: String | r1 } -> [ unnamed :: {}, taken :: { "Username" :: String }, available :: { "Username" :: String } ]
 usernameStatus { "Username": username } = case trim username of
   "" -> .unnamed {}
   name | usernameTaken name -> .taken { "Username": name }
   name -> .available { "Username": name }
 
-takenLine :: { "Username" :: String } -> String
+takenLine :: forall r1. { "Username" :: String | r1 } -> String
 takenLine { "Username": username } = "✗ " <> username <> " is already taken"
 
-availableLine :: { "Username" :: String } -> String
+availableLine :: forall r1. { "Username" :: String | r1 } -> String
 availableLine { "Username": username } = "✓ " <> username <> " is available"
 
 usernameTaken :: String -> Boolean
@@ -76,5 +76,5 @@ takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
 declined :: [ accepted :: {}, declined :: {} ] -> Boolean
 declined = match { accepted: const false, declined: const true }
 
-unnamedLine :: {} -> String
+unnamedLine :: forall r1. { | r1 } -> String
 unnamedLine _ = "Pick a username to check its availability"

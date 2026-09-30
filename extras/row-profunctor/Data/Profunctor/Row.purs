@@ -68,10 +68,10 @@
 -- | What makes such a profunctor a row profunctor is not its shape alone but
 -- | the structure that shape supports: for each shape, a **merge** combining
 -- | two profunctors over labelled rows into one over the
--- | combined row, with `Category`'s `identity` at the empty row as unit — so
--- | every shape is a monoid on labelled rows, written with qualified-do
--- | (`RecordToRecord.do`), and the labels of the merged row are exactly the
--- | labels of the operands.
+-- | combined row, with a forced unit (the table under *The laws*) — so every
+-- | shape is a monoid on labelled rows, written with qualified-do
+-- | (`RecordToRecord.do`), and the labels of the merged output are exactly
+-- | the labels the operands own.
 -- |
 -- | Around each merge sit the functions that place a profunctor **into** a
 -- | row. They divide by what each needs — the same three columns as the
@@ -137,11 +137,14 @@
 -- | The merge's two obligations are per-side and dual, and they are what the
 -- | constraint vocabulary below spells out: on an **input** side, where does
 -- | each label's value come from; on an **output** side, who is allowed to
--- | produce it. Records share their input (every operand may read every
--- | field) and own their output (each field has exactly one producer);
+-- | produce it. Records share their input (every operand is fed the whole
+-- | row) and own their output (each field has exactly one producer);
 -- | variants own their input (each case has exactly one handler) and share
--- | their output (any operand may emit any case). Sharing is inclusive
--- | (`InclusiveRows`), ownership is exclusive (`ExclusiveRows`) — so a merge
+-- | their output (any operand may emit any case). A shared record input is
+-- | **one row** — the operands' inputs are the merge's, and what an operand
+-- | reads of it is its business functions' footprint, stated by row
+-- | polymorphism (guardrails L18); a shared variant output is **inclusive**
+-- | (`InclusiveRows`); ownership is exclusive (`ExclusiveRows`) — so a merge
 -- | signature is two words, one per side.
 -- |
 -- | `Data.Profunctor.Acting` extends the family one step past rows: rows are
@@ -152,7 +155,7 @@
 -- | (`Data.Profunctor.Row.*`) stands on:
 -- |
 -- |   * **row-constraint vocabulary** — `InclusiveRows` (overlapping rows,
--- |     deduped union: record inputs, variant outputs), `ExclusiveRows`
+-- |     deduped union: variant outputs), `ExclusiveRows`
 -- |     (disjoint partition: variant inputs, record outputs),
 -- |     `DispatchableVariants` (runtime tag evidence for variant dispatch).
 -- |     Their meanings come from the row-profunctor reading: everyone may
@@ -220,7 +223,7 @@
 -- | --------------  ----------------  --------------  ----------------------  ---------------------
 -- | 1 repetition    owed              owed            —                       —
 -- | 2 answer        a row, once       nothing         —                       —
--- | 3 unit u        identity @{}      silence         identity @(Variant ())  lcmap case_ identity
+-- | 3 unit u        the {} wire       silence         identity @(Variant ())  lcmap case_ identity
 -- | 4 π_k           whole row         whole row       own cases               own cases
 -- |   exact         trim              identity        identity                trim
 -- | 5 preservation  of 1 and 2        of 1 and 2      vacuous                 vacuous
@@ -237,7 +240,10 @@
 -- | gate once every element has spoken), and by 6 the merge refines with
 -- | it. `{}` is always known, so a `{}` output is answered by `{}` — which
 -- | no gate awaits — and a `{}`-input component counts registration as
--- | its feed (`announce`, the point).
+-- | its feed (`announce`, the point). The `×→×` unit is the `{}` wire at
+-- | the merge's own input, `lcmap (const {}) identity` (`blank`): the
+-- | operands of a `×→×` merge share one input row, so the unit is the
+-- | terminal arrow out of it — `identity @{}` is that wire only at `{}`.
 -- |
 -- | **What is not a law here.** That an emitted `{ | o }` is whole is the
 -- | type. That `focusField @l` re-attaches the background, that `clicked`
@@ -259,13 +265,16 @@
 -- | two streams into a stream of pairs, so every `(·,×)` shape gates and
 -- | no `(·,+)` shape does — the container action's `Array b` included,
 -- | gathered by the same machine over the fed keys as labels
--- | (`Data.Profunctor.Acting`) — and the unit is forced, not designed: the wire
--- | at the unit object wherever a wire fits (a zero-field side is born
+-- | (`Data.Profunctor.Acting`) — and the unit is forced, not designed: a wire
+-- | into the unit object wherever a wire fits (a zero-field side is born
 -- | spoken), `silence` at the one shape no wire reaches. Counting
 -- | renderings a gated merge is premonoidal — interchange at the inner
 -- | surfaces holds as `⊑` — and counting channels monoidal; at the
 -- | boundary interchange holds on the nose because a feed is one step
--- | (doc §4). Starvation reads off the laws: a gated merge silent after
+-- | (doc §4). Since operands share one input row, interchange is stated
+-- | with the projections explicit: `merge (f >>> h) (g >>> k)` against
+-- | `merge f g >>> merge (π₁ h) (π₂ k)`, `π` the widening
+-- | (`widenRecordInput`) of each second stage to the middle row. Starvation reads off the laws: a gated merge silent after
 -- | every owned side has been fed has an operand breaking 2; one silent
 -- | before that has an unprimed owned field (`with`/`mvu`, `seeded`, the
 -- | seed of a trace form).
@@ -331,6 +340,7 @@ import Prim.TypeError (class Fail, Above, Beside, Text)
 import Record (get) as Record
 import Record.Builder (Builder)
 import Record.Builder (buildFromScratch, insert) as Builder
+import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -461,7 +471,9 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- =====================================================================
 --
 -- The four merges' constraints factor exactly by side, under one law:
--- **sharing is inclusive, responsibility is exclusive** — and runtime
+-- **sharing is open, responsibility is exclusive** — a shared record input
+-- is one row every operand is fed whole, a shared variant output an
+-- inclusive union any operand may emit into — and runtime
 -- label evidence appears only on the exclusive sides, where the merge's
 -- runtime action is label-driven (dispatch, union) rather than
 -- label-blind (broadcast, expand). Records are read-shared but
@@ -473,7 +485,7 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 --   variantToVariant : OwnedVariantInputs  + SharedVariantOutputs
 --   variantToRecord  : OwnedVariantInputs  + OwnedRecordOutputs
 --
--- **What an inclusive input side obliges.** A shared record input is a
+-- **What a shared input side obliges.** A shared record input is a
 -- *broadcast*: one feed reaches both operands, so both may answer it. That
 -- is the sole cause of the two feed laws, and it states them as one
 -- sentence — **one feed in, at most one thing out, and if it is a record,
@@ -501,13 +513,18 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- them: dispatched input, so no broadcast to batch, yet a record output, so
 -- it gates and retains exactly like `recordToRecord`.
 
--- | A merge's **record-input side**: everyone may read a field, so operand
--- | rows may overlap. The merge action is a label-blind broadcast — no
--- | runtime evidence needed.
+-- | A merge's **record-input side**: every operand is fed the merge's whole
+-- | row — the operands' input rows *are* the merge's (an equality, no
+-- | `Union`). The merge action is a label-blind broadcast, so no runtime
+-- | evidence is needed. What an operand reads of the row is its business
+-- | functions' footprint, stated by row polymorphism
+-- | (`forall r. { count :: Int | r } -> String`) and checked by
+-- | unification, which a bare hole never leaves stuck (guardrails L18); the
+-- | equality carries the context's row down into the operands.
 class SharedRecordInputs :: Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Constraint
-class InclusiveRows i1 i2 i i12 i1x i2x <= SharedRecordInputs i1 i2 i i12 i1x i2x
+class SharedRecordInputs i1 i2 i i12 i1x i2x
 
-instance InclusiveRows i1 i2 i i12 i1x i2x => SharedRecordInputs i1 i2 i i12 i1x i2x
+instance (TypeEquals (Record i1) (Record i), TypeEquals (Record i2) (Record i)) => SharedRecordInputs i1 i2 i i12 i1x i2x
 
 -- | A merge's **variant-output side**: anyone may emit a case, so operand
 -- | rows may overlap. The merge action is a label-blind `expand` — no
@@ -653,9 +670,8 @@ instance
 -- Whole-row reshapings
 -- =====================================================================
 
-widenRecordInput :: forall p narrow extra wider o.
+widenRecordInput :: forall p narrow wider o.
   Profunctor p =>
-  Row.Union narrow extra wider =>
   p { | narrow } o -> p { | wider } o
 widenRecordInput = lcmap unsafeCoerce
 

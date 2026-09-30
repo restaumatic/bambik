@@ -1,6 +1,6 @@
 module OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes) where
 
-import Prelude (compare, max, min, mod, negate, show, (&&), (*), (+), (-), (/), (<), (<$>), (>), (>=))
+import Prelude (compare, max, min, mod, negate, show, ($), (&&), (*), (+), (-), (/), (<), (<$>), (>), (>=))
 
 import Data.Array (filter, index, length, mapMaybe, range, snoc, sortBy, take)
 import Data.Foldable (sum)
@@ -17,10 +17,10 @@ openingDay = { tick: 0, orders: mapMaybe arrival (range openingTick 0), "Showing
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-ordersArrive :: { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int } } -> Maybe { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int } }
-ordersArrive { tick, orders } = Just
-  { tick: tick + 1
-  , orders: case arrival (tick + 1) of
+ordersArrive :: forall r1. { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int } | r1 } -> Maybe { tick :: Int, orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int } | r1 }
+ordersArrive day@{ tick, orders } = Just $ day
+  { tick = tick + 1
+  , orders = case arrival (tick + 1) of
     Just order -> snoc orders order
     Nothing -> orders
   }
@@ -52,19 +52,19 @@ openingTick = -900
 windowStart :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ] -> Int -> Int
 windowStart window tick = match { "Last minute": \_ -> tick - 60, "Last 15 min": \_ -> tick - 900, "Since open": \_ -> openingTick } window
 
-inWindow :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> Array { id :: Int, dish :: String, total :: Number, at :: Int }
+inWindow :: forall r1. { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int | r1 } -> Array { id :: Int, dish :: String, total :: Number, at :: Int }
 inWindow { orders, "Showing": window, tick } = filter (\o -> o.at >= windowStart window tick) orders
 
-ordersCount :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> String
+ordersCount :: forall r1. { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int | r1 } -> String
 ordersCount m = show (length (inWindow m))
 
-revenue :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> String
+revenue :: forall r1. { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int | r1 } -> String
 revenue m = toStringWith (fixed 2) (sum (_.total <$> inWindow m))
 
-kitchenLoad :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, tick :: Int } -> Number
+kitchenLoad :: forall r1. { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, tick :: Int | r1 } -> Number
 kitchenLoad { orders, tick } = min 1.0 (toNumber (length (filter (\o -> o.at > tick - prepTime) orders)) / kitchenCapacity)
 
-orderFlow :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> Array Number
+orderFlow :: forall r1. { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int | r1 } -> Array Number
 orderFlow m@{ "Showing": window, tick } =
   let start = windowStart window tick
       width = max 1 ((tick - start) / trendBuckets)
@@ -72,7 +72,7 @@ orderFlow m@{ "Showing": window, tick } =
       bucket i = toNumber (length (filter (\o -> o.at >= start + i * width && o.at < start + (i + 1) * width) recent))
   in bucket <$> range 0 (trendBuckets - 1)
 
-topDishes :: { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int } -> Array { name :: String, score :: String }
+topDishes :: forall r1. { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int | r1 } -> Array { name :: String, score :: String }
 topDishes m = take 5 ((\(Tuple name count) -> { name, score: show (count :: Int) }) <$> sortBy (\(Tuple _ a) (Tuple _ b) -> compare b a) (toUnfoldable (fromFoldableWith (+) ((\o -> Tuple o.dish 1) <$> inWindow m))))
 
 prepTime :: Int

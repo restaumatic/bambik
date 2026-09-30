@@ -26,7 +26,7 @@ calculatorMDC3 =
         clicked @"entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" (const keyPad) ) # with {} # updated (match { entered: pressKey })
     ) # mvu blankTally
 
-keyFace :: { key :: String } -> String
+keyFace :: forall r1. { key :: String | r1 } -> String
 keyFace { key } =
   "height: 52px; display: flex; align-items: center; justify-content: center; "
     <> "font-size: 22px; font-family: Roboto, sans-serif; cursor: pointer; "

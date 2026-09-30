@@ -28,14 +28,7 @@ This paragraph shows **bold**, *italic* and `inline code` text.
 """
   }
 
-parseMarkdown
-  :: { "Source" :: String }
-  -> Array
-    [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] }
-    , paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
-    , bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ])
-    , quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
-    ]
+parseMarkdown :: forall r1. { "Source" :: String | r1 } -> Array [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] } , paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] , bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ]) , quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] ]
 parseMarkdown document = blocks (split (Pattern "\n") document."Source")
 
 blocks

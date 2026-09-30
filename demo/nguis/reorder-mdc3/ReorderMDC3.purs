@@ -1,14 +1,13 @@
 module ReorderMDC3 (reorderMDC3) where
 
-import Prelude ((#), ($), (>>>), Unit)
+import Prelude (identity, (#), ($), (>>>), Unit)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, blank, edited, mvu, static, updated)
-import PUI.Web (el, (:=))
+import PUI (action, atCase, blank, edited, mvu, static, toCase, updated)
+import PUI.Web (el, shown, (:=))
 import PUI.Web.MDC3 (body, button, filledTextField, group, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import ReorderLogic (openingSetlist, rotateAction, setOrder, shuffleAction)
@@ -21,10 +20,10 @@ reorderMDC3 =
         button @"Rotate" { icon: "sync" }
         button @"Shuffle" { icon: "shuffle" }
       VariantToVariant.do
-        blank # action rotateAction # atCase @"Rotate"
-        blank # action shuffleAction # atCase @"Shuffle" ) # updated (match { reordered: setOrder })
+        blank # action rotateAction # atCase @"Rotate" # toCase @"reordered" identity
+        blank # action shuffleAction # atCase @"Shuffle" # toCase @"reordered" identity ) # updated (match { reordered: setOrder })
     group @"Setlist" $ list $
-      ( listItem $ RecordToRecord.do
-        static (el "input" >>> "type" := "checkbox")
+      ( listItem $ Semigroupoid.do
+        static (el "input" >>> "type" := "checkbox") # shown
         filledTextField @"Title" {} ) # edited @"id"
   ) # mvu openingSetlist

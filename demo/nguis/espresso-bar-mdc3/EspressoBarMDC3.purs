@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
-import PUI (armed, mvu, updated, with)
+import PUI (armed, mvu, updated)
 import PUI.Web (choice, shown, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, button, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltipWith, topAppBar)
@@ -36,8 +36,8 @@ espressoBarMDC3 =
         checkbox @"Loyalty" @"member" @"guest" {} (staticText @"Loyalty member") # tooltipWith loyaltyNote
         divider # shown
         menu @"Presets" ( RecordToVariant.do
-          menuItem @"The usual" {} # with theUsual
-          menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const, "Espresso, no frills": const <<< espressoNoFrills })
+          menuItem @"The usual" {}
+          menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const <<< theUsual, "Espresso, no frills": const <<< espressoNoFrills })
       ) # mvu usualOrder
       bodyMedium (text cupLine) # shown
       ( div $ RecordToRecord.do

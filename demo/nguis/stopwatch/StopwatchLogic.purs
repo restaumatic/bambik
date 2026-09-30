@@ -10,39 +10,35 @@ import Data.Variant (match)
 zeroedStopwatch :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int }
 zeroedStopwatch = { phase: .halted {}, elapsedTenths: 0, laps: [] }
 
-elapsedText :: { elapsedTenths :: Int } -> String
+elapsedText :: forall r1. { elapsedTenths :: Int | r1 } -> String
 elapsedText { elapsedTenths } = formatTime elapsedTenths
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 100.0 }
 
-beginTiming :: { phase :: [ halted :: {}, timing :: {} ] }
-beginTiming = { phase: .timing {} }
+beginTiming :: forall r. { phase :: [ halted :: {}, timing :: {} ] | r } -> { phase :: [ halted :: {}, timing :: {} ] | r }
+beginTiming sw = sw { phase = .timing {} }
 
-haltTiming :: { phase :: [ halted :: {}, timing :: {} ] }
-haltTiming = { phase: .halted {} }
+haltTiming :: forall r. { phase :: [ halted :: {}, timing :: {} ] | r } -> { phase :: [ halted :: {}, timing :: {} ] | r }
+haltTiming sw = sw { phase = .halted {} }
 
-recordLap
-  :: { elapsedTenths :: Int, laps :: Array Int }
-  -> { elapsedTenths :: Int, laps :: Array Int }
+recordLap :: forall r1. { elapsedTenths :: Int, laps :: Array Int | r1 } -> { elapsedTenths :: Int, laps :: Array Int | r1 }
 recordLap sw@{ laps, elapsedTenths } = sw { laps = snoc laps elapsedTenths }
 
-clearStopwatch :: { elapsedTenths :: Int, laps :: Array Int }
-clearStopwatch = { elapsedTenths: 0, laps: [] }
+clearStopwatch :: forall r. { elapsedTenths :: Int, laps :: Array Int | r } -> { elapsedTenths :: Int, laps :: Array Int | r }
+clearStopwatch sw = sw { elapsedTenths = 0, laps = [] }
 
-tick
-  :: { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int }
-  -> Maybe { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int }
+tick :: forall r1. { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int | r1 } -> Maybe { phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int | r1 }
 tick sw@{ phase, elapsedTenths } =
   match { timing: \_ -> Just (sw { elapsedTenths = elapsedTenths + 1 }), halted: \_ -> Nothing } phase
 
-stopwatchPhase :: { phase :: [ halted :: {}, timing :: {} ] } -> [ halted :: {}, timing :: {} ]
+stopwatchPhase :: forall r1. { phase :: [ halted :: {}, timing :: {} ] | r1 } -> [ halted :: {}, timing :: {} ]
 stopwatchPhase { phase } = phase
 
-lapRows :: { laps :: Array Int } -> Array { number :: Int, tenths :: Int }
+lapRows :: forall r1. { laps :: Array Int | r1 } -> Array { number :: Int, tenths :: Int }
 lapRows { laps } = mapWithIndex (\i t -> { number: i + 1, tenths: t }) laps
 
-lapLine :: { number :: Int, tenths :: Int } -> String
+lapLine :: forall r1. { number :: Int, tenths :: Int | r1 } -> String
 lapLine { number, tenths } = "Lap " <> show number <> " — " <> formatTime tenths
 
 formatTime :: Int -> String

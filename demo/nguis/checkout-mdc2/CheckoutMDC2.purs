@@ -23,6 +23,6 @@ checkoutMDC2 =
         RecordToVariant.do
           button @"Next" {} # toCase @"next" goneOn # provided @"onward" onwardFrom
           button @"Back" {} # toCase @"next" goneBack # provided @"back" previousOf
-          button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep ) # folding @"next" cartStep # updated (match { "Place order": const (const orderPlaced) })
+          button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep ) # folding @"next" @"step" cartStep # updated (match { "Place order": const orderPlaced })
       ( body2 $ text placedLine ) # shownWhen @"placed" orderStatus
     ) # mvu freshOrder

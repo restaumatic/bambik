@@ -28,6 +28,6 @@ cellsMDC3 =
 headerFace :: String
 headerFace = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"
 
-cellFace :: { text :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
+cellFace :: forall r1. { text :: String, status :: [ selected :: {}, unselected :: {} ] | r1 } -> String
 cellFace { status } = "border: 1px solid #eee; padding: 2px 6px; min-width: 48px; height: 18px; cursor: cell;"
   <> match { selected: \_ -> " background: #cde;", unselected: \_ -> "" } status

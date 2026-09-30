@@ -8,10 +8,10 @@ import Data.Maybe (Maybe(..))
 emptyCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
 emptyCart = { order: [] }
 
-totalLine :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
+totalLine :: forall r1. { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } | r1 } -> String
 totalLine { order } = "Total: $" <> formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 order)
 
-productCatalogue :: {} -> Array { product :: { name :: String, unitPrice :: Int } }
+productCatalogue :: forall r1. { | r1 } -> Array { product :: { name :: String, unitPrice :: Int } }
 productCatalogue _ = map (\product -> { product })
   [ { name: "Espresso", unitPrice: 350 }
   , { name: "Cappuccino", unitPrice: 450 }
@@ -21,34 +21,34 @@ productCatalogue _ = map (\product -> { product })
   , { name: "Cheesecake", unitPrice: 550 }
   ]
 
-catalogueLine :: { product :: { name :: String, unitPrice :: Int } } -> String
+catalogueLine :: forall r1. { product :: { name :: String, unitPrice :: Int } | r1 } -> String
 catalogueLine { product } = product.name <> " · $" <> formatMoney product.unitPrice
 
-addUnit :: { name :: String, unitPrice :: Int } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
-addUnit product { order }
+addUnit :: forall r1 r2. { name :: String, unitPrice :: Int | r1 } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } | r2 } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } | r2 }
+addUnit product cart@{ order }
   | any (\l -> l.product.name == product.name) order =
-    { order: map (\l -> if l.product.name == product.name then l { quantity = l.quantity + 1 } else l) order }
-  | otherwise = { order: snoc order { product, quantity: 1 } }
+    cart { order = map (\l -> if l.product.name == product.name then l { quantity = l.quantity + 1 } else l) order }
+  | otherwise = cart { order = snoc order { product: { name: product.name, unitPrice: product.unitPrice }, quantity: 1 } }
 
-removeUnit :: String -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
+removeUnit :: forall r1. String -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } | r1 } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } | r1 }
 removeUnit name cart = cart { order = mapMaybe oneFewer cart.order }
   where
   oneFewer l
     | l.product.name == name = if l.quantity == 1 then Nothing else Just l { quantity = l.quantity - 1 }
     | otherwise = Just l
 
-cartLines :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> Array { product :: String, unitPrice :: Int, quantity :: Int }
+cartLines :: forall r1. { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } | r1 } -> Array { product :: String, unitPrice :: Int, quantity :: Int }
 cartLines { order } = map line order
   where
   line { product, quantity } = { product: product.name, unitPrice: product.unitPrice, quantity }
 
-productLine :: { product :: String } -> String
+productLine :: forall r1. { product :: String | r1 } -> String
 productLine { product } = product
 
-quantityLine :: { quantity :: Int } -> String
+quantityLine :: forall r1. { quantity :: Int | r1 } -> String
 quantityLine { quantity } = show quantity
 
-lineTotalLine :: { unitPrice :: Int, quantity :: Int } -> String
+lineTotalLine :: forall r1. { unitPrice :: Int, quantity :: Int | r1 } -> String
 lineTotalLine { unitPrice, quantity } = "$" <> formatMoney (quantity * unitPrice)
 
 formatMoney :: Int -> String

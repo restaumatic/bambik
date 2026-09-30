@@ -61,7 +61,9 @@ module PUI.Web.HTML
   )
   where
 
+import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude
+import Unsafe.Coerce (unsafeCoerce)
 
 import Control.Monad.State (gets, modify_)
 import Data.Array ((!!), findIndex)
@@ -148,20 +150,20 @@ textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-select :: forall @l a rest r. IsSymbol l => Cons l a rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-select options = selectWith @l false (selectedAt @l) options
+select :: forall @l a rest r. IsSymbol l => Cons l a rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select options = withStructuralEq @a (selectWith @l false (selectedAt @l) options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectUnpicked options = selectWith @l false (selectedUnpickedAt @l @c) options
+selectUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectUnpicked options = withStructuralEq @a (selectWith @l false (selectedUnpickedAt @l @c) options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-selectOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectOptional options = selectWith @l true (selectedOptionalAt @l @c @n) options
+selectOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectOptional options = withStructuralEq @a (selectWith @l true (selectedOptionalAt @l @c @n) options)
 
 selectWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
 selectWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wrap do
@@ -309,8 +311,8 @@ button provided = wrap do
 -- | A horizontal rule separating sections — fixed decoration, and the one
 -- | element with nothing inside it, so it is written as a leaf rather than
 -- | wrapped around content.
-hr :: PUI Web {} {}
-hr = wrap do
+hrExact :: PUI Web {} {}
+hrExact = wrap do
   parent <- gets _.parent
   newNode <- liftEffect $ do
     node <- createElementNS htmlNS "hr"
@@ -321,6 +323,9 @@ hr = wrap do
     { toUser: mempty
     , fromUser: \prop -> prop {}
     }
+
+hr :: forall in_. PUI Web { | in_ } {}
+hr = unsafeCoerce (hrExact :: PUI Web {} {})
 
 -- UIOculars
 

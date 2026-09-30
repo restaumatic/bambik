@@ -147,6 +147,9 @@ discard
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Focus a sub-variant, passing the background cases through untouched.
+-- | Routing needs only the focus's labels, which the view names; the
+-- | background is whatever else arrives (guardrails L18: the whole row is
+-- | the logic's, so it is left free).
 subChoice
   :: forall p f f' b s s'
    . Choice p

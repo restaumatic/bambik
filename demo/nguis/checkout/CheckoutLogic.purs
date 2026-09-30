@@ -12,33 +12,33 @@ freshOrder =
   , status: .pending {}
   }
 
-cartStep :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
-cartStep = { step: .cart {} }
+cartStep :: [ cart :: {}, shipping :: {}, payment :: {} ]
+cartStep = .cart {}
 
-checkoutStep :: { item :: String, address :: String, card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> [ cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ]
+checkoutStep :: forall r1. { item :: String, address :: String, card :: String, step :: [ cart :: {}, shipping :: {}, payment :: {} ] | r1 } -> [ cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ]
 checkoutStep { item, address, card, step } = match
   { cart: \_ -> .cart { item }
   , shipping: \_ -> .shipping { address }
   , payment: \_ -> .payment { card }
   } step
 
-cartLine :: { item :: String } -> String
+cartLine :: forall r1. { item :: String | r1 } -> String
 cartLine { item } = "Step 1 of 3 — Cart: " <> item
 
-shippingLine :: { address :: String } -> String
+shippingLine :: forall r1. { address :: String | r1 } -> String
 shippingLine { address } = "Step 2 of 3 — Shipping to " <> address
 
-paymentLine :: { card :: String } -> String
+paymentLine :: forall r1. { card :: String | r1 } -> String
 paymentLine { card } = "Step 3 of 3 — Pay with card " <> card
 
-onwardFrom :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> [ onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }, last :: {} ]
+onwardFrom :: forall r1. { step :: [ cart :: {}, shipping :: {}, payment :: {} ] | r1 } -> [ onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }, last :: {} ]
 onwardFrom { step } = match
   { cart: \_ -> .onward { step: .shipping {} }
   , shipping: \_ -> .onward { step: .payment {} }
   , payment: \_ -> .last {}
   } step
 
-previousOf :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } -> [ back :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }, first :: {} ]
+previousOf :: forall r1. { step :: [ cart :: {}, shipping :: {}, payment :: {} ] | r1 } -> [ back :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }, first :: {} ]
 previousOf { step } = match
   { cart: \_ -> .first {}
   , shipping: \_ -> .back { step: .cart {} }
@@ -51,11 +51,11 @@ goneOn = match { "Next": identity }
 goneBack :: [ "Back" :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] } ] -> { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
 goneBack = match { "Back": identity }
 
-orderPlaced :: { status :: [ pending :: {}, placed :: {} ] }
-orderPlaced = { status: .placed {} }
+orderPlaced :: forall r. { status :: [ pending :: {}, placed :: {} ] | r } -> { status :: [ pending :: {}, placed :: {} ] | r }
+orderPlaced order = order { status = .placed {} }
 
-orderStatus :: { item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] } -> [ pending :: {}, placed :: { item :: String, address :: String, card :: String } ]
+orderStatus :: forall r1. { item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] | r1 } -> [ pending :: {}, placed :: { item :: String, address :: String, card :: String } ]
 orderStatus { item, address, card, status } = match { pending: \_ -> .pending {}, placed: \_ -> .placed { item, address, card } } status
 
-placedLine :: { item :: String, address :: String, card :: String } -> String
+placedLine :: forall r1. { item :: String, address :: String, card :: String | r1 } -> String
 placedLine { item, address, card } = "Order placed: " <> item <> " → " <> address <> " (card " <> card <> ")"

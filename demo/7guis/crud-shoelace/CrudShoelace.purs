@@ -1,24 +1,23 @@
 module CrudShoelace (crudShoelace) where
 
-import Prelude (Unit, bind, (#), ($), (<>), (>>>))
+import Prelude (Unit, identity, (#), ($), (<>), (>>>))
 
-import CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, personLine, pick, refreshPeople, sharedPeopleCatalogue, updatePerson)
+import CrudLogic (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleDeleted, personLine, pick, refreshPeople, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, foreach, looped, updated, with, blank)
+import PUI (action, atCase, blank, foreach, looped, toCase, updated, with)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, li, ul)
 import PUI.Web.Shoelace (body, button, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudShoelace :: Effect Unit
-crudShoelace = do
-  catalogue <- sharedPeopleCatalogue
+crudShoelace =
   body $
     ( Semigroupoid.do
-      blank # action (loadPeopleCatalogue catalogue)
+      blank # action loadPeopleCatalogue
       ( Semigroupoid.do
         textField @"Filter prefix (surname)" {}
         textField @"Name" {}
@@ -31,10 +30,10 @@ crudShoelace = do
             button @"Update" {}
             button @"Delete" {}
           VariantToVariant.do
-            blank # action (createPerson catalogue) # atCase @"Create"
-            blank # action (updatePerson catalogue) # atCase @"Update"
-            blank # action (deletePerson catalogue) # atCase @"Delete" ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted }) ) # looped
+            blank # action createPerson # atCase @"Create" # toCase @"created" identity
+            blank # action updatePerson # atCase @"Update" # toCase @"updated" identity
+            blank # action deletePerson # atCase @"Delete" # toCase @"deleted" identity ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted }) ) # looped
     ) # with {}
 
-entryFace :: { "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
+entryFace :: forall r1. { "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] | r1 } -> String
 entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: var(--sl-color-primary-100, #cde);", unselected: \_ -> "" } status

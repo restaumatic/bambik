@@ -47,11 +47,11 @@ lawBenchHTML = do
   rows = [ { n: 1 }, { n: 2 } ]
   events = [ .event "hello", .event "world" ]
 
-modeOf :: { mode :: [ on :: { n :: String }, off :: {} ] } -> [ on :: { n :: String }, off :: {} ]
+modeOf :: forall r1. { mode :: [ on :: { n :: String }, off :: {} ] | r1 } -> [ on :: { n :: String }, off :: {} ]
 modeOf = _.mode
 
-itemsOf :: { items :: Array { id :: Int, title :: String } } -> Array { id :: Int, title :: String }
+itemsOf :: forall r1. { items :: Array { id :: Int, title :: String } | r1 } -> Array { id :: Int, title :: String }
 itemsOf = _.items
 
-titleOf :: { title :: String } -> String
+titleOf :: forall r1. { title :: String | r1 } -> String
 titleOf = _.title

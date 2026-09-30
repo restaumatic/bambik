@@ -7,7 +7,7 @@ module DashboardControlsMDC3
   , trendChart
   ) where
 
-import Prelude (class Eq, otherwise, show, (#), ($), (*), (-), (/), (<), (<<<), (<>), (==), (>>>))
+import Prelude (otherwise, show, (#), ($), (*), (-), (/), (<), (<<<), (<>), (==), (>>>))
 
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Data.Array (foldl, length, mapWithIndex)
@@ -15,7 +15,7 @@ import Data.Int (round, toNumber)
 import Data.Number (max)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Prim.Row (class Cons, class Union)
+import Prim.Row (class Cons)
 import PUI (Ocular, PUI, blank, foreach, muted)
 import PUI.Web (OptCaption(..), Web, attrWith, shown, staticString, staticText, text, (:=))
 import PUI.Web.HTML (div)
@@ -33,7 +33,7 @@ statTile f =
     ( labelMedium $ staticText @l ) # shown
     displaySmall (text f)
 
-gauge :: forall @l r. IsSymbol l => Union r () r => ({ | r } -> Number) -> PUI Web { | r } {}
+gauge :: forall @l r. IsSymbol l => ({ | r } -> Number) -> PUI Web { | r } {}
 gauge f =
   tile $ ( Semigroupoid.do
     ( labelMedium $ staticText @l ) # shown
@@ -55,7 +55,7 @@ leaderboard f =
     ( labelMedium $ staticText @l ) # shown
     list ( ( listItem $ text entryLine ) # foreach @"name" f ) # muted
 
-rangePicker :: forall @l provided a rest r. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+rangePicker :: forall @l provided a rest r. IsSymbol l => Cons l a rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
 rangePicker provided options =
   div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Semigroupoid.do
     ( labelMedium $ staticString config.label ) # shown
@@ -66,7 +66,7 @@ rangePicker provided options =
 percentLine :: Number -> String
 percentLine fraction = show (round (fraction * 100.0)) <> "%"
 
-entryLine :: { name :: String, score :: String } -> String
+entryLine :: forall r1. { name :: String, score :: String | r1 } -> String
 entryLine { name, score } = name <> " — " <> score
 
 tile :: Ocular (PUI Web)

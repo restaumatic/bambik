@@ -1,6 +1,6 @@
 module ReorderLogic (openingSetlist, rotateAction, setOrder, shuffleAction) where
 
-import Prelude ((<$>), bind, compare, map, pure)
+import Prelude (bind, compare, map, pure)
 
 import Data.Array (snoc, sortBy, uncons)
 import Data.Maybe (maybe)
@@ -21,23 +21,16 @@ openingSetlist =
     ]
   }
 
-rotateAction
-  :: { "Setlist" :: Array { id :: String, "Title" :: String } }
-  -> Aff [ reordered :: Array { id :: String, "Title" :: String } ]
-rotateAction { "Setlist": tracks } = pure (.reordered (rotate tracks))
+rotateAction :: forall r1. { "Setlist" :: Array { id :: String, "Title" :: String } | r1 } -> Aff (Array { id :: String, "Title" :: String })
+rotateAction { "Setlist": tracks } = pure (rotate tracks)
 
-shuffleAction
-  :: { "Setlist" :: Array { id :: String, "Title" :: String } }
-  -> Aff [ reordered :: Array { id :: String, "Title" :: String } ]
-shuffleAction { "Setlist": tracks } = liftEffect (.reordered <$> shuffleOrder tracks)
+shuffleAction :: forall r1. { "Setlist" :: Array { id :: String, "Title" :: String } | r1 } -> Aff (Array { id :: String, "Title" :: String })
+shuffleAction { "Setlist": tracks } = liftEffect (shuffleOrder tracks)
 
 rotate :: Array { id :: String, "Title" :: String } -> Array { id :: String, "Title" :: String }
 rotate tracks = maybe tracks (\{ head, tail } -> snoc tail head) (uncons tracks)
 
-setOrder
-  :: Array { id :: String, "Title" :: String }
-  -> { "Setlist" :: Array { id :: String, "Title" :: String } }
-  -> { "Setlist" :: Array { id :: String, "Title" :: String } }
+setOrder :: forall r1. Array { id :: String, "Title" :: String } -> { "Setlist" :: Array { id :: String, "Title" :: String } | r1 } -> { "Setlist" :: Array { id :: String, "Title" :: String } | r1 }
 setOrder tracks pl = pl { "Setlist" = tracks }
 
 shuffleOrder :: Array { id :: String, "Title" :: String } -> Effect (Array { id :: String, "Title" :: String })

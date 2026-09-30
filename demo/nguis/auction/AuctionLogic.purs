@@ -7,16 +7,16 @@ import Data.Number.Format (fixed, toStringWith)
 openingBid :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } }
 openingBid = { "Your bid ($)": biddingRange }
 
-noBids :: { top :: Number }
-noBids = { top: 0.0 }
+noBids :: Number
+noBids = 0.0
 
-bidLine :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
+bidLine :: forall r1. { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> String
 bidLine r = "Your current bid: $" <> dollars r."Your bid ($)".current
 
-topLine :: { top :: Number } -> String
+topLine :: forall r1. { top :: Number | r1 } -> String
 topLine r = "Highest bid so far: $" <> dollars r.top
 
-raiseTop :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number } -> { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number }
+raiseTop :: forall r1. { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number | r1 } -> { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number | r1 }
 raiseTop r = r { top = max r."Your bid ($)".current r.top }
 
 dollars :: Number -> String

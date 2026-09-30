@@ -489,7 +489,9 @@ echoElem = do
 actedRig :: (PUI Effect Item { v :: Int } -> PUI Effect Item { v :: Int }) -> Effect Rig
 actedRig wrap = do
   el <- echoElem
-  m' <- unwrap (acted @"k" (wrap el.p) :: PUI Effect (Array Item) (Array { k :: Int, v :: Int }))
+  -- holey-weak-types: an item is typed at its whole row, key included, and the
+  -- carrier sets the key on each emission; this element emits `{ v }` only
+  m' <- unwrap (acted @"k" (unsafeCoerce (wrap el.p) :: PUI Effect Item { k :: Int, v :: Int }) :: PUI Effect (Array Item) (Array { k :: Int, v :: Int }))
   outs <- Ref.new []
   m'.fromUser \o -> Ref.modify_ (_ <> [ show o ]) outs
   pure { feed: \shape n -> m'.toUser (arrayOf shape n), fires: [ el.fire 1, el.fire 2 ], outs }
@@ -553,8 +555,11 @@ gatherAlphabet = [ Feed, FeedOnly1, FeedNone, Fire1, Fire2 ]
 gatherFeeds :: Array Event
 gatherFeeds = [ Feed, FeedAgain, FeedOnly1, FeedNone ]
 
-unitRR :: PUI Effect {} {}
-unitRR = identity
+-- holey-weak-types: an equal-input `×→×` merge feeds both operands the same
+-- row, so its unit is the `{}`-output wire at *every* input (`blank`), no
+-- longer `identity` at `{}` — the unit law restated, not merely re-typed.
+unitRR :: forall r. PUI Effect { | r } {}
+unitRR = lcmap (const {}) identity
 
 unitVV :: PUI Effect (Variant ()) (Variant ())
 unitVV = identity
@@ -562,7 +567,7 @@ unitVV = identity
 unitVR :: PUI Effect (Variant ()) {}
 unitVR = lcmap case_ identity
 
-unitRV :: PUI Effect {} (Variant ())
+unitRV :: forall r. PUI Effect { | r } (Variant ())
 unitRV = silence
 
 laws :: Array Law

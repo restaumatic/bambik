@@ -23,7 +23,7 @@ ticTacToeMDC2 =
       button @"New game" { icon: "replay" } # with openingPosition # updated (match { "New game": const })
     ) # mvu openingPosition
 
-cellFace :: { mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String
+cellFace :: forall r1. { mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] | r1 } -> String
 cellFace { line } = cellStyle <> match { winning: \_ -> "background: #a5d6a7;", plain: \_ -> "background: #eceff1;" } line
 
 cellStyle :: String

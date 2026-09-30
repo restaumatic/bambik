@@ -27,5 +27,5 @@ circleDrawerShoelace =
         button @"Redo" {} ) # updated (match { "Undo": const <<< undo, "Redo": const <<< redo })
     ) # mvu emptyCanvas
 
-circleFill :: { key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
+circleFill :: forall r1. { key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] | r1 } -> String
 circleFill { status } = match { selected: \_ -> "#ddd", unselected: \_ -> "transparent" } status

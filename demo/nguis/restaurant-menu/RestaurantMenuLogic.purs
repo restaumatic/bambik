@@ -2,19 +2,19 @@ module RestaurantMenuLogic (courseDishes, courseName, dishDescription, dishName,
 
 import Prelude ((<>), map)
 
-courseName :: { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } } -> String
+courseName :: forall r1. { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } | r1 } -> String
 courseName = _.name
 
-courseDishes :: { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } } -> Array { name :: String, price :: String, description :: String, tags :: Array String }
+courseDishes :: forall r1. { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } | r1 } -> Array { name :: String, price :: String, description :: String, tags :: Array String }
 courseDishes = _.dishes
 
-dishName :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+dishName :: forall r1. { name :: String, price :: String, description :: String, tags :: Array String | r1 } -> String
 dishName = _.name
 
-dishDescription :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+dishDescription :: forall r1. { name :: String, price :: String, description :: String, tags :: Array String | r1 } -> String
 dishDescription = _.description
 
-menuCourses :: {} -> Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
+menuCourses :: forall r1. { | r1 } -> Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
 menuCourses _ =
   [ { name: "Antipasti"
     , dishes:
@@ -39,8 +39,8 @@ menuCourses _ =
     }
   ]
 
-priceLine :: { name :: String, price :: String, description :: String, tags :: Array String } -> String
+priceLine :: forall r1. { name :: String, price :: String, description :: String, tags :: Array String | r1 } -> String
 priceLine { price } = "€" <> price
 
-dishTags :: { name :: String, price :: String, description :: String, tags :: Array String } -> Array { tag :: String }
+dishTags :: forall r1. { name :: String, price :: String, description :: String, tags :: Array String | r1 } -> Array { tag :: String }
 dishTags { tags } = map { tag: _ } tags

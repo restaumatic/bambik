@@ -346,3 +346,13 @@ export function afterTask(action) {
     setTimeout(action, 0);
   };
 }
+
+const holeReached = (what) => {
+  globalThis.__bambikHoleReached = what;
+  throw new Error("bambik: a hole was reached (" + what + ") — data flowed into logic that is not written yet");
+};
+export const hole = new Proxy(function () {}, {
+  get: (_, p) => p === "__bambikHole" ? true : holeReached("read ." + String(p)),
+  apply: () => holeReached("called"),
+  construct: () => holeReached("constructed"),
+});

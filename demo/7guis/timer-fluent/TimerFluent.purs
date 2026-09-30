@@ -1,14 +1,13 @@
 module TimerFluent (timerFluent) where
 
-import Prelude ((#), ($), Unit, const)
+import Prelude (Unit, (#), ($))
 
-import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, mvu, updated, with)
+import PUI (applied, every, mvu)
 import PUI.Web.Fluent (body, body1, button, progressBar, slider)
 import PUI.Web (shown, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TimerLogic (elapsedFraction, nothingElapsed, progressLine, tenSecondFreshTimer, tick, tickPeriod)
+import TimerLogic (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerFluent :: Effect Unit
 timerFluent =
@@ -18,5 +17,5 @@ timerFluent =
       (body1 $ text progressLine) # shown
       slider @"Duration" {}
       every tickPeriod tick
-      button @"Reset" {} # with nothingElapsed # updated (match { "Reset": const })
+      button @"Reset" {} # applied restarted
     ) # mvu tenSecondFreshTimer

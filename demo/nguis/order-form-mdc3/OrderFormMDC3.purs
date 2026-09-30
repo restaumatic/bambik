@@ -4,7 +4,6 @@ import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import OrderFormLogic (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
@@ -48,11 +47,13 @@ orderFormMDC3 =
     ( RecordToVariant.do
       button @"Submit order" { icon: "save" }
       button @"Receipt" { icon: "file" } ) # armed
-    VariantToVariant.do
-      indeterminateLinearProgress @"Submitting order" # action submitOrder # atCase @"Submit order"
-      indeterminateLinearProgress @"Printing receipt" # action printReceipt # atCase @"Receipt"
     VariantToRecord.do
-      snackbar @"orderSubmitted" submittedLine
-      snackbar @"submissionFailed" rejectionLine
-      snackbar @"receiptPrinted" receiptLine
+      Semigroupoid.do
+        indeterminateLinearProgress @"Submitting order" # action submitOrder # atCase @"Submit order"
+        VariantToRecord.do
+          snackbar @"orderSubmitted" submittedLine
+          snackbar @"submissionFailed" rejectionLine
+      Semigroupoid.do
+        indeterminateLinearProgress @"Printing receipt" # action printReceipt # atCase @"Receipt"
+        snackbar @"receiptPrinted" receiptLine
   ) # with {}

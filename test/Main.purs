@@ -26,6 +26,7 @@ import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, toCase, variant
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
+import Data.Profunctor.Row (widenRecordInput)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
 import Data.Variant (Variant, case_, inj, match)
@@ -205,7 +206,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (recordToRecord (identity :: PUI Effect {} {}) (probe gProp :: PUI Effect {} { a :: Int }))
+    m <- unwrap (recordToRecord unitWire (probe gProp :: PUI Effect {} { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 1 }
     Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord identity g = g" [ { a: 1 } ]
@@ -214,7 +215,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (recordToRecord (probe gProp :: PUI Effect {} { a :: Int }) (identity :: PUI Effect {} {}))
+    m <- unwrap (recordToRecord (probe gProp :: PUI Effect {} { a :: Int }) unitWire)
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 2 }
     Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord g identity = g" [ { a: 2 } ]
@@ -279,7 +280,7 @@ main = do
     shown <- Ref.new ([] :: Array { top :: Int })
     outs <- Ref.new ([] :: Array {})
     let display = PUI (pure { toUser: \s -> Ref.modify_ (_ <> [ s ]) shown, fromUser: \_ -> pure unit }) :: PUI Effect { top :: Int } {}
-    m <- unwrap (feedback { top: 0 } (recordToRecord display identity) :: PUI Effect {} {})
+    m <- unwrap (feedback @"top" 0 (recordToRecord display identity) :: PUI Effect {} {})
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     Ref.read shown >>= assertEqual "feedback + display beside the wire: nothing renders before the first input" []
     m.toUser {}
@@ -447,7 +448,7 @@ main = do
     ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { o :: Int })
-    m <- unwrap (feedback { acc: 0 } (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
+    m <- unwrap (feedback @"acc" 0 (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     Ref.read ins >>= assertEqual "feedback: nothing fed before the first input" []
     m.toUser { a: 1 }
@@ -468,7 +469,7 @@ main = do
     ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ done :: String ])
-    m <- unwrap (folding @"fold" { acc: 5 } (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } [ done :: String, fold :: { acc :: Int } ]))
+    m <- unwrap (folding @"fold" @"acc" 5 (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } [ done :: String, fold :: { acc :: Int } ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { a: 1 }
     Ref.read ins >>= assertEqual "folding: first input joined with the seed" [ { a: 1, acc: 5 } ]
@@ -488,7 +489,7 @@ main = do
     ins <- Ref.new ([] :: Array [ start :: Int, resume :: { acc :: Int } ])
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { o :: String })
-    m <- unwrap (unfolding @"resume" { acc: 0 } (probeIO ins gProp :: PUI Effect [ start :: Int, resume :: { acc :: Int } ] { o :: String, acc :: Int }))
+    m <- unwrap (unfolding @"resume" @"acc" 0 (probeIO ins gProp :: PUI Effect [ start :: Int, resume :: { acc :: Int } ] { o :: String, acc :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     Ref.read ins >>= assertEqual "unfolding: seed enters as a first resume" [ .resume { acc: 0 } ]
     m.toUser (.start 1)
@@ -893,11 +894,12 @@ main = do
   -- replaying: the ×→+ leaf's replay-last-value protocol as Strong's
   -- retention — an occurrence before any feed is withheld, a feed never
   -- emits, and each occurrence leaves as case l carrying f of the row last
-  -- fed (the source's input subsumes: it reads a sub-row of the row replayed).
+  -- fed (holey-weak-types: the source is fed the row replayed, whole — no
+  -- longer a sub-row of it; the replay function's footprint stays free).
   do
     outs <- Ref.new ([] :: Array (Variant (picked :: Int)))
     src <- Ref.new Nothing
-    m <- unwrap (replaying @"picked" _.k (probe src :: PUI Effect { k :: Int } (Variant (occurred :: {}))) :: PUI Effect { k :: Int, extra :: Boolean } (Variant (picked :: Int)))
+    m <- unwrap (replaying @"picked" _.k (probe src :: PUI Effect { k :: Int, extra :: Boolean } (Variant (occurred :: {}))) :: PUI Effect { k :: Int, extra :: Boolean } (Variant (picked :: Int)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire src (inj (Proxy @"occurred") {})
     Ref.read outs >>= assertEqual "replaying: an occurrence before any feed is withheld" []
@@ -1038,8 +1040,8 @@ main = do
         o <- Ref.read outs
         pure { i, o }
     bare <- run \g -> g
-    onLeft <- run \g -> recordToRecord (identity :: PUI Effect {} {}) g
-    onRight <- run \g -> recordToRecord g (identity :: PUI Effect {} {})
+    onLeft <- run \g -> recordToRecord unitWire g
+    onRight <- run \g -> recordToRecord g unitWire
     assertEqual "×→× left unit: identity beside g observes g's streams" bare onLeft
     assertEqual "×→× right unit: g beside identity observes g's streams" bare onRight
     assertEqual "×→× unit laws: the streams are the full script" { i: [ { a: 1 }, { a: 2 } ], o: [ { a: 3 }, { a: 4 } ] } bare
@@ -1138,7 +1140,7 @@ main = do
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==
 
   -- acted on (->): pure carriers have no identity — acted _ = map.
-  assertEqual "acted/(->) = map, key re-attached" [ { k: "a", v: 2 }, { k: "b", v: 6 } ] (acted @"k" (\(r :: { k :: String, v :: Int }) -> { v: r.v * 2 }) [ { k: "a", v: 1 }, { k: "b", v: 3 } ])
+  assertEqual "acted/(->) = map, key re-set" [ { k: "a", v: 2 }, { k: "b", v: 6 } ] (acted @"k" (\(r :: { k :: String, v :: Int }) -> r { v = r.v * 2 }) [ { k: "a", v: 1 }, { k: "b", v: 3 } ])
 
   -- optioned on (->): the Maybe = 1 + a container action, via the Array embedding.
   assertEqual "optioned/(->): Just" (Just 6) (optioned (_ * 2) (Just 3))
@@ -1150,7 +1152,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { txt :: String }))
     outs <- Ref.new ([] :: Array (Array { k :: String, txt :: String }))
-    m <- unwrap (acted @"k" (elemProbe builds roster))
+    m <- unwrap (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     Ref.read outs >>= assertEqual "acted: registration announces nothing" []
     m.toUser []
@@ -1162,7 +1164,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { txt :: String }))
     outs <- Ref.new ([] :: Array (Array { k :: String, txt :: String }))
-    m <- unwrap (acted @"k" (elemProbe builds roster))
+    m <- unwrap (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 } ]
     handles <- Ref.read roster
@@ -1177,7 +1179,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { txt :: String }))
     outs <- Ref.new ([] :: Array (Array { k :: String, txt :: String }))
-    m <- unwrap (acted @"k" (elemProbe builds roster))
+    m <- unwrap (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     fireElem roster 0 { txt: "x" }
@@ -1194,7 +1196,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { txt :: String }))
     outs <- Ref.new ([] :: Array (Array { k :: String, txt :: String }))
-    m <- unwrap (acted @"k" (elemProbe builds roster))
+    m <- unwrap (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     Ref.read builds >>= assertEqual "acted/keys: two entrants built" 2
@@ -1274,7 +1276,8 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { id :: String, title :: String } { title :: String }))
     outs <- Ref.new ([] :: Array (Array { id :: String, title :: String }))
-    m <- unwrap (edited @"id" (elemProbe builds roster))
+    -- holey-weak-types: the element is typed at its whole row, key included; the carrier re-sets the key
+    m <- unwrap (edited @"id" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { id :: String, title :: String } { id :: String, title :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { id: "a", title: "x" }, { id: "b", title: "y" } ]
     Ref.read outs >>= assertEqual "edited: input-primed — every feed re-emits the array" [ [ { id: "a", title: "x" }, { id: "b", title: "y" } ] ]
@@ -1490,7 +1493,9 @@ main = do
         hs <- Ref.read hIns
         os <- Ref.read outs
         pure { hMid, hs, os }
-    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord h k
+    -- holey-weak-types: equal-input merges feed h and k the whole middle row, so the
+    -- synced side states the widening the merge used to perform
+    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord (widenRecordInput h) (widenRecordInput k)
     free <- run \f g h k -> recordToRecord (f >>> h) (g >>> k)
     assertEqual "interchange: the middle gate withholds h's feed until g spoke" [] synced.hMid
     assertEqual "interchange: the free side feeds h immediately" [ { a: 10 } ] free.hMid
@@ -1610,13 +1615,13 @@ main = do
     (recordToRecord (\(r :: { s :: Int }) -> { a: r.s * 2 }) (\(r :: { s :: Int }) -> { b: show r.s }) { s: 5 })
   assertEqual "recordToRecord/(->): exactness — an echoing operand cannot shadow its sibling"
     { a: 1, b: "x!" }
-    (recordToRecord (\(r :: { a :: Int }) -> r) (\(r :: { a :: Int, b :: String }) -> { b: r.b <> "!" }) { a: 1, b: "x" })
+    (recordToRecord (\(r :: { a :: Int, b :: String }) -> { a: r.a }) (\(r :: { a :: Int, b :: String }) -> { b: r.b <> "!" }) { a: 1, b: "x" })
   assertEqual "recordToRecord/(->): left unit"
     { a: 7 }
-    (recordToRecord (identity :: {} -> {}) (\(r :: { s :: Int }) -> { a: r.s + 2 }) { s: 5 })
+    (recordToRecord (const {} :: { s :: Int } -> {}) (\(r :: { s :: Int }) -> { a: r.s + 2 }) { s: 5 })
   assertEqual "recordToRecord/(->): right unit"
     { a: 7 }
-    (recordToRecord (\(r :: { s :: Int }) -> { a: r.s + 2 }) (identity :: {} -> {}) { s: 5 })
+    (recordToRecord (\(r :: { s :: Int }) -> { a: r.s + 2 }) (const {} :: { s :: Int } -> {}) { s: 5 })
   do
     let
       fA = \(r :: { s :: Int }) -> { a: r.s }
@@ -1679,7 +1684,9 @@ main = do
         fire fProp { a: 7 }
         fire hProp { c: 99 }
         Ref.read outs
-    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord h k
+    -- holey-weak-types: equal-input merges feed h and k the whole middle row, so the
+    -- synced side states the widening the merge used to perform
+    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord (widenRecordInput h) (widenRecordInput k)
     free <- run \f g h k -> recordToRecord (f >>> h) (g >>> k)
     assertEqual "boundary interchange: the streams are equal on the nose" free synced
     assertEqual "boundary interchange: the common stream — one emission per feed, every field fresh"
@@ -2217,3 +2224,8 @@ disjointOperands = recordToRecord (rmap (\r -> { a: r.s }) idProbe) (rmap (\r ->
   where
   idProbe :: PUI Effect { s :: Int } { s :: Int }
   idProbe = identity
+
+-- holey-weak-types: an equal-input `×→×` merge feeds both operands one row,
+-- so its unit is the `{}`-output wire at every input, not `identity` at `{}`.
+unitWire :: forall r. PUI Effect { | r } {}
+unitWire = lcmap (const {}) identity

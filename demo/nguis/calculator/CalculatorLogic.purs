@@ -26,16 +26,13 @@ operatorKeys = [ "÷", "×", "−", "+", "=" ]
 functionKeys :: Array String
 functionKeys = [ "C", "±" ]
 
-readout :: { condition :: [ sound :: {}, faulty :: {} ], entry :: String } -> [ sound :: { entry :: String }, faulty :: {} ]
+readout :: forall r1. { condition :: [ sound :: {}, faulty :: {} ], entry :: String | r1 } -> [ sound :: { entry :: String }, faulty :: {} ]
 readout { condition, entry } = match { sound: \_ -> .sound { entry }, faulty: \_ -> .faulty {} } condition
 
-pressKey
-  :: String
-  -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] }
-  -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] }
+pressKey :: forall r1. String -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r1 } -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r1 }
 pressKey key tally@{ entry, operation, input }
-  | match { faulty: \_ -> key /= "C", sound: \_ -> false } tally.condition = pressKey key blankTally
-  | key == "C" = blankTally
+  | match { faulty: \_ -> key /= "C", sound: \_ -> false } tally.condition = pressKey key (cleared tally)
+  | key == "C" = cleared tally
   | key == "±" = tally { entry = negated entry }
   | key == "." && typing input =
     if contains (Pattern ".") entry then tally else tally { entry = entry <> "." }
@@ -47,14 +44,18 @@ pressKey key tally@{ entry, operation, input }
       , entry = format total
       , input = .settled {}
       }
-    Nothing -> blankTally { condition = .faulty {} }
+    Nothing -> (cleared tally) { condition = .faulty {} }
   | typing input = tally { entry = if entry == "0" then key else entry <> key }
   | otherwise = tally { entry = key, input = .entering {} }
+
+-- the tally cleared, whatever else the row carries
+cleared :: forall r. { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r } -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r }
+cleared t = t { total = blankTally.total, operation = blankTally.operation, entry = blankTally.entry, input = blankTally.input, condition = blankTally.condition }
 
 typing :: [ entering :: {}, settled :: {} ] -> Boolean
 typing = match { entering: \_ -> true, settled: \_ -> false }
 
-settle :: { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ] } -> Maybe Number
+settle :: forall r1. { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ] | r1 } -> Maybe Number
 settle { operation, input, total, entry } = match
   { pending: \p -> if typing input then compute p.key total (entryValue { entry }) else Just (entryValue { entry })
   , none: \_ -> Just (entryValue { entry })
@@ -68,7 +69,7 @@ compute "÷" _ 0.0 = Nothing
 compute "÷" a b = Just (a / b)
 compute _ _ b = Just b
 
-entryValue :: { entry :: String } -> Number
+entryValue :: forall r1. { entry :: String | r1 } -> Number
 entryValue { entry } = fromMaybe 0.0 (fromString entry)
 
 negated :: String -> String
@@ -79,5 +80,5 @@ negated entry = case stripPrefix (Pattern "-") entry of
 format :: Number -> String
 format n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
 
-faultLine :: {} -> String
+faultLine :: forall r1. { | r1 } -> String
 faultLine _ = "Error"

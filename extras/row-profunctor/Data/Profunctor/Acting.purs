@@ -59,17 +59,17 @@ module Data.Profunctor.Acting
   , optioned
   ) where
 
+import Data.Profunctor.Row.Structural (withStructuralOrd)
 import Prelude
 
 import Data.Array (head) as Array
 import Data.Maybe (Maybe, maybe)
 import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Row (widenRecordInput)
 import Data.Profunctor.Strong (class Strong, second)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
-import Prim.Row (class Cons, class Lacks, class Union)
-import Record (get, insert) as Record
+import Prim.Row (class Cons)
+import Record (get, set) as Record
 import Type.Proxy (Proxy(..))
 
 -- | The class primitive: lift a UI component over the `Array` container, keyed by
@@ -86,23 +86,19 @@ instance Acting (->) where
 -- | for the laws), keyed by the row's materialized identity field `@l`.
 -- | Written trailing, like the merges' operands: `row # acted @"id"`.
 -- |
--- | As in `edited`, the element's output row **excludes the key** — each
--- | gathered row's key is re-attached from its *input* row, so an element
--- | structurally cannot forge or change identity. The guarantee is derived
--- | in the pure algebra: the input's key rides around the element on the
--- | `Strong` state channel (`second`), joining each emission.
--- |
--- | The element's *input* row **subsumes**: an element editor reading only
--- | the fields it edits (its key included, so identity can ride around it)
--- | lifts over an array of wider rows with no widening at the site.
-acted
-  :: forall @l p k ra a narrow extra rb b
-   . Acting p => Strong p => IsSymbol l
-  => Cons l k ra a => Cons l k rb b => Lacks l rb => Ord k
-  => Union narrow extra a
-  => p { | narrow } { | rb } -> p (Array { | a }) (Array { | b })
-acted w = actedBy (Record.get prox)
-  (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.insert prox k out) (second (widenRecordInput w)))
+-- | As in `edited`, the element is typed at its **whole row, key
+-- | included**, on both sides — an item that reads its key beside a
+-- | whole-row editor that echoes it needs exactly that — and the carrier
+-- | **re-sets** the key on every emission from the element's *input* row,
+-- | so an element cannot forge or change identity: whatever it emits in
+-- | the key field is replaced. The guarantee is derived in the pure
+-- | algebra: the input's key rides around the element on the `Strong`
+-- | state channel (`second`) and is written over each emission
+-- | (`Record.set`). What an element reads of its row is its own functions'
+-- | open-row footprint (guardrails L18).
+acted :: forall @l p k ra a rb b . Acting p => Strong p => IsSymbol l => Cons l k ra a => Cons l k rb b => p { | a } { | b } -> p (Array { | a }) (Array { | b })
+acted w = withStructuralOrd @k (actedBy (Record.get prox)
+  (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.set prox k out) (second w)))
   where
   prox = Proxy @l
 
@@ -116,6 +112,6 @@ optioned :: forall p a b. Acting p => Strong p => p a b -> p (Maybe a) (Maybe b)
 optioned w = dimap (maybe [] \x -> [ { key: "the", value: x } ]) (Array.head >>> map _.value)
   (acted @"key" element)
   where
-  -- the annotation pins `acted`'s subsuming element row to the whole row
-  element :: p { key :: String, value :: a } { value :: b }
-  element = dimap _.value { value: _ } w
+  -- the element sees and emits its whole row; the carrier re-sets the key
+  element :: p { key :: String, value :: a } { key :: String, value :: b }
+  element = dimap _.value { key: "the", value: _ } w

@@ -19,9 +19,9 @@
 -- |     (`announce a >>> w` — discharge the initial-state obligation) and
 -- |     `mvu` (`with seed (looped w)` — the app shape); over bare
 -- |     `Profunctor`: the rename `asField`, the counit `muted` and the
--- |     subsuming normalization `settled`; over the pointed co-strength:
--- |     `feedback` (the ×-trace at row granularity, seeded with the state's
--- |     starting value only).
+-- |     normalization `settled`; over the pointed co-strength: `feedback`
+-- |     (the ×-trace at row granularity: one state field, labelled on the
+-- |     view line, seeded with its starting value only).
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
@@ -40,8 +40,8 @@
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
 -- | a component `w :: p { | i } { | o }` is an **editor** of knowledge, or
 -- | at `o = {}` a **display**; the merge is `m = recordToRecord w1 w2`,
--- | inputs shared (`SharedRecordInputs`), outputs owned
--- | (`OwnedRecordOutputs`).
+-- | inputs shared (`SharedRecordInputs`: both operands are fed the merge's
+-- | one row), outputs owned (`OwnedRecordOutputs`).
 -- |
 -- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`.
 -- |   2. **Answer** — a row, once: every feed is answered within its step
@@ -50,11 +50,14 @@
 -- |      the echo wire, `focusField @l` the echo with its background); a stage
 -- |      may refine the liveness half in time (`confirmed`, the gather
 -- |      gate). A display's answer is `{}`, which no gate awaits.
--- |   3. **Monoid** — unit `identity :: p {} {}`, exact:
--- |      `recordToRecord identity g = g = recordToRecord g identity`;
--- |      symmetric and associative up to `≈`. The merge has no unit of its
--- |      own, and the merge pinned at its unit is the operand itself, so
--- |      this shape names no introducer.
+-- |   3. **Monoid** — unit the `{}` wire at the merge's row,
+-- |      `blank = lcmap (const {}) identity`, exact:
+-- |      `recordToRecord blank g = g = recordToRecord g blank`;
+-- |      symmetric and associative up to `≈`. The operands share one input
+-- |      row, so the unit is the terminal arrow out of it (`identity` at
+-- |      `{}` only when that row is `{}`). The merge has no unit of its own,
+-- |      and the merge pinned at its unit is the operand itself, so this
+-- |      shape names no introducer.
 -- |   4. **Projection** — `π_k` is the whole row: every feed of `m`
 -- |      reaches each operand whole, and nothing else does — a sibling's
 -- |      emission never reaches it; cross-feed is `looped`'s, and only
@@ -99,15 +102,16 @@ import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.PointedCostrong (class PointedCostrong, unfirstFrom)
-import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, widenRecordInput)
+import Data.Profunctor.Row (class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow)
 import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Profunctor.Strong (class Strong, first)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Record (get, insert, union) as Record
+import Record.Unsafe (unsafeSet)
 import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -122,47 +126,50 @@ class Profunctor p <= RecordToRecord p where
     -> p { | i } { | o }
 
 instance RecordToRecord (->) where
-  recordToRecord p1 p2 i = Record.union (exactRow (widenRecordInput p1 i)) (exactRow (widenRecordInput p2 i))
+  recordToRecord p1 p2 i = Record.union (exactRow (p1 (unsafeCoerce i))) (exactRow (p2 (unsafeCoerce i)))
 
 bind
-  :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l
+  :: forall p o1 o2 i o o1l o2l
    . RecordToRecord p
-  => SharedRecordInputs i1 i2 i i12 i1x i2x
   => OwnedRecordOutputs o1 o2 o o1l o2l
-  => p { | i1 } { | o1 }
-  -> (p { | i1 } { | o1 } -> p { | i2 } { | o2 })
+  => p { | i } { | o1 }
+  -> (p { | i } { | o1 } -> p { | i } { | o2 })
   -> p { | i } { | o }
 bind first cont = recordToRecord first (cont first)
 
 discard
-  :: forall p i1 o1 i2 o2 i12 i1x i2x i o o1l o2l
+  :: forall p o1 o2 i o o1l o2l
    . RecordToRecord p
-  => SharedRecordInputs i1 i2 i i12 i1x i2x
   => OwnedRecordOutputs o1 o2 o o1l o2l
-  => p { | i1 } { | o1 }
-  -> (Unit -> p { | i2 } { | o2 })
+  => p { | i } { | o1 }
+  -> (Unit -> p { | i } { | o2 })
   -> p { | i } { | o }
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Focus a sub-record of the row, carrying the rest of the row unchanged.
+-- | The focus is the component's own (closed) row and the background is
+-- | inferred from the fed row by the forward `Union`s alone, so it cannot
+-- | overlap the focus — and the fed row may be open, as it is while the
+-- | logic that closes it is still a hole (guardrails L18).
 subStrong
   :: forall p f f' f'l b s s'
    . Strong p
-  => ExclusiveRows f b s
-  => ExclusiveRows f' b s'
+  -- forward only: the focus is the view's (closed), the background is
+  -- inferred, so it cannot overlap the focus — and `s` may be open (L18)
+  => Union f b s
+  => Union f' b s'
   => RowToList f' f'l
   => FieldNames f'l f' f'
   => p { | f } { | f' }
   -> p { | s } { | s' }
 subStrong g =
   dimap (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
-        -- `Record.union` is left-biased and does not nub. `ExclusiveRows f' b s'`
-        -- keeps the typed halves disjoint, and `exactRow` trims the emission to
-        -- its declared row first: `g` may answer a feed *later* than the feed
-        -- that stocked the retained background (a debounced inner stage), so a
-        -- fat echo's runtime copies of background fields can be genuinely stale
-        -- — the same hazard the gated merges trim (runtime-exactness).
-        (\(Tuple f' b) -> Record.union (exactRow f') b)
+        -- `exactRow` trims the emission to its declared row first: `g` may
+        -- answer a feed *later* than the feed that stocked the retained
+        -- background (a debounced inner stage), so a fat echo's runtime
+        -- copies of background fields can be genuinely stale — the same
+        -- hazard the gated merges trim (runtime-exactness).
+        (\(Tuple f' b) -> unsafeUnion (exactRow f') b :: { | s' })
         (first g)
 
 -- | The field lens: lift a component editing field `l` into a whole-row citizen that retains the rest of the row.
@@ -195,8 +202,10 @@ blank :: forall p a. Category p => Profunctor p => p a {}
 blank = lcmap (const {}) identity
 
 -- | Discharge a component's initial-state obligation by announcing its t=0 value.
-with :: forall p a o. Seeding p => { | a } -> p { | a } o -> p {} o
-with a w = announce a >>> w
+-- | Its own input is ignored, so it sits at any row; a seed that is a hole is
+-- | never announced (`announce`, guardrails L18).
+with :: forall p a o r. Seeding p => { | a } -> p { | a } o -> p { | r } o
+with a w = lcmap (const {}) (announce a >>> w)
 
 -- | The model–view–update shape: a self-looped pipeline over the model, seeded with its initial state.
 mvu
@@ -226,35 +235,38 @@ asField = dimap (\r -> Record.insert (Proxy @c) (Record.get (Proxy @l) r) {}) (\
 muted :: forall p i o. Profunctor p => p i o -> p i {}
 muted = rmap (const {})
 
--- | Normalize a stage's emissions with an idempotent function over a stated sub-row footprint.
+-- | Normalize a stage's emissions with an idempotent function over the row.
+-- | The normalizer's footprint is its own signature, an open row
+-- | (`forall r. { "°C" :: String, "°F" :: String | r } -> { … | r }`): by
+-- | parametricity it touches exactly the fields it names.
 settled
-  :: forall p small rest big i
+  :: forall p big i
    . Profunctor p
-  => Union small rest big
-  => ({ | small } -> { | small })
+  => ({ | big } -> { | big })
   -> p i { | big }
   -> p i { | big }
-settled f = rmap (\big -> unsafeUnion (f (unsafeCoerce big)) big :: { | big })
+settled f = rmap f
 
--- | Loop the state sub-record of the output back into the input, starting it at the given value.
+-- | Loop state field `l` of the output back into the input, starting it at the given value.
+-- | The state is one field, labelled on the view line (`feedback @"top"
+-- | noBids`), so the split is a `Cons` at a label the view states: checked
+-- | whatever the logic has written, and never stuck on an open row. The
+-- | field is written over the fresh input, so a stale runtime copy of it
+-- | never shadows the looped state.
 feedback
-  :: forall p i il o fb iw ow
-   . PointedCostrong p
-  => ExclusiveRows i fb iw
-  => ExclusiveRows o fb ow
-  => RowToList i il
-  => FieldNames il i i
-  => { | fb }
+  :: forall @l p i o a iw ow
+   . IsSymbol l
+  => PointedCostrong p
+  => Cons l a i iw
+  => Cons l a o ow
+  => a
   -> p { | iw } { | ow }
   -> p { | i } { | o }
 feedback seed g =
   unfirstFrom seed
     (dimap
-      -- the join is left-biased; `exactRow` trims the fresh input to its
-      -- declared row so a fat upstream emission cannot shadow the looped
-      -- state fields with stale runtime copies (runtime-exactness)
-      (\(Tuple i fb) -> Record.union (exactRow i) fb)
-      -- coerce-split, as in `subStrong`: safe because `ExclusiveRows o fb ow`
-      -- guarantees the two typed views are disjoint
-      (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
+      -- the state field is written over the fresh input, so a fat upstream
+      -- emission's stale copy of it never shadows the looped state
+      (\(Tuple i a) -> unsafeSet (reflectSymbol (Proxy @l)) a i :: { | iw })
+      (\ow -> Tuple (unsafeCoerce ow) (Record.get (Proxy @l) ow))
       g)

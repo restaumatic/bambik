@@ -8,7 +8,7 @@ import Data.String (Pattern(..), stripSuffix)
 openedTill :: { balance :: Number }
 openedTill = { balance: 200.0 }
 
-balanceLine :: { balance :: Number } -> String
+balanceLine :: forall r1. { balance :: Number | r1 } -> String
 balanceLine { balance } = "Till balance: €" <> euros balance
 
 standardRefund :: { amount :: Number }
@@ -20,20 +20,20 @@ courierFee = { amount: 10.0 }
 customerDeposit :: { amount :: Number }
 customerDeposit = { amount: 50.0 }
 
-refundLine :: { amount :: Number } -> String
+refundLine :: forall r1. { amount :: Number | r1 } -> String
 refundLine { amount } = "Hand €" <> euros amount <> " back to the customer."
 
-payoutLine :: { amount :: Number } -> String
+payoutLine :: forall r1. { amount :: Number | r1 } -> String
 payoutLine { amount } = "Hand €" <> euros amount <> " to the courier."
 
-applyRefund :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-applyRefund { amount } { balance } = { balance: balance - amount }
+applyRefund :: forall r1 r2. { amount :: Number | r1 } -> { balance :: Number | r2 } -> { balance :: Number | r2 }
+applyRefund { amount } till = till { balance = till.balance - amount }
 
-applyPayout :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-applyPayout { amount } { balance } = { balance: balance - amount }
+applyPayout :: forall r1 r2. { amount :: Number | r1 } -> { balance :: Number | r2 } -> { balance :: Number | r2 }
+applyPayout { amount } till = till { balance = till.balance - amount }
 
-applyDeposit :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-applyDeposit { amount } { balance } = { balance: balance + amount }
+applyDeposit :: forall r1 r2. { amount :: Number | r1 } -> { balance :: Number | r2 } -> { balance :: Number | r2 }
+applyDeposit { amount } till = till { balance = till.balance + amount }
 
 euros :: Number -> String
 euros n = let s = show n in fromMaybe s (stripSuffix (Pattern ".0") s)

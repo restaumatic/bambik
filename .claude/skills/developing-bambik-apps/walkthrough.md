@@ -162,12 +162,12 @@ bookedLine itinerary = "You have booked: " <> summary itinerary
 rejectedLine :: String -> String
 rejectedLine problem = "Cannot book: " <> problem
 
-returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+returnBetween :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
-parse :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } = case parseDate startInput of
   Nothing -> Left ("start date " <> show startInput <> " is not a valid DD.MM.YYYY date")
   Just start ->
@@ -178,21 +178,21 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
         Nothing -> Left "the return date is before the start date"
         Just itinerary -> Right itinerary
 
-bookingState :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> [ problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+bookingState :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> [ problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 bookingState = parse >>> either (\problem -> .problem { problem })
   (match
     { oneWayOn: \out -> ."one-way" { out }
     , returnBetween: ."return"
     })
 
-problemLine :: { problem :: String } -> String
+problemLine :: forall r1. { problem :: String | r1 } -> String
 problemLine { problem } = "⚠ " <> problem
 
-oneWayLine :: { out :: { y :: Int, m :: Int, d :: Int } } -> String
+oneWayLine :: forall r1. { out :: { y :: Int, m :: Int, d :: Int } | r1 } -> String
 oneWayLine { out } = summary (.oneWayOn out)
 
-returnLine :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } -> String
-returnLine r = summary (.returnBetween r)
+returnLine :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> String
+returnLine r = summary (.returnBetween { out: r.out, back: r.back })
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
 summary = match
@@ -200,7 +200,7 @@ summary = match
   , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
   }
 
-submit :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
+submit :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
 submit trip = case parse trip of
   Left problem -> pure (.rejected problem)
   Right itinerary -> expand <$> bookFlight itinerary
@@ -219,15 +219,15 @@ parseDate s = case split (Pattern ".") s of
       else Nothing
   _ -> Nothing
 
-formatDate :: { y :: Int, m :: Int, d :: Int } -> String
+formatDate :: forall r1. { y :: Int, m :: Int, d :: Int | r1 } -> String
 formatDate { y, m, d } = pad d <> "." <> pad m <> "." <> show y
   where
   pad n = (if n < 10 then "0" else "") <> show n
 
-dateKey :: { y :: Int, m :: Int, d :: Int } -> Int
+dateKey :: forall r1. { y :: Int, m :: Int, d :: Int | r1 } -> Int
 dateKey { y, m, d } = y * 10000 + m * 100 + d
 
-tripType :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ] } -> [ "one-way" :: {}, "return" :: {} ]
+tripType :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ] | r1 } -> [ "one-way" :: {}, "return" :: {} ]
 tripType = _."Flight type"
 ```
 
@@ -258,10 +258,16 @@ helper. It compiles and tests without a browser.
 - `bookedLine`/`rejectedLine` — the copy functions the two snackbars
   take: each outcome case to its sentence.
 
-**Two things worth noticing.** The rows are spelled out in full, eight
+**Three things worth noticing.** The rows are spelled out in full, eight
 times for the itinerary variant — deliberately: there are no `type`
 synonyms in application code, the shape *is* the interface, and the price
-of that is paid here in repetition (writing.md, *Types and values*). And
+of that is paid here in repetition (writing.md, *Types and values*). Every
+record a function reads is an **open row** — `forall r1. { out :: …, back
+:: … | r1 }` — the fields it names and a tail for the rest of whatever it
+is fed: the footprint is exact by parametricity, and the view type-checks
+while these functions are still holes (writing.md, *Footprints as open
+rows*); a function handing its argument on to a closed helper projects it
+(`returnLine r = summary (.returnBetween { out: r.out, back: r.back })`). And
 `parseDate` has a real `do` — `Maybe`'s monad — which is the contrast to
 keep in mind: `Semigroupoid.do` in the view is composition of stages, `do` in
 the logic is the ordinary one.
@@ -280,12 +286,12 @@ the logic is the ordinary one.
 - **flight-booker** — this file.
 - **todo-list** — a collection (`listOf`, `foreach`), a selectable list emitting
   its key as `listOf @l @"key"`, a filter selector.
-- **checkout** — a wizard: `folding` loops the step state silently, and two
+- **checkout** — a wizard: `folding @"next" @"step"` loops the step state silently, and two
   buttons each emit their own case, introduced into one loop case with
   `toCase`.
 - **order-form** — all four shapes in one screen: `looped` form with
   labelled groups (`group @"Customer" $ …`), a variant editor with
-  `bracketed`, the debounced summary, `armed` buttons, dispatch, statuses.
+  `bracketed`, the debounced summary, `armed` buttons, each action with its statuses.
 
 When a screen needs something and the word for it is missing,
 [vocabulary.md](vocabulary.md) goes from the need to the word and to the

@@ -18,10 +18,10 @@ mondayMail =
   , nextId: 4
   }
 
-unreadLine :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } } -> String
+unreadLine :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } | r1 } -> String
 unreadLine { messages } = show (length (filter (isUnread <<< _.status) messages)) <> " unread of " <> show (length messages) <> " messages"
 
-mailboxRows :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> Array { id :: Int, sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] }
+mailboxRows :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] | r1 } -> Array { id :: Int, sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] }
 mailboxRows { messages, opened } = messages # map \g ->
   { id: g.id
   , sender: g.sender
@@ -30,16 +30,16 @@ mailboxRows { messages, opened } = messages # map \g ->
   , emphasis: if isUnread g.status || isOpened g.id opened then .highlighted {} else .plain {}
   }
 
-messageLine :: { sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ] } -> String
+messageLine :: forall r1. { sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ] | r1 } -> String
 messageLine { sender, subject, status } = match { unread: const "● ", read: const "" } status <> sender <> " — " <> subject
 
-fromLine :: { sender :: String, subject :: String, body :: String } -> String
+fromLine :: forall r1. { sender :: String, subject :: String, body :: String | r1 } -> String
 fromLine { sender } = "From: " <> sender
 
-subjectLine :: { sender :: String, subject :: String, body :: String } -> String
+subjectLine :: forall r1. { sender :: String, subject :: String, body :: String | r1 } -> String
 subjectLine { subject } = subject
 
-bodyText :: { sender :: String, subject :: String, body :: String } -> String
+bodyText :: forall r1. { sender :: String, subject :: String, body :: String | r1 } -> String
 bodyText { body } = body
 
 isUnread :: [ unread :: {}, read :: {} ] -> Boolean
@@ -48,13 +48,13 @@ isUnread = match { unread: const true, read: const false }
 isOpened :: Int -> [ message :: { id :: Int }, none :: {} ] -> Boolean
 isOpened id = match { message: \m -> m.id == id, none: const false }
 
-highlighted :: { id :: Int, sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] } -> Boolean
+highlighted :: forall r1. { id :: Int, sender :: String, subject :: String, status :: [ unread :: {}, read :: {} ], emphasis :: [ highlighted :: {}, plain :: {} ] | r1 } -> Boolean
 highlighted { emphasis } = match { highlighted: const true, plain: const false } emphasis
 
-openMessage :: Int -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] }
+openMessage :: forall r1. Int -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] | r1 } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] | r1 }
 openMessage id m@{ messages } = m { messages = map (\g -> if g.id == id then g { status = .read {} } else g) messages, opened = .message { id } }
 
-messageView :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] } -> [ reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ]
+messageView :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ] | r1 } -> [ reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ]
 messageView { messages, opened } = match
   { message: \m -> case find (\g -> g.id == m.id) messages of
     Just message -> .reading { sender: message.sender, subject: message.subject, body: message.body }
@@ -62,34 +62,34 @@ messageView { messages, opened } = match
   , none: const (.browsing {})
   } opened
 
-deletionOf :: { deletion :: [ silent :: {}, confirming :: {} ] } -> [ silent :: {}, confirming :: {} ]
+deletionOf :: forall r1. { deletion :: [ silent :: {}, confirming :: {} ] | r1 } -> [ silent :: {}, confirming :: {} ]
 deletionOf { deletion } = deletion
 
-requestDelete :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] }
+requestDelete :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] | r1 } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] | r1 }
 requestDelete m@{ messages } = if length messages == 1 then m { deletion = .confirming {} } else deleteOpened m
 
-deleteOpened :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] }
+deleteOpened :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] | r1 } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] | r1 }
 deleteOpened m@{ messages, opened } = m { messages = filter (\g -> not (isOpened g.id opened)) messages, opened = .none {}, deletion = .silent {} }
 
-keepMessages :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] }
+keepMessages :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] | r1 } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, opened :: [ message :: { id :: Int }, none :: {} ], deletion :: [ silent :: {}, confirming :: {} ] | r1 }
 keepMessages m = m { deletion = .silent {} }
 
-inboxZeroLine :: {} -> String
+inboxZeroLine :: forall r1. { | r1 } -> String
 inboxZeroLine _ = "Inbox zero!"
 
-composeMessage :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, nextId :: Int } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, nextId :: Int }
+composeMessage :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, nextId :: Int | r1 } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] }, nextId :: Int | r1 }
 composeMessage m@{ messages, nextId } = m
   { messages = snoc messages { id: nextId, sender: "Me", subject: "Draft " <> show nextId, body: "A freshly composed note, still looking for its recipient.", status: .unread {} }
   , nextId = nextId + 1
   }
 
-sortBySender :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } }
+sortBySender :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } | r1 } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } | r1 }
 sortBySender m@{ messages } = m { messages = sortBy (comparing _.sender) messages }
 
-sortBySubject :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } }
+sortBySubject :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } | r1 } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } | r1 }
 sortBySubject m@{ messages } = m { messages = sortBy (comparing _.subject) messages }
 
-sortUnreadFirst :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } }
+sortUnreadFirst :: forall r1. { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } | r1 } -> { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {} ] } | r1 }
 sortUnreadFirst m@{ messages } = m { messages = sortBy (comparing (readRank <<< _.status)) messages }
 
 readRank :: [ unread :: {}, read :: {} ] -> Int

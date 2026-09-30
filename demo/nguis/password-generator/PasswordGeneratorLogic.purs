@@ -23,13 +23,13 @@ strongMixRecipe =
   , password: ""
   }
 
-strengthLine :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> String
+strengthLine :: forall r1. { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean | r1 } -> String
 strengthLine r = "Strength: " <> strengthGrade (entropyBits r)
 
 passwordLengths :: Number -> { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
 passwordLengths n = { current: n, min: 8.0, max: 64.0, step: .discrete 1.0 }
 
-samplePassword :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> Aff [ generated :: String ]
+samplePassword :: forall r1. { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean | r1 } -> Aff [ generated :: String ]
 samplePassword { "Length": length, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = liftEffect do
   let alphabet = effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols }
   chars <- sequence (replicate (round length.current) (randomCharacter alphabet))
@@ -40,13 +40,13 @@ randomCharacter alphabet = do
   i <- randomInt 0 (length alphabet - 1)
   pure (fromMaybe 'a' (index alphabet i))
 
-passwordText :: { password :: String } -> String
+passwordText :: forall r1. { password :: String | r1 } -> String
 passwordText { password } = password
 
-rememberPassword :: String -> { password :: String } -> { password :: String }
+rememberPassword :: forall r1. String -> { password :: String | r1 } -> { password :: String | r1 }
 rememberPassword password recipe = recipe { password = password }
 
-effectiveAlphabet :: { "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> Array Char
+effectiveAlphabet :: forall r1. { "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean | r1 } -> Array Char
 effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } =
   let chosen = (if uppercase then uppercaseLetters else [])
             <> (if lowercase then lowercaseLetters else [])
@@ -54,7 +54,7 @@ effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowerca
             <> (if symbols then symbolCharacters else [])
   in if null chosen then lowercaseLetters else chosen
 
-entropyBits :: { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean } -> Number
+entropyBits :: forall r1. { "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Uppercase letters" :: Boolean, "Lowercase letters" :: Boolean, "Digits" :: Boolean, "Symbols" :: Boolean | r1 } -> Number
 entropyBits { "Length": len, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = len.current * log (toNumber (length (effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols }))) / log 2.0
 
 strengthGrade :: Number -> String

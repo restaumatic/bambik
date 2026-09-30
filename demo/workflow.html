@@ -36,9 +36,8 @@
     line, an <em>Order</em> button, a confirmation snackbar — in the two-module
     layout every bambik app ships with (a view module and a logic module beside
     it), and every compiler response is verbatim output of bambik's pinned
-    PureScript compiler (0.15.16-variant.7, the variant fork — whose hole
-    reporting through constraint failures this very workflow motivated),
-    captured by replaying the session. The screenshots at the end are the
+    PureScript compiler (0.15.16-variant.7, the variant fork), captured by
+    replaying the session. The screenshots at the end are the
     session's own app, running.</p>
 
     <p>The method rests on one rule, the <em>anchor invariant</em> (see the
@@ -86,86 +85,76 @@ orderApp =
     ) # with ?start
 </code></pre>
 
-    <p>The compiler answers with four messages. The first is a refusal at
-    <code>shown</code> — and it already knows something no logic line has said
-    yet:</p>
+    <p>The compiler answers with three messages, and none of them is a
+    refusal: every hole comes back typed. The display read and the
+    confirmation copy both report <code>{ "Pizza" :: String | t0 } -&gt; String</code>
+    — the editor's field anchor taught the pipeline the model's first field
+    before any logic exists, and the <code>| t0</code> says the rest of the
+    row is still the logic's to decide. The seed reports the model as far as
+    the view has spelled it:</p>
 
-<pre class="compiler">Error 1 of 4:
+<pre class="compiler">Error 1 of 3:
 
   in module Order
-  at src/Order.purs:16:41 - 16:46 (line 16, column 41 - line 16, column 46)
-
-    No type class instance was found for
-
-      Prim.Row.Union t2
-                     t3
-                     <mark>( "Pizza" :: String</mark>
-                     <mark>| t4</mark>
-                     <mark>)</mark>
-
-    The instance head contains unknown type variables. Consider adding a type annotation.
-
-  while checking that type forall (read :: Row Type) (extra :: Row Type) (row :: Row Type). Union @Type read extra row =&gt; PUI Web (Record read) (Record ...) -&gt; PUI Web (Record row) (Record row)
-    is at least as general as type PUI Web (Record t0) (Record (() @Type)) -&gt; t1
-  while checking that expression shown
-    has type PUI Web (Record t0) (Record (() @Type)) -&gt; t1
-  in value declaration orderApp
-  ⋯</pre>
-
-<pre class="compiler">Error 2 of 4:
-
   at src/Order.purs:16:27 - 16:37 (line 16, column 27 - line 16, column 37)
 
     Hole 'orderLine' has the inferred type
 
-      <mark>Union t0 t1</mark>
-        <mark>( "Pizza" :: String</mark>
-        <mark>| t2</mark>
-        <mark>)</mark>
-       <mark>=&gt; Record t0 -&gt; String</mark>
+      { "Pizza" :: String
+      | t0
+      }
+      -&gt; String
+
+    You could substitute the hole with one of these values:
+
+      _."Pizza"                   :: String
+      Data.Monoid.mempty          :: forall @m. Monoid m =&gt; m
+      PUI.Web.hole                :: forall a. a
+      Unsafe.Coerce.unsafeCoerce  :: forall a b. a -&gt; b
   ⋯
 
-Error 3 of 4:
+Error 2 of 3:
 
   at src/Order.purs:18:25 - 18:39 (line 18, column 25 - line 18, column 39)
 
     Hole 'confirmedLine' has the inferred type
 
-      t0 -&gt; String
+      { "Pizza" :: String
+      | t0
+      }
+      -&gt; String
   ⋯
 
-Error 4 of 4:
+Error 3 of 3:
 
   at src/Order.purs:19:14 - 19:20 (line 19, column 14 - line 19, column 20)
 
     Hole 'start' has the inferred type
 
-      Record t0
+      { "Pizza" :: String
+      | t0
+      }
   ⋯</pre>
 
-    <p>The refusal is the design, not an obstacle. <code>shown</code> reads a
-    sub-row of the model (<code>Union read extra row</code>: what the line
-    reads, plus everything it doesn't, is the model) — and <em>which</em>
-    sub-row a display reads is a business decision, so the compiler declines to
-    make it. But the fed row it prints already carries
-    <code>( "Pizza" :: String | t4 )</code>: the editor's field anchor taught
-    the pipeline the model's first field before any logic exists. The display
-    hole reports the same contract from its side — a read
-    <code>Record t0 -&gt; String</code> over a sub-row of that row. The two
-    holes further down know little yet — the copy hole only that it returns
-    a <code>String</code>, the seed nothing: constraint solving stops at the
-    first refusal, so each decision you land sharpens the next report. The
-    first decision: this line shows the pizza. Write the read function down,
-    its footprint stated as a closed row.</p>
+    <p>Two things to read here. First, the suggestion list already offers
+    <code>PUI.Web.hole</code>: substitute it for every hole and the view
+    compiles and <em>runs</em> — the field, the button and an empty line on
+    screen, no data flowing, before a single business function exists
+    (guardrails L18). Second, the reported row is everything the view has
+    named, not what a function reads: <em>which</em> fields a line reads is
+    a business decision, so the signature is yours to write. This line shows
+    the pizza. Write the read function down, its footprint an
+    <strong>open row</strong> — the field it reads, and a tail for the rest of
+    whatever it is fed.</p>
 
-    <h2>2 · One decision in — every refusal gone</h2>
+    <h2>2 · One decision in — one hole gone</h2>
 
     <h3>src/OrderLogic.purs — the logic module begins</h3>
 <pre><code class="language-haskell">module OrderLogic (orderLine) where
 
 import Prelude ((&lt;&gt;))
 
-orderLine :: { "Pizza" :: String } -> String
+orderLine :: forall r. { "Pizza" :: String | r } -&gt; String
 orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 </code></pre>
 
@@ -175,8 +164,9 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
   headlineSmall (text orderLine) # shown
 </code></pre>
 
-    <p>One closed-row signature in, and the next compile has no refusal left at
-    all — just the two remaining holes, both now fully typed:</p>
+    <p>One open-row signature in: its hole is gone, unification now checks
+    the footprint against the row the stage is fed, and the other two holes
+    are as they were:</p>
 
 <pre class="compiler">Error 1 of 2:
 
@@ -185,18 +175,21 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
     Hole 'confirmedLine' has the inferred type
 
-      <mark>{ "Pizza" :: String</mark>
-      <mark>| t0</mark>
-      <mark>}</mark>
-      <mark>-&gt; String</mark>
+      { "Pizza" :: String
+      | t0
+      }
+      -&gt; String
 
     You could substitute the hole with one of these values:
 
-      <mark>_."Pizza"</mark>                   :: String
+      _."Pizza"                   :: String
       Data.Monoid.mempty          :: forall @m. Monoid m =&gt; m
-      <mark>OrderLogic.orderLine</mark>        :: { "Pizza" :: String
-                                     }
-                                     -&gt; String
+      OrderLogic.orderLine        :: forall r.
+                                       { "Pizza" :: String
+                                       | r
+                                       }
+                                       -&gt; String
+      PUI.Web.hole                :: forall a. a
       Unsafe.Coerce.unsafeCoerce  :: forall a b. a -&gt; b
   ⋯
 
@@ -211,19 +204,17 @@ Error 2 of 2:
       }
   ⋯</pre>
 
-    <p>This is the other side of the workflow. The confirmation copy sits at a
-    <em>pinned</em> position — the button replays the row it is fed, so the
-    payload of case <code>"Order"</code> is exactly the pipeline's row, and the
-    hole comes back complete, suggestions included: <code>_."Pizza"</code>
-    would do, and the compiler even offers <code>OrderLogic.orderLine</code>,
-    the function written thirty seconds earlier. At pinned positions the
-    compiler speaks first; at subsuming positions (the display read above) the
-    footprint is yours to state — the signature is the decision.</p>
+    <p>The confirmation copy sits where the button's payload goes — the
+    button replays the row it is fed, so case <code>"Order"</code> carries the
+    pipeline's row — and the compiler offers <code>_."Pizza"</code>, and even
+    <code>OrderLogic.orderLine</code>, the function written thirty seconds
+    earlier: its row is open, so it fits wherever the pizza is on the
+    row.</p>
 
-    <h2>3 · The last hole is the seed — and the model is closed</h2>
+    <h2>3 · The last hole is the seed — and the seed closes the model</h2>
 
     <h3>src/OrderLogic.purs — the confirmation copy joins</h3>
-<pre><code class="language-haskell">confirmedLine :: { "Pizza" :: String } -> String
+<pre><code class="language-haskell">confirmedLine :: forall r. { "Pizza" :: String | r } -&gt; String
 confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 </code></pre>
 
@@ -233,15 +224,17 @@ at src/Order.purs:20:14 - 20:20 (line 20, column 14 - line 20, column 20)
 
   Hole 'start' has the inferred type
 
-    <mark>{ "Pizza" :: String</mark>
-    <mark>}</mark>
+    { "Pizza" :: String
+    | t0
+    }
   ⋯</pre>
 
-    <p>The view computed the model — and with both read functions stating
-    closed footprints, the row is now <em>closed</em>: the app's state is
-    exactly <code>{ "Pizza" :: String }</code>, derived from what the lines
-    demanded, declared nowhere. The seed is that row's value at t=0, business
-    data under a business name — never <code>initial</code>.</p>
+    <p>The row is still <em>open</em>: both functions state what they read
+    and nothing more, so nothing so far has said what else the app holds. The
+    seed does. It is the model's value at t=0, and its type is the app's
+    state — exactly <code>{ "Pizza" :: String }</code>, the row the view
+    named, closed by the one value that has to exist anyway. Business data
+    under a business name — never <code>initial</code>.</p>
 
     <h2>4 · Green</h2>
 
@@ -253,10 +246,10 @@ import Prelude ((&lt;&gt;))
 plainMargherita :: { "Pizza" :: String }
 plainMargherita = { "Pizza": "Margherita" }
 
-orderLine :: { "Pizza" :: String } -> String
+orderLine :: forall r. { "Pizza" :: String | r } -&gt; String
 orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
-confirmedLine :: { "Pizza" :: String } -> String
+confirmedLine :: forall r. { "Pizza" :: String | r } -&gt; String
 confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 </code></pre>
 
@@ -288,10 +281,10 @@ orderApp =
 
     <p>Every anchor resolved: <code>orderLine</code> and
     <code>confirmedLine</code> are pure functions under unit test in the logic
-    module, <code>@"Pizza"</code> is both the field's caption and its name in
-    the model, <code>@"Order"</code> is both the button's caption and the case
-    the snackbar renders, and the chrome names nothing because it writes
-    nothing.</p>
+    module, each touching exactly the field it names, <code>@"Pizza"</code> is
+    both the field's caption and its name in the model, <code>@"Order"</code>
+    is both the button's caption and the case the snackbar renders, and the
+    chrome names nothing because it writes nothing.</p>
 
     <h2>5 · Compile-green is not done — run it</h2>
 

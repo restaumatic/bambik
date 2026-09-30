@@ -72,6 +72,7 @@ module PUI.Web
   , setValue
   , textContent
   , uniqueId
+  , hole
   , shown
   , shownWhen
   , inCase
@@ -97,6 +98,7 @@ module PUI.Web
   )
   where
 
+import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
@@ -114,11 +116,18 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (class Hosting, Ocular, PUI, Logged, diagnosticsOn, foreach, muted, replaying, setDiagnostics, setSink, setTracing)
-import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs)
-import Data.Profunctor.Row.RecordToRecord (focusField, recordToRecord)
-import Prim.Row (class Cons, class Union)
-import Prim.RowList (Nil) as RL
+import Data.Profunctor.Row.RecordToRecord (focusField)
+import Prim.Row (class Cons)
+import Data.Profunctor.Seeding (isHole)
 import Unsafe.Coerce (unsafeCoerce)
+
+-- | A value of any type standing for logic not written yet (guardrails L18):
+-- | any read of it, or call, throws and marks the page (`__bambikHoleReached`),
+-- | so a view run with its logic stubbed to holes that reaches none proves no
+-- | data reached the logic. The one exception is the field `__bambikHole`,
+-- | which answers `true` — what `Data.Profunctor.Seeding.isHole` reads, so a
+-- | word consuming a logic value when built can skip a hole.
+foreign import hole :: forall a. a
 
 foreign import data Node :: Type
 
@@ -311,8 +320,8 @@ instance Hosting Web Node where
 -- | than in the `PUI.Web.HTML` vocabulary, because an HTML-string surface must
 -- | not be part of the public vocabulary an application composes from. The
 -- | design-system modules reach it; application code does not.
-staticHTML :: String -> PUI Web {} {}
-staticHTML html = wrap do
+staticHTMLExact :: String -> PUI Web {} {}
+staticHTMLExact html = wrap do
   parent <- gets _.parent
   newNode <- liftEffect $ appendRawHtml html parent
   modify_ _ { sibling = newNode}
@@ -320,6 +329,9 @@ staticHTML html = wrap do
     { toUser: mempty
     , fromUser: \prop -> prop {}
     }
+
+staticHTML :: forall in_. String -> PUI Web { | in_ } {}
+staticHTML = unsafeCoerce (staticHTMLExact :: String -> PUI Web {} {})
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
@@ -410,8 +422,8 @@ selectedOptionalAt = selectedWith @l (prj (Proxy @c)) (Just <<< maybe (inj (Prox
 -- | an arrow-key move to another member never clears; the clear runs after
 -- | the element's own click handling, which re-checks it. Vocabulary plumbing
 -- | for the `…Optional` radio leaves.
-clearedOnRepress :: forall a m. Eq a => Ref.Ref (Maybe a) -> Array { press :: Node, click :: Node, value :: a | m } -> Effect Unit -> Effect Unit
-clearedOnRepress selRef members clear = do
+clearedOnRepress :: forall a m. Ref.Ref (Maybe a) -> Array { press :: Node, click :: Node, value :: a | m } -> Effect Unit -> Effect Unit
+clearedOnRepress selRef members clear = withStructuralEq @a (do
   pressedRef <- Ref.new Nothing
   for_ members \m -> do
     let
@@ -424,7 +436,7 @@ clearedOnRepress selRef members clear = do
       pressed <- Ref.read pressedRef
       Ref.write Nothing pressedRef
       -- after the element's own click handling, which re-checks it
-      when (pressed == Just m.value) (afterTask clear)
+      when (pressed == Just m.value) (afterTask clear))
 
 -- checkedOf: the option the field shows checked; stored: what a pick (`Just`)
 -- or a clear (`Nothing`) stores, if anything; `checkedOf <=< stored` must give
@@ -447,17 +459,14 @@ selectedWith checkedOf stored w = focusField @l $ wrap do
 -- | The **ambient rung** — content that is
 -- | always there: registered at build (its chrome exists before any
 -- | feed), fed the row on every feed, the fed row released always. The
--- | content reads its own *closed* narrow row by subsumption
--- | (`Union read extra row`), so a chrome merge states exactly
--- | the fields it shows — verbatim: a formatted read is a derived field a
--- | `settled` normalization maintains (the presentation-model rule).
+-- | content is fed the whole row; what it reads is its read functions'
+-- | open-row footprints (guardrails L18).
 -- | The sibling of `shownWhen`/`shownEach` whose policy is
 -- | no policy; the rung trails its content like every data concern:
 -- | `(headline6 $ …) # shown`.
 shown
-  :: forall read extra row
-   . Union read extra row
-  => PUI Web { | read } {} -> PUI Web { | row } { | row }
+  :: forall row
+   . PUI Web { | row } {} -> PUI Web { | row } { | row }
 shown content = wrap do
   content' <- unwrap content
   -- complete the content's wiring: its only possible emission is the
@@ -481,13 +490,10 @@ shown content = wrap do
 -- | block the pipe, so this rung's fulfillment is best-effort by
 -- | construction. Trails its content: `(…) # shownWhen @l classifier`.
 shownWhen
-  :: forall @l read extra row a b s i12 i1x i2x rowL
+  :: forall @l row a b s
    . IsSymbol l => Cons l { | a } b s
-  => Union read extra row
-  => SharedRecordInputs row row row i12 i1x i2x
-  => OwnedRecordOutputs () row row RL.Nil rowL
-  => ({ | read } -> [ | s ]) -> PUI Web { | a } {} -> PUI Web { | row } { | row }
-shownWhen f content = recordToRecord (attachedOn @l (\(r :: { | row }) -> f (unsafeCoerce r)) content) identity
+  => ({ | row } -> [ | s ]) -> PUI Web { | a } {} -> PUI Web { | row } { | row }
+shownWhen f content = shown (attachedOn @l f content)
 
 -- | The **editor pane** — `shownWhen`'s
 -- | editor sibling. A whole-row citizen (an editor, or a pipeline of them)
@@ -512,16 +518,15 @@ shownWhen f content = recordToRecord (attachedOn @l (\(r :: { | row }) -> f (uns
 -- | normalization on the same stage when it is a state invariant
 -- | (meeting-booker's `seatsInRoom`, circle-drawer's `resizeSelected`).
 inCase
-  :: forall @l read extra row a b s
+  :: forall @l row a b s
    . IsSymbol l => Cons l a b s
-  => Union read extra row
-  => ({ | read } -> [ | s ]) -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
+  => ({ | row } -> [ | s ]) -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
 inCase f w = wrap do
   { result: pane, ensureAttached, ensureDetached } <- attachable $ unwrap w
   propRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \row -> do
-        case prj (Proxy @l) (f (unsafeCoerce row :: { | read })) of
+        case prj (Proxy @l) (f row) of
           Nothing -> do
             ensureDetached
             -- the wire speaks only for the absent editor: attached, the
@@ -539,14 +544,8 @@ inCase f w = wrap do
 -- | retained list from the projection, release the fed row per feed.
 -- | Derived: the collection, muted, merged with the wire. Trails its
 -- | item: `(li $ …) # shownEach @l proj`.
-shownEach
-  :: forall @l read extra row k r a o i12 i1x i2x rowL
-   . IsSymbol l => Cons l k r a => Ord k
-  => Union read extra row
-  => SharedRecordInputs row row row i12 i1x i2x
-  => OwnedRecordOutputs () row row RL.Nil rowL
-  => ({ | read } -> Array { | a }) -> PUI Web { | a } o -> PUI Web { | row } { | row }
-shownEach proj item = recordToRecord (muted (foreach @l (\(r :: { | row }) -> proj (unsafeCoerce r)) item)) identity
+shownEach :: forall @l row k r a o . IsSymbol l => Cons l k r a => ({ | row } -> Array { | a }) -> PUI Web { | a } o -> PUI Web { | row } { | row }
+shownEach proj item = shown (muted (foreach @l proj item))
 
 -- | Show a string that changes — a readout, a total, a sentence, a name in
 -- | a list row. (Wording that doesn't change is `staticString`.)
@@ -615,14 +614,17 @@ textLeaf f = wrap do
 -- | pane's message, the glue of a sentence, a formatted value — is a
 -- | *constant*, and lives in a copy function of the logic module
 -- | (`text faultLine`); text that *is* data is `staticString`.
-staticText :: forall @s. IsSymbol s => PUI Web {} {}
-staticText = staticString (reflectSymbol (Proxy @s))
+staticTextExact :: forall @s. IsSymbol s => PUI Web {} {}
+staticTextExact = staticString (reflectSymbol (Proxy @s))
+
+staticText :: forall @s in_. IsSymbol s => PUI Web { | in_ } {}
+staticText = unsafeCoerce (staticTextExact @s :: PUI Web {} {})
 
 -- | Fixed text given as a runtime string — for vocabulary code captioning
 -- | from its configuration, and for closure-known text that is data (a
 -- | parsed markdown run). Application copy that is static is `staticText @s`.
-staticString :: String -> PUI Web {} {}
-staticString content = wrap do
+staticStringExact :: String -> PUI Web {} {}
+staticStringExact content = wrap do
   -- decoration contributes nothing: the `{}` it announces is ignored by
   -- the gates (a zero-field side is pre-known and inert), so this is the
   -- chrome's own completeness, not a merge requirement
@@ -636,6 +638,9 @@ staticString content = wrap do
     { toUser: mempty
     , fromUser: \prop -> prop {}
     }
+
+staticString :: forall in_. String -> PUI Web { | in_ } {}
+staticString = unsafeCoerce (staticStringExact :: String -> PUI Web {} {})
 
 -- | Set a fixed attribute on the element being decorated, written infix as
 -- | `:=`: `"placeholder" := "you@example.com" $ input "email" $ …`. For an
@@ -811,17 +816,16 @@ attrWith name valueOf w = wrap do
 -- | fed — replay is lawful over records only, an entity's value may be
 -- | re-said where a one-shot event may not (the `looped`/`observed`/
 -- | `simpleDialog` argument) — and leaves as an occurrence of `l`, so
--- | nothing record-shaped ever stands for a click. **The content
--- | subsumes** (it is a display — the baked-in reads-narrow rule): it may
--- | read a closed sub-row of the replayed row, and pure chrome states `{}`,
--- | so `clicked @l f staticChrome` needs no adapter.
+-- | nothing record-shaped ever stands for a click. The content is fed the
+-- | row it replays; statics and chrome sit at any row, so
+-- | `clicked @l f staticChrome` needs no adapter.
 -- |
 -- | The **replay contract**, a law of this word rather than of the shape
 -- | (the shape's two are Data.Profunctor.Row's Repetition and Answer, both
 -- | held: a feed rewrites the replay slot, and a feed never fires): a click
 -- | emits `f` of the row last fed, as case `l`; before the first feed a
 -- | click emits nothing.
-clicked :: forall @l @narrow @extra r o k s. IsSymbol l => Cons l k () s => Union narrow extra r => ({ | r } -> k) -> PUI Web { | narrow } o -> PUI Web { | r } [ | s ]
+clicked :: forall @l r o k s. IsSymbol l => Cons l k () s => ({ | r } -> k) -> PUI Web { | r } o -> PUI Web { | r } [ | s ]
 clicked f w = replaying @l f (occurrences w)
 
 -- The click source `clicked` is built from: each click on the last-built
@@ -902,8 +906,8 @@ dynamic build = wrap $ unwrap (foreachWith build) <#> \w ->
 -- | It answers each feed once, with `{}`, for the whole list: the elements'
 -- | own `{}` answers are absorbed, so a list of n elements is one answer,
 -- | not n (Answer at `×→×`).
-each :: forall a. Array a -> (a -> PUI Web {} {}) -> PUI Web {} {}
-each items build = wrap do
+eachExact :: forall a. Array a -> (a -> PUI Web {} {}) -> PUI Web {} {}
+eachExact items0 build = let items = if isHole items0 then [] else items0 in wrap do
   w <- unwrap (foreachWith build)
   propRef <- liftEffect $ Ref.new Nothing
   pure
@@ -914,6 +918,9 @@ each items build = wrap do
         w.fromUser \_ -> pure unit
         Ref.write (Just prop) propRef
     }
+
+each :: forall a in_. Array a -> (a -> PUI Web {} {}) -> PUI Web { | in_ } {}
+each = unsafeCoerce (eachExact :: Array a -> (a -> PUI Web {} {}) -> PUI Web {} {})
 
 -- Entry point
 

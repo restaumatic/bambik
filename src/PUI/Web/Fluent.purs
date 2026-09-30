@@ -37,7 +37,9 @@ module PUI.Web.Fluent
   , toggleSwitch
   ) where
 
+import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude hiding (div)
+import Unsafe.Coerce (unsafeCoerce)
 
 import Control.Monad.State (gets)
 import Data.Array ((!!), findIndex)
@@ -54,6 +56,7 @@ import Data.Variant (case_, match, on) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
+import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
@@ -100,7 +103,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --     (hand-rolled over the `--colorNeutral*`/`--shadow*` tokens — the
 --     Fluent card is a React-only catalog entry) and the type-ramp
 --     typography over `<fluent-text>`: `title3`, `body1`, `caption1`.
---   * plus **announcing statics** (`{} → {}` chrome with a face):
+--   * plus **announcing statics** (`{}`-output chrome with a face, at any row):
 --     `divider` (`<fluent-divider>`).
 --
 -- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
@@ -118,10 +121,10 @@ button :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => Convert
 button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in eventLeaf @l $
   el "fluent-button" >>> "appearance" := "primary" $ staticString config.label
 
--- the click-emitter protocol over any `{} → {}` element chrome: replay the
+-- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
 eventLeaf :: forall @l r s. IsSymbol l => Cons l { | r } () s => PUI Web {} {} -> PUI Web { | r } [ | s ]
-eventLeaf chrome = clicked @l identity chrome
+eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
 
 -- a `<fluent-field>` associating a label with the editor its builder
 -- appends (Fluent's label protocol: both are slotted children of the field)
@@ -239,20 +242,20 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: re
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-dropdown :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-dropdown provided options = dropdownWith @l false (selectedAt @l) provided options
+dropdown :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+dropdown provided options = withStructuralEq @a (dropdownWith @l false (selectedAt @l) provided options)
 
 -- | `dropdown` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-dropdownUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-dropdownUnpicked provided options = dropdownWith @l false (selectedUnpickedAt @l @c) provided options
+dropdownUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+dropdownUnpicked provided options = withStructuralEq @a (dropdownWith @l false (selectedUnpickedAt @l @c) provided options)
 
 -- | `dropdown` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-dropdownOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-dropdownOptional provided options = dropdownWith @l true (selectedOptionalAt @l @c @n) provided options
+dropdownOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+dropdownOptional provided options = withStructuralEq @a (dropdownWith @l true (selectedOptionalAt @l @c @n) provided options)
 
 dropdownWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
 dropdownWith clearable lift provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in lift $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
@@ -284,20 +287,20 @@ dropdownWith clearable lift provided options = let config = convertOptionsWithDe
 -- | The **radio group**: one choice among a handful, every option visible
 -- | and comparable at a glance. Beyond about five options use `dropdown`.
 -- | Same selection contract as `dropdown`.
-radioGroup :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioGroup provided options = radioGroupWith @l false (selectedAt @l) provided options
+radioGroup :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioGroup provided options = withStructuralEq @a (radioGroupWith @l false (selectedAt @l) provided options)
 
 -- | `radioGroup` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-radioGroupUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioGroupUnpicked provided options = radioGroupWith @l false (selectedUnpickedAt @l @c) provided options
+radioGroupUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioGroupUnpicked provided options = withStructuralEq @a (radioGroupWith @l false (selectedUnpickedAt @l @c) provided options)
 
 -- | `radioGroup` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | pressing the checked option again clears it, storing `n` again.
-radioGroupOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioGroupOptional provided options = radioGroupWith @l true (selectedOptionalAt @l @c @n) provided options
+radioGroupOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+radioGroupOptional provided options = withStructuralEq @a (radioGroupWith @l true (selectedOptionalAt @l @c @n) provided options)
 
 radioGroupWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
 radioGroupWith clearable lift provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in lift $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
@@ -460,12 +463,15 @@ cardCss = """
 .fluent-card { background: var(--colorNeutralBackground1, #fff); color: var(--colorNeutralForeground1, #242424); font-family: var(--fontFamilyBase, 'Segoe UI', sans-serif); border-radius: var(--borderRadiusXLarge, 8px); box-shadow: var(--shadow4, 0 2px 4px rgba(0,0,0,.14)); padding: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
 """
 
--- announcing statics ({} → {} chrome with a face)
+-- announcing statics ({}-output chrome with a face, at any row)
 
 -- | A **divider**: the hairline rule between sections of a surface. Fixed
 -- | decoration, carrying no data.
-divider :: PUI Web {} {}
-divider = staticHTML "<fluent-divider style=\"width: 100%;\"></fluent-divider>"
+dividerExact :: PUI Web {} {}
+dividerExact = staticHTML "<fluent-divider style=\"width: 100%;\"></fluent-divider>"
+
+divider :: forall in_. PUI Web { | in_ } {}
+divider = unsafeCoerce (dividerExact :: PUI Web {} {})
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

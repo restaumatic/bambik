@@ -2,7 +2,6 @@ module PotluckMDC3 (potluckMDC3) where
 
 import Prelude ((#), ($), Unit)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PotluckLogic (guestCountLine, guestName, invitation, menuLine, menuState, waitingLine)
 import PUI (acted, with)
@@ -15,8 +14,8 @@ potluckMDC3 =
   body $ ( Semigroupoid.do
     bodyMedium (text guestCountLine) # shown
     group @"Guests" $ list $
-      ( listItem $ RecordToRecord.do
-        titleMedium (text guestName)
+      ( listItem $ Semigroupoid.do
+        titleMedium (text guestName) # shown
         segmentedButtonUnpicked @"Dish" @"chosen"
           [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name"
     headlineSmall (text menuLine) # shownWhen @"complete" menuState
