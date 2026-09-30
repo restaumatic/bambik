@@ -1,53 +1,98 @@
 # Building, running and verifying a bambik application
 
-The workflow is the scaffold's npm scripts, set up by
-[bootstrap.md](bootstrap.md) — which also describes the scaffold's files
-themselves, including the page the app mounts into.
+Everything runs from the app directory with the scaffold's npm scripts
+([bootstrap.md](bootstrap.md)). Commands assume
+`export PATH=$PWD/node_modules/.bin:$PATH` and the scaffold's port 8000.
 
-**Dev mode is where every piece of work ends.** Bootstrapping an app,
-adding a stage, fixing a business function — none of it is finished at a
-green compile. Leave the app running at its URL, verified in a browser,
-and say so to the developer.
+## Run
 
-## Build and run
+1. **Start dev mode** — two background processes, left running for the
+   whole session:
 
-1. **Agent loop: use watch mode.** Keep `npm run watch` (`spago build -w`)
-   running in the background and read its output after each edit
-   (~0.7s incremental) instead of one-shot `npm run build`s. Two
-   caveats: spago -w reads stdin and dies on EOF, so keep stdin open
-   (never `</dev/null`), and only one watcher may own `output/` at a
-   time.
+   ```sh
+   tail -f /dev/null | npm run watch > watch.log 2>&1 &
+   tail -f /dev/null | npm run dev   > dev.log   2>&1 &
+   ```
 
-2. **Serve.** `npm run dev` serves the app at `http://127.0.0.1:8000/`,
-   with esbuild rebundling from `output/` on request — refresh the
-   browser after an edit. It dies on stdin EOF like the watcher. Change
-   the port in package.json if 8000 is busy.
+   `watch` (`spago build -w`) recompiles `src/` into `output/` on every
+   save (under a second); `dev` (esbuild) serves `public/` at
+   `http://127.0.0.1:8000/` and rebundles `bundle.js` from `output/` on
+   each request. Both exit when their stdin closes, so the `tail -f
+   /dev/null |` is required — never `</dev/null`. Run one watcher per
+   directory: two processes writing `output/` corrupt each other's
+   builds, so do not also run `npm run build` while `watch` is up.
 
-   The two together are dev mode: the watcher turns edits into `output/`,
-   the server turns `output/` into the page. Start both in the
-   background, keep them up for the whole session, and verify the running
-   page as below.
+2. **After each edit, read the watcher log** instead of building again:
 
-3. **Bundle.** `npm run bundle` writes the minified
-   `public/bundle.js`. The whole of `public/` is then the deployable
-   artifact: static files, no server. This is a deploy step — it is not
-   part of the dev loop, and it is not what concludes a task.
+   ```sh
+   sleep 1; tail -n 30 watch.log
+   ```
+
+   A good build prints `Build succeeded.`; a bad one prints the
+   compiler's error (file, line, message) followed by
+   `[error] Failed to build.`. Either way the watcher then waits for the
+   next save. An unused-dependencies warning is harmless. `dev.log`
+   shows each request and any bundling error.
+
+3. **Refresh the page** (or re-run *Verify*) to see the change.
 
 ## Verify
 
-The compiler proves the wiring; it does not prove the app works. bambik
-apps are DOM-driven, so verify in a browser: HTTP 200 on the page and on
-`/bundle.js`, the app rendered inside `<body>`, no console errors. The
-app mounts asynchronously — poll for a rendered element rather than
-sampling once after a fixed delay.
+The compiler proves the wiring, not that the app shows data. The
+check, used after bootstrapping and after every change:
 
-A headless check is worth writing once the app has more than one stage.
-The library's own demos are covered by a Chrome CDP harness at
-`.spago/bambik/<tag>/scripts/smoke/`, whose `cdp.mjs` session helper is a usable
-model; its `tests/*.mjs` files show how a walk through a demo is
-written.
+> Page and bundle answer 200, the app is rendered inside `<body>`, and
+> the console shows no errors or warnings, checked at least 3 s after
+> load.
 
-When the page loads but the data does not arrive, the problem is in the
-app module, not the build: see **When it does not propagate** in
-[writing.md](writing.md#when-it-does-not-propagate) for the starvation
-watchdog and the emission trace.
+The 3 s matter: a merge waiting for a field with no value warns in the
+console after 3 s ([writing.md](writing.md), *When it does not
+propagate*).
+
+```sh
+curl -s -o /dev/null -w 'page %{http_code}\n'   http://127.0.0.1:8000/
+curl -s -o /dev/null -w 'bundle %{http_code}\n' http://127.0.0.1:8000/bundle.js
+
+google-chrome --headless=new --disable-gpu --no-first-run \
+  --user-data-dir="$(mktemp -d)" --enable-logging=stderr --v=0 \
+  --virtual-time-budget=5000 \
+  --dump-dom http://127.0.0.1:8000/ > dom.html 2> chrome.log
+sed -n '/<body/,/<\/body>/p' dom.html   # the app's elements, with their data
+grep CONSOLE chrome.log                  # must print nothing
+```
+
+- Use whichever of `google-chrome`, `chromium`, `chromium-browser` is
+  installed.
+- `--virtual-time-budget=5000` runs the page's clock 5 s past load
+  (instantly), so the check covers the 3 s warning.
+- `dom.html`'s body must hold the app's elements and the seeded values
+  (for the starter: an `<h4>` showing `0` and a `Count` button). An
+  empty `<body>` means the bundle failed — read `dev.log` and the
+  `CONSOLE` lines.
+- Every `CONSOLE` line is a message the page logged (errors, warnings,
+  and the emission trace if you turned it on — turn it off for the
+  check).
+- When the developer has a browser, give them the URL as well; an
+  interaction the check cannot perform (a click, typing) is theirs to
+  try, or yours in a scripted browser.
+
+Report `http://127.0.0.1:8000/` to the developer with the servers left
+running.
+
+## Bundle for deploy
+
+```sh
+npm run bundle
+```
+
+Writes the minified `public/bundle.js` (about 0.5 MB for the starter).
+`public/` is then the whole deployable site: static files, no server.
+This is a deploy step, not part of the dev loop, and it does not end a
+task.
+
+## API reference
+
+The module headers are the reference: `npm run docs` (`spago docs
+--open`) generates and opens them as browsable HTML under
+`generated-docs/html/`. The sources and the demos that use them are
+under `.spago/bambik/<tag>/` (`src/`, `demo/7guis/`, `demo/nguis/`).

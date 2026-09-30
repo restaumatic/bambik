@@ -12,8 +12,6 @@ import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 
--- The in-memory catalogue stands in for a server, and is global as a server
--- is: no view holds a handle to it, so a view hands this module only data.
 catalogue :: Ref (Array { "Name" :: String, "Surname" :: String })
 catalogue = unsafePerformEffect $ Ref.new
   [ { "Name": "Hans", "Surname": "Emil" }

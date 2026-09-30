@@ -48,7 +48,6 @@ pressKey key tally@{ entry, operation, input }
   | typing input = tally { entry = if entry == "0" then key else entry <> key }
   | otherwise = tally { entry = key, input = .entering {} }
 
--- the tally cleared, whatever else the row carries
 cleared :: forall r. { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r } -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r }
 cleared t = t { total = blankTally.total, operation = blankTally.operation, entry = blankTally.entry, input = blankTally.input, condition = blankTally.condition }
 

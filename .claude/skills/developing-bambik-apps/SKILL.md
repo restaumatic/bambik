@@ -1,67 +1,72 @@
 ---
 name: developing-bambik-apps
-description: How to devlop Profunctor User Interfaces Web applications featuring HTML/MDC2/MDC3/Shoelace/Fluent/Bootstrap with Bambik library: Bootstraping, writing, reviewing, building, bundling, running. With idiomatic code style, refering to Bambik demo applications. This skill is standalone — copy its directory and use it anywhere.
+description: Use when creating, editing, reviewing, building or running a bambik / PUI (Profunctor User Interfaces) PureScript web app — an app whose view composes components from PUI.Web.HTML, PUI.Web.MDC2, PUI.Web.MDC3, PUI.Web.Shoelace, PUI.Web.Fluent or PUI.Web.Bootstrap. Covers scaffolding a new app with the forked compiler and the bambik spago package, the view/logic module split and the code style for application code, and the dev-mode run-and-verify loop.
 ---
 
 # Developing bambik applications
 
-A bambik application is one profunctor pipeline: every UI component is a
-profunctor over its carrier, displaying an input and emitting an
-output, and the app composes them with qualified-do pipelines (editors
-are whole-row pipeline stages) and the
-four row merges. It is a pair of modules with a one-way dependency: a
-**view module** exporting a single entry function named after the
-application (never `main`), mounted at the document body, importing the
-design system and the logic module; and a **logic module** of pure
-business functions and values, depending only on the domain. The rows
-the pipeline operates over are a **presentation model**: displays are
-verbatim (no leaf takes a formatter), so everything the user reads —
-formatted readouts, composed sentence lines — is a model field the
-logic module writes and unit tests (writing.md, *displays are
-verbatim*). The
-smallest complete example is the helloworld demo (all view, so a single
-module); the counter demo is the smallest one with a model and a logic
-module.
+A bambik app is a view module and a logic module. The smallest one with
+a model, the counter (MDC2):
 
-Work through the three procedures in order. Each is a file in this
-skill's directory:
+```purescript
+counterMDC2 :: Effect Unit
+counterMDC2 =
+  body $
+    ( Semigroupoid.do
+      headline4 (text countLine) # shown
+      button @"Count" {} # applied increment
+    ) # mvu freshCount
+```
 
-1. **[bootstrap.md](bootstrap.md)** — scaffold the application. It
-   creates, from nothing but node + git + network, a directory that
-   builds, bundles and runs locally, with bambik as an ordinary tagged
-   spago package (no repo to clone, nothing vendored). Covers the forked
-   compiler, updating and pinning, and troubleshooting. Its **first step
-   is the design system** — MDC2, MDC3, Shoelace, Fluent, Bootstrap or
-   plain HTML — which the developer chooses; ask if they have not said.
+```purescript
+freshCount :: { count :: Int }
+freshCount = { count: 0 }
 
-2. **[writing.md](writing.md)** — write the app modules. The pipeline and
-   the four merges, component citizenship and the adopters, pass-through
-   stages, app shapes with the demo that shows each, conditional
-   visibility, modals, collections, separation of concerns, the type
-   inference gotchas, and what to do when data does not propagate (the
-   starvation watchdog and the emission trace) — closing with **Code
-   style**, the definitive contract for bambik application code (layout,
-   types and values, business functions, wiring). That section is
-   normative: the library's own documentation points at it rather than
-   restating it, and the demos are its executable form.
+countLine :: forall r1. { count :: Int | r1 } -> String
+countLine { count } = show count
 
-   Two companions ride with it: **[walkthrough.md](walkthrough.md)**,
-   one mid-size demo (flight-booker) read line by line — the first thing
-   to read after the counter — and **[vocabulary.md](vocabulary.md)**, the
-   lookup index from what the screen needs to the word for it and the
-   place its rule is stated. Neither states a rule of its own.
+increment :: forall r1. { count :: Int | r1 } -> { count :: Int | r1 }
+increment m = m { count = m.count + 1 }
+```
 
-3. **[building.md](building.md)** — build, run and verify. The npm
-   scripts, the watch-mode agent loop, and browser verification.
+Read top to bottom, the view is the screen: a heading showing
+`countLine` of the model, then a `Count` button that applies
+`increment`, the whole started at `freshCount`. The view names design
+system words and logic values; the logic module is plain functions over
+open rows, unit-testable, importing no UI. What the screen reads is a
+copy function (`countLine`), taken by the display at the leaf.
 
-All three end at the same place: the application **running in dev mode**
-— `npm run watch` and `npm run dev` in the background, the page verified
-in a browser, its URL reported to the developer. A green build is not a
-finished task; bambik apps are DOM-driven and the knowledge gates that
-silence a pane are invisible to the compiler.
+## Procedures
 
-Spago clones the library whole, so after the first build
-**`.spago/bambik/<tag>/`** holds its sources, demos and docs as worked
-examples: `demo/7guis/`, `demo/nguis/`, and the module headers under
-`src/` that document the API. Paths below are
-written relative to that directory.
+1. **[bootstrap.md](bootstrap.md)** — scaffold a new app: design
+   system choice (ask the developer), the pinned toolchain, the scaffold
+   files, the counter as starter.
+2. **[writing.md](writing.md)** — write the two modules. Its sections:
+   *Terms* (the only vocabulary this skill uses), *The pipeline*,
+   *Components*, *Stages*, *App shape*, *Conditional visibility*,
+   *Modals*, *Collections*, *View and logic modules*, **Code style** (the
+   contract for application code: *Layout*, *Types and values*,
+   *Business functions*, *Wiring*), *Writing order* (view first, missing
+   logic as holes), *What the laws guarantee*, *When it does not
+   propagate*, *Finish by running it*, *Looking things up*.
+   Companions, stating no rules of their own:
+   [walkthrough.md](walkthrough.md) (flight-booker read line by line —
+   read it after the counter) and [vocabulary.md](vocabulary.md) (from
+   what the screen needs to the word and the demo that uses it).
+3. **[building.md](building.md)** — run dev mode, verify in a headless
+   browser, bundle for deploy, open the API reference.
+
+**Every task ends in dev mode**: the app running, the check in
+[building.md](building.md#verify) passing, and its URL reported to the
+developer. A green build is not a finished task — a pane waiting for a
+missing value is invisible to the compiler and obvious on screen.
+
+## Worked examples
+
+Spago fetches the library whole, so after the first build
+`.spago/bambik/<tag>/` holds its module headers under `src/` (the API
+reference) and its demos under `demo/7guis/` and `demo/nguis/`. A demo
+directory's suffix names its design system (`counter-mdc2`,
+`counter-html`, …); twins share the logic module in the unsuffixed
+directory. Switching an app's design system is its vocabulary import
+plus the page's links ([bootstrap.md](bootstrap.md), step 1).

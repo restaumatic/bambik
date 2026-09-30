@@ -1,139 +1,120 @@
 # Bootstrapping a bambik application
 
-This procedure creates, from nothing but node + git + network, a single
-application directory that builds, bundles and runs locally. bambik is an
-ordinary dependency — there is **no repo to clone** and nothing to vendor:
-the library is a spago git package pinned to a tag, the compiler is an npm
-package from a GitHub release, and the patched variant library is another
-git package. All three resolve on the first `npm install` / `spago build`.
+Creates, from node + git + network alone, an app directory that builds,
+bundles and runs. bambik is an ordinary spago git package pinned to a
+tag; nothing is cloned by hand or vendored.
 
 ## Prerequisites
 
-- **Linux x86_64** — the forked PureScript compiler installs from its
-  GitHub release, as an npm package that drop-in replaces `purescript` and
-  bundles a prebuilt binary (nothing is downloaded at install time beyond
-  the tarball itself):
+- **Linux x86_64.** The forked PureScript compiler installs from a
+  GitHub release as an npm package with a prebuilt binary. Stock `purs`
+  cannot build bambik code (`Module Prim.Variant was not found`).
+- node ≥ 18 with npm, git, curl, network access.
 
-  ```json
-  "purescript": "https://github.com/erykciepiela/purescript/releases/download/v0.15.16-variant.7/purescript-0.15.16-variant.7.tgz"
-  ```
+## Pins
 
-  The same release carries the bare binary as asset `purs`, for use without
-  npm. On another platform, build the `variant-type-sugar` branch (PR #1)
-  of https://github.com/erykciepiela/purescript with `stack install` and
-  either use that binary directly or repack the tarball with it as
-  `purs.bin`.
-- node ≥ 18 with npm, git, network access.
-- Stock purs **cannot** build bambik code — it fails with
-  `Module Prim.Variant was not found`. The forked compiler adds variant
-  sugar (`[ ok :: Int ]` types, `.ok 42` injectors/patterns; see
-  `doc/variant-sugar.md` in the fetched package), and the matching fork of
-  `purescript-variant`
-  (`erykciepiela/purescript-variant`, tag `v8.0.0-prim-variant.1`, which
-  the scaffold's packages.dhall names) re-exports the compiler's built-in
-  `Prim.Variant.Variant` so the sugar and `Data.Variant`'s
-  `inj`/`on`/`match` meet on one type. Spago fetches it like any git
-  package — nothing to vendor or check out.
+Three pins, moved together — the variant fork compiles only under that
+compiler, and the library needs both:
 
-## Where the dependencies come from
+| Dependency      | Named in         | Pin                                                   |
+|-----------------|------------------|-------------------------------------------------------|
+| bambik          | `packages.dhall` (and the second `sources` glob in `spago.dhall`) | tag `v0.1.6` of `restaumatic/bambik` |
+| variant fork    | `packages.dhall` | tag `v8.0.0-prim-variant.1` of `erykciepiela/purescript-variant` |
+| forked compiler | `package.json`   | release `v0.15.16-variant.7` of `erykciepiela/purescript` |
 
-The app directory stands alone; nothing lives beside it. Its three
-non-registry dependencies are named by URL and pinned by tag:
-
-| Dependency        | Named in        | Pinned by                                    |
-|-------------------|-----------------|----------------------------------------------|
-| bambik library    | `packages.dhall`| tag `v0.1.5` of `restaumatic/bambik`          |
-| variant fork      | `packages.dhall`| tag `v8.0.0-prim-variant.1`                   |
-| forked compiler   | `package.json`  | release URL + integrity hash in the lock      |
-
-Spago clones each git package whole, so after the first build the library's
-**demos, docs and CLAUDE.md** sit in `.spago/bambik/<tag>/` as worked
-examples — `demo/7guis/`, `demo/nguis/`, the module headers under `src/`.
+Below, `<tag>` is the bambik tag (`v0.1.6`).
 
 ## Steps
 
-1. **Settle the design system** — it decides the npm dependency, the
-   page's CSS links and the vocabulary the app module imports, so it has
-   to be known before anything is copied. If the developer did not name
-   one, **ask**; do not default silently to the starter's MDC2. The
-   choices are the five rows of the [table below](#design-systems), plus
-   plain HTML (`PUI.Web.HTML` + `PUI.Web.SVG`, no design system at all —
-   the app supplies its own CSS, as `demo/nguis/restaurant-menu/` does).
-   Worth stating when asking: the vocabularies are interchangeable — same
-   two-sorted structure, same citizenship, same names where the concept
-   exists in both catalogs — so the choice is a look, not an
-   architecture, and switching later is switching the import plus the
-   page's CSS.
+1. **Choose the design system.** ⚠ **Decision point**: if the developer
+   has not named one, **ask** — do not default silently. It decides the
+   npm dependency, the page's links and the starter view module. The
+   choice is a look, not an architecture:
 
-2. **Write the seven scaffold files** into a fresh directory, from the
-   [Scaffold](#scaffold) section below. Three names are chosen once and
-   used throughout: `<app>` (kebab-case, the directory and package
-   name), `<Module>` (PascalCase, the view module — the logic module
-   beside it is `<Module>Logic`) and `<entryFn>` (camelCase, the
-   exported entry function — named after the application, never
-   `main`).
+   | Vocabulary module   | npm dependency (`package.json`)          | Page links (`public/index.html`) | Body font | Counter twin (`<twin>` / `<Suffix>`) |
+   |---------------------|------------------------------------------|----------------------------------|-----------|--------------------------------------|
+   | `PUI.Web.MDC2`      | `"material-components-web": "^14.0.0"`   | `https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.min.css`, `https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap`, `https://fonts.googleapis.com/icon?family=Material+Icons` | `Roboto, sans-serif` | `counter-mdc2` / `MDC2` |
+   | `PUI.Web.MDC3`      | `"@material/web": "^2.5.0"`              | `https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap`, `https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap` | `Roboto, sans-serif` | `counter-mdc3` / `MDC3` |
+   | `PUI.Web.Shoelace`  | `"@shoelace-style/shoelace": "^2.20.1"`  | `https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css` | `var(--sl-font-sans, sans-serif)` | `counter-shoelace` / `Shoelace` |
+   | `PUI.Web.Fluent`    | `"@fluentui/web-components": "^3.0.2"`   | none                             | `'Segoe UI', system-ui, sans-serif` | `counter-fluent` / `Fluent` |
+   | `PUI.Web.Bootstrap` | none                                     | `https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css` | (Bootstrap's own) | `counter-bootstrap` / `Bootstrap` |
+   | `PUI.Web.HTML`      | none                                     | the app's own CSS                | `system-ui, sans-serif` | `counter-html` / `HTML` |
+
+2. **Name the app.** Three names, used throughout: `<app>` (kebab-case:
+   directory and package name), `<Module>` (PascalCase: the view module;
+   the logic module is `<Module>Logic`), `<entryFn>` (camelCase: the
+   exported entry function, named after the app, never `main`).
+
+3. **Write the scaffold files** from [Scaffold](#scaffold) into a fresh
+   `<app>/`:
 
    ```
+   <app>/.gitignore
    <app>/package.json
    <app>/packages.dhall
    <app>/spago.dhall
    <app>/entry.mjs
    <app>/public/index.html
-   <app>/src/<Module>.purs        ← the view module; with its logic module,
-   <app>/src/<Module>Logic.purs   ← the deliverable — the rest is scaffolding
    ```
 
-3. **Install and check the compiler**:
+4. **Write the starter app** — the counter twin from step 1's table,
+   fetched from the tag and renamed. Write it even when the developer's
+   app is already specified: a running counter proves the toolchain,
+   and the real app replaces it afterwards, written to
+   [writing.md](writing.md).
+
+   ```sh
+   cd <app> && mkdir -p src
+   RAW=https://raw.githubusercontent.com/restaumatic/bambik/<tag>
+   curl -sfL $RAW/demo/7guis/<twin>/Counter<Suffix>.purs \
+     | sed -e 's/Counter<Suffix>/<Module>/g' -e 's/counter<Suffix>/<entryFn>/g' \
+           -e 's/CounterLogic/<Module>Logic/g' > src/<Module>.purs
+   curl -sfL $RAW/demo/7guis/counter/CounterLogic.purs \
+     | sed 's/CounterLogic/<Module>Logic/g' > src/<Module>Logic.purs
+   ```
+
+   The result is the counter shown in [SKILL.md](SKILL.md) under your
+   names (the other twins differ in their imports and heading word).
+
+5. **Install and check the compiler:**
 
    ```sh
    npm install
-   node_modules/.bin/purs --version   # must say 0.15.16 [development build ...]
+   node_modules/.bin/purs --version   # must print 0.15.16 [development build ...]
    export PATH=$PWD/node_modules/.bin:$PATH
    ```
 
-4. **Build** — the first run fetches the package set, clones bambik and the
-   variant fork, and compiles the lot (a few minutes); after that an
-   app-module edit rebuilds in well under a second:
+6. **Build:**
 
    ```sh
    spago build
    ```
 
-5. **Run it in dev mode** — this is the procedure's finish line:
-   bootstrapping is done when the app is on screen, not when the build is
-   green. Start both long-running processes in the background and leave
-   them running:
+   The first run fetches the package set, bambik and the variant fork
+   (a minute or two). It ends with `Build succeeded.`; a warning listing
+   unused dependencies is expected and harmless.
 
-   ```sh
-   npm run watch     # spago build -w   — recompiles on each .purs edit
-   npm run dev       # esbuild serve    — http://127.0.0.1:8000
-   ```
-
-   Neither may have its stdin closed (never `</dev/null`; both die on
-   EOF), and only one watcher may own `output/` at a time. Then verify
-   the page in a browser — HTTP 200 on `/` and on `/bundle.js`, the app
-   rendered inside `<body>`, no console errors — and report the URL to
-   the developer, so they land on a running application. From here an
-   edit needs only a browser refresh. `npm run bundle` writes the
-   minified `public/bundle.js` (~500 kB for the starter) and is for
-   deploying, not for the loop. The dev loop and browser verification in
-   full: [building.md](building.md).
+7. **Run it in dev mode and verify** — [building.md](building.md),
+   *Run* and *Verify*. Bootstrapping is done when the verify check passes
+   and the URL is reported.
 
 ## Scaffold
 
-Seven files, written fresh each time rather than copied from a stored
-template — the one part that could drift, the library's dependency list,
-is fetched from the tag in the process.
+### .gitignore
+
+```
+node_modules/
+output/
+.spago/
+generated-docs/
+public/bundle.js
+```
 
 ### package.json
 
-`<design-system-package>` is the npm dependency from the
-[table below](#design-systems); drop the whole `dependencies` block for
-Bootstrap or plain HTML, which need none. Keep the version ranges the
-library itself uses — `.spago/bambik/<tag>/package.json` after the first
-build, or
-`https://raw.githubusercontent.com/restaumatic/bambik/<tag>/package.json`
-before it.
+Put the design system's `dependencies` entry from step 1's table in
+place of `<design-system dependency>`; for Bootstrap and plain HTML
+drop the `dependencies` block.
 
 ```json
 {
@@ -142,11 +123,12 @@ before it.
   "scripts": {
     "build": "spago build",
     "watch": "spago build -w",
+    "dev": "esbuild entry.mjs --bundle --format=esm --outfile=public/bundle.js --servedir=public --serve=127.0.0.1:8000",
     "bundle": "spago build && esbuild entry.mjs --bundle --minify --format=esm --outfile=public/bundle.js",
-    "dev": "esbuild entry.mjs --bundle --format=esm --outfile=public/bundle.js --servedir=public --serve=127.0.0.1:8000"
+    "docs": "spago docs --open"
   },
   "dependencies": {
-    "<design-system-package>": "^14.0.0"
+    <design-system dependency>
   },
   "devDependencies": {
     "esbuild": "0.25.1",
@@ -156,31 +138,24 @@ before it.
 }
 ```
 
-spago is pinned to 0.21 — the legacy dhall-based line this scaffold is
-written for. Do not upgrade it to the 0.9x rewrite, which uses
-`spago.yaml` and a different package-set mechanism.
+Keep spago on 0.21 (the dhall-based line); the 0.9x rewrite uses
+`spago.yaml` and does not read this scaffold.
 
-### packages.dhall
+### The library's dependency list
 
-The upstream package set plus three overrides: `variant` repointed at
-the `Prim.Variant`-patched fork, `convertable-options` (not in the set),
-and `bambik` itself.
-
-**The `bambik` entry must spell out the library's own dependency list**,
-because spago does not read a git package's `spago.dhall`. Do not
-transcribe the list from memory or from this document — read it from the
-tag being pinned, so it is right by construction:
+Both dhall files need the library's dependency list (spago does not
+read a git package's own `spago.dhall`). Fetch it from the tag; never
+type it from memory:
 
 ```sh
 curl -sfL https://raw.githubusercontent.com/restaumatic/bambik/<tag>/spago.dhall \
-  | sed -n '/^, dependencies/,/^  ]/p'
+  | sed -n '/^, dependencies/,/^  ]/p' | tail -n +2
 ```
 
-That prints the library's own one-per-line dhall formatting. Re-emit the
-names as a comma-separated dhall list — every entry quoted, commas
-*between* entries, no trailing comma, and no identifier broken across a
-line wrap (a mangled list fails as a dhall parse error, not a helpful
-one). Then write the file, substituting that list and the tag:
+It prints a valid dhall list (`[ "aff"` … `]`). Paste it verbatim in
+the two places marked `<library dependency list>` below.
+
+### packages.dhall
 
 ```dhall
 let upstream =
@@ -197,65 +172,29 @@ in  upstream
     }
   with bambik =
     { dependencies =
-      [ <the list fetched above> ]
+        <library dependency list>
     , repo = "https://github.com/restaumatic/bambik.git"
     , version = "<tag>"
     }
 ```
 
-If a later library version gains a dependency, this list needs the same
-addition or the build fails with a missing module from some *other*
-library while compiling bambik.
-
 ### spago.dhall
-
-An ordinary config. Add dependencies as the app's imports grow — imports
-are 100% explicit, so the list follows them.
 
 ```dhall
 { name = "<app>"
-, dependencies = [ "bambik", "effect", "prelude", "qualified-do", "variant" ]
+, dependencies = [ "bambik" ] # <library dependency list>
 , packages = ./packages.dhall
-, sources =
-  [ "src/**/*.purs"
-  , ".spago/bambik/<tag>/extras/**/*.purs"
-  ]
+, sources = [ "src/**/*.purs", ".spago/bambik/<tag>/extras/**/*.purs" ]
 }
 ```
 
-The **second glob is required**, with `<tag>` the same tag as in
-`packages.dhall`. bambik keeps its **ecosystem complements** — modules that
-claim a `Data.Profunctor.*` or `Data.Lens.*` name because they belong in
-those families, mentioning no `PUI`, no row and no carrier — outside its
-`src/`, under two source roots that the one glob covers:
-
-| Root                      | Modules                                                                          |
-|---------------------------|----------------------------------------------------------------------------------|
-| `extras/profunctor/`     | `Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`, `Data.Profunctor.Cont` |
-| `extras/lenses/`          | `Data.Lens.Colens`/`.Coprism`/`.Shutter`/`.Coshutter`/`.Reel`/`.Coreel`, `Data.Lens.Prism.Existential` |
-| `extras/row-profunctor/` | `Data.Profunctor.Row` and `Data.Profunctor.Row.*` (the four merges), `Data.Profunctor.Acting`, `Data.Profunctor.Seeding` |
-| `extras/variant/`         | `Data.Variant.Case` (`caseText`, the value-level label read) |
-
-The third root matters most in practice: **`Data.Profunctor.Row.RecordToRecord`
-and its three siblings are what an app imports to write a `.do` merge**, so
-without the glob an ordinary app fails on its own first merge, not on some
-library internal. `src/` in the library holds only `PUI` and `PUI.Web.*`.
-
-Spago globs a git dependency as `.spago/<pkg>/<ver>/src/**/*.purs` —
-hardcoded, ignoring the package's own `sources`, the same reason the
-`bambik` entry above must spell out the dependency list — so without this
-line those eleven modules are never compiled and the build fails with
-`Module Data.Profunctor.Resolving was not found` (or `Module
-Data.Lens.Reel was not found`, whichever the app's imports reach first;
-bambik's own `src/` reaches all of them, so it fails even for an app that
-imports none directly). It is the one place an app names a path inside the
-library, and it must be re-pointed whenever `bambik.version` moves.
+The second `sources` glob is required and carries the **same tag** as
+`packages.dhall`. Because it compiles part of the library as the app's
+own sources, the app lists the library's dependencies too. Add a
+package to the `[ "bambik" ]` part when an app import needs one the
+list lacks.
 
 ### entry.mjs
-
-The esbuild entry: imports the app's entry function from spago's
-`output/` and calls it. Needed because `spago bundle-app` can only call
-`Main.main`, and no bambik module is `Main`.
 
 ```js
 import { <entryFn> } from './output/<Module>/index.js'
@@ -264,117 +203,56 @@ import { <entryFn> } from './output/<Module>/index.js'
 
 ### public/index.html
 
-Minimal page — the app mounts into the document body at runtime, so
-there is no markup to write. An empty `<html>` with:
+The app mounts into `<body>` at runtime, so the body is empty. The page,
+not the app, provides any surrounding surface or margin — style it
+here, never by wrapping the app. Fill the slots from step 1's table
+(one `<link>` per listed URL; none for Fluent):
 
-- the usual `charset` and `viewport` meta tags, and a `<title>`;
-- the chosen design system's stylesheet `<link>`s, copied from its demo
-  page (last column of the table below) — plain HTML links whatever CSS
-  the app supplies instead;
-- a `<style>` giving the body a margin and the design system's font
-  family;
-- `<script type="module" src="bundle.js">`, the bundle esbuild writes;
-- optionally `<script>window.__bambikTrace = true</script>` to turn on
-  the emission trace, as every demo page does.
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><App title></title>
+    <!-- design-system links from step 1's table, one per URL: -->
+    <link rel="stylesheet" href="<link URL>">
+    <style>
+      body { margin: 24px; font-family: <body font>; }
+    </style>
+    <script type="module" src="bundle.js"></script>
+  </head>
+  <body></body>
+</html>
+```
 
-Do **not** copy a demo's page wholesale: those carry the suite's own
-chrome — source panel, `page.js`, highlight.js, the back-link header —
-none of which belongs in an application. Take only the `<link>`s.
+## Updating
 
-### src/&lt;Module&gt;.purs and src/&lt;Module&gt;Logic.purs
-
-The application itself, written to the rules in
-[writing.md](writing.md): the view module and the logic module it
-imports — view depends on the logic module and the design system, logic
-only on the domain. If the developer's app is not yet specified, copy
-the counter demo as the starter:
-`.spago/bambik/<tag>/demo/7guis/counter-mdc2/CounterMDC2.purs` as
-`src/<Module>.purs` and the shared
-`.spago/bambik/<tag>/demo/7guis/counter/CounterLogic.purs` as
-`src/<Module>Logic.purs`, renaming the modules and entry function to
-`<Module>`, `<Module>Logic` and `<entryFn>` (the view module's import of
-`CounterLogic` follows the rename). It is a complete working app in
-twenty-odd lines — the MVU shape, a display, an event button and a
-business function — so a green build of it proves the whole toolchain.
-Its page, `demo/7guis/counter-mdc2/index.html`, is the source of the CSS
-links above.
-
-For a vocabulary other than MDC2, copy the counter's sibling view module
-`counter-mdc3/` instead, or the demo named in the last column of the
-table below: the logic module is the same whatever the vocabulary, the
-oculars the counter wraps its content in exist under each catalog's own
-names, and drop them entirely for plain HTML.
-
-## Design systems
-
-The starter uses MDC2. To use another vocabulary, switch the import in the
-app module, the npm dependency, and the page's CSS — the entry `body` is
-exported by every vocabulary module under the same signature (each dressing
-the page for its catalogue before it mounts), so the switch is still that one
-import line:
-
-| Vocabulary module    | npm dependency               | index.html needs                          | Demo to copy from            |
-|----------------------|------------------------------|-------------------------------------------|------------------------------|
-| `PUI.Web.MDC2`       | `material-components-web`    | MDC CSS + Material Icons links (starter)   | any `*-mdc2/`                |
-| `PUI.Web.MDC3`       | `@material/web`              | Roboto + Material Symbols Outlined fonts   | `espresso-bar-mdc3/`         |
-| `PUI.Web.Shoelace`   | `@shoelace-style/shoelace`   | Shoelace light theme CSS from CDN          | `product-review-shoelace/`   |
-| `PUI.Web.Fluent`     | `@fluentui/web-components`   | nothing (`body` applies the theme at mount) | `meeting-booker-fluent/`     |
-| `PUI.Web.Bootstrap`  | — (CSS-only)                 | Bootstrap 5 CSS from CDN                   | `loan-calculator-bootstrap/` |
-| `PUI.Web.HTML` alone | — (none)                     | whatever CSS the app itself supplies       | `restaurant-menu/`           |
-
-Match the versions bambik pins in its own `package.json`, and copy the
-exact CDN links from that vocabulary's demo page under
-`.spago/bambik/<tag>/demo/nguis/`.
-
-The last row is the no-design-system case: element oculars from
-`PUI.Web.HTML` (and `PUI.Web.SVG`) styled by the app's own CSS, no npm
-component library at all. Everything else in this procedure is unchanged
-by the choice — same scaffold, same build, same rules in
-[writing.md](writing.md).
-
-## Updating and pinning
-
-To move to a newer library, bump `bambik.version` in `packages.dhall` to a
-newer tag **and re-point the `.spago/bambik/<tag>/extras/**/*.purs` glob in
-`spago.dhall` to the same tag** (the two must agree — a stale glob points at
-the old checkout, or at nothing once it is cleaned, and the four
-`Data.Profunctor` complement classes go missing), then re-run `spago build`;
-spago fetches that tag into its own `.spago/bambik/<tag>/`, so nothing is
-upgraded behind your back. The other
-two are pinned the same way: the compiler by the release URL in
-`package.json` (npm records the tarball's integrity hash in
-`package-lock.json`, so a re-published asset of the same name is rejected
-rather than silently swapped) and the variant fork by `variant.version`.
-The three move together in practice — the fork's patch only compiles under
-that compiler, and the library needs both — so change them as a set, and
-check the library's `dependencies` list in the `bambik` entry when you do.
+To move to a newer bambik tag, change all three together:
+`bambik.version` in `packages.dhall`, the tag in `spago.dhall`'s second
+`sources` glob, and the pasted dependency lists (re-run the fetch
+against the new tag). Check the new tag's own Pins table
+(`https://raw.githubusercontent.com/restaumatic/bambik/<new tag>/.claude/skills/developing-bambik-apps/bootstrap.md`)
+and move the compiler and variant-fork pins in the same edit if they
+changed. Then `npm install` and `spago build`.
 
 ## Troubleshooting
 
-- `Module Prim.Variant was not found` — stock purs got installed; check
-  `package.json`'s `purescript` entry is the release URL, re-run
-  `npm install`, confirm with `purs --version`.
+- `Module Prim.Variant was not found` — stock purs is installed: check
+  `package.json`'s `purescript` entry is the release URL, `npm install`,
+  confirm with `purs --version`. While compiling `Data.Variant`, it
+  means the `with variant.repo`/`with variant.version` lines are missing
+  from `packages.dhall`.
+- `Module Data.Profunctor.… was not found` (or `Data.Lens.…`,
+  `Data.Variant.Case`) — the second `sources` glob is missing or names a
+  different tag than `packages.dhall`. Make them equal; confirm
+  `.spago/bambik/<tag>/extras/` exists.
 - `Module PUI was not found` — `bambik` is missing from `spago.dhall`'s
-  `dependencies`, or its `packages.dhall` entry failed to fetch (check
-  `.spago/bambik/<tag>/src/PUI.purs` exists).
-- `Module Data.Profunctor.Resolving was not found` (or `.Coresolving`,
-  `.Retaining`, `.Coretaining`) — the second `sources` glob in
-  `spago.dhall` is missing or names the wrong tag. It must read
-  `.spago/bambik/<tag>/extras/**/*.purs` with the tag from
-  `packages.dhall`; confirm
-  `.spago/bambik/<tag>/extras/profunctor/Data/Profunctor/Resolving.purs`
-  exists. These four live outside the library's `src/`, which spago's
-  hardcoded git-dependency glob does not reach.
-- A missing module from some *other* library while compiling bambik itself
-  — the `bambik` entry's `dependencies` list is behind the library's;
-  compare it with `spago.dhall` in `.spago/bambik/<tag>/`.
-- `Module Prim.Variant was not found` *while compiling `Data.Variant`* —
-  the `variant` override is absent, so the stock library is being built;
-  check both `with variant.repo` and `with variant.version` are present.
-- dhall errors mentioning an absolute `/home/...` path — `packages.dhall`
-  points at a local checkout instead of the tagged git package; rewrite
-  it from [Scaffold](#packagesdhall) above.
-- Custom type errors from the row layer — the duplicated-label detector
-  names the label and both operands' label sets; read the message before
-  fighting the row unification behind it.
-- Port busy — change `--serve=127.0.0.1:8000` in `package.json`.
+  `dependencies`, or its fetch failed (check `.spago/bambik/<tag>/src/PUI.purs`).
+- A missing module from some other library while compiling bambik, or
+  spago asking to add packages to the dependency list — a pasted list is
+  behind the tag; re-run the fetch and paste again.
+- A dhall parse error — a list was edited by hand; paste the fetch
+  output unchanged.
+- Port 8000 busy — change `--serve=127.0.0.1:8000` in `package.json`
+  and use the new port in building.md's checks.

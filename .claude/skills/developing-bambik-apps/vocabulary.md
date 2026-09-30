@@ -1,152 +1,141 @@
 # Which word, when
 
-An index, not a rulebook. Every row points at the section of
-[writing.md](writing.md) or the module header that states the rule; nothing
-here says anything those do not. Read writing.md once; come back here when you
-know what the screen needs and not yet what the word for it is. Module paths
-are inside the fetched library, `.spago/bambik/<tag>/` — `HTML.purs` is
-`src/PUI/Web/HTML.purs`, `PUI.purs` is `src/PUI.purs`, and the four shape
-modules are `extras/row-profunctor/Data/Profunctor/Row/*.purs`.
+A lookup index: from what the screen needs to the word, a demo that uses
+it, and where to read. It states no rules — those are in
+[writing.md](writing.md) — and no component contracts — those are in the
+module headers. `×` is a record, `+` a variant; the other terms are defined
+in writing.md *Terms*.
 
-One invariant spans every table: a view line names exactly one anchor —
-the **field** it edits, the **case** it emits or shows, the **read
-function** it renders, or **nothing** (chrome) — so each *Write* cell
-below leads with that anchor, in its own position: every leaf reads
-word, anchor, then its positional arguments, with records only for
-optional presentation. Stated in writing.md *The anchor invariant*.
+Where to read:
 
-## The two `do`s — neither is a monad's
+- **writing.md *Section*** — the rule.
+- **a module name** — its header and per-word docs: `npx spago docs --open`
+  in the app, or the source under `.spago/bambik/v0.1.6/src/`
+  (`PUI.Web.MDC2` is `src/PUI/Web/MDC2.purs`).
+- **a demo name** — `.spago/bambik/v0.1.6/demo/7guis/<name>-<ds>/` or
+  `demo/nguis/<name>-<ds>/`, its logic module in the unsuffixed sibling
+  directory.
 
-| You are writing | Block | What flows | Demo |
+Words not listed here — typography, surfaces, icons, the other selectors
+and emitters of a catalogue — are in the design-system module header
+(`PUI.Web.MDC2`, `PUI.Web.MDC3`, `PUI.Web.Shoelace`, `PUI.Web.Fluent`,
+`PUI.Web.Bootstrap`, or `PUI.Web.HTML` for plain HTML).
+
+## Composing
+
+| You are writing | Word | Demo | Read |
 | --- | --- | --- | --- |
-| stages in sequence — an editor after an editor, a display after a form, a fold after a button | `Semigroupoid.do` (`import QualifiedDo.Semigroupoid as Semigroupoid`) | each stage's output is the next one's input; code order = DOM order = data order | every demo — start with counter |
-| chrome and displays reading **one record** together | `RecordToRecord.do` (×→×) | the record broadcast to every operand; displays and static chrome only — never an editor, and never `staticText` glue in one text run with a `text @l` leaf (a composed line is one derived field) | order-form's summary stages |
-| several buttons over one record | `RecordToVariant.do` (×→+) | record in, one case out per emitter | cashbox |
-| one stage per event case | `VariantToVariant.do` (+→+) | each case to its own stage (backend actions), each operand's outcome cases named on its line | crud's actions |
-| one status per outcome | `VariantToRecord.do` (+→×) | cases in, statuses out | order-form's snackbars |
+| stages one after another | `Semigroupoid.do` (`import QualifiedDo.Semigroupoid as Semigroupoid`) | counter | writing.md *The pipeline* |
+| displays and chrome reading one record side by side | `RecordToRecord.do` — `div $ RecordToRecord.do` | espresso-bar, loan-calculator, meeting-booker, shopping-cart | `Data.Profunctor.Row.RecordToRecord` |
+| several emitters over one record | `RecordToVariant.do` | cashbox, stopwatch, crud | `Data.Profunctor.Row.RecordToVariant` |
+| one stage per event case | `VariantToVariant.do` | crud, cashbox, reorder | `Data.Profunctor.Row.VariantToVariant` |
+| one status per outcome case | `VariantToRecord.do` | flight-booker, order-form | `Data.Profunctor.Row.VariantToRecord` |
+| what a composition guarantees | — | — | writing.md *What the laws guarantee* |
+| a pane stays blank | — | — | writing.md *When it does not propagate* |
 
-Rule of thumb: things that *follow* each other → `Semigroupoid.do`; things that
-*share one value* → a merge, named by the shape of what goes in and out
-(record `×`, variant `+`). Stated in: writing.md *The pipeline*; the four
-shape module headers.
+## App shape
+
+| The app is | Word | Demo | Read |
+| --- | --- | --- | --- |
+| mounted | `body $ …`, imported from the design-system module | every demo | writing.md *App shape* |
+| a model edited and folded | `# mvu freshCount` | counter | writing.md *App shape* |
+| seeded, with no loop of its own | `# with invitation`; `# with {}` | potluck; order-form | writing.md *App shape* |
+| a form section looping inside it | `# looped` | order-form, crud | writing.md *App shape* |
+| a wizard whose step loops silently | `# folding @"next" @"step" cartStep` | checkout | `Data.Profunctor.Row.RecordToVariant` |
+| a state field looping output to input | `# feedback @"top" noBids` | auction | `Data.Profunctor.Row.RecordToRecord` |
+| an event that retries itself | `# iterate` | payment | `Data.Profunctor.Row.VariantToVariant` |
+| a counter resuming where it left off | `# unfolding @"resume" @"next" firstTicket` | ticket-dispenser | `Data.Profunctor.Row.VariantToRecord` |
 
 ## Showing data
 
-| The screen needs | Write | Demo | Stated in |
+| The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| one value, formatted | `text f` — the read function, named in the logic module: `headline4 (text countLine) # shown` | counter | writing.md *copy is a function, not a field*; doc/research-copy-is-a-function.md |
-| one field verbatim (already copy) | `text _.title` — an accessor section, no named function for a bare read | todo-list, inbox | same |
-| a sentence, a prefixed or unit-suffixed value, text composed from several fields | one named function, glue included: `headlineSmall (text balanceLine) # shown` | order-form's summary; cashbox's balance line | writing.md *A composed line is one function* |
-| a **number** as a bar, gauge or stars | the quantity leaf: label = accessible name, value = read function — `progressBar @"Elapsed" elapsedFraction` | timer, quiz, meeting-booker | writing.md *copy is a function, not a field* |
-| pure chrome inside a pipeline (a static caption) | `(headline4 $ staticText @"…") # shown`; copy shown only in some state is a constant, `text faultLine # shownWhen @l f` | signup-form; calculator | writing.md *Pass-through stages* |
-| content that exists only in one state | `content # shownWhen @l classifierOf` (a display; an emitter takes `# provided @l classifierOf`, an editor `# inCase @l classifierOf`): one classifier names every state, each case carrying its pane's payload; a projection never decides, and no pane is gated on a `Maybe` | flight-booker's three `bookingState` panes; checkout: `# shownWhen @"placed" orderStatus`; calculator: `# shownWhen @"faulty" readout` | writing.md *Conditional visibility* |
-| an **editor** that exists in one mode | `editor # inCase @l classifier` | flight-booker's return date; meeting-booker's slider | writing.md *Conditional visibility* |
-| a list, displayed | `item # shownEach @l rowsOf` inside its container ocular | stopwatch's laps | writing.md *Pass-through stages*, *Collections* |
-| a display inside a collection item or pane payload | `text f` over the item/payload row — the row carries the *source* fields, the function formats them | stopwatch's laps; flight-booker's panes | writing.md *copy is a function, not a field* |
-| a live readout that should settle before it redraws | `stage # debounced { ms }` | flight-booker's itinerary line | PUI.purs (`debounced`) |
-| the flow must wait for the user's confirmation | `confirmed @l title $ content` (MDC2/MDC3) — the modal leads like any container | cashbox | writing.md *Modals* |
-| a value-computed attribute (style, coordinates, colour) | `attrWith "style" f` on the element | calculator, cells, color-mixer | HTML.purs (`attrWith`) |
-| a class that depends on the value | `# clWhen predicate "class"` | todo-list | HTML.purs (`clWhen`) |
-| structure that genuinely varies with the value | the `dynamic` / `each` builders | markdown-previewer | HTML.purs; writing.md *Collections* |
+| a value, formatted | `headline4 (text countLine) # shown` | counter | writing.md *Components*; `PUI.Web` |
+| a field verbatim | `text _.request.city`; `text _.entry` | weather; calculator | writing.md *Components* |
+| a sentence composed from several fields | `( headline6 $ text balanceLine ) # shown` | cashbox | writing.md *Code style* → *Types and values* |
+| a case label read as copy | `caseText` (`Data.Variant.Case`), in the logic | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
+| a number as a bar, gauge or stars | `linearProgress @"Elapsed" elapsedFraction`; `progressBar @"Seats taken" seatOccupancy` | timer; meeting-booker | the design-system module |
+| fixed copy | `(headline4 $ staticText @"Create account") # shown` | signup-form | writing.md *Components* |
+| a record-reading group of displays | `# shown` | loan-calculator | writing.md *Stages* |
+| a pane for one state of the model | `# shownWhen @"faulty" readout` | calculator, flight-booker, checkout | writing.md *Conditional visibility* |
+| a list, displayed | `ul $ ( li $ text lapLine ) # shownEach @"number" lapRows` | stopwatch | writing.md *Collections* |
+| a card that edits nothing | `card $ body1 (text summaryLine) # shown` | order-form, product-review | writing.md *Components* |
+| a readout that settles before it redraws | `# debounced summarySettleTime` | order-form, flight-booker | `PUI` |
+| a hint on hover | `# tooltip @"You must accept the terms of service to sign up"`; `# tooltipWith loyaltyNote` | signup-form; espresso-bar | the design-system module |
+| a value-computed attribute | `attrWith "style" keyFace` | calculator, cells, circle-drawer | `PUI.Web` |
+| a fixed attribute or class | `"style" := "…"`; `cl "dish"` | cells; restaurant-menu | `PUI.Web` |
+| a class that depends on the value | `# clWhen isCompleted "todo-done"` | todo-list | `PUI.Web` |
+| structure that varies with the value | `dynamic documentView`; `each items …`; `el ("h" <> show h.level)` | markdown-previewer | `PUI.Web` |
+| an element with nothing in it | `static (span >>> cl "dish-dots")` | restaurant-menu, reorder | `PUI` |
+| a leaf with no face | `blank` | circle-drawer, color-mixer | `PUI` |
 
 ## Editing
 
-| The screen needs | Write | Demo | Stated in |
+| The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| a field of the model, edited | the leaf with the field as its label: `filledTextField @"First name" {}`, `checkbox @l {}`, `slider @l {}` | every form | writing.md *Component citizenship* |
-| a card-headed group nesting a sub-model | `group @"Customer" $ Semigroupoid.do …` (MDC2/MDC3) — surface, heading and field in one word, the label stamped as the accessible group name, leading its lines like any container; the focus is anything `focusField @l` takes (a record, a `bracketed` variant, a collection's array) | order-form; potluck; reorder | MDC2.purs / MDC3.purs (`group`); writing.md *Component citizenship* |
-| a reusable sub-form over a flat sub-row (no wrapper field) | `addressForm # subStrong` | parcel | RecordToRecord.purs (`subStrong`) |
-| an invariant between **edited** fields — editing one implies the other | `editor # settled normalize` — its only job; every `# settled` in the demos sits on an editor, never feeding a display | temperature-converter; meeting-booker's `seatsInRoom` | PUI.purs (`settled`); writing.md *copy is a function, not a field* |
-| a selection that always has a value | `select @l {} [ choice @"…", … ]` — the field is the option | flight-booker | MDC2.purs (`select`) |
-| a selection owed but not yet made | `dropdownUnpicked @l @"chosen" {} […]` — every selector's `…Unpicked` sibling: the field is a named two-case variant, seeded `.unchosen {}`; a pick cannot be taken back; consumers adopt the made case | meeting-booker's Room | Fluent.purs (`dropdownUnpicked`) |
-| a selection the user may leave unmade | `dropdownOptional @l @"ordered" @"none" {} […]` — every selector's `…Optional` sibling: the same two-case variant, seeded at `none`, and the face can clear back to it (an empty option; pressing the checked radio or selected segment again) | meeting-booker's Catering | Fluent.purs (`dropdownOptional`) |
-| a bounded quantity | the model holds `{ current, min, max, step }`; `sliderLive @l {}` edits it | timer, circle-drawer | writing.md *Code style → Types and values* |
-| two controls editing **one** field | two successive stages over it, `slider @l {}` then `rangeInput @l` | tip-calculator | writing.md *Component citizenship* |
-| a variant-valued field with an editor per case | `( Semigroupoid.do selector; pane # inCase @l selection; … ) # bracketed @l stateOf caseOf` | order-form's fulfillment | writing.md *Component citizenship*; RecordToRecord.purs (`bracketed`) |
+| a text field | `filledTextField @"First name" {}` | order-form | writing.md *Components* |
+| a text field checked as the user pauses | `debouncedTextField @"Username" {} usernameSettleTime` | signup-form | the design-system module |
+| a yes/no over a two-case field | `checkbox @"Terms" @"accepted" @"declined" {} (…)` | signup-form, espresso-bar | the design-system module |
+| a switch | `toggleSwitch @"Takeaway cup" {}` | espresso-bar | the design-system module |
+| a selection that always has a value | `select @"Flight type" {} [ choice @"one-way", choice @"return" ]` | flight-booker | writing.md *Components* |
+| a selection owed but not yet made | `dropdownUnpicked @"Room" @"chosen" {} […]`; `segmentedButtonUnpicked @"Dish" @"chosen"` | meeting-booker; potluck | writing.md *Components* |
+| a selection the user may leave unmade | `dropdownOptional @"Catering" @"ordered" @"none" {} […]` | meeting-booker | writing.md *Components* |
+| a bounded quantity | `sliderLive @"Duration" {}`; `slider @"Split between" {}` | timer; tip-calculator | writing.md *Code style* → *Types and values* |
+| two controls on one field | `slider @"Tip percentage" {}` then `rangeInput @"Tip percentage"` | tip-calculator | writing.md *Components* |
+| a labelled group over a sub-record | `group @"Customer" $ Semigroupoid.do …` | order-form, potluck, reorder | writing.md *Components* |
+| a reusable sub-form over a flat sub-row | `addressForm # subStrong` | parcel | `PUI` |
+| an editor that exists in one state | `# inCase @"return" tripType` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
+| an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |
+| a variant field with an editor per case | `# bracketed @"Mode" fulfillmentState fulfillmentCase` | order-form | writing.md *Stages* |
 
 ## Events into state
 
-| The screen needs | Write | Demo | Stated in |
+| The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| a button that changes the model | `button @"Count" {} # applied increment` — `increment :: state -> state`, the click's payload unread | counter; todo-list's Add | PUI.purs (`applied`) |
-| an event whose payload the model folds in | `clicked @"picked" _.key content # foreach … # updated (match { picked: handler })` | quiz, tic-tac-toe | PUI.purs (`updated`) |
-| the handler's shape | `payload -> state -> state`, each record an open row, the state updated in place | cashbox: `applyRefund :: { amount :: Number \| r1 } -> { balance :: Number \| r2 } -> { balance :: Number \| r2 }` | writing.md *Code style → Business functions* |
-| … several payload-less buttons sharing one stage | `const <<< f` per branch | circle-drawer: `"Undo": const <<< undo, "Redo": const <<< redo` | same |
-| … the payload is ignored | `const f` | stopwatch: `const recordLap` | same |
-| … a preset (fields set to constants) | an open-row update in the logic: `const beginTiming`, `# applied restarted`, `const <<< theUsual` — never a constant patch | stopwatch; timer; checkout; espresso-bar | writing.md *No constant patches* |
-| a clicked collection element naming itself | `clicked @"picked" _.key content` (whole payload: `identity`) | todo-list, cells | VariantToVariant.purs (`toCase`) |
-| a button whose *outcome* the business computes | the button emits its own case; the outcome is decided where it is consumed — the fold's handler, or a status's copy function (`snackbar @"Sign up" signupLine`) | signup-form | writing.md *emitters* |
-| two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn`, `goneOn` taking the button's own case | checkout's Next/Back | VariantToVariant.purs (`toCase`) |
-| one event case routed to its own stage | `stage # atCase @l` inside `VariantToVariant.do` | crud; reorder | VariantToVariant.purs (`atCase`) |
-| an action with one outcome | the logic returns the bare payload; the line names the case: `action createPerson # atCase @"Create" # toCase @"created" identity` | crud; reorder | writing.md *An action's outcome cases are named where the action is* |
-| an action with several outcomes | its statuses right after it: `action submitOrder # atCase @"Submit order" >>> VariantToRecord.do { … }`, the actions' branches merged by `VariantToRecord.do` | order-form | same |
-| some event cases intercepted, the rest passing straight | `( VariantToVariant.do … ) # subChoice` | cashbox | VariantToVariant.purs (`subChoice`) |
-| a whole button group made an emit stage | `( RecordToVariant.do … ) # armed` | order-form | RecordToVariant.purs (`armed`) |
+| a button stepping the model | `button @"Count" {} # applied increment` | counter, todo-list | writing.md *Stages* |
+| a button with a fixed payload | `button @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
+| an event folded into the model | `# updated (match { claimed: claimCell })` | tic-tac-toe, cashbox | writing.md *Code style* → *Business functions* |
+| a clicked element naming itself | `clicked @"claimed" _.key (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
+| a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
+| an emitter shown in one state | `# provided @"timing" stopwatchPhase` | stopwatch, checkout, quiz | writing.md *Conditional visibility* |
+| two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn` | checkout | `PUI` |
+| an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
+| some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
+| a button group fed the record it replays | `( RecordToVariant.do … ) # armed` | order-form, espresso-bar, signup-form | writing.md *Stages* |
+| a menu of presets | `menu @"Presets" ( RecordToVariant.do menuItem @"The usual" {} … )` | espresso-bar, inbox | the design-system module |
 
-## Effects and time
+## Effects, time, statuses
 
-| The screen needs | Write | Demo | Stated in |
+| The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| an `Aff` action on an event, with a busy indicator | `indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"` — the label names the run, since it is the accessible name; `blank # action …` where the vocabulary has no indicator | flight-booker; reorder; order-form's distance estimate (inside a `looped` form the button is the occurrence — an action fed by the broadcast would re-run on every turn) | PUI.purs (`action`) |
-| an action at load, before any input | `indeterminateLinearProgress @"Loading order" # action loadOrder` as the first stage, the app closed with `# with {}` | order-form | writing.md *App shape* |
-| a periodic step | `every tickPeriod tick` as a stage | stopwatch, scoreboard | PUI.purs (`every`) |
-| narrate an event as it passes, without consuming it | `status # observed` | payment's retry toast | PUI.purs (`observed`) |
-
-## Statuses — events shown
-
-| The screen needs | Write | Demo | Stated in |
-| --- | --- | --- | --- |
-| one status line per outcome case | `snackbar @"orderSubmitted" submittedLine` in `VariantToRecord.do` — sibling operands each own their case | order-form | writing.md *statuses* |
-| mutually exclusive outcomes, one status each | `snackbar @"booked" bookedLine` beside `snackbar @"rejected" rejectedLine` in `VariantToRecord.do` | flight-booker | writing.md *statuses* |
+| an `Aff` action on an event | `indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"` | flight-booker, crud | writing.md *Stages* |
+| … with no progress indicator | `blank # action rotateAction # atCase @"Rotate"` | reorder, flight-booker (fluent, bootstrap, html) | writing.md *Stages* |
+| an action at load | `indeterminateLinearProgress @"Loading order" # action loadOrder` | order-form, crud | writing.md *App shape* |
+| an action's outcome named on its line | `# toCase @"created" identity` | crud | writing.md *View and logic modules* |
+| a periodic step | `every tickPeriod tick` | timer, stopwatch, scoreboard | `PUI` |
+| a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
+| narrate an event while passing it on | `snackbar @"charge" retryLine # observed` | payment, inbox | `PUI` |
+| confirm before the flow continues | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox | writing.md *Modals* |
+| a dialog of choices | `dialog @"Delete the last message?" $ RecordToVariant.do …` | inbox | writing.md *Modals* |
+| an informational dialog | `simpleDialog @"Got it" @"About this dashboard" (…)` | weather | writing.md *Modals* |
+| discard an assembly's output deliberately | `# muted` | scoreboard, order-dashboard | writing.md *Stages* |
 
 ## Collections
 
-| What comes in → what goes out | Write | Demo | Stated in |
+| What comes in → what goes out | Word | Demo | Read |
 | --- | --- | --- | --- |
-| the whole array → each element's own event | `item # foreach @"id" rowsOf` (keyed by a model field) | cells, tic-tac-toe, crud (plain HTML) | PUI.purs (`foreach`); writing.md *Collections* |
-| the whole array → the whole array, decided jointly (withheld until every element spoke) | `item # acted @"name"` | potluck (per-guest `optional @"chosen"` selectors) | PUI.purs (`acted`) |
-| the whole array → the whole array, edited in place | `editor # edited @"id"` | reorder | PUI.purs (`edited`) |
-| one `{ key, value }` at a time → tagged per-element output | `item # dispatched envelopeOf` | departures | PUI.purs (`dispatched`) |
-| one `{ key, value }` at a time → the growing array | `item # accumulated envelopeOf` | scoreboard | PUI.purs (`accumulated`) |
-| a selectable list (MDC2) | `listOf @l @"key" { selected: _.done } rowsOf item` — the pick is a named key field of the row, never a function; a pick carrying more than an id gets a field the projection builds (weather's `request`) | todo-list, crud | MDC2.purs (`listOf`) |
-| a collection display that passes the model through | `item # shownEach @l rowsOf` | stopwatch | HTML.purs (`shownEach`) |
+| the array → each element's event | `# foreach @"key" cells` | tic-tac-toe, cells, shopping-cart | writing.md *Collections* |
+| the array → the array, decided jointly | `# acted @"name"` | potluck | writing.md *Collections* |
+| the array → the array, edited in place | `# edited @"id"` | reorder | writing.md *Collections* |
+| one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
+| one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
+| a selectable list (MDC2, MDC3) | `listOf @"toggled" @"key" { selected: isCompleted } visibleEntries (…)` | todo-list, crud, inbox | writing.md *Collections* |
+| a selectable list elsewhere | `clicked @"picked" _.key (…) # foreach @"key" entries` | crud (html) | writing.md *Collections* |
 
-## App shapes
+## Logic not written yet
 
-| The app is | Write | Demo | Stated in |
-| --- | --- | --- | --- |
-| a model, edited and folded, redrawn on every change | `pipeline # mvu seed` | counter and most demos | writing.md *App shape* |
-| any of these, mounted | `body $ …`, `body` imported from the design-system module (`PUI.Web.HTML`'s at the plain floor) — one signature everywhere, each dressing the page for its catalogue before it mounts | every demo | HTML.purs (`body`); each vocabulary's header |
-| a pipeline with no loop of its own, seeded | `pipeline # with initial`; a form section inside it `# looped` | order-form; restaurant-menu | writing.md *App shape* |
-| a wizard whose step state loops silently | `# folding @"next" @"step" firstStep` (loop case, then the state field; its starting value) | checkout | RecordToVariant.purs (`folding`) |
-| a state field that loops output → input, invisible outside | `# feedback @"top" noBids` (the state field, then its starting value) | auction | RecordToRecord.purs (`feedback`) |
-| an event that retries itself | `# iterate` | payment | VariantToVariant.purs (`iterate`) |
-| a counter that resumes where it left off | `# unfolding @"resume" @"next" firstTicket` (resume case, then the state field; its starting value) | ticket-dispenser | VariantToRecord.purs (`unfolding`) |
-
-## Where `identity` still appears
-
-In a projection slot `identity` means "the whole value, verbatim": `clicked @l
-identity` (the whole row is the case payload), `toCase @l identity` (a
-dialog's whole release — cashbox),
-`foreach @l identity` (the fed value *is* the array — potluck). `shown` takes
-no projection, so it never appears with it. Stated in:
-writing.md *Code style → Wiring*.
-
-## What you may rely on
-
-A `.do` block is again a component; line order and grouping are not
-observable; an operand is fed only its part and never a sibling's emission;
-a multi-field feed is released once, whole; showing state never fires an
-event; a quieter stage anywhere only withholds; design systems are
-interchangeable at the boundary. Stated in: writing.md *What the laws
-guarantee*; the six laws themselves in `Data.Profunctor.Row` ("The laws").
-
-## The one runtime rule
-
-A record merge, and every stage built on one, emits only once every field of
-its row has been fed; until then it withholds and nothing downstream renders.
-Seeds (`mvu seed`, `with initial`, the trace forms' first argument) are how a
-row becomes known at registration. A pane that stays blank is a gate
-withholding — the 3s watchdog prints the gate and its missing fields to the
-console. Stated in: writing.md *The pipeline* and *When it does not
-propagate*.
+| You need | Word | Read |
+| --- | --- | --- |
+| the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
+| the view running before its logic exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
+| to know the app is finished | no hole left | writing.md *Writing order* |

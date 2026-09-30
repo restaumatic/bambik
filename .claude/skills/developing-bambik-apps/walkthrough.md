@@ -2,14 +2,14 @@
 
 The 7GUIs flight booker: a one-way/return selector, one or two date fields,
 a live line describing the itinerary (or what is wrong with it), a Book
-button, and a confirmation. It is the smallest demo that crosses three of
-the four shapes — editors (`×→×`), an event (`×→+`), an action (`+→+`)
-and a status (`+→×`) — so once it reads plainly, every larger demo is the
-same moves repeated. The view is
-`demo/7guis/flight-booker-mdc2/FlightBookerMDC2.purs`, the logic
-`demo/7guis/flight-booker/FlightBookerLogic.purs`; run it with
-`npm run dev flight-booker-mdc2`. Every word used here has a row in
-[vocabulary.md](vocabulary.md) and its rule in [writing.md](writing.md).
+button, and a confirmation. It is a small demo that uses all four shapes —
+editors (`×→×`), an emitter (`×→+`), an action (`+→+`) and statuses
+(`+→×`) — so once it reads plainly, the larger demos are the same moves
+repeated. The view is `demo/7guis/flight-booker-mdc2/FlightBookerMDC2.purs`,
+the logic `demo/7guis/flight-booker/FlightBookerLogic.purs`; in an app both
+are under `.spago/bambik/v0.1.6/`. The rules the lines follow are in
+[writing.md](writing.md); what each component does is in its module header
+(`npx spago docs --open`).
 
 ## The view
 
@@ -46,95 +46,75 @@ flightBookerMDC2 =
       snackbar @"rejected" rejectedLine
 ```
 
-**The imports.** Three vocabularies and one merge sugar: `PUI` for the
-words that shape data flow (`mvu`, `debounced`, `action`, `atCase`),
-`PUI.Web` for the words every vocabulary shares (`choice`, and the display
-stages `shownWhen`, `inCase`, `text`), `VariantToRecord` for the qualified-do
-that sets the two statuses side by side, and `PUI.Web.MDC2` for the design
-system — its `body` included:
-every vocabulary exports the entry under that one name and signature,
-dressing the page for its catalogue before it mounts.
-The MDC3 twin differs from this file in exactly the last import (and the
-typography names it pulls from it); the logic module is shared verbatim.
-No merge block appears: each displayed line is one read function at one
-leaf, so no stage here reads more than one leaf. `QualifiedDo.Semigroupoid as Semigroupoid`
-gives `Semigroupoid.do`: sequential composition, not a monad.
+**The imports.** `PUI` for the words that shape data flow (`mvu`,
+`debounced`, `action`, `atCase`); `PUI.Web` for the words every design
+system shares (`choice`, the panes `shownWhen` and `inCase`, the `text`
+leaf); `VariantToRecord` for the block that sets the two statuses side by
+side; and `PUI.Web.MDC2` for the design system, its `body` included. The
+MDC3 twin differs in its module and entry name, that one vocabulary import,
+and the typography it pulls from it (`bodyLarge` for `body1`); the logic
+module is shared verbatim. `QualifiedDo.Semigroupoid as Semigroupoid` gives
+`Semigroupoid.do`: stages in sequence, not a monad.
 
 **`body $ Semigroupoid.do`.** Mount at the document body, dressed for
-Material 2 (the `body` is the vocabulary's) and applied with `$`, the
-visual plumbing, never with `#`, the data plumbing. There is no wrapper:
-the app takes no surface of its own — the page it is shown on frames it —
-and inside it a card holds either a model sub-record (`group @l`) or
-content that edits nothing (a summary card) — this flat booking needs
-neither. The outer `Semigroupoid.do` has five stages, and data
-flows top to bottom exactly as the code reads: the form emits the model on
-every edit → the itinerary line shows it and passes it on → the button turns
-it into an event → the action turns the event into an outcome → the snackbar
-shows the outcome. Code order is DOM order *and* data order.
+Material 2, applied with `$` (layout), never `#` (data flow). The outer
+`Semigroupoid.do` has five stages, and data flows top to bottom as the code
+reads: the form emits the model on every edit → the itinerary line shows it
+and passes it on → the button turns it into an event → the action turns the
+event into an outcome → a snackbar shows the outcome. Code order is DOM
+order and data order (writing.md *The pipeline*).
 
-**Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed with
-`# mvu plannedTrip`.
+**Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
+with `# mvu plannedTrip`.
 
-- `select @"Flight type" {} [ choice @"one-way", choice @"return" ]`
-  — the leaf's type argument is the caption *and* the model field, so this
-  edits `{ "Flight type" :: [ "one-way" :: {}, "return" :: {} ] }`. Each
-  `choice @l` states an option's copy once, as its case. The plain
-  `select` says a selection always exists: the model holds the variant
-  itself, not a `Maybe` — the selector is an editor of that field,
-  answering every feed (`selectUnpicked` would hold a choice owed but not
-  yet made, `selectOptional` one the user may leave unmade).
+- `select @"Flight type" {} [ choice @"one-way", choice @"return" ]` — the
+  type argument is both the caption and the model field, so this edits
+  `{ "Flight type" :: [ "one-way" :: {}, "return" :: {} ] }`. Each
+  `choice @l` states an option's copy once, as its case. A trip always has
+  a type, so the plain `select` fits: the field holds the variant itself.
 - `filledTextField @"Start date (DD.MM.YYYY)" {}` — the label carries the
-  whole copy, format hint included; the `{}` is empty presentation config.
+  whole copy, format hint included; `{}` is empty presentation config.
 - `filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType`
-  — this editor *exists* only while `tripType model` yields case `return`;
-  detached otherwise, the model passing straight through. `tripType` is a
-  business function, so what "return" means lives in the logic module.
+  — the editor pane: this field exists only while `tripType` yields case
+  `return`, and the model passes straight through otherwise. What "return"
+  means lives in the logic module.
 
-Every editor is a **whole-row stage**: fed the whole record, it emits the
-whole record with its own field changed. `mvu plannedTrip` seeds the record
-at registration and loops each emission back to the top, so all three
-editors see every change. It also closes the stage's input to `{}` — the
-compile-time proof that nothing here waits for a seed nobody supplies.
+Each editor is fed the whole record and emits it with its own field
+changed. `mvu plannedTrip` supplies the starting record and loops each
+change back to the top, so all three editors see every edit; it also closes
+the app's input to `{}`, which `body` requires (writing.md *App shape*).
 
-**Stage 2 — the itinerary line.** Three panes, one visible at a time,
-under one `# debounced itinerarySettleTime`.
+**Stage 2 — the itinerary line.** Three panes over one classifier, under
+one `# debounced itinerarySettleTime`.
 
-- `body1 (text oneWayLine)` — the leaf takes the **read function**, not a
-  label: its content *is* the copy, so there is no field to name. The whole
-  sentence ("A one-way flight on 27.03.2026") is `oneWayLine`, one pure
-  function in the logic module (writing.md, *copy is a function, not a
-  field*): the copy is under unit test, the view holds no glue, and the line
-  names its own writer.
-- `# shownWhen @"one-way" bookingState` — attach and feed this pane when
-  `bookingState model` yields case `one-way`, with that case's payload
-  `{ out :: { y, m, d } }` — the **source** data the line is computed from,
-  not a rendering of it; detach on any other case. Either way the fed
-  model is released downstream: a hidden pane never blocks the flow. Three
-  such stages over one classifier make the three states exclusive by
-  construction — exclusivity is computed in `bookingState`, not arranged
-  in the view.
-- `# debounced { ms: 300.0 }` — redraw the whole line 300 ms after the last
-  edit; the duration is model data (`itinerarySettleTime`), not a literal.
+- `body1 (text oneWayLine)` — the `text` leaf takes a **read function**:
+  the whole sentence ("A one-way flight on 27.03.2026") is `oneWayLine`,
+  one pure function in the logic module. The view holds no glue, and the
+  line names its own copy function.
+- `# shownWhen @"one-way" bookingState` — the pane is shown while
+  `bookingState` yields case `one-way`, and its content reads that case's
+  payload `{ out :: { y, m, d } }` — the source data the line is computed
+  from. The model is passed on whether the pane is shown or not. Three
+  panes over one classifier make the three states exclusive, because the
+  classifier returns one case (writing.md *Conditional visibility*).
+- `# debounced itinerarySettleTime` — redraw the line once the edits pause
+  for `itinerarySettleTime`, which is `{ ms: 300.0 }` in the logic module,
+  so the view carries no literal.
 
-The stage's type is model → model: a display *is* a pass-through stage.
-
-**Stage 3 — `button @"Book" { icon: "flight_takeoff" }`.** The first
-shape change, `×→+`: fed the model, it emits `[ "Book" :: model ]` on
-click, replaying the last model it was fed. Its case is its caption; `icon`
-is presentation config.
+**Stage 3 — `button @"Book" { icon: "flight_takeoff" }`.** The first shape
+change, `×→+`: fed the model, it emits case `"Book"` carrying the model on
+click. Its case is its caption; `icon` is presentation config.
 
 **Stage 4 — `indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"`.**
-`+→+`: `atCase` adopts the button's case, so its payload goes to
-`submit :: model -> Aff [ booked :: …, rejected :: String ]`, the progress
-bar shows while the `Aff` runs, and the outcome variant emits when it
-settles.
+`+→+`: `atCase @"Book"` takes the button's case, its payload goes to
+`submit`, the progress bar shows while the `Aff` runs, and the outcome —
+`[ booked :: …, rejected :: String ]` — is emitted when it settles.
 
-**Stage 5 — `snackbar @"booked" bookedLine` beside `snackbar @"rejected"
-rejectedLine`.** `+→×`: a `VariantToRecord.do` of two statuses, each owning
-one outcome case of `submit`'s variant and rendering it with its copy
-function — the status's counterpart of a display's read function. Their
-merged output is `{}`, which is where every pipeline must end — no emission is
-ever dropped silently.
+**Stage 5 — `VariantToRecord.do` of two snackbars.** `+→×`:
+`snackbar @"booked" bookedLine` and `snackbar @"rejected" rejectedLine`
+each take one outcome case of `submit` and render it with its copy
+function. Together they cover every case, and the block's output is `{}`,
+where the pipeline ends (writing.md *Components*).
 
 ## The logic
 
@@ -234,65 +214,60 @@ tripType = _."Flight type"
 **No library in sight.** The module imports the domain — `Prelude`,
 `Maybe`, `Either`, `Aff`, `Data.Variant` — and nothing from `PUI`. The
 export list is exactly what the view imports; everything else is a private
-helper. It compiles and tests without a browser.
+helper. It compiles and tests without a browser (writing.md *View and logic
+modules*).
 
 **The exports, in the order the view uses them.**
 
-- `plannedTrip` — the seed `mvu` feeds at registration. Its keys are the
-  leaves' labels, quoted because they are copy (`"Start date (DD.MM.YYYY)"`),
-  and its variant field is written with the constructor sugar `."one-way" {}`
-  (the forked compiler's `.label` form; the type `[ … ]` is its type sugar).
-- `itinerarySettleTime` — a duration is a structural `{ ms :: Number }`, held
-  in the logic so the view carries no literal.
-- `tripType` — the classifier behind `# inCase @"return"`: a one-field read
-  returning the variant, so "the return date exists in return trips" is a
-  business statement, not a view condition.
-- `bookingState` — the classifier behind the three `shownWhen` panes. It
-  turns the model into one of three exclusive display states, each carrying
-  exactly the source data its pane's line is computed from (`{ out }`,
-  `{ out, back }`, `{ problem }`), so a pane's `text oneWayLine` is typed
-  against it and the copy — glue, warning glyph and all — is one testable
-  function beside it.
-- `submit` — the `Aff` boundary. `parse` is shared with `bookingState`, so
+- `plannedTrip` — the starting record for `mvu`. Its keys are the leaves'
+  labels, quoted because they are copy (`"Start date (DD.MM.YYYY)"`), and
+  its variant field is written with the constructor sugar `."one-way" {}`
+  (the type `[ … ]` is the matching type sugar).
+- `itinerarySettleTime` — a duration, `{ ms :: Number }`.
+- `tripType` — the classifier behind `# inCase @"return"`: "the return date
+  exists in return trips" is a business statement, not a view condition.
+- `bookingState` — the classifier behind the three `shownWhen` panes: one
+  of three exclusive states, each carrying exactly the data its line is
+  computed from (`{ problem }`, `{ out }`, `{ out, back }`), so a pane's
+  `text oneWayLine` is typed against it.
+- `problemLine`/`oneWayLine`/`returnLine` — the panes' copy functions,
+  glue and warning glyph included.
+- `submit` — the `Aff` boundary. It shares `parse` with `bookingState`, so
   what the live line calls a problem is precisely what Book refuses.
-- `bookedLine`/`rejectedLine` — the copy functions the two snackbars
-  take: each outcome case to its sentence.
+- `bookedLine`/`rejectedLine` — the snackbars' copy functions, each
+  outcome case to its sentence.
 
-**Three things worth noticing.** The rows are spelled out in full, eight
-times for the itinerary variant — deliberately: there are no `type`
-synonyms in application code, the shape *is* the interface, and the price
-of that is paid here in repetition (writing.md, *Types and values*). Every
-record a function reads is an **open row** — `forall r1. { out :: …, back
-:: … | r1 }` — the fields it names and a tail for the rest of whatever it
-is fed: the footprint is exact by parametricity, and the view type-checks
-while these functions are still holes (writing.md, *Footprints as open
-rows*); a function handing its argument on to a closed helper projects it
-(`returnLine r = summary (.returnBetween { out: r.out, back: r.back })`). And
-`parseDate` has a real `do` — `Maybe`'s monad — which is the contrast to
-keep in mind: `Semigroupoid.do` in the view is composition of stages, `do` in
-the logic is the ordinary one.
+**Three things worth noticing.** The rows are spelled out in full — the
+itinerary variant seven times — because application code declares no
+`type` synonyms: the shape is the interface (writing.md *Code style* →
+*Types and values*). Every record a function reads is an **open row** —
+`forall r1. { out :: …, back :: … | r1 }` — the fields it names plus a tail
+for the rest of whatever it is fed; a function handing its argument on to a
+closed helper builds the smaller record
+(`returnLine r = summary (.returnBetween { out: r.out, back: r.back })`)
+(writing.md *Code style* → *Business functions*). And `parseDate` has a
+real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
+`do` in the logic is the ordinary one.
 
 ## What to read next
 
-- **counter** — the floor: one display reading one function
-  (`headline4 (text countLine) # shown`), one button, one fold (`applied`).
-  Its whole model is `{ count :: Int }` — every display is a function, so
-  nothing in the row exists for the screen's benefit.
-- **timer** — the same at two displays of different sorts:
-  `progressBar @"Elapsed" elapsedFraction` and `text progressLine` over a
-  model of `{ "Duration", elapsed }`, both derived, neither stored.
-- **temperature-converter** — two editors kept consistent with `settled`:
-  the surviving job of `settled`, an invariant among *edited* fields.
-- **flight-booker** — this file.
-- **todo-list** — a collection (`listOf`, `foreach`), a selectable list emitting
-  its key as `listOf @l @"key"`, a filter selector.
-- **checkout** — a wizard: `folding @"next" @"step"` loops the step state silently, and two
-  buttons each emit their own case, introduced into one loop case with
-  `toCase`.
-- **order-form** — all four shapes in one screen: `looped` form with
-  labelled groups (`group @"Customer" $ …`), a variant editor with
-  `bracketed`, the debounced summary, `armed` buttons, each action with its statuses.
+- **counter** — one display reading one function
+  (`headline4 (text countLine) # shown`), one button, one step
+  (`# applied increment`), over a model of `{ count :: Int }`.
+- **timer** — two displays of different sorts,
+  `linearProgress @"Elapsed" elapsedFraction` and `text progressLine`,
+  both computed from the model, neither stored; `every tickPeriod tick`
+  drives it.
+- **temperature-converter** — two editors kept consistent with
+  `# settled fromCelsius` / `# settled fromFahrenheit`.
+- **todo-list** — a selectable list, `listOf @"toggled" @"key"`, a filter
+  selector, and panes over `remainingItems`.
+- **checkout** — a wizard: `folding @"next" @"step"` loops the step state,
+  and Next/Back each emit their own case, joined into one loop case with
+  `toCase @"next"`.
+- **order-form** — all four shapes on one screen: a `looped` form in
+  labelled groups, a variant editor under `bracketed @"Mode"`, the debounced
+  summary, `armed` buttons, and each action followed by its statuses.
 
-When a screen needs something and the word for it is missing,
-[vocabulary.md](vocabulary.md) goes from the need to the word and to the
-place its rule is stated.
+When the word for something is missing, [vocabulary.md](vocabulary.md)
+goes from the need to a word, a demo using it, and where to read more.
