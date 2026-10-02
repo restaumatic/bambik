@@ -8,7 +8,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import OrderFormLogic (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
 import PUI (action, armed, atCase, bracketed, debounced, looped, settled, updated, with)
-import PUI.Web (choice, inCase, shown, shownWhen, text)
+import PUI.Web ((<+>), choice, inCase, shown, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -27,7 +27,7 @@ orderFormMDC2 =
       group @"Fulfillment" $
         ( Semigroupoid.do
           tabBar @"selected"
-            [ choice @"Dine in", choice @"Takeaway", choice @"Delivery" ]
+            (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
           filledTextField @"Table" {} # inCase @"Dine in" selection
           filledTextField @"Time" {} # inCase @"Takeaway" selection
           ( Semigroupoid.do
@@ -39,7 +39,7 @@ orderFormMDC2 =
       group @"Payment" $ Semigroupoid.do
         filledTextField @"Total" {}
         segmentedButton @"Method"
-          [ choice @"cash", choice @"card" ]
+          (choice @"cash" <+> choice @"card")
         filledTextField @"Paid" {}
         ( body1 $ text payingLine ) # shown
       group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped

@@ -4,7 +4,7 @@ import Prelude
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web (choice, staticText)
+import PUI.Web ((<+>), choice, staticText)
 import PUI.Web.Bootstrap (body, button, progress, select, selectOptional, selectUnpicked, sliderLive, textField, toast, toggleSwitch)
 
 lawBenchBootstrap :: Effect Unit
@@ -27,7 +27,7 @@ lawBenchBootstrap = do
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
-  options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
+  options = (choice @"one" <+> choice @"two") :: Array { value :: [ one :: {}, two :: {} ], label :: String }
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]

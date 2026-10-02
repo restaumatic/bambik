@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import MeetingBookerLogic (blankBooking, bookedLine, plan, planLine, ratedRoom, roomOf, roomRatingCaption, roomStars, seatOccupancy, seatsInRoom, seatsTaken, seatsTakenCaption)
 import PUI (mvu, settled)
-import PUI.Web (choice, inCase, provided, shown, shownWhen, text)
+import PUI.Web ((<+>), choice, inCase, provided, shown, shownWhen, text)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdownOptional, dropdownUnpicked, messageBar, progressBar, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,11 +17,11 @@ meetingBookerFluent =
     ( Semigroupoid.do
       textField @"Meeting title" {}
       dropdownUnpicked @"Room" @"chosen" {}
-        [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)", choice @"Auditorium (40 seats)" ] # settled seatsInRoom
+        (choice @"Focus pod (4 seats)" <+> choice @"Boardroom (12 seats)" <+> choice @"Auditorium (40 seats)") # settled seatsInRoom
       radioGroupUnpicked @"Duration (min)" @"chosen" {}
-        [ choice @"15", choice @"30", choice @"60" ]
+        (choice @"15" <+> choice @"30" <+> choice @"60")
       dropdownOptional @"Catering" @"ordered" @"none" {}
-        [ choice @"coffee and pastries", choice @"sandwich lunch" ]
+        (choice @"coffee and pastries" <+> choice @"sandwich lunch")
       toggleSwitch @"Include a Teams link" {}
       divider # shown
       slider @"Attendees" {} # inCase @"chosen" roomOf

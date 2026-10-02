@@ -8,7 +8,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
 import PUI (armed, mvu, updated)
-import PUI.Web (choice, shown, staticText, text)
+import PUI.Web ((<+>), choice, shown, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, button, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltipWith, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,14 +19,14 @@ espressoBarMDC3 =
     topAppBar @"Espresso Bar" $ Semigroupoid.do
       ( Semigroupoid.do
         tabBar @"Drink"
-          [ choice @"Espresso", choice @"Cappuccino", choice @"Latte" ]
+          (choice @"Espresso" <+> choice @"Cappuccino" <+> choice @"Latte")
         filledTextField @"Your name" {}
         segmentedButton @"Size"
-          [ choice @"Small", choice @"Medium", choice @"Large" ]
+          (choice @"Small" <+> choice @"Medium" <+> choice @"Large")
         select @"Milk" {}
-          [ choice @"with whole milk", choice @"with oat milk", choice @"with almond milk", choice @"no milk" ]
+          (choice @"with whole milk" <+> choice @"with oat milk" <+> choice @"with almond milk" <+> choice @"no milk")
         radioButton @"Roast"
-          [ choice @"Light", choice @"Medium", choice @"Dark" ]
+          (choice @"Light" <+> choice @"Medium" <+> choice @"Dark")
         sliderLive @"Sugar" {}
         chipSet Semigroupoid.do
           filterChip @"Extra shot" {}

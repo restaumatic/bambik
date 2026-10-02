@@ -182,7 +182,7 @@ atCase = lcmap (on (Proxy @l) identity case_)
 
 -- | Emit a component's bare output, mapped by the projection, as case `l`.
 toCase
-  :: forall @l p i a b s
+  :: forall @l @b p i a s
    . IsSymbol l
   => Cons l b () s
   => Profunctor p

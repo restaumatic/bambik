@@ -38,6 +38,8 @@ module PUI.Web
   , Node
   , OptCaption(..)
   , choice
+  , andChoice
+  , (<+>)
   , selectedAt
   , clearedOnRepress
   , selectedOptionalAt
@@ -104,7 +106,7 @@ import Prelude
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant (Variant, inj, prj)
+import Data.Variant (Variant, expand, inj, prj)
 import Prim.Row as Row
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
@@ -377,15 +379,30 @@ instance ConvertOption OptCaption sym a a where
 -- | — exactly as a captioned leaf does:
 -- |
 -- | ```
--- | dropdown @"Room" {} [ choice @"Focus pod (4 seats)", choice @"Boardroom (12 seats)" ]
+-- | dropdown @"Room" {} (choice @"Focus pod (4 seats)" <+> choice @"Boardroom (12 seats)")
 -- | ```
 -- |
--- | The options stay a plain array, so their order is the order they are
--- | written in. That matters: a selector's option order is a design decision
--- | (rooms by size, durations by length), and it deliberately does **not**
--- | come from the variant row, which the compiler sorts alphabetically.
-choice :: forall @l tail r. IsSymbol l => Row.Cons l {} tail r => { value :: Variant r, label :: String }
-choice = { value: inj (Proxy :: Proxy l) {}, label: reflectSymbol (Proxy :: Proxy l) }
+-- | A choice is a one-option array over the **closed** singleton row of its
+-- | case, and `<+>` joins option lists uniting their rows, so the options
+-- | stay a plain array in the order they are written — a selector's option
+-- | order is a design decision (rooms by size, durations by length) and
+-- | deliberately does **not** come from the variant row, which the compiler
+-- | sorts alphabetically — while the row the selector's field holds is
+-- | closed by the list itself, with no case left open for a typed hole to
+-- | report.
+choice :: forall @l r. IsSymbol l => Row.Cons l {} () r => Array { value :: Variant r, label :: String }
+choice = [ { value: inj (Proxy :: Proxy l) {}, label: reflectSymbol (Proxy :: Proxy l) } ]
+
+-- | Join two option lists in writing order, their variant rows united — so
+-- | `choice @"one-way" <+> choice @"return"` is the **closed** row
+-- | `[ "one-way" :: {}, return :: {} ]` in that order, and a selector over
+-- | it leaves no option case open for a typed hole to report (guardrails
+-- | L18, the determination half). Option order stays the order written,
+-- | never the row's alphabetical one.
+andChoice :: forall r1 r2 r3. Row.Union r1 r2 r3 => Row.Union r2 r1 r3 => Array { value :: Variant r1, label :: String } -> Array { value :: Variant r2, label :: String } -> Array { value :: Variant r3, label :: String }
+andChoice xs ys = map (\o -> o { value = expand o.value }) xs <> map (\o -> o { value = expand o.value }) ys
+
+infixr 5 andChoice as <+>
 
 -- | Lift a bare selection leaf — the option to check in (`Nothing`: none),
 -- | the option the user checked out (`Nothing`: cleared) — to the
@@ -835,7 +852,7 @@ attrWith name valueOf w = wrap do
 -- | held: a feed rewrites the replay slot, and a feed never fires): a click
 -- | emits `f` of the row last fed, as case `l`; before the first feed a
 -- | click emits nothing.
-clicked :: forall @l r o k s. IsSymbol l => Cons l k () s => ({ | r } -> k) -> PUI Web { | r } o -> PUI Web { | r } [ | s ]
+clicked :: forall @l @k r o s. IsSymbol l => Cons l k () s => ({ | r } -> k) -> PUI Web { | r } o -> PUI Web { | r } [ | s ]
 clicked f w = replaying @l f (occurrences w)
 
 -- The click source `clicked` is built from: each click on the last-built
@@ -929,7 +946,7 @@ eachExact items0 build = let items = if isHole items0 then [] else items0 in wra
         Ref.write (Just prop) propRef
     }
 
-each :: forall a in_. Array a -> (a -> PUI Web {} {}) -> PUI Web { | in_ } {}
+each :: forall @a in_. Array a -> (a -> PUI Web {} {}) -> PUI Web { | in_ } {}
 each = unsafeCoerce (eachExact :: Array a -> (a -> PUI Web {} {}) -> PUI Web {} {})
 
 -- Entry point

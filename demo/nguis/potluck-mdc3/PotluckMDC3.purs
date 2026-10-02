@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Effect (Effect)
 import PotluckLogic (guestCountLine, guestName, invitation, menuLine, menuState, waitingLine)
 import PUI (acted, with)
-import PUI.Web (choice, shown, shownWhen, text)
+import PUI.Web ((<+>), choice, shown, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyMedium, group, headlineSmall, list, listItem, segmentedButtonUnpicked, titleMedium)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -17,7 +17,7 @@ potluckMDC3 =
       ( listItem $ Semigroupoid.do
         titleMedium (text guestName) # shown
         segmentedButtonUnpicked @"Dish" @"chosen"
-          [ choice @"Salad", choice @"Lasagna", choice @"Pavlova" ] ) # acted @"name"
+          (choice @"Salad" <+> choice @"Lasagna" <+> choice @"Pavlova") ) # acted @"name"
     headlineSmall (text menuLine) # shownWhen @"complete" menuState
     bodyMedium (text waitingLine) # shownWhen @"waiting" menuState
   ) # with invitation

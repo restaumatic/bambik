@@ -188,7 +188,7 @@ armed = widenRecordInput
 -- | @"step" cartStep`); the loop case carries `{ l :: a }`. A seed that is
 -- | a hole is not injected (guardrails L18).
 folding
-  :: forall @w @l p i a fb iw done ow
+  :: forall @w @l @a p i fb iw done ow
    . Seeding p
   => Coresolving p
   => IsSymbol w

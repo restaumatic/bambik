@@ -6,7 +6,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType)
 import PUI (action, atCase, debounced, mvu, blank)
-import PUI.Web (choice, inCase, shown, shownWhen, staticText, text)
+import PUI.Web ((<+>), choice, inCase, shown, shownWhen, staticText, text)
 import PUI.Web.HTML (body, button, div, input, label, output, p, select)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -16,7 +16,7 @@ flightBookerHTML =
     ( Semigroupoid.do
       p ( label $ Semigroupoid.do
         (staticText @"Flight type ") # shown
-        select @"Flight type" [ choice @"one-way", choice @"return" ] )
+        select @"Flight type" (choice @"one-way" <+> choice @"return") )
       p ( label $ Semigroupoid.do
         (staticText @"Start date (DD.MM.YYYY) ") # shown
         input @"Start date (DD.MM.YYYY)" "text" )

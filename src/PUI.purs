@@ -1158,7 +1158,7 @@ static o = widenRecordInput (o identity :: p {} {})
 -- | onward, since there is no output to post. An action whose function is a
 -- | hole never runs (guardrails L18): a view's own literal seed may reach
 -- | it before its logic exists.
-action :: forall s t. (s -> Aff t) -> Action s t [ started :: {}, ended :: {} ] {}
+action :: forall @t s. (s -> Aff t) -> Action s t [ started :: {}, ended :: {} ] {}
 action arr w = action'
   (\i pro post -> if isHole arr then pure unit else do
     liftEffect $ pro (inj (Proxy @"started") {})
@@ -1307,7 +1307,7 @@ instance Hosting m node => Acting (PUI m) where
 -- | array itself is the output, use `acted` (gathered, knowledge-gated,
 -- | announces `[]`) or `edited` (input-primed, immediate). All share this
 -- | keyed reconciler.
-foreach :: forall @l m node k r a i o. Hosting m node => IsSymbol l => Cons l k r a => (i -> Array { | a }) -> PUI m { | a } o -> PUI m i o
+foreach :: forall @l @a m node k r i o. Hosting m node => IsSymbol l => Cons l k r a => (i -> Array { | a }) -> PUI m { | a } o -> PUI m i o
 foreach f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs = f r in if isHole xs then [] else xs) $ wrap do
   hooks <- hosting w
   liftEffect $ collapsedWith (Record.get (Proxy @l)) hooks)
@@ -1341,7 +1341,7 @@ foreach f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs
 -- | tag their emissions with the key `first` retains from their fed row —
 -- | the keyed reconciliation is `foreach`'s, the input-primed fold
 -- | `updated`'s.
-edited :: forall @l m node k r a. Hosting m node => IsSymbol l => Cons l k r a => PUI m { | a } { | a } -> PUI m (Array { | a }) (Array { | a })
+edited :: forall @l @a m node k r. Hosting m node => IsSymbol l => Cons l k r a => PUI m { | a } { | a } -> PUI m (Array { | a }) (Array { | a })
 edited item0 = withStructuralOrd @k (dimap (\xs -> { xs }) _.xs $ updated folded (lcmap _.xs (foreach @l identity keyed) :: PUI m { xs :: Array { | a } } { key :: k, row :: { | a } }))
   where
   keyOf = Record.get (Proxy @l)
@@ -1358,7 +1358,7 @@ edited item0 = withStructuralOrd @k (dimap (\xs -> { xs }) _.xs $ updated folded
 -- | shape for streams/pushes that arrive one entity at a time. No key
 -- | function: the runtime variant input carries its tag, as a variant case
 -- | carries its label.
-dispatched :: forall m node k i a b. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }
+dispatched :: forall @k @a m node i b. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }
 dispatched f w = withStructuralOrd @k (lcmap f $ wrap do
   hooks <- hosting w
   liftEffect do
@@ -1384,7 +1384,7 @@ dispatched f w = withStructuralOrd @k (lcmap f $ wrap do
 -- | for keyed streams: the aggregate as running state, built one entity at a
 -- | time. Emits `[]` for no keys yet only in the sense that nothing has been
 -- | fed; order is first-appearance order.
-accumulated :: forall m node k i a. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a a -> PUI m i (Array a)
+accumulated :: forall @k @a m node i. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a a -> PUI m i (Array a)
 accumulated f w = withStructuralOrd @k (lcmap f $ wrap do
   hooks <- hosting w
   liftEffect do

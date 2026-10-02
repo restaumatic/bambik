@@ -185,16 +185,15 @@ focusField = prop (Proxy @l)
 
 -- | Edit the variant-valued field `l` through a record-shaped, self-looped editor state.
 bracketed
-  :: forall @l p v s v' b rs rs'
+  :: forall @l @v p s b rs
    . IsSymbol l
   => Cons l [ | v ] b rs
-  => Cons l [ | v' ] b rs'
   => Looping p
   => Strong p
   => ([ | v ] -> { | s })
-  -> ({ | s } -> [ | v' ])
+  -> ({ | s } -> [ | v ])
   -> p { | s } { | s }
-  -> p { | rs } { | rs' }
+  -> p { | rs } { | rs }
 bracketed f g w = focusField @l (dimap f g (looped w))
 
 -- | The faceless leaf that reads nothing and contributes nothing, at any input.
@@ -204,12 +203,12 @@ blank = lcmap (const {}) identity
 -- | Discharge a component's initial-state obligation by announcing its t=0 value.
 -- | Its own input is ignored, so it sits at any row; a seed that is a hole is
 -- | never announced (`announce`, guardrails L18).
-with :: forall p a o r. Seeding p => { | a } -> p { | a } o -> p { | r } o
+with :: forall @a p o r. Seeding p => { | a } -> p { | a } o -> p { | r } o
 with a w = lcmap (const {}) (announce a >>> w)
 
 -- | The model–view–update shape: a self-looped pipeline over the model, seeded with its initial state.
 mvu
-  :: forall p model
+  :: forall @model p
    . Looping p
   => Seeding p
   => { | model }
@@ -254,7 +253,7 @@ settled f = rmap f
 -- | field is written over the fresh input, so a stale runtime copy of it
 -- | never shadows the looped state.
 feedback
-  :: forall @l p i o a iw ow
+  :: forall @l @a p i o iw ow
    . IsSymbol l
   => PointedCostrong p
   => Cons l a i iw

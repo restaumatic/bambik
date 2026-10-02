@@ -4,7 +4,7 @@ import Prelude
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web (choice, staticText)
+import PUI.Web ((<+>), choice, staticText)
 import PUI.Web.Shoelace (body, button, progressBar, rating, select, selectOptional, selectUnpicked, sliderLive, textArea, textField, toast, toggleSwitch)
 
 lawBenchShoelace :: Effect Unit
@@ -30,7 +30,7 @@ lawBenchShoelace = do
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   ratings = [ { "Stars": { current: 2.0, max: 5 }, other: 1 }, { "Stars": { current: 4.0, max: 5 }, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
-  options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
+  options = (choice @"one" <+> choice @"two") :: Array { value :: [ one :: {}, two :: {} ], label :: String }
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]

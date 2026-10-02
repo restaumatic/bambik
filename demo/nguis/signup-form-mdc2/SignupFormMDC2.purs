@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import PUI (armed, mvu)
-import PUI.Web (choice, shown, shownWhen, staticText, text)
+import PUI.Web ((<+>), choice, shown, shownWhen, staticText, text)
 import PUI.Web.MDC2 (body, body2, button, checkbox, debouncedTextField, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import SignupFormLogic (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, unnamedLine, usernameSettleTime, usernameStatus, validation)
@@ -16,9 +16,9 @@ signupFormMDC2 =
       (headline4 $ staticText @"Create account") # shown
       debouncedTextField @"Username" {} usernameSettleTime
       radioButton @"Plan"
-        [ choice @"Free", choice @"Pro", choice @"Team" ]
+        (choice @"Free" <+> choice @"Pro" <+> choice @"Team")
       select @"Country" {}
-        [ choice @"Poland", choice @"Germany", choice @"France", choice @"Spain" ]
+        (choice @"Poland" <+> choice @"Germany" <+> choice @"France" <+> choice @"Spain")
       filledTextField @"Email" {}
       checkbox @"Terms" @"accepted" @"declined" {} (staticText @"I accept the terms of service") # tooltip @"You must accept the terms of service to sign up"
     ) # mvu newApplicant

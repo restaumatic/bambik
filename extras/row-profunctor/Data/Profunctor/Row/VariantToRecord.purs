@@ -149,7 +149,7 @@ subRetaining g =
 -- | @"next" firstTicket`); case `w` carries `{ l :: a }`. A seed that is a
 -- | hole is not injected (guardrails L18).
 unfolding
-  :: forall @w @l p i fb iw wx o a ow
+  :: forall @w @l @a p i fb iw wx o ow
    . Seeding p
   => Coretaining p
   => IsSymbol w

@@ -4,7 +4,7 @@ import Prelude hiding (div)
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web (choice, clicked, dynamic, each, inCase, onClickedXY, provided, shown, shownEach, shownWhen, staticString, staticText, text)
+import PUI.Web ((<+>), choice, clicked, dynamic, each, inCase, onClickedXY, provided, shown, shownEach, shownWhen, staticString, staticText, text)
 import PUI.Web.HTML (body, button, div, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
@@ -36,7 +36,7 @@ lawBenchHTML = do
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
-  options = [ choice @"one", choice @"two" ] :: Array { value :: [ one :: {}, two :: {} ], label :: String }
+  options = (choice @"one" <+> choice @"two") :: Array { value :: [ one :: {}, two :: {} ], label :: String }
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   titled = [ { title: "first", other: 1 }, { title: "second", other: 2 } ]
