@@ -21,7 +21,7 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
-import PUI (action, atCase, debounced, mvu)
+import PUI (action, atCase, debounced, mvu, state)
 import PUI.Web ((<+>), choice, inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -34,16 +34,18 @@ flightBookerMDC2 =
         (choice @"one-way" <+> choice @"return")
       filledTextField @"Start date (DD.MM.YYYY)" {}
       filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
-    ) # mvu
-      @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-       , "Start date (DD.MM.YYYY)" :: String
-       , "Return date (DD.MM.YYYY)" :: String
-       )
-      plannedTrip
+    ) # mvu plannedTrip
     ( Semigroupoid.do
-      body1 (text problemLine) # shownWhen @"problem" @( problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ) bookingState
-      body1 (text oneWayLine) # shownWhen @"one-way" bookingState
-      body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+      ( Semigroupoid.do
+        state @"problem" @String
+        body1 (text problemLine) ) # shownWhen @"problem" bookingState
+      ( Semigroupoid.do
+        state @"out" @{ y :: Int, m :: Int, d :: Int }
+        body1 (text oneWayLine) ) # shownWhen @"one-way" bookingState
+      ( Semigroupoid.do
+        state @"out" @{ y :: Int, m :: Int, d :: Int }
+        state @"back" @{ y :: Int, m :: Int, d :: Int }
+        body1 (text returnLine) ) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     indeterminateLinearProgress @"Booking flight" # action @[ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] submit # atCase @"Book"
     VariantToRecord.do
@@ -70,7 +72,7 @@ event into an outcome → a snackbar shows the outcome. Code order is DOM
 order and data order (writing.md *The pipeline*).
 
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
-with `# mvu @( … ) plannedTrip`, the model row declared there.
+with `# mvu plannedTrip`.
 
 - `select @"Flight type" {} (choice @"one-way" <+> choice @"return")` —
   the type argument is both the caption and the model field, so this
@@ -85,13 +87,12 @@ with `# mvu @( … ) plannedTrip`, the model row declared there.
   — the editor pane: this field exists only while the stored
   `"Flight type"` is at case `return`, and the model passes straight
   through otherwise. The pane reads the field with a plain accessor; the
-  model row on the seed line types it (writing.md *Conditional
+  select's closed option row types it (writing.md *Conditional
   visibility*).
 
 Each editor is fed the whole record and emits it with its own field
-changed. `mvu @( … ) plannedTrip` declares the model row — the three
-fields the editors bind, written once — supplies the starting record and
-loops each change back to the top, so all three editors see every edit;
+changed. `mvu plannedTrip` supplies the starting record and loops each
+change back to the top, so all three editors see every edit;
 it also closes the app's input to `{}`, which `body` requires (writing.md
 *App shape*).
 
@@ -107,10 +108,11 @@ one `# debounced itinerarySettleTime`.
   payload `{ out :: { y, m, d } }` — the source data the line is computed
   from. The model is passed on whether the pane is shown or not. Three
   panes over one classifier make the three states exclusive, because the
-  classifier returns one case (writing.md *Conditional visibility*). The
-  first of the three, `# shownWhen @"problem" @( … ) bookingState`,
-  declares the classifier's cases — a derived row, so the view states it
-  where it is introduced; the other two name only their case.
+  classifier returns one case (writing.md *Conditional visibility*). Each
+  pane's content types the payload it reads with a state leaf —
+  `state @"out" @{ y :: Int, m :: Int, d :: Int }` beside
+  `text oneWayLine` — so the classifier's cases are typed by its panes
+  and the view model closes the variant (writing.md *Types and values*).
 - `# debounced itinerarySettleTime` — redraw the line once the edits pause
   for `itinerarySettleTime`, which is `{ ms: 300.0 }` in the view model module,
   so the view carries no literal.
