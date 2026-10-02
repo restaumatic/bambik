@@ -5,7 +5,7 @@ import Prelude ((#), ($), (<<<), Unit, const)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import InboxLogic (composeMessage, deleteOpened, deletionOf, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, mailboxRows, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
+import InboxViewModel (composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
 import PUI (applied, mvu, observed, updated, with)
 import PUI.Web (provided, shown, text)
 import PUI.Web.HTML (span)
@@ -17,16 +17,16 @@ inboxMDC2 =
   body $
     ( Semigroupoid.do
       ( caption $ text unreadLine ) # shown
-      listOf @"opened" @"id" { selected: highlighted } mailboxRows ( span $ text messageLine # shown ) # updated (match { opened: openMessage })
+      listOf @"opened" @"id" @( id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] ) { selected: highlighted } _.messages ( span $ text messageLine # shown ) # updated (match { opened: openMessage })
       ( Semigroupoid.do
         headline6 (text subjectLine) # shown
         body2 (text fromLine) # shown
         body1 (text bodyText) # shown
-        iconButton @"Delete message" {} "delete" ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
+        iconButton @"Delete message" {} "delete" ) # provided @"reading" @( reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ) messageView # updated (match { "Delete message": const requestDelete })
       ( Semigroupoid.do
         ( dialog @"Delete the last message?" $ RecordToVariant.do
           button @"Delete" {} # with {}
-          button @"Keep" {} # with {} ) # provided @"confirming" deletionOf
+          button @"Keep" {} # with {} ) # provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion
         banner @"Delete" inboxZeroLine # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
       fab @"Compose" {} "edit" # applied composeMessage
       ( menu @"Sort" $ RecordToVariant.do

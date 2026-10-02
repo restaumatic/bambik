@@ -20,7 +20,7 @@ compiler, and the library needs both:
 |-----------------|------------------|-------------------------------------------------------|
 | bambik          | `packages.dhall` (and the second `sources` glob in `spago.dhall`) | tag `v0.1.6` of `restaumatic/bambik` |
 | variant fork    | `packages.dhall` | tag `v8.0.0-prim-variant.1` of `erykciepiela/purescript-variant` |
-| forked compiler | `package.json`   | release `v0.15.16-variant.7` of `erykciepiela/purescript` |
+| forked compiler | `package.json`   | release `v0.15.16-variant.9` of `erykciepiela/purescript` |
 
 Below, `<tag>` is the bambik tag (`v0.1.6`).
 
@@ -42,7 +42,7 @@ Below, `<tag>` is the bambik tag (`v0.1.6`).
 
 2. **Name the app.** Three names, used throughout: `<app>` (kebab-case:
    directory and package name), `<Module>` (PascalCase: the view module;
-   the logic module is `<Module>Logic`), `<entryFn>` (camelCase: the
+   the view model module is `<Module>ViewModel`), `<entryFn>` (camelCase: the
    exported entry function, named after the app, never `main`).
 
 3. **Write the scaffold files** from [Scaffold](#scaffold) into a fresh
@@ -68,9 +68,9 @@ Below, `<tag>` is the bambik tag (`v0.1.6`).
    RAW=https://raw.githubusercontent.com/restaumatic/bambik/<tag>
    curl -sfL $RAW/demo/7guis/<twin>/Counter<Suffix>.purs \
      | sed -e 's/Counter<Suffix>/<Module>/g' -e 's/counter<Suffix>/<entryFn>/g' \
-           -e 's/CounterLogic/<Module>Logic/g' > src/<Module>.purs
+           -e 's/CounterLogic/<Module>ViewModel/g' > src/<Module>.purs
    curl -sfL $RAW/demo/7guis/counter/CounterLogic.purs \
-     | sed 's/CounterLogic/<Module>Logic/g' > src/<Module>Logic.purs
+     | sed 's/CounterLogic/<Module>ViewModel/g' > src/<Module>ViewModel.purs
    ```
 
    The result is the counter shown in [SKILL.md](SKILL.md) under your
@@ -132,7 +132,7 @@ drop the `dependencies` block.
   },
   "devDependencies": {
     "esbuild": "0.25.1",
-    "purescript": "https://github.com/erykciepiela/purescript/releases/download/v0.15.16-variant.7/purescript-0.15.16-variant.7.tgz",
+    "purescript": "https://github.com/erykciepiela/purescript/releases/download/v0.15.16-variant.9/purescript-0.15.16-variant.9.tgz",
     "spago": "^0.21.0"
   }
 }

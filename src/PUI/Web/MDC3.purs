@@ -1259,9 +1259,12 @@ listItem = el "md-list-item"
 -- | than computed: the UI decides its view model, so whatever a pick must
 -- | carry is a field of the row. Rows are keyed by it — matched keys are
 -- | updated in place, and a row's node moves with its key — so the list
--- | can refresh under the user without flicker; keys must be unique.
+-- | can refresh under the user without flicker; keys must be unique. The
+-- | row is a visible type argument after the key, so the view can declare
+-- | the view model each row is drawn from
+-- | (`listOf @"opened" @"id" @( id :: Int, subject :: String ) …`).
 listOf
-  :: forall @l @k provided i r rest o key s
+  :: forall @l @k @r provided i rest o key s
    . IsSymbol l
   => IsSymbol k
   => Cons l key () s

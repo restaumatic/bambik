@@ -13,7 +13,7 @@ Where to read:
   in the app, or the source under `.spago/bambik/v0.1.6/src/`
   (`PUI.Web.MDC2` is `src/PUI/Web/MDC2.purs`).
 - **a demo name** — `.spago/bambik/v0.1.6/demo/7guis/<name>-<ds>/` or
-  `demo/nguis/<name>-<ds>/`, its logic module in the unsuffixed sibling
+  `demo/nguis/<name>-<ds>/`, its view model module in the unsuffixed sibling
   directory.
 
 Words not listed here — typography, surfaces, icons, the other selectors
@@ -53,7 +53,7 @@ and emitters of a catalogue — are in the design-system module header
 | a value, formatted | `headline4 (text countLine) # shown` | counter | writing.md *Components*; `PUI.Web` |
 | a field verbatim | `text _.request.city`; `text _.entry` | weather; calculator | writing.md *Components* |
 | a sentence composed from several fields | `( headline6 $ text balanceLine ) # shown` | cashbox | writing.md *Code style* → *Types and values* |
-| a case label read as copy | `caseText` (`Data.Variant.Case`), in the logic | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
+| a case label read as copy | `caseText` (`Data.Variant.Case`), in the view model module | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
 | a number as a bar, gauge or stars | `linearProgress @"Elapsed" elapsedFraction`; `progressBar @"Seats taken" seatOccupancy` | timer; meeting-booker | the design-system module |
 | fixed copy | `(headline4 $ staticText @"Create account") # shown` | signup-form | writing.md *Components* |
 | a record-reading group of displays | `# shown` | loan-calculator | writing.md *Stages* |
@@ -97,7 +97,7 @@ and emitters of a catalogue — are in the design-system module header
 | an event folded into the model | `# updated (match { claimed: claimCell })` | tic-tac-toe, cashbox | writing.md *Code style* → *Business functions* |
 | a clicked element naming itself | `clicked @"claimed" _.key (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
-| an emitter shown in one state | `# provided @"timing" stopwatchPhase` | stopwatch, checkout, quiz | writing.md *Conditional visibility* |
+| an emitter shown in one state | `# provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion` | inbox, stopwatch, quiz | writing.md *Conditional visibility* |
 | two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn` | checkout | `PUI` |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
 | some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
@@ -111,7 +111,7 @@ and emitters of a catalogue — are in the design-system module header
 | an `Aff` action on an event | `indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"` | flight-booker, crud | writing.md *Stages* |
 | … with no progress indicator | `blank # action rotateAction # atCase @"Rotate"` | reorder, flight-booker (fluent, bootstrap, html) | writing.md *Stages* |
 | an action at load | `indeterminateLinearProgress @"Loading order" # action loadOrder` | order-form, crud | writing.md *App shape* |
-| an action's outcome named on its line | `# toCase @"created" identity` | crud | writing.md *View and logic modules* |
+| an action's outcome named on its line | `# toCase @"created" identity` | crud | writing.md *View module and view model module* |
 | a periodic step | `every tickPeriod tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
 | narrate an event while passing it on | `snackbar @"charge" retryLine # observed` | payment, inbox | `PUI` |
@@ -129,13 +129,15 @@ and emitters of a catalogue — are in the design-system module header
 | the array → the array, edited in place | `# edited @"id"` | reorder | writing.md *Collections* |
 | one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
 | one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
-| a selectable list (MDC2, MDC3) | `listOf @"toggled" @"key" { selected: isCompleted } visibleEntries (…)` | todo-list, crud, inbox | writing.md *Collections* |
+| a selectable list (MDC2, MDC3) | `listOf @"opened" @"id" @( id :: Int, … ) { selected: highlighted } _.messages (…)` | inbox | writing.md *Collections* |
 | a selectable list elsewhere | `clicked @"picked" _.key (…) # foreach @"key" entries` | crud (html) | writing.md *Collections* |
 
-## Logic not written yet
+## View model not written yet
 
 | You need | Word | Read |
 | --- | --- | --- |
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
-| the view running before its logic exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
+| the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them | writing.md *Writing order* |
+| a list's row or a pane's states stated on its line | `listOf @l @k @( … )`, `# provided @l @( … ) f` (inbox) | writing.md *Types and values* |
+| the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

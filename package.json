@@ -12,7 +12,8 @@
     "bundle-demos": "spago build && node scripts/bundle.mjs && node scripts/holes.mjs",
     "check-holes": "node scripts/holes.mjs && node scripts/smoke/run.mjs holes",
     "deploy-demos": "scp -r demo/index.html demo/workflow.html demo/page.js demo/7guis/ demo/nguis/ xyz:/var/www/html/bambik/demo/",
-    "check-view-model": "node scripts/check-view-model.mjs"
+    "check-view-model": "node scripts/check-view-model.mjs",
+    "check-determined": "node scripts/check-determined.mjs"
   },
   "dependencies": {
     "@fluentui/web-components": "^3.0.2",
@@ -24,7 +25,7 @@
     "@marp-team/marp-cli": "^4.1.2",
     "axe-core": "^4.13.0",
     "esbuild": "0.25.1",
-    "purescript": "https://github.com/erykciepiela/purescript/releases/download/v0.15.16-variant.7/purescript-0.15.16-variant.7.tgz",
+    "purescript": "https://github.com/erykciepiela/purescript/releases/download/v0.15.16-variant.9/purescript-0.15.16-variant.9.tgz",
     "spago": "^0.21.0"
   },
   "overrides": {

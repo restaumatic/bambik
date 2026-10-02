@@ -1,9 +1,11 @@
 // The view-model rule (writing.md, Types and values): a view-model row is
 // records, variants, primitives and Array — no Maybe, and no Boolean unless a
-// Boolean editor edits it. This scans the demos' logic modules for `:: Maybe`
+// Boolean editor edits it. This scans the demos' view-model modules for `:: Maybe`
 // and `:: Boolean` field types and reports every one not on the allow-list.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+
+const isViewModel = (file) => file.endsWith("ViewModel.purs") || file.endsWith("Logic.purs");
 
 const walk = (dir) => readdirSync(dir).flatMap((n) => {
   const p = join(dir, n);
@@ -21,7 +23,7 @@ const allow = new Set([
 const fieldRe = /((?:"[^"]+"|[A-Za-z_][A-Za-z0-9_']*) :: (?:Maybe|Boolean))\b/g;
 const hits = [];
 for (const file of walk("demo")) {
-  if (!file.endsWith("Logic.purs")) continue;
+  if (!isViewModel(file)) continue;
   const src = readFileSync(file, "utf8");
   src.split("\n").forEach((line, i) => {
     // a top-level `name :: Maybe …` is a function signature, not a row field —
@@ -62,7 +64,7 @@ if (banned.length) {
 const lambdaRe = /\btext \(?\\/;
 const lambdas = [];
 for (const file of walk("demo")) {
-  if (file.endsWith("Logic.purs")) continue;
+  if (isViewModel(file)) continue;
   const src = readFileSync(file, "utf8");
   src.split("\n").forEach((line, i) => {
     if (lambdaRe.test(line)) lambdas.push(`${file}:${i + 1}: ${line.trim()}`);

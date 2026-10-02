@@ -80,7 +80,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   doc/research-presentation-model.md). Nor do the vocabulary's own row **field**
   names: a leaf reading structured data MUST NOT make the application
   name its rows `src`/`label`/`event` — it takes a read function, and
-  the logic module translates at the boundary (`imagePane developedShot`,
+  the view model module translates at the boundary (`imagePane developedShot`,
   which replaced a canonical `{ src, label }` row, 2026-09-28). Two
   vocabulary value types are sanctioned in application rows, as units
   rather than a leaf's private names: the bounded quantity
@@ -153,7 +153,18 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   **named read function** as a display's positional argument (L17), or
   **nothing** (chrome — statics and oculars write nothing and so name
   nothing; a static's type argument, `staticText @"Hours"`, is its own
-  text, known before runtime like every label, not an anchor). Every leaf therefore reads as a noun phrase — word, anchor,
+  text, known before runtime like every label, not an anchor). A
+  **declared row** is not an anchor either: the visible row type
+  argument after the anchor by which a line declares the shape it
+  works over — a list's row on `listOf`, a pane's whole variant on
+  `provided`/`shownWhen`/`inCase`, an item's row on `shownEach`
+  (2026-10-01, piloted on inbox). It names no field and no case. No line
+  declares the whole model: it is assembled from what the lines state
+  (these rows, and accessors on the lines that bind stored fields), so
+  every typed hole reports a concrete type open only at the model's
+  tail, which the seed closes (`mvu`/`with` take no declared row today;
+  a field no other line binds, counter's `count`, is the open case the
+  sweep settles). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
@@ -492,7 +503,7 @@ code below the UI) are algebra-layer material and exempt by location.
   { | reads } {}` — and MUST carry no label: its content is the copy,
   so there is no field to name and nothing to caption (a caption is
   surrounding chrome). The function MUST be a named function of the
-  logic module or a bare accessor section; a formatter bracket, a
+  view model module or a bare accessor section; a formatter bracket, a
   view-side lambda and a `staticText`-plus-leaf text run are all
   forbidden. `projection` (2026-08-31) and `projected` (2026-09-02) are
   deleted; the vocabulary-internal `textOf` serves the statuses' own
@@ -531,10 +542,11 @@ code below the UI) are algebra-layer material and exempt by location.
   testability motivation and its `settled` half); the application-side
   statement is writing.md's *copy is a function, not a field*.
 
-### L18. A view runs before its logic exists.
+### L18. A view runs before its view model exists — and determines it.
 
-- The library MUST let every application view run with its logic
-  **deleted**: each `*Logic` module replaced by a stub whose every export
+- The library MUST let every application view run with its view model
+  **deleted**: each view model module (`*ViewModel`, or `*Logic` where not
+  yet renamed) replaced by a stub whose every export
   is a bare, untyped `hole` (no signature), **against the real library**
   — no shadow modules, no changed import, nothing else touched. The
   result MUST compile, mount clean and render the view's initial UI, and
@@ -589,11 +601,35 @@ code below the UI) are algebra-layer material and exempt by location.
   folds as record updates, no editor or selector as a merge operand, each
   action's outcome cases named where the action is, the view handing its
   logic only arguments called on data.
-- **Checkable form**: `node scripts/holes.mjs` stubs every demo's logic
-  into `.holey/` (gitignored) and builds it under holey.dhall;
+- **The view determines the view model** (2026-10-01, piloted on inbox).
+  The rule's converse: a view compiled with a typed hole in place of
+  every value it imports MUST report each hole at a concrete type, the
+  model's tail the one unknown — so the hole list *is* the view model
+  module's signatures (writing.md, *Writing order*) and nothing in that
+  module is designed. What it demands of the library: every row a view
+  line introduces MUST be statable on that line — a word whose row no
+  leaf inside it fixes takes the row as a **visible type argument after
+  its anchor** (`listOf @l @k @r`, the panes `provided`/`shownWhen`/
+  `inCase @l @s`, `shownEach @l @a`; a new word of that kind MUST do the
+  same) — and of the application: a stored field is read with an
+  accessor on the line that binds it (`_.messages`), never through a
+  closed accessor function the holes cannot see through, and state no
+  line binds is derived, not stored. The seed closes the model;
+  `mvu`/`with` take no declared row today, and a field no other line
+  binds (counter's `count`, read only by copy and handlers) is the open
+  case: it reaches the compiler as `Record t0`, so the sweep must give
+  it a line, the seed's being the candidate. An unknown anywhere but a row's
+  tail names a missing declaration, not a design choice. The
+  library-side face of the declared row is at L3.
+- **Checkable form**: `node scripts/holes.mjs` stubs every demo's view
+  model into `.holey/` (gitignored) and builds it under holey.dhall;
   `npm run bundle-demos` runs it, so L15's stack covers this rule
   unchanged, and scripts/smoke/tests/holes.mjs mounts every holey view
-  and exercises every control.
+  and exercises every control. `npm run check-determined`
+  (scripts/check-determined.mjs) compiles each swept demo's view with a
+  typed hole for every imported value into `.determined/` and reads the
+  hole list back, failing on a second unknown, on an unknown off a row's
+  tail, or on an error that is not a hole.
 - **Rejected (2026-09-30)**, each on a measured branch: shadow `.Holey`
   modules a view imports instead (102 of 102, but a second vocabulary no
   real build checks); leaving read rows and variant outputs free (96 of

@@ -1,8 +1,9 @@
 # Writing a bambik application
 
 The rules below govern the two app modules the scaffold ships: the view
-module (`src/<Module>.purs`) and the logic module beside it
-(`src/<Module>Logic.purs`). [Code style](#code-style) is the strict
+module (`src/<Module>.purs`) and the view model module beside it
+(`src/<Module>ViewModel.purs`), whose signatures the view determines
+([Writing order](#writing-order)). [Code style](#code-style) is the strict
 contract; the sections before it are the shapes that contract is
 written in. Other files of this skill point here and state no rules.
 
@@ -12,9 +13,10 @@ and its options are in the library's module headers — see
 examples, each from a demo you can open under
 `.spago/bambik/<tag>/demo/7guis/` or `demo/nguis/`. A demo directory's
 suffix names its design system (`counter-mdc2`, `counter-mdc3`, …,
-`counter-html`); the siblings share one logic module in the unsuffixed
-directory (`counter/CounterLogic.purs`), so read whichever twin matches
-your design system.
+`counter-html`); the siblings share one view model module in the
+unsuffixed directory (`inbox/InboxViewModel.purs`; demos not yet swept
+still name theirs `<Demo>Logic`, as `counter/CounterLogic.purs`), so read
+whichever twin matches your design system.
 
 ## Terms
 
@@ -42,8 +44,11 @@ your design system.
   case (`# shownWhen @"estimated" distanceOf`).
 - **anchor** — the one model symbol a view line names: a field, a case,
   a copy function, or nothing (see [Code style](#code-style)).
-- **copy function** — a pure function in the logic module from the row
-  to the words on screen (`countLine`).
+- **view model module** — the module beside the view holding the seed
+  and every function the view calls; the view determines its
+  signatures ([Writing order](#writing-order)).
+- **copy function** — a pure function in the view model module from the
+  row to the words on screen (`countLine`).
 - **chrome** — headings, cards and other parts that show no data.
 - **hole** — a stand-in for a value not written yet
   ([Writing order](#writing-order)).
@@ -221,8 +226,9 @@ the variant is at the named case and is given that case's payload:
 `shownWhen` for a display, `inCase` for an editor, `provided` for an
 emitter.
 
-When the state is stored in the model as a variant, a named accessor
-reads it (ticket-dispenser's `# shownWhen @"serving" displayOf`). When
+When the state is stored in the model as a variant, the pane reads the
+field with an accessor on its own line, which is what names the field
+in the model (inbox's `# provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion`). When
 it is derived, one classifier derives it, naming every case and giving
 each case exactly what its pane shows — checkout's `checkoutStep`,
 calculator's `readout`, inbox's `messageView`. Two panes over one
@@ -248,8 +254,8 @@ in `# bracketed @"Mode" …` (order-form).
 A dialog opens when it is fed and closes when one of its buttons emits.
 Feed it only in the state that asks for it and put the deciding buttons
 inside: inbox's `dialog @"Delete the last message?" $ RecordToVariant.do
-…` under `# provided @"confirming" deletionOf`. For a confirmation step
-inside a flow, `confirmed` (cashbox).
+…` under `# provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion`.
+For a confirmation step inside a flow, `confirmed` (cashbox).
 
 A drawer's navigation is the first stage and its content the second, so
 the pick reaches the content directly (photo-gallery).
@@ -279,7 +285,7 @@ the pick reaches the content directly (photo-gallery).
   once, in a face function over an open row
   (`attrWith "style" cellFace`, cells).
 
-## View and logic modules
+## View module and view model module
 
 Every function belongs to one of two classes, in two modules with a
 one-way dependency:
@@ -287,22 +293,30 @@ one-way dependency:
 - **The view module** (`<App>.purs`) exports the one entry function and
   keeps UI-wiring functions that span several lines (a `dynamic`/`each`
   builder, a reusable sub-form like parcel's `addressForm`). It imports
-  the design system, the library's words and the logic module.
-- **The logic module** (`<App>Logic.purs`) exports business functions
-  and named business values: seed models, tick periods, fixed payloads,
-  copy functions, parsers, `Aff` actions. It imports only the domain —
-  `Prelude`, plain data modules, `Effect`, `Aff`, `Data.Variant.Case` —
-  never `PUI`, `PUI.Web.*`, a design-system module or the merges. The
-  one exception is temporary: a stub `hole` while the logic is not
-  written ([Writing order](#writing-order)).
+  the design system, the library's words and the view model module.
+- **The view model module** (`<App>ViewModel.purs`) exports business
+  functions and named business values: seed models, tick periods, fixed
+  payloads, copy functions, parsers, `Aff` actions. It imports only the
+  domain — `Prelude`, plain data modules, `Effect`, `Aff`,
+  `Data.Variant.Case` — never `PUI`, `PUI.Web.*`, a design-system module
+  or the merges. The one exception is temporary: a stub `hole` while
+  the view model is not written ([Writing order](#writing-order)).
 
-The view hands the logic **only arguments called on data**: a copy
-function, a handler, a classifier, an action, the seed, a period. It
-never runs a logic effect at the entry and never applies a logic-built
-component: an optic the view uses is assembled on the view line from
-logic functions (ticket-dispenser's `reelE issue nextTicket identity`).
-A stand-in server keeps its state in the logic module, as a real server
-would (crud's catalogue).
+**The view determines the view model module.** A value lives there
+exactly when a view line calls it, and its signature is what that line
+demands: compiled with a typed hole for each such value, the view
+reports every one at a concrete type, and the module's signatures
+restate that list with the footprints narrowed
+([Writing order](#writing-order)). Nothing is designed into the view
+model module that no view line asks for.
+
+The view hands the view model module **only arguments called on
+data**: a copy function, a handler, a classifier, an action, the seed,
+a period. It never runs one of its effects at the entry and never
+applies a component built there: an optic the view uses is assembled on
+the view line from view model functions (ticket-dispenser's `reelE issue
+nextTicket identity`). A stand-in server keeps its state in the view
+model module, as a real server would (crud's catalogue).
 
 **Name each action's outcome cases where the action is**: a
 single-outcome action's line names its case
@@ -311,7 +325,7 @@ crud); a multi-outcome action is followed directly by its own statuses
 (order-form's submit). Do not merge two actions before their outcomes
 are named.
 
-Design-system twins are two view modules over the same logic module, so
+Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app
 with no business functions (helloworld) is a single view module.
 
@@ -334,6 +348,12 @@ the anchor's own position, and the anchor says what the line is:
 - **nothing** — chrome (`card`, `h1 >>> cl "restaurant-name" $ staticText
   @"Osteria Yoneda"`, `topAppBar @"Espresso Bar"`). A static's type argument is its own
   text, not an anchor: it needs no data to be seen.
+
+A **declared row** is not an anchor either. It is the type argument
+after the anchor that states the shape the line works over (a list's
+row, a pane's states), so it names no field and no case (see *The view
+model is assembled from its lines* in
+[Types and values](#types-and-values)).
 
 So every leaf reads as a noun phrase — word, anchor, positional
 arguments:
@@ -397,6 +417,24 @@ text is computed, a chrome line nothing.
 
 ### Types and values
 
+- **The view model is assembled from its lines.** No line declares the
+  whole model. Each line states the piece it binds, and the compiler
+  puts the pieces together:
+  - stored state is read with an accessor on the line that binds it,
+    which names the field (`listOf … _.messages`, `# provided … _.deletion`);
+  - a list declares its row after its key
+    (`listOf @"opened" @"id" @( id :: Int, sender :: String, … )`);
+  - a pane declares its states after its case, every case named, not
+    just the one it shows
+    (`# provided @"reading" @( reading :: { sender :: String, … }, browsing :: {} ) messageView`).
+
+  So the model holds only what some line binds. State that no line
+  binds is derived instead of stored (inbox computes the next message
+  id from `messages` rather than keeping a counter). Every typed hole
+  then reports the assembled model, open only at the tail
+  (`{ deletion :: …, messages :: … | t0 }`), and the seed's signature
+  closes it. The view model module's signatures restate the pieces, and
+  the compiler checks that they agree.
 - **No nominal types in UI.** No `data`, `newtype` or `type` synonym for
   anything a component shows, emits or is configured with. A view-model
   row holds records, variants, `String`/`Number`/`Int` and `Array` —
@@ -422,11 +460,11 @@ text is computed, a chrome line nothing.
   owns a value, it rides the row: a slider edits a bounded quantity
   whose bounds come from the seed and may change at runtime. What stays
   a constant — a tick period, a fixed payload, the seed — is a named
-  value in the logic module (`tickPeriod`, `smallestLoan`,
+  value in the view model module (`tickPeriod`, `smallestLoan`,
   `roomTemperature`). UI code keeps only presentation: labels, icons,
   styles, structure, layout numbers (`{ columns: 80, rows: 3 }`).
 - **Copy is a function, not a field.** A display's text comes from a
-  copy function in the logic module, named on the view line and
+  copy function in the view model module, named on the view line and
   unit-testable (`countLine { count: 3 } == "3"`). A whole line is one
   function, glue included — never several leaves with `staticText`
   between them, never a formatter in the view:
@@ -507,7 +545,7 @@ text is computed, a chrome line nothing.
   the component.
 - **Inline a dispatcher.** A named function that only `match`es cases is
   written inline at the `updated` stage, each branch a named business
-  function in the logic module.
+  function in the view model module.
 
 ### Wiring
 
@@ -532,9 +570,12 @@ text is computed, a chrome line nothing.
 
 ## Writing order
 
-The anchor invariant makes view-first the natural order: every view
-line names what it needs, so write the view first and the logic module
-to its names. Until the logic exists a **hole** stands in for each
+**The view determines the view model.** Every view line names what it
+needs and states the piece of the model it binds, so a view written
+with a typed hole for every value it would import compiles to a list of
+those values with their types: the view model module's signatures, the
+model's tail the one unknown. Write the view first and the view model
+module to that list. Until it exists a **hole** stands in for each
 missing value, and there are two:
 
 | Hole | Written | Compiles? | Gives you |
@@ -547,44 +588,50 @@ view run before it exists. One `?name` fails the build, so to run the
 view, turn every remaining `?name` into `hole` or its definition. With
 the watch build running ([building.md](building.md)):
 
-1. **Write the view**, each line naming its anchors. Field and case
-   labels never need a hole — writing them defines the model. Every
-   other value — a copy function, a handler, a classifier, an action,
-   the seed — starts as a typed hole (`text ?countLine`,
+1. **Write the view**, each line naming its anchors and stating the
+   piece of the model it binds: an accessor for stored state, a
+   declared row for each list and pane
+   ([Types and values](#types-and-values)). Labels, accessors and
+   declared rows never need a hole, because writing them assembles the
+   model. Every other value — a copy function, a handler, a classifier,
+   an action, the seed — starts as a typed hole (`text ?countLine`,
    `# mvu ?start`).
-2. **Read each hole's type.** Each reports the row the view has named
-   so far, open at the tail. The seed hole reports the whole model the
-   view has spelled out. At temperature-converter,
-   `# settled ?fromCelsius` reports:
+2. **Read the holes.** Every hole reports a concrete type built from
+   the pieces the lines state. With several holes, a last message lists
+   them all, placed on the declaration's name: the view model module's
+   signatures, ready to write down. Three of inbox's 17, abridged and
+   joined onto one line each:
 
    ```
-   Hole 'fromCelsius' has the inferred type
-
-     { "°C" :: String
-     , "°F" :: String
-     | t0
-     }
-     -> { "°C" :: String
-        , "°F" :: String
-        | t0
-        }
+   openMessage  :: Int -> { deletion :: …, messages :: Array { … } | t0 } -> { deletion :: …, messages :: Array { … } | t0 }
+   highlighted  :: { body :: String, id :: Int, sender :: String, status :: …, subject :: String } -> Boolean
+   mondayMail   :: { deletion :: …, messages :: Array { … } | t0 }
    ```
 
-   A view that names no field (counter's `text ?countLine`) reports
-   `Record t0 -> String`: the model is still wholly the logic's.
-3. **Decide the footprint.** The reported row is everything the view
-   has named, not what the function needs. Keep the fields the function
-   reads and writes and the tail, and write it in the logic module
-   (`fromCelsius :: forall r. { "°C" :: String, "°F" :: String | r } -> { "°C" :: String, "°F" :: String | r }`).
-   The hole's message goes away and the compiler checks the footprint
-   from then on.
-4. **Fill the holes one declaration at a time.** The compiler stops at
-   the first declaration with a hole, but an app is one pipeline in one
-   declaration, so all its holes report together. Write the seed last:
-   it then reports the finished model, and one business-named value
-   (`freshCount`, `plannedTrip`) closes the app.
+   The model's tail (`| t0`) is the one unknown left: nothing in the
+   view says the model holds nothing else. Any other unknown is a piece
+   no line states (`Record t1`, `[ reading :: … | t2 ]`): read the
+   stored field with an accessor on the line that binds it, or declare
+   the list's row or the pane's states. Each hole's own message numbers
+   its unknowns afresh, but the list numbers them once, so a `t0` on two
+   of its lines is one type.
+3. **Decide the footprint.** A reported type takes the whole assembled
+   model, not what the function needs. Keep the fields the function
+   reads and writes, keep the tail, and write it in the view model
+   module (`sortBySender :: forall r. { messages :: Array { … } | r } -> { messages :: Array { … } | r }`).
+   A row reported without a tail (a list's element, `highlighted`)
+   takes an open footprint all the same
+   (`forall r. { status :: … | r } -> Boolean`). The hole's message goes
+   away, and from then on the compiler checks the footprint against the
+   pieces.
+4. **Fill the holes in any order.** The compiler stops at the first
+   declaration with a hole, but an app is one pipeline in one
+   declaration, so all its holes report together, and the pieces
+   already fix every type. The seed closes the model: its signature is
+   the assembled model without the tail, and its value is one
+   business-named record (`freshCount`, `mondayMail`).
 5. **Run the view on holes, at any point.** Replace the typed holes
-   with `hole` — inline (`text hole`, `# mvu hole`) or as logic exports
+   with `hole` — inline (`text hole`, `# mvu hole`) or as view model exports
    stubbed without signatures (`countLine = hole`, the view importing
    the names it will keep). The view builds and shows its initial UI —
    chrome, editors, buttons — before any business function exists. A
@@ -594,15 +641,15 @@ the watch build running ([building.md](building.md)):
    warning may report that, which is expected while holes remain. Once
    the seed is real, input reaches the next unwritten function and
    throws: **`bambik: a hole was reached` in the console names the next
-   function to write.** A view that throws at mount applies a logic
+   function to write.** A view that throws at mount applies a view model
    value instead of handing it data — see
-   [View and logic modules](#view-and-logic-modules).
+   [View module and view model module](#view-module-and-view-model-module).
 6. **Finish with no hole left.** A runtime hole compiles, so nothing
    stops one from shipping: the app is done only when
    `grep -rnw hole src/` comes back empty, and then only once it runs
    ([Finish by running it](#finish-by-running-it)).
 
-A design-system twin inverts the loop: its logic module already exists,
+A design-system twin inverts the loop: its view model module already exists,
 so the view is written against known signatures.
 
 ## What the laws guarantee
@@ -637,7 +684,7 @@ give you while writing:
   a twin over another design system behaves the same.
 
 They do not guarantee that your business functions are correct — that
-is what the logic module's unit tests are for.
+is what the view model module's unit tests are for.
 
 ## When it does not propagate
 

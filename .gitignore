@@ -12,3 +12,4 @@ demo/**/bundle.js
 .claude/*.tmp.*
 /generated-docs/
 /.holey/
+/.determined/

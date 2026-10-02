@@ -6,7 +6,8 @@ button, and a confirmation. It is a small demo that uses all four shapes —
 editors (`×→×`), an emitter (`×→+`), an action (`+→+`) and statuses
 (`+→×`) — so once it reads plainly, the larger demos are the same moves
 repeated. The view is `demo/7guis/flight-booker-mdc2/FlightBookerMDC2.purs`,
-the logic `demo/7guis/flight-booker/FlightBookerLogic.purs`; in an app both
+the view model module `demo/7guis/flight-booker/FlightBookerLogic.purs`
+(still under the older `Logic` name); in an app both
 are under `.spago/bambik/v0.1.6/`. The rules the lines follow are in
 [writing.md](writing.md); what each component does is in its module header
 (`npx spago docs --open`).
@@ -52,7 +53,7 @@ system shares (`choice`, the panes `shownWhen` and `inCase`, the `text`
 leaf); `VariantToRecord` for the block that sets the two statuses side by
 side; and `PUI.Web.MDC2` for the design system, its `body` included. The
 MDC3 twin differs in its module and entry name, that one vocabulary import,
-and the typography it pulls from it (`bodyLarge` for `body1`); the logic
+and the typography it pulls from it (`bodyLarge` for `body1`); the view model
 module is shared verbatim. `QualifiedDo.Semigroupoid as Semigroupoid` gives
 `Semigroupoid.do`: stages in sequence, not a monad.
 
@@ -77,7 +78,10 @@ with `# mvu plannedTrip`.
 - `filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType`
   — the editor pane: this field exists only while `tripType` yields case
   `return`, and the model passes straight through otherwise. What "return"
-  means lives in the logic module.
+  means lives in the view model module. Written today the pane would also
+  state the states it chooses among after its case
+  (`# inCase @"return" @( "one-way" :: {}, "return" :: {} ) tripType`, writing.md *Types and
+  values*); this demo predates that rule and is swept next.
 
 Each editor is fed the whole record and emits it with its own field
 changed. `mvu plannedTrip` supplies the starting record and loops each
@@ -89,7 +93,7 @@ one `# debounced itinerarySettleTime`.
 
 - `body1 (text oneWayLine)` — the `text` leaf takes a **read function**:
   the whole sentence ("A one-way flight on 27.03.2026") is `oneWayLine`,
-  one pure function in the logic module. The view holds no glue, and the
+  one pure function in the view model module. The view holds no glue, and the
   line names its own copy function.
 - `# shownWhen @"one-way" bookingState` — the pane is shown while
   `bookingState` yields case `one-way`, and its content reads that case's
@@ -98,7 +102,7 @@ one `# debounced itinerarySettleTime`.
   panes over one classifier make the three states exclusive, because the
   classifier returns one case (writing.md *Conditional visibility*).
 - `# debounced itinerarySettleTime` — redraw the line once the edits pause
-  for `itinerarySettleTime`, which is `{ ms: 300.0 }` in the logic module,
+  for `itinerarySettleTime`, which is `{ ms: 300.0 }` in the view model module,
   so the view carries no literal.
 
 **Stage 3 — `button @"Book" { icon: "flight_takeoff" }`.** The first shape
@@ -116,7 +120,7 @@ each take one outcome case of `submit` and render it with its copy
 function. Together they cover every case, and the block's output is `{}`,
 where the pipeline ends (writing.md *Components*).
 
-## The logic
+## The view model
 
 ```purescript
 module FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType) where
@@ -214,8 +218,8 @@ tripType = _."Flight type"
 **No library in sight.** The module imports the domain — `Prelude`,
 `Maybe`, `Either`, `Aff`, `Data.Variant` — and nothing from `PUI`. The
 export list is exactly what the view imports; everything else is a private
-helper. It compiles and tests without a browser (writing.md *View and logic
-modules*).
+helper. It compiles and tests without a browser (writing.md *View module and view model
+module*).
 
 **The exports, in the order the view uses them.**
 
@@ -247,7 +251,7 @@ closed helper builds the smaller record
 (`returnLine r = summary (.returnBetween { out: r.out, back: r.back })`)
 (writing.md *Code style* → *Business functions*). And `parseDate` has a
 real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
-`do` in the logic is the ordinary one.
+`do` in the view model module is the ordinary one.
 
 ## What to read next
 

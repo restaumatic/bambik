@@ -34,9 +34,9 @@
     written in, and what the compiler says back after each step. The session
     below is real: the app is a small pizza-order form — a text field, a live
     line, an <em>Order</em> button, a confirmation snackbar — in the two-module
-    layout every bambik app ships with (a view module and a logic module beside
-    it), and every compiler response is verbatim output of bambik's pinned
-    PureScript compiler (0.15.16-variant.7, the variant fork), captured by
+    layout every bambik app ships with (a view module and, beside it, the
+    view model module the view determines), and every compiler response is verbatim output of bambik's pinned
+    PureScript compiler (0.15.16-variant.9, the variant fork), captured by
     replaying the session. The screenshots at the end are the
     session's own app, running.</p>
 
@@ -49,8 +49,14 @@
     <strong>nothing</strong> at all, chrome writing nothing. So the view is
     written first, with typed holes (<code>?orderLine</code> — a name the
     compiler must type rather than resolve) standing in for the functions that
-    do not exist yet, and the logic module is written second, to the names and
-    types the view demanded.</p>
+    do not exist yet, and the view model module is written second, to the names
+    and types the view demanded: the compiler's last message lists every hole
+    with its type, and that list <em>is</em> the module's signatures, the
+    model's tail the one unknown. This app has no list and no pane; an app
+    that has states each one's row on its own line (a list's row after its
+    key, a pane's states after its case, a stored field read by an accessor
+    right there — see the code style note), which is what keeps the list
+    concrete.</p>
 
     <h2>1 · The view, whole, before any logic exists</h2>
 
@@ -85,15 +91,16 @@ orderApp =
     ) # with ?start
 </code></pre>
 
-    <p>The compiler answers with three messages, and none of them is a
-    refusal: every hole comes back typed. The display read and the
-    confirmation copy both report <code>{ "Pizza" :: String | t0 } -&gt; String</code>
+    <p>The compiler answers with a message per hole and a last one listing
+    them together, and none of them is a refusal: every hole comes back typed.
+    The display read and the confirmation copy both report
+    <code>{ "Pizza" :: String | t0 } -&gt; String</code>
     — the editor's field anchor taught the pipeline the model's first field
     before any logic exists, and the <code>| t0</code> says the rest of the
-    row is still the logic's to decide. The seed reports the model as far as
+    row is still the view model's to decide. The seed reports the model as far as
     the view has spelled it:</p>
 
-<pre class="compiler">Error 1 of 3:
+<pre class="compiler">Error 1 of 4:
 
   in module Order
   at src/Order.purs:16:27 - 16:37 (line 16, column 27 - line 16, column 37)
@@ -107,13 +114,10 @@ orderApp =
 
     You could substitute the hole with one of these values:
 
-      _."Pizza"                   :: String
-      Data.Monoid.mempty          :: forall @m. Monoid m =&gt; m
-      PUI.Web.hole                :: forall a. a
-      Unsafe.Coerce.unsafeCoerce  :: forall a b. a -&gt; b
+      _."Pizza"  :: String
   ⋯
 
-Error 2 of 3:
+Error 2 of 4:
 
   at src/Order.purs:18:25 - 18:39 (line 18, column 25 - line 18, column 39)
 
@@ -125,7 +129,7 @@ Error 2 of 3:
       -&gt; String
   ⋯
 
-Error 3 of 3:
+Error 3 of 4:
 
   at src/Order.purs:19:14 - 19:20 (line 19, column 14 - line 19, column 20)
 
@@ -134,10 +138,34 @@ Error 3 of 3:
       { "Pizza" :: String
       | t0
       }
+  ⋯
+
+Error 4 of 4:
+
+  at src/Order.purs:11:1 - 11:9 (line 11, column 1 - line 11, column 9)
+
+    The 3 holes in this declaration, with one numbering of unknowns across them:
+
+      orderLine      :: { "Pizza" :: String
+                        | t0
+                        }
+                        -&gt; String
+      confirmedLine  :: { "Pizza" :: String
+                        | t0
+                        }
+                        -&gt; String
+      start          :: { "Pizza" :: String
+                        | t0
+                        }
   ⋯</pre>
 
-    <p>Two things to read here. First, the suggestion list already offers
-    <code>PUI.Web.hole</code>: substitute it for every hole and the view
+    <p>Two things to read here. First, the last message is the one to read
+    when there are many holes: each hole's own message numbers its unknowns
+    afresh, so a <code>t0</code> there says nothing about the next message's
+    <code>t0</code>, while the list numbers them once — here the three holes
+    share one row, so all three are one decision about the model. And holes
+    need not stop you from seeing the view: import <code>hole</code> from
+    <code>PUI.Web</code> and substitute it for every hole, and the view
     compiles and <em>runs</em> — the field, the button and an empty line on
     screen, no data flowing, before a single business function exists
     (guardrails L18). Second, the reported row is everything the view has
@@ -149,8 +177,8 @@ Error 3 of 3:
 
     <h2>2 · One decision in — one hole gone</h2>
 
-    <h3>src/OrderLogic.purs — the logic module begins</h3>
-<pre><code class="language-haskell">module OrderLogic (orderLine) where
+    <h3>src/OrderViewModel.purs — the view model module begins</h3>
+<pre><code class="language-haskell">module OrderViewModel (orderLine) where
 
 import Prelude ((&lt;&gt;))
 
@@ -159,7 +187,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 </code></pre>
 
     <h3>src/Order.purs — the display line takes its name</h3>
-<pre><code class="language-haskell">import OrderLogic (orderLine)
+<pre><code class="language-haskell">import OrderViewModel (orderLine)
   ⋮
   headlineSmall (text orderLine) # shown
 </code></pre>
@@ -168,7 +196,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
     the footprint against the row the stage is fed, and the other two holes
     are as they were:</p>
 
-<pre class="compiler">Error 1 of 2:
+<pre class="compiler">Error 1 of 3:
 
   in module Order
   at src/Order.purs:19:25 - 19:39 (line 19, column 25 - line 19, column 39)
@@ -182,18 +210,15 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
     You could substitute the hole with one of these values:
 
-      _."Pizza"                   :: String
-      Data.Monoid.mempty          :: forall @m. Monoid m =&gt; m
-      OrderLogic.orderLine        :: forall r.
-                                       { "Pizza" :: String
-                                       | r
-                                       }
-                                       -&gt; String
-      PUI.Web.hole                :: forall a. a
-      Unsafe.Coerce.unsafeCoerce  :: forall a b. a -&gt; b
+      _."Pizza"                 :: String
+      OrderViewModel.orderLine  :: forall r.
+                                     { "Pizza" :: String
+                                     | r
+                                     }
+                                     -&gt; String
   ⋯
 
-Error 2 of 2:
+Error 2 of 3:
 
   at src/Order.purs:20:14 - 20:20 (line 20, column 14 - line 20, column 20)
 
@@ -202,18 +227,33 @@ Error 2 of 2:
       { "Pizza" :: String
       | t0
       }
+  ⋯
+
+Error 3 of 3:
+
+  at src/Order.purs:12:1 - 12:9 (line 12, column 1 - line 12, column 9)
+
+    The 2 holes in this declaration, with one numbering of unknowns across them:
+
+      confirmedLine  :: { "Pizza" :: String
+                        | t0
+                        }
+                        -&gt; String
+      start          :: { "Pizza" :: String
+                        | t0
+                        }
   ⋯</pre>
 
     <p>The confirmation copy sits where the button's payload goes — the
     button replays the row it is fed, so case <code>"Order"</code> carries the
     pipeline's row — and the compiler offers <code>_."Pizza"</code>, and even
-    <code>OrderLogic.orderLine</code>, the function written thirty seconds
+    <code>OrderViewModel.orderLine</code>, the function written thirty seconds
     earlier: its row is open, so it fits wherever the pizza is on the
     row.</p>
 
     <h2>3 · The last hole is the seed — and the seed closes the model</h2>
 
-    <h3>src/OrderLogic.purs — the confirmation copy joins</h3>
+    <h3>src/OrderViewModel.purs — the confirmation copy joins</h3>
 <pre><code class="language-haskell">confirmedLine :: forall r. { "Pizza" :: String | r } -&gt; String
 confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 </code></pre>
@@ -238,8 +278,8 @@ at src/Order.purs:20:14 - 20:20 (line 20, column 14 - line 20, column 20)
 
     <h2>4 · Green</h2>
 
-    <h3>src/OrderLogic.purs</h3>
-<pre><code class="language-haskell">module OrderLogic (confirmedLine, orderLine, plainMargherita) where
+    <h3>src/OrderViewModel.purs</h3>
+<pre><code class="language-haskell">module OrderViewModel (confirmedLine, orderLine, plainMargherita) where
 
 import Prelude ((&lt;&gt;))
 
@@ -259,7 +299,7 @@ confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import OrderLogic (confirmedLine, orderLine, plainMargherita)
+import OrderViewModel (confirmedLine, orderLine, plainMargherita)
 import PUI (with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, filledTextField, headlineSmall, snackbar)
@@ -276,11 +316,11 @@ orderApp =
     ) # with plainMargherita
 </code></pre>
 
-<pre class="compiler">[1 of 2] Compiling OrderLogic
+<pre class="compiler">[1 of 2] Compiling OrderViewModel
 [2 of 2] Compiling Order</pre>
 
     <p>Every anchor resolved: <code>orderLine</code> and
-    <code>confirmedLine</code> are pure functions under unit test in the logic
+    <code>confirmedLine</code> are pure functions under unit test in the view model
     module, each touching exactly the field it names, <code>@"Pizza"</code> is
     both the field's caption and its name in the model, <code>@"Order"</code>
     is both the button's caption and the case the snackbar renders, and the
