@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import OrderFormLogic (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, selection, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
+import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
 import PUI (action, armed, atCase, bracketed, debounced, looped, settled, updated, with)
 import PUI.Web ((<+>), choice, inCase, shown, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderFormMDC2 :: Effect Unit
 orderFormMDC2 =
   body $ ( Semigroupoid.do
-    indeterminateLinearProgress @"Loading order" # action loadOrder
+    indeterminateLinearProgress @"Loading order" # action @{ "Identifier" :: { "Short ID" :: String , "Unique ID" :: String } , "Customer" :: { "First name" :: String , "Last name" :: String } , "Fulfillment" :: { "Mode" :: [ "Dine in" :: { "Table" :: String } , "Takeaway" :: { "Time" :: String } , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ] } , "Payment" :: { "Total" :: String , "Method" :: [ "cash" :: {} , "card" :: {} ] , "Paid" :: String } , "Kitchen" :: { "Remarks" :: String } } loadOrder
     ( Semigroupoid.do
       ( headline6 $ text orderLine ) # shown
       group @"Identifier" $ Semigroupoid.do
@@ -28,14 +28,14 @@ orderFormMDC2 =
         ( Semigroupoid.do
           tabBar @"selected"
             (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
-          filledTextField @"Table" {} # inCase @"Dine in" selection
-          filledTextField @"Time" {} # inCase @"Takeaway" selection
+          filledTextField @"Table" {} # inCase @"Dine in" _.selected
+          filledTextField @"Time" {} # inCase @"Takeaway" _.selected
           ( Semigroupoid.do
             filledTextField @"Address" {} # settled staleDistanceForgotten
             ( Semigroupoid.do
               button @"Estimate distance" { icon: "near_me" }
-              indeterminateLinearProgress @"Estimating distance" # action estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-            ( body1 $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" selection ) # bracketed @"Mode" fulfillmentState fulfillmentCase
+              indeterminateLinearProgress @"Estimating distance" # action @[ estimated :: { km :: Int, to :: String } ] estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
+            ( body1 $ text distanceLine ) # shownWhen @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf ) # inCase @"Delivery" _.selected ) # bracketed @"Mode" @( "Dine in" :: { "Table" :: String } , "Takeaway" :: { "Time" :: String } , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ) @( selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] ) fulfillmentState fulfillmentCase
       group @"Payment" $ Semigroupoid.do
         filledTextField @"Total" {}
         segmentedButton @"Method"
@@ -49,11 +49,11 @@ orderFormMDC2 =
       button @"Receipt" { icon: "file" } ) # armed
     VariantToRecord.do
       Semigroupoid.do
-        indeterminateLinearProgress @"Submitting order" # action submitOrder # atCase @"Submit order"
+        indeterminateLinearProgress @"Submitting order" # action @[ orderSubmitted :: { "Short ID" :: String } , submissionFailed :: { "Short ID" :: String, reason :: String } ] submitOrder # atCase @"Submit order"
         VariantToRecord.do
           snackbar @"orderSubmitted" submittedLine
           snackbar @"submissionFailed" rejectionLine
       Semigroupoid.do
-        indeterminateLinearProgress @"Printing receipt" # action printReceipt # atCase @"Receipt"
+        indeterminateLinearProgress @"Printing receipt" # action @[ receiptPrinted :: { "Short ID" :: String } ] printReceipt # atCase @"Receipt"
         snackbar @"receiptPrinted" receiptLine
   ) # with {}

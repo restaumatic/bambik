@@ -17,7 +17,7 @@ inboxMDC2 =
   body $
     ( Semigroupoid.do
       ( caption $ text unreadLine ) # shown
-      listOf @"opened" @"id" @( id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] ) { selected: highlighted } _.messages ( span $ text messageLine # shown ) # updated (match { opened: openMessage })
+      listOf @"opened" @"id" { selected: highlighted } _.messages ( span $ text messageLine # shown ) # updated (match { opened: openMessage })
       ( Semigroupoid.do
         headline6 (text subjectLine) # shown
         body2 (text fromLine) # shown
@@ -26,11 +26,15 @@ inboxMDC2 =
       ( Semigroupoid.do
         ( dialog @"Delete the last message?" $ RecordToVariant.do
           button @"Delete" {} # with {}
-          button @"Keep" {} # with {} ) # provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion
+          button @"Keep" {} # with {} ) # provided @"confirming" _.deletion
         banner @"Delete" inboxZeroLine # observed ) # updated (match { "Delete": const deleteOpened, "Keep": const keepMessages })
       fab @"Compose" {} "edit" # applied composeMessage
       ( menu @"Sort" $ RecordToVariant.do
         menuItem @"By sender" {}
         menuItem @"By subject" {}
         menuItem @"Unread first" {} ) # updated (match { "By sender": const <<< sortBySender, "By subject": const <<< sortBySubject, "Unread first": const <<< sortUnreadFirst })
-    ) # mvu mondayMail
+    ) # mvu
+      @( messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] }
+       , deletion :: [ silent :: {}, confirming :: {} ]
+       )
+      mondayMail

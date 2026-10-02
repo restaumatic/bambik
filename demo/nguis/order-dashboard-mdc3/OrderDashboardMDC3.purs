@@ -4,7 +4,7 @@ import Prelude (Unit, ($), (#))
 
 import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Effect (Effect)
-import OrderDashboardLogic (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
+import OrderDashboardViewModel (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
 import PUI (every, mvu)
 import PUI.Web ((<+>), choice, shown)
 import PUI.Web.MDC3 (body, topAppBar)
@@ -23,4 +23,9 @@ orderDashboardMDC3 =
         gauge @"Kitchen load" kitchenLoad # shown
         trendChart @"Order flow" orderFlow # shown
         leaderboard @"Top dishes" topDishes # shown
-    ) # mvu openingDay
+    ) # mvu
+      @( tick :: Int
+       , orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }
+       , "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ]
+       )
+      openingDay

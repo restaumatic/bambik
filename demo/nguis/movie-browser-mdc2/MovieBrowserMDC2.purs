@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Data.Variant (match)
 import Effect (Effect)
-import MovieBrowserLogic (favoriteMark, favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
+import MovieBrowserViewModel (favoriteMark, favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
 import PUI (foreach, mvu, toCase, updated)
 import PUI.Web ((<+>), choice, clWhen, shown, text)
 import PUI.Web.HTML (span)
@@ -27,5 +27,12 @@ movieBrowserMDC2 =
           span (text titleLine) # shown
           span (text yearLine) # shown
           span (text ratingLine) # shown
-          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # foreach @"title" visibleMovies # toCase @"favored" favoriteMark # updated (match { favored: markFavorite })
-    ) # mvu movieCatalogue
+          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # foreach @"title" @( title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean ) visibleMovies # toCase @"favored" @{ title :: String, "Favorite" :: Boolean } favoriteMark # updated (match { favored: markFavorite })
+    ) # mvu
+      @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]
+       , "Classic" :: Boolean
+       , "Cult" :: Boolean
+       , "Oscar" :: Boolean
+       , movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean }
+       )
+      movieCatalogue

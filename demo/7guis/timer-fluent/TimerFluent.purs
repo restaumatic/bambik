@@ -7,7 +7,7 @@ import PUI (applied, every, mvu)
 import PUI.Web.Fluent (body, body1, button, progressBar, slider)
 import PUI.Web (shown, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TimerLogic (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
+import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerFluent :: Effect Unit
 timerFluent =
@@ -18,4 +18,8 @@ timerFluent =
       slider @"Duration" {}
       every tickPeriod tick
       button @"Reset" {} # applied restarted
-    ) # mvu tenSecondFreshTimer
+    ) # mvu
+      @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       , elapsed :: Number
+       )
+      tenSecondFreshTimer

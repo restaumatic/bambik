@@ -7,7 +7,7 @@ import PUI (applied, every, mvu)
 import PUI.Web (shown, staticText, text)
 import PUI.Web.HTML (body, button, div, label, p, progress, rangeInput)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TimerLogic (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
+import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerHTML :: Effect Unit
 timerHTML =
@@ -19,4 +19,8 @@ timerHTML =
       rangeInput @"Duration" )
     every tickPeriod tick
     button @"Reset" {} # applied restarted
-  ) # mvu tenSecondFreshTimer
+  ) # mvu
+    @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , elapsed :: Number
+     )
+    tenSecondFreshTimer

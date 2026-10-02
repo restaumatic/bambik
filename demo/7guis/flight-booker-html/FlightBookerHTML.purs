@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType)
+import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
 import PUI (action, atCase, debounced, mvu, blank)
 import PUI.Web ((<+>), choice, inCase, shown, shownWhen, staticText, text)
 import PUI.Web.HTML (body, button, div, input, label, output, p, select)
@@ -22,14 +22,19 @@ flightBookerHTML =
         input @"Start date (DD.MM.YYYY)" "text" )
       p ( label $ Semigroupoid.do
         (staticText @"Return date (DD.MM.YYYY) ") # shown
-        input @"Return date (DD.MM.YYYY)" "text" ) # inCase @"return" tripType
-    ) # mvu plannedTrip
+        input @"Return date (DD.MM.YYYY)" "text" ) # inCase @"return" _."Flight type"
+    ) # mvu
+      @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
+       , "Start date (DD.MM.YYYY)" :: String
+       , "Return date (DD.MM.YYYY)" :: String
+       )
+      plannedTrip
     ( Semigroupoid.do
-      p (text problemLine) # shownWhen @"problem" bookingState
+      p (text problemLine) # shownWhen @"problem" @( problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ) bookingState
       p (text oneWayLine) # shownWhen @"one-way" bookingState
       p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" {}
-    blank # action submit # atCase @"Book"
+    blank # action @[ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] submit # atCase @"Book"
     VariantToRecord.do
       output @"booked" bookedLine
       output @"rejected" rejectedLine

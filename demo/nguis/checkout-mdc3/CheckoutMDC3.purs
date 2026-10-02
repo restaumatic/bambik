@@ -2,7 +2,7 @@ module CheckoutMDC3 (checkoutMDC3) where
 
 import Prelude ((#), ($), Unit, const)
 
-import CheckoutLogic (cartLine, cartStep, checkoutStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine)
+import CheckoutViewModel (cartLine, cartStep, checkoutStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine)
 import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
@@ -17,12 +17,12 @@ checkoutMDC3 =
   body $
     ( Semigroupoid.do
       ( Semigroupoid.do
-        ( bodyMedium $ text cartLine ) # shownWhen @"cart" checkoutStep
+        ( bodyMedium $ text cartLine ) # shownWhen @"cart" @( cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ) checkoutStep
         ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
         ( bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
         RecordToVariant.do
-          button @"Next" {} # toCase @"next" goneOn # provided @"onward" onwardFrom
-          button @"Back" {} # toCase @"next" goneBack # provided @"back" previousOf
-          button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep ) # folding @"next" @"step" cartStep # updated (match { "Place order": const orderPlaced })
-      ( bodyMedium $ text placedLine ) # shownWhen @"placed" orderStatus
-    ) # mvu freshOrder
+          button @"Next" {} # toCase @"next" @{ step :: [ cart :: {}, shipping :: {}, payment :: {} ] } goneOn # provided @"onward" @( onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }, last :: {} ) onwardFrom
+          button @"Back" {} # toCase @"next" @{ step :: [ cart :: {}, shipping :: {}, payment :: {} ] } goneBack # provided @"back" @( back :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }, first :: {} ) previousOf
+          button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep ) # folding @"next" @"step" @[ cart :: {}, shipping :: {}, payment :: {} ] cartStep # updated (match { "Place order": const orderPlaced })
+      ( bodyMedium $ text placedLine ) # shownWhen @"placed" @( pending :: {}, placed :: { item :: String, address :: String, card :: String } ) orderStatus
+    ) # mvu @( item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] ) freshOrder

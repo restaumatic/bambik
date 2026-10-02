@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import EspressoBarLogic (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
+import EspressoBarViewModel (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
 import PUI (armed, mvu, updated)
 import PUI.Web ((<+>), choice, shown, staticText, text)
 import PUI.Web.HTML (div)
@@ -38,7 +38,20 @@ espressoBarMDC2 =
         menu @"Presets" ( RecordToVariant.do
           menuItem @"The usual" {}
           menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const <<< theUsual, "Espresso, no frills": const <<< espressoNoFrills })
-      ) # mvu usualOrder
+      ) # mvu
+        @( "Your name" :: String
+         , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]
+         , "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ]
+         , "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ]
+         , "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ]
+         , "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+         , "Extra shot" :: Boolean
+         , "Decaf" :: Boolean
+         , "Takeaway cup" :: Boolean
+         , "Mark as favorite" :: Boolean
+         , "Loyalty" :: [ member :: {}, guest :: {} ]
+         )
+        usualOrder
       body2 (text cupLine) # shown
       ( div $ RecordToRecord.do
         caption $ staticText @"Caffeine"

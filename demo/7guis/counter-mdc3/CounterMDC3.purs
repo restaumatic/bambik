@@ -2,7 +2,7 @@ module CounterMDC3 (counterMDC3) where
 
 import Prelude ((#), ($), Unit)
 
-import CounterLogic (countLine, freshCount, increment)
+import CounterViewModel (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web (shown, text)
@@ -15,4 +15,4 @@ counterMDC3 =
     ( Semigroupoid.do
       headlineLarge (text countLine) # shown
       button @"Count" {} # applied increment
-    ) # mvu freshCount
+    ) # mvu @( count :: Int ) freshCount

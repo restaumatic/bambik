@@ -2,7 +2,7 @@ module AuctionMDC3 (auctionMDC3) where
 
 import Prelude ((#), ($), Unit)
 
-import AuctionLogic (bidLine, noBids, openingBid, raiseTop, topLine)
+import AuctionViewModel (bidLine, noBids, openingBid, raiseTop, topLine)
 import Data.Profunctor.Row.RecordToRecord (feedback)
 import Effect (Effect)
 import PUI (mvu, settled)
@@ -17,5 +17,8 @@ auctionMDC3 =
       ( bodyMedium $ text bidLine ) # shown
       ( Semigroupoid.do
         sliderLive @"Your bid ($)" {} # settled raiseTop
-        ( headlineSmall $ text topLine ) # shown ) # feedback @"top" noBids
-    ) # mvu openingBid
+        ( headlineSmall $ text topLine ) # shown ) # feedback @"top" @Number noBids
+    ) # mvu
+      @( "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       )
+      openingBid

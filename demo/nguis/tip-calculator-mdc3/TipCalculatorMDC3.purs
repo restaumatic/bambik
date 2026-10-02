@@ -8,7 +8,7 @@ import PUI.Web (shown, text)
 import PUI.Web.HTML (rangeInput)
 import PUI.Web.MDC3 (body, bodyMedium, filledTextField, slider)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TipCalculatorLogic (dinnerBill, perPersonLine, splitLine, tipAmountLine, tipLine, totalLine)
+import TipCalculatorViewModel (dinnerBill, perPersonLine, splitLine, tipAmountLine, tipLine, totalLine)
 
 tipCalculatorMDC3 :: Effect Unit
 tipCalculatorMDC3 =
@@ -23,4 +23,9 @@ tipCalculatorMDC3 =
       bodyMedium (text tipAmountLine) # shown
       bodyMedium (text totalLine) # shown
       bodyMedium (text perPersonLine) # shown
-    ) # mvu dinnerBill
+    ) # mvu
+      @( "Bill amount" :: String
+       , "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       , "Split between" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       )
+      dinnerBill

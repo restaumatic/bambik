@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PhotoGalleryLogic (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
+import PhotoGalleryViewModel (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
 import PUI (mvu, updated)
 import PUI.Web (each, shown, shownEach, staticText, text)
 import PUI.Web.HTML (span)
@@ -18,15 +18,15 @@ photoGalleryMDC2 =
     topAppBar @"Photo Gallery" $
       ( drawer @( title :: "Darkroom", subtitle :: "photos drawn on the spot" )
         ( Semigroupoid.do
-          listOf @"opened" @"name" { selected: isOpen } albumChoices (span (text _.name)) # updated (match { opened: openAlbum })
+          listOf @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices (span (text _.name)) # updated (match { opened: openAlbum })
           divider # shown
           ( list RecordToRecord.do
             listItem $ staticText @"Every photo is an SVG"
             listItem $ staticText @"developed from its caption"
             listItem $ staticText @"No network involved" ) # shown
           ( overline $ staticText @"Favorites" ) # shown
-          ( imageList 2 $ each favoriteShots imageListItem ) # shown )
+          ( imageList 2 $ each @{ src :: String, alt :: String } favoriteShots imageListItem ) # shown )
         ( Semigroupoid.do
           ( headline2 $ text albumTitle ) # shown
-          imageList 3 $ imagePane developedShot # shownEach @"shot" albumShots )
-      ) # mvu landscapesOpen
+          imageList 3 $ imagePane developedShot # shownEach @"shot" @( shot :: String ) albumShots )
+      ) # mvu @( album :: String ) landscapesOpen

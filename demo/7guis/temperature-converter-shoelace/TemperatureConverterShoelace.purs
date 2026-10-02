@@ -6,7 +6,7 @@ import Effect (Effect)
 import PUI (mvu, settled)
 import PUI.Web.Shoelace (body, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TemperatureConverterLogic (fromCelsius, fromFahrenheit, roomTemperature)
+import TemperatureConverterViewModel (fromCelsius, fromFahrenheit, roomTemperature)
 
 temperatureConverterShoelace :: Effect Unit
 temperatureConverterShoelace =
@@ -14,4 +14,4 @@ temperatureConverterShoelace =
     ( Semigroupoid.do
       textField @"°C" {} # settled fromCelsius
       textField @"°F" {} # settled fromFahrenheit
-    ) # mvu roomTemperature
+    ) # mvu @( "°C" :: String, "°F" :: String ) roomTemperature

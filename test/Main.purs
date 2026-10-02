@@ -37,7 +37,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import OrderFormLogic (fulfillmentCase, fulfillmentState)
+import OrderFormViewModel (fulfillmentCase, fulfillmentState)
 import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, observed, optioned, replaying, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive

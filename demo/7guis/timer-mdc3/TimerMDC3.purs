@@ -7,7 +7,7 @@ import PUI (applied, every, mvu)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TimerLogic (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
+import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerMDC3 :: Effect Unit
 timerMDC3 =
@@ -18,4 +18,8 @@ timerMDC3 =
       sliderLive @"Duration" {}
       every tickPeriod tick
       button @"Reset" { icon: "replay" } # applied restarted
-    ) # mvu tenSecondFreshTimer
+    ) # mvu
+      @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       , elapsed :: Number
+       )
+      tenSecondFreshTimer

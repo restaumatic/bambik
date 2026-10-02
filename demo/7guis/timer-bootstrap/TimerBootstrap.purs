@@ -8,7 +8,7 @@ import PUI.Web.Bootstrap (body, button, progress, sliderLive)
 import PUI.Web (shown, text)
 import PUI.Web.HTML (p)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TimerLogic (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
+import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerBootstrap :: Effect Unit
 timerBootstrap =
@@ -19,4 +19,8 @@ timerBootstrap =
       sliderLive @"Duration" {}
       every tickPeriod tick
       button @"Reset" {} # applied restarted
-    ) # mvu tenSecondFreshTimer
+    ) # mvu
+      @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       , elapsed :: Number
+       )
+      tenSecondFreshTimer

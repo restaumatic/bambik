@@ -2,7 +2,7 @@ module CounterBootstrap (counterBootstrap) where
 
 import Prelude ((#), ($), Unit)
 
-import CounterLogic (countLine, freshCount, increment)
+import CounterViewModel (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (applied, mvu)
 import PUI.Web.Bootstrap (body, button)
@@ -16,4 +16,4 @@ counterBootstrap =
     ( Semigroupoid.do
       h4 (text countLine) # shown
       button @"Count" {} # applied increment
-    ) # mvu freshCount
+    ) # mvu @( count :: Int ) freshCount

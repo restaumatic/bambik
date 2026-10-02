@@ -185,7 +185,7 @@ focusField = prop (Proxy @l)
 
 -- | Edit the variant-valued field `l` through a record-shaped, self-looped editor state.
 bracketed
-  :: forall @l @v p s b rs
+  :: forall @l @v @s p b rs
    . IsSymbol l
   => Cons l [ | v ] b rs
   => Looping p

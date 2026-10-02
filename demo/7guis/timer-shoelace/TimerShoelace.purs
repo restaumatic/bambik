@@ -8,7 +8,7 @@ import PUI.Web (shown, text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, progressBar, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TimerLogic (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
+import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerShoelace :: Effect Unit
 timerShoelace =
@@ -19,4 +19,8 @@ timerShoelace =
       sliderLive @"Duration" {}
       every tickPeriod tick
       button @"Reset" {} # applied restarted
-    ) # mvu tenSecondFreshTimer
+    ) # mvu
+      @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       , elapsed :: Number
+       )
+      tenSecondFreshTimer

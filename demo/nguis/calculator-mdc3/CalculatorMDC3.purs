@@ -2,7 +2,7 @@ module CalculatorMDC3 (calculatorMDC3) where
 
 import Prelude (const, (#), ($), (<>), (>>>), Unit)
 
-import CalculatorLogic (blankTally, faultLine, functionKeys, keyPad, operatorKeys, pressKey, readout)
+import CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operatorKeys, pressKey, readout)
 import Data.Array (elem)
 import Data.Variant (match)
 import Effect (Effect)
@@ -20,11 +20,18 @@ calculatorMDC3 =
         := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
           <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
           <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
-          text faultLine # shownWhen @"faulty" readout
+          text faultLine # shownWhen @"faulty" @( sound :: { entry :: String }, faulty :: {} ) readout
           text _.entry # shownWhen @"sound" readout
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-        clicked @"entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" (const keyPad) ) # with {} # updated (match { entered: pressKey })
-    ) # mvu blankTally
+        clicked @"entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" @( key :: String ) (const keyPad) ) # with {} # updated (match { entered: pressKey })
+    ) # mvu
+      @( total :: Number
+       , operation :: [ pending :: { key :: String }, none :: {} ]
+       , entry :: String
+       , input :: [ entering :: {}, settled :: {} ]
+       , condition :: [ sound :: {}, faulty :: {} ]
+       )
+      blankTally
 
 keyFace :: forall r1. { key :: String | r1 } -> String
 keyFace { key } =

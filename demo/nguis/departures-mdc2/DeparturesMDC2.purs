@@ -2,7 +2,7 @@ module DeparturesMDC2 (departuresMDC2) where
 
 import Prelude (Unit, (#), ($))
 
-import DeparturesLogic (arrival, boardOpening, flightLine, tick, tickPeriod, updateLine)
+import DeparturesViewModel (arrival, boardOpening, flightLine, tick, tickPeriod, updateLine)
 import Effect (Effect)
 import PUI (dispatched, every, mvu)
 import PUI.Web (shown, text)
@@ -15,6 +15,6 @@ departuresMDC2 =
     ( Semigroupoid.do
       every tickPeriod tick
       ( Semigroupoid.do
-        list $ ( listItem $ text flightLine ) # shown # dispatched arrival
+        list $ ( listItem $ text flightLine ) # shown # dispatched @String @{ code :: String, status :: String } arrival
         body2 (text updateLine) ) # shown
-    ) # mvu boardOpening
+    ) # mvu @( beat :: Int ) boardOpening

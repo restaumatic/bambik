@@ -8,7 +8,7 @@ import PUI (foreach, static, with)
 import PUI.Web (cl, staticText, text, (:=))
 import PUI.Web.HTML (a, article, blockquote, body, div, footer, h1, h2, h3, header, hr, li, p, section, span, ul)
 import PUI.Web.SVG as SVG
-import RestaurantMenuLogic (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine)
+import RestaurantMenuViewModel (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine)
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
@@ -32,7 +32,7 @@ restaurantMenu =
               span >>> cl "dish-price" $ text priceLine
             p >>> cl "dish-desc" $ text dishDescription
             span >>> cl "tags" $
-              ( span >>> cl "tag" $ text _.tag ) # foreach @"tag" dishTags ) # foreach @"name" courseDishes ) # foreach @"name" menuCourses
+              ( span >>> cl "tag" $ text _.tag ) # foreach @"tag" @( tag :: String ) dishTags ) # foreach @"name" @( name :: String, price :: String, description :: String, tags :: Array String ) courseDishes ) # foreach @"name" @( name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } ) menuCourses
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText @"Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText @"— from the kitchen"

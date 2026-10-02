@@ -7,7 +7,7 @@ import PUI (muted, accumulated, every, foreach, mvu)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import ScoreboardLogic (boardSummary, gameStart, goal, scoreLine, summaryLine, tick, tickPeriod)
+import ScoreboardViewModel (boardSummary, gameStart, goal, scoreLine, summaryLine, tick, tickPeriod)
 
 scoreboardMDC3 :: Effect Unit
 scoreboardMDC3 =
@@ -15,6 +15,6 @@ scoreboardMDC3 =
     ( Semigroupoid.do
       every tickPeriod tick
       ( Semigroupoid.do
-        list $ ( listItem $ text scoreLine ) # shown # accumulated goal
-        ( bodyMedium $ text summaryLine # shown ) # foreach @"key" boardSummary # muted ) # shown
-    ) # mvu gameStart
+        list $ ( listItem $ text scoreLine ) # shown # accumulated @String @{ team :: String, points :: Int } goal
+        ( bodyMedium $ text summaryLine # shown ) # foreach @"key" @( key :: String, teams :: Int, leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] ) boardSummary # muted ) # shown
+    ) # mvu @( beat :: Int ) gameStart

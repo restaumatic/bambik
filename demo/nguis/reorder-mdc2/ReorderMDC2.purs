@@ -10,7 +10,7 @@ import PUI (action, atCase, blank, edited, mvu, static, toCase, updated)
 import PUI.Web (el, shown, (:=))
 import PUI.Web.MDC2 (body, button, filledTextField, group, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import ReorderLogic (openingSetlist, rotateAction, setOrder, shuffleAction)
+import ReorderViewModel (openingSetlist, rotateAction, setOrder, shuffleAction)
 
 reorderMDC2 :: Effect Unit
 reorderMDC2 =
@@ -20,10 +20,10 @@ reorderMDC2 =
         button @"Rotate" { icon: "sync" }
         button @"Shuffle" { icon: "shuffle" }
       VariantToVariant.do
-        blank # action rotateAction # atCase @"Rotate" # toCase @"reordered" identity
-        blank # action shuffleAction # atCase @"Shuffle" # toCase @"reordered" identity ) # updated (match { reordered: setOrder })
+        blank # action @((Array { id :: String, "Title" :: String })) rotateAction # atCase @"Rotate" # toCase @"reordered" identity
+        blank # action @((Array { id :: String, "Title" :: String })) shuffleAction # atCase @"Shuffle" # toCase @"reordered" identity ) # updated (match { reordered: setOrder })
     group @"Setlist" $ list $
       ( listItem $ Semigroupoid.do
         static (el "input" >>> "type" := "checkbox") # shown
         filledTextField @"Title" {} ) # edited @"id"
-  ) # mvu openingSetlist
+  ) # mvu @( "Setlist" :: Array { id :: String, "Title" :: String } ) openingSetlist

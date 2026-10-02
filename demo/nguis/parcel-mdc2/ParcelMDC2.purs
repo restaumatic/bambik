@@ -3,7 +3,7 @@ module ParcelMDC2 (parcelMDC2) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import ParcelLogic (draftParcel, parcelLine)
+import ParcelViewModel (draftParcel, parcelLine)
 import PUI (PUI, subStrong, mvu)
 import PUI.Web.MDC2 (body, body1, filledTextField)
 import PUI.Web (Web, shown, text)
@@ -16,7 +16,7 @@ parcelMDC2 =
       filledTextField @"Recipient" {}
       addressForm # subStrong
       ( body1 $ text parcelLine ) # shown
-    ) # mvu draftParcel
+    ) # mvu @( "Recipient" :: String, "Street" :: String, "City" :: String ) draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
 addressForm = Semigroupoid.do

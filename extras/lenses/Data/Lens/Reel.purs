@@ -44,5 +44,5 @@ reel dispatch g = reelE dispatch (\(Tuple b f) -> f b) g
 -- | is exactly the eliminator of that existential; `retain` is the carrier. `reel`
 -- | is this at the co-Yoneda witness `c := b → t` (`recon = \(Tuple b f) -> f b`,
 -- | i.e. evaluation).
-reelE :: forall s t a b c. (s -> Either a c) -> (Tuple b c -> t) -> Reel s t a b
+reelE :: forall @a @c s t b. (s -> Either a c) -> (Tuple b c -> t) -> Reel s t a b
 reelE decon recon g = dimap decon recon (retain g)
