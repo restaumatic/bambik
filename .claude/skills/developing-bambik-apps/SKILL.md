@@ -15,7 +15,7 @@ counterMDC2 =
     ( Semigroupoid.do
       headline4 (text countLine) # shown
       button @"Count" {} # applied increment
-    ) # mvu freshCount
+    ) # mvu @( count :: Int ) freshCount
 ```
 
 ```purescript
@@ -31,7 +31,8 @@ increment m = m { count = m.count + 1 }
 
 Read top to bottom, the view is the screen: a heading showing
 `countLine` of the model, then a `Count` button that applies
-`increment`, the whole started at `freshCount`. The view names design
+`increment`, the whole over the model `{ count :: Int }` started at
+`freshCount`. The view names design
 system words and view model values; the view model module is plain
 functions over open rows, unit-testable, importing no UI, its
 signatures read off the view (writing.md *Writing order*). What the screen reads is a

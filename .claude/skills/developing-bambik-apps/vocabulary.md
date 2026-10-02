@@ -38,7 +38,7 @@ and emitters of a catalogue — are in the design-system module header
 | The app is | Word | Demo | Read |
 | --- | --- | --- | --- |
 | mounted | `body $ …`, imported from the design-system module | every demo | writing.md *App shape* |
-| a model edited and folded | `# mvu freshCount` | counter | writing.md *App shape* |
+| a model edited and folded | `# mvu @( count :: Int ) freshCount`, the model row declared there | counter | writing.md *App shape* |
 | seeded, with no loop of its own | `# with invitation`; `# with {}` | potluck; order-form | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form, crud | writing.md *App shape* |
 | a wizard whose step loops silently | `# folding @"next" @"step" cartStep` | checkout | `Data.Profunctor.Row.RecordToVariant` |
@@ -77,14 +77,14 @@ and emitters of a catalogue — are in the design-system module header
 | a text field checked as the user pauses | `debouncedTextField @"Username" {} usernameSettleTime` | signup-form | the design-system module |
 | a yes/no over a two-case field | `checkbox @"Terms" @"accepted" @"declined" {} (…)` | signup-form, espresso-bar | the design-system module |
 | a switch | `toggleSwitch @"Takeaway cup" {}` | espresso-bar | the design-system module |
-| a selection that always has a value | `select @"Flight type" {} [ choice @"one-way", choice @"return" ]` | flight-booker | writing.md *Components* |
+| a selection that always has a value | `select @"Flight type" {} (choice @"one-way" <+> choice @"return")` | flight-booker | writing.md *Components* |
 | a selection owed but not yet made | `dropdownUnpicked @"Room" @"chosen" {} […]`; `segmentedButtonUnpicked @"Dish" @"chosen"` | meeting-booker; potluck | writing.md *Components* |
 | a selection the user may leave unmade | `dropdownOptional @"Catering" @"ordered" @"none" {} […]` | meeting-booker | writing.md *Components* |
 | a bounded quantity | `sliderLive @"Duration" {}`; `slider @"Split between" {}` | timer; tip-calculator | writing.md *Code style* → *Types and values* |
 | two controls on one field | `slider @"Tip percentage" {}` then `rangeInput @"Tip percentage"` | tip-calculator | writing.md *Components* |
 | a labelled group over a sub-record | `group @"Customer" $ Semigroupoid.do …` | order-form, potluck, reorder | writing.md *Components* |
 | a reusable sub-form over a flat sub-row | `addressForm # subStrong` | parcel | `PUI` |
-| an editor that exists in one state | `# inCase @"return" tripType` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
+| an editor that exists in one state | `# inCase @"return" _."Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
 | an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |
 | a variant field with an editor per case | `# bracketed @"Mode" fulfillmentState fulfillmentCase` | order-form | writing.md *Stages* |
 
@@ -97,7 +97,7 @@ and emitters of a catalogue — are in the design-system module header
 | an event folded into the model | `# updated (match { claimed: claimCell })` | tic-tac-toe, cashbox | writing.md *Code style* → *Business functions* |
 | a clicked element naming itself | `clicked @"claimed" _.key (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
-| an emitter shown in one state | `# provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion` | inbox, stopwatch, quiz | writing.md *Conditional visibility* |
+| an emitter shown in one state | `# provided @"confirming" _.deletion` | inbox, stopwatch, quiz | writing.md *Conditional visibility* |
 | two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn` | checkout | `PUI` |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
 | some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
@@ -129,7 +129,7 @@ and emitters of a catalogue — are in the design-system module header
 | the array → the array, edited in place | `# edited @"id"` | reorder | writing.md *Collections* |
 | one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
 | one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
-| a selectable list (MDC2, MDC3) | `listOf @"opened" @"id" @( id :: Int, … ) { selected: highlighted } _.messages (…)` | inbox | writing.md *Collections* |
+| a selectable list (MDC2, MDC3) | `listOf @"opened" @"id" { selected: highlighted } _.messages (…)` | inbox | writing.md *Collections* |
 | a selectable list elsewhere | `clicked @"picked" _.key (…) # foreach @"key" entries` | crud (html) | writing.md *Collections* |
 
 ## View model not written yet
@@ -137,7 +137,8 @@ and emitters of a catalogue — are in the design-system module header
 | You need | Word | Read |
 | --- | --- | --- |
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
-| the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them | writing.md *Writing order* |
-| a list's row or a pane's states stated on its line | `listOf @l @k @( … )`, `# provided @l @( … ) f` (inbox) | writing.md *Types and values* |
+| the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, nothing unknown | writing.md *Writing order* |
+| the model row | `# mvu @( … ) seed` (counter, inbox) | writing.md *Types and values* |
+| a derived row, where it is introduced | a classifier's first pane `# shownWhen @l @( … ) f` (checkout), `# action @[ … ] f` (password-generator), `# foreach @k @( … ) proj` (color-mixer), `# with @( … ) payload` (cashbox), `# feedback @l @Number seed` (auction) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

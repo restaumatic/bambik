@@ -6,8 +6,7 @@ button, and a confirmation. It is a small demo that uses all four shapes —
 editors (`×→×`), an emitter (`×→+`), an action (`+→+`) and statuses
 (`+→×`) — so once it reads plainly, the larger demos are the same moves
 repeated. The view is `demo/7guis/flight-booker-mdc2/FlightBookerMDC2.purs`,
-the view model module `demo/7guis/flight-booker/FlightBookerLogic.purs`
-(still under the older `Logic` name); in an app both
+the view model module `demo/7guis/flight-booker/FlightBookerViewModel.purs`; in an app both
 are under `.spago/bambik/v0.1.6/`. The rules the lines follow are in
 [writing.md](writing.md); what each component does is in its module header
 (`npx spago docs --open`).
@@ -21,9 +20,9 @@ import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType)
+import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
 import PUI (action, atCase, debounced, mvu)
-import PUI.Web (choice, inCase, shownWhen, text)
+import PUI.Web ((<+>), choice, inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -32,16 +31,21 @@ flightBookerMDC2 =
   body $ Semigroupoid.do
     ( Semigroupoid.do
       select @"Flight type" {}
-        [ choice @"one-way", choice @"return" ]
+        (choice @"one-way" <+> choice @"return")
       filledTextField @"Start date (DD.MM.YYYY)" {}
-      filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType
-    ) # mvu plannedTrip
+      filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
+    ) # mvu
+      @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
+       , "Start date (DD.MM.YYYY)" :: String
+       , "Return date (DD.MM.YYYY)" :: String
+       )
+      plannedTrip
     ( Semigroupoid.do
-      body1 (text problemLine) # shownWhen @"problem" bookingState
+      body1 (text problemLine) # shownWhen @"problem" @( problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ) bookingState
       body1 (text oneWayLine) # shownWhen @"one-way" bookingState
       body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
-    indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"
+    indeterminateLinearProgress @"Booking flight" # action @[ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] submit # atCase @"Book"
     VariantToRecord.do
       snackbar @"booked" bookedLine
       snackbar @"rejected" rejectedLine
@@ -49,8 +53,8 @@ flightBookerMDC2 =
 
 **The imports.** `PUI` for the words that shape data flow (`mvu`,
 `debounced`, `action`, `atCase`); `PUI.Web` for the words every design
-system shares (`choice`, the panes `shownWhen` and `inCase`, the `text`
-leaf); `VariantToRecord` for the block that sets the two statuses side by
+system shares (`choice` and `<+>`, the panes `shownWhen` and `inCase`,
+the `text` leaf); `VariantToRecord` for the block that sets the two statuses side by
 side; and `PUI.Web.MDC2` for the design system, its `body` included. The
 MDC3 twin differs in its module and entry name, that one vocabulary import,
 and the typography it pulls from it (`bodyLarge` for `body1`); the view model
@@ -66,27 +70,30 @@ event into an outcome → a snackbar shows the outcome. Code order is DOM
 order and data order (writing.md *The pipeline*).
 
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
-with `# mvu plannedTrip`.
+with `# mvu @( … ) plannedTrip`, the model row declared there.
 
-- `select @"Flight type" {} [ choice @"one-way", choice @"return" ]` — the
-  type argument is both the caption and the model field, so this edits
-  `{ "Flight type" :: [ "one-way" :: {}, "return" :: {} ] }`. Each
-  `choice @l` states an option's copy once, as its case. A trip always has
-  a type, so the plain `select` fits: the field holds the variant itself.
+- `select @"Flight type" {} (choice @"one-way" <+> choice @"return")` —
+  the type argument is both the caption and the model field, so this
+  edits `{ "Flight type" :: [ "one-way" :: {}, "return" :: {} ] }`. Each
+  `choice @l` states an option's copy once, as its case, and `<+>` joins
+  the options in writing order while closing their row. A trip always
+  has a type, so the plain `select` fits: the field holds the variant
+  itself.
 - `filledTextField @"Start date (DD.MM.YYYY)" {}` — the label carries the
   whole copy, format hint included; `{}` is empty presentation config.
-- `filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" tripType`
-  — the editor pane: this field exists only while `tripType` yields case
-  `return`, and the model passes straight through otherwise. What "return"
-  means lives in the view model module. Written today the pane would also
-  state the states it chooses among after its case
-  (`# inCase @"return" @( "one-way" :: {}, "return" :: {} ) tripType`, writing.md *Types and
-  values*); this demo predates that rule and is swept next.
+- `filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"`
+  — the editor pane: this field exists only while the stored
+  `"Flight type"` is at case `return`, and the model passes straight
+  through otherwise. The pane reads the field with a plain accessor; the
+  model row on the seed line types it (writing.md *Conditional
+  visibility*).
 
 Each editor is fed the whole record and emits it with its own field
-changed. `mvu plannedTrip` supplies the starting record and loops each
-change back to the top, so all three editors see every edit; it also closes
-the app's input to `{}`, which `body` requires (writing.md *App shape*).
+changed. `mvu @( … ) plannedTrip` declares the model row — the three
+fields the editors bind, written once — supplies the starting record and
+loops each change back to the top, so all three editors see every edit;
+it also closes the app's input to `{}`, which `body` requires (writing.md
+*App shape*).
 
 **Stage 2 — the itinerary line.** Three panes over one classifier, under
 one `# debounced itinerarySettleTime`.
@@ -100,7 +107,10 @@ one `# debounced itinerarySettleTime`.
   payload `{ out :: { y, m, d } }` — the source data the line is computed
   from. The model is passed on whether the pane is shown or not. Three
   panes over one classifier make the three states exclusive, because the
-  classifier returns one case (writing.md *Conditional visibility*).
+  classifier returns one case (writing.md *Conditional visibility*). The
+  first of the three, `# shownWhen @"problem" @( … ) bookingState`,
+  declares the classifier's cases — a derived row, so the view states it
+  where it is introduced; the other two name only their case.
 - `# debounced itinerarySettleTime` — redraw the line once the edits pause
   for `itinerarySettleTime`, which is `{ ms: 300.0 }` in the view model module,
   so the view carries no literal.
@@ -109,10 +119,11 @@ one `# debounced itinerarySettleTime`.
 change, `×→+`: fed the model, it emits case `"Book"` carrying the model on
 click. Its case is its caption; `icon` is presentation config.
 
-**Stage 4 — `indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"`.**
+**Stage 4 — `indeterminateLinearProgress @"Booking flight" # action @[ … ] submit # atCase @"Book"`.**
 `+→+`: `atCase @"Book"` takes the button's case, its payload goes to
 `submit`, the progress bar shows while the `Aff` runs, and the outcome —
-`[ booked :: …, rejected :: String ]` — is emitted when it settles.
+`[ booked :: …, rejected :: String ]`, declared on the line since no model
+field holds it — is emitted when it settles.
 
 **Stage 5 — `VariantToRecord.do` of two snackbars.** `+→×`:
 `snackbar @"booked" bookedLine` and `snackbar @"rejected" rejectedLine`
@@ -123,7 +134,7 @@ where the pipeline ends (writing.md *Components*).
 ## The view model
 
 ```purescript
-module FlightBookerLogic (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit, tripType) where
+module FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit) where
 
 import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, pure, show)
 
@@ -210,9 +221,6 @@ formatDate { y, m, d } = pad d <> "." <> pad m <> "." <> show y
 
 dateKey :: forall r1. { y :: Int, m :: Int, d :: Int | r1 } -> Int
 dateKey { y, m, d } = y * 10000 + m * 100 + d
-
-tripType :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ] | r1 } -> [ "one-way" :: {}, "return" :: {} ]
-tripType = _."Flight type"
 ```
 
 **No library in sight.** The module imports the domain — `Prelude`,
@@ -228,8 +236,6 @@ module*).
   its variant field is written with the constructor sugar `."one-way" {}`
   (the type `[ … ]` is the matching type sugar).
 - `itinerarySettleTime` — a duration, `{ ms :: Number }`.
-- `tripType` — the classifier behind `# inCase @"return"`: "the return date
-  exists in return trips" is a business statement, not a view condition.
 - `bookingState` — the classifier behind the three `shownWhen` panes: one
   of three exclusive states, each carrying exactly the data its line is
   computed from (`{ problem }`, `{ out }`, `{ out, back }`), so a pane's

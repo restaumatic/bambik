@@ -9,20 +9,18 @@
 // anywhere (the model row not declared on the seed line, or a derived row —
 // a classifier's cases, an action's outcome, a projection's element row, a
 // payload, a trace state — not declared where it is introduced), and on
-// any error that is not a hole. Default
-// set: every demo whose view imports a `*ViewModel` module (the swept ones);
-// `node scripts/check-determined.mjs inbox-mdc3 …` narrows to named demos.
+// any error that is not a hole. Runs over every registered demo (an all-view
+// demo passes trivially); `node scripts/check-determined.mjs inbox-mdc3 …`
+// narrows to named demos. About a minute for all, ten seconds for a few.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { sets } from './demos.mjs'
 
-const importRe = /^import (\w+(?:ViewModel|Logic)) \(([^)]*)\)[ \t]*\n/m
+const importRe = /^import (\w+ViewModel) \(([^)]*)\)[ \t]*\n/m
 const demos = Object.entries(sets).flatMap(([set, byDir]) =>
   Object.entries(byDir).map(([dir, [mod]]) => ({ dir, mod, file: `demo/${set}/${dir}/${mod}.purs` })))
 const wanted = process.argv.slice(2)
-const chosen = demos.filter(d => wanted.length
-  ? wanted.includes(d.dir)
-  : (importRe.exec(readFileSync(d.file, 'utf8'))?.[1] ?? '').endsWith('ViewModel'))
+const chosen = wanted.length ? demos.filter(d => wanted.includes(d.dir)) : demos
 if (chosen.length === 0) { console.error('check-determined: no demo selected'); process.exit(2) }
 
 rmSync('.determined', { recursive: true, force: true })

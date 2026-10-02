@@ -37,7 +37,8 @@ whichever twin matches your design system.
   input.
 - **merge** — several components over one shared value, written as a
   qualified `do` block (below).
-- **seed** — the model's value at start (`# mvu freshCount`). A pane
+- **seed** — the model's value at start, on the line that declares the
+  model row (`# mvu @( count :: Int ) freshCount`). A pane
   stays blank until the fields it waits for have values; a seed gives
   them one.
 - **pane** — a component that exists only while the model is in one
@@ -121,7 +122,7 @@ How each kind takes its business meaning:
   `…Unpicked` word when a choice is owed but not yet made; the
   `…Optional` word when the user may leave it unmade. Options are
   `choice @"…"` values in the order written (meeting-booker:
-  `dropdownUnpicked @"Room" @"chosen" {} [ choice @"Focus pod (4 seats)", … ]`).
+  `dropdownUnpicked @"Room" @"chosen" {} (choice @"Focus pod (4 seats)" <+> …)`).
 - **Displays** take a copy function, not a label:
   `headline4 (text countLine) # shown` (counter). A number shown as a
   bar or gauge takes a function too, and keeps its label only as the
@@ -166,7 +167,7 @@ a trailing word that says what it is for:
 | a display or chrome, always there | `(headlineSmall $ text orderLine) # shown` | order-form |
 | a display shown in one case | `text distanceLine # shownWhen @"estimated" distanceOf` | order-form |
 | an editor that exists in one case | `filledTextField @"Table" {} # inCase @"Dine in" selection` | order-form |
-| a button that exists in one case | `button @"Start" {…} # provided @"halted" stopwatchPhase` | stopwatch |
+| a button that exists in one case | `button @"Start" {…} # provided @"halted" _.phase` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # shownEach @"number" lapRows` | stopwatch |
 | content that waits for the user to confirm | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox |
 | a button stepping the model | `button @"Count" {} # applied increment` | counter |
@@ -227,12 +228,15 @@ the variant is at the named case and is given that case's payload:
 emitter.
 
 When the state is stored in the model as a variant, the pane reads the
-field with an accessor on its own line, which is what names the field
-in the model (inbox's `# provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion`). When
-it is derived, one classifier derives it, naming every case and giving
-each case exactly what its pane shows — checkout's `checkoutStep`,
-calculator's `readout`, inbox's `messageView`. Two panes over one
-classifier can never both be on screen.
+field with an accessor (inbox's `# provided @"confirming" _.deletion`,
+flight-booker's `# inCase @"return" _."Flight type"`), typed by the
+model row the seed line declares. When it is derived, one classifier
+derives it, naming every case and giving each case exactly what its
+pane shows — checkout's `checkoutStep`, calculator's `readout`, inbox's
+`messageView` — and the classifier's first pane declares those cases
+(`# provided @"reading" @( reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ) messageView`);
+its later panes name only their case. Two panes over one classifier
+can never both be on screen.
 
 A `Maybe` a pane depends on is a two-case state with unnamed cases.
 Name them: order-form's distance is
@@ -242,8 +246,8 @@ UI — a lookup, an `Aff` result — and a classifier converts it (inbox's
 
 An editor that exists only in one mode is `# inCase`, not a pane whose
 edits you fold back by hand. Order-form's fulfillment fields,
-flight-booker's return date (`# inCase @"return" tripType`) and
-meeting-booker's attendees slider (`# inCase @"chosen" roomOf`) are the
+flight-booker's return date (`# inCase @"return" _."Flight type"`) and
+meeting-booker's attendees slider (`# inCase @"chosen" _."Room"`) are the
 examples; a variant field edited through several such panes is wrapped
 in `# bracketed @"Mode" …` (order-form).
 
@@ -254,8 +258,8 @@ in `# bracketed @"Mode" …` (order-form).
 A dialog opens when it is fed and closes when one of its buttons emits.
 Feed it only in the state that asks for it and put the deciding buttons
 inside: inbox's `dialog @"Delete the last message?" $ RecordToVariant.do
-…` under `# provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion`.
-For a confirmation step inside a flow, `confirmed` (cashbox).
+…` under `# provided @"confirming" _.deletion`. For a confirmation step
+inside a flow, `confirmed` (cashbox).
 
 A drawer's navigation is the first stage and its content the second, so
 the pick reaches the content directly (photo-gallery).
@@ -349,11 +353,11 @@ the anchor's own position, and the anchor says what the line is:
   @"Osteria Yoneda"`, `topAppBar @"Espresso Bar"`). A static's type argument is its own
   text, not an anchor: it needs no data to be seen.
 
-A **declared row** is not an anchor either. It is the type argument
-after the anchor that states the shape the line works over (a list's
-row, a pane's states), so it names no field and no case (see *The view
-model is assembled from its lines* in
-[Types and values](#types-and-values)).
+A **declared row** is not an anchor either. It is a visible type
+argument stating a shape the compiler could not otherwise know: the
+model row on the seed line, and a derived row where it is introduced
+(see *The model is declared once* in
+[Types and values](#types-and-values)). It names no field and no case.
 
 So every leaf reads as a noun phrase — word, anchor, positional
 arguments:
@@ -401,8 +405,11 @@ text is computed, a chrome line nothing.
 - **Closing parens and `#` chains never start a line.** A trailing
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
-  it closes over: `… # shown ) # feedback @"top" noBids`. The exception
-  is a seed closer, `) # mvu seed` / `) # with seed`, on its own line.
+  it closes over: `… # shown ) # feedback @"top" @Number noBids`. The
+  exception is a seed closer, `) # mvu @( … ) seed` / `) # with @( … ) seed`,
+  on its own line — or, when the model row is long, `) # mvu` on its own
+  line, the row's fields one per line beneath it and the seed last
+  (inbox).
   `#` binds tighter than `$`: where a chain must apply to a whole
   wrapped element (a `foreach` multiplying a card), open the paren
   before the wrapper.
@@ -417,24 +424,33 @@ text is computed, a chrome line nothing.
 
 ### Types and values
 
-- **The view model is assembled from its lines.** No line declares the
-  whole model. Each line states the piece it binds, and the compiler
-  puts the pieces together:
-  - stored state is read with an accessor on the line that binds it,
-    which names the field (`listOf … _.messages`, `# provided … _.deletion`);
-  - a list declares its row after its key
-    (`listOf @"opened" @"id" @( id :: Int, sender :: String, … )`);
-  - a pane declares its states after its case, every case named, not
-    just the one it shows
-    (`# provided @"reading" @( reading :: { sender :: String, … }, browsing :: {} ) messageView`).
+- **The model is declared once, on the seed line; every derived row
+  where it is introduced.** The seed line states the whole model
+  (`# mvu @( count :: Int ) freshCount`; inbox's two fields, one per
+  line), and every editor, selector, list and accessor is checked
+  against it — so a stored field is read with a plain accessor
+  (`listOf … _.messages`, `# provided @"confirming" _.deletion`). A
+  **derived row** is a shape no model field holds, and the line that
+  introduces it declares it after its anchor:
+  - a classifier's cases, on its first pane
+    (`# shownWhen @"cart" @( cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ) checkoutStep`);
+  - an action's outcome (`# action @[ generated :: String ] samplePassword`);
+  - a projection's element row
+    (`# foreach @"name" @( name :: String, mix :: … ) (const palette)`,
+    `# shownEach @"number" @( number :: Int, tenths :: Int ) lapRows`);
+  - a fixed payload (`# with @( amount :: Number ) courierFee`);
+  - a trace form's state (`# feedback @"top" @Number noBids`,
+    `# folding @"next" @"step" @[ cart :: {}, shipping :: {}, payment :: {} ] cartStep`),
+    a bracketed editor's state, a Reel's two types;
+  - an option list, closed by `<+>` (`choice @"one-way" <+> choice @"return"`).
 
-  So the model holds only what some line binds. State that no line
-  binds is derived instead of stored (inbox computes the next message
-  id from `messages` rather than keeping a counter). Every typed hole
-  then reports the assembled model, open only at the tail
-  (`{ deletion :: …, messages :: … | t0 }`), and the seed's signature
-  closes it. The view model module's signatures restate the pieces, and
-  the compiler checks that they agree.
+  What no line declares is not in the model. State only the business
+  needs is derived (inbox computes the next message id from
+  `messages`) or declared like any other field (circle-drawer's undo
+  stacks are state, so they are on its seed line). Every typed hole then
+  reports a concrete type with nothing unknown; the view model module's
+  signatures restate them with footprints narrowed to open rows, and the
+  compiler checks that they agree.
 - **No nominal types in UI.** No `data`, `newtype` or `type` synonym for
   anything a component shows, emits or is configured with. A view-model
   row holds records, variants, `String`/`Number`/`Int` and `Array` —
@@ -573,8 +589,8 @@ text is computed, a chrome line nothing.
 **The view determines the view model.** Every view line names what it
 needs and states the piece of the model it binds, so a view written
 with a typed hole for every value it would import compiles to a list of
-those values with their types: the view model module's signatures, the
-model's tail the one unknown. Write the view first and the view model
+those values with their types: the view model module's signatures, with
+nothing unknown. Write the view first and the view model
 module to that list. Until it exists a **hole** stands in for each
 missing value, and there are two:
 
@@ -588,14 +604,13 @@ view run before it exists. One `?name` fails the build, so to run the
 view, turn every remaining `?name` into `hole` or its definition. With
 the watch build running ([building.md](building.md)):
 
-1. **Write the view**, each line naming its anchors and stating the
-   piece of the model it binds: an accessor for stored state, a
-   declared row for each list and pane
-   ([Types and values](#types-and-values)). Labels, accessors and
-   declared rows never need a hole, because writing them assembles the
-   model. Every other value — a copy function, a handler, a classifier,
-   an action, the seed — starts as a typed hole (`text ?countLine`,
-   `# mvu ?start`).
+1. **Write the view**, each line naming its anchors, the seed line
+   declaring the model row and each derived row declared where it is
+   introduced ([Types and values](#types-and-values)). Labels,
+   accessors and declared rows never need a hole, because writing them
+   is writing the model. Every other value — a copy function, a
+   handler, a classifier, an action, the seed — starts as a typed hole
+   (`text ?countLine`, `# mvu @( count :: Int ) ?start`).
 2. **Read the holes.** Every hole reports a concrete type built from
    the pieces the lines state. With several holes, a last message lists
    them all, placed on the declaration's name: the view model module's
@@ -603,32 +618,32 @@ the watch build running ([building.md](building.md)):
    joined onto one line each:
 
    ```
-   openMessage  :: Int -> { deletion :: …, messages :: Array { … } | t0 } -> { deletion :: …, messages :: Array { … } | t0 }
+   openMessage  :: Int -> { deletion :: …, messages :: Array { … } } -> { deletion :: …, messages :: Array { … } }
    highlighted  :: { body :: String, id :: Int, sender :: String, status :: …, subject :: String } -> Boolean
-   mondayMail   :: { deletion :: …, messages :: Array { … } | t0 }
+   mondayMail   :: { deletion :: …, messages :: Array { … } }
    ```
 
-   The model's tail (`| t0`) is the one unknown left: nothing in the
-   view says the model holds nothing else. Any other unknown is a piece
-   no line states (`Record t1`, `[ reading :: … | t2 ]`): read the
-   stored field with an accessor on the line that binds it, or declare
-   the list's row or the pane's states. Each hole's own message numbers
-   its unknowns afresh, but the list numbers them once, so a `t0` on two
-   of its lines is one type.
-3. **Decide the footprint.** A reported type takes the whole assembled
-   model, not what the function needs. Keep the fields the function
-   reads and writes, keep the tail, and write it in the view model
-   module (`sortBySender :: forall r. { messages :: Array { … } | r } -> { messages :: Array { … } | r }`).
-   A row reported without a tail (a list's element, `highlighted`)
-   takes an open footprint all the same
-   (`forall r. { status :: … | r } -> Boolean`). The hole's message goes
-   away, and from then on the compiler checks the footprint against the
-   pieces.
-4. **Fill the holes in any order.** The compiler stops at the first
-   declaration with a hole, but an app is one pipeline in one
-   declaration, so all its holes report together, and the pieces
-   already fix every type. The seed closes the model: its signature is
-   the assembled model without the tail, and its value is one
+   Nothing is unknown. An unknown anywhere (`Record t1`,
+   `[ reading :: … | t2 ]`, a tail `| t0`) names a missing declaration:
+   the model row on the seed line, or a derived row where it is
+   introduced. Each `?name` is its own hole, so a function used on
+   several lines (`bookingState` on three panes) is declared on its
+   first; once written, the compiler types its other uses.
+3. **Decide the footprint.** A reported type takes the whole model,
+   not what the function needs. Keep the fields the function reads and
+   writes, open the row with a tail, and write it in the view model
+   module (`sortBySender :: forall r. { messages :: Array { … } | r } -> { messages :: Array { … } | r }`;
+   `highlighted :: forall r. { status :: … | r } -> Boolean` over the
+   list's element row). The hole's message goes away, and from then on
+   the compiler checks the footprint against the declared rows.
+4. **Fill the holes in any order.** The compiler reports one
+   declaration's holes per build, and an app is one pipeline in one
+   declaration, so its holes report together; a view helper's holes
+   (markdown-previewer's `documentView`) surface after the entry's. A
+   helper applies one view model function per value — composing two
+   (`rgb (mixOf channels)`) hides the type between them, so the view
+   model exports the composite (color-mixer's `mixedColor`). The seed's
+   signature is the model row its line declares, and its value is one
    business-named record (`freshCount`, `mondayMail`).
 5. **Run the view on holes, at any point.** Replace the typed holes
    with `hole` — inline (`text hole`, `# mvu hole`) or as view model exports

@@ -154,17 +154,16 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   **nothing** (chrome — statics and oculars write nothing and so name
   nothing; a static's type argument, `staticText @"Hours"`, is its own
   text, known before runtime like every label, not an anchor). A
-  **declared row** is not an anchor either: the visible row type
-  argument after the anchor by which a line declares the shape it
-  works over — a list's row on `listOf`, a pane's whole variant on
-  `provided`/`shownWhen`/`inCase`, an item's row on `shownEach`
-  (2026-10-01, piloted on inbox). It names no field and no case. No line
-  declares the whole model: it is assembled from what the lines state
-  (these rows, and accessors on the lines that bind stored fields), so
-  every typed hole reports a concrete type open only at the model's
-  tail, which the seed closes (`mvu`/`with` take no declared row today;
-  a field no other line binds, counter's `count`, is the open case the
-  sweep settles). Every leaf therefore reads as a noun phrase — word, anchor,
+  **declared row** is not an anchor either: a visible row type argument
+  by which a line states a shape the compiler could not otherwise know —
+  the model row on the seed line (`mvu`/`with @( … )`), and a derived
+  row where it is introduced: a classifier's cases on its first pane
+  (`provided`/`shownWhen`/`inCase @l @s`), an action's outcome, a
+  projection's element row (`listOf`/`foreach`/`shownEach @… @r`), a
+  payload, a trace form's state, a bracketed editor's state (2026-10-01
+  on inbox, 2026-10-02 everywhere). It names no field and no case, and
+  with it every typed hole in a view reports a concrete type with nothing
+  unknown (L18). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
@@ -601,35 +600,38 @@ code below the UI) are algebra-layer material and exempt by location.
   folds as record updates, no editor or selector as a merge operand, each
   action's outcome cases named where the action is, the view handing its
   logic only arguments called on data.
-- **The view determines the view model** (2026-10-01, piloted on inbox).
-  The rule's converse: a view compiled with a typed hole in place of
-  every value it imports MUST report each hole at a concrete type, the
-  model's tail the one unknown — so the hole list *is* the view model
-  module's signatures (writing.md, *Writing order*) and nothing in that
-  module is designed. What it demands of the library: every row a view
-  line introduces MUST be statable on that line — a word whose row no
-  leaf inside it fixes takes the row as a **visible type argument after
-  its anchor** (`listOf @l @k @r`, the panes `provided`/`shownWhen`/
-  `inCase @l @s`, `shownEach @l @a`; a new word of that kind MUST do the
-  same) — and of the application: a stored field is read with an
-  accessor on the line that binds it (`_.messages`), never through a
-  closed accessor function the holes cannot see through, and state no
-  line binds is derived, not stored. The seed closes the model;
-  `mvu`/`with` take no declared row today, and a field no other line
-  binds (counter's `count`, read only by copy and handlers) is the open
-  case: it reaches the compiler as `Record t0`, so the sweep must give
-  it a line, the seed's being the candidate. An unknown anywhere but a row's
-  tail names a missing declaration, not a design choice. The
-  library-side face of the declared row is at L3.
+- **The view determines the view model** (2026-10-01 on inbox, every
+  demo 2026-10-02). The rule's converse: a view compiled with a typed
+  hole in place of every value it imports MUST report each hole at a
+  concrete type with **nothing unknown** — so the hole list *is* the view
+  model module's signatures (writing.md, *Writing order*) and nothing in
+  that module is designed. What it demands of the library: every word
+  that introduces a row through a function or value argument MUST take
+  that row as a **visible type argument after its anchor** — `mvu`/`with
+  @model`, `action @outcome`, `listOf`/`foreach`/`shownEach`/`acted`/
+  `edited @row`, `dispatched`/`accumulated @key @value`, the panes
+  `provided`/`shownWhen`/`inCase @l @s`, `feedback`/`folding`/`unfolding
+  @state`, `bracketed @variant @state`, `toCase`/`clicked @payload`,
+  `each @element`, `reelE @a @c`; a new word of that kind MUST do the
+  same — and an option list MUST close its row (`choice @"a" <+> choice
+  @"b"`). What it demands of the application: the model row is declared
+  once, on the seed line; a stored variant field is read by accessor on
+  its pane line; a derived row is declared once, where its function
+  first appears (each `?name` is its own hole, so the function's later
+  uses are typed once it is written); a view helper applies one view
+  model function per value. An unknown anywhere names a missing
+  declaration, not a design choice. The library-side face of the
+  declared row is at L3.
 - **Checkable form**: `node scripts/holes.mjs` stubs every demo's view
   model into `.holey/` (gitignored) and builds it under holey.dhall;
   `npm run bundle-demos` runs it, so L15's stack covers this rule
   unchanged, and scripts/smoke/tests/holes.mjs mounts every holey view
   and exercises every control. `npm run check-determined`
-  (scripts/check-determined.mjs) compiles each swept demo's view with a
-  typed hole for every imported value into `.determined/` and reads the
-  hole list back, failing on a second unknown, on an unknown off a row's
-  tail, or on an error that is not a hole.
+  (scripts/check-determined.mjs) compiles every demo's view with a typed
+  hole for every imported value into `.determined/` and reads the hole
+  list back — one declaration per compile round, a first declaration
+  copied to the function's later occurrences — failing on any unknown
+  or on an error that is not a hole.
 - **Rejected (2026-09-30)**, each on a measured branch: shadow `.Holey`
   modules a view imports instead (102 of 102, but a second vocabulary no
   real build checks); leaving read rows and variant outputs free (96 of

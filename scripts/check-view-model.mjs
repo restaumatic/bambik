@@ -5,7 +5,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const isViewModel = (file) => file.endsWith("ViewModel.purs") || file.endsWith("Logic.purs");
+const isViewModel = (file) => file.endsWith("ViewModel.purs");
 
 const walk = (dir) => readdirSync(dir).flatMap((n) => {
   const p = join(dir, n);

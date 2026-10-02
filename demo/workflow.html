@@ -51,12 +51,11 @@
     compiler must type rather than resolve) standing in for the functions that
     do not exist yet, and the view model module is written second, to the names
     and types the view demanded: the compiler's last message lists every hole
-    with its type, and that list <em>is</em> the module's signatures, the
-    model's tail the one unknown. This app has no list and no pane; an app
-    that has states each one's row on its own line (a list's row after its
-    key, a pane's states after its case, a stored field read by an accessor
-    right there — see the code style note), which is what keeps the list
-    concrete.</p>
+    with its type, and that list <em>is</em> the module's signatures, with
+    nothing unknown. The model row is declared once, on the seed line, and a
+    row no model field holds — a classifier's cases, an action's outcome —
+    where it is introduced (see the code style note); that is what keeps the
+    list concrete.</p>
 
     <h2>1 · The view, whole, before any logic exists</h2>
 
@@ -66,8 +65,9 @@
     holes — the display's read, the confirmation copy, the seed. Note what is
     <em>not</em> a hole: the field anchor (<code>@"Pizza"</code>), the case
     anchor (<code>@"Order"</code>, stated once on the button and once on the
-    snackbar that renders it), and the chrome (<code>headlineSmall</code>) are complete as
-    written.</p>
+    snackbar that renders it), the model row on the seed line
+    (<code>@( "Pizza" :: String )</code>) and the chrome
+    (<code>headlineSmall</code>) are complete as written.</p>
 
     <h3>src/Order.purs</h3>
 <pre><code class="language-haskell">module Order (orderApp) where
@@ -88,17 +88,16 @@ orderApp =
       headlineSmall (text ?orderLine) # shown
       button @"Order" {}
       snackbar @"Order" ?confirmedLine
-    ) # with ?start
+    ) # with @( "Pizza" :: String ) ?start
 </code></pre>
 
     <p>The compiler answers with a message per hole and a last one listing
     them together, and none of them is a refusal: every hole comes back typed.
     The display read and the confirmation copy both report
-    <code>{ "Pizza" :: String | t0 } -&gt; String</code>
-    — the editor's field anchor taught the pipeline the model's first field
-    before any logic exists, and the <code>| t0</code> says the rest of the
-    row is still the view model's to decide. The seed reports the model as far as
-    the view has spelled it:</p>
+    <code>{ "Pizza" :: String } -&gt; String</code>
+    — the editor's field anchor and the model row declared on the seed line
+    fixed the model before any logic exists, and the seed reports exactly
+    that row:</p>
 
 <pre class="compiler">Error 1 of 4:
 
@@ -108,7 +107,6 @@ orderApp =
     Hole 'orderLine' has the inferred type
 
       { "Pizza" :: String
-      | t0
       }
       -&gt; String
 
@@ -124,19 +122,17 @@ Error 2 of 4:
     Hole 'confirmedLine' has the inferred type
 
       { "Pizza" :: String
-      | t0
       }
       -&gt; String
   ⋯
 
 Error 3 of 4:
 
-  at src/Order.purs:19:14 - 19:20 (line 19, column 14 - line 19, column 20)
+  at src/Order.purs:19:37 - 19:43 (line 19, column 37 - line 19, column 43)
 
     Hole 'start' has the inferred type
 
       { "Pizza" :: String
-      | t0
       }
   ⋯
 
@@ -147,29 +143,24 @@ Error 4 of 4:
     The 3 holes in this declaration, with one numbering of unknowns across them:
 
       orderLine      :: { "Pizza" :: String
-                        | t0
                         }
                         -&gt; String
       confirmedLine  :: { "Pizza" :: String
-                        | t0
                         }
                         -&gt; String
       start          :: { "Pizza" :: String
-                        | t0
                         }
   ⋯</pre>
 
     <p>Two things to read here. First, the last message is the one to read
-    when there are many holes: each hole's own message numbers its unknowns
-    afresh, so a <code>t0</code> there says nothing about the next message's
-    <code>t0</code>, while the list numbers them once — here the three holes
-    share one row, so all three are one decision about the model. And holes
+    when there are many holes: it lists every hole with its type, and nothing
+    in it is unknown — the model row on the seed line saw to that. And holes
     need not stop you from seeing the view: import <code>hole</code> from
     <code>PUI.Web</code> and substitute it for every hole, and the view
     compiles and <em>runs</em> — the field, the button and an empty line on
     screen, no data flowing, before a single business function exists
-    (guardrails L18). Second, the reported row is everything the view has
-    named, not what a function reads: <em>which</em> fields a line reads is
+    (guardrails L18). Second, the reported row is the whole model the seed
+    line declared, not what a function reads: <em>which</em> fields a line reads is
     a business decision, so the signature is yours to write. This line shows
     the pizza. Write the read function down, its footprint an
     <strong>open row</strong> — the field it reads, and a tail for the rest of
@@ -204,7 +195,6 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
     Hole 'confirmedLine' has the inferred type
 
       { "Pizza" :: String
-      | t0
       }
       -&gt; String
 
@@ -220,12 +210,11 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
 Error 2 of 3:
 
-  at src/Order.purs:20:14 - 20:20 (line 20, column 14 - line 20, column 20)
+  at src/Order.purs:20:37 - 20:43 (line 20, column 37 - line 20, column 43)
 
     Hole 'start' has the inferred type
 
       { "Pizza" :: String
-      | t0
       }
   ⋯
 
@@ -236,11 +225,9 @@ Error 3 of 3:
     The 2 holes in this declaration, with one numbering of unknowns across them:
 
       confirmedLine  :: { "Pizza" :: String
-                        | t0
                         }
                         -&gt; String
       start          :: { "Pizza" :: String
-                        | t0
                         }
   ⋯</pre>
 
@@ -260,21 +247,19 @@ confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 
 <pre class="compiler">Error found:
 in module Order
-at src/Order.purs:20:14 - 20:20 (line 20, column 14 - line 20, column 20)
+at src/Order.purs:20:37 - 20:43 (line 20, column 37 - line 20, column 43)
 
   Hole 'start' has the inferred type
 
     { "Pizza" :: String
-    | t0
     }
   ⋯</pre>
 
-    <p>The row is still <em>open</em>: both functions state what they read
-    and nothing more, so nothing so far has said what else the app holds. The
-    seed does. It is the model's value at t=0, and its type is the app's
-    state — exactly <code>{ "Pizza" :: String }</code>, the row the view
-    named, closed by the one value that has to exist anyway. Business data
-    under a business name — never <code>initial</code>.</p>
+    <p>Both functions state what they read and nothing more, through open
+    rows; the model itself was declared on the seed line, so the seed's type
+    was never in doubt: exactly <code>{ "Pizza" :: String }</code>. The seed
+    is the model's value at t=0 — business data under a business name, never
+    <code>initial</code>.</p>
 
     <h2>4 · Green</h2>
 
@@ -313,7 +298,7 @@ orderApp =
       headlineSmall (text orderLine) # shown
       button @"Order" {}
       snackbar @"Order" confirmedLine
-    ) # with plainMargherita
+    ) # with @( "Pizza" :: String ) plainMargherita
 </code></pre>
 
 <pre class="compiler">[1 of 2] Compiling OrderViewModel
