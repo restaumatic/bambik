@@ -1,15 +1,17 @@
 // The view determines the view model (guardrails L18, writing.md *Writing
 // order*): a view compiled with a typed hole in place of every value it
 // imports from its view model module must report each hole at a concrete
-// type, nothing unknown. This rewrites each chosen demo's
+// type, every field and case known, unknown only at row tails. This rewrites each chosen demo's
 // view that way — the import dropped, every imported name a `?name`, the
 // module renamed under `Determined.` — into .determined/ (gitignored),
 // compiles it against the real library into a copy of output/, and reads the
 // compiler's hole list back. It fails on a second unknown, on an unknown
-// anywhere (the model row not declared on the seed line, or a derived row —
-// a classifier's cases, an action's outcome, a projection's element row, a
-// payload, a trace state — not declared where it is introduced), and on
-// any error that is not a hole. Runs over every registered demo (an all-view
+// anywhere but a row's tail (a field no line declares — `state @l @t`, an
+// editor, an accessor — an action's outcome or payload without its type),
+// and on any error that is not a hole. Tails are the view model's to close:
+// `Cons` constraints bound a row from below, so every row the view declares
+// field by field comes back open-tailed, and the view model's signature is
+// the hole's type with its tails closed. Runs over every registered demo (an all-view
 // demo passes trivially); `node scripts/check-determined.mjs inbox-mdc3 …`
 // narrows to named demos. About a minute for all, ten seconds for a few.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync } from 'node:fs'
@@ -33,14 +35,6 @@ const holed = chosen.flatMap(d => {
   if (!m) { console.log(`– ${d.dir}: no view model module, all view`); return [] }
   const names = m[2].split(',').map(s => s.trim()).filter(Boolean)
   let out = src.replace(m[0], '').replace(/^module (\w+)/m, 'module Determined.$1')
-  // A derived row is declared once, where its function first appears; the
-  // function's later occurrences are typed by the function itself once it is
-  // written. Each `?name` is its own hole, so that second step is emulated:
-  // the first occurrence's declaration is copied to the later, undeclared ones.
-  const declared = new Map()
-  for (const d of out.matchAll(/@\(((?:[^()]|\([^()]*\))*)\) ([A-Za-z_][\w']*)\b/g)) if (!declared.has(d[2])) declared.set(d[2], d[1])
-  for (const [n, row] of declared)
-    out = out.replace(new RegExp(`((?:shownWhen|inCase|provided|foreach|shownEach|listOf) @"[^"]+"(?: @"[^"]+")?(?: \\{[^}]*\\})?) ${n}\\b`, 'g'), `$1 @(${row}) ${n}`)
   for (const n of names) out = out.replace(new RegExp(`(?<![\\w."])${n}\\b`, 'g'), `?${n}`)
   writeFileSync(`.determined/src/${d.mod}.purs`, out)
   return [{ ...d, names }]
@@ -57,8 +51,8 @@ const declOf = b => b.match(/in value declaration (\w+)/)?.[1] ?? '?'
 const check = (block, problems) => {
   const unknowns = [...new Set([...block.matchAll(/\b(t\d+) is an unknown type/g)].map(m => m[1]))]
   for (const t of unknowns) {
-    const where = new RegExp(`(?<!\\| )\\b${t}\\b(?! is an unknown)`).test(block) ? 'inside a type' : 'as a row tail'
-    problems.push(`${declOf(block)}: ${t} is unknown ${where}: the model row is not declared on the seed line (\`# mvu @( … ) seed\`), or a derived row is not declared where it is introduced (a classifier's cases, an action's outcome, a projection's element row, a payload, a trace state)`)
+    if (new RegExp(`(?<!\\| )(?<!Record )\\b${t}\\b(?! is an unknown)`).test(block))
+      problems.push(`${declOf(block)}: ${t} is unknown inside a type: a field no line declares (a \`state @l @t\` leaf, an editor, an accessor), an action's outcome or a payload without its type, or a view helper composing two view model functions`)
   }
   return unknowns
 }
@@ -108,7 +102,7 @@ for (const d of holed) {
   const r = results.get(d.dir)
   if (!r.seen) r.problems.push('no hole list: the view uses nothing it imports, or did not compile down to holes')
   if (r.problems.length === 0)
-    console.log(`✓ ${d.dir}: ${r.listed.length} holes determined, nothing unknown`)
+    console.log(`✓ ${d.dir}: ${r.listed.length} holes determined${r.tails.length ? ', unknowns only as row tails' : ', nothing unknown'}`)
   else { failed = true; console.error(`✗ ${d.dir}\n  ${r.problems.join('\n  ')}`) }
   if (process.env.SHOW && (r.problems.length || process.env.SHOW === 'all')) for (const l of r.shown) console.log(`    ${l}`)
 }

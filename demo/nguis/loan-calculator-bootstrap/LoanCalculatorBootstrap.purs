@@ -21,14 +21,7 @@ loanCalculatorBootstrap =
       select @"Purpose" {}
         (choice @"Car" <+> choice @"Home improvement" <+> choice @"Holiday")
       toggleSwitch @"Payment protection insurance" {}
-    ) # mvu
-      @( "Applicant" :: String
-       , "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
-       , "Payment protection insurance" :: Boolean
-       )
-      cityCarLoan
+    ) # mvu cityCarLoan
     card $ Semigroupoid.do
       ( listGroup $ RecordToRecord.do
         listGroupItem (text monthlyLine)

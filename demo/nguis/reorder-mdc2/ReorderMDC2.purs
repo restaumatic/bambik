@@ -20,10 +20,10 @@ reorderMDC2 =
         button @"Rotate" { icon: "sync" }
         button @"Shuffle" { icon: "shuffle" }
       VariantToVariant.do
-        blank # action @((Array { id :: String, "Title" :: String })) rotateAction # atCase @"Rotate" # toCase @"reordered" identity
-        blank # action @((Array { id :: String, "Title" :: String })) shuffleAction # atCase @"Shuffle" # toCase @"reordered" identity ) # updated (match { reordered: setOrder })
+        blank # action @(Array { id :: String, "Title" :: String }) rotateAction # atCase @"Rotate" # toCase @"reordered" identity
+        blank # action @(Array { id :: String, "Title" :: String }) shuffleAction # atCase @"Shuffle" # toCase @"reordered" identity ) # updated (match { reordered: setOrder })
     group @"Setlist" $ list $
       ( listItem $ Semigroupoid.do
         static (el "input" >>> "type" := "checkbox") # shown
-        filledTextField @"Title" {} ) # edited @"id"
-  ) # mvu @( "Setlist" :: Array { id :: String, "Title" :: String } ) openingSetlist
+        filledTextField @"Title" {} ) # edited @"id" @String
+  ) # mvu openingSetlist

@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (atCase, mvu, subChoice, toCase, updated, with)
+import PUI (atCase, mvu, state, subChoice, toCase, updated, with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC2 (body, body1, button, headline6, confirmed)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,6 +16,7 @@ cashboxMDC2 :: Effect Unit
 cashboxMDC2 =
   body $
     ( Semigroupoid.do
+      state @"balance" @Number
       ( headline6 $ text balanceLine ) # shown
       ( Semigroupoid.do
         RecordToVariant.do
@@ -25,4 +26,4 @@ cashboxMDC2 =
         ( VariantToVariant.do
           ( confirmed @"Refund" @"Refund the customer?" $ body1 $ text refundLine ) # atCase @"Refund a customer" # toCase @"refunded" identity
           ( confirmed @"Pay" @"Pay the courier?" $ body1 $ text payoutLine ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice ) # updated (match { refunded: applyRefund, paidOut: applyPayout, "Take a deposit": applyDeposit })
-    ) # mvu @( balance :: Number ) openedTill
+    ) # mvu openedTill

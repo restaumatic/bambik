@@ -17,7 +17,7 @@ markdownPreviewerMDC2 =
     layoutGrid $ ( Semigroupoid.do
       layoutCell 6 $ filledTextArea @"Source" { columns: 60, rows: 24 }
       layoutCell 6 $ ( dynamic documentView ) # shown
-    ) # mvu @( "Source" :: String ) welcomeDocument
+    ) # mvu welcomeDocument
 
 documentView :: { "Source" :: String } -> PUI Web {} {}
 documentView document = each (parseMarkdown document) blockView

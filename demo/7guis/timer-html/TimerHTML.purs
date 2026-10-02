@@ -3,7 +3,7 @@ module TimerHTML (timerHTML) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import PUI (applied, every, mvu)
+import PUI (applied, every, mvu, state)
 import PUI.Web (shown, staticText, text)
 import PUI.Web.HTML (body, button, div, label, p, progress, rangeInput)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -12,6 +12,7 @@ import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshT
 timerHTML :: Effect Unit
 timerHTML =
   body $ div $ ( Semigroupoid.do
+    state @"elapsed" @Number
     progress @"Elapsed" elapsedFraction # shown
     (p $ text progressLine) # shown
     p ( label $ Semigroupoid.do
@@ -19,8 +20,4 @@ timerHTML =
       rangeInput @"Duration" )
     every tickPeriod tick
     button @"Reset" {} # applied restarted
-  ) # mvu
-    @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-     , elapsed :: Number
-     )
-    tenSecondFreshTimer
+  ) # mvu tenSecondFreshTimer

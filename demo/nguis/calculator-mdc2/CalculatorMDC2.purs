@@ -6,7 +6,7 @@ import CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operato
 import Data.Array (elem)
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (foreach, mvu, updated, with)
+import PUI (foreach, mvu, state, updated, with)
 import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body)
@@ -16,22 +16,20 @@ calculatorMDC2 :: Effect Unit
 calculatorMDC2 =
   body $
     ( div >>> "style" := "display: inline-block; width: 296px;" $ Semigroupoid.do
+      state @"entry" @String
+      state @"total" @Number
+      state @"operation" @[ pending :: { key :: String }, none :: {} ]
+      state @"input" @[ entering :: {}, settled :: {} ]
+      state @"condition" @[ sound :: {}, faulty :: {} ]
       div >>> "style"
         := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
           <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
           <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
-          text faultLine # shownWhen @"faulty" @( sound :: { entry :: String }, faulty :: {} ) readout
+          text faultLine # shownWhen @"faulty" readout
           text _.entry # shownWhen @"sound" readout
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-        clicked @"entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" @( key :: String ) (const keyPad) ) # with {} # updated (match { entered: pressKey })
-    ) # mvu
-      @( total :: Number
-       , operation :: [ pending :: { key :: String }, none :: {} ]
-       , entry :: String
-       , input :: [ entering :: {}, settled :: {} ]
-       , condition :: [ sound :: {}, faulty :: {} ]
-       )
-      blankTally
+        clicked @"entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" @String (const keyPad) ) # with {} # updated (match { entered: pressKey })
+    ) # mvu blankTally
 
 keyFace :: forall r1. { key :: String | r1 } -> String
 keyFace { key } =

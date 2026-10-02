@@ -5,7 +5,7 @@ import Prelude (Unit, const, (#), ($))
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (every, mvu, updated)
+import PUI (every, mvu, state, updated)
 import PUI.Web (provided, shown, shownEach, text)
 import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC3 (body, button, displaySmall)
@@ -16,6 +16,9 @@ stopwatchMDC3 :: Effect Unit
 stopwatchMDC3 =
   body $
     ( Semigroupoid.do
+      state @"phase" @[ halted :: {}, timing :: {} ]
+      state @"elapsedTenths" @Int
+      state @"laps" @(Array Int)
       displaySmall (text elapsedText) # shown
       every tickPeriod tick
       ( RecordToVariant.do
@@ -24,5 +27,7 @@ stopwatchMDC3 =
       ( RecordToVariant.do
         button @"Lap" { icon: "flag" } # provided @"timing" _.phase
         button @"Reset" { icon: "replay" } # provided @"halted" _.phase ) # updated (match { "Lap": const recordLap, "Reset": const clearStopwatch })
-      ul $ ( li $ text lapLine ) # shownEach @"number" @( number :: Int, tenths :: Int ) lapRows
-    ) # mvu @( phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int ) zeroedStopwatch
+      ul $ ( Semigroupoid.do
+        state @"tenths" @Int
+        li $ text lapLine ) # shownEach @"number" @Int lapRows
+    ) # mvu zeroedStopwatch

@@ -38,20 +38,7 @@ espressoBarMDC2 =
         menu @"Presets" ( RecordToVariant.do
           menuItem @"The usual" {}
           menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const <<< theUsual, "Espresso, no frills": const <<< espressoNoFrills })
-      ) # mvu
-        @( "Your name" :: String
-         , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]
-         , "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ]
-         , "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ]
-         , "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ]
-         , "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-         , "Extra shot" :: Boolean
-         , "Decaf" :: Boolean
-         , "Takeaway cup" :: Boolean
-         , "Mark as favorite" :: Boolean
-         , "Loyalty" :: [ member :: {}, guest :: {} ]
-         )
-        usualOrder
+      ) # mvu usualOrder
       body2 (text cupLine) # shown
       ( div $ RecordToRecord.do
         caption $ staticText @"Caffeine"

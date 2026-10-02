@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import InboxViewModel (composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
-import PUI (applied, mvu, observed, updated, with)
+import PUI (applied, mvu, observed, state, updated, with)
 import PUI.Web (provided, shown, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, dialog, fab, headline6, iconButton, listOf, menu, menuItem)
@@ -16,13 +16,22 @@ inboxMDC2 :: Effect Unit
 inboxMDC2 =
   body $
     ( Semigroupoid.do
+      state @"deletion" @[ silent :: {}, confirming :: {} ]
       ( caption $ text unreadLine ) # shown
-      listOf @"opened" @"id" { selected: highlighted } _.messages ( span $ text messageLine # shown ) # updated (match { opened: openMessage })
+      listOf @"opened" @"id" @Int { selected: highlighted } _.messages ( Semigroupoid.do
+        state @"sender" @String
+        state @"subject" @String
+        state @"body" @String
+        state @"status" @[ unread :: {}, read :: {}, open :: {} ]
+        span $ text messageLine # shown ) # updated (match { opened: openMessage })
       ( Semigroupoid.do
+        state @"sender" @String
+        state @"subject" @String
+        state @"body" @String
         headline6 (text subjectLine) # shown
         body2 (text fromLine) # shown
         body1 (text bodyText) # shown
-        iconButton @"Delete message" {} "delete" ) # provided @"reading" @( reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ) messageView # updated (match { "Delete message": const requestDelete })
+        iconButton @"Delete message" {} "delete" ) # provided @"reading" messageView # updated (match { "Delete message": const requestDelete })
       ( Semigroupoid.do
         ( dialog @"Delete the last message?" $ RecordToVariant.do
           button @"Delete" {} # with {}
@@ -33,8 +42,4 @@ inboxMDC2 =
         menuItem @"By sender" {}
         menuItem @"By subject" {}
         menuItem @"Unread first" {} ) # updated (match { "By sender": const <<< sortBySender, "By subject": const <<< sortBySubject, "Unread first": const <<< sortUnreadFirst })
-    ) # mvu
-      @( messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] }
-       , deletion :: [ silent :: {}, confirming :: {} ]
-       )
-      mondayMail
+    ) # mvu mondayMail

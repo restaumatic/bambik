@@ -5,7 +5,7 @@ import Prelude (Unit, const, identity, (#), ($))
 import Data.Profunctor.Row.VariantToRecord (unfolding)
 import Data.Lens.Reel (reelE)
 import Effect (Effect)
-import PUI (mvu, updated)
+import PUI (mvu, state, updated)
 import PUI.Web (shownWhen, text)
 import PUI.Web.MDC2 (body, body2, button, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,6 +15,7 @@ ticketDispenserMDC2 :: Effect Unit
 ticketDispenserMDC2 =
   body $
     ( Semigroupoid.do
+      state @"display" @[ waiting :: {}, serving :: { number :: Int } ]
       headline3 ( Semigroupoid.do
         (text noTicketLine) # shownWhen @"waiting" _.display
         (text ticketLine) # shownWhen @"serving" _.display )
@@ -24,4 +25,4 @@ ticketDispenserMDC2 =
       ( Semigroupoid.do
         button @"Take a number" {}
         reelE @{ display :: [ waiting :: {}, serving :: { number :: Int } ] } @{ next :: Int } issue nextTicket identity # unfolding @"resume" @"next" @Int firstTicket ) # updated const
-    ) # mvu @( display :: [ waiting :: {}, serving :: { number :: Int } ] ) emptyQueue
+    ) # mvu emptyQueue

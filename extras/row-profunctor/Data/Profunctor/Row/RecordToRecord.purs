@@ -86,6 +86,7 @@ module Data.Profunctor.Row.RecordToRecord
   , focusField
   , bracketed
   , blank
+  , state
   , with
   , mvu
   , asField
@@ -185,7 +186,7 @@ focusField = prop (Proxy @l)
 
 -- | Edit the variant-valued field `l` through a record-shaped, self-looped editor state.
 bracketed
-  :: forall @l @v @s p b rs
+  :: forall @l p v s b rs
    . IsSymbol l
   => Cons l [ | v ] b rs
   => Looping p
@@ -202,13 +203,26 @@ blank = lcmap (const {}) identity
 
 -- | Discharge a component's initial-state obligation by announcing its t=0 value.
 -- | Its own input is ignored, so it sits at any row; a seed that is a hole is
+-- | Declare a field of the row this stage runs over, and show nothing:
+-- | `state @"count" @Int` types the model's `count` where it is first used,
+-- | `state @"sender" @String` inside a list item types the element row's
+-- | `sender`. The wire with a `Cons` witness — the one-label declaration of a
+-- | field no editor or selector binds and no leaf shows verbatim, so that a
+-- | typed hole over the row reports it concretely (guardrails L18). A
+-- | field's type is a scalar, a variant or an array, never a record: a
+-- | record field is declared by the lines of the group or item running over
+-- | it. Every row is declared this way by the lines that run over it, and
+-- | its tail is closed by the view model module's signature.
+state :: forall @l @t p rest row. Category p => Cons l t rest row => p { | row } { | row }
+state = identity
+
 -- | never announced (`announce`, guardrails L18).
 with :: forall @a p o r. Seeding p => { | a } -> p { | a } o -> p { | r } o
 with a w = lcmap (const {}) (announce a >>> w)
 
 -- | The model–view–update shape: a self-looped pipeline over the model, seeded with its initial state.
 mvu
-  :: forall @model p
+  :: forall p model
    . Looping p
   => Seeding p
   => { | model }

@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import PotluckViewModel (guestCountLine, guestName, invitation, menuLine, menuState, waitingLine)
-import PUI (acted, with)
+import PUI (acted, state, with)
 import PUI.Web ((<+>), choice, shown, shownWhen, text)
 import PUI.Web.MDC2 (body, body2, group, headline6, list, listItem, segmentedButtonUnpicked, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,10 +17,11 @@ potluckMDC2 =
       ( listItem $ Semigroupoid.do
         subtitle1 (text guestName) # shown
         segmentedButtonUnpicked @"Dish" @"chosen"
-          (choice @"Salad" <+> choice @"Lasagna" <+> choice @"Pavlova") ) # acted @"name"
-    headline6 (text menuLine) # shownWhen @"complete" @( complete :: { dishes :: Array { name :: String, dish :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }, waiting :: { remaining :: Array String } ) menuState
-    body2 (text waitingLine) # shownWhen @"waiting" menuState
-  ) # with
-    @( "Guests" :: Array { name :: String, "Dish" :: [ chosen :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ], unchosen :: {} ] }
-     )
-    invitation
+          (choice @"Salad" <+> choice @"Lasagna" <+> choice @"Pavlova") ) # acted @"name" @String
+    ( Semigroupoid.do
+      state @"dishes" @(Array { name :: String, dish :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] })
+      headline6 (text menuLine) ) # shownWhen @"complete" menuState
+    ( Semigroupoid.do
+      state @"remaining" @(Array String)
+      body2 (text waitingLine) ) # shownWhen @"waiting" menuState
+  ) # with invitation

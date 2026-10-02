@@ -96,7 +96,7 @@ instance Acting (->) where
 -- | state channel (`second`) and is written over each emission
 -- | (`Record.set`). What an element reads of its row is its own functions'
 -- | open-row footprint (guardrails L18).
-acted :: forall @l @a p k ra rb b . Acting p => Strong p => IsSymbol l => Cons l k ra a => Cons l k rb b => p { | a } { | b } -> p (Array { | a }) (Array { | b })
+acted :: forall @l @k p ra a rb b . Acting p => Strong p => IsSymbol l => Cons l k ra a => Cons l k rb b => p { | a } { | b } -> p (Array { | a }) (Array { | b })
 acted w = withStructuralOrd @k (actedBy (Record.get prox)
   (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.set prox k out) (second w)))
   where

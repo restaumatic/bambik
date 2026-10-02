@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant (folding)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (mvu, toCase, updated)
+import PUI (mvu, state, toCase, updated)
 import PUI.Web (provided, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyMedium, button)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,13 +16,33 @@ checkoutMDC3 :: Effect Unit
 checkoutMDC3 =
   body $
     ( Semigroupoid.do
+      state @"item" @String
+      state @"address" @String
+      state @"card" @String
+      state @"status" @[ pending :: {}, placed :: {} ]
       ( Semigroupoid.do
-        ( bodyMedium $ text cartLine ) # shownWhen @"cart" @( cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ) checkoutStep
-        ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
-        ( bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
+        ( Semigroupoid.do
+          state @"item" @String
+          bodyMedium $ text cartLine ) # shownWhen @"cart" checkoutStep
+        ( Semigroupoid.do
+          state @"address" @String
+          bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
+        ( Semigroupoid.do
+          state @"card" @String
+          bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
         RecordToVariant.do
-          button @"Next" {} # toCase @"next" @{ step :: [ cart :: {}, shipping :: {}, payment :: {} ] } goneOn # provided @"onward" @( onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }, last :: {} ) onwardFrom
-          button @"Back" {} # toCase @"next" @{ step :: [ cart :: {}, shipping :: {}, payment :: {} ] } goneBack # provided @"back" @( back :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }, first :: {} ) previousOf
-          button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep ) # folding @"next" @"step" @[ cart :: {}, shipping :: {}, payment :: {} ] cartStep # updated (match { "Place order": const orderPlaced })
-      ( bodyMedium $ text placedLine ) # shownWhen @"placed" @( pending :: {}, placed :: { item :: String, address :: String, card :: String } ) orderStatus
-    ) # mvu @( item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ] ) freshOrder
+          ( Semigroupoid.do
+            state @"step" @[ cart :: {}, shipping :: {}, payment :: {} ]
+            button @"Next" {} # toCase @"next" goneOn ) # provided @"onward" onwardFrom
+          ( Semigroupoid.do
+            state @"step" @[ cart :: {}, shipping :: {}, payment :: {} ]
+            button @"Back" {} # toCase @"next" goneBack ) # provided @"back" previousOf
+          ( Semigroupoid.do
+            state @"card" @String
+            button @"Place order" { icon: "shopping_cart_checkout" } ) # provided @"payment" checkoutStep ) # folding @"next" @"step" @[ cart :: {}, shipping :: {}, payment :: {} ] cartStep # updated (match { "Place order": const orderPlaced })
+      ( Semigroupoid.do
+        state @"item" @String
+        state @"address" @String
+        state @"card" @String
+        bodyMedium $ text placedLine ) # shownWhen @"placed" orderStatus
+    ) # mvu freshOrder

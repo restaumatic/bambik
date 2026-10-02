@@ -510,7 +510,7 @@ shown content = wrap do
 -- | the view can declare every state the pane chooses among
 -- | (`# shownWhen @"serving" @( serving :: { number :: Int }, idle :: {} ) displayOf`).
 shownWhen
-  :: forall @l @s row a b
+  :: forall @l row a b s
    . IsSymbol l => Cons l { | a } b s
   => ({ | row } -> [ | s ]) -> PUI Web { | a } {} -> PUI Web { | row } { | row }
 shownWhen f content = shown (attachedOn @l f content)
@@ -540,7 +540,7 @@ shownWhen f content = shown (attachedOn @l f content)
 -- | Like the other panes, it takes the classifier's variant as a visible
 -- | type argument after the case.
 inCase
-  :: forall @l @s row a b
+  :: forall @l row a b s
    . IsSymbol l => Cons l a b s
   => ({ | row } -> [ | s ]) -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
 inCase f w = wrap do
@@ -567,7 +567,7 @@ inCase f w = wrap do
 -- | Derived: the collection, muted, merged with the wire. Trails its
 -- | item: `(li $ …) # shownEach @l proj`. The element row is a visible type
 -- | argument after the key, so the view can declare what each item is fed.
-shownEach :: forall @l @a row k r o . IsSymbol l => Cons l k r a => ({ | row } -> Array { | a }) -> PUI Web { | a } o -> PUI Web { | row } { | row }
+shownEach :: forall @l @k row r a o . IsSymbol l => Cons l k r a => ({ | row } -> Array { | a }) -> PUI Web { | a } o -> PUI Web { | row } { | row }
 shownEach proj item = shown (muted (foreach @l proj item))
 
 -- | Show a string that changes — a readout, a total, a sentence, a name in
@@ -772,7 +772,7 @@ infixr 10 attrDyn as :=>
 -- | The classifier's variant is a visible type argument after the case, so
 -- | the view can declare every state the pane chooses among
 -- | (`# provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion`).
-provided :: forall @l @s i a b o. IsSymbol l => Cons l { | a } b s => ({ | i } -> [ | s ]) -> PUI Web { | a } [ | o ] -> PUI Web { | i } [ | o ]
+provided :: forall @l i a b s o. IsSymbol l => Cons l { | a } b s => ({ | i } -> [ | s ]) -> PUI Web { | a } [ | o ] -> PUI Web { | i } [ | o ]
 provided = attachedOn @l
 
 -- The pane mechanism every pane shares, at any content output: attach and
@@ -780,7 +780,7 @@ provided = attachedOn @l
 -- through its lawful restrictions — `provided` at emitter content, where a
 -- detached pane's silence is `×→+`'s Answer; `shownWhen`, which merges it
 -- with the wire so a display pane answers every feed with the row.
-attachedOn :: forall @l @s i a b o. IsSymbol l => Cons l { | a } b s => ({ | i } -> [ | s ]) -> PUI Web { | a } o -> PUI Web { | i } o
+attachedOn :: forall @l i a b s o. IsSymbol l => Cons l { | a } b s => ({ | i } -> [ | s ]) -> PUI Web { | a } o -> PUI Web { | i } o
 attachedOn f w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure

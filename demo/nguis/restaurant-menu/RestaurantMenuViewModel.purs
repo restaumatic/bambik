@@ -1,12 +1,10 @@
-module RestaurantMenuViewModel (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine) where
+module RestaurantMenuViewModel (courseName, dishDescription, dishName, dishTags, menuCourses, priceLine) where
 
 import Prelude ((<>), map)
 
 courseName :: forall r1. { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } | r1 } -> String
 courseName = _.name
 
-courseDishes :: forall r1. { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } | r1 } -> Array { name :: String, price :: String, description :: String, tags :: Array String }
-courseDishes = _.dishes
 
 dishName :: forall r1. { name :: String, price :: String, description :: String, tags :: Array String | r1 } -> String
 dishName = _.name

@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (applied, mvu, updated)
+import PUI (applied, mvu, state, updated)
 import PUI.Web ((<+>), choice, clWhen, shownWhen, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (body, button, caption, filledTextField, listOf, segmentedButton)
@@ -15,19 +15,21 @@ todoListMDC2 :: Effect Unit
 todoListMDC2 =
   body $
     ( Semigroupoid.do
+      state @"todos" @(Array { title :: String, status :: [ active :: {}, completed :: {} ] })
       Semigroupoid.do
         filledTextField @"What needs to be done?" {}
         button @"Add" {} # applied addTodo
-      listOf @"toggled" @"key" @( key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] ) { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # updated (match { toggled: toggleTodo })
+      listOf @"toggled" @"key" @Int { selected: isCompleted } visibleEntries ( Semigroupoid.do
+        state @"status" @[ active :: {}, completed :: {} ]
+        span (text _.title) # clWhen isCompleted "todo-done" ) # updated (match { toggled: toggleTodo })
       segmentedButton @"Visibility"
         (choice @"All" <+> choice @"Active" <+> choice @"Completed")
       Semigroupoid.do
-        caption (text soleLine) # shownWhen @"sole" @( sole :: { count :: Int }, several :: { count :: Int } ) remainingItems
-        caption (text severalLine) # shownWhen @"several" remainingItems
+        ( Semigroupoid.do
+          state @"count" @Int
+          caption (text soleLine) ) # shownWhen @"sole" remainingItems
+        ( Semigroupoid.do
+          state @"count" @Int
+          caption (text severalLine) ) # shownWhen @"several" remainingItems
         button @"Clear completed" {} # applied clearCompleted
-    ) # mvu
-      @( "What needs to be done?" :: String
-       , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }
-       , "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ]
-       )
-      emptyTodoList
+    ) # mvu emptyTodoList

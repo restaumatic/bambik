@@ -1493,7 +1493,7 @@ listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: 
 -- | the view model each row is drawn from
 -- | (`listOf @"opened" @"id" @( id :: Int, subject :: String ) …`).
 listOf
-  :: forall @l @k @r provided i rest o key s
+  :: forall @l @k @key provided i rest o r s
    . IsSymbol l
   => IsSymbol k
   => Cons l key () s
