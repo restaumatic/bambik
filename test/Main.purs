@@ -20,7 +20,7 @@ import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
 import Data.Profunctor.Row.RecordToRecord (feedback, focusField, muted, subStrong, recordToRecord)
-import Data.Profunctor.Row.VariantToRecord (unfolding, variantToRecord)
+import Data.Profunctor.Row.VariantToRecord (fold, unfolding, variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (folding, recordToVariant)
 import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, toCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
@@ -189,6 +189,16 @@ main = do
   assertEqual "toCase"
     (.picked 7 :: [ picked :: Int ])
     (toCase @"picked" _.key identity { key: 7, label: "x" })
+
+  -- fold @l f: one case folding into the record, f of its payload —
+  -- fold @l f (inj @l a) = f a; at identity the closed singleton is its
+  -- row, an iso with toCase @l identity both ways
+  assertEqual "fold" { count: 4 } (fold @"Count" (\r -> r { count = r.count + 1 }) (."Count" { count: 3 }))
+  assertEqual "fold/identity" { count: 5 } (fold @"Count" identity (."Count" { count: 5 }))
+  assertEqual "fold/section" { count: 5 } ((toCase @"Count" identity identity >>> fold @"Count" identity) { count: 5 })
+  assertEqual "fold/retraction"
+    (."Count" { count: 5 } :: [ "Count" :: { count :: Int } ])
+    ((fold @"Count" identity >>> toCase @"Count" identity identity) (."Count" { count: 5 }))
 
   -- caseText (label-is-copy): caseText (inj @l a) = reflectSymbol (Proxy @l) —
   -- the case label of a variant value, verbatim, whichever case is inhabited.
@@ -599,21 +609,6 @@ main = do
     fire gProp 3
     Ref.read outs >>= assertEqual "updated: a second event with no re-feed folds into the first's result" [ { n: 10 }, { n: 13 }, { n: 16 } ]
 
-  -- observed (the +-diagonal pass-through): every event forwards once at
-  -- feed time; the status is fed exactly the cases it consumes, and its
-  -- own emissions are dropped.
-  do
-    shown <- Ref.new ([] :: Array (Variant ( charge :: Int )))
-    sProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array (Variant ( charge :: Int, done :: String )))
-    m <- unwrap (observed (probeIO shown sProp :: PUI Effect (Variant ( charge :: Int )) {}))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser (inj (Proxy @"charge") 1)
-    m.toUser (inj (Proxy @"done") "ok")
-    fire sProp {}
-    Ref.read shown >>= \xs -> assertEqual "observed: the status sees only its cases" [ "charge" ] (map caseText xs)
-    Ref.read outs >>= \xs -> assertEqual "observed: every event forwards once, the status's emission dropped" [ "charge", "done" ] (map caseText xs)
-
   -- applied (the occurrence stage): a state transformer over the retained
   -- row, stepped on every emission — law: applied f ≡ updated (const f).
   -- The emitter is fed the row it acts on; whatever it emits is discarded
@@ -633,6 +628,21 @@ main = do
     Ref.read outs >>= assertEqual "applied: the occurrence steps the retained row, the replay payload discarded" [ { n: 10 }, { n: 11 } ]
     fire gProp (.count { n: 99 })
     Ref.read outs >>= assertEqual "applied: each occurrence steps once more" [ { n: 10 }, { n: 11 }, { n: 12 } ]
+
+  -- observed (the +-diagonal pass-through): every event forwards once at
+  -- feed time; the status is fed exactly the cases it consumes, and its
+  -- own emissions are dropped.
+  do
+    shown <- Ref.new ([] :: Array (Variant ( charge :: Int )))
+    sProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array (Variant ( charge :: Int, done :: String )))
+    m <- unwrap (observed (probeIO shown sProp :: PUI Effect (Variant ( charge :: Int )) {}))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (inj (Proxy @"charge") 1)
+    m.toUser (inj (Proxy @"done") "ok")
+    fire sProp {}
+    Ref.read shown >>= \xs -> assertEqual "observed: the status sees only its cases" [ "charge" ] (map caseText xs)
+    Ref.read outs >>= \xs -> assertEqual "observed: every event forwards once, the status's emission dropped" [ "charge", "done" ] (map caseText xs)
 
   -- field (the leaf lift): a scalar control lifted under a label is a
   -- whole-row citizen — the background is retained by the Strong state

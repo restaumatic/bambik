@@ -18,4 +18,4 @@ temperatureConverterHTML =
     p ( label $ Semigroupoid.do
       (staticText @"°F ") # shown
       input @"°F" "text" ) # settled fromFahrenheit
-  ) # mvu roomTemperature
+  ) # mvu @( "°C" :: String, "°F" :: String ) roomTemperature

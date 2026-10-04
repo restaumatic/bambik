@@ -16,7 +16,7 @@ parcelMDC3 =
       filledTextField @"Recipient" {}
       addressForm # subStrong
       ( bodyLarge $ text parcelLine ) # shown
-    ) # mvu draftParcel
+    ) # mvu @( "Recipient" :: String, "Street" :: String, "City" :: String ) draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
 addressForm = Semigroupoid.do

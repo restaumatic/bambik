@@ -84,8 +84,8 @@
 -- | -----------  ------------------------------  ---------------------------  --------------------
 -- | p {|a} {|b}  asField, muted, settled         subStrong, focusField       feedback
 -- | p [|a] [|b]  atCase, toCase, forCase         subChoice, focusCase         iterate
--- | p {|a} [|b]  armed                           subResolving                 folding
--- | p [|a] {|b}  —                               subRetaining                 unfolding
+-- | p {|a} [|b]  silenced                        subResolving                 folding
+-- | p [|a] {|b}  fold                            subRetaining                 unfolding
 -- | ```
 -- |
 -- | The **left** column is `dimap` alone: renaming and rewrapping labels, with
@@ -141,9 +141,8 @@
 -- | row) and own their output (each field has exactly one producer);
 -- | variants own their input (each case has exactly one handler) and share
 -- | their output (any operand may emit any case). A shared record input is
--- | **one row** — the operands' inputs are the merge's, and what an operand
--- | reads of it is its business functions' footprint, stated by row
--- | polymorphism (guardrails L18); a shared variant output is **inclusive**
+-- | **one row** — the operands' inputs are the merge's, and an operand's
+-- | business functions are typed at that row (guardrails L18); a shared variant output is **inclusive**
 -- | (`InclusiveRows`); ownership is exclusive (`ExclusiveRows`) — so a merge
 -- | signature is two words, one per side.
 -- |
@@ -516,10 +515,10 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- | A merge's **record-input side**: every operand is fed the merge's whole
 -- | row — the operands' input rows *are* the merge's (an equality, no
 -- | `Union`). The merge action is a label-blind broadcast, so no runtime
--- | evidence is needed. What an operand reads of the row is its business
--- | functions' footprint, stated by row polymorphism
--- | (`forall r. { count :: Int | r } -> String`) and checked by
--- | unification, which a bare hole never leaves stuck (guardrails L18); the
+-- | evidence is needed. An operand's business functions are typed at the row
+-- | (`countLine :: { count :: Int } -> String`, the view's hint verbatim)
+-- | and checked by unification, which a bare hole never leaves stuck
+-- | (guardrails L18); the
 -- | equality carries the context's row down into the operands.
 class SharedRecordInputs :: Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Constraint
 class SharedRecordInputs i1 i2 i i12 i1x i2x
@@ -670,15 +669,15 @@ instance
 -- Whole-row reshapings
 -- =====================================================================
 
-widenRecordInput :: forall p narrow wider o.
+widenRecordInput :: forall p r1 r a.
   Profunctor p =>
-  p { | narrow } o -> p { | wider } o
+  p { | r1 } a -> p { | r } a
 widenRecordInput = lcmap unsafeCoerce
 
-widenVariantOutput :: forall p i narrow extra wider.
+widenVariantOutput :: forall p a v1 v2 v.
   Profunctor p =>
-  Row.Union narrow extra wider =>
-  p i [ | narrow ] -> p i [ | wider ]
+  Row.Union v1 v2 v =>
+  p a [ | v1 ] -> p a [ | v ]
 widenVariantOutput = rmap expand
 
 -- | Dispatch a shot into the focused sub-variant or the background — a
@@ -686,12 +685,12 @@ widenVariantOutput = rmap expand
 -- | floor rather than in a shape module. `subChoice`, `iterate` and
 -- | `subRetaining` all split with it.
 splitVariant
-  :: forall f b s
-   . ExclusiveRows f b s
-  => Contractable s f
-  => Contractable s b
-  => [ | s ]
-  -> Either [ | f ] [ | b ]
+  :: forall v1 b v
+   . ExclusiveRows v1 b v
+  => Contractable v v1
+  => Contractable v b
+  => [ | v ]
+  -> Either [ | v1 ] [ | b ]
 splitVariant v = case contract v of
   Just f -> Left f
   Nothing -> case contract v of

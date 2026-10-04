@@ -14,4 +14,4 @@ temperatureConverterFluent =
     ( Semigroupoid.do
       textField @"°C" {} # settled fromCelsius
       textField @"°F" {} # settled fromFahrenheit
-    ) # mvu roomTemperature
+    ) # mvu @( "°C" :: String, "°F" :: String ) roomTemperature

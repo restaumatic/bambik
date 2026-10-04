@@ -3,7 +3,7 @@ module SignupFormMDC3 (signupFormMDC3) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import PUI (armed, mvu, state)
+import PUI (armed, mvu)
 import PUI.Web ((<+>), choice, shown, shownWhen, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, checkbox, debouncedTextField, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,19 +21,18 @@ signupFormMDC3 =
         (choice @"Poland" <+> choice @"Germany" <+> choice @"France" <+> choice @"Spain")
       filledTextField @"Email" {}
       checkbox @"Terms" @"accepted" @"declined" {} (staticText @"I accept the terms of service") # tooltip @"You must accept the terms of service to sign up"
-    ) # mvu newApplicant
-    ( bodyMedium $ text unnamedLine ) # shownWhen @"unnamed" usernameStatus
-    ( Semigroupoid.do
-      state @"Username" @String
-      bodyMedium $ text takenLine ) # shownWhen @"taken" usernameStatus
-    ( Semigroupoid.do
-      state @"Username" @String
-      bodyMedium $ text availableLine ) # shownWhen @"available" usernameStatus
-    ( Semigroupoid.do
-      state @"reason" @[ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ]
-      titleSmall $ text invalidLine ) # shownWhen @"invalid" validation
-    ( Semigroupoid.do
-      state @"Username" @String
-      titleSmall $ text readyLine ) # shownWhen @"ready" validation
+    ) # mvu
+      @( "Username" :: String
+       , "Email" :: String
+       , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+       , "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ]
+       , "Terms" :: [ accepted :: {}, declined :: {} ]
+       )
+      newApplicant
+    ( bodyMedium $ text unnamedLine ) # shownWhen @"unnamed" @( unnamed :: {}, taken :: { "Username" :: String }, available :: { "Username" :: String } ) usernameStatus
+    ( bodyMedium $ text takenLine ) # shownWhen @"taken" usernameStatus
+    ( bodyMedium $ text availableLine ) # shownWhen @"available" usernameStatus
+    ( titleSmall $ text invalidLine ) # shownWhen @"invalid" @( invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }, ready :: { "Username" :: String } ) validation
+    ( titleSmall $ text readyLine ) # shownWhen @"ready" validation
     button @"Sign up" { icon: "person_add" } # armed
     snackbar @"Sign up" signupLine

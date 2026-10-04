@@ -6,7 +6,7 @@ import Data.Array (any, filter, length)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 
-movieCatalogue :: { category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } }
+movieCatalogue :: { "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], movies :: Array { "Favorite" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], rating :: Number, tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], title :: String, year :: Int } }
 movieCatalogue =
   { category: ."All" {}
   , "Classic": false
@@ -28,7 +28,7 @@ movieCatalogue =
     ]
   }
 
-visibleMovies :: forall r1. { category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } | r1 } -> Array { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean }
+visibleMovies :: { "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], movies :: Array { "Favorite" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], rating :: Number, tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], title :: String, year :: Int } } -> Array { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int }
 visibleMovies { category, "Classic": classic, "Cult": cult, "Oscar": oscar, movies } = map listing (filter (\movie -> inCategory movie && taggedAsChosen movie) movies)
   where
   inCategory movie = category == ."All" {} || movie.category == category
@@ -36,25 +36,25 @@ visibleMovies { category, "Classic": classic, "Cult": cult, "Oscar": oscar, movi
   chosenTag = match { "Classic": const classic, "Cult": const cult, "Oscar": const oscar }
   listing { title, year, rating, "Favorite": favorite } = { title, year, rating, "Favorite": favorite }
 
-favoriteMark :: forall r1. { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean | r1 } -> { title :: String, "Favorite" :: Boolean }
+favoriteMark :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> { "Favorite" :: Boolean, title :: String }
 favoriteMark { title, "Favorite": favorite } = { title, "Favorite": favorite }
 
-markFavorite :: forall r1 r2. { title :: String, "Favorite" :: Boolean | r1 } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } | r2 } -> { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } | r2 }
+markFavorite :: { "Favorite" :: Boolean, title :: String } -> { "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], movies :: Array { "Favorite" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], rating :: Number, tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], title :: String, year :: Int } } -> { "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], movies :: Array { "Favorite" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], rating :: Number, tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], title :: String, year :: Int } }
 markFavorite { title, "Favorite": favorite } catalogue = catalogue { movies = map (\movie -> if movie.title == title then movie { "Favorite" = favorite } else movie) catalogue.movies }
 
-isFavorite :: forall r1. { title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean | r1 } -> Boolean
+isFavorite :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> Boolean
 isFavorite { "Favorite": favorite } = favorite
 
-titleLine :: forall r1. { title :: String | r1 } -> String
+titleLine :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> String
 titleLine { title } = title
 
-yearLine :: forall r1. { year :: Int | r1 } -> String
+yearLine :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> String
 yearLine { year } = show year
 
-ratingLine :: forall r1. { rating :: Number | r1 } -> String
+ratingLine :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> String
 ratingLine { rating } = "★ " <> toStringWith (fixed 1) rating
 
-favoritesLine :: forall r1. { movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean } | r1 } -> String
+favoritesLine :: { "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], movies :: Array { "Favorite" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], rating :: Number, tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], title :: String, year :: Int } } -> String
 favoritesLine { movies } =
   let count = length (filter _."Favorite" movies)
   in if count == 1 then "1 favorite" else show count <> " favorites"

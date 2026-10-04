@@ -11,10 +11,10 @@ boardOpening = { beat: 0 }
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-tick :: forall r1. { beat :: Int | r1 } -> Maybe { beat :: Int }
+tick :: { beat :: Int } -> Maybe { beat :: Int }
 tick { beat } = Just { beat: beat + 1 }
 
-arrival :: forall r1. { beat :: Int | r1 } -> { key :: String, value :: { code :: String, status :: String } }
+arrival :: { beat :: Int } -> { key :: String, value :: { code :: String, status :: String } }
 arrival { beat } =
   let
     code = pick flights beat
@@ -22,10 +22,10 @@ arrival { beat } =
   in
     { key: code, value: { code, status } }
 
-flightLine :: forall r1. { code :: String, status :: String | r1 } -> String
+flightLine :: { code :: String, status :: String } -> String
 flightLine { code, status } = code <> " — " <> status
 
-updateLine :: forall r1. { key :: String, value :: { code :: String, status :: String } | r1 } -> String
+updateLine :: { key :: String, value :: { code :: String, status :: String } } -> String
 updateLine { value: { code, status } } = "Last update: " <> code <> " → " <> status
 
 pick :: Array String -> Int -> String

@@ -5,7 +5,7 @@ import Prelude (Unit, (#), ($), (>>>))
 import Data.Variant (match)
 import Effect (Effect)
 import PasswordGeneratorViewModel (passwordText, rememberPassword, samplePassword, strengthLine, strongMixRecipe)
-import PUI (action, atCase, mvu, state, updated)
+import PUI (action, mvu, atCase, updated)
 import PUI.Web (attr, shown, text)
 import PUI.Web.HTML (code)
 import PUI.Web.MDC2 (body, body2, button, indeterminateLinearProgress, slider, toggleSwitch)
@@ -15,7 +15,6 @@ passwordGeneratorMDC2 :: Effect Unit
 passwordGeneratorMDC2 =
   body $
     ( Semigroupoid.do
-      state @"password" @String
       slider @"Length" {}
       toggleSwitch @"Uppercase letters" {}
       toggleSwitch @"Lowercase letters" {}
@@ -26,4 +25,12 @@ passwordGeneratorMDC2 =
       ( Semigroupoid.do
         button @"Generate" {}
         indeterminateLinearProgress @"Generating password" # action @[ generated :: String ] samplePassword # atCase @"Generate" ) # updated (match { generated: rememberPassword })
-    ) # mvu strongMixRecipe
+    ) # mvu
+      @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       , "Uppercase letters" :: Boolean
+       , "Lowercase letters" :: Boolean
+       , "Digits" :: Boolean
+       , "Symbols" :: Boolean
+       , password :: String
+       )
+      strongMixRecipe

@@ -21,7 +21,7 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
-import PUI (action, atCase, debounced, mvu, state)
+import PUI (action, atCase, debounced, mvu)
 import PUI.Web ((<+>), choice, inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -34,18 +34,16 @@ flightBookerMDC2 =
         (choice @"one-way" <+> choice @"return")
       filledTextField @"Start date (DD.MM.YYYY)" {}
       filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
-    ) # mvu plannedTrip
+    ) # mvu
+      @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
+       , "Start date (DD.MM.YYYY)" :: String
+       , "Return date (DD.MM.YYYY)" :: String
+       )
+      plannedTrip
     ( Semigroupoid.do
-      ( Semigroupoid.do
-        state @"problem" @String
-        body1 (text problemLine) ) # shownWhen @"problem" bookingState
-      ( Semigroupoid.do
-        state @"out" @{ y :: Int, m :: Int, d :: Int }
-        body1 (text oneWayLine) ) # shownWhen @"one-way" bookingState
-      ( Semigroupoid.do
-        state @"out" @{ y :: Int, m :: Int, d :: Int }
-        state @"back" @{ y :: Int, m :: Int, d :: Int }
-        body1 (text returnLine) ) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
+      body1 (text problemLine) # shownWhen @"problem" @( problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ) bookingState
+      body1 (text oneWayLine) # shownWhen @"one-way" bookingState
+      body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     indeterminateLinearProgress @"Booking flight" # action @[ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] submit # atCase @"Book"
     VariantToRecord.do
@@ -72,7 +70,7 @@ event into an outcome → a snackbar shows the outcome. Code order is DOM
 order and data order (writing.md *The pipeline*).
 
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
-with `# mvu plannedTrip`.
+with `# mvu @( … ) plannedTrip`, the model row declared there.
 
 - `select @"Flight type" {} (choice @"one-way" <+> choice @"return")` —
   the type argument is both the caption and the model field, so this
@@ -87,12 +85,13 @@ with `# mvu plannedTrip`.
   — the editor pane: this field exists only while the stored
   `"Flight type"` is at case `return`, and the model passes straight
   through otherwise. The pane reads the field with a plain accessor; the
-  select's closed option row types it (writing.md *Conditional
+  model row on the seed line types it (writing.md *Conditional
   visibility*).
 
 Each editor is fed the whole record and emits it with its own field
-changed. `mvu plannedTrip` supplies the starting record and loops each
-change back to the top, so all three editors see every edit;
+changed. `mvu @( … ) plannedTrip` declares the model row — the three
+fields the editors bind, written once — supplies the starting record and
+loops each change back to the top, so all three editors see every edit;
 it also closes the app's input to `{}`, which `body` requires (writing.md
 *App shape*).
 
@@ -108,11 +107,10 @@ one `# debounced itinerarySettleTime`.
   payload `{ out :: { y, m, d } }` — the source data the line is computed
   from. The model is passed on whether the pane is shown or not. Three
   panes over one classifier make the three states exclusive, because the
-  classifier returns one case (writing.md *Conditional visibility*). Each
-  pane's content types the payload it reads with a state leaf —
-  `state @"out" @{ y :: Int, m :: Int, d :: Int }` beside
-  `text oneWayLine` — so the classifier's cases are typed by its panes
-  and the view model closes the variant (writing.md *Types and values*).
+  classifier returns one case (writing.md *Conditional visibility*). The
+  first of the three, `# shownWhen @"problem" @( … ) bookingState`,
+  declares the classifier's cases — a derived row, so the view states it
+  where it is introduced; the other two name only their case.
 - `# debounced itinerarySettleTime` — redraw the line once the edits pause
   for `itinerarySettleTime`, which is `{ ms: 300.0 }` in the view model module,
   so the view carries no literal.
@@ -147,13 +145,13 @@ import Data.String (Pattern(..), split)
 import Data.Variant (expand, match)
 import Effect.Aff (Aff)
 
-plannedTrip :: { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String }
+plannedTrip :: { "Flight type" :: [ "one-way" :: {}, return :: {} ], "Return date (DD.MM.YYYY)" :: String, "Start date (DD.MM.YYYY)" :: String }
 plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.2026", "Return date (DD.MM.YYYY)": "27.03.2026" }
 
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
 
-bookedLine :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
+bookedLine :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }, returnBetween :: { back :: { d :: Int, m :: Int, y :: Int }, out :: { d :: Int, m :: Int, y :: Int } } ] -> String
 bookedLine itinerary = "You have booked: " <> summary itinerary
 
 rejectedLine :: String -> String
@@ -175,20 +173,20 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
         Nothing -> Left "the return date is before the start date"
         Just itinerary -> Right itinerary
 
-bookingState :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> [ problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+bookingState :: { "Flight type" :: [ "one-way" :: {}, return :: {} ], "Return date (DD.MM.YYYY)" :: String, "Start date (DD.MM.YYYY)" :: String } -> [ "one-way" :: { out :: { d :: Int, m :: Int, y :: Int } }, problem :: { problem :: String }, return :: { back :: { d :: Int, m :: Int, y :: Int }, out :: { d :: Int, m :: Int, y :: Int } } ]
 bookingState = parse >>> either (\problem -> .problem { problem })
   (match
     { oneWayOn: \out -> ."one-way" { out }
     , returnBetween: ."return"
     })
 
-problemLine :: forall r1. { problem :: String | r1 } -> String
+problemLine :: { problem :: String } -> String
 problemLine { problem } = "⚠ " <> problem
 
-oneWayLine :: forall r1. { out :: { y :: Int, m :: Int, d :: Int } | r1 } -> String
+oneWayLine :: { out :: { d :: Int, m :: Int, y :: Int } } -> String
 oneWayLine { out } = summary (.oneWayOn out)
 
-returnLine :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> String
+returnLine :: { back :: { d :: Int, m :: Int, y :: Int }, out :: { d :: Int, m :: Int, y :: Int } } -> String
 returnLine r = summary (.returnBetween { out: r.out, back: r.back })
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
@@ -197,7 +195,7 @@ summary = match
   , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
   }
 
-submit :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ]
+submit :: { "Flight type" :: [ "one-way" :: {}, return :: {} ], "Return date (DD.MM.YYYY)" :: String, "Start date (DD.MM.YYYY)" :: String } -> Aff [ booked :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }, returnBetween :: { back :: { d :: Int, m :: Int, y :: Int }, out :: { d :: Int, m :: Int, y :: Int } } ], rejected :: String ]
 submit trip = case parse trip of
   Left problem -> pure (.rejected problem)
   Right itinerary -> expand <$> bookFlight itinerary
@@ -252,9 +250,11 @@ module*).
 **Three things worth noticing.** The rows are spelled out in full — the
 itinerary variant seven times — because application code declares no
 `type` synonyms: the shape is the interface (writing.md *Code style* →
-*Types and values*). Every record a function reads is an **open row** —
-`forall r1. { out :: …, back :: … | r1 }` — the fields it names plus a tail
-for the rest of whatever it is fed; a function handing its argument on to a
+*Types and values*). Every exported function carries the signature the
+view reported for it, verbatim — the row its pane or stage is fed, closed,
+its fields in the compiler's alphabetical order — while the private
+helpers (`parse`, `formatDate`, `dateKey`) keep open rows of their own,
+since no view line types them; a function handing its argument on to a
 closed helper builds the smaller record
 (`returnLine r = summary (.returnBetween { out: r.out, back: r.back })`)
 (writing.md *Code style* → *Business functions*). And `parseDate` has a
@@ -265,7 +265,8 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 
 - **counter** — one display reading one function
   (`headline4 (text countLine) # shown`), one button, one step
-  (`# applied increment`), over a model of `{ count :: Int }`.
+  (`# applied increment`), over a model of `{ count :: Int }`; the MDC3
+  twin writes the step as its own `+→×` stage, `fold @"Count" increment`.
 - **timer** — two displays of different sorts,
   `linearProgress @"Elapsed" elapsedFraction` and `text progressLine`,
   both computed from the model, neither stored; `every tickPeriod tick`

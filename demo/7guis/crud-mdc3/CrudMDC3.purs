@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (action, atCase, looped, state, toCase, updated, with)
+import PUI (action, atCase, looped, toCase, updated, with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, cardActions, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,25 +16,19 @@ crudMDC3 :: Effect Unit
 crudMDC3 =
   body $
     ( Semigroupoid.do
-      indeterminateLinearProgress @"Loading people" # action loadPeopleCatalogue
+      indeterminateLinearProgress @"Loading people" # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] } loadPeopleCatalogue
       ( Semigroupoid.do
-        state @"people" @(Array { "Name" :: String, "Surname" :: String })
-        state @"selected" @[ picked :: { index :: Int }, none :: {} ]
         filledTextField @"Filter prefix (surname)" {}
         filledTextField @"Name" {}
         filledTextField @"Surname" {}
-        listOf @"picked" @"key" @Int { selected: isSelected } entries ( Semigroupoid.do
-          state @"Name" @String
-          state @"Surname" @String
-          state @"status" @[ selected :: {}, unselected :: {} ]
-          text personLine # shown ) # updated (match { picked: pick })
+        listOf @"picked" @"key" @( key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] ) { selected: isSelected } entries (text personLine # shown) # updated (match { picked: pick })
         ( Semigroupoid.do
           cardActions $ RecordToVariant.do
             button @"Create" {}
             button @"Update" {}
             button @"Delete" {}
           VariantToVariant.do
-            indeterminateLinearProgress @"Creating person" # action @(Array { "Name" :: String, "Surname" :: String }) createPerson # atCase @"Create" # toCase @"created" identity
-            indeterminateLinearProgress @"Updating person" # action @(Array { "Name" :: String, "Surname" :: String }) updatePerson # atCase @"Update" # toCase @"updated" identity
-            indeterminateLinearProgress @"Deleting person" # action @(Array { "Name" :: String, "Surname" :: String }) deletePerson # atCase @"Delete" # toCase @"deleted" identity ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted }) ) # looped
+            indeterminateLinearProgress @"Creating person" # action @((Array { "Name" :: String, "Surname" :: String })) createPerson # atCase @"Create" # toCase @"created" identity
+            indeterminateLinearProgress @"Updating person" # action @((Array { "Name" :: String, "Surname" :: String })) updatePerson # atCase @"Update" # toCase @"updated" identity
+            indeterminateLinearProgress @"Deleting person" # action @((Array { "Name" :: String, "Surname" :: String })) deletePerson # atCase @"Delete" # toCase @"deleted" identity ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted }) ) # looped
     ) # with {}

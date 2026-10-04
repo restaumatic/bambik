@@ -7,7 +7,7 @@ import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Variant (match)
 
-openingPosition :: { board :: Array [ x :: {}, o :: {}, free :: {} ] }
+openingPosition :: { board :: Array [ free :: {}, o :: {}, x :: {} ] }
 openingPosition =
   { board:
     [ .free {}, .free {}, .free {}
@@ -16,18 +16,18 @@ openingPosition =
     ]
   }
 
-cells :: forall r1. { board :: Array [ x :: {}, o :: {}, free :: {} ] | r1 } -> Array { key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] }
+cells :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> Array { key :: String, line :: [ plain :: {}, winning :: {} ], mark :: [ free :: {}, o :: {}, x :: {} ] }
 cells { board } =
   let winners = fromMaybe [] (winningLine board)
   in range 0 8 <#> \i -> { key: show i, mark: fromMaybe (.free {}) (index board i), line: if i `elem` winners then .winning {} else .plain {} }
 
-cellMark :: forall r1. { mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] | r1 } -> String
+cellMark :: { key :: String, line :: [ plain :: {}, winning :: {} ], mark :: [ free :: {}, o :: {}, x :: {} ] } -> String
 cellMark { mark } = markText { mark }
 
 markText :: forall r1. { mark :: [ x :: {}, o :: {}, free :: {} ] | r1 } -> String
 markText { mark } = match { x: \_ -> "X", o: \_ -> "O", free: \_ -> "" } mark
 
-claimCell :: forall r1. String -> { board :: Array [ x :: {}, o :: {}, free :: {} ] | r1 } -> { board :: Array [ x :: {}, o :: {}, free :: {} ] | r1 }
+claimCell :: String -> { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> { board :: Array [ free :: {}, o :: {}, x :: {} ] }
 claimCell key game@{ board } = case fromString key of
   Just i | index board i == Just (.free {}) && isNothing (winningLine board) ->
     game { board = fromMaybe board (updateAt i (playerToMove board) board) }
@@ -59,16 +59,16 @@ winner board = do
 boardFull :: Array [ x :: {}, o :: {}, free :: {} ] -> Boolean
 boardFull board = not ((.free {}) `elem` board)
 
-gameOutcome :: forall r1. { board :: Array [ x :: {}, o :: {}, free :: {} ] | r1 } -> [ won :: { mark :: [ x :: {}, o :: {}, free :: {} ] }, drawn :: {}, toMove :: { mark :: [ x :: {}, o :: {}, free :: {} ] } ]
+gameOutcome :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> [ drawn :: {}, toMove :: { mark :: [ free :: {}, o :: {}, x :: {} ] }, won :: { mark :: [ free :: {}, o :: {}, x :: {} ] } ]
 gameOutcome { board } = case winner board of
   Just m -> .won { mark: m }
   Nothing -> if boardFull board then .drawn {} else .toMove { mark: playerToMove board }
 
-wonLine :: forall r1. { mark :: [ x :: {}, o :: {}, free :: {} ] | r1 } -> String
+wonLine :: { mark :: [ free :: {}, o :: {}, x :: {} ] } -> String
 wonLine r = markText r <> " wins"
 
-toMoveLine :: forall r1. { mark :: [ x :: {}, o :: {}, free :: {} ] | r1 } -> String
+toMoveLine :: { mark :: [ free :: {}, o :: {}, x :: {} ] } -> String
 toMoveLine r = markText r <> " to move"
 
-drawnLine :: forall r1. { | r1 } -> String
+drawnLine :: {} -> String
 drawnLine _ = "Draw"

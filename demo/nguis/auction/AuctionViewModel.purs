@@ -4,19 +4,19 @@ import Prelude (max, (<>))
 
 import Data.Number.Format (fixed, toStringWith)
 
-openingBid :: { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } }
+openingBid :: { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } }
 openingBid = { "Your bid ($)": biddingRange }
 
 noBids :: Number
 noBids = 0.0
 
-bidLine :: forall r1. { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> String
+bidLine :: { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
 bidLine r = "Your current bid: $" <> dollars r."Your bid ($)".current
 
-topLine :: forall r1. { top :: Number | r1 } -> String
+topLine :: { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, top :: Number } -> String
 topLine r = "Highest bid so far: $" <> dollars r.top
 
-raiseTop :: forall r1. { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number | r1 } -> { "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, top :: Number | r1 }
+raiseTop :: { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, top :: Number } -> { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, top :: Number }
 raiseTop r = r { top = max r."Your bid ($)".current r.top }
 
 dollars :: Number -> String

@@ -14,4 +14,4 @@ temperatureConverterMDC2 =
     ( Semigroupoid.do
       filledTextField @"°C" {} # settled fromCelsius
       filledTextField @"°F" {} # settled fromFahrenheit
-    ) # mvu roomTemperature
+    ) # mvu @( "°C" :: String, "°F" :: String ) roomTemperature

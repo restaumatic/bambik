@@ -14,25 +14,25 @@ gameStart = { beat: 0 }
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-tick :: forall r1. { beat :: Int | r1 } -> Maybe { beat :: Int }
+tick :: { beat :: Int } -> Maybe { beat :: Int }
 tick { beat } = Just { beat: beat + 1 }
 
-goal :: forall r1. { beat :: Int | r1 } -> { key :: String, value :: { team :: String, points :: Int } }
+goal :: { beat :: Int } -> { key :: String, value :: { points :: Int, team :: String } }
 goal { beat } =
   let team = pick teams beat
       points = scored team beat
   in { key: team, value: { team, points } }
 
-scoreLine :: forall r1. { team :: String, points :: Int | r1 } -> String
+scoreLine :: { points :: Int, team :: String } -> String
 scoreLine { team, points } = team <> ": " <> show points
 
 scored :: String -> Int -> Int
 scored team beat = length (filter (\i -> pick teams i == team) (range 0 beat))
 
-boardSummary :: Array { team :: String, points :: Int } -> Array { key :: String, teams :: Int, leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] }
+boardSummary :: Array { points :: Int, team :: String } -> Array { key :: String, leader :: [ led :: { points :: Int, team :: String }, unled :: {} ], teams :: Int }
 boardSummary scores = [ { key: "summary", teams: length scores, leader: leaderOf scores } ]
 
-summaryLine :: forall r1. { teams :: Int, leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] | r1 } -> String
+summaryLine :: { key :: String, leader :: [ led :: { points :: Int, team :: String }, unled :: {} ], teams :: Int } -> String
 summaryLine r = show r.teams <> " teams on the board — leading: " <> match { led: \{ team, points } -> team <> " (" <> show points <> ")", unled: const "—" } r.leader
 
 leaderOf :: Array { team :: String, points :: Int } -> [ led :: { team :: String, points :: Int }, unled :: {} ]

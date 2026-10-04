@@ -22,7 +22,15 @@ productReviewShoelace =
       toggleSwitch @"I'd recommend it to a friend" {}
       textField @"Nickname" {}
       divider # shown
-    ) # mvu freshImpression
+    ) # mvu
+      @( "Overall rating" :: { current :: Number, max :: Int }
+       , "Headline" :: String
+       , "Your review" :: String
+       , "How long have you owned it?" :: [ "less than a month" :: {}, "1–12 months" :: {}, "more than a year" :: {} ]
+       , "I'd recommend it to a friend" :: Boolean
+       , "Nickname" :: String
+       )
+      freshImpression
     card $ p (text previewLine) # shown
     button @"Submit review" {} # armed
     toast @"Submit review" submittedLine

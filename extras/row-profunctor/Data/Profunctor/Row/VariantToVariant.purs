@@ -75,15 +75,20 @@
 -- | 6 run over every script to a bound in test/Exhaustive.purs.
 -- |
 -- | One transpose of a `RecordToRecord` name is **deliberately absent**
--- | here: `focusField`'s
--- | `+ → +` transpose — the closed-singleton case wrap
+-- | here: `focusField`'s `+ → +` transpose — the closed-singleton case wrap
 -- | `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
 -- | subsumption step: it is already vocabulary-expressible as
 -- | `w # atCase @l # toCase @l' f`, two adopters applications already have.
--- | `RecordToRecord.subStrong`'s transpose, `subChoice`, once sat in this
--- | note as failing reachability; an application reached for it — some cases
--- | detouring through an interception stage while the rest pass straight
--- | through — and it is admitted below.
+-- | It was admitted for one day (2026-10-02, as `handler @l f`, the wire at
+-- | the wrap) when counter's four-shape loop wanted a `+→+` stage that was
+-- | a pure function of the occurrence, and deleted 2026-10-03 when that
+-- | function moved onto the fold (`VariantToRecord.fold @l f`): a pure
+-- | handling of an occurrence is applied where the occurrence is consumed,
+-- | so the `+→+` shape keeps no pure leaf, and its handlers remain the
+-- | `action`s. `RecordToRecord.subStrong`'s transpose, `subChoice`, once sat
+-- | in this note as failing reachability; an application reached for it —
+-- | some cases detouring through an interception stage while the rest pass
+-- | straight through — and it is admitted below.
 module Data.Profunctor.Row.VariantToVariant
   ( class VariantToVariant
   , variantToVariant
@@ -127,23 +132,23 @@ instance VariantToVariant (->) where
     Right v2 -> expand (p2 v2)
 
 bind
-  :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o
+  :: forall p v1 rl1 v2 rl2 v4 v5 v6 v7 v8 v3 v
    . VariantToVariant p
-  => OwnedVariantInputs i1 i2 i i1l i2l
-  => SharedVariantOutputs o1 o2 o o12 o1x o2x
-  => p [ | i1 ] [ | o1 ]
-  -> (p [ | i1 ] [ | o1 ] -> p [ | i2 ] [ | o2 ])
-  -> p [ | i ] [ | o ]
+  => OwnedVariantInputs v1 v2 v3 rl1 rl2
+  => SharedVariantOutputs v4 v5 v v6 v7 v8
+  => p [ | v1 ] [ | v4 ]
+  -> (p [ | v1 ] [ | v4 ] -> p [ | v2 ] [ | v5 ])
+  -> p [ | v3 ] [ | v ]
 bind first cont = variantToVariant first (cont first)
 
 discard
-  :: forall p i1 i1l i2 i2l o1 o2 o12 o1x o2x i o
+  :: forall p v1 rl1 v2 rl2 v4 v5 v6 v7 v8 v3 v
    . VariantToVariant p
-  => OwnedVariantInputs i1 i2 i i1l i2l
-  => SharedVariantOutputs o1 o2 o o12 o1x o2x
-  => p [ | i1 ] [ | o1 ]
-  -> (Unit -> p [ | i2 ] [ | o2 ])
-  -> p [ | i ] [ | o ]
+  => OwnedVariantInputs v1 v2 v3 rl1 rl2
+  => SharedVariantOutputs v4 v5 v v6 v7 v8
+  => p [ | v1 ] [ | v4 ]
+  -> (Unit -> p [ | v2 ] [ | v5 ])
+  -> p [ | v3 ] [ | v ]
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Focus a sub-variant, passing the background cases through untouched.
@@ -151,67 +156,67 @@ discard first cont = bind first (\_ -> cont unit)
 -- | background is whatever else arrives (guardrails L18: the whole row is
 -- | the logic's, so it is left free).
 subChoice
-  :: forall p f f' b s s'
+  :: forall p v1 v2 b v v3
    . Choice p
-  => ExclusiveRows f b s
-  => ExclusiveRows f' b s'
-  => Contractable s f
-  => Contractable s b
-  => p [ | f ] [ | f' ]
-  -> p [ | s ] [ | s' ]
+  => ExclusiveRows v1 b v
+  => ExclusiveRows v2 b v3
+  => Contractable v v1
+  => Contractable v b
+  => p [ | v1 ] [ | v2 ]
+  -> p [ | v ] [ | v3 ]
 subChoice g = dimap splitVariant (either expand expand) (left g)
 
 -- | The case prism: transform the payload of case `l`, passing the other cases through.
 focusCase
-  :: forall @l p f f' b s s' mix
+  :: forall @l p f f' b v v1 v2
    . IsSymbol l
-  => Cons l f b s
-  => Cons l f' b s'
-  => Union b mix s'
+  => Cons l f b v
+  => Cons l f' b v1
+  => Union b v2 v1
   => Choice p
   => p f f'
-  -> p [ | s ] [ | s' ]
+  -> p [ | v ] [ | v1 ]
 focusCase =
   prismE
     (on (Proxy @l) Left Right)
     (either (inj (Proxy @l)) expand)
 
 -- | Adopt a bare-input component as the owner of input case `l`.
-atCase :: forall @l p a b s. IsSymbol l => Cons l a () s => Profunctor p => p a b -> p [ | s ] b
+atCase :: forall @l p a b v. IsSymbol l => Cons l a () v => Profunctor p => p a b -> p [ | v ] b
 atCase = lcmap (on (Proxy @l) identity case_)
 
 -- | Emit a component's bare output, mapped by the projection, as case `l`.
 toCase
-  :: forall @l @b p i a s
+  :: forall @l @b p c a v
    . IsSymbol l
-  => Cons l b () s
+  => Cons l b () v
   => Profunctor p
   => (a -> b)
-  -> p i a
-  -> p i [ | s ]
+  -> p c a
+  -> p c [ | v ]
 toCase f = rmap (\a -> inj (Proxy @l) (f a))
 
 -- | Render business case `l` into a single-case status's own case with `f`.
 forCase
-  :: forall @l c p a b o s cs
-   . RowToList cs (RL.Cons c a RL.Nil)
+  :: forall @l c p a b d v v1
+   . RowToList v1 (RL.Cons c a RL.Nil)
   => IsSymbol c
   => IsSymbol l
-  => Cons c a () cs
-  => Cons l b () s
+  => Cons c a () v1
+  => Cons l b () v
   => Profunctor p
   => (b -> a)
-  -> p [ | cs ] o
-  -> p [ | s ] o
+  -> p [ | v1 ] d
+  -> p [ | v ] d
 forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
 
 -- | Loop the `again` cases of the output back into the input, emitting only the `done` cases.
 iterate
-  :: forall p done again out
+  :: forall p v v1 v2
    . Cochoice p
-  => ExclusiveRows done again out
-  => Contractable out done
-  => Contractable out again
-  => p [ | again ] [ | out ]
-  -> p [ | again ] [ | done ]
+  => ExclusiveRows v v1 v2
+  => Contractable v2 v
+  => Contractable v2 v1
+  => p [ | v1 ] [ | v2 ]
+  -> p [ | v1 ] [ | v ]
 iterate g = unleft (dimap (either identity identity) splitVariant g)

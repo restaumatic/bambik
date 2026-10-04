@@ -4,12 +4,11 @@ import Prelude ((#), ($), (>>>), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (foreach, state, static, with)
+import PUI (foreach, static, with)
 import PUI.Web (cl, staticText, text, (:=))
-import QualifiedDo.Semigroupoid as Semigroupoid
 import PUI.Web.HTML (a, article, blockquote, body, div, footer, h1, h2, h3, header, hr, li, p, section, span, ul)
 import PUI.Web.SVG as SVG
-import RestaurantMenuViewModel (courseName, dishDescription, dishName, dishTags, menuCourses, priceLine)
+import RestaurantMenuViewModel (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine)
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
@@ -26,18 +25,14 @@ restaurantMenu =
       ( section >>> cl "course" $ RecordToRecord.do
         h2 (text courseName)
         ul >>> cl "dishes" $
-          ( Semigroupoid.do
-            state @"price" @String
-            state @"description" @String
-            state @"tags" @(Array String)
-            li >>> cl "dish" $ RecordToRecord.do
-              div >>> cl "dish-head" $ RecordToRecord.do
-                span >>> cl "dish-name" $ text dishName
-                static (span >>> cl "dish-dots")
-                span >>> cl "dish-price" $ text priceLine
-              p >>> cl "dish-desc" $ text dishDescription
-              span >>> cl "tags" $
-                ( span >>> cl "tag" $ text _.tag ) # foreach @"tag" @String dishTags ) # foreach @"name" @String _.dishes ) # foreach @"name" @String menuCourses
+          ( li >>> cl "dish" $ RecordToRecord.do
+            div >>> cl "dish-head" $ RecordToRecord.do
+              span >>> cl "dish-name" $ text dishName
+              static (span >>> cl "dish-dots")
+              span >>> cl "dish-price" $ text priceLine
+            p >>> cl "dish-desc" $ text dishDescription
+            span >>> cl "tags" $
+              ( span >>> cl "tag" $ text _.tag ) # foreach @"tag" @( tag :: String ) dishTags ) # foreach @"name" @( name :: String, price :: String, description :: String, tags :: Array String ) courseDishes ) # foreach @"name" @( name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } ) menuCourses
     blockquote >>> cl "chef-note" $ RecordToRecord.do
       p (staticText @"Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText @"— from the kitchen"

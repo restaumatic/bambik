@@ -79,7 +79,7 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (elem, foldl, for_)
 import Data.Lens (Optic)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
@@ -96,14 +96,15 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- every vocabulary editor is `focusField @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself (the `widenRecordInput` precedent, one adopter later).
-import Data.Profunctor.Row.RecordToRecord (asField, blank, bracketed, mvu, state, subStrong, muted, settled, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, blank, bracketed, mvu, subStrong, muted, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, replaying, silence) as Adopters
--- `widenRecordInput` is deliberately NOT re-exported: subsumption is baked
--- into the stages that consume a row (the gated displays, `updated`,
--- `every`, `settled`, `armed`, `edited`, `acted`), so a UI component's own row is always
--- stated by a business function, never coerced at the call site. It stays
--- exported from `Data.Profunctor.Row` as the merge instances' plumbing.
+-- `widenRecordInput` is deliberately NOT re-exported: a stage is typed at
+-- one row (the gated displays, `updated`, `applied`, `every`, `settled`,
+-- `armed`, `edited`, `acted`), so a UI component's own row is always stated
+-- by a business function, never coerced at the call site. It stays exported
+-- from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Row.VariantToVariant (atCase, subChoice, toCase) as Adopters
+import Data.Profunctor.Row.VariantToRecord (fold) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
@@ -305,16 +306,22 @@ instance MonadEffect m => Costrong (PUI m) where
 -- | `c0`, so the first input joins the starting state instead of waiting on
 -- | an emission — `feedback`'s primitive, and why it needs no input seed.
 instance MonadEffect m => PointedCostrong (PUI m) where
+  -- a hole start (guardrails L18) is absent: the state channel is unprimed
+  -- and every input is withheld, as under the gated `unfirst` — so a `fold`
+  -- or `feedback` whose seed is not written yet lets nothing through to the
+  -- handlers that are not written yet either
   unfirstFrom c0 p = wrap do
     p' <- unwrap p
-    cRef <- liftEffect $ Ref.new c0
+    cRef <- liftEffect $ Ref.new (if isHole c0 then Nothing else Just c0)
     pure
       { toUser: \a -> do
-          c <- Ref.read cRef
-          p'.toUser $ Tuple a c
+          mc <- Ref.read cRef
+          case mc of
+            Nothing -> tr "PointedCostrong.unfirstFrom: input withheld (the start is a hole)" a
+            Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop ->
           p'.fromUser \(Tuple b c) -> do
-            Ref.write c cRef
+            Ref.write (Just c) cRef
             prop b
       }
 
@@ -450,7 +457,10 @@ instance MonadEffect m => Category (PUI m) where
 instance MonadEffect m => Seeding (PUI m) where
   announce a = wrap $ pure
     { toUser: mempty
-    , fromUser: \prop -> unless (isHole a) (prop a)
+    -- an `if`, not `unless`: the branch must not even be built for a hole,
+    -- since a downstream stage (a gated merge's `exactRow`) reads the value
+    -- while constructing its effect (holey twins of a fold beside a status)
+    , fromUser: \prop -> if isHole a then pure unit else prop a
     }
 
 -- | Self-reference as carrier structure (`Data.Profunctor.Looping`,
@@ -475,19 +485,36 @@ instance MonadEffect m => Looping (PUI m) where
   looped p = wrap do
     p' <- unwrap p
     busyRef <- liftEffect $ Ref.new false
+    -- `Just pending` while the body is being wired: downstream registers
+    -- first (`compose`), so an emission fired during registration — a
+    -- `fold`'s seed, announced from the loop's last stage — would be re-fed
+    -- to a top whose stages have no listener yet (a display's release would
+    -- reach no one). It is held and re-fed once the body is wired.
+    wiringRef <- liftEffect $ Ref.new (Just [])
     pure
       { toUser: p'.toUser
-      , fromUser: \prop ->
+      , fromUser: \prop -> do
+          let
+            refeed u = do
+              busy <- Ref.read busyRef
+              if busy
+                then tr "looped: echo swallowed (re-entrant)" u
+                else do
+                  tr "looped: re-feeding emission" u
+                  Ref.write true busyRef
+                  p'.toUser u
+                  Ref.write false busyRef
+                  prop u
           p'.fromUser \u -> do
-            busy <- Ref.read busyRef
-            if busy
-              then tr "looped: echo swallowed (re-entrant)" u
-              else do
-                tr "looped: re-feeding emission" u
-                Ref.write true busyRef
-                p'.toUser u
-                Ref.write false busyRef
-                prop u
+            wiring <- Ref.read wiringRef
+            case wiring of
+              Just pending -> do
+                tr "looped: emission while wiring, held until the body is wired" u
+                Ref.write (Just (pending <> [ u ])) wiringRef
+              Nothing -> refeed u
+          pending <- Ref.read wiringRef
+          Ref.write Nothing wiringRef
+          for_ (fromMaybe [] pending) refeed
       }
 
 -- The four row merges, one instance per shape, in the order of the grid in
@@ -580,8 +607,8 @@ instance MonadEffect m => VariantToRecord (PUI m) where
 -- | record-output merges be written directly as instance methods (an
 -- | instance member cannot restate the class signature, so the method's
 -- | `RowList` variables are not in scope in its body).
-labelsOf :: forall m i o ol. RowToList o ol => RowLabels ol => PUI m i { | o } -> Array String
-labelsOf _ = rowLabels (Proxy @ol)
+labelsOf :: forall m a r rl. RowToList r rl => RowLabels rl => PUI m a { | r } -> Array String
+labelsOf _ = rowLabels (Proxy @rl)
 
 -- | The gate as run: the pure machine's state in one `Ref` and the
 -- | downstream continuation, written at registration and read at release,
@@ -661,14 +688,14 @@ newRecordGate shape labels1 labels2 = do
 -- | their labels; a release is assembled back into the merged row, `Union
 -- | o1 o2 o` witnessing that the assembled fields are exactly `o`'s.
 gatedRecordOutputs
-  :: forall e1 e2 o1 o2 o
-   . Union o1 o2 o
+  :: forall e1 e2 r1 r2 r
+   . Union r1 r2 r
   => RecordGate
-  -> (e1 -> { | o1 })
-  -> (e2 -> { | o2 })
+  -> (e1 -> { | r1 })
+  -> (e2 -> { | r2 })
   -> ((e1 -> Effect Unit) -> Effect Unit)
   -> ((e2 -> Effect Unit) -> Effect Unit)
-  -> ({ | o } -> Effect Unit)
+  -> ({ | r } -> Effect Unit)
   -> Effect Unit
 gatedRecordOutputs rg exact1 exact2 sub1 sub2 prop = do
   -- the release reads the downstream continuation from the gate, so it is
@@ -682,7 +709,7 @@ gatedRecordOutputs rg exact1 exact2 sub1 sub2 prop = do
   sub1 \partial -> contributed rg (fieldsOf rg.labels1 (exact1 partial))
   sub2 \partial -> contributed rg (fieldsOf rg.labels2 (exact2 partial))
   where
-  assembled :: Array (Tuple String Field) -> { | o }
+  assembled :: Array (Tuple String Field) -> { | r }
   assembled = unsafeCoerce <<< foldl (\r (Tuple l v) -> unsafeSet l v r) {}
 
 fieldsOf :: forall r. Array String -> { | r } -> Array (Tuple String Field)
@@ -941,9 +968,9 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- |
 -- | **One row** (guardrails L18): the handler is a step over the model and
 -- | the wrapped event UI component is fed the model — both at the stage's
--- | row. What a handler touches is its own open-row footprint
--- | (`forall r. { count :: Int | r } -> { count :: Int | r }`), which by
--- | parametricity is exactly the fields it names, so a hole in its place
+-- | row. The handler is typed at that row, its signature the view's hole
+-- | hint verbatim (`{ count :: Int } -> { count :: Int }`), checked by
+-- | unification, so a hole in its place
 -- | leaves nothing to solve and a real one is checked by unification.
 -- |
 -- | **Derived** (2026-09-27), not a carrier primitive: the wire and the
@@ -966,21 +993,21 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | into the same base.) The nesting under `s` gives the merge's row
 -- | constraints closed rows to solve.
 updated
-  :: forall m big e
+  :: forall m r e
    . MonadEffect m
-  => (e -> { | big } -> { | big })
-  -> PUI m { | big } e
-  -> PUI m { | big } { | big }
+  => (e -> { | r } -> { | r })
+  -> PUI m { | r } e
+  -> PUI m { | r } { | r }
 updated handler w = dimap (\s -> { s }) (match { fed: identity, folded: identity }) $ recordToVariant
-  (dimap _.s (inj (Proxy @"fed")) identity :: PUI m { s :: { | big } } [ fed :: { | big } ])
-  (dimap _.s (inj (Proxy @"folded")) (looped (dimap (\s -> Tuple (s :: { | big }) s) (\(Tuple e s) -> unsafeUnion (handler e (unsafeCoerce s)) s :: { | big }) (first w))) :: PUI m { s :: { | big } } [ folded :: { | big } ])
+  (dimap _.s (inj (Proxy @"fed")) identity :: PUI m { s :: { | r } } [ fed :: { | r } ])
+  (dimap _.s (inj (Proxy @"folded")) (looped (dimap (\s -> Tuple (s :: { | r }) s) (\(Tuple e s) -> unsafeUnion (handler e (unsafeCoerce s)) s :: { | r }) (first w))) :: PUI m { s :: { | r } } [ folded :: { | r } ])
 
 -- | The **occurrence stage** — `updated` for an emitter that carries no
 -- | payload of its own. A `× → +` leaf fed the row it acts on (a button,
 -- | a `fab`, a `menuItem`, a `clicked @l identity` row)
 -- | replays that row on click, so its "payload" is the very row the stage
 -- | retains: the Mealy step degenerates to a state transformer, and this
--- | rung takes it as one — `f :: { | big } -> { | big }`, an open-row
+-- | rung takes it as one — `f :: { | r } -> { | r }`, an open-row
 -- | update in the logic, is applied to the retained row on each emission,
 -- | whatever the emission carries.
 -- | `button @"Add" {} # applied addTodo` states the label once and the
@@ -1008,11 +1035,11 @@ updated handler w = dimap (\s -> { s }) (match { fed: identity, folded: identity
 -- | so a preset is an update in the logic (`applied restarted`,
 -- | `const <<< theUsual`).
 applied
-  :: forall m big s
+  :: forall m r s
    . MonadEffect m
-  => ({ | big } -> { | big })
-  -> PUI m { | big } [ | s ]
-  -> PUI m { | big } { | big }
+  => ({ | r } -> { | r })
+  -> PUI m { | r } [ | s ]
+  -> PUI m { | r } { | r }
 applied f = updated (const f)
 
 -- | Make a status an **event pass-through stage** — the gated displays'
@@ -1020,11 +1047,11 @@ applied f = updated (const f)
 -- | the `+`-diagonal: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
 -- | status consumes are also shown — `snackbar @"charge" retryLine
--- | # observed` narrates a retry loop without interrupting it. Subsumption
--- | runs the variant way (`Contractable`, the `+`-dual of the record stages'
--- | `Union` widening): the status may consume a *narrower* row than the
--- | stage carries — its cases are contracted out and shown, background cases
--- | pass untouched. The status's own emissions are dropped, deliberately —
+-- | # observed` narrates a retry loop without interrupting it. The status
+-- | owns its cases within the stage's row (`Contractable s f`, the
+-- | shot/focus relation `subChoice` and `iterate` dispatch by): the focus
+-- | cases are contracted out and shown, the background cases pass
+-- | untouched. The status's own emissions are dropped, deliberately —
 -- | events are one-shot, so re-emitting the last event would duplicate it —
 -- | and the drop is lossless by type: like the gated displays, `observed` accepts
 -- | only a status whose output is `{}`.
@@ -1034,34 +1061,14 @@ applied f = updated (const f)
 -- | behind `left` so it sees only its contracted cases, `>>> silence` so its
 -- | emissions leave as nothing.
 observed
-  :: forall m narrow wider
+  :: forall m v v1
    . MonadEffect m
-  => Contractable wider narrow
-  => PUI m [ | narrow ] {}
-  -> PUI m [ | wider ] [ | wider ]
+  => Contractable v v1
+  => PUI m [ | v1 ] {}
+  -> PUI m [ | v ] [ | v ]
 observed status = dimap (\v -> { event: v }) (match { forwarded: identity }) $ recordToVariant
-  (dimap _.event (inj (Proxy @"forwarded")) identity :: PUI m { event :: [ | wider ] } [ forwarded :: [ | wider ] ])
-  (lcmap (\r -> maybe (Right unit) Left (contract r.event)) (left (status >>> silence)) >>> lcmap (const {}) silence :: PUI m { event :: [ | wider ] } [ forwarded :: [ | wider ] ])
-
--- | The **tick source**: an occurrence of case `l` every `interval`, at any
--- | row — the timer's `× → +` leaf, exactly as a click
--- | source is a button's, and the point's dual (`announce` is one
--- | occurrence at registration; this is one per period). Feeds are ignored,
--- | so it sits at any row, and nothing is emitted inside a feed. A period
--- | that is a hole schedules nothing (guardrails L18). The loop
--- | runs for the UI component's whole life (no cancellation — a prototype
--- | limitation shared with `action'`).
-ticks :: forall @l m s r. IsSymbol l => Cons l {} () s => MonadEffect m => { ms :: Number } -> PUI m { | r } [ | s ]
-ticks interval = wrap $ pure
-  { toUser: mempty
-  , fromUser: \prop -> if isHole interval then pure unit else do
-      let
-        loop = do
-          delay (Milliseconds interval.ms)
-          liftEffect $ prop (inj (Proxy @l) {})
-          loop
-      launchAff_ loop
-  }
+  (dimap _.event (inj (Proxy @"forwarded")) identity :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
+  (lcmap (\r -> maybe (Right unit) Left (contract r.event)) (left (status >>> silence)) >>> lcmap (const {}) silence :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
 
 -- | The **heartbeat wire**: `identity`'s pass-through plus a periodic step.
 -- | Every `interval`, applies `step` to the last value flowing through —
@@ -1083,20 +1090,40 @@ ticks interval = wrap $ pure
 -- | update in the logic, `Maybe` around the same row, so its footprint is
 -- | stated once in its own signature.
 every
-  :: forall m big
+  :: forall m r
    . MonadEffect m
   => { ms :: Number }
-  -> ({ | big } -> Maybe { | big })
-  -> PUI m { | big } { | big }
+  -> ({ | r } -> Maybe { | r })
+  -> PUI m { | r } { | r }
 every interval step = looped (updated (\e _ -> match { stepped: identity } e) (classified >>> stepsOnly))
   where
-  classified :: PUI m { | big } [ stepped :: { | big }, idle :: {} ]
+  classified :: PUI m { | r } [ stepped :: { | r }, idle :: {} ]
   classified = ticks @"tick" interval
     # replaying @"tick" identity
-    # rmap (match { tick: \s -> maybe (inj (Proxy @"idle") {}) (inj (Proxy @"stepped")) (step s) })
+    # rmap (match { tick: \v -> maybe (inj (Proxy @"idle") {}) (inj (Proxy @"stepped")) (step v) })
   -- a pause is the idle case handled by silence: nothing leaves
-  stepsOnly :: PUI m [ stepped :: { | big }, idle :: {} ] [ stepped :: { | big } ]
+  stepsOnly :: PUI m [ stepped :: { | r }, idle :: {} ] [ stepped :: { | r } ]
   stepsOnly = variantToVariant (lcmap (const {}) silence :: PUI m [ idle :: {} ] [ | () ]) identity
+
+-- | The **tick source**: an occurrence of case `l` every `interval`, at any
+-- | row — the timer's `× → +` leaf, exactly as a click
+-- | source is a button's, and the point's dual (`announce` is one
+-- | occurrence at registration; this is one per period). Feeds are ignored,
+-- | so it sits at any row, and nothing is emitted inside a feed. A period
+-- | that is a hole schedules nothing (guardrails L18). The loop
+-- | runs for the UI component's whole life (no cancellation — a prototype
+-- | limitation shared with `action'`).
+ticks :: forall @l m v r. IsSymbol l => Cons l {} () v => MonadEffect m => { ms :: Number } -> PUI m { | r } [ | v ]
+ticks interval = wrap $ pure
+  { toUser: mempty
+  , fromUser: \prop -> if isHole interval then pure unit else do
+      let
+        loop = do
+          delay (Milliseconds interval.ms)
+          liftEffect $ prop (inj (Proxy @l) {})
+          loop
+      launchAff_ loop
+  }
 
 
 -- Optics
@@ -1158,7 +1185,7 @@ static o = widenRecordInput (o identity :: p {} {})
 -- | onward, since there is no output to post. An action whose function is a
 -- | hole never runs (guardrails L18): a view's own literal seed may reach
 -- | it before its logic exists.
-action :: forall @t s. (s -> Aff t) -> Action s t [ started :: {}, ended :: {} ] {}
+action :: forall @t a. (a -> Aff t) -> Action a t [ started :: {}, ended :: {} ] {}
 action arr w = action'
   (\i pro post -> if isHole arr then pure unit else do
     liftEffect $ pro (inj (Proxy @"started") {})
@@ -1169,7 +1196,7 @@ action arr w = action'
       Right o -> liftEffect $ post o)
   w
 
-action' :: forall a b i o m. MonadEffect m => (i -> (a -> Effect Unit) -> (o -> Effect Unit) -> Aff Unit) -> Optic (PUI m) i o a b
+action' :: forall a b s t m. MonadEffect m => (s -> (a -> Effect Unit) -> (t -> Effect Unit) -> Aff Unit) -> Optic (PUI m) s t a b
 action' arr w = wrap do
   w' <- unwrap w
   oVar <- liftEffect AVar.empty
@@ -1307,7 +1334,7 @@ instance Hosting m node => Acting (PUI m) where
 -- | array itself is the output, use `acted` (gathered, knowledge-gated,
 -- | announces `[]`) or `edited` (input-primed, immediate). All share this
 -- | keyed reconciler.
-foreach :: forall @l @k m node r a i o. Hosting m node => IsSymbol l => Cons l k r a => (i -> Array { | a }) -> PUI m { | a } o -> PUI m i o
+foreach :: forall @l @r m node k b a c. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } c -> PUI m a c
 foreach f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs = f r in if isHole xs then [] else xs) $ wrap do
   hooks <- hosting w
   liftEffect $ collapsedWith (Record.get (Proxy @l)) hooks)
@@ -1341,13 +1368,15 @@ foreach f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs
 -- | tag their emissions with the key `first` retains from their fed row —
 -- | the keyed reconciliation is `foreach`'s, the input-primed fold
 -- | `updated`'s.
-edited :: forall @l @k m node r a. Hosting m node => IsSymbol l => Cons l k r a => PUI m { | a } { | a } -> PUI m (Array { | a }) (Array { | a })
-edited item0 = withStructuralOrd @k (dimap (\xs -> { xs }) _.xs $ updated folded (lcmap _.xs (foreach @l identity keyed) :: PUI m { xs :: Array { | a } } { key :: k, row :: { | a } }))
+edited :: forall @l @r m node k b. Hosting m node => IsSymbol l => Cons l k b r => PUI m { | r } { | r } -> PUI m (Array { | r }) (Array { | r })
+
+
+edited item0 = withStructuralOrd @k (dimap (\xs -> { xs }) _.xs $ updated folded (lcmap _.xs (foreach @l identity keyed) :: PUI m { xs :: Array { | r } } { key :: k, row :: { | r } }))
   where
   keyOf = Record.get (Proxy @l)
-  keyed :: PUI m { | a } { key :: k, row :: { | a } }
+  keyed :: PUI m { | r } { key :: k, row :: { | r } }
   keyed = dimap (\x -> Tuple x (keyOf x)) (\(Tuple row key) -> { key, row }) (first item0)
-  folded :: { key :: k, row :: { | a } } -> { xs :: Array { | a } } -> { xs :: Array { | a } }
+  folded :: { key :: k, row :: { | r } } -> { xs :: Array { | r } } -> { xs :: Array { | r } }
   folded e s = withStructuralEq @k { xs: map (\x -> if keyOf x == e.key then Record.set (Proxy @l) e.key e.row else x) s.xs }
 
 -- | The **keyed dispatch** — the +→+ member: one runtime case at a time.
@@ -1358,7 +1387,7 @@ edited item0 = withStructuralOrd @k (dimap (\xs -> { xs }) _.xs $ updated folded
 -- | shape for streams/pushes that arrive one entity at a time. No key
 -- | function: the runtime variant input carries its tag, as a variant case
 -- | carries its label.
-dispatched :: forall @k m node i a b. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }
+dispatched :: forall @k @a m node i b. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }
 dispatched f w = withStructuralOrd @k (lcmap f $ wrap do
   hooks <- hosting w
   liftEffect do
@@ -1384,7 +1413,7 @@ dispatched f w = withStructuralOrd @k (lcmap f $ wrap do
 -- | for keyed streams: the aggregate as running state, built one entity at a
 -- | time. Emits `[]` for no keys yet only in the sense that nothing has been
 -- | fed; order is first-appearance order.
-accumulated :: forall @k m node i a. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a a -> PUI m i (Array a)
+accumulated :: forall @k @a m node i. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a a -> PUI m i (Array a)
 accumulated f w = withStructuralOrd @k (lcmap f $ wrap do
   hooks <- hosting w
   liftEffect do
@@ -1536,7 +1565,7 @@ actedWith key hooks = do
 -- The forward (collapsed) mode: element emissions exit onto the shared
 -- channel as they happen; the slot is kept written so a later gather-mode
 -- reading of the same core stays possible, but nothing gates.
-collapsedWith :: forall k a o node. Ord k => (a -> k) -> Hooks a o node -> Effect { toUser :: Array a -> Effect Unit, fromUser :: ((o -> Effect Unit) -> Effect Unit) }
+collapsedWith :: forall k a b node. Ord k => (a -> k) -> Hooks a b node -> Effect { toUser :: Array a -> Effect Unit, fromUser :: ((b -> Effect Unit) -> Effect Unit) }
 collapsedWith key hooks = do
   propRef <- Ref.new Nothing
   entriesRef <- Ref.new []

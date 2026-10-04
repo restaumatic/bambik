@@ -23,4 +23,9 @@ tipCalculatorMDC2 =
       body2 (text tipAmountLine) # shown
       body2 (text totalLine) # shown
       body2 (text perPersonLine) # shown
-    ) # mvu dinnerBill
+    ) # mvu
+      @( "Bill amount" :: String
+       , "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       , "Split between" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       )
+      dinnerBill

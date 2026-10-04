@@ -5,8 +5,8 @@ import Prelude ((+), show)
 freshCount :: { count :: Int }
 freshCount = { count: 0 }
 
-countLine :: forall r1. { count :: Int | r1 } -> String
+countLine :: { count :: Int } -> String
 countLine { count } = show count
 
-increment :: forall r1. { count :: Int | r1 } -> { count :: Int | r1 }
+increment :: { count :: Int } -> { count :: Int }
 increment m = m { count = m.count + 1 }

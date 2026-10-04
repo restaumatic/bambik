@@ -1,18 +1,20 @@
-module RestaurantMenuViewModel (courseName, dishDescription, dishName, dishTags, menuCourses, priceLine) where
+module RestaurantMenuViewModel (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine) where
 
 import Prelude ((<>), map)
 
-courseName :: forall r1. { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } | r1 } -> String
+courseName :: { dishes :: Array { description :: String, name :: String, price :: String, tags :: Array String }, name :: String } -> String
 courseName = _.name
 
+courseDishes :: { dishes :: Array { description :: String, name :: String, price :: String, tags :: Array String }, name :: String } -> Array { description :: String, name :: String, price :: String, tags :: Array String }
+courseDishes = _.dishes
 
-dishName :: forall r1. { name :: String, price :: String, description :: String, tags :: Array String | r1 } -> String
+dishName :: { description :: String, name :: String, price :: String, tags :: Array String } -> String
 dishName = _.name
 
-dishDescription :: forall r1. { name :: String, price :: String, description :: String, tags :: Array String | r1 } -> String
+dishDescription :: { description :: String, name :: String, price :: String, tags :: Array String } -> String
 dishDescription = _.description
 
-menuCourses :: forall r1. { | r1 } -> Array { name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } }
+menuCourses :: {} -> Array { dishes :: Array { description :: String, name :: String, price :: String, tags :: Array String }, name :: String }
 menuCourses _ =
   [ { name: "Antipasti"
     , dishes:
@@ -37,8 +39,8 @@ menuCourses _ =
     }
   ]
 
-priceLine :: forall r1. { name :: String, price :: String, description :: String, tags :: Array String | r1 } -> String
+priceLine :: { description :: String, name :: String, price :: String, tags :: Array String } -> String
 priceLine { price } = "€" <> price
 
-dishTags :: forall r1. { name :: String, price :: String, description :: String, tags :: Array String | r1 } -> Array { tag :: String }
+dishTags :: { description :: String, name :: String, price :: String, tags :: Array String } -> Array { tag :: String }
 dishTags { tags } = map { tag: _ } tags

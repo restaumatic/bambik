@@ -37,7 +37,8 @@ whichever twin matches your design system.
   input.
 - **merge** — several components over one shared value, written as a
   qualified `do` block (below).
-- **seed** — the model's value at start (`# mvu freshCount`). A pane
+- **seed** — the model's value at start, on the line that declares the
+  model row (`# mvu @( count :: Int ) freshCount`). A pane
   stays blank until the fields it waits for have values; a seed gives
   them one.
 - **pane** — a component that exists only while the model is in one
@@ -49,9 +50,6 @@ whichever twin matches your design system.
   signatures ([Writing order](#writing-order)).
 - **copy function** — a pure function in the view model module from the
   row to the words on screen (`countLine`).
-- **state leaf** — `state @"count" @Int`: the line that types a field no
-  editor binds and no leaf shows verbatim (see
-  [Types and values](#types-and-values)).
 - **chrome** — headings, cards and other parts that show no data.
 - **hole** — a stand-in for a value not written yet
   ([Writing order](#writing-order)).
@@ -173,6 +171,7 @@ a trailing word that says what it is for:
 | a list rendered from the row | `ul $ (li $ text lapLine) # shownEach @"number" lapRows` | stopwatch |
 | content that waits for the user to confirm | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox |
 | a button stepping the model | `button @"Count" {} # applied increment` | counter |
+| a click's replayed row stepped into the record, as a stage | `fold @"Count" increment` | counter (MDC3) |
 | events folded into the model | `# updated (match { "Start": const beginTiming, … })` | stopwatch |
 | an invariant between edited fields | `filledTextField @"°C" {} # settled fromCelsius` | temperature-converter |
 | a periodic step | `every tickPeriod tick` | stopwatch, timer |
@@ -208,6 +207,7 @@ seed is a compile error at `body` naming the missing fields.
 | Shape | Demos |
 | --- | --- |
 | the smallest model-view-update loop | counter |
+| the loop written as three stages, one per shape | counter (MDC3) |
 | a load action feeding a looped form, events, actions, statuses | order-form (all four shapes), crud |
 | a loop plus fixed payloads | cashbox, inbox, tic-tac-toe, shopping-cart |
 | a fixed grid or canvas fed as data, updated in place | cells, circle-drawer, tic-tac-toe, calculator |
@@ -231,15 +231,14 @@ emitter.
 
 When the state is stored in the model as a variant, the pane reads the
 field with an accessor (inbox's `# provided @"confirming" _.deletion`,
-flight-booker's `# inCase @"return" _."Flight type"`), typed by its
-state leaf or its selector (`state @"deletion" @[ silent :: {}, confirming :: {} ]`,
-the `select`'s closed option row). When it is derived, one classifier
+flight-booker's `# inCase @"return" _."Flight type"`), typed by the
+model row the seed line declares. When it is derived, one classifier
 derives it, naming every case and giving each case exactly what its
 pane shows — checkout's `checkoutStep`, calculator's `readout`, inbox's
-`messageView` — and each pane's content declares the payload it reads
-with state leaves (`state @"sender" @String` beside `text fromLine` in
-inbox's reading pane), so the classifier's cases are typed by its panes.
-Two panes over one classifier can never both be on screen.
+`messageView` — and the classifier's first pane declares those cases
+(`# provided @"reading" @( reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ) messageView`);
+its later panes name only their case. Two panes over one classifier
+can never both be on screen.
 
 A `Maybe` a pane depends on is a two-case state with unnamed cases.
 Name them: order-form's distance is
@@ -289,8 +288,10 @@ the pick reaches the content directly (photo-gallery).
 - A fixed catalogue is given through the word's own projection
   argument, `# foreach @"key" (const keyPad)` (calculator).
 - An element whose content reads several things names that reading
-  once, in a face function over an open row
-  (`attrWith "style" cellFace`, cells).
+  once, in a face function, typed at the element row and closed like
+  every other function a view line names
+  (`attrWith "style" cellFace`, `cellFace :: { key :: String, text ::
+  String, status :: [ … ] } -> String`, cells).
 
 ## View module and view model module
 
@@ -303,7 +304,9 @@ one-way dependency:
   the design system, the library's words and the view model module.
 - **The view model module** (`<App>ViewModel.purs`) exports business
   functions and named business values: seed models, tick periods, fixed
-  payloads, copy functions, parsers, `Aff` actions. It imports only the
+  payloads, copy functions, parsers, `Aff` actions — exactly the names
+  the view imports, nothing a view line does not type (a helper only
+  other business functions call is private). It imports only the
   domain — `Prelude`, plain data modules, `Effect`, `Aff`,
   `Data.Variant.Case` — never `PUI`, `PUI.Web.*`, a design-system module
   or the merges. The one exception is temporary: a stub `hole` while
@@ -313,7 +316,7 @@ one-way dependency:
 exactly when a view line calls it, and its signature is what that line
 demands: compiled with a typed hole for each such value, the view
 reports every one at a concrete type, and the module's signatures
-restate that list with the footprints narrowed
+are that list, verbatim
 ([Writing order](#writing-order)). Nothing is designed into the view
 model module that no view line asks for.
 
@@ -356,12 +359,11 @@ the anchor's own position, and the anchor says what the line is:
   @"Osteria Yoneda"`, `topAppBar @"Espresso Bar"`). A static's type argument is its own
   text, not an anchor: it needs no data to be seen.
 
-A **state leaf** names a field like an editor does (`state @"count"
-@Int`), and a **type after the anchor** is not a second anchor: a state
-leaf's or a key's type (`listOf @"opened" @"id" @Int`), a trace state's,
-an action's outcome, a payload's. It is one field's or one value's type,
-never a row — rows are declared by the lines that run over them (see
-[Types and values](#types-and-values)).
+A **declared row** is not an anchor either. It is a visible type
+argument stating a shape the compiler could not otherwise know: the
+model row on the seed line, and a derived row where it is introduced
+(see *The model is declared once* in
+[Types and values](#types-and-values)). It names no field and no case.
 
 So every leaf reads as a noun phrase — word, anchor, positional
 arguments:
@@ -410,8 +412,10 @@ text is computed, a chrome line nothing.
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
   it closes over: `… # shown ) # feedback @"top" @Number noBids`. The
-  exception is a seed closer, `) # mvu seed` / `) # with seed`, on its
-  own line.
+  exception is a seed closer, `) # mvu @( … ) seed` / `) # with @( … ) seed`,
+  on its own line — or, when the model row is long, `) # mvu` on its own
+  line, the row's fields one per line beneath it and the seed last
+  (inbox).
   `#` binds tighter than `$`: where a chain must apply to a whole
   wrapped element (a `foreach` multiplying a card), open the paren
   before the wrapper.
@@ -426,31 +430,33 @@ text is computed, a chrome line nothing.
 
 ### Types and values
 
-- **Every row is declared by the lines that run over it, one field per
-  line.** The compiler learns a row only from its fields, so each field
-  is bound by exactly one line: an editor or selector binds its field
-  with its type (`filledTextField @"Name" {}`; `select @"Flight type" {}
-  (choice @"one-way" <+> choice @"return")`, where `<+>` closes the option
-  row), a collection binds its key (`listOf @"opened" @"id" @Int`), and a
-  **state leaf** types a field nothing edits or shows verbatim —
-  `state @"count" @Int` at the top of the pipeline for the model,
-  `state @"sender" @String` inside a list item for the element row, inside
-  a pane for its payload. A state leaf's type is a scalar, a variant or
-  an array, never a record: a record field is declared by the lines of
-  the group or item that run over it. A type parameter is therefore
-  always a label or one field's type, never a row.
+- **The model is declared once, on the seed line; every derived row
+  where it is introduced.** The seed line states the whole model
+  (`# mvu @( count :: Int ) freshCount`; inbox's two fields, one per
+  line), and every editor, selector, list and accessor is checked
+  against it — so a stored field is read with a plain accessor
+  (`listOf … _.messages`, `# provided @"confirming" _.deletion`). A
+  **derived row** is a shape no model field holds, and the line that
+  introduces it declares it after its anchor:
+  - a classifier's cases, on its first pane
+    (`# shownWhen @"cart" @( cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ) checkoutStep`);
+  - an action's outcome (`# action @[ generated :: String ] samplePassword`);
+  - a projection's element row
+    (`# foreach @"name" @( name :: String, mix :: … ) (const palette)`,
+    `# shownEach @"number" @( number :: Int, tenths :: Int ) lapRows`);
+  - a fixed payload (`# with @( amount :: Number ) courierFee`);
+  - a trace form's state (`# feedback @"top" @Number noBids`,
+    `# folding @"next" @"step" @[ cart :: {}, shipping :: {}, payment :: {} ] cartStep`),
+    a bracketed editor's state, a Reel's two types;
+  - an option list, closed by `<+>` (`choice @"one-way" <+> choice @"return"`).
 
-  What is left to the view model is only the **tails**: a declaration
-  bounds a row from below, so no line can say "and nothing else". The
-  view model's signature is the hole's type with its tails closed — and
-  nothing more: a field no line declares is not in the model (inbox
-  derives the next message id). Four things are still one type where
-  they are introduced, because no lines run over them: an action's
-  outcome (`# action @[ generated :: String ] samplePassword`), an
-  event's payload (`# with @( amount :: Number ) courierFee`,
-  `# toCase @"charge" @{ amount :: Number, attempt :: Int } startCharge`),
-  a trace form's state (`# feedback @"top" @Number noBids`) and a Reel's
-  two types.
+  What no line declares is not in the model. State only the business
+  needs is derived (inbox computes the next message id from
+  `messages`) or declared like any other field (circle-drawer's undo
+  stacks are state, so they are on its seed line). Every typed hole then
+  reports a concrete type with nothing unknown; the view model module's
+  signatures are those types verbatim, and the compiler checks that they
+  agree.
 - **No nominal types in UI.** No `data`, `newtype` or `type` synonym for
   anything a component shows, emits or is configured with. A view-model
   row holds records, variants, `String`/`Number`/`Int` and `Array` —
@@ -489,7 +495,7 @@ text is computed, a chrome line nothing.
   headlineSmall (text balanceLine) # shown
   ```
 
-  with `balanceLine :: forall r. { balance :: Number | r } -> String`. A
+  with `balanceLine :: { balance :: Number } -> String`. A
   display that shows one field verbatim takes the accessor
   (`text _.title`). A number drawn as a bar is a function too — a
   fraction is derived from state, like a sentence. A model field exists
@@ -518,12 +524,16 @@ text is computed, a chrome line nothing.
 
 ### Business functions
 
-- **Footprints as open rows.** Every business function states what it
-  reads and writes as an open row:
-  `countLine :: forall r. { count :: Int | r } -> String`. Never the
-  whole model, never a closed row, never a coercion at the call site.
-  The compiler checks the footprint against the row the stage is fed,
-  and the function touches exactly the fields it names.
+- **The signature is the hint, verbatim.** Every business function is
+  typed exactly as the view reports it: the row the stage is fed, closed
+  (`countLine :: { count :: Int } -> String`). Never narrowed to the
+  fields the body reads, never opened with a tail, never coerced at the
+  call site. Which fields the body uses is the body's business; the
+  compiler checks the body against the row it is given. A name two lines
+  call at different rows gets two hints, and that is the one case for a
+  `forall`: generalize to the fields both rows share, with a tail.
+  Private helpers no view line types are free to be as general as they
+  like (flight-booker's `parse`, `formatDate`).
 - **Update the row you are given.** A function returning the row it
   takes — a handler, a `settled` normalizer, a periodic step — updates
   it (`increment m = m { count = m.count + 1 }`), never builds a
@@ -537,11 +547,11 @@ text is computed, a chrome line nothing.
 - **One record per business function.** Records that travel together
   are one row; let field names carry the roles positional arguments
   lose. The exception is a fold handler, which takes the event's payload
-  and the state separately, each an open row:
+  and the state separately, each as the view reports it:
 
   ```purescript
   # updated (match { refunded: applyRefund })
-  applyRefund :: forall r1 r2. { amount :: Number | r1 } -> { balance :: Number | r2 } -> { balance :: Number | r2 }
+  applyRefund :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
   applyRefund { amount } till = till { balance = till.balance - amount }
   ```
 
@@ -550,7 +560,9 @@ text is computed, a chrome line nothing.
   `match`, `const f` ignores the payload (`"Start": const beginTiming`)
   and `const <<< f` applies `f` to it (espresso-bar's
   `"The usual": const <<< theUsual`). Scalar and array payloads (a key,
-  a fetched list) are positional.
+  a fetched list) are positional. A replaying emitter's payload *is* the
+  row it was fed, so a stage of its own may update it directly:
+  `fold @"Count" increment` (counter, MDC3).
 - **A handler carries no field it does not touch.** Group buttons into
   stages by the fields their handlers touch (circle-drawer keeps undo and
   redo apart from the canvas click). An identity handler means the
@@ -589,9 +601,8 @@ text is computed, a chrome line nothing.
 **The view determines the view model.** Every view line names what it
 needs and states the piece of the model it binds, so a view written
 with a typed hole for every value it would import compiles to a list of
-those values with their types: the view model module's signatures,
-every field and case known, unknown only at the rows' tails. Write the
-view first and the view model
+those values with their types: the view model module's signatures, with
+nothing unknown. Write the view first and the view model
 module to that list. Until it exists a **hole** stands in for each
 missing value, and there are two:
 
@@ -605,13 +616,13 @@ view run before it exists. One `?name` fails the build, so to run the
 view, turn every remaining `?name` into `hole` or its definition. With
 the watch build running ([building.md](building.md)):
 
-1. **Write the view**, each line naming its anchors, with a state leaf
-   for every field no editor binds, in the block whose row holds it
-   ([Types and values](#types-and-values)). Labels, accessors, keys and
-   state leaves never need a hole, because writing them is writing the
-   model. Every other value — a copy function, a handler, a classifier,
-   an action, the seed — starts as a typed hole (`text ?countLine`,
-   `# mvu ?start`).
+1. **Write the view**, each line naming its anchors, the seed line
+   declaring the model row and each derived row declared where it is
+   introduced ([Types and values](#types-and-values)). Labels,
+   accessors and declared rows never need a hole, because writing them
+   is writing the model. Every other value — a copy function, a
+   handler, a classifier, an action, the seed — starts as a typed hole
+   (`text ?countLine`, `# mvu @( count :: Int ) ?start`).
 2. **Read the holes.** Every hole reports a concrete type built from
    the pieces the lines state. With several holes, a last message lists
    them all, placed on the declaration's name: the view model module's
@@ -619,26 +630,30 @@ the watch build running ([building.md](building.md)):
    joined onto one line each:
 
    ```
-   openMessage  :: Int -> { deletion :: …, messages :: Array { … | t1 } | t3 } -> { deletion :: …, messages :: Array { … | t1 } | t3 }
-   highlighted  :: { body :: String, id :: Int, sender :: String, status :: …, subject :: String | t1 } -> Boolean
-   mondayMail   :: { deletion :: …, messages :: Array { … | t1 } | t3 }
+   openMessage  :: Int -> { deletion :: …, messages :: Array { … } } -> { deletion :: …, messages :: Array { … } }
+   highlighted  :: { body :: String, id :: Int, sender :: String, status :: …, subject :: String } -> Boolean
+   mondayMail   :: { deletion :: …, messages :: Array { … } }
    ```
 
-   Every field and case is known. The only unknowns are the rows' tails
-   (`| t1`, `| t3`): a declaration bounds a row from below, so no line
-   can say "and nothing else", and the view model closes them. An
-   unknown anywhere else (`Record t2` beside fields, `t4 -> String`)
-   names a missing declaration: a state leaf, a key's type, an outcome's
-   or a payload's type. Each `?name` is its own hole, so a function used
-   on several lines is reported once per line, each from its own row.
-3. **Decide the footprint.** A reported type takes the whole model,
-   not what the function needs. Keep the fields the function reads and
-   writes, open the row with a tail, and write it in the view model
-   module (`sortBySender :: forall r. { messages :: Array { … } | r } -> { messages :: Array { … } | r }`;
-   `highlighted :: forall r. { status :: … | r } -> Boolean` over the
-   list's element row). The hole's message goes away, and from then on
-   the compiler checks the footprint against the declared rows. The
-   seed's signature is its hole's type with the tails closed.
+   Nothing is unknown. An unknown anywhere (`Record t1`,
+   `[ reading :: … | t2 ]`, a tail `| t0`) names a missing declaration:
+   the model row on the seed line, or a derived row where it is
+   introduced. Each `?name` is its own hole, so a function used on
+   several lines (`bookingState` on three panes) is declared on its
+   first; once written, the compiler types its other uses.
+3. **Write the signatures down, verbatim.** The hint is the signature:
+   the row the stage is fed, closed, its fields in the compiler's order
+   (`highlighted :: { body :: String, id :: Int, sender :: String, status :: …, subject :: String } -> Boolean`
+   over the list's element row). Do not narrow it to the fields the body
+   reads and do not open it with a tail: which fields the body uses is
+   the body's business, and the compiler checks the body against the
+   row it is given. A name reported at two different rows, because two
+   lines call it, is the one case for a `forall`: generalize to the
+   fields both rows share, with a tail. The hole's message goes away,
+   and from then on the compiler checks the function against the
+   declared rows; `npm run check-determined` checks that every exported
+   signature still equals its hint and that every export is a name some
+   view imports.
 4. **Fill the holes in any order.** The compiler reports one
    declaration's holes per build, and an app is one pipeline in one
    declaration, so its holes report together; a view helper's holes
@@ -646,7 +661,8 @@ the watch build running ([building.md](building.md)):
    helper applies one view model function per value — composing two
    (`rgb (mixOf channels)`) hides the type between them, so the view
    model exports the composite (color-mixer's `mixedColor`). The seed's
-   value is one business-named record (`freshCount`, `mondayMail`).
+   signature is the model row its line declares, and its value is one
+   business-named record (`freshCount`, `mondayMail`).
 5. **Run the view on holes, at any point.** Replace the typed holes
    with `hole` — inline (`text hole`, `# mvu hole`) or as view model exports
    stubbed without signatures (`countLine = hole`, the view importing

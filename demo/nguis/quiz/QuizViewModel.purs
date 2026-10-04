@@ -6,13 +6,13 @@ import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 
-freshQuizRun :: { question :: Int, correct :: Int }
+freshQuizRun :: { correct :: Int, question :: Int }
 freshQuizRun = { question: 0, correct: 0 }
 
-quizProgress :: forall r1. { question :: Int, correct :: Int | r1 } -> Number
+quizProgress :: { correct :: Int, question :: Int } -> Number
 quizProgress { question } = toNumber question / toNumber (length questionCatalogue)
 
-questionLine :: forall r1. { question :: Int, correct :: Int | r1 } -> String
+questionLine :: { correct :: Int, question :: Int } -> String
 questionLine { question, correct } = "Question " <> show (min (question + 1) (length questionCatalogue)) <> " of " <> show (length questionCatalogue) <> " · Score " <> show correct
 
 questionCatalogue :: Array { prompt :: String, choices :: Array String, answer :: Int }
@@ -24,18 +24,18 @@ questionCatalogue =
   , { prompt: "How many continents are there?", choices: [ "five", "six", "seven", "eight" ], answer: 2 }
   ]
 
-answer :: forall r1. Int -> { question :: Int, correct :: Int | r1 } -> { question :: Int, correct :: Int | r1 }
+answer :: Int -> { correct :: Int, question :: Int } -> { correct :: Int, question :: Int }
 answer choice run@{ question, correct } = case index questionCatalogue question of
   Just q -> run { question = question + 1, correct = correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
-quizPhase :: forall r1. { question :: Int, correct :: Int | r1 } -> [ asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { correct :: Int } ]
+quizPhase :: { correct :: Int, question :: Int } -> [ asking :: { choices :: Array { key :: Int, label :: String }, prompt :: String }, finished :: { correct :: Int } ]
 quizPhase { question, correct } = case index questionCatalogue question of
   Just q -> .asking { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
   Nothing -> .finished { correct }
 
-askedPrompt :: forall r1. { prompt :: String, choices :: Array { key :: Int, label :: String } | r1 } -> String
+askedPrompt :: { choices :: Array { key :: Int, label :: String }, prompt :: String } -> String
 askedPrompt { prompt } = prompt
 
-finalScoreLine :: forall r1. { correct :: Int | r1 } -> String
+finalScoreLine :: { correct :: Int } -> String
 finalScoreLine { correct } = "Final score: " <> show correct <> " / " <> show (length questionCatalogue)

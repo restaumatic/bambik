@@ -11,9 +11,11 @@
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `subRetaining` (a
--- |     sub-variant, the background wrapped as a field); over the
--- |     co-strength `Coretaining`: `unfolding @w @l` (the productive unfold at
--- |     row granularity, the `Coreel` optic's row form).
+-- |     sub-variant, the background wrapped as a field); over `Category`:
+-- |     `fold @l f` (one case folding into the record, `f` of its payload —
+-- |     the merge pinned at its unit, under `atCase @l`); over the co-strength
+-- |     `Coretaining`: `unfolding @w @l` (the productive unfold at row
+-- |     granularity, the `Coreel` optic's row form).
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
@@ -45,7 +47,10 @@
 -- |      associative up to `≈`. Never fed and owning no field, the unit's
 -- |      side is born spoken, so any silent element of that type serves
 -- |      equally (`silence` at `b = ()` is one). The merge pinned at it —
--- |      one case folding into the record — is derivable and not exported.
+-- |      one case folding into the record — is `fold @l f` (below): `f` of
+-- |      the payload under `atCase @l`, exported 2026-10-02 for the
+-- |      counter's loop, whose `+→×` stage folds the click back into the
+-- |      model row (`fold @"Count" increment`).
 -- |   4. **Projection** — `π_k` is the operand's own cases: an occurrence
 -- |      of case `l` reaches the one operand owning `l` and no other
 -- |      (`DisjointLabels`), and nothing else reaches an operand. `exact`
@@ -75,10 +80,12 @@ module Data.Profunctor.Row.VariantToRecord
   , bind
   , discard
   , subRetaining
+  , fold
   , unfolding
   )
   where
 
+import Control.Category (class Category, identity)
 import Control.Semigroupoid ((>>>))
 import Data.Either (either)
 import Data.Lens.Reel (reelE)
@@ -90,7 +97,7 @@ import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, expand, inj)
+import Data.Variant (class Contractable, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
@@ -106,36 +113,36 @@ class Profunctor p <= VariantToRecord p where
     -> p [ | i ] { | o }
 
 bind
-  :: forall p i1 i1l i2 i2l o1 o2 i o o1l o2l
+  :: forall p v1 rl1 v2 rl2 r1 r2 v r rl3 rl4
    . VariantToRecord p
-  => OwnedVariantInputs i1 i2 i i1l i2l
-  => OwnedRecordOutputs o1 o2 o o1l o2l
-  => p [ | i1 ] { | o1 }
-  -> (p [ | i1 ] { | o1 } -> p [ | i2 ] { | o2 })
-  -> p [ | i ] { | o }
+  => OwnedVariantInputs v1 v2 v rl1 rl2
+  => OwnedRecordOutputs r1 r2 r rl3 rl4
+  => p [ | v1 ] { | r1 }
+  -> (p [ | v1 ] { | r1 } -> p [ | v2 ] { | r2 })
+  -> p [ | v ] { | r }
 bind first cont = variantToRecord first (cont first)
 
 discard
-  :: forall p i1 i1l i2 i2l o1 o2 i o o1l o2l
+  :: forall p v1 rl1 v2 rl2 r1 r2 v r rl3 rl4
    . VariantToRecord p
-  => OwnedVariantInputs i1 i2 i i1l i2l
-  => OwnedRecordOutputs o1 o2 o o1l o2l
-  => p [ | i1 ] { | o1 }
-  -> (Unit -> p [ | i2 ] { | o2 })
-  -> p [ | i ] { | o }
+  => OwnedVariantInputs v1 v2 v rl1 rl2
+  => OwnedRecordOutputs r1 r2 r rl3 rl4
+  => p [ | v1 ] { | r1 }
+  -> (Unit -> p [ | v2 ] { | r2 })
+  -> p [ | v ] { | r }
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Focus a sub-variant of the input, wrapping the background into output field `w`.
 subRetaining
-  :: forall @w p f b s b' s'
+  :: forall @w p v1 b v r1 r
    . Retaining p
   => IsSymbol w
-  => ExclusiveRows f b s
-  => Contractable s f
-  => Contractable s b
-  => Cons w [ | b ] b' s'
-  => p [ | f ] { | b' }
-  -> p [ | s ] { | s' }
+  => ExclusiveRows v1 b v
+  => Contractable v v1
+  => Contractable v b
+  => Cons w [ | b ] r1 r
+  => p [ | v1 ] { | r1 }
+  -> p [ | v ] { | r }
 subRetaining g =
   reelE
     splitVariant
@@ -144,26 +151,48 @@ subRetaining g =
     (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
     g
 
+-- | One case folding into the record: the closed singleton `[ l :: a ]`
+-- | consumed by `f`, which turns its payload into the row — `atCase @l` of
+-- | the function, the `+→×` merge pinned at its unit. The payload of a
+-- | replaying emitter *is* the row it was fed, so `f` updates the model it
+-- | already holds, and nothing need be retained (counter's
+-- | `fold @"Count" increment`; `mvu` around it supplies the loop). Laws on
+-- | `(->)`: `fold @l f (inj @l a) = f a`; at `identity` it is the closed
+-- | singleton unwrapped to its row, an iso with `toCase @l identity` both
+-- | ways — `toCase @l identity identity >>> fold @l identity = identity` on
+-- | `{ | r }` and `fold @l identity >>> toCase @l identity identity =
+-- | identity` on the singleton. A retaining, seeded `fold` was tried
+-- | 2026-10-03/04 and reverted: the payload already carries the model.
+fold
+  :: forall @l p a r v
+   . IsSymbol l
+  => Cons l a () v
+  => Profunctor p
+  => Category p
+  => (a -> { | r })
+  -> p [ | v ] { | r }
+fold f = dimap (on (Proxy @l) identity case_) f identity
+
 -- | Resume state field `l` of every emission as case `w`, seeded with its initial value.
 -- | The state is one field labelled on the view line (`unfolding @"resume"
 -- | @"next" firstTicket`); case `w` carries `{ l :: a }`. A seed that is a
 -- | hole is not injected (guardrails L18).
 unfolding
-  :: forall @w @l @a p i fb iw wx o ow
+  :: forall @w @l @a p v r1 v1 v2 r r2
    . Seeding p
   => Coretaining p
   => IsSymbol w
   => IsSymbol l
-  => Cons l a () fb
-  => Cons w { | fb } i iw
-  => Union i wx iw
-  => Cons l a o ow
+  => Cons l a () r1
+  => Cons w { | r1 } v v1
+  => Union v v2 v1
+  => Cons l a r r2
   => a
-  -> p [ | iw ] { | ow }
-  -> p [ | i ] { | o }
+  -> p [ | v1 ] { | r2 }
+  -> p [ | v ] { | r }
 unfolding seed g =
   coretain
     (dimap
       (either expand (inj (Proxy @w)))
       (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
-      (if isHole seed then g else seeded (inj (Proxy @w) (unsafeSet (reflectSymbol (Proxy @l)) seed {} :: { | fb })) >>> g))
+      (if isHole seed then g else seeded (inj (Proxy @w) (unsafeSet (reflectSymbol (Proxy @l)) seed {} :: { | r1 })) >>> g))

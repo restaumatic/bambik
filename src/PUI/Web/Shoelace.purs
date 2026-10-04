@@ -110,20 +110,20 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- | carrying the data it was showing, under the name the app gives the
 -- | action — `button @"Submit the review" {}`. The label defaults to
 -- | the case label verbatim (`label:` overrides with real copy).
-button :: forall @l provided r cl. IsSymbol l => Cons l { | r } () cl => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | cl ]
+button :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | v ]
 button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in eventLeaf @l $
   el "sl-button" >>> "variant" := "primary" $ staticString config.label
 
 -- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
-eventLeaf :: forall @l r s. IsSymbol l => Cons l { | r } () s => PUI Web {} {} -> PUI Web { | r } [ | s ]
+eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
 eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
 
 -- | The **text field**: a labelled single-line input. Shows the string it
 -- | is given and reports each edit; typing is never interrupted by values
 -- | arriving from elsewhere. Attach it to a field of the model with
 -- | `# asField @l`.
-textField :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (the shadow input keeps the host as `activeElement`),
@@ -147,7 +147,7 @@ textField provided = let config = convertOptionsWithDefaults OptCaption { label:
 
 -- | The **multi-line text field**, `rows` lines tall — a note, a review, a
 -- | message. Otherwise `textField`.
-textArea :: forall @l r rest provided. IsSymbol l => Cons l String rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
+textArea :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
 textArea provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-textarea" (pure unit)
   attribute "label" config.label
@@ -176,7 +176,7 @@ textArea provided = let config = convertOptionsWithDefaults OptCaption { label: 
 -- | stars there are comes from the data and can differ between contexts —
 -- | and a scale nobody supplied is a compile error rather than a wrong
 -- | screen. The label is drawn above the stars.
-rating :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, max :: Int } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+rating :: forall @l r b provided. IsSymbol l => Cons l { current :: Number, max :: Int } b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 rating provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ wrap do
     _ <- unwrap (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticString config.label)
@@ -216,7 +216,7 @@ rating provided = let config = convertOptionsWithDefaults OptCaption { label: re
 -- | It reports on **every change**, following the drag — so whatever it
 -- | drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number shows in the control's own tooltip while dragging.
-sliderLive :: forall @l r rest provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+sliderLive :: forall @l r b provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-range" (pure unit)
   attribute "label" config.label
@@ -253,7 +253,7 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label sits beside it and is part of the target, so clicking the
 -- | words toggles it too.
-toggleSwitch :: forall @l r rest provided. IsSymbol l => Cons l Boolean rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
+toggleSwitch :: forall @l r b provided. IsSymbol l => Cons l Boolean b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "sl-switch" (void $ unwrap (staticString config.label))
   node <- gets _.sibling
@@ -280,19 +280,19 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-select :: forall @l a rest r provided. IsSymbol l => Cons l a rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select :: forall @l a b r provided. IsSymbol l => Cons l a b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
 select provided options = withStructuralEq @a (selectWith @l false (selectedAt @l) provided options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c a b s rest r provided. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectUnpicked :: forall @l @c a b1 v b2 r provided. IsSymbol l => IsSymbol c => Cons c a b1 v => Cons l [ | v ] b2 r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
 selectUnpicked provided options = withStructuralEq @a (selectWith @l false (selectedUnpickedAt @l @c) provided options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | its clear button clears it, storing `n` again.
-selectOptional :: forall @l @c @n a b t s rest r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectOptional :: forall @l @c @n a b1 t v b2 r provided. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b1 v => Cons n {} t v => Cons l [ | v ] b2 r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
 selectOptional provided options = withStructuralEq @a (selectWith @l true (selectedOptionalAt @l @c @n) provided options)
 
 selectWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
@@ -360,11 +360,11 @@ progressBar f = wrap do
 -- | the toast is built — `toast @"submitted" thanksLine` — and
 -- | let the event carry the bare facts.
 toast
-  :: forall @l a s
+  :: forall @l a v
    . IsSymbol l
-  => Cons l a () s
+  => Cons l a () v
   => (a -> String)
-  -> PUI Web [ | s ] {}
+  -> PUI Web [ | v ] {}
 toast copy = toastFace # forCase @l copy
 
 toastFace :: PUI Web [ event :: String ] {}

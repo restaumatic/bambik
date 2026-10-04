@@ -8,22 +8,22 @@ import Data.Maybe (fromMaybe)
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
-warsawBulletin :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int }
+warsawBulletin :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int }
 warsawBulletin = { report: conditionsFor "Warsaw" 0, servedReports: 1 }
 
-temperatureLine :: forall r1. { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } | r1 } -> String
+temperatureLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
 temperatureLine { report } = show report.temperature <> " °C"
 
-conditionLine :: forall r1. { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } | r1 } -> String
+conditionLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
 conditionLine { report } = report.condition <> " in " <> report.city
 
-humidityWindLine :: forall r1. { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } | r1 } -> String
+humidityWindLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
 humidityWindLine { report } = "Humidity " <> show report.humidity <> "% · Wind " <> show report.wind <> " km/h"
 
-servedLine :: forall r1. { servedReports :: Int | r1 } -> String
+servedLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
 servedLine { servedReports } = "Simulated service · " <> if servedReports == 1 then "1 report served" else show servedReports <> " reports served"
 
-aboutLine :: forall r1. { servedReports :: Int | r1 } -> String
+aboutLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
 aboutLine { servedReports } = "A simulated weather service: canned per-city climate with slight variation per reading, served with a " <> show (round serviceDelay.ms) <> " ms delay. Reports served so far: " <> show servedReports <> "."
 
 serviceDelay :: { ms :: Number }
@@ -54,17 +54,17 @@ firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == 
 unknownTerritory :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport :: forall r1. { city :: String, sample :: Int | r1 } -> Aff [ reportServed :: { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } } ]
+fetchReport :: { city :: String, sample :: Int } -> Aff [ reportServed :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number } } ]
 fetchReport { city, sample } = do
   delay (Milliseconds serviceDelay.ms)
   pure (.reportServed { report: conditionsFor city sample })
 
-rememberReport :: forall r1 r2. { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number } | r1 } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int | r2 } -> { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int | r2 }
+rememberReport :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number } } -> { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int }
 rememberReport { report } forecast = forecast { report = report, servedReports = forecast.servedReports + 1 }
 
-forecastRequests :: forall r1. { report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }, servedReports :: Int | r1 } -> Array { request :: { city :: String, sample :: Int }, focus :: [ current :: {}, other :: {} ] }
+forecastRequests :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> Array { focus :: [ current :: {}, other :: {} ], request :: { city :: String, sample :: Int } }
 forecastRequests { servedReports, report } = climateTable <#> \r ->
   { request: { city: r.city, sample: servedReports }, focus: if r.city == report.city then .current {} else .other {} }
 
-isCurrent :: forall r1. { request :: { city :: String, sample :: Int }, focus :: [ current :: {}, other :: {} ] | r1 } -> Boolean
+isCurrent :: { focus :: [ current :: {}, other :: {} ], request :: { city :: String, sample :: Int } } -> Boolean
 isCurrent { focus } = match { current: \_ -> true, other: \_ -> false } focus

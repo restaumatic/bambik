@@ -7,7 +7,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
-import PUI (action, armed, atCase, bracketed, debounced, looped, settled, state, updated, with)
+import PUI (action, armed, atCase, bracketed, debounced, looped, settled, updated, with)
 import PUI.Web ((<+>), choice, inCase, shown, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderFormMDC3 :: Effect Unit
 orderFormMDC3 =
   body $ ( Semigroupoid.do
-    indeterminateLinearProgress @"Loading order" # action loadOrder
+    indeterminateLinearProgress @"Loading order" # action @{ "Identifier" :: { "Short ID" :: String , "Unique ID" :: String } , "Customer" :: { "First name" :: String , "Last name" :: String } , "Fulfillment" :: { "Mode" :: [ "Dine in" :: { "Table" :: String } , "Takeaway" :: { "Time" :: String } , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ] } , "Payment" :: { "Total" :: String , "Method" :: [ "cash" :: {} , "card" :: {} ] , "Paid" :: String } , "Kitchen" :: { "Remarks" :: String } } loadOrder
     ( Semigroupoid.do
       ( headlineSmall $ text orderLine ) # shown
       group @"Identifier" $ Semigroupoid.do
@@ -24,10 +24,8 @@ orderFormMDC3 =
       group @"Customer" $ Semigroupoid.do
         filledTextField @"First name" {}
         filledTextField @"Last name" {}
-      group @"Fulfillment" $ Semigroupoid.do
-        state @"Mode" @[ "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String }, "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ]
+      group @"Fulfillment" $
         ( Semigroupoid.do
-          state @"distance" @[ estimated :: { km :: Int, to :: String }, unknown :: {} ]
           tabBar @"selected"
             (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
           filledTextField @"Table" {} # inCase @"Dine in" _.selected
@@ -37,9 +35,7 @@ orderFormMDC3 =
             ( Semigroupoid.do
               button @"Estimate distance" { icon: "near_me" }
               indeterminateLinearProgress @"Estimating distance" # action @[ estimated :: { km :: Int, to :: String } ] estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-            ( Semigroupoid.do
-              state @"km" @Int
-              bodyLarge $ text distanceLine ) # shownWhen @"estimated" distanceOf ) # inCase @"Delivery" _.selected ) # bracketed @"Mode" fulfillmentState fulfillmentCase
+            ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf ) # inCase @"Delivery" _.selected ) # bracketed @"Mode" @( "Dine in" :: { "Table" :: String } , "Takeaway" :: { "Time" :: String } , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ) @( selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] ) fulfillmentState fulfillmentCase
       group @"Payment" $ Semigroupoid.do
         filledTextField @"Total" {}
         segmentedButton @"Method"

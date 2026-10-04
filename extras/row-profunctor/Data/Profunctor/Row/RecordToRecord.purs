@@ -86,7 +86,6 @@ module Data.Profunctor.Row.RecordToRecord
   , focusField
   , bracketed
   , blank
-  , state
   , with
   , mvu
   , asField
@@ -130,21 +129,21 @@ instance RecordToRecord (->) where
   recordToRecord p1 p2 i = Record.union (exactRow (p1 (unsafeCoerce i))) (exactRow (p2 (unsafeCoerce i)))
 
 bind
-  :: forall p o1 o2 i o o1l o2l
+  :: forall p r2 r3 r1 r rl1 rl2
    . RecordToRecord p
-  => OwnedRecordOutputs o1 o2 o o1l o2l
-  => p { | i } { | o1 }
-  -> (p { | i } { | o1 } -> p { | i } { | o2 })
-  -> p { | i } { | o }
+  => OwnedRecordOutputs r2 r3 r rl1 rl2
+  => p { | r1 } { | r2 }
+  -> (p { | r1 } { | r2 } -> p { | r1 } { | r3 })
+  -> p { | r1 } { | r }
 bind first cont = recordToRecord first (cont first)
 
 discard
-  :: forall p o1 o2 i o o1l o2l
+  :: forall p r2 r3 r1 r rl1 rl2
    . RecordToRecord p
-  => OwnedRecordOutputs o1 o2 o o1l o2l
-  => p { | i } { | o1 }
-  -> (Unit -> p { | i } { | o2 })
-  -> p { | i } { | o }
+  => OwnedRecordOutputs r2 r3 r rl1 rl2
+  => p { | r1 } { | r2 }
+  -> (Unit -> p { | r1 } { | r3 })
+  -> p { | r1 } { | r }
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Focus a sub-record of the row, carrying the rest of the row unchanged.
@@ -153,16 +152,16 @@ discard first cont = bind first (\_ -> cont unit)
 -- | overlap the focus — and the fed row may be open, as it is while the
 -- | logic that closes it is still a hole (guardrails L18).
 subStrong
-  :: forall p f f' f'l b s s'
+  :: forall p r1 r2 rl b r r3
    . Strong p
   -- forward only: the focus is the view's (closed), the background is
-  -- inferred, so it cannot overlap the focus — and `s` may be open (L18)
-  => Union f b s
-  => Union f' b s'
-  => RowToList f' f'l
-  => FieldNames f'l f' f'
-  => p { | f } { | f' }
-  -> p { | s } { | s' }
+  -- inferred, so it cannot overlap the focus — and `r` may be open (L18)
+  => Union r1 b r
+  => Union r2 b r3
+  => RowToList r2 rl
+  => FieldNames rl r2 r2
+  => p { | r1 } { | r2 }
+  -> p { | r } { | r3 }
 subStrong g =
   dimap (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
         -- `exactRow` trims the emission to its declared row first: `g` may
@@ -170,31 +169,31 @@ subStrong g =
         -- background (a debounced inner stage), so a fat echo's runtime
         -- copies of background fields can be genuinely stale — the same
         -- hazard the gated merges trim (runtime-exactness).
-        (\(Tuple f' b) -> unsafeUnion (exactRow f') b :: { | s' })
+        (\(Tuple f' b) -> unsafeUnion (exactRow f') b :: { | r3 })
         (first g)
 
 -- | The field lens: lift a component editing field `l` into a whole-row citizen that retains the rest of the row.
 focusField
-  :: forall @l p f f' b s s'
+  :: forall @l p f f' b r r1
    . IsSymbol l
-  => Cons l f b s
-  => Cons l f' b s'
+  => Cons l f b r
+  => Cons l f' b r1
   => Strong p
   => p f f'
-  -> p { | s } { | s' }
+  -> p { | r } { | r1 }
 focusField = prop (Proxy @l)
 
 -- | Edit the variant-valued field `l` through a record-shaped, self-looped editor state.
 bracketed
-  :: forall @l p v s b rs
+  :: forall @l @v @r1 p b r
    . IsSymbol l
-  => Cons l [ | v ] b rs
+  => Cons l [ | v ] b r
   => Looping p
   => Strong p
-  => ([ | v ] -> { | s })
-  -> ({ | s } -> [ | v ])
-  -> p { | s } { | s }
-  -> p { | rs } { | rs }
+  => ([ | v ] -> { | r1 })
+  -> ({ | r1 } -> [ | v ])
+  -> p { | r1 } { | r1 }
+  -> p { | r } { | r }
 bracketed f g w = focusField @l (dimap f g (looped w))
 
 -- | The faceless leaf that reads nothing and contributes nothing, at any input.
@@ -203,61 +202,47 @@ blank = lcmap (const {}) identity
 
 -- | Discharge a component's initial-state obligation by announcing its t=0 value.
 -- | Its own input is ignored, so it sits at any row; a seed that is a hole is
--- | Declare a field of the row this stage runs over, and show nothing:
--- | `state @"count" @Int` types the model's `count` where it is first used,
--- | `state @"sender" @String` inside a list item types the element row's
--- | `sender`. The wire with a `Cons` witness — the one-label declaration of a
--- | field no editor or selector binds and no leaf shows verbatim, so that a
--- | typed hole over the row reports it concretely (guardrails L18). A
--- | field's type is a scalar, a variant or an array, never a record: a
--- | record field is declared by the lines of the group or item running over
--- | it. Every row is declared this way by the lines that run over it, and
--- | its tail is closed by the view model module's signature.
-state :: forall @l @t p rest row. Category p => Cons l t rest row => p { | row } { | row }
-state = identity
-
 -- | never announced (`announce`, guardrails L18).
-with :: forall @a p o r. Seeding p => { | a } -> p { | a } o -> p { | r } o
+with :: forall @r1 p a r. Seeding p => { | r1 } -> p { | r1 } a -> p { | r } a
 with a w = lcmap (const {}) (announce a >>> w)
 
--- | The model–view–update shape: a self-looped pipeline over the model, seeded with its initial state.
+-- | The model–view–update shape: a self-looped pipeline over the model, seeded with its initial state — the model row declared here, on the seed line.
 mvu
-  :: forall p model
+  :: forall @r p
    . Looping p
   => Seeding p
-  => { | model }
-  -> p { | model } { | model }
-  -> p {} { | model }
+  => { | r }
+  -> p { | r } { | r }
+  -> p {} { | r }
 mvu seed w = with seed (looped w)
 
 -- | Rename a component's singleton field `c` to business field `l` on both sides.
 asField
-  :: forall @c @l p a b s t ci co
+  :: forall @c @l p a b r r1 r2 r3
    . IsSymbol c
   => IsSymbol l
   => Profunctor p
-  => Cons c a () ci
-  => Cons c b () co
-  => Cons l a () s
-  => Cons l b () t
-  => p { | ci } { | co }
-  -> p { | s } { | t }
+  => Cons c a () r2
+  => Cons c b () r3
+  => Cons l a () r
+  => Cons l b () r1
+  => p { | r2 } { | r3 }
+  -> p { | r } { | r1 }
 asField = dimap (\r -> Record.insert (Proxy @c) (Record.get (Proxy @l) r) {}) (\r -> Record.insert (Proxy @l) (Record.get (Proxy @c) r) {})
 
 -- | Render the component and deliberately discard its output.
-muted :: forall p i o. Profunctor p => p i o -> p i {}
+muted :: forall p a b. Profunctor p => p a b -> p a {}
 muted = rmap (const {})
 
 -- | Normalize a stage's emissions with an idempotent function over the row.
--- | The normalizer's footprint is its own signature, an open row
--- | (`forall r. { "°C" :: String, "°F" :: String | r } -> { … | r }`): by
--- | parametricity it touches exactly the fields it names.
+-- | The normalizer is typed at the stage's row, its signature the view's
+-- | hole hint verbatim (`{ "°C" :: String, "°F" :: String } -> { … }`).
 settled
-  :: forall p big i
+  :: forall p r a
    . Profunctor p
-  => ({ | big } -> { | big })
-  -> p i { | big }
-  -> p i { | big }
+  => ({ | r } -> { | r })
+  -> p a { | r }
+  -> p a { | r }
 settled f = rmap f
 
 -- | Loop state field `l` of the output back into the input, starting it at the given value.
@@ -267,19 +252,19 @@ settled f = rmap f
 -- | field is written over the fresh input, so a stale runtime copy of it
 -- | never shadows the looped state.
 feedback
-  :: forall @l @a p i o iw ow
+  :: forall @l @a p r r1 r2 r3
    . IsSymbol l
   => PointedCostrong p
-  => Cons l a i iw
-  => Cons l a o ow
+  => Cons l a r r2
+  => Cons l a r1 r3
   => a
-  -> p { | iw } { | ow }
-  -> p { | i } { | o }
+  -> p { | r2 } { | r3 }
+  -> p { | r } { | r1 }
 feedback seed g =
   unfirstFrom seed
     (dimap
       -- the state field is written over the fresh input, so a fat upstream
       -- emission's stale copy of it never shadows the looped state
-      (\(Tuple i a) -> unsafeSet (reflectSymbol (Proxy @l)) a i :: { | iw })
+      (\(Tuple i a) -> unsafeSet (reflectSymbol (Proxy @l)) a i :: { | r2 })
       (\ow -> Tuple (unsafeCoerce ow) (Record.get (Proxy @l) ow))
       g)

@@ -8,7 +8,7 @@ import Data.Number (fromString)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 
-blankTally :: { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] }
+blankTally :: { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number }
 blankTally = { total: 0.0, operation: .none {}, entry: "0", input: .settled {}, condition: .sound {} }
 
 keyPad :: Array { key :: String }
@@ -26,10 +26,10 @@ operatorKeys = [ "÷", "×", "−", "+", "=" ]
 functionKeys :: Array String
 functionKeys = [ "C", "±" ]
 
-readout :: forall r1. { condition :: [ sound :: {}, faulty :: {} ], entry :: String | r1 } -> [ sound :: { entry :: String }, faulty :: {} ]
+readout :: { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number } -> [ faulty :: {}, sound :: { entry :: String } ]
 readout { condition, entry } = match { sound: \_ -> .sound { entry }, faulty: \_ -> .faulty {} } condition
 
-pressKey :: forall r1. String -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r1 } -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r1 }
+pressKey :: String -> { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number } -> { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number }
 pressKey key tally@{ entry, operation, input }
   | match { faulty: \_ -> key /= "C", sound: \_ -> false } tally.condition = pressKey key (cleared tally)
   | key == "C" = cleared tally
@@ -79,5 +79,5 @@ negated entry = case stripPrefix (Pattern "-") entry of
 format :: Number -> String
 format n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
 
-faultLine :: forall r1. { | r1 } -> String
+faultLine :: {} -> String
 faultLine _ = "Error"

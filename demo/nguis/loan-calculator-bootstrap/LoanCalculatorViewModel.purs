@@ -8,7 +8,7 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.String (trim)
 import Data.Variant (match)
 
-cityCarLoan :: { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean }
+cityCarLoan :: { "Amount (€)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Applicant" :: String, "Payment protection insurance" :: Boolean, "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ], "Term (years)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } }
 cityCarLoan =
   { "Applicant": ""
   , "Amount (€)": { current: 12000.0, min: smallestLoan, max: largestLoan, step: .discrete loanIncrement }
@@ -17,16 +17,16 @@ cityCarLoan =
   , "Payment protection insurance": false
   }
 
-rateLine :: forall r1. { "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> String
+rateLine :: { "Amount (€)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Applicant" :: String, "Payment protection insurance" :: Boolean, "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ], "Term (years)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
 rateLine r = "Interest rate " <> toStringWith (fixed 1) (annualRate r) <> "% p.a."
 
-monthlyLine :: forall r1. { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> String
+monthlyLine :: { "Amount (€)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Applicant" :: String, "Payment protection insurance" :: Boolean, "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ], "Term (years)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
 monthlyLine loan = "Monthly payment " <> monthlyText loan
 
-totalInterestLine :: forall r1. { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> String
+totalInterestLine :: { "Amount (€)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Applicant" :: String, "Payment protection insurance" :: Boolean, "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ], "Term (years)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
 totalInterestLine loan = "Total interest €" <> toStringWith (fixed 2) (totalInterest loan)
 
-appliedLine :: forall r1. { "Applicant" :: String, "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> String
+appliedLine :: { "Amount (€)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Applicant" :: String, "Payment protection insurance" :: Boolean, "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ], "Term (years)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
 appliedLine loan =
   "Application received" <> forApplicant { "Applicant": loan."Applicant" }
     <> ": €" <> toStringWith (fixed 0) loan."Amount (€)".current
@@ -50,7 +50,7 @@ monthlyPayment { "Amount (€)": amount, "Term (years)": years, "Purpose": purpo
 totalInterest :: forall r1. { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> Number
 totalInterest loan = monthlyPayment loan * loan."Term (years)".current * 12.0 - loan."Amount (€)".current
 
-interestShare :: forall r1. { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> Number
+interestShare :: { "Amount (€)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Applicant" :: String, "Payment protection insurance" :: Boolean, "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ], "Term (years)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> Number
 interestShare loan = totalInterest loan / (monthlyPayment loan * loan."Term (years)".current * 12.0)
 
 annualRate :: forall r1. { "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> Number

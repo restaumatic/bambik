@@ -38,7 +38,7 @@ and emitters of a catalogue — are in the design-system module header
 | The app is | Word | Demo | Read |
 | --- | --- | --- | --- |
 | mounted | `body $ …`, imported from the design-system module | every demo | writing.md *App shape* |
-| a model edited and folded | `# mvu freshCount` | counter | writing.md *App shape* |
+| a model edited and folded | `# mvu @( count :: Int ) freshCount`, the model row declared there | counter | writing.md *App shape* |
 | seeded, with no loop of its own | `# with invitation`; `# with {}` | potluck; order-form | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form, crud | writing.md *App shape* |
 | a wizard whose step loops silently | `# folding @"next" @"step" cartStep` | checkout | `Data.Profunctor.Row.RecordToVariant` |
@@ -101,6 +101,7 @@ and emitters of a catalogue — are in the design-system module header
 | two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn` | checkout | `PUI` |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
 | some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
+| a click's replayed row stepped into the record, as a stage | `fold @"Count" increment` | counter (MDC3) | writing.md *Stages* |
 | a button group fed the record it replays | `( RecordToVariant.do … ) # armed` | order-form, espresso-bar, signup-form | writing.md *Stages* |
 | a menu of presets | `menu @"Presets" ( RecordToVariant.do menuItem @"The usual" {} … )` | espresso-bar, inbox | the design-system module |
 
@@ -137,9 +138,8 @@ and emitters of a catalogue — are in the design-system module header
 | You need | Word | Read |
 | --- | --- | --- |
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
-| the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, unknown only at row tails | writing.md *Writing order* |
-| a field no editor binds, no leaf shows verbatim | `state @"count" @Int` at the top of the pipeline; `state @"sender" @String` inside a list item or a pane | counter, inbox | writing.md *Types and values* |
-| a collection's key type | `listOf @"opened" @"id" @Int`, `# foreach @"key" @String proj` | inbox, cells | writing.md *Types and values* |
-| an outcome, payload or trace state type | `# action @[ … ] f` (password-generator), `# with @( amount :: Number ) payload` (cashbox), `# feedback @"top" @Number seed` (auction) | | writing.md *Types and values* |
+| the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, nothing unknown | writing.md *Writing order* |
+| the model row | `# mvu @( … ) seed` (counter, inbox) | writing.md *Types and values* |
+| a derived row, where it is introduced | a classifier's first pane `# shownWhen @l @( … ) f` (checkout), `# action @[ … ] f` (password-generator), `# foreach @k @( … ) proj` (color-mixer), `# with @( … ) payload` (cashbox), `# feedback @l @Number seed` (auction) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

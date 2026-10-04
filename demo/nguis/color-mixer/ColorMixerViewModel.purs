@@ -1,4 +1,4 @@
-module ColorMixerViewModel (mixedColor, applyPreset, duskViolet, hexLine, mixOf, palette, rgb, rgbLine) where
+module ColorMixerViewModel (mixedColor, applyPreset, duskViolet, hexLine, palette, rgb, rgbLine) where
 
 import Prelude ((<>), (<<<), (==), max, min, show)
 
@@ -7,21 +7,21 @@ import Data.Int (hexadecimal, round, toStringAs)
 import Data.Maybe (maybe)
 import Data.String (length, toUpper)
 
-duskViolet :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } }
+duskViolet :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } }
 duskViolet = let m = mix 96.0 64.0 160.0 in { "Red": channelRange m."Red", "Green": channelRange m."Green", "Blue": channelRange m."Blue" }
 
-hexLine :: forall r1. { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> String
+hexLine :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
 hexLine channels = hex (mixOf channels)
 
-rgbLine :: forall r1. { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> String
+rgbLine :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
 rgbLine channels = rgb (mixOf channels)
 
-applyPreset :: forall r1. String -> { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 }
+applyPreset :: String -> { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } }
 applyPreset name channels = maybe channels
   (\p -> channels { "Red" = channels."Red" { current = p.mix."Red" }, "Green" = channels."Green" { current = p.mix."Green" }, "Blue" = channels."Blue" { current = p.mix."Blue" } })
   (find (\p -> p.name == name) palette)
 
-palette :: Array { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } }
+palette :: Array { mix :: { "Blue" :: Number, "Green" :: Number, "Red" :: Number }, name :: String }
 palette =
   [ { name: "White", mix: mix 255.0 255.0 255.0 }
   , { name: "Black", mix: mix 0.0 0.0 0.0 }
@@ -33,7 +33,7 @@ palette =
 mix :: Number -> Number -> Number -> { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
 mix red green blue = { "Red": clampChannel red, "Green": clampChannel green, "Blue": clampChannel blue }
 
-mixedColor :: forall r1. { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> String
+mixedColor :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
 mixedColor = rgb <<< mixOf
 
 mixOf :: forall r1. { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
@@ -47,7 +47,7 @@ channelHex n =
   let digits = toUpper (toStringAs hexadecimal (round (clampChannel n)))
   in if length digits == 1 then "0" <> digits else digits
 
-rgb :: forall r1. { "Red" :: Number, "Green" :: Number, "Blue" :: Number | r1 } -> String
+rgb :: { "Blue" :: Number, "Green" :: Number, "Red" :: Number } -> String
 rgb { "Red": red, "Green": green, "Blue": blue } = "rgb(" <> channel red <> ", " <> channel green <> ", " <> channel blue <> ")"
 
 channel :: Number -> String

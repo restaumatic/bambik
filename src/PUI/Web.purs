@@ -332,7 +332,7 @@ staticHTMLExact html = wrap do
     , fromUser: \prop -> prop {}
     }
 
-staticHTML :: forall in_. String -> PUI Web { | in_ } {}
+staticHTML :: forall r. String -> PUI Web { | r } {}
 staticHTML = unsafeCoerce (staticHTMLExact :: String -> PUI Web {} {})
 
 slotCounter :: Ref.Ref Int
@@ -399,7 +399,7 @@ choice = [ { value: inj (Proxy :: Proxy l) {}, label: reflectSymbol (Proxy :: Pr
 -- | it leaves no option case open for a typed hole to report (guardrails
 -- | L18, the determination half). Option order stays the order written,
 -- | never the row's alphabetical one.
-andChoice :: forall r1 r2 r3. Row.Union r1 r2 r3 => Row.Union r2 r1 r3 => Array { value :: Variant r1, label :: String } -> Array { value :: Variant r2, label :: String } -> Array { value :: Variant r3, label :: String }
+andChoice :: forall v1 v2 v. Row.Union v1 v2 v => Row.Union v2 v1 v => Array { value :: Variant v1, label :: String } -> Array { value :: Variant v2, label :: String } -> Array { value :: Variant v, label :: String }
 andChoice xs ys = map (\o -> o { value = expand o.value }) xs <> map (\o -> o { value = expand o.value }) ys
 
 infixr 5 andChoice as <+>
@@ -413,7 +413,7 @@ infixr 5 andChoice as <+>
 -- | into field `l`. Here the field is the option itself, so the model has a
 -- | choice at all times. Vocabulary plumbing, beside `focusField @l`: every
 -- | plain selector in every vocabulary is its leaf lifted with this.
-selectedAt :: forall @l a rest r. IsSymbol l => Row.Cons l a rest r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
+selectedAt :: forall @l a b r. IsSymbol l => Row.Cons l a b r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
 selectedAt = selectedWith @l Just identity
 
 -- | `selectedAt` for a choice owed but not yet made: field `l` is a variant
@@ -422,14 +422,14 @@ selectedAt = selectedWith @l Just identity
 -- | stores case `c` and there is no way back, so the stages demanding the
 -- | selection adopt the made case. Every `…Unpicked` selector is its leaf
 -- | lifted with this.
-selectedUnpickedAt :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Row.Cons c a b s => Row.Cons l (Variant s) rest r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
+selectedUnpickedAt :: forall @l @c a b1 v b r. IsSymbol l => IsSymbol c => Row.Cons c a b1 v => Row.Cons l (Variant v) b r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
 selectedUnpickedAt = selectedWith @l (prj (Proxy @c)) (map (inj (Proxy @c)))
 
 -- | `selectedAt` for a choice the user may leave unmade: field `l` is a
 -- | variant whose case `c` is the made choice and whose case `n` is none,
 -- | and clearing the widget stores case `n`. Every `…Optional` selector is
 -- | its leaf lifted with this.
-selectedOptionalAt :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Row.Cons c a b s => Row.Cons n {} t s => Row.Cons l (Variant s) rest r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
+selectedOptionalAt :: forall @l @c @n a b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Row.Cons c a b1 v => Row.Cons n {} b2 v => Row.Cons l (Variant v) b r => PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
 selectedOptionalAt = selectedWith @l (prj (Proxy @c)) (Just <<< maybe (inj (Proxy @n) {}) (inj (Proxy @c)))
 
 -- | The clearing gesture of an optional radio group: the platform's radios
@@ -458,7 +458,7 @@ clearedOnRepress selRef members clear = withStructuralEq @a (do
 -- checkedOf: the option the field shows checked; stored: what a pick (`Just`)
 -- or a clear (`Nothing`) stores, if anything; `checkedOf <=< stored` must give
 -- back the pick, so a pick's echo is the pick
-selectedWith :: forall @l f a rest r. IsSymbol l => Row.Cons l f rest r => (f -> Maybe a) -> (Maybe a -> Maybe f) -> PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
+selectedWith :: forall @l f a b r. IsSymbol l => Row.Cons l f b r => (f -> Maybe a) -> (Maybe a -> Maybe f) -> PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
 selectedWith checkedOf stored w = focusField @l $ wrap do
   w' <- unwrap w
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -476,14 +476,14 @@ selectedWith checkedOf stored w = focusField @l $ wrap do
 -- | The **ambient rung** — content that is
 -- | always there: registered at build (its chrome exists before any
 -- | feed), fed the row on every feed, the fed row released always. The
--- | content is fed the whole row; what it reads is its read functions'
--- | open-row footprints (guardrails L18).
+-- | content is fed the whole row; its read functions are typed at that
+-- | row (guardrails L18).
 -- | The sibling of `shownWhen`/`shownEach` whose policy is
 -- | no policy; the rung trails its content like every data concern:
 -- | `(headline6 $ …) # shown`.
 shown
-  :: forall row
-   . PUI Web { | row } {} -> PUI Web { | row } { | row }
+  :: forall r
+   . PUI Web { | r } {} -> PUI Web { | r } { | r }
 shown content = wrap do
   content' <- unwrap content
   -- complete the content's wiring: its only possible emission is the
@@ -491,7 +491,7 @@ shown content = wrap do
   liftEffect $ content'.fromUser \_ -> pure unit
   propRef <- liftEffect $ Ref.new Nothing
   -- the content registers at build (its chrome exists before any feed, like
-  -- every component's); feeding renders the narrow row it reads, then the
+  -- every component's); feeding renders its reading of the fed row, then the
   -- fed row is released — the ambient rung's gate opens instantly
   pure
     { toUser: \row -> do
@@ -510,9 +510,9 @@ shown content = wrap do
 -- | the view can declare every state the pane chooses among
 -- | (`# shownWhen @"serving" @( serving :: { number :: Int }, idle :: {} ) displayOf`).
 shownWhen
-  :: forall @l row a b s
-   . IsSymbol l => Cons l { | a } b s
-  => ({ | row } -> [ | s ]) -> PUI Web { | a } {} -> PUI Web { | row } { | row }
+  :: forall @l @v r r1 b
+   . IsSymbol l => Cons l { | r1 } b v
+  => ({ | r } -> [ | v ]) -> PUI Web { | r1 } {} -> PUI Web { | r } { | r }
 shownWhen f content = shown (attachedOn @l f content)
 
 -- | The **editor pane** — `shownWhen`'s
@@ -530,9 +530,9 @@ shownWhen f content = shown (attachedOn @l f content)
 -- | (`# provided @l paneOf # updated setField` with `setField`
 -- | the identity) — it is a whole-row editor whose existence is gated, and
 -- | its `focusField @l` lift already re-attaches the rest of the row. The
--- | classifier reads a closed narrow row (the row-stating exception:
--- | `fulfillment :: { selected :: [ … ] } -> [ … ]`), exactly as
--- | `shownWhen`'s does. One release per feed either way: attached, the
+-- | classifier is typed at the stage's row — a stored variant read by its
+-- | accessor (`# inCase @"Delivery" _.selected`, order-form) or a business
+-- | function at that row — exactly as `shownWhen`'s is. One release per feed either way: attached, the
 -- | editor's own echo is the release; detached, the wire speaks for the
 -- | absent editor. What the edit does to the rest of the row is a `settled`
 -- | normalization on the same stage when it is a state invariant
@@ -540,9 +540,9 @@ shownWhen f content = shown (attachedOn @l f content)
 -- | Like the other panes, it takes the classifier's variant as a visible
 -- | type argument after the case.
 inCase
-  :: forall @l row a b s
-   . IsSymbol l => Cons l a b s
-  => ({ | row } -> [ | s ]) -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
+  :: forall @l @v r a b
+   . IsSymbol l => Cons l a b v
+  => ({ | r } -> [ | v ]) -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
 inCase f w = wrap do
   { result: pane, ensureAttached, ensureDetached } <- attachable $ unwrap w
   propRef <- liftEffect $ Ref.new Nothing
@@ -567,7 +567,7 @@ inCase f w = wrap do
 -- | Derived: the collection, muted, merged with the wire. Trails its
 -- | item: `(li $ …) # shownEach @l proj`. The element row is a visible type
 -- | argument after the key, so the view can declare what each item is fed.
-shownEach :: forall @l @k row r a o . IsSymbol l => Cons l k r a => ({ | row } -> Array { | a }) -> PUI Web { | a } o -> PUI Web { | row } { | row }
+shownEach :: forall @l @r1 r k b a . IsSymbol l => Cons l k b r1 => ({ | r } -> Array { | r1 }) -> PUI Web { | r1 } a -> PUI Web { | r } { | r }
 shownEach proj item = shown (muted (foreach @l proj item))
 
 -- | Show a string that changes — a readout, a total, a sentence, a name in
@@ -576,10 +576,9 @@ shownEach proj item = shown (muted (foreach @l proj item))
 -- | **Copy is a function, not a field**: the argument is the read — a named
 -- | function from the fields it needs to the words on the screen, living in
 -- | the logic module where it is one pure function and one unit test
--- | (`text progressLineOf`, `text _.title`). The read function's own
--- | signature states the footprint, and the stage that hosts the display
--- | (`shown`/`shownWhen`/`shownEach`) widens it to the fed row, so no call
--- | site coerces. This is why `text` takes no label:
+-- | (`text progressLineOf`, `text _.title`). The read function is typed at
+-- | the row the hosting stage (`shown`/`shownWhen`/`shownEach`) feeds it,
+-- | so no call site coerces. This is why `text` takes no label:
 -- | its content *is* the copy, so there is no field to name and nothing to
 -- | caption — a caption is surrounding chrome (`staticString`, a `label`, a
 -- | column header). A leaf that renders a *number* keeps its label and
@@ -589,13 +588,13 @@ shownEach proj item = shown (muted (foreach @l proj item))
 -- | A whole line is one function, glue included — never several leaves with
 -- | `staticString` between them, and never a formatter in the view.
 -- | doc/research-copy-is-a-function.md is the rationale.
-text :: forall reads. ({ | reads } -> String) -> PUI Web { | reads } {}
+text :: forall r. ({ | r } -> String) -> PUI Web { | r } {}
 text = textLeaf
 
 -- | `text`'s variant-input sibling: a status renders its own payload
 -- | (`textOf eventText`), a `+→×` leaf. Vocabulary-internal — application
 -- | code shows copy with `text`, whose row-shaped read states its footprint.
-textOf :: forall r. ([ | r ] -> String) -> PUI Web [ | r ] {}
+textOf :: forall v. ([ | v ] -> String) -> PUI Web [ | v ] {}
 textOf = textLeaf
 
 textLeaf :: forall a. (a -> String) -> PUI Web a {}
@@ -637,11 +636,11 @@ textLeaf f = wrap do
 -- | pane's message, the glue of a sentence, a formatted value — is a
 -- | *constant*, and lives in a copy function of the logic module
 -- | (`text faultLine`); text that *is* data is `staticString`.
-staticTextExact :: forall @s. IsSymbol s => PUI Web {} {}
-staticTextExact = staticString (reflectSymbol (Proxy @s))
+staticTextExact :: forall @t. IsSymbol t => PUI Web {} {}
+staticTextExact = staticString (reflectSymbol (Proxy @t))
 
-staticText :: forall @s in_. IsSymbol s => PUI Web { | in_ } {}
-staticText = unsafeCoerce (staticTextExact @s :: PUI Web {} {})
+staticText :: forall @t r. IsSymbol t => PUI Web { | r } {}
+staticText = unsafeCoerce (staticTextExact @t :: PUI Web {} {})
 
 -- | Fixed text given as a runtime string — for vocabulary code captioning
 -- | from its configuration, and for closure-known text that is data (a
@@ -662,7 +661,7 @@ staticStringExact content = wrap do
     , fromUser: \prop -> prop {}
     }
 
-staticString :: forall in_. String -> PUI Web { | in_ } {}
+staticString :: forall r. String -> PUI Web { | r } {}
 staticString = unsafeCoerce (staticStringExact :: String -> PUI Web {} {})
 
 -- | Set a fixed attribute on the element being decorated, written infix as
@@ -772,7 +771,7 @@ infixr 10 attrDyn as :=>
 -- | The classifier's variant is a visible type argument after the case, so
 -- | the view can declare every state the pane chooses among
 -- | (`# provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion`).
-provided :: forall @l i a b s o. IsSymbol l => Cons l { | a } b s => ({ | i } -> [ | s ]) -> PUI Web { | a } [ | o ] -> PUI Web { | i } [ | o ]
+provided :: forall @l @v r r1 b v1. IsSymbol l => Cons l { | r1 } b v => ({ | r } -> [ | v ]) -> PUI Web { | r1 } [ | v1 ] -> PUI Web { | r } [ | v1 ]
 provided = attachedOn @l
 
 -- The pane mechanism every pane shares, at any content output: attach and
@@ -780,7 +779,7 @@ provided = attachedOn @l
 -- through its lawful restrictions — `provided` at emitter content, where a
 -- detached pane's silence is `×→+`'s Answer; `shownWhen`, which merges it
 -- with the wire so a display pane answers every feed with the row.
-attachedOn :: forall @l i a b s o. IsSymbol l => Cons l { | a } b s => ({ | i } -> [ | s ]) -> PUI Web { | a } o -> PUI Web { | i } o
+attachedOn :: forall @l @v r r1 b a. IsSymbol l => Cons l { | r1 } b v => ({ | r } -> [ | v ]) -> PUI Web { | r1 } a -> PUI Web { | r } a
 attachedOn f w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
@@ -803,7 +802,7 @@ attachedOn f w = wrap do
 -- | `provided`, which takes the content away with the pane instead of
 -- | leaving it on the page in a different colour. Applies to the last
 -- | element built, not to a group of siblings.
-clWhen :: forall i o. ({ | i } -> Boolean) -> String -> PUI Web { | i } o -> PUI Web { | i } o
+clWhen :: forall r a. ({ | r } -> Boolean) -> String -> PUI Web { | r } a -> PUI Web { | r } a
 clWhen pred name w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -822,7 +821,7 @@ clWhen pred name w = wrap do
 -- | element is created once and restyled in place as values arrive, so
 -- | selection, focus and scrolling survive every update. Pair it with
 -- | `foreach` for a collection whose elements are never torn down.
-attrWith :: forall i o. String -> ({ | i } -> String) -> PUI Web { | i } o -> PUI Web { | i } o
+attrWith :: forall r a. String -> ({ | r } -> String) -> PUI Web { | r } a -> PUI Web { | r } a
 attrWith name valueOf w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -852,7 +851,7 @@ attrWith name valueOf w = wrap do
 -- | held: a feed rewrites the replay slot, and a feed never fires): a click
 -- | emits `f` of the row last fed, as case `l`; before the first feed a
 -- | click emits nothing.
-clicked :: forall @l @k r o s. IsSymbol l => Cons l k () s => ({ | r } -> k) -> PUI Web { | r } o -> PUI Web { | r } [ | s ]
+clicked :: forall @l @k r a v. IsSymbol l => Cons l k () v => ({ | r } -> k) -> PUI Web { | r } a -> PUI Web { | r } [ | v ]
 clicked f w = replaying @l f (occurrences w)
 
 -- The click source `clicked` is built from: each click on the last-built
@@ -864,7 +863,7 @@ clicked f w = replaying @l f (occurrences w)
 -- one fixed case: the business label is `clicked @l`'s to state, and
 -- `replaying @l` relabels while it attaches the row — replay is `Strong`'s
 -- retention, so no source keeps a copy of the row it was shown.
-occurrences :: forall i o. PUI Web i o -> PUI Web i [ occurred :: {} ]
+occurrences :: forall a b. PUI Web a b -> PUI Web a [ occurred :: {} ]
 occurrences w = wrap do
   w' <- unwrap w
   node <- gets _.sibling
@@ -882,7 +881,7 @@ occurrences w = wrap do
 -- | The canvas gesture, where the place clicked *is* the interaction:
 -- | `svg >>> "viewBox" := "0 0 500 300" $ onClickedXY @"picked" $ …`. An event
 -- | source: the point leaves as an occurrence of case `l`.
-onClickedXY :: forall @l i o s. IsSymbol l => Cons l { x :: Number, y :: Number } () s => PUI Web { | i } o -> PUI Web { | i } [ | s ]
+onClickedXY :: forall @l r a v. IsSymbol l => Cons l { x :: Number, y :: Number } () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
 onClickedXY content = wrap do
   w' <- unwrap content
   node <- gets _.parent
@@ -903,7 +902,7 @@ onClickedXY content = wrap do
 -- | move, `foreach` with `text` and `attrWith` updates the same elements in
 -- | place instead — no flicker, nothing losing focus. It owns the element it
 -- | sits in, so give it its own container rather than a shared one.
-foreachWith :: forall a o. (a -> PUI Web {} o) -> PUI Web (Array a) o
+foreachWith :: forall a b. (a -> PUI Web {} b) -> PUI Web (Array a) b
 foreachWith build = wrap do
   parent <- gets _.parent
   propRef <- liftEffect $ Ref.new Nothing
@@ -922,7 +921,7 @@ foreachWith build = wrap do
 -- | redraw when the value changes — the scene whose whole composition
 -- | depends on the data. `div $ dynamic renderSwatch`. Owns the element it
 -- | sits in.
-dynamic :: forall a o. ({ | a } -> PUI Web {} { | o }) -> PUI Web { | a } { | o }
+dynamic :: forall r r1. ({ | r } -> PUI Web {} { | r1 }) -> PUI Web { | r } { | r1 }
 dynamic build = wrap $ unwrap (foreachWith build) <#> \w ->
   { toUser: \value -> w.toUser [ value ], fromUser: w.fromUser }
 
@@ -946,7 +945,7 @@ eachExact items0 build = let items = if isHole items0 then [] else items0 in wra
         Ref.write (Just prop) propRef
     }
 
-each :: forall @a in_. Array a -> (a -> PUI Web {} {}) -> PUI Web { | in_ } {}
+each :: forall @a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } {}
 each = unsafeCoerce (eachExact :: Array a -> (a -> PUI Web {} {}) -> PUI Web {} {})
 
 -- Entry point

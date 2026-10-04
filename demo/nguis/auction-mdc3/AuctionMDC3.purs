@@ -18,4 +18,7 @@ auctionMDC3 =
       ( Semigroupoid.do
         sliderLive @"Your bid ($)" {} # settled raiseTop
         ( headlineSmall $ text topLine ) # shown ) # feedback @"top" @Number noBids
-    ) # mvu openingBid
+    ) # mvu
+      @( "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       )
+      openingBid

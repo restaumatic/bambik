@@ -11,7 +11,7 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 
-openingSetlist :: { "Setlist" :: Array { id :: String, "Title" :: String } }
+openingSetlist :: { "Setlist" :: Array { "Title" :: String, id :: String } }
 openingSetlist =
   { "Setlist":
     [ { id: "t1", "Title": "Track 1" }
@@ -21,16 +21,16 @@ openingSetlist =
     ]
   }
 
-rotateAction :: forall r1. { "Setlist" :: Array { id :: String, "Title" :: String } | r1 } -> Aff (Array { id :: String, "Title" :: String })
+rotateAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff (Array { "Title" :: String, id :: String } )
 rotateAction { "Setlist": tracks } = pure (rotate tracks)
 
-shuffleAction :: forall r1. { "Setlist" :: Array { id :: String, "Title" :: String } | r1 } -> Aff (Array { id :: String, "Title" :: String })
+shuffleAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff (Array { "Title" :: String, id :: String } )
 shuffleAction { "Setlist": tracks } = liftEffect (shuffleOrder tracks)
 
 rotate :: Array { id :: String, "Title" :: String } -> Array { id :: String, "Title" :: String }
 rotate tracks = maybe tracks (\{ head, tail } -> snoc tail head) (uncons tracks)
 
-setOrder :: forall r1. Array { id :: String, "Title" :: String } -> { "Setlist" :: Array { id :: String, "Title" :: String } | r1 } -> { "Setlist" :: Array { id :: String, "Title" :: String } | r1 }
+setOrder :: Array { "Title" :: String, id :: String } -> { "Setlist" :: Array { "Title" :: String, id :: String } } -> { "Setlist" :: Array { "Title" :: String, id :: String } }
 setOrder tracks pl = pl { "Setlist" = tracks }
 
 shuffleOrder :: Array { id :: String, "Title" :: String } -> Effect (Array { id :: String, "Title" :: String })

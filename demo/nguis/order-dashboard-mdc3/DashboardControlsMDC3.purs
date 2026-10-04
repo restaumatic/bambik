@@ -66,7 +66,7 @@ rangePicker provided options =
 percentLine :: Number -> String
 percentLine fraction = show (round (fraction * 100.0)) <> "%"
 
-entryLine :: forall r1. { name :: String, score :: String | r1 } -> String
+entryLine :: { name :: String, score :: String } -> String
 entryLine { name, score } = name <> " — " <> score
 
 tile :: Ocular (PUI Web)

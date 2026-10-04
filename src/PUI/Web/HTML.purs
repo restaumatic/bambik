@@ -100,7 +100,7 @@ import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpicked
 -- | arriving from elsewhere are not written into it, so an update can't
 -- | swallow a half-typed word; the field picks the model up again the
 -- | moment it loses focus.
-input :: forall @l r rest. IsSymbol l => Cons l String rest r => String -> PUI Web { | r } { | r }
+input :: forall @l r b. IsSymbol l => Cons l String b r => String -> PUI Web { | r } { | r }
 input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ wrap do
   -- focus guard: skip the write while the user is in the field, but still
   -- echo — an editor owes every feed its answer (record-echo totality), and
@@ -124,7 +124,7 @@ input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := typ
 -- | The multi-line `input` — same citizenship (label-indexed, `name`
 -- | stamped) and same guarantee: typing is never interrupted by values
 -- | arriving from elsewhere.
-textArea :: forall @l r rest. IsSymbol l => Cons l String rest r => PUI Web { | r } { | r }
+textArea :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
@@ -150,19 +150,19 @@ textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-select :: forall @l a rest r. IsSymbol l => Cons l a rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+select :: forall @l a b r. IsSymbol l => Cons l a b r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
 select options = withStructuralEq @a (selectWith @l false (selectedAt @l) options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c a b s rest r. IsSymbol l => IsSymbol c => Cons c a b s => Cons l [ | s ] rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectUnpicked :: forall @l @c a b1 v b2 r. IsSymbol l => IsSymbol c => Cons c a b1 v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
 selectUnpicked options = withStructuralEq @a (selectWith @l false (selectedUnpickedAt @l @c) options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-selectOptional :: forall @l @c @n a b t s rest r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b s => Cons n {} t s => Cons l [ | s ] rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+selectOptional :: forall @l @c @n a b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
 selectOptional options = withStructuralEq @a (selectWith @l true (selectedOptionalAt @l @c @n) options)
 
 selectWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
@@ -203,7 +203,7 @@ selectWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ 
 -- | is never silently out of range, and a range nobody supplied is a
 -- | compile error rather than a wrong screen. `step` is `.discrete n`
 -- | or `.continuous {}`, named like every other two-state field.
-rangeInput :: forall @l r rest. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } rest r => PUI Web { | r } { | r }
+rangeInput :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
 rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
@@ -263,11 +263,11 @@ progress f = wrap do
 -- | the output is built — `output @"booked" bookedLine` — and
 -- | let the event carry the bare facts.
 output
-  :: forall @l a s
+  :: forall @l a v
    . IsSymbol l
-  => Cons l a () s
+  => Cons l a () v
   => (a -> String)
-  -> PUI Web [ | s ] {}
+  -> PUI Web [ | v ] {}
 output copy = outputFace # forCase @l copy
 
 outputFace :: PUI Web [ event :: String ] {}
@@ -288,7 +288,7 @@ eventText = on (Proxy @"event") identity case_
 -- | on click** until the next value reaches it — so a double tap cannot
 -- | send a request twice, and a button that stays dead is a screen whose
 -- | model never came back.
-button :: forall @l provided r s. IsSymbol l => Cons l { | r } () s => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | s ]
+button :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | v ]
 button provided = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticString config.label)
   -- a click before any value arrived has nothing valid to emit — withheld

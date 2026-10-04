@@ -7,7 +7,7 @@ import Data.Foldable (elem)
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 
-newApplicant :: { "Username" :: String, "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ] }
+newApplicant :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ], "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ], "Username" :: String }
 newApplicant =
   { "Username": ""
   , "Email": ""
@@ -19,7 +19,7 @@ newApplicant =
 usernameSettleTime :: { ms :: Number }
 usernameSettleTime = { ms: 300.0 }
 
-signupLine :: forall r1. { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] | r1 } -> String
+signupLine :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ], "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ], "Username" :: String } -> String
 signupLine applicant = either rejectionLine welcomeLine (validate applicant)
 
 welcomeLine :: String -> String
@@ -46,25 +46,25 @@ validate applicant@{ "Email": email, "Terms": terms } =
     else if declined terms then Left (.termsUnaccepted {})
     else Right username
 
-validation :: forall r1. { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] | r1 } -> [ invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }, ready :: { "Username" :: String } ]
+validation :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ], "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ], "Username" :: String } -> [ invalid :: { reason :: [ badEmail :: {}, taken :: { "Username" :: String }, termsUnaccepted :: {}, unnamed :: {} ] }, ready :: { "Username" :: String } ]
 validation applicant = either (\reason -> .invalid { reason }) (\name -> .ready { "Username": name }) (validate applicant)
 
-invalidLine :: forall r1. { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] | r1 } -> String
+invalidLine :: { reason :: [ badEmail :: {}, taken :: { "Username" :: String }, termsUnaccepted :: {}, unnamed :: {} ] } -> String
 invalidLine { reason } = "⚠ " <> refusalText reason
 
-readyLine :: forall r1. { "Username" :: String | r1 } -> String
+readyLine :: { "Username" :: String } -> String
 readyLine { "Username": username } = "Ready to sign up as " <> username
 
-usernameStatus :: forall r1. { "Username" :: String | r1 } -> [ unnamed :: {}, taken :: { "Username" :: String }, available :: { "Username" :: String } ]
+usernameStatus :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ], "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ], "Username" :: String } -> [ available :: { "Username" :: String }, taken :: { "Username" :: String }, unnamed :: {} ]
 usernameStatus { "Username": username } = case trim username of
   "" -> .unnamed {}
   name | usernameTaken name -> .taken { "Username": name }
   name -> .available { "Username": name }
 
-takenLine :: forall r1. { "Username" :: String | r1 } -> String
+takenLine :: { "Username" :: String } -> String
 takenLine { "Username": username } = "✗ " <> username <> " is already taken"
 
-availableLine :: forall r1. { "Username" :: String | r1 } -> String
+availableLine :: { "Username" :: String } -> String
 availableLine { "Username": username } = "✓ " <> username <> " is available"
 
 usernameTaken :: String -> Boolean
@@ -76,5 +76,5 @@ takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
 declined :: [ accepted :: {}, declined :: {} ] -> Boolean
 declined = match { accepted: const false, declined: const true }
 
-unnamedLine :: forall r1. { | r1 } -> String
+unnamedLine :: {} -> String
 unnamedLine _ = "Pick a username to check its availability"

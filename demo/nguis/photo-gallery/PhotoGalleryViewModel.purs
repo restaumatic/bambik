@@ -13,7 +13,7 @@ import Data.Variant (match)
 landscapesOpen :: { album :: String }
 landscapesOpen = { album: "Landscapes" }
 
-albumTitle :: forall r1. { album :: String | r1 } -> String
+albumTitle :: { album :: String } -> String
 albumTitle { album } = album
 
 albumCatalogue :: Array { name :: String, shots :: Array String }
@@ -39,24 +39,24 @@ albumCatalogue =
     }
   ]
 
-albumChoices :: forall r1. { album :: String | r1 } -> Array { name :: String, state :: [ open :: {}, closed :: {} ] }
+albumChoices :: { album :: String } -> Array { name :: String, state :: [ closed :: {}, open :: {} ] }
 albumChoices { album } = albumCatalogue <#> \a -> { name: a.name, state: if a.name == album then .open {} else .closed {} }
 
-isOpen :: forall r1. { name :: String, state :: [ open :: {}, closed :: {} ] | r1 } -> Boolean
+isOpen :: { name :: String, state :: [ closed :: {}, open :: {} ] } -> Boolean
 isOpen { state } = match { open: \_ -> true, closed: \_ -> false } state
 
-openAlbum :: forall r1. String -> { album :: String | r1 } -> { album :: String | r1 }
+openAlbum :: String -> { album :: String } -> { album :: String }
 openAlbum album gallery = gallery { album = album }
 
-favoriteShots :: Array { src :: String, alt :: String }
+favoriteShots :: Array { alt :: String, src :: String }
 favoriteShots = [ "Dawn Ridge", "Half Smile", "Orbit Study", "Quiet Lake" ] <#> \shot -> developedShot { shot }
 
-albumShots :: forall r1. { album :: String | r1 } -> Array { shot :: String }
+albumShots :: { album :: String } -> Array { shot :: String }
 albumShots { album } =
   maybe [] (\a -> a.shots <#> \shot -> { shot })
     (find (\a -> a.name == album) albumCatalogue)
 
-developedShot :: forall r1. { shot :: String | r1 } -> { src :: String, alt :: String }
+developedShot :: { shot :: String } -> { alt :: String, src :: String }
 developedShot { shot } = { src: developedPhoto shot, alt: shot }
 
 developedPhoto :: String -> String

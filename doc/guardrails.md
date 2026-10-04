@@ -95,8 +95,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   | --- | --- | --- |
   | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes that answer (`shownWhen`, `inCase`), stages |
   | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided` |
-  | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`) |
-  | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers |
+  | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`), one case folded into the record, `fold @l f` |
+  | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
 
   A closed row (`{}`, `[ event :: String ]`) is a row. A word that
   would need two shapes is two words, each lawful at its own: a pane is `provided` for emitters (a detached one's
@@ -154,15 +154,16 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   **nothing** (chrome — statics and oculars write nothing and so name
   nothing; a static's type argument, `staticText @"Hours"`, is its own
   text, known before runtime like every label, not an anchor). A
-  **state leaf** names a field as an editor does (`state @"count" @Int`,
-  2026-10-02: the wire with a `Cons` witness, typing a field no editor
-  binds and no leaf shows verbatim, in the block whose row holds it), and
-  a **type after the anchor** is not a second anchor: a state leaf's or a
-  key's type (`listOf @"opened" @"id" @Int`), a trace state's, an
-  action's outcome, a payload's — one field's or one value's type, never
-  a row. Rows are declared by the lines that run over them, so every
-  typed hole in a view reports every field and case, unknown only at the
-  rows' tails (L18). Every leaf therefore reads as a noun phrase — word, anchor,
+  **declared row** is not an anchor either: a visible row type argument
+  by which a line states a shape the compiler could not otherwise know —
+  the model row on the seed line (`mvu`/`with @( … )`), and a derived
+  row where it is introduced: a classifier's cases on its first pane
+  (`provided`/`shownWhen`/`inCase @l @s`), an action's outcome, a
+  projection's element row (`listOf`/`foreach`/`shownEach @… @r`), a
+  payload, a trace form's state, a bracketed editor's state (2026-10-01
+  on inbox, 2026-10-02 everywhere). It names no field and no case, and
+  with it every typed hole in a view reports a concrete type with nothing
+  unknown (L18). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
@@ -211,8 +212,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 ### L4. The merge law: sharing is open, responsibility is exclusive.
 
 - A shared record input is **one row**: every operand is fed the merge's
-  whole row (an equality), and what it reads is its business functions'
-  open-row footprint (L18). Variant emissions may overlap — a shared
+  whole row (an equality), and its business functions are typed at that
+  row (L18). Variant emissions may overlap — a shared
   variant output is the inclusive union of the operands' cases, so a
   handler missing for one of them is a type error. Variant handling and
   record production MUST be disjoint (responsibility never splits). Runtime evidence appears exactly where responsibility
@@ -557,15 +558,21 @@ code below the UI) are algebra-layer material and exempt by location.
   read. A run that reaches no hole proves what the rule wants: **no data
   reaches logic that is not there**. A user's input stops at the
   knowledge gates (L6), which have nothing to join it with.
-- **No `Union` where a business function states a footprint.** A stage
-  is typed at **one row**: a read function, a handler, a classifier, a
-  normalizer, an action's function all take the row the stage is fed,
-  and a shared record input is an **equality** (every operand is fed the
-  merge's row, L4). What a business function reads is stated by **row
-  polymorphism** in its own signature
-  (`forall r. { count :: Int | r } -> String`): checked by unification,
-  exactly the fields it names by parametricity, and never stuck on a
-  hole, where a `Union small rest big` is. A shared *variant* output
+- **No `Union`: a business function is typed at the stage's row.** A
+  stage is typed at **one row**: a read function, a handler, a
+  classifier, a normalizer, an action's function all take the row the
+  stage is fed, and a shared record input is an **equality** (every
+  operand is fed the merge's row, L4). A business function's signature
+  is that row, **verbatim from the view's hole hint**
+  (`countLine :: { count :: Int } -> String`, 2026-10-03): checked by
+  unification, and never stuck on a hole, where a `Union small rest big`
+  is. Until 2026-10-03 the signature was an open-row footprint,
+  `forall r. { count :: Int | r } -> String`, narrowed by hand from the
+  hint; the hint never suggested the quantifier, so the view did not
+  determine it, and it went. A name two lines call at different rows is
+  generalized to what they share, and only then carries a `forall`;
+  `npm run check-determined` checks every exported signature against its
+  hint. A shared *variant* output
   stays an inclusive union (`SharedVariantOutputs`): which operand emits
   which case is checked, so a view names it (below).
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
@@ -595,33 +602,34 @@ code below the UI) are algebra-layer material and exempt by location.
   once passed `Union r () r` on to every caller — true at every row,
   provable only at a concrete one; with one row per stage no such
   constraint is left, and the lemma that discharged it is deleted.)
-- **The application side** is writing.md's: footprints as open rows,
+- **The application side** is writing.md's: signatures verbatim from the
+  view's hints, the export list exactly the names the views import,
+  a view's own face functions closed at their element row,
   folds as record updates, no editor or selector as a merge operand, each
   action's outcome cases named where the action is, the view handing its
   logic only arguments called on data.
 - **The view determines the view model** (2026-10-01 on inbox, every
   demo 2026-10-02). The rule's converse: a view compiled with a typed
-  hole in place of every value it imports MUST report each hole at a type
-  with **every field and case known, unknown only at the rows' tails** —
-  so the hole list *is* the view model module's signatures with the tails
-  closed (writing.md, *Writing order*), and nothing in that module is
-  designed. **Every row is declared by the lines that run over it, one
-  field per line, and no type parameter is ever a row**: a field is bound
-  by its editor or selector (`<+>` closing an option row), a key by its
-  collection (`listOf`/`foreach`/`shownEach`/`acted`/`edited @l @k`), and
-  a field nothing edits or shows verbatim by a `state @l @t` leaf in the
-  block whose row holds it — the pipeline for the model, the item for an
-  element row, the pane for its payload. What no lines run over is one
-  type where introduced, and these MUST stay the only such parameters:
-  `action @outcome`, a payload (`with`/`toCase`/`clicked @t`), a trace
-  state (`feedback`/`folding`/`unfolding @t`), `reelE @a @c`. A tail is
-  the view model's to close, because a `Cons` bounds a row from below; an
-  unknown anywhere else names a missing declaration, not a design choice.
-  Rejected on the way (2026-10-01/02): the row as a visible type argument
-  on `listOf` and the panes (a row the leaf did not read), then on the
-  seed line (`mvu @model`: one structure per app, element rows restated)
-  — both determined everything and both put a structure in the view. The
-  library-side face is at L3.
+  hole in place of every value it imports MUST report each hole at a
+  concrete type with **nothing unknown** — so the hole list *is* the view
+  model module's signatures (writing.md, *Writing order*) and nothing in
+  that module is designed. What it demands of the library: every word
+  that introduces a row through a function or value argument MUST take
+  that row as a **visible type argument after its anchor** — `mvu`/`with
+  @model`, `action @outcome`, `listOf`/`foreach`/`shownEach`/`acted`/
+  `edited @row`, `dispatched`/`accumulated @key @value`, the panes
+  `provided`/`shownWhen`/`inCase @l @s`, `feedback`/`folding`/`unfolding
+  @state`, `bracketed @variant @state`, `toCase`/`clicked @payload`,
+  `each @element`, `reelE @a @c`; a new word of that kind MUST do the
+  same — and an option list MUST close its row (`choice @"a" <+> choice
+  @"b"`). What it demands of the application: the model row is declared
+  once, on the seed line; a stored variant field is read by accessor on
+  its pane line; a derived row is declared once, where its function
+  first appears (each `?name` is its own hole, so the function's later
+  uses are typed once it is written); a view helper applies one view
+  model function per value. An unknown anywhere names a missing
+  declaration, not a design choice. The library-side face of the
+  declared row is at L3.
 - **Checkable form**: `node scripts/holes.mjs` stubs every demo's view
   model into `.holey/` (gitignored) and builds it under holey.dhall;
   `npm run bundle-demos` runs it, so L15's stack covers this rule
@@ -629,8 +637,9 @@ code below the UI) are algebra-layer material and exempt by location.
   and exercises every control. `npm run check-determined`
   (scripts/check-determined.mjs) compiles every demo's view with a typed
   hole for every imported value into `.determined/` and reads the hole
-  list back, one declaration per compile round, failing on an unknown
-  anywhere but a row's tail or on an error that is not a hole.
+  list back — one declaration per compile round, a first declaration
+  copied to the function's later occurrences — failing on any unknown
+  or on an error that is not a hole.
 - **Rejected (2026-09-30)**, each on a measured branch: shadow `.Holey`
   modules a view imports instead (102 of 102, but a second vocabulary no
   real build checks); leaving read rows and variant outputs free (96 of

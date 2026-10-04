@@ -94,9 +94,9 @@ instance Acting (->) where
 -- | the key field is replaced. The guarantee is derived in the pure
 -- | algebra: the input's key rides around the element on the `Strong`
 -- | state channel (`second`) and is written over each emission
--- | (`Record.set`). What an element reads of its row is its own functions'
--- | open-row footprint (guardrails L18).
-acted :: forall @l @k p ra a rb b . Acting p => Strong p => IsSymbol l => Cons l k ra a => Cons l k rb b => p { | a } { | b } -> p (Array { | a }) (Array { | b })
+-- | (`Record.set`). An element's functions are typed at its row
+-- | (guardrails L18).
+acted :: forall @l @r p k b1 b2 r1 . Acting p => Strong p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
 acted w = withStructuralOrd @k (actedBy (Record.get prox)
   (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.set prox k out) (second w)))
   where
