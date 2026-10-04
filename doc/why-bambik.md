@@ -106,8 +106,9 @@ sit side by side and become one:
   case has exactly one handler), outputs may overlap.
 - `recordToVariant` — ungated broadcast: everyone sees the record, anyone
   may fire an event.
-- `variantToRecord` — gated like `×→×`: a status arrives on one side, the
-  merged output retains what the other side last said.
+- `variantToRecord` — the copairing: each case is dispatched to its one
+  handler, and whatever that handler releases is the whole shared row,
+  forwarded as it comes (2026-10-04; gated like `×→×` before).
 
 Look at the may-overlap/must-be-disjoint pattern for a moment, because it
 is a law, not a coincidence: **sharing is inclusive, responsibility is
@@ -127,7 +128,7 @@ carries exactly two constraints, one per side:
 recordToRecord   : SharedRecordInputs + OwnedRecordOutputs
 recordToVariant  : SharedRecordInputs + SharedVariantOutputs
 variantToVariant : OwnedVariantInputs + SharedVariantOutputs
-variantToRecord  : OwnedVariantInputs + OwnedRecordOutputs
+variantToRecord  : OwnedVariantInputs, one shared output row
 ```
 
 The `Shared` sides need nothing beyond the type-level overlap bookkeeping —
@@ -140,8 +141,8 @@ bundles `MergeableRecords` (reified field names, so the gate can trim each
 emission to exactly its declared row before combining contributions).
 Evidence appears precisely where responsibility does — and the constraint
 count is an honest price sheet: `recordToVariant`, with no owned side, is
-the trivial broadcast; `variantToRecord`, doubly owned, both dispatches
-and gates.
+the trivial broadcast; `variantToRecord`, owned on its input and shared on
+its output, dispatches and forwards.
 
 These merges are what the qualified-do sugar desugars to. A form,
 meanwhile, is editors as successive pipeline stages:

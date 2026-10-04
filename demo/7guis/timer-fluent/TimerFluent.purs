@@ -1,9 +1,11 @@
 module TimerFluent (timerFluent) where
 
-import Prelude (Unit, (#), ($))
+import Prelude ((#), ($), Unit, identity)
 
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (applied, every, mvu)
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI (fold, mvu, replaying, ticks)
 import PUI.Web.Fluent (body, body1, button, progressBar, slider)
 import PUI.Web (shown, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,8 +18,12 @@ timerFluent =
       progressBar @"Elapsed" elapsedFraction # shown
       (body1 $ text progressLine) # shown
       slider @"Duration" {}
-      every tickPeriod tick
-      button @"Reset" {} # applied restarted
+      RecordToVariant.do
+        ticks @"tick" tickPeriod # replaying @"tick" identity
+        button @"Reset" {}
+      VariantToRecord.do
+        fold @"tick" tick
+        fold @"Reset" restarted
     ) # mvu
       @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , elapsed :: Number

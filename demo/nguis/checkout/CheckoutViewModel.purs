@@ -51,8 +51,8 @@ goneOn = match { "Next": identity }
 goneBack :: [ "Back" :: { step :: [ cart :: {}, payment :: {}, shipping :: {} ] } ] -> { step :: [ cart :: {}, payment :: {}, shipping :: {} ] }
 goneBack = match { "Back": identity }
 
-orderPlaced :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ] } -> { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ] }
-orderPlaced order = order { status = .placed {} }
+orderPlaced :: { event :: { card :: String }, model :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } } -> { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ] }
+orderPlaced { model: { item, address, card } } = { item, address, card, status: .placed {} }
 
 orderStatus :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ] } -> [ pending :: {}, placed :: { address :: String, card :: String, item :: String } ]
 orderStatus { item, address, card, status } = match { pending: \_ -> .pending {}, placed: \_ -> .placed { item, address, card } } status

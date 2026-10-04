@@ -402,14 +402,14 @@ ratingDisplay f = wrap do
 -- | the message bar is built — `messageBar @"booked" bookedLine`
 -- | — and let the event carry the bare facts.
 messageBar
-  :: forall @l a v
+  :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
-  -> PUI Web [ | v ] {}
+  -> PUI Web [ | v ] { | r }
 messageBar copy = messageBarFace # forCase @l copy
 
-messageBarFace :: PUI Web [ event :: String ] {}
+messageBarFace :: forall r. PUI Web [ event :: String ] { | r }
 messageBarFace = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $

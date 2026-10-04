@@ -594,8 +594,14 @@ text = textLeaf
 -- | `text`'s variant-input sibling: a status renders its own payload
 -- | (`textOf eventText`), a `+→×` leaf. Vocabulary-internal — application
 -- | code shows copy with `text`, whose row-shaped read states its footprint.
-textOf :: forall v. ([ | v ] -> String) -> PUI Web [ | v ] {}
-textOf = textLeaf
+-- | Unlike the display it renders with, a status **releases nothing**: the
+-- | `+→×` merge forwards every release as the whole shared row, so the
+-- | leaf's `{}` echo is swallowed here and the output is typed at every
+-- | row, as `silence`'s is (2026-10-04).
+textOf :: forall v r. ([ | v ] -> String) -> PUI Web [ | v ] { | r }
+textOf f = wrap do
+  leaf <- unwrap (textLeaf f)
+  pure { toUser: leaf.toUser, fromUser: \_ -> leaf.fromUser \_ -> pure unit }
 
 textLeaf :: forall a. (a -> String) -> PUI Web a {}
 textLeaf f = wrap do

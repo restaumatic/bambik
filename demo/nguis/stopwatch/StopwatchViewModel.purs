@@ -4,7 +4,6 @@ import Prelude ((<>), (+), (<), show)
 
 import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
-import Data.Maybe (Maybe(..))
 import Data.Variant (match)
 
 zeroedStopwatch :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
@@ -16,21 +15,21 @@ elapsedText { elapsedTenths } = formatTime elapsedTenths
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 100.0 }
 
-beginTiming :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-beginTiming sw = sw { phase = .timing {} }
+beginTiming :: { event :: {}, model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } } -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+beginTiming { model: sw } = sw { phase = .timing {} }
 
-haltTiming :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-haltTiming sw = sw { phase = .halted {} }
+haltTiming :: { event :: {}, model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } } -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+haltTiming { model: sw } = sw { phase = .halted {} }
 
-recordLap :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-recordLap sw@{ laps, elapsedTenths } = sw { laps = snoc laps elapsedTenths }
+recordLap :: { event :: {}, model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } } -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+recordLap { model: sw@{ laps, elapsedTenths } } = sw { laps = snoc laps elapsedTenths }
 
-clearStopwatch :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-clearStopwatch sw = sw { elapsedTenths = 0, laps = [] }
+clearStopwatch :: { event :: {}, model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } } -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+clearStopwatch { model: sw } = sw { elapsedTenths = 0, laps = [] }
 
-tick :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> Maybe { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+tick :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
 tick sw@{ phase, elapsedTenths } =
-  match { timing: \_ -> Just (sw { elapsedTenths = elapsedTenths + 1 }), halted: \_ -> Nothing } phase
+  match { timing: \_ -> sw { elapsedTenths = elapsedTenths + 1 }, halted: \_ -> sw } phase
 
 lapRows :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> Array { number :: Int, tenths :: Int }
 lapRows { laps } = mapWithIndex (\i t -> { number: i + 1, tenths: t }) laps

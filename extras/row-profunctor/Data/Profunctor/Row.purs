@@ -161,7 +161,7 @@
 -- |     read a record field / offer a variant case, but each variant case
 -- |     must have exactly one handler and each record field exactly one
 -- |     producer. `MergeableRecords` adds the **runtime-exactness** evidence the
--- |     gated merges use to trim operand emissions to their declared
+-- |     gated merge uses to trim operand emissions to their declared
 -- |     output rows (`exactRow`).
 -- |   * **reshapings** — `dimap`-only structural adapters that grow or
 -- |     shrink one row-typed side, with nothing flowing through the added
@@ -255,14 +255,17 @@
 -- | satisfies the two diagonal merges' laws with none of them.
 -- |
 -- | **How `PUI` discharges them.** Input, law 4's first half: broadcast in
--- | one step at `×`, dispatch to the one owner at `+`. Output: at `×` the
--- | gate `PUI.Gate.gateStep` — retain each side's last contribution,
--- | release their union once every owned side has spoken, once per step;
--- | before that withhold, and **drop** rather than delay (the primed
--- | equivalence, doc §4); at `+` passage — each emission exits as it
--- | occurs, nothing retained. The gate is the one canonical way to pair
--- | two streams into a stream of pairs, so every `(·,×)` shape gates and
--- | no `(·,+)` shape does — the container action's `Array b` included,
+-- | one step at `×`, dispatch to the one owner at `+`. Output: at `×→×`,
+-- | where the operands own fields of one row, the gate `PUI.Gate.gateStep`
+-- | — retain each side's last contribution, release their union once
+-- | every owned side has spoken, once per step; before that withhold, and
+-- | **drop** rather than delay (the primed equivalence, doc §4); at `+→×`,
+-- | where each operand releases the whole shared row, the copairing —
+-- | forward each release as it occurs (2026-10-04; gated before); at `+`
+-- | passage — each emission exits as it occurs, nothing retained. The
+-- | gate is the one canonical way to pair two streams into a stream of
+-- | pairs, so it appears exactly where a row is assembled from several
+-- | operands — the broadcast merge, and the container action's `Array b`,
 -- | gathered by the same machine over the fed keys as labels
 -- | (`Data.Profunctor.Acting`) — and the unit is forced, not designed: a wire
 -- | into the unit object wherever a wire fits (a zero-field side is born
@@ -402,14 +405,14 @@ instance
 -- | object carries only the declared labels: the widening reshapings above
 -- | are coercions, so a UI component that echoes or lens-rebuilds its input emits
 -- | an object runtime-carrying every field of the *merged* row while typed
--- | at its own narrow slice. The gated merges use `exactRow` to trim each
+-- | at its own narrow slice. The gated merge uses `exactRow` to trim each
 -- | operand's emission to its declared output row before the left-biased
 -- | `Record.union`, so stale runtime copies of *sibling* fields can never
 -- | shadow the siblings' genuine contributions.
 exactRow :: forall r rl. RowToList r rl => FieldNames rl r r => { | r } -> { | r }
 exactRow r = Builder.buildFromScratch (fieldNames (Proxy @rl) r)
 
--- | Rows o1 and o2 carry runtime rebuild evidence for the gated merges'
+-- | Rows o1 and o2 carry runtime rebuild evidence for the gated merge's
 -- | exactness trim (`exactRow`). Witness lists: o1l = RowToList o1,
 -- | o2l = RowToList o2 — the `DispatchableVariants` pattern, so the merge
 -- | instances can discharge `exactRow`'s constraints from the givens'
@@ -506,11 +509,12 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- The two axes are therefore independent, and the mechanisms follow both:
 -- the **input** side says whether the obligation exists at all (broadcast
 -- merges have it, dispatch merges do not), the **output** side says what
--- discharges it (a record output gates and retains, so "one thing" also
--- means "whole"; a variant output passes through, so it only means "do
--- not manufacture a second"). `variantToRecord` is the case that separates
--- them: dispatched input, so no broadcast to batch, yet a record output, so
--- it gates and retains exactly like `recordToRecord`.
+-- discharges it (a record output assembled from owned fields gates and
+-- retains, so "one thing" also means "whole"; a variant output passes
+-- through, so it only means "do not manufacture a second").
+-- `variantToRecord` is the case that separates them: dispatched input, so
+-- no broadcast to batch, and a record output each operand releases whole,
+-- so nothing to assemble — it neither gates nor retains (2026-10-04).
 
 -- | A merge's **record-input side**: every operand is fed the merge's whole
 -- | row — the operands' input rows *are* the merge's (an equality, no

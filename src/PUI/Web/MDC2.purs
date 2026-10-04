@@ -178,7 +178,7 @@ import Type.Proxy (Proxy(..))
 --       `+→×` statuses — `snackbar`, `banner` (MD2 still has the banner;
 --         MD3 dropped it, so `PUI.Web.MDC3` has no citizen for it), and
 --         `indeterminateLinearProgress @l`/`indeterminateCircularProgress @l`
---         (`[ started, ended ] → {}` — the run's two occurrences, the shape
+--         (`[ started, ended ] → { | r }` — the run's two occurrences, the shape
 --         `PUI.action`'s progress slot dispatches).
 --     No scalar or polymorphic component interfaces. Variant *editing* has
 --     no `+→+` component citizens: it goes through record-shaped editor
@@ -1061,7 +1061,7 @@ tabBarLeaf options = wrap do
 -- | @"Booking flight" # action submit`). No model owns a "busy" field, so nothing
 -- | here is state; the label is the accessible name, and nothing else — so
 -- | it names the run (`@"Loading order"`), never a generic "busy".
-indeterminateLinearProgress :: forall @l. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] {}
+indeterminateLinearProgress :: forall @l r. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateLinearProgress = wrap do
   _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
   node <- gets _.sibling
@@ -1114,7 +1114,7 @@ linearProgressInnards = RecordToRecord.do
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
 -- | the width would be too much.
-indeterminateCircularProgress :: forall @l. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] {}
+indeterminateCircularProgress :: forall @l r. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateCircularProgress = wrap do
   _ <- unwrap $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
   node <- gets _.sibling
@@ -1372,14 +1372,14 @@ simpleDialog content = wrap do
 -- | and let the event carry the bare facts. Mutually exclusive outcomes are
 -- | sibling snackbars, one per business case.
 snackbar
-  :: forall @l a v
+  :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
-  -> PUI Web [ | v ] {}
+  -> PUI Web [ | v ] { | r }
 snackbar copy = snackbarFace # forCase @l copy
 
-snackbarFace :: PUI Web [ event :: String ] {}
+snackbarFace :: forall r. PUI Web [ event :: String ] { | r }
 snackbarFace = snackbarContainer $ textOf eventText
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
@@ -1401,14 +1401,14 @@ snackbarContainer content =
 -- | Material Design 2 only — MD3 dropped the banner, so `PUI.Web.MDC3` has
 -- | none.
 banner
-  :: forall @l a v
+  :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
-  -> PUI Web [ | v ] {}
+  -> PUI Web [ | v ] { | r }
 banner copy = bannerFace # forCase @l copy
 
-bannerFace :: PUI Web [ event :: String ] {}
+bannerFace :: forall r. PUI Web [ event :: String ] { | r }
 bannerFace = bannerContainer $ textOf eventText
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

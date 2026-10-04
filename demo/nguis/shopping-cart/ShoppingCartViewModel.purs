@@ -24,14 +24,14 @@ productCatalogue _ = map (\product -> { product })
 catalogueLine :: { product :: { name :: String, unitPrice :: Int } } -> String
 catalogueLine { product } = product.name <> " · $" <> formatMoney product.unitPrice
 
-addUnit :: { name :: String, unitPrice :: Int } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
-addUnit product cart@{ order }
+addUnit :: { event :: { name :: String, unitPrice :: Int }, model :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
+addUnit { event: product, model: cart@{ order } }
   | any (\l -> l.product.name == product.name) order =
     cart { order = map (\l -> if l.product.name == product.name then l { quantity = l.quantity + 1 } else l) order }
   | otherwise = cart { order = snoc order { product: { name: product.name, unitPrice: product.unitPrice }, quantity: 1 } }
 
-removeUnit :: String -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
-removeUnit name cart = cart { order = mapMaybe oneFewer cart.order }
+removeUnit :: { event :: String, model :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } } -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
+removeUnit { event: name, model: cart } = cart { order = mapMaybe oneFewer cart.order }
   where
   oneFewer l
     | l.product.name == name = if l.quantity == 1 then Nothing else Just l { quantity = l.quantity - 1 }

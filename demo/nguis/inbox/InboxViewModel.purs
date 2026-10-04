@@ -1,4 +1,4 @@
-module InboxViewModel (mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, inboxZeroLine, openMessage, requestDelete, deleteOpened, keepMessages, composeMessage, sortBySender, sortBySubject, sortUnreadFirst) where
+module InboxViewModel (deletionPane, mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, inboxZeroLine, openMessage, requestDelete, deleteOpened, keepMessages, composeMessage, sortBySender, sortBySubject, sortUnreadFirst) where
 
 import Prelude ((<<<), (<>), (+), (==), comparing, const, map, max, not, show)
 
@@ -39,14 +39,14 @@ fromLine { sender } = "From: " <> sender
 bodyText :: { body :: String, sender :: String, subject :: String } -> String
 bodyText { body } = body
 
-inboxZeroLine :: {} -> String
+inboxZeroLine :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> String
 inboxZeroLine _ = "Inbox zero!"
 
-openMessage :: Int -> { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } }
-openMessage id m@{ messages } = m { messages = map (\g -> if g.id == id then g { status = .open {} } else if isOpen g.status then g { status = .read {} } else g) messages }
+openMessage :: { event :: Int, model :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } } -> { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } }
+openMessage { event: id, model: m@{ messages } } = m { messages = map (\g -> if g.id == id then g { status = .open {} } else if isOpen g.status then g { status = .read {} } else g) messages }
 
-requestDelete :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } }
-requestDelete m@{ messages } = if length messages == 1 then m { deletion = .confirming {} } else deleteOpened m
+requestDelete :: { event :: { body :: String, sender :: String, subject :: String }, model :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } } -> { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } }
+requestDelete { model: m@{ messages } } = if length messages == 1 then m { deletion = .confirming {} } else deleteOpened m
 
 deleteOpened :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } }
 deleteOpened m@{ messages } = m { messages = filter (not <<< isOpen <<< _.status) messages, deletion = .silent {} }
@@ -76,3 +76,6 @@ isOpen = match { unread: const false, read: const false, open: const true }
 
 readRank :: [ unread :: {}, read :: {}, open :: {} ] -> Int
 readRank = match { unread: const 0, read: const 1, open: const 1 }
+
+deletionPane :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> [ confirming :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } }, silent :: {} ]
+deletionPane m = match { confirming: \_ -> .confirming m, silent: \_ -> .silent {} } m.deletion

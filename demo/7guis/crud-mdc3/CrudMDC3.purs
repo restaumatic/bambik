@@ -2,12 +2,12 @@ module CrudMDC3 (crudMDC3) where
 
 import Prelude (Unit, identity, (#), ($))
 
-import CrudViewModel (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleDeleted, personLine, pick, refreshPeople, updatePerson)
+import CrudViewModel (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personLine, pick, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Data.Variant (match)
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, looped, toCase, updated, with)
+import PUI (action, atCase, fold, joined, looped, subChoice, toCase, with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, cardActions, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,14 +21,20 @@ crudMDC3 =
         filledTextField @"Filter prefix (surname)" {}
         filledTextField @"Name" {}
         filledTextField @"Surname" {}
-        listOf @"picked" @"key" @( key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] ) { selected: isSelected } entries (text personLine # shown) # updated (match { picked: pick })
-        ( Semigroupoid.do
+        RecordToVariant.do
+          listOf @"picked" @"key" @( key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] ) { selected: isSelected } entries (text personLine # shown) # joined @"picked"
           cardActions $ RecordToVariant.do
             button @"Create" {}
             button @"Update" {}
             button @"Delete" {}
-          VariantToVariant.do
-            indeterminateLinearProgress @"Creating person" # action @((Array { "Name" :: String, "Surname" :: String })) createPerson # atCase @"Create" # toCase @"created" identity
-            indeterminateLinearProgress @"Updating person" # action @((Array { "Name" :: String, "Surname" :: String })) updatePerson # atCase @"Update" # toCase @"updated" identity
-            indeterminateLinearProgress @"Deleting person" # action @((Array { "Name" :: String, "Surname" :: String })) deletePerson # atCase @"Delete" # toCase @"deleted" identity ) # updated (match { created: refreshPeople, updated: refreshPeople, deleted: peopleDeleted }) ) # looped
+        ( VariantToVariant.do
+          indeterminateLinearProgress @"Creating person" # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } createPerson # atCase @"Create" # toCase @"created" identity
+          indeterminateLinearProgress @"Updating person" # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } updatePerson # atCase @"Update" # toCase @"updated" identity
+          indeterminateLinearProgress @"Deleting person" # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } deletePerson # atCase @"Delete" # toCase @"deleted" identity ) # subChoice
+        VariantToRecord.do
+          fold @"picked" pick
+          fold @"created" identity
+          fold @"updated" identity
+          fold @"deleted" identity
+      ) # looped
     ) # with {}

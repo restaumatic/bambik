@@ -92,16 +92,16 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| a button stepping the model | `button @"Count" {} # applied increment` | counter, todo-list | writing.md *Stages* |
+| a button stepping the model | `button @"Count" {}` and `fold @"Count" increment` | counter, todo-list | writing.md *Stages* |
 | a button with a fixed payload | `button @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
-| an event folded into the model | `# updated (match { claimed: claimCell })` | tic-tac-toe, cashbox | writing.md *Code style* → *Business functions* |
+| an event folded into the model | `fold @"claimed" claimCell`, the loop's folds merged in `VariantToRecord.do` | tic-tac-toe, cashbox | writing.md *Code style* → *Business functions* |
 | a clicked element naming itself | `clicked @"claimed" _.key (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
 | an emitter shown in one state | `# provided @"confirming" _.deletion` | inbox, stopwatch, quiz | writing.md *Conditional visibility* |
 | two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn` | checkout | `PUI` |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
 | some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
-| a click's replayed row stepped into the record, as a stage | `fold @"Count" increment` | counter (MDC3) | writing.md *Stages* |
+| an event carrying something of its own | `listOf @"toggled" … # joined @"toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, stopwatch | writing.md *Stages* |
 | a button group fed the record it replays | `( RecordToVariant.do … ) # armed` | order-form, espresso-bar, signup-form | writing.md *Stages* |
 | a menu of presets | `menu @"Presets" ( RecordToVariant.do menuItem @"The usual" {} … )` | espresso-bar, inbox | the design-system module |
 
@@ -113,7 +113,7 @@ and emitters of a catalogue — are in the design-system module header
 | … with no progress indicator | `blank # action rotateAction # atCase @"Rotate"` | reorder, flight-booker (fluent, bootstrap, html) | writing.md *Stages* |
 | an action at load | `indeterminateLinearProgress @"Loading order" # action loadOrder` | order-form, crud | writing.md *App shape* |
 | an action's outcome named on its line | `# toCase @"created" identity` | crud | writing.md *View module and view model module* |
-| a periodic step | `every tickPeriod tick` | timer, stopwatch, scoreboard | `PUI` |
+| a periodic occurrence | `ticks @"tick" tickPeriod # replaying @"tick" identity` and `fold @"tick" tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
 | narrate an event while passing it on | `snackbar @"charge" retryLine # observed` | payment, inbox | `PUI` |
 | confirm before the flow continues | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox | writing.md *Modals* |

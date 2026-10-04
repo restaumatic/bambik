@@ -4,9 +4,8 @@ import Prelude (const, (#), ($), (<>), (>>>), Unit)
 
 import CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operatorKeys, pressKey, readout)
 import Data.Array (elem)
-import Data.Variant (match)
 import Effect (Effect)
-import PUI (foreach, mvu, updated, with)
+import PUI (fold, foreach, joined, mvu)
 import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body)
@@ -23,7 +22,8 @@ calculatorMDC3 =
           text faultLine # shownWhen @"faulty" @( sound :: { entry :: String }, faulty :: {} ) readout
           text _.entry # shownWhen @"sound" readout
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-        clicked @"entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" @( key :: String ) (const keyPad) ) # with {} # updated (match { entered: pressKey })
+        clicked @"entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" @( key :: String ) (const keyPad) ) # joined @"entered"
+      fold @"entered" pressKey
     ) # mvu
       @( total :: Number
        , operation :: [ pending :: { key :: String }, none :: {} ]

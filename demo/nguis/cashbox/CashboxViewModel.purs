@@ -1,4 +1,4 @@
-module CashboxViewModel (applyDeposit, applyPayout, applyRefund, balanceLine, courierFee, customerDeposit, openedTill, payoutLine, refundLine, standardRefund) where
+module CashboxViewModel (balanceLine, openedTill, payCourier, payoutLine, refundLine, refundStandard, takeDeposit) where
 
 import Prelude ((+), (-), (<>), show)
 
@@ -11,29 +11,29 @@ openedTill = { balance: 200.0 }
 balanceLine :: { balance :: Number } -> String
 balanceLine { balance } = "Till balance: €" <> euros balance
 
-standardRefund :: { amount :: Number }
-standardRefund = { amount: 25.0 }
+refundLine :: { balance :: Number } -> String
+refundLine _ = "Hand €" <> euros standardRefund <> " back to the customer."
 
-courierFee :: { amount :: Number }
-courierFee = { amount: 10.0 }
+payoutLine :: { balance :: Number } -> String
+payoutLine _ = "Hand €" <> euros courierFee <> " to the courier."
 
-customerDeposit :: { amount :: Number }
-customerDeposit = { amount: 50.0 }
+refundStandard :: { balance :: Number } -> { balance :: Number }
+refundStandard till = till { balance = till.balance - standardRefund }
 
-refundLine :: { amount :: Number } -> String
-refundLine { amount } = "Hand €" <> euros amount <> " back to the customer."
+payCourier :: { balance :: Number } -> { balance :: Number }
+payCourier till = till { balance = till.balance - courierFee }
 
-payoutLine :: { amount :: Number } -> String
-payoutLine { amount } = "Hand €" <> euros amount <> " to the courier."
+takeDeposit :: { balance :: Number } -> { balance :: Number }
+takeDeposit till = till { balance = till.balance + customerDeposit }
 
-applyRefund :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-applyRefund { amount } till = till { balance = till.balance - amount }
+standardRefund :: Number
+standardRefund = 25.0
 
-applyPayout :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-applyPayout { amount } till = till { balance = till.balance - amount }
+courierFee :: Number
+courierFee = 10.0
 
-applyDeposit :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-applyDeposit { amount } till = till { balance = till.balance + amount }
+customerDeposit :: Number
+customerDeposit = 50.0
 
 euros :: Number -> String
 euros n = let s = show n in fromMaybe s (stripSuffix (Pattern ".0") s)

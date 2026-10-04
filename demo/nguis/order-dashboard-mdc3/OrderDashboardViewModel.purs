@@ -17,8 +17,8 @@ openingDay = { tick: 0, orders: mapMaybe arrival (range openingTick 0), "Showing
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-ordersArrive :: { "Showing" :: [ "Last 15 min" :: {}, "Last minute" :: {}, "Since open" :: {} ], orders :: Array { at :: Int, dish :: String, id :: Int, total :: Number }, tick :: Int } -> Maybe { "Showing" :: [ "Last 15 min" :: {}, "Last minute" :: {}, "Since open" :: {} ], orders :: Array { at :: Int, dish :: String, id :: Int, total :: Number }, tick :: Int }
-ordersArrive day@{ tick, orders } = Just $ day
+ordersArrive :: { "Showing" :: [ "Last 15 min" :: {}, "Last minute" :: {}, "Since open" :: {} ], orders :: Array { at :: Int, dish :: String, id :: Int, total :: Number }, tick :: Int } -> { "Showing" :: [ "Last 15 min" :: {}, "Last minute" :: {}, "Since open" :: {} ], orders :: Array { at :: Int, dish :: String, id :: Int, total :: Number }, tick :: Int }
+ordersArrive day@{ tick, orders } = day
   { tick = tick + 1
   , orders = case arrival (tick + 1) of
     Just order -> snoc orders order

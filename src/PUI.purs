@@ -33,8 +33,8 @@
 -- | doc/research-copy-is-a-function.md, stated once there.
 -- |
 -- | **The gate is a pure machine.** The knowledge gate every product-shaped
--- | output runs on — the two record-output merges over their owned labels,
--- | the container action's gather over its element keys — is
+-- | output runs on — the `×→×` merge over its owned labels, the container
+-- | action's gather over its element keys — is
 -- | `PUI.Gate.gateStep`, one total step over a small state in a module with
 -- | no `Effect`; `driveGate` below is its whole effectful part (read, step,
 -- | write, act). That separation is what lets the merge laws be checked
@@ -97,7 +97,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself (the `widenRecordInput` precedent, one adopter later).
 import Data.Profunctor.Row.RecordToRecord (asField, blank, bracketed, mvu, subStrong, muted, settled, with) as Adopters
-import Data.Profunctor.Row.RecordToVariant (armed, replaying, silence) as Adopters
+import Data.Profunctor.Row.RecordToVariant (armed, joined, replaying, silence) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: a stage is typed at
 -- one row (the gated displays, `updated`, `applied`, `every`, `settled`,
 -- `armed`, `edited`, `acted`), so a UI component's own row is always stated
@@ -125,7 +125,7 @@ import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (class Contractable, contract, inj, match)
-import Prim.Row (class Cons, class Union)
+import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -518,8 +518,9 @@ instance MonadEffect m => Looping (PUI m) where
       }
 
 -- The four row merges, one instance per shape, in the order of the grid in
--- Data.Profunctor.Row ("The laws"): ×→×, ×→+, +→+, +→×. The
--- two record-output ones share the gate machinery that follows the block.
+-- Data.Profunctor.Row ("The laws"): ×→×, ×→+, +→+, +→×. Only the first
+-- gates — the machinery that follows the block, shared with the container
+-- action; the other three are routing (+→× the copairing since 2026-10-04).
 
 instance MonadEffect m => RecordToRecord (PUI m) where
   recordToRecord p1 p2 = wrap do
@@ -578,27 +579,25 @@ instance Applicative m => VariantToVariant (PUI m) where
       }
 
 instance MonadEffect m => VariantToRecord (PUI m) where
+  -- the copairing: an occurrence is dispatched to the one operand owning
+  -- its case, and whatever either operand releases is the whole row, so it
+  -- is forwarded as it comes — no gate, nothing retained (2026-10-04; until
+  -- then the operands owned output fields and shared the ×→× gate)
   variantToRecord p1 p2 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
-    gate <- liftEffect $ newRecordGate "+→×" labels1 labels2
     pure
-      -- dispatch in, the same gate out — the shape's projection law. The
-      -- step is kept for the one thing dispatch still carries: an operand
-      -- echoing re-entrantly during its own feed is coalesced into one
-      -- release, not released twice
-      { toUser: \v -> steppedRecordFeed Dispatched gate do
+      { toUser: \v -> do
           for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
           for_ (contract v :: Maybe _) \v2 -> p2'.toUser v2
-      , fromUser: gatedRecordOutputs gate exactRow exactRow p1'.fromUser p2'.fromUser
+      , fromUser: \prop -> do
+          p1'.fromUser prop
+          p2'.fromUser prop
       }
-    where
-    labels1 = labelsOf p1
-    labels2 = labelsOf p2
 
--- The gate the two record-output merges and the container action share:
--- the pure machine is `PUI.Gate`; this is its runner, then the record
--- merges' enrolment of their owned labels as its participants (the
+-- The gate the `×→×` merge and the container action share: the pure
+-- machine is `PUI.Gate`; this is its runner, then the record merge's
+-- enrolment of its owned labels as its participants (the
 -- collection's enrolment of its keys is `actedWith`, with the reconciler).
 
 -- | The rendered output labels of an operand, read off its type: a
@@ -689,8 +688,7 @@ newRecordGate shape labels1 labels2 = do
 -- | o1 o2 o` witnessing that the assembled fields are exactly `o`'s.
 gatedRecordOutputs
   :: forall e1 e2 r1 r2 r
-   . Union r1 r2 r
-  => RecordGate
+   . RecordGate
   -> (e1 -> { | r1 })
   -> (e2 -> { | r2 })
   -> ((e1 -> Effect Unit) -> Effect Unit)

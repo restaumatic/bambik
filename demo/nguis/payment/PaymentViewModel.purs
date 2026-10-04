@@ -1,4 +1,4 @@
-module PaymentViewModel (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder) where
+module PaymentViewModel (amountLine, chargeFlaky, retryLine, startCharge, statusLine, unpaidOrder) where
 
 import Prelude (show, (<>), ($), (+), (<), discard, pure)
 
@@ -17,17 +17,17 @@ statusLine { amount, approval } = match
   , approved: \{ attempt } -> "Approved — $" <> show amount <> " charged on attempt " <> show attempt
   } approval
 
-retryLine :: { amount :: Number, attempt :: Int } -> String
-retryLine { attempt } = "Charge declined — retrying (attempt " <> show attempt <> ")"
+retryLine :: { event :: { amount :: Number, attempt :: Int }, model :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } } -> String
+retryLine { event: { attempt } } = "Charge declined — retrying (attempt " <> show attempt <> ")"
 
 startCharge :: [ "Charge card" :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } ] -> { amount :: Number, attempt :: Int }
 startCharge = match { "Charge card": \{ amount } -> { amount, attempt: 0 } }
 
-chargeFlaky :: { amount :: Number, attempt :: Int } -> Aff [ charge :: { amount :: Number, attempt :: Int }, charged :: { attempt :: Int } ]
-chargeFlaky r@{ attempt } = do
+chargeFlaky :: { event :: { amount :: Number, attempt :: Int }, model :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } } -> Aff [ charge :: { event :: { amount :: Number, attempt :: Int }, model :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } }, charged :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } ]
+chargeFlaky r@{ event: { attempt }, model } = do
   delay (Milliseconds 700.0)
   let tried = attempt + 1
-  pure $ if attempt < 2 then .charge { amount: r.amount, attempt: tried } else .charged { attempt: tried }
+  pure $ if attempt < 2 then .charge (r { event = r.event { attempt = tried } }) else .charged (recordCharged { attempt: tried } model)
 
 recordCharged :: { attempt :: Int } -> { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
 recordCharged approved charge = charge { approval = .approved { attempt: approved.attempt } }

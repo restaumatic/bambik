@@ -95,7 +95,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   | --- | --- | --- |
   | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes that answer (`shownWhen`, `inCase`), stages |
   | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided` |
-  | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`), one case folded into the record, `fold @l f` |
+  | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`), the folds `fold @l f` |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
 
   A closed row (`{}`, `[ event :: String ]`) is a row. A word that
@@ -265,9 +265,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   display-side operand unable to starve its siblings, and the
   display-beside-the-wire construction (the gated displays' bodies) a
   derived form rather than a carrier primitive. There is **one gate**:
-  the record merges and the container action's gather run the same pure
-  machine (`PUI.Gate`), the merges enrolling their owned labels as its
-  participants and `acted` the fed keys — so the zero-field clause above
+  the `×→×` merge and the container action's gather run the same pure
+  machine (`PUI.Gate`), the merge enrolling its owned labels as its
+  participants and `acted` the fed keys (the `+→×` merge has none — its
+  operands release the whole shared row, so it is the copairing,
+  2026-10-04) — so the zero-field clause above
   is a consequence of enrolling nothing, the collection's empty law the
   zero-participant release, and a gating rule proved on the step holds
   for both (2026-09-15). A merge whose operands own **no field at all**

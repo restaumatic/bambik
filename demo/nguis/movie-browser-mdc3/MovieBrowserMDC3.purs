@@ -2,10 +2,9 @@ module MovieBrowserMDC3 (movieBrowserMDC3) where
 
 import Prelude ((#), ($), Unit)
 
-import Data.Variant (match)
 import Effect (Effect)
 import MovieBrowserViewModel (favoriteMark, favoritesLine, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
-import PUI (foreach, mvu, toCase, updated)
+import PUI (fold, foreach, joined, mvu, toCase)
 import PUI.Web ((<+>), choice, shown, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
@@ -27,7 +26,8 @@ movieBrowserMDC3 =
           span (text titleLine) # shown
           span (text yearLine) # shown
           span (text ratingLine) # shown
-          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # foreach @"title" @( title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean ) visibleMovies # toCase @"favored" @{ title :: String, "Favorite" :: Boolean } favoriteMark # updated (match { favored: markFavorite })
+          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # foreach @"title" @( title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean ) visibleMovies # toCase @"favored" @{ title :: String, "Favorite" :: Boolean } favoriteMark # joined @"favored"
+      fold @"favored" markFavorite
     ) # mvu
       @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]
        , "Classic" :: Boolean

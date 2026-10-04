@@ -1,11 +1,11 @@
 module TicketDispenserMDC2 (ticketDispenserMDC2) where
 
-import Prelude (Unit, const, identity, (#), ($))
+import Prelude ((#), ($), Unit, identity)
 
 import Data.Profunctor.Row.VariantToRecord (unfolding)
 import Data.Lens.Reel (reelE)
 import Effect (Effect)
-import PUI (mvu, updated)
+import PUI (mvu)
 import PUI.Web (shownWhen, text)
 import PUI.Web.MDC2 (body, body2, button, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,5 +23,5 @@ ticketDispenserMDC2 =
         (text servingLine) # shownWhen @"serving" _.display )
       ( Semigroupoid.do
         button @"Take a number" {}
-        reelE @{ display :: [ waiting :: {}, serving :: { number :: Int } ] } @{ next :: Int } issue nextTicket identity # unfolding @"resume" @"next" @Int firstTicket ) # updated const
+        reelE @{ display :: [ waiting :: {}, serving :: { number :: Int } ] } @{ next :: Int } issue nextTicket identity # unfolding @"resume" @"next" @Int firstTicket )
     ) # mvu @( display :: [ waiting :: {}, serving :: { number :: Int } ] ) emptyQueue

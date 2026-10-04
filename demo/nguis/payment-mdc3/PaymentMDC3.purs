@@ -1,12 +1,11 @@
 module PaymentMDC3 (paymentMDC3) where
 
-import Prelude ((#), ($), Unit)
+import Prelude ((#), ($), Unit, identity)
 
 import Data.Profunctor.Row.VariantToVariant (iterate)
-import Data.Variant (match)
 import Effect (Effect)
-import PaymentViewModel (amountLine, chargeFlaky, recordCharged, retryLine, startCharge, statusLine, unpaidOrder)
-import PUI (action, atCase, mvu, observed, toCase, updated)
+import PaymentViewModel (amountLine, chargeFlaky, retryLine, startCharge, statusLine, unpaidOrder)
+import PUI (action, atCase, fold, joined, mvu, observed, toCase)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, headlineSmall, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,8 +17,9 @@ paymentMDC3 =
       ( headlineSmall $ text amountLine ) # shown
       ( bodyMedium $ text statusLine ) # shown
       ( Semigroupoid.do
-        button @"Charge card" { icon: "credit_card" } # toCase @"charge" @{ amount :: Number, attempt :: Int } startCharge
+        button @"Charge card" { icon: "credit_card" } # toCase @"charge" @{ amount :: Number, attempt :: Int } startCharge # joined @"charge"
         ( Semigroupoid.do
-          indeterminateCircularProgress @"Charging card" # action @[ charged :: { attempt :: Int } , charge :: { amount :: Number, attempt :: Int } ] chargeFlaky # atCase @"charge"
-          snackbar @"charge" retryLine # observed ) # iterate ) # updated (match { charged: recordCharged })
+          indeterminateCircularProgress @"Charging card" # action @[ charged :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }, charge :: { event :: { amount :: Number, attempt :: Int }, model :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } } ] chargeFlaky # atCase @"charge"
+          snackbar @"charge" retryLine # observed ) # iterate )
+      fold @"charged" identity
     ) # mvu @( amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] ) unpaidOrder

@@ -3,6 +3,7 @@ module Test.Main where
 import Prelude
 
 import Data.Array (last, length, nub, uncons, (!!))
+import Data.String as String
 import Data.Either (Either(..))
 import Data.Foldable (foldl, for_)
 import Data.Lens (over, set, view)
@@ -199,6 +200,15 @@ main = do
   assertEqual "fold/retraction"
     (."Count" { count: 5 } :: [ "Count" :: { count :: Int } ])
     ((fold @"Count" identity >>> toCase @"Count" identity identity) (."Count" { count: 5 }))
+  -- two folds of one loop merge at +→×: each releases the whole row, the
+  -- latest contribution winning (the copairing of the coproduct)
+  do
+    outs <- Ref.new ([] :: Array { n :: Int })
+    m <- unwrap (variantToRecord (fold @"A" (\r -> r { n = r.n + 1 })) (fold @"B" (\r -> r { n = r.n * 2 })) :: PUI Effect [ "A" :: { n :: Int }, "B" :: { n :: Int } ] { n :: Int })
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (."A" { n: 1 })
+    m.toUser (."B" { n: 5 })
+    Ref.read outs >>= assertEqual "fold/merge: each fold releases the whole row" [ { n: 2 }, { n: 10 } ]
 
   -- caseText (label-is-copy): caseText (inj @l a) = reflectSymbol (Proxy @l) —
   -- the case label of a variant value, verbatim, whichever case is inhabited.
@@ -315,45 +325,28 @@ main = do
     fire p1Prop (unsafeCoerce { a: 1, b: "stale" } :: { a :: Int })
     Ref.read outs >>= assertEqual "×→× exactness: stale runtime sibling must not shadow" [ { a: 1, b: "fresh" } ]
 
-  -- +→× runtime-exactness: same guarantee on the other gated merge.
+  -- +→× copairing: each operand releases the whole shared row, forwarded
+  -- as it comes — no gate, nothing retained
   do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
     m <- unwrap (variantToRecord
-      (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int })
-      (probe p2Prop :: PUI Effect [ y :: Unit ] { b :: String }))
+      (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int, b :: String })
+      (probe p2Prop :: PUI Effect [ y :: Unit ] { a :: Int, b :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire p2Prop { b: "fresh" }
-    fire p1Prop (unsafeCoerce { a: 4, b: "stale" } :: { a :: Int })
-    Ref.read outs >>= assertEqual "+→× exactness: stale runtime sibling must not shadow" [ { a: 4, b: "fresh" } ]
+    fire p2Prop { a: 0, b: "fresh" }
+    fire p1Prop { a: 4, b: "fresh" }
+    Ref.read outs >>= assertEqual "+→× copairing: releases forwarded whole, in order" [ { a: 0, b: "fresh" }, { a: 4, b: "fresh" } ]
 
   -- +→× unit law: variantToRecord (lcmap case_ identity) g = g.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (variantToRecord (lcmap case_ identity :: PUI Effect (Variant ()) {}) (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }))
+    m <- unwrap (variantToRecord (lcmap case_ identity :: PUI Effect (Variant ()) { a :: Int }) (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 3 }
     Ref.read outs >>= assertEqual "unit law +→×: variantToRecord (lcmap case_ identity) g = g" [ { a: 3 } ]
-
-  -- +→× knowledge-gating: with two non-empty operands, nothing propagates
-  -- until every field of the merged record is known; then each emission
-  -- propagates the complete record.
-  do
-    p1Prop <- Ref.new Nothing
-    p2Prop <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-    m <- unwrap (variantToRecord
-      (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int })
-      (probe p2Prop :: PUI Effect [ y :: Unit ] { b :: String }))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire p1Prop { a: 1 }
-    Ref.read outs >>= assertEqual "+→× gating: incomplete record withheld" []
-    fire p2Prop { b: "s" }
-    Ref.read outs >>= assertEqual "+→× gating: completed record propagates" [ { a: 1, b: "s" } ]
-    fire p1Prop { a: 2 }
-    Ref.read outs >>= assertEqual "+→× gating: later emissions merge with retained side" [ { a: 1, b: "s" }, { a: 2, b: "s" } ]
 
   -- == The trace quartet: each co-strength ties the knot its strength adds. ==
 
@@ -711,7 +704,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (variantToRecord (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }) (lcmap case_ identity :: PUI Effect (Variant ()) {}))
+    m <- unwrap (variantToRecord (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }) (lcmap case_ identity :: PUI Effect (Variant ()) { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 3 }
     Ref.read outs >>= assertEqual "unit law +→×: variantToRecord g (lcmap case_ identity) = g" [ { a: 3 } ]
@@ -1532,23 +1525,23 @@ main = do
     assertEqual "×→× symmetry: boundary streams agree under either operand order" ab ba
     assertEqual "×→× symmetry: the script's stream" [ { a: 1, b: "x" }, { a: 2, b: "x" } ] ab
 
-  -- +→× symmetry: likewise for the doubly-owned merge.
+  -- +→× symmetry: likewise for the copairing.
   do
     let
       run wrapper = do
         p1Prop <- Ref.new Nothing
         p2Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-        m <- unwrap (wrapper (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int }) (probe p2Prop :: PUI Effect [ y :: Unit ] { b :: String }))
+        m <- unwrap (wrapper (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int, b :: String }) (probe p2Prop :: PUI Effect [ y :: Unit ] { a :: Int, b :: String }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-        fire p1Prop { a: 1 } *> fire p2Prop { b: "s" } *> fire p1Prop { a: 2 }
+        fire p1Prop { a: 1, b: "s" } *> fire p2Prop { a: 1, b: "t" } *> fire p1Prop { a: 2, b: "t" }
         Ref.read outs
     ab <- run variantToRecord
     ba <- run \p1 p2 -> variantToRecord p2 p1
     assertEqual "+→× symmetry: boundary streams agree under either operand order" ab ba
-    assertEqual "+→× symmetry: the script's stream" [ { a: 1, b: "s" }, { a: 2, b: "s" } ] ab
+    assertEqual "+→× symmetry: the script's stream" [ { a: 1, b: "s" }, { a: 1, b: "t" }, { a: 2, b: "t" } ] ab
 
-  -- +→× associativity: dispatch and the nested gates agree under both
+  -- +→× associativity: dispatch and forwarding agree under both
   -- groupings.
   do
     let
@@ -1560,12 +1553,12 @@ main = do
         cIns <- Ref.new ([] :: Array [ z :: Int ])
         cProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int, b :: Int, c :: Int })
-        m <- unwrap (grouping (probeIO aIns aProp :: PUI Effect [ x :: Int ] { a :: Int })
-                              (probeIO bIns bProp :: PUI Effect [ y :: Int ] { b :: Int })
-                              (probeIO cIns cProp :: PUI Effect [ z :: Int ] { c :: Int }))
+        m <- unwrap (grouping (probeIO aIns aProp :: PUI Effect [ x :: Int ] { a :: Int, b :: Int, c :: Int })
+                              (probeIO bIns bProp :: PUI Effect [ y :: Int ] { a :: Int, b :: Int, c :: Int })
+                              (probeIO cIns cProp :: PUI Effect [ z :: Int ] { a :: Int, b :: Int, c :: Int }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser (.x 1) *> m.toUser (.y 2) *> m.toUser (.z 3)
-        fire cProp { c: 9 } *> fire aProp { a: 1 } *> fire bProp { b: 2 } *> fire aProp { a: 3 }
+        fire cProp { a: 0, b: 0, c: 9 } *> fire aProp { a: 1, b: 0, c: 9 } *> fire bProp { a: 1, b: 2, c: 9 } *> fire aProp { a: 3, b: 2, c: 9 }
         as <- Ref.read aIns
         bs <- Ref.read bIns
         cs <- Ref.read cIns
@@ -1573,10 +1566,10 @@ main = do
         pure { as, bs, cs, os }
     l <- run \a b c -> variantToRecord (variantToRecord a b) c
     r <- run \a b c -> variantToRecord a (variantToRecord b c)
-    assertEqual "+→× associativity: dispatch and the nested gates agree" l r
+    assertEqual "+→× associativity: dispatch and forwarding agree" l r
     assertEqual "+→× associativity: the script's streams"
       { as: [ .x 1 ], bs: [ .y 2 ], cs: [ .z 3 ]
-      , os: [ { a: 1, b: 2, c: 9 }, { a: 3, b: 2, c: 9 } ] } l
+      , os: [ { a: 0, b: 0, c: 9 }, { a: 1, b: 0, c: 9 }, { a: 1, b: 2, c: 9 }, { a: 3, b: 2, c: 9 } ] } l
 
   -- ×→+ associativity: broadcast and shared exits agree under both
   -- groupings.
@@ -1738,34 +1731,26 @@ main = do
     Ref.read outs >>= assertEqual "one feed, one release: nested merges release once" [ { a: 1, b: 101, c: 1001 } ]
 
   -- == The prediction of §8.0: the feed law belongs to INCLUSIVE input. ==
-  -- == `+→×` has disjoint-row operands and a retaining gate, i.e. every ==
-  -- == ingredient of the torn row EXCEPT a broadcast — and cannot tear. ==
+  -- == `+→×` dispatches each feed to the one operand owning its case and ==
+  -- == forwards whole rows — no broadcast, so nothing can tear.         ==
 
   do
     aIns <- Ref.new ([] :: Array [ l :: Int ])
     aProp <- Ref.new Nothing
     bIns <- Ref.new ([] :: Array [ r :: Int ])
     bProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
+    outs <- Ref.new ([] :: Array { a :: Int })
     m <- unwrap (variantToRecord
       (echoProbe (\v -> { a: match { l: identity } v }) aIns aProp)
-      (echoProbe (\v -> { b: match { r: identity } v }) bIns bProp))
+      (echoProbe (\v -> { a: match { r: (_ * 100) } v }) bIns bProp))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    -- each feed is DISPATCHED: exactly one operand owns the case, so at most
-    -- one contribution arrives per feed and there is nothing to coalesce
     m.toUser (.l 1)
-    Ref.read outs >>= assertEqual "+→× dispatch: one operand owns the case, so the first feed only fills a slot" []
-    m.toUser (.r 100)
-    Ref.read outs >>= assertEqual "+→× dispatch: the second case completes the row, released whole" [ { a: 1, b: 100 } ]
-    -- re-feeding one case emits the fresh field beside the RETAINED sibling —
-    -- correct, not torn: retention is the sibling's current value, and no
-    -- broadcast ever asked it to answer this feed
-    m.toUser (.l 2)
-    Ref.read outs >>= assertEqual "+→× dispatch: a re-fed case releases once, sibling retained (retention is not staleness)"
-      [ { a: 1, b: 100 }, { a: 2, b: 100 } ]
+    Ref.read outs >>= assertEqual "+→× dispatch: one operand owns the case and releases the whole row" [ { a: 1 } ]
+    m.toUser (.r 2)
+    Ref.read outs >>= assertEqual "+→× dispatch: the other case, the other operand, another whole row" [ { a: 1 }, { a: 200 } ]
     aFeeds <- Ref.read aIns
     bFeeds <- Ref.read bIns
-    assertEqual "+→× dispatch: the `l` operand saw only its own cases" 2 (length aFeeds)
+    assertEqual "+→× dispatch: the `l` operand saw only its own cases" 1 (length aFeeds)
     assertEqual "+→× dispatch: the `r` operand saw only its own — no broadcast" 1 (length bFeeds)
 
   -- == Enrichment: composition and the merges are monotone in `⊑`, which is ==
@@ -1863,8 +1848,8 @@ main = do
     assertEqual "monotonicity at +→+: the quieter merge lacks exactly the dropped emission" [ .err "e", .ok 2 ] lower
     assertEqual "monotonicity at +→+: the full merge emits everything" [ .ok 1, .err "e", .ok 2 ] upper
 
-  -- and at +→×, the other gated shape: the quieter fold's first emission is
-  -- gone, so the gate opens one occurrence later and the residuals agree.
+  -- and at +→×, the copairing: the quieter fold's first emission is gone
+  -- and every later release forwards unchanged.
   do
     let
       run q = do
@@ -1872,18 +1857,18 @@ main = do
         aProp <- Ref.new Nothing
         bIns <- Ref.new ([] :: Array [ y :: String ])
         bProp <- Ref.new Nothing
-        outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+        outs <- Ref.new ([] :: Array { a :: Int })
         m <- unwrap (variantToRecord
           (q (echoProbe (match { x: \n -> { a: n } }) aIns aProp :: PUI Effect [ x :: Int ] { a :: Int }))
-          (echoProbe (match { y: \t -> { b: t } }) bIns bProp :: PUI Effect [ y :: String ] { b :: String }))
+          (echoProbe (match { y: \t -> { a: String.length t } }) bIns bProp :: PUI Effect [ y :: String ] { a :: Int }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser (.x 1) *> m.toUser (.y "s") *> m.toUser (.x 2)
         Ref.read outs
     lower <- run quieter
     upper <- run identity
     assertEqual "monotonicity at +→×: p ⊑ p' ⇒ p ⊗ r ⊑ p' ⊗ r" true (isSubsequence lower upper)
-    assertEqual "monotonicity at +→×: the quieter merge opens one occurrence later" [ { a: 2, b: "s" } ] lower
-    assertEqual "monotonicity at +→×: the full merge releases on every whole occurrence" [ { a: 1, b: "s" }, { a: 2, b: "s" } ] upper
+    assertEqual "monotonicity at +→×: the quieter merge misses the first occurrence" [ { a: 1 }, { a: 2 } ] lower
+    assertEqual "monotonicity at +→×: the full merge releases on every whole occurrence" [ { a: 1 }, { a: 1 }, { a: 2 } ] upper
 
   -- == The shape laws (Data.Profunctor.Row, "The laws"): the cells no ==
   -- == earlier probe pins — the component laws at each shape on its own ==
@@ -1949,36 +1934,36 @@ main = do
     m2.toUser (.x 1) *> m2.toUser (.x 1) *> m2.toUser (.y "e")
     Ref.read outs2 >>= assertEqual "repetition +→+: the merge coalesces nothing either" [ .x 1, .x 1, .y "e" ]
 
-  -- No component law at +→×, and the gate's withholding, on the merge of two echo folds and a status beside
-  -- one: nothing at registration, withheld until the knowledge exists,
-  -- released whole on a change, stepped again on a repeated occurrence,
-  -- and a status owes the channel nothing.
+  -- No component law at +→×, on the merge of two echo folds and a status
+  -- beside one: nothing at registration, every occurrence released whole
+  -- at once (the copairing keeps no gate), stepped again on a repeated
+  -- occurrence, and a status owes the channel nothing.
   do
     aIns <- Ref.new ([] :: Array [ x :: Int ])
     aProp <- Ref.new Nothing
     bIns <- Ref.new ([] :: Array [ y :: String ])
     bProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { a :: Int, b :: String })
+    outs <- Ref.new ([] :: Array { a :: Int })
     m <- unwrap (variantToRecord
       (echoProbe (match { x: \n -> { a: n } }) aIns aProp :: PUI Effect [ x :: Int ] { a :: Int })
-      (echoProbe (match { y: \t -> { b: t } }) bIns bProp :: PUI Effect [ y :: String ] { b :: String }))
+      (echoProbe (match { y: \t -> { a: String.length t } }) bIns bProp :: PUI Effect [ y :: String ] { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     Ref.read outs >>= assertEqual "emission +→×: nothing at registration" []
     m.toUser (.x 1)
-    Ref.read outs >>= assertEqual "emission +→×: withheld until the knowledge exists, never partial" []
-    m.toUser (.y "s")
-    Ref.read outs >>= assertEqual "answer +→×: a change releases, whole" [ { a: 1, b: "s" } ]
+    Ref.read outs >>= assertEqual "answer +→×: an occurrence releases the whole row at once" [ { a: 1 } ]
+    m.toUser (.y "ss")
+    Ref.read outs >>= assertEqual "answer +→×: the other owner, another whole row" [ { a: 1 }, { a: 2 } ]
     m.toUser (.x 1)
-    Ref.read outs >>= assertEqual "repetition +→×: twice is two — the fold steps again (release on every occurrence, the permitted choice)" [ { a: 1, b: "s" }, { a: 1, b: "s" } ]
+    Ref.read outs >>= assertEqual "repetition +→×: twice is two — the fold steps again (release on every occurrence, the permitted choice)" [ { a: 1 }, { a: 2 }, { a: 1 } ]
     Ref.read aIns >>= assertEqual "repetition +→×: the owner was stepped twice" [ .x 1, .x 1 ]
     sProp <- Ref.new Nothing
-    outsS <- Ref.new ([] :: Array { b :: String })
+    outsS <- Ref.new ([] :: Array { a :: Int })
     mS <- unwrap (variantToRecord
-      (probe sProp :: PUI Effect [ z :: Unit ] {})
-      (echoProbe (match { y: \t -> { b: t } }) bIns bProp :: PUI Effect [ y :: String ] { b :: String }))
+      (probe sProp :: PUI Effect [ z :: Unit ] { a :: Int })
+      (echoProbe (match { y: \t -> { a: String.length t } }) bIns bProp :: PUI Effect [ y :: String ] { a :: Int }))
     mS.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsS
     mS.toUser (.z unit) *> mS.toUser (.y "s")
-    Ref.read outsS >>= assertEqual "answer +→×: a status beside the fold owes nothing — the fold releases without it" [ { b: "s" } ]
+    Ref.read outsS >>= assertEqual "answer +→×: a status beside the fold owes nothing — the fold releases without it" [ { a: 1 } ]
 
   -- Monoid at ×→+: operand order is not observable at the boundary.
   do
@@ -2081,10 +2066,10 @@ main = do
     ins2 <- Ref.new ([] :: Array [ y :: String ])
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
-    m <- unwrap (variantToRecord (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] { a :: Int }) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] { b :: String }))
+    m <- unwrap (variantToRecord (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] { a :: Int }) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] { a :: Int }))
     m.fromUser \_ -> pure unit
     m.toUser (.x 1) *> m.toUser (.y "b")
-    fire p1Prop { a: 1 } *> fire p2Prop { b: "s" } *> fire p1Prop { a: 2 }
+    fire p1Prop { a: 1 } *> fire p2Prop { a: 3 } *> fire p1Prop { a: 2 }
     Ref.read ins1 >>= assertEqual "projection +→×: an operand is fed only its dispatched cases" [ .x 1 ]
     Ref.read ins2 >>= assertEqual "projection +→×: a sibling's emission never reaches it" [ .y "b" ]
 
@@ -2209,7 +2194,7 @@ main = do
   do
     -- The positive half compiles right here: `disjointOperands` below is the
     -- merge the law is about, and it typechecks. Its negative twin is a type
-    -- error and so cannot be written as a test — `OwnedRecordOutputs` wants
+    -- error and so cannot be written as a test — `OwnedRecordOutputs` (the ×→× merge's) wants
     -- disjoint ownership, while `focusField @l` makes every editor a whole-row
     -- citizen `p { l | rest } { l | rest }` claiming the entire row, so two
     -- editors merged in parallel fail with `Prim.Row.Union` having no

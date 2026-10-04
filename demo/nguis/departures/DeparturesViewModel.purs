@@ -11,8 +11,8 @@ boardOpening = { beat: 0 }
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-tick :: { beat :: Int } -> Maybe { beat :: Int }
-tick { beat } = Just { beat: beat + 1 }
+tick :: { beat :: Int } -> { beat :: Int }
+tick { beat } = { beat: beat + 1 }
 
 arrival :: { beat :: Int } -> { key :: String, value :: { code :: String, status :: String } }
 arrival { beat } =

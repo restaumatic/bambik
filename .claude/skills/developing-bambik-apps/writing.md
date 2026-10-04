@@ -170,13 +170,13 @@ a trailing word that says what it is for:
 | a button that exists in one case | `button @"Start" {…} # provided @"halted" _.phase` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # shownEach @"number" lapRows` | stopwatch |
 | content that waits for the user to confirm | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox |
-| a button stepping the model | `button @"Count" {} # applied increment` | counter |
-| a click's replayed row stepped into the record, as a stage | `fold @"Count" increment` | counter (MDC3) |
-| events folded into the model | `# updated (match { "Start": const beginTiming, … })` | stopwatch |
+| an event folded into the model | `fold @"Add" addTodo`, one per case, merged in `VariantToRecord.do` beside the statuses | todo-list |
+| an event carrying something of its own, joined with the model | `listOf @"toggled" … # joined @"toggled"` | todo-list, cells, inbox |
+| a periodic occurrence | `ticks @"tick" tickPeriod # replaying @"tick" identity` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"°C" {} # settled fromCelsius` | temperature-converter |
-| a periodic step | `every tickPeriod tick` | stopwatch, timer |
 | buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
-| an effect run on a button's case | `indeterminateLinearProgress @"Submitting order" # action submitOrder # atCase @"Submit order"` | order-form |
+| an effect run on a button's case, the other events passing | `indeterminateLinearProgress @"Creating person" # action createPerson # atCase @"Create" … # subChoice` | crud |
+| an effect whose outcome is the model | `indeterminateCircularProgress @"Fetching forecast" # action @{ … } fetchReport # atCase @"requested"` | weather |
 | an effect with no progress indicator | `blank # action rotateAction # atCase @"Rotate"` | reorder |
 
 Content inside `shown`, the panes and `confirmed` must output `{}`. An
@@ -199,15 +199,45 @@ address is edited" is not.
 
 ## App shape
 
-The pipeline ends with its seed: `# mvu seed` for a model that loops
-through its own editors and buttons, `# with seed` for a flow with no
-loop of its own. Both close the app to what `body` accepts; a forgotten
-seed is a compile error at `body` naming the missing fields.
+An app is one loop through the four shapes, tied once by `# mvu seed`:
+
+```purescript
+( Semigroupoid.do
+  headline4 (text countLine) # shown          -- ×→× displays and editors, fed by the loop
+  RecordToVariant.do                          -- ×→+ the event ensemble: every emitter and pane
+    button @"Add" {}
+    listOf @"toggled" … # joined @"toggled"   --   an event with a payload of its own, joined with the model
+  … # action createPerson # atCase @"Create" # subChoice   -- +→+ effects on some events, the rest passing
+  VariantToRecord.do                          -- +→× the folds, one per case, and the statuses
+    fold @"Add" addTodo
+    fold @"toggled" toggleTodo
+    snackbar @"created" createdLine
+) # mvu @( … ) seed
+```
+
+A fold is label-indexed like every other leaf, `fold @l f`, and
+memoryless: a replaying emitter's payload is the row it was fed, an event
+with something of its own arrives `# joined @l` with that row as
+`{ event, model }`, and an effect returns the model. So every handler has
+the model in hand and the loop's memory stays at the emitters and in
+`mvu`. Each fold releases the whole next model, and the `+→×` merge
+forwards each release as it comes — its output row is shared, where the
+`×→×` merge's operands own their fields — while a status beside the folds
+releases nothing and so fits any row. The seed and every later model enter at the top, so everything that
+must be on screen at mount — displays, editors, the list a pick comes
+from — stands before the ensemble; a stage after the fold is fed only by
+events. Editors before the ensemble flow forward only; an editor whose
+edit must reach its siblings keeps its own normalizer (`# settled`,
+temperature-converter) or stands in a loop with no events at all. A
+component whose own wiring feeds one part from another, the drawer, folds
+its pick in place with `updated` (photo-gallery). `# with seed` closes a
+flow with no loop of its own. Both close the app to what `body` accepts; a forgotten seed is a
+compile error at `body` naming the missing fields.
 
 | Shape | Demos |
 | --- | --- |
-| the smallest model-view-update loop | counter |
-| the loop written as three stages, one per shape | counter (MDC3) |
+| the smallest loop: display, button, fold | counter |
+| the loop with each stage's shape spelled out in comments | counter (MDC3) |
 | a load action feeding a looped form, events, actions, statuses | order-form (all four shapes), crud |
 | a loop plus fixed payloads | cashbox, inbox, tic-tac-toe, shopping-cart |
 | a fixed grid or canvas fed as data, updated in place | cells, circle-drawer, tic-tac-toe, calculator |
@@ -539,30 +569,29 @@ text is computed, a chrome line nothing.
   it (`increment m = m { count = m.count + 1 }`), never builds a
   literal.
 - **A preset is a field update**, even one that reads nothing:
-  `beginTiming sw = sw { phase = .timing {} }` (stopwatch),
-  `button @"Reset" {} # applied restarted` (timer). A constant replaces
-  the model only as a whole: `button @"New game" {…} # with
-  openingPosition # updated (match { "New game": const })`
+  `beginTiming { model: sw } = sw { phase = .timing {} }` (stopwatch),
+  `fold @"Reset" restarted` (timer). A constant replaces the model only
+  as a whole, and in a fold: `fold @"New game" (const openingPosition)`
   (tic-tac-toe).
 - **One record per business function.** Records that travel together
   are one row; let field names carry the roles positional arguments
-  lose. The exception is a fold handler, which takes the event's payload
-  and the state separately, each as the view reports it:
+  lose. A fold handler is no exception: a joined event arrives as one
+  record, the payload under `event` and the model under `model`:
 
   ```purescript
-  # updated (match { refunded: applyRefund })
-  applyRefund :: { amount :: Number } -> { balance :: Number } -> { balance :: Number }
-  applyRefund { amount } till = till { balance = till.balance - amount }
+  fold @"toggled" toggleTodo
+  toggleTodo :: { event :: Int, model :: { todos :: …, … } } -> { todos :: …, … }
+  toggleTodo { event: i, model: m@{ todos } } = m { todos = … }
   ```
 
-  A button with no payload of its own, stepping the model it is fed, is
-  `# applied f` (`button @"Add" {} # applied addTodo`); inside a
-  `match`, `const f` ignores the payload (`"Start": const beginTiming`)
-  and `const <<< f` applies `f` to it (espresso-bar's
-  `"The usual": const <<< theUsual`). Scalar and array payloads (a key,
-  a fetched list) are positional. A replaying emitter's payload *is* the
-  row it was fed, so a stage of its own may update it directly:
-  `fold @"Count" increment` (counter, MDC3).
+  A button replaying the row it is fed is handled by the row update
+  itself (`"Add": addTodo`, `addTodo :: model -> model`); an event with
+  a payload of its own is `# joined @l` on its line and handled by one
+  function of one record (`toggleTodo :: { event :: Int, model :: … } ->
+  …`); a fixed payload is baked into its handler (cashbox's
+  `refundStandard`); an effect returns the model (`createPerson :: model
+  -> Aff model`), so its fold is `fold @"created" identity`; a constant
+  replacing the model is `fold @"New game" (const openingPosition)`.
 - **A handler carries no field it does not touch.** Group buttons into
   stages by the fields their handlers touch (circle-drawer keeps undo and
   redo apart from the canvas click). An identity handler means the
@@ -571,8 +600,8 @@ text is computed, a chrome line nothing.
   field; a normalization that loses information is `# settled` on the
   stage (cells' formula field `# settled commit`), never hidden inside
   the component.
-- **Inline a dispatcher.** A named function that only `match`es cases is
-  written inline at the `updated` stage, each branch a named business
+- **No dispatcher.** A function that only `match`es event cases has no
+  place: each case is its own `fold @l f` line, `f` a named business
   function in the view model module.
 
 ### Wiring
@@ -704,9 +733,8 @@ give you while writing:
   every field fresh — never a half-updated row. Business functions read
   consistent state.
 - **Showing state never fires an event.** Feeding a button, a list or a
-  selector the model does not make it emit; only the user does. So
-  `updated`, `applied` and `mvu` can feed emitters freely, and a loop
-  settles instead of spinning.
+  selector the model does not make it emit; only the user does. So the
+  loop can feed its emitters freely, and settles instead of spinning.
 - **Waiting is safe.** Putting a stage that holds things back —
   `confirmed`, `acted`, a debounce — anywhere only delays what flows; it
   never produces a new or inconsistent value.

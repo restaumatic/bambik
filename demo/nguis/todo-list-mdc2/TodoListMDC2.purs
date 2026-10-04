@@ -2,9 +2,10 @@ module TodoListMDC2 (todoListMDC2) where
 
 import Prelude ((#), ($), Unit)
 
-import Data.Variant (match)
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (applied, mvu, updated)
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI (fold, joined, mvu)
 import PUI.Web ((<+>), choice, clWhen, shownWhen, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (body, button, caption, filledTextField, listOf, segmentedButton)
@@ -15,16 +16,19 @@ todoListMDC2 :: Effect Unit
 todoListMDC2 =
   body $
     ( Semigroupoid.do
-      Semigroupoid.do
-        filledTextField @"What needs to be done?" {}
-        button @"Add" {} # applied addTodo
-      listOf @"toggled" @"key" @( key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] ) { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # updated (match { toggled: toggleTodo })
+      filledTextField @"What needs to be done?" {}
       segmentedButton @"Visibility"
         (choice @"All" <+> choice @"Active" <+> choice @"Completed")
-      Semigroupoid.do
-        caption (text soleLine) # shownWhen @"sole" @( sole :: { count :: Int }, several :: { count :: Int } ) remainingItems
-        caption (text severalLine) # shownWhen @"several" remainingItems
-        button @"Clear completed" {} # applied clearCompleted
+      caption (text soleLine) # shownWhen @"sole" @( sole :: { count :: Int }, several :: { count :: Int } ) remainingItems
+      caption (text severalLine) # shownWhen @"several" remainingItems
+      RecordToVariant.do
+        button @"Add" {}
+        listOf @"toggled" @"key" @( key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] ) { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # joined @"toggled"
+        button @"Clear completed" {}
+      VariantToRecord.do
+        fold @"Add" addTodo
+        fold @"toggled" toggleTodo
+        fold @"Clear completed" clearCompleted
     ) # mvu
       @( "What needs to be done?" :: String
        , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }

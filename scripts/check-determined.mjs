@@ -78,7 +78,8 @@ const globs = spawnSync(bin('spago'), ['sources'], { encoding: 'utf8' }).stdout.
 const compile = () => {
   const purs = spawnSync(bin('purs'), ['compile', ...globs, '.determined/src/*.purs', '-o', '.determined/output'],
     { encoding: 'utf8', maxBuffer: 1 << 28 })
-  return (purs.stdout + purs.stderr).split(/^(?=Error \d+ of \d+:|Error found:)/m)
+  // warnings are split off too and dropped: a redundant import in a holed view is not a determination failure
+  return (purs.stdout + purs.stderr).split(/^(?=Error \d+ of \d+:|Error found:|Warning \d+ of \d+:|Warning found:)/m).filter(b => !/^Warning/.test(b))
 }
 const declOf = b => b.match(/in value declaration (\w+)/)?.[1] ?? '?'
 const oneLine = t => t.replace(/\s+/g, ' ').replace(/ ,/g, ',').trim()

@@ -99,9 +99,10 @@ canonical implementation — retain each side's last value, emit on change,
 withhold until both have spoken, and release **once per feed** (a broadcast
 is one step, so the product is computed atomically per moment, never torn).
 That is the knowledge gate, and it appears
-in **every** (·, ×)-monoidal structure (`recordToRecord`,
-`variantToRecord`'s retention) and in none of the (·, +) ones (injections
-need no pairing). The gate is what the product of behaviors costs when
+wherever a product is assembled from several operands (`recordToRecord`;
+`variantToRecord` stopped assembling on 2026-10-04 — its operands release
+whole shared rows, so it is a copairing) and in none of the (·, +) ones
+(injections need no pairing). The gate is what the product of behaviors costs when
 computed over streams — carrier machinery for a universal construction, not
 an ad-hoc feature.
 

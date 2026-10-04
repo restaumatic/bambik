@@ -177,16 +177,17 @@ over retained state):
 | `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | the `{}` wire at the merge's row (`blank` = `lcmap (const {}) identity`); `identity` only at `{}` |
 | `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `replaying`, `first` around a payload-less source, so the replay is `Strong`'s retention and the protocol its primed law; `armed`, `# with payload`) or at quiescence (`resolve`) (law 3) | `silence` |
 | `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is `iterate`'s well-foundedness | `identity`, the forward wire |
-| `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is whole, and the retained state **is** the released state, so a change can never stay private | `lcmap case_ identity`, the never-fed wire |
+| `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is the whole row, one operand's own — a fold's next model — so a change can never stay private; a status releases nothing and is typed at every row | `lcmap case_ identity`, the never-fed wire |
 
 The criterion behind the column: **the output shape decides whether anything
 is owed, the input shape decides how it is discharged.** A record output must
 be whole however its input arrived. With a feed on the input side the
 background is the retained feed and the wire is echo (`focusField @l` re-attaches
-it); with an occurrence there is no feed to re-attach, so the background is
-the retained *contributions* and the wire is retention (`retain` withholds
-until its state channel has a value, `variantToRecord` retains the other
-side's last contribution, `accumulated`/`unfolding` take a seed). A variant
+it); with an occurrence there is no feed to re-attach, so wholeness is each
+operand's own — a fold releases the whole row it computed — and where a
+form carries state across occurrences the wire is retention (`retain`
+withholds until its state channel has a value, `accumulated`/`unfolding`
+take a seed). A variant
 output cannot be re-said, so no echo can be mandated: from a feed it would be
 a fabricated event, forbidden; from an occurrence it is a response,
 permitted. The two off-diagonal "wires", replay and retention, are carrier
@@ -198,13 +199,17 @@ input *is* the state, so an unanswered feed is state hidden from downstream
 and the echo is owed. At `+→×` the input is an occurrence, and whether it
 changes anything is the handler's decision; an occurrence that leaves the
 state unchanged has nothing to say, and by law 1 saying it anyway is a
-no-op. The carrier's policy of releasing on every occurrence once the row is
-whole is therefore a **permitted choice** (made so that no row ever needs
-`Eq`), not the law, and a carrier that released only on change would
-satisfy the same laws. The degenerate case is every status, `[ event ] → {}`:
-state that never changes, each occurrence rendered to the user, nothing to
-the channel — a zero-field contribution is pre-satisfied and inert. The same
-inertness means the `{}`-output displays' per-feed `{}` emission is never
+no-op. A fold's releasing on every occurrence is therefore a **permitted
+choice** (made so that no row ever needs `Eq`), not the law, and a fold
+that released only on change would satisfy the same laws. The merge adds
+nothing of its own: since 2026-10-04 `variantToRecord` is the copairing —
+its operands share one output row, each release is one operand's whole
+row, forwarded as it comes — so there is no gate at this shape and nothing
+is retained. The degenerate case is every status, `[ event ] → { | r }`:
+each occurrence rendered to the user, nothing to the channel, and so typed
+at every row like `silence`. The `{}`-output displays' per-feed `{}`
+emission, by contrast, is a contribution of zero fields — pre-satisfied and
+inert at a gate — and so is never
 awaited by any **gate**: the rung (`shown`) releases the row, not the leaf.
 It is still the display's lawful answer under law 2 (the whole of a `{}`
 output row is `{}`), and *sequencing* may depend on it — `simpleDialog`'s
@@ -479,11 +484,12 @@ The two axes are independent, and `+→×` is the case that separates them:
 **input** inclusivity says whether the obligation exists, **output** shape
 says what discharges it. `variantToRecord` dispatches its input (so it has
 no torn-row hazard — nothing coalesces, at most one operand answers a case)
-yet still gates and retains its output, because a record must be whole
-however its input arrived. Its `steppedFeed` is therefore not discharging a
-broadcast obligation; it is kept for re-entrant coalescing. `variantToVariant`
-has neither side's obligation, which is the structural reason it is the one
-merge needing no gate, no step, and no `MonadEffect`.
+and, since 2026-10-04, releases each operand's whole shared row as it
+comes: a record must be whole however its input arrived, and here each
+operand's release already is, so the merge needs no gate and no step
+(before, its outputs were owned fields and it gated like `×→×`).
+`variantToVariant` has neither side's obligation either; the two dispatched
+merges are the ones needing no gate, no step, and no `MonadEffect`.
 
 ### 8.1 Two sources of tearing
 
@@ -535,8 +541,8 @@ Every product-shaped output the carrier gates runs on one **pure step**,
 (GateState k v) (GateOutput k v)`, in a module that imports no `Effect`. Its
 **participants** are keys, each holding one slot: the gate releases the
 slots in participant order once every participant is known, and retains
-last-known values thereafter. The two record-output merges enrol their
-**owned field labels** as participants and contribute each operand emission
+last-known values thereafter. The `×→×` merge enrols its **owned field
+labels** as participants and contributes each operand emission
 as its labelled fields (a release is assembled back into the row); the
 container action enrols the **fed keys** and contributes each element
 emission as its one slot (a release is the vector). So the gather gate of
@@ -550,13 +556,14 @@ is a single function, `driveGate` in `PUI`: read the state, step, write the
 new state, act on a `Released` vector, hand the output back (a record merge
 arms the starvation guard of the side that spoke on `Withheld`, naming the
 missing fields; the collection traces it; `Quiet` is nothing).
-`recordToRecord`, `variantToRecord` and `acted` differ only in what drives
-the step — a broadcast bracketed by `StepBegun`/`StepEnded`, one dispatched
-operand between the same brackets, or a `Rekeyed` (survivors keep their
-slot, entrants are unknown, leavers are forgotten — knowledge changed, so it
-lands like a contribution) followed by the reconcile between them. The two
-variant-output merges have no state at all: their `toUser`/`fromUser` are
-pure routing (`contract` and sequencing) and hold nothing between events.
+`recordToRecord` and `acted` differ only in what drives the step — a
+broadcast bracketed by `StepBegun`/`StepEnded`, or a `Rekeyed` (survivors
+keep their slot, entrants are unknown, leavers are forgotten — knowledge
+changed, so it lands like a contribution) followed by the reconcile between
+them. The other three merges have no state at all: their `toUser`/`fromUser`
+are pure routing (`contract` and sequencing) and hold nothing between
+events — `variantToRecord` among them since 2026-10-04, when its output row
+became shared and the merge the copairing.
 
 **Data independence with finite control.** No branch of `gateStep` inspects
 a payload: the retained slots are stored and re-emitted, never compared or
@@ -584,7 +591,7 @@ Scripts of length six and eight exhaust them with margin.
 **What is checked** (test/Exhaustive.purs, run from `spago test`, about 50
 seconds): at each of the four shapes, symmetry, associativity, both unit
 laws and `⊑`-monotonicity (a `quieter` operand, minus its first emission);
-at the two record-output shapes, exactness against an operand whose every
+at `×→×`, exactness against an operand whose every
 emission carries a stale runtime copy of the sibling's field, and
 **conformance** — the effectful merge's boundary stream equals the pure
 `gateStep` driven by the same script; at `×→+`, arming (replacing every feed
@@ -633,8 +640,8 @@ common stream, one-feed-one-release (a two-field broadcast releasing once
 with no torn row, a user emission releasing at once, nested merges
 releasing once, the disjoint-operand shape it is reachable from, and §8.0's
 prediction — `+→×` dispatch carrying every ingredient of the torn row except
-a broadcast, and provably not tearing: each operand sees only its own cases,
-a re-fed case releases once beside its retained sibling), `⊑`-monotonicity of `>>>` and `⊗` (the merge at all four shapes), the
+a broadcast, and provably not tearing: each operand sees only its own cases
+and releases its own whole row), `⊑`-monotonicity of `>>>` and `⊗` (the merge at all four shapes), the
 shape laws' remaining cells (Data.Profunctor.Row, "The laws": the component
 laws at each shape on its own wire, replay source or merge —
 `repetition`/`emission`/`answer ×→×`, `×→+`, `+→+`, `+→×`, the `emission`

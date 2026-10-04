@@ -264,13 +264,12 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 ## What to read next
 
 - **counter** — one display reading one function
-  (`headline4 (text countLine) # shown`), one button, one step
-  (`# applied increment`), over a model of `{ count :: Int }`; the MDC3
-  twin writes the step as its own `+→×` stage, `fold @"Count" increment`.
+  (`headline4 (text countLine) # shown`), one button, one fold
+  (`fold @"Count" increment`), over a model of `{ count :: Int }`.
 - **timer** — two displays of different sorts,
   `linearProgress @"Elapsed" elapsedFraction` and `text progressLine`,
-  both computed from the model, neither stored; `every tickPeriod tick`
-  drives it.
+  both computed from the model, neither stored; `ticks @"tick" tickPeriod
+  # replaying @"tick" identity` drives it through `fold @"tick" tick`.
 - **temperature-converter** — two editors kept consistent with
   `# settled fromCelsius` / `# settled fromFahrenheit`.
 - **todo-list** — a selectable list, `listOf @"toggled" @"key"`, a filter

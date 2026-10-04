@@ -1,9 +1,11 @@
 module TimerHTML (timerHTML) where
 
-import Prelude (Unit, (#), ($))
+import Prelude ((#), ($), Unit, identity)
 
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (applied, every, mvu)
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI (fold, mvu, replaying, ticks)
 import PUI.Web (shown, staticText, text)
 import PUI.Web.HTML (body, button, div, label, p, progress, rangeInput)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,8 +19,12 @@ timerHTML =
     p ( label $ Semigroupoid.do
       (staticText @"Duration ") # shown
       rangeInput @"Duration" )
-    every tickPeriod tick
-    button @"Reset" {} # applied restarted
+    RecordToVariant.do
+      ticks @"tick" tickPeriod # replaying @"tick" identity
+      button @"Reset" {}
+    VariantToRecord.do
+      fold @"tick" tick
+      fold @"Reset" restarted
   ) # mvu
     @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
      , elapsed :: Number

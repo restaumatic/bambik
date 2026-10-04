@@ -3,8 +3,10 @@ module TicTacToeMDC3 (ticTacToeMDC3) where
 import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
 import Data.Variant (match)
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (foreach, mvu, updated, with)
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI (fold, foreach, joined, mvu)
 import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, button, headlineSmall)
@@ -18,9 +20,13 @@ ticTacToeMDC3 =
       headlineSmall (text wonLine) # shownWhen @"won" @( won :: { mark :: [ x :: {}, o :: {}, free :: {} ] }, drawn :: {}, toMove :: { mark :: [ x :: {}, o :: {}, free :: {} ] } ) gameOutcome
       headlineSmall (text drawnLine) # shownWhen @"drawn" gameOutcome
       headlineSmall (text toMoveLine) # shownWhen @"toMove" gameOutcome
-      ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-        clicked @"claimed" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" @( key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] ) cells ) ) # updated (match { claimed: claimCell })
-      button @"New game" { icon: "replay" } # with @( board :: Array [ x :: {}, o :: {}, free :: {} ] ) openingPosition # updated (match { "New game": const })
+      RecordToVariant.do
+        ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
+          clicked @"claimed" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" @( key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] ) cells ) ) # joined @"claimed"
+        button @"New game" { icon: "replay" }
+      VariantToRecord.do
+        fold @"claimed" claimCell
+        fold @"New game" (const openingPosition)
     ) # mvu @( board :: Array [ x :: {}, o :: {}, free :: {} ] ) openingPosition
 
 cellFace :: { key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String

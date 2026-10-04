@@ -5,8 +5,8 @@
 -- | everything in it is a total function over a small state.
 -- |
 -- | One machine serves every product-shaped output the carrier gates. Its
--- | **participants** are keys — the owned *field labels* of a record merge
--- | (`recordToRecord`, `variantToRecord`), the element *keys* of the
+-- | **participants** are keys — the owned *field labels* of the record
+-- | merge (`recordToRecord`), the element *keys* of the
 -- | container action (`acted`) — each holding one slot, and the gate
 -- | releases the whole in participant order once every participant is
 -- | known, retaining last-known values thereafter. So the gather gate is

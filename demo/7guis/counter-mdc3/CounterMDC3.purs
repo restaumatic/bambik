@@ -19,9 +19,10 @@ counterMDC3 =
       -- ×→+ record to variant: the emitter. Fed the row, it shows nothing new and emits
       -- nothing; on a click it replays the row it was last fed as the event [ "Count" :: { count } ].
       button @"Count" {}
-      -- +→× variant to record: the fold. Owns the case "Count", applies increment to its
-      -- payload — the row the button was fed, so the model is already in hand — and
-      -- releases the result as the record { count } again.
+      -- +→× variant to record: the fold. Owns the case "Count", whose payload is the row
+      -- the button was fed, so increment has the model in hand and the fold retains nothing,
+      -- releasing the record { count } again. A loop with several events has one such fold
+      -- per case, merged beside its statuses in a VariantToRecord.do block.
       fold @"Count" increment
     -- mvu loops the record released at the bottom back to the top, so the display re-renders
     -- and the button retains the new row for its next click. The model row is declared here,

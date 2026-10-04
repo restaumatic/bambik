@@ -263,14 +263,14 @@ progress f = wrap do
 -- | the output is built — `output @"booked" bookedLine` — and
 -- | let the event carry the bare facts.
 output
-  :: forall @l a v
+  :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
-  -> PUI Web [ | v ] {}
+  -> PUI Web [ | v ] { | r }
 output copy = outputFace # forCase @l copy
 
-outputFace :: PUI Web [ event :: String ] {}
+outputFace :: forall r. PUI Web [ event :: String ] { | r }
 outputFace = el "output" $ textOf eventText
 
 -- the canonical status payload, read into the text leaf as its projection

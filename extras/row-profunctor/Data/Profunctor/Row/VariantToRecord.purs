@@ -12,8 +12,9 @@
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `subRetaining` (a
 -- |     sub-variant, the background wrapped as a field); over `Category`:
--- |     `fold @l f` (one case folding into the record, `f` of its payload —
--- |     the merge pinned at its unit, under `atCase @l`); over the co-strength
+-- |     `fold @l f` (one case folded into the record, `f` of its payload —
+-- |     the merge pinned at its unit, under `atCase @l`; a loop's folds, one
+-- |     per case, merge here beside the statuses); over the co-strength
 -- |     `Coretaining`: `unfolding @w @l` (the productive unfold at row
 -- |     granularity, the `Coreel` optic's row form).
 -- |
@@ -29,51 +30,55 @@
 -- | ## Laws at `+→×`
 -- |
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
--- | a component `w :: p [ | i ] { | o }` is a **fold** of occurrences into
--- | retained state, or at `o = {}` a **status**; the merge is
--- | `m = variantToRecord w1 w2`, inputs owned (`OwnedVariantInputs`),
--- | outputs owned (`OwnedRecordOutputs`).
+-- | a component `w :: p [ | v ] { | r }` is a **fold** of occurrences into
+-- | the record, or a **status**, which releases nothing and so is typed at
+-- | every row like `silence`; the merge is `m = variantToRecord w1 w2`,
+-- | inputs owned (`OwnedVariantInputs`), the output row **shared** — the
+-- | copairing `[f, g] : A + B -> R` of the coproduct (2026-10-04). Each
+-- | operand releases the whole row, so the merge forwards releases as they
+-- | come and keeps no gate; the `×→×` merge, whose operands own fields, is
+-- | the gated one.
 -- |
 -- |   1–2. **Repetition, Answer** — not owed. A variant input is
 -- |      dispatched to one owner and `≈` counts every occurrence: a fold
 -- |      steps on each, a status renders each, and whether an occurrence
 -- |      releases is the fold's; a status owes the channel nothing. What
--- |      is released is a `{ | o }` — whole by type — and before the
--- |      retained state exists a release needing it is withheld, not
--- |      invented, which is why `unfolding`/`accumulated` take a seed.
+-- |      is released is a `{ | r }` — whole by type, the operand's own —
+-- |      and where a release needs retained state (`unfolding`,
+-- |      `accumulated`) it is withheld, not invented, before that state
+-- |      exists, which is why those forms take a seed.
 -- |   3. **Monoid** — unit `lcmap case_ identity :: p (Variant ()) {}`,
 -- |      exact: `variantToRecord (lcmap case_ identity) g = g =
 -- |      variantToRecord g (lcmap case_ identity)`; symmetric and
 -- |      associative up to `≈`. Never fed and owning no field, the unit's
 -- |      side is born spoken, so any silent element of that type serves
--- |      equally (`silence` at `b = ()` is one). The merge pinned at it —
--- |      one case folding into the record — is `fold @l f` (below): `f` of
--- |      the payload under `atCase @l`, exported 2026-10-02 for the
--- |      counter's loop, whose `+→×` stage folds the click back into the
--- |      model row (`fold @"Count" increment`).
+-- |      equally (`silence` at `b = ()` is one). The merge pinned at it is
+-- |      `fold @l f` (below), one case folded into the record
+-- |      (`fold @"Count" increment`, counter); a loop's folds merge here one
+-- |      per case, each releasing the whole next model, the statuses beside
+-- |      them releasing nothing.
 -- |   4. **Projection** — `π_k` is the operand's own cases: an occurrence
 -- |      of case `l` reaches the one operand owning `l` and no other
 -- |      (`DisjointLabels`), and nothing else reaches an operand. `exact`
 -- |      trims: `variantToRecord w1 w2 ≈ variantToRecord (rmap exactRow w1) w2`.
 -- |   5. **Preservation** — vacuous at the input: nothing is owed. What
 -- |      the shape adds is that no torn row is reachable: dispatch feeds
--- |      one owner per occurrence, so a release is one fresh contribution
--- |      beside retained ones — every ingredient of tearing but a
--- |      broadcast.
+-- |      one owner per occurrence and that owner releases a whole row, so
+-- |      nothing is ever assembled from two operands.
 -- |   6. **Monotonicity** — `w1 ⊑ w1'` implies
 -- |      `variantToRecord w1 w2 ⊑ variantToRecord w1' w2`.
 -- |
--- | On `PUI`: dispatch in, gate out — the gate shared with `×→×`
--- | (`PUI.Gate.gateStep`): retain each side's last contribution, release
--- | their union once both owned sides have spoken, withhold before; the
--- | step is kept so a re-entrant echo during an occurrence coalesces into
--- | one release. Releasing on every occurrence once the row is whole is
--- | the carrier's permitted choice (no row needs `Eq`), not a law. A merge
--- | silent once both sides have spoken has an operand that never
--- | releases; one silent before that waits on an owned field's first
--- | occurrence — prime it (`unfolding`'s seed, `seeded`). Probes carry law
--- | and shape in test/Main.purs; 3, 4 and 6 and the gate's conformance to
--- | its pure step run over every script to a bound in test/Exhaustive.purs.
+-- | On `PUI`: dispatch in, passage out — each operand's release exits as
+-- | it occurs, nothing retained, no gate, no step (`Applicative m`
+-- | suffices, as at `+→+`). Until 2026-10-04 the outputs were owned and
+-- | the merge gated like `×→×`; with a loop's folds one per case, each
+-- | releasing the whole next model, the shared row is the honest type and
+-- | the copairing the honest mechanism. Releasing on every occurrence is
+-- | the fold's choice (no row needs `Eq`), not a law. A merge silent on an
+-- | occurrence has an operand that chose not to release — a status, or a
+-- | seeded form before its seed (`unfolding`). Probes carry law and shape
+-- | in test/Main.purs; 3, 4 and 6 run over every script to a bound in
+-- | test/Exhaustive.purs.
 module Data.Profunctor.Row.VariantToRecord
   ( class VariantToRecord
   , variantToRecord
@@ -92,7 +97,7 @@ import Data.Lens.Reel (reelE)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Coretaining (class Coretaining, coretain)
 import Data.Profunctor.Retaining (class Retaining)
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedRecordOutputs, class OwnedVariantInputs, splitVariant)
+import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, splitVariant)
 import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
@@ -105,30 +110,27 @@ import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= VariantToRecord p where
   variantToRecord
-    :: forall i1 i1l i2 i2l o1 o2 i o o1l o2l
-     . OwnedVariantInputs i1 i2 i i1l i2l
-    => OwnedRecordOutputs o1 o2 o o1l o2l
-    => p [ | i1 ] { | o1 }
-    -> p [ | i2 ] { | o2 }
-    -> p [ | i ] { | o }
+    :: forall v1 rl1 v2 rl2 v r
+     . OwnedVariantInputs v1 v2 v rl1 rl2
+    => p [ | v1 ] { | r }
+    -> p [ | v2 ] { | r }
+    -> p [ | v ] { | r }
 
 bind
-  :: forall p v1 rl1 v2 rl2 r1 r2 v r rl3 rl4
+  :: forall p v1 rl1 v2 rl2 v r
    . VariantToRecord p
   => OwnedVariantInputs v1 v2 v rl1 rl2
-  => OwnedRecordOutputs r1 r2 r rl3 rl4
-  => p [ | v1 ] { | r1 }
-  -> (p [ | v1 ] { | r1 } -> p [ | v2 ] { | r2 })
+  => p [ | v1 ] { | r }
+  -> (p [ | v1 ] { | r } -> p [ | v2 ] { | r })
   -> p [ | v ] { | r }
 bind first cont = variantToRecord first (cont first)
 
 discard
-  :: forall p v1 rl1 v2 rl2 r1 r2 v r rl3 rl4
+  :: forall p v1 rl1 v2 rl2 v r
    . VariantToRecord p
   => OwnedVariantInputs v1 v2 v rl1 rl2
-  => OwnedRecordOutputs r1 r2 r rl3 rl4
-  => p [ | v1 ] { | r1 }
-  -> (Unit -> p [ | v2 ] { | r2 })
+  => p [ | v1 ] { | r }
+  -> (Unit -> p [ | v2 ] { | r })
   -> p [ | v ] { | r }
 discard first cont = bind first (\_ -> cont unit)
 
@@ -151,18 +153,22 @@ subRetaining g =
     (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
     g
 
--- | One case folding into the record: the closed singleton `[ l :: a ]`
+-- | One case folded into the record: the closed singleton `[ l :: a ]`
 -- | consumed by `f`, which turns its payload into the row — `atCase @l` of
--- | the function, the `+→×` merge pinned at its unit. The payload of a
--- | replaying emitter *is* the row it was fed, so `f` updates the model it
--- | already holds, and nothing need be retained (counter's
--- | `fold @"Count" increment`; `mvu` around it supplies the loop). Laws on
--- | `(->)`: `fold @l f (inj @l a) = f a`; at `identity` it is the closed
--- | singleton unwrapped to its row, an iso with `toCase @l identity` both
--- | ways — `toCase @l identity identity >>> fold @l identity = identity` on
--- | `{ | r }` and `fold @l identity >>> toCase @l identity identity =
--- | identity` on the singleton. A retaining, seeded `fold` was tried
--- | 2026-10-03/04 and reverted: the payload already carries the model.
+-- | the function, the `+→×` merge pinned at its unit. Label-indexed like
+-- | every leaf (`button @l`, `snackbar @l f`): a loop's folds are one
+-- | `fold @l f` per event case, merged by `VariantToRecord.do` beside the
+-- | statuses, each releasing the whole next model (the merge's output row
+-- | is shared, the copairing). Memoryless: a replaying emitter's
+-- | payload is the row it was fed, an event with something of its own
+-- | arrives `RecordToVariant.joined @l` with that row as `{ event, model }`,
+-- | and an effect returns the model (`fold @"created" identity`), so every
+-- | handler has the model in hand and the loop's memory stays at the
+-- | emitters and in `mvu`. Laws on `(->)`: `fold @l f (inj @l a) = f a`; at
+-- | `identity` it is the closed singleton unwrapped to its row, an iso with
+-- | `toCase @l identity` both ways. A seeded, retaining fold (2026-10-03)
+-- | and a whole-variant `fold (match …)` (2026-10-04) both gave way to
+-- | this form.
 fold
   :: forall @l p a r v
    . IsSymbol l

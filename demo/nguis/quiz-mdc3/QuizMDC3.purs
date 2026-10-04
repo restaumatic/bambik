@@ -2,9 +2,10 @@ module QuizMDC3 (quizMDC3) where
 
 import Prelude ((#), ($), Unit, const)
 
-import Data.Variant (match)
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (mvu, updated)
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI (fold, joined, mvu)
 import PUI.Web (provided, shown, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, headlineMedium, headlineSmall, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,10 +17,14 @@ quizMDC3 =
     ( Semigroupoid.do
       linearProgress @"Progress" quizProgress # shown
       ( bodyLarge $ text questionLine ) # shown
-      ( Semigroupoid.do
-        headlineMedium (text askedPrompt) # shown
-        listOf @"answered" @"key" {} _.choices (text _.label) ) # provided @"asking" @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { correct :: Int } ) quizPhase # updated (match { answered: answer })
-      ( Semigroupoid.do
-        headlineSmall (text finalScoreLine) # shown
-        button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase # updated (match { "Restart": const (const freshQuizRun) })
+      RecordToVariant.do
+        ( Semigroupoid.do
+          headlineMedium (text askedPrompt) # shown
+          listOf @"answered" @"key" {} _.choices (text _.label) ) # provided @"asking" @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { correct :: Int } ) quizPhase # joined @"answered"
+        ( Semigroupoid.do
+          headlineSmall (text finalScoreLine) # shown
+          button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase
+      VariantToRecord.do
+        fold @"answered" answer
+        fold @"Restart" (const freshQuizRun)
     ) # mvu @( question :: Int, correct :: Int ) freshQuizRun

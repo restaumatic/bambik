@@ -318,14 +318,14 @@ progress f = wrap do
 -- | the toast is built — `toast @"applied" appliedLine` — and let
 -- | the event carry the bare facts.
 toast
-  :: forall @l a v
+  :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
-  -> PUI Web [ | v ] {}
+  -> PUI Web [ | v ] { | r }
 toast copy = toastFace # forCase @l copy
 
-toastFace :: PUI Web [ event :: String ] {}
+toastFace :: forall r. PUI Web [ event :: String ] { | r }
 toastFace = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $

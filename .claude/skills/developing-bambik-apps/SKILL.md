@@ -14,7 +14,8 @@ counterMDC2 =
   body $
     ( Semigroupoid.do
       headline4 (text countLine) # shown
-      button @"Count" {} # applied increment
+      button @"Count" {}
+      fold @"Count" increment
     ) # mvu @( count :: Int ) freshCount
 ```
 

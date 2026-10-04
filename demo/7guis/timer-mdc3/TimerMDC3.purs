@@ -1,9 +1,11 @@
 module TimerMDC3 (timerMDC3) where
 
-import Prelude (Unit, (#), ($))
+import Prelude ((#), ($), Unit, identity)
 
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (applied, every, mvu)
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import PUI (fold, mvu, replaying, ticks)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,8 +18,12 @@ timerMDC3 =
       linearProgress @"Elapsed" elapsedFraction # shown
       (bodyLarge $ text progressLine) # shown
       sliderLive @"Duration" {}
-      every tickPeriod tick
-      button @"Reset" { icon: "replay" } # applied restarted
+      RecordToVariant.do
+        ticks @"tick" tickPeriod # replaying @"tick" identity
+        button @"Reset" { icon: "replay" }
+      VariantToRecord.do
+        fold @"tick" tick
+        fold @"Reset" restarted
     ) # mvu
       @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , elapsed :: Number

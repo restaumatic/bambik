@@ -2,12 +2,12 @@ module CashboxMDC3 (cashboxMDC3) where
 
 import Prelude ((#), ($), Unit, identity)
 
-import CashboxViewModel (applyDeposit, applyPayout, applyRefund, balanceLine, courierFee, customerDeposit, openedTill, payoutLine, refundLine, standardRefund)
+import CashboxViewModel (balanceLine, openedTill, payCourier, payoutLine, refundLine, refundStandard, takeDeposit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Data.Variant (match)
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (atCase, mvu, subChoice, toCase, updated, with)
+import PUI (atCase, fold, mvu, subChoice, toCase)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, headlineSmall, confirmed)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,12 +17,15 @@ cashboxMDC3 =
   body $
     ( Semigroupoid.do
       ( headlineSmall $ text balanceLine ) # shown
-      ( Semigroupoid.do
-        RecordToVariant.do
-          button @"Refund a customer" { icon: "undo" } # with @( amount :: Number ) standardRefund
-          button @"Pay the courier" { icon: "local_shipping" } # with @( amount :: Number ) courierFee
-          button @"Take a deposit" { icon: "savings" } # with @( amount :: Number ) customerDeposit
-        ( VariantToVariant.do
-          ( confirmed @"Refund" @"Refund the customer?" $ bodyLarge $ text refundLine ) # atCase @"Refund a customer" # toCase @"refunded" identity
-          ( confirmed @"Pay" @"Pay the courier?" $ bodyLarge $ text payoutLine ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice ) # updated (match { refunded: applyRefund, paidOut: applyPayout, "Take a deposit": applyDeposit })
+      RecordToVariant.do
+        button @"Refund a customer" { icon: "undo" }
+        button @"Pay the courier" { icon: "local_shipping" }
+        button @"Take a deposit" { icon: "savings" }
+      ( VariantToVariant.do
+        ( confirmed @"Refund" @"Refund the customer?" $ bodyLarge $ text refundLine ) # atCase @"Refund a customer" # toCase @"refunded" identity
+        ( confirmed @"Pay" @"Pay the courier?" $ bodyLarge $ text payoutLine ) # atCase @"Pay the courier" # toCase @"paidOut" identity ) # subChoice
+      VariantToRecord.do
+        fold @"refunded" refundStandard
+        fold @"paidOut" payCourier
+        fold @"Take a deposit" takeDeposit
     ) # mvu @( balance :: Number ) openedTill

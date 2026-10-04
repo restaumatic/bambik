@@ -56,8 +56,8 @@ sheetRows m =
 rowLabel :: { cells :: Array { key :: String, status :: [ selected :: {}, unselected :: {} ], text :: String }, rowKey :: String } -> String
 rowLabel { rowKey } = rowKey
 
-selectCell :: String -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
-selectCell key m = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
+selectCell :: { event :: String, model :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } } -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
+selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
 
 commit :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
 commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = match

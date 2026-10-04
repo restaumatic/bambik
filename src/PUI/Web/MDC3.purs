@@ -188,7 +188,7 @@ import Type.Proxy (Proxy(..))
 --       `+→×` statuses — `snackbar` (MD3 dropped the banner from the
 --         catalog, so `banner` has no citizen here) and
 --         `indeterminateLinearProgress @l`/`indeterminateCircularProgress @l`
---         (`[ started, ended ] → {}` — the run's two occurrences, the shape
+--         (`[ started, ended ] → { | r }` — the run's two occurrences, the shape
 --         `PUI.action`'s progress slot dispatches).
 --   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
 --     `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/`dataCell`,
@@ -905,7 +905,7 @@ tabBarLeaf options = wrap do
 -- | @"Booking flight" # action submit`). No model owns a "busy" field, so nothing
 -- | here is state; the label is the accessible name, and nothing else — so
 -- | it names the run (`@"Loading order"`), never a generic "busy".
-indeterminateLinearProgress :: forall @l. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] {}
+indeterminateLinearProgress :: forall @l r. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateLinearProgress = wrap do
   element "md-linear-progress" (pure unit)
   attribute "indeterminate" ""
@@ -953,7 +953,7 @@ linearProgress f = wrap do
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
 -- | the width would be too much.
-indeterminateCircularProgress :: forall @l. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] {}
+indeterminateCircularProgress :: forall @l r. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateCircularProgress = wrap do
   element "md-circular-progress" (pure unit)
   attribute "indeterminate" ""
@@ -1190,14 +1190,14 @@ simpleDialog content =
 -- | let the event carry the bare facts. Mutually exclusive outcomes are
 -- | sibling snackbars, one per business case.
 snackbar
-  :: forall @l a v
+  :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
-  -> PUI Web [ | v ] {}
+  -> PUI Web [ | v ] { | r }
 snackbar copy = snackbarFace # forCase @l copy
 
-snackbarFace :: PUI Web [ event :: String ] {}
+snackbarFace :: forall r. PUI Web [ event :: String ] { | r }
 snackbarFace = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $

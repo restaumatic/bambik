@@ -1,7 +1,7 @@
 -- | Bounded exhaustive checking of the merge laws — every script up to a
 -- | stated length, with a fresh token per event — on the `PUI Effect`
 -- | carrier, and conformance of every effectful gate to the one pure step
--- | (`PUI.Gate`): the two record-output merges over their labels, the
+-- | (`PUI.Gate`): the `×→×` merge over its labels, the
 -- | container action's gather over its keys. Why a bound is a proof here
 -- | and not a sample: doc/observational-semantics.md, "The gate as a Mealy
 -- | machine".
@@ -370,36 +370,28 @@ pureGateRR = do
     }
 
 -- +→×
-vrA :: Effect (Op (Variant (x :: Int)) { a :: Int })
-vrA = foldOp (match { x: \n -> { a: n } }) \n -> { a: n }
+-- every operand releases the one shared row — the copairing's codomain
+vrA :: Effect (Op (Variant (x :: Int)) { v :: Int })
+vrA = foldOp (match { x: \n -> { v: n } }) \n -> { v: n }
 
-vrB :: Effect (Op (Variant (y :: Int)) { b :: Int })
-vrB = foldOp (match { y: \n -> { b: n } }) \n -> { b: n }
+vrB :: Effect (Op (Variant (y :: Int)) { v :: Int })
+vrB = foldOp (match { y: \n -> { v: n + 100 } }) \n -> { v: n + 100 }
 
-vrC :: Effect (Op (Variant (z :: Int)) { c :: Int })
-vrC = foldOp (match { z: \n -> { c: n } }) \n -> { c: n }
+vrC :: Effect (Op (Variant (z :: Int)) { v :: Int })
+vrC = foldOp (match { z: \n -> { v: n + 200 } }) \n -> { v: n + 200 }
 
-vrTwo :: (PUI Effect (Variant (x :: Int)) { a :: Int } -> PUI Effect (Variant (y :: Int)) { b :: Int } -> PUI Effect (Variant (x :: Int, y :: Int)) { a :: Int, b :: Int }) -> Effect Rig
+vrTwo :: (PUI Effect (Variant (x :: Int)) { v :: Int } -> PUI Effect (Variant (y :: Int)) { v :: Int } -> PUI Effect (Variant (x :: Int, y :: Int)) { v :: Int }) -> Effect Rig
 vrTwo merge = do
   a <- vrA
   b <- vrB
   rig case2 (merge a.p b.p) [ a.fire, b.fire ]
 
-vrThree :: (PUI Effect (Variant (x :: Int)) { a :: Int } -> PUI Effect (Variant (y :: Int)) { b :: Int } -> PUI Effect (Variant (z :: Int)) { c :: Int } -> PUI Effect (Variant (x :: Int, y :: Int, z :: Int)) { a :: Int, b :: Int, c :: Int }) -> Effect Rig
+vrThree :: (PUI Effect (Variant (x :: Int)) { v :: Int } -> PUI Effect (Variant (y :: Int)) { v :: Int } -> PUI Effect (Variant (z :: Int)) { v :: Int } -> PUI Effect (Variant (x :: Int, y :: Int, z :: Int)) { v :: Int }) -> Effect Rig
 vrThree merge = do
   a <- vrA
   b <- vrB
   c <- vrC
   rig case3 (merge a.p b.p c.p) [ a.fire, b.fire, c.fire ]
-
-pureGateVR :: Effect Rig
-pureGateVR = do
-  g <- pureRecordGate
-  pure
-    { feed: \_ n -> g.step StepBegun *> (if n `mod` 2 == 0 then g.step (Contributed [ Tuple "a" n ]) else g.step (Contributed [ Tuple "b" n ])) *> g.step (StepEnded Dispatched)
-    , fires: [ \n -> g.step (Contributed [ Tuple "a" n ]), \n -> g.step (Contributed [ Tuple "b" n ]) ]
-    , outs: g.outs
-    }
 
 -- ×→+
 rvA :: Effect (Op { s :: Int } (Variant (x :: Int)))
@@ -564,7 +556,7 @@ unitRR = lcmap (const {}) identity
 unitVV :: PUI Effect (Variant ()) (Variant ())
 unitVV = identity
 
-unitVR :: PUI Effect (Variant ()) {}
+unitVR :: forall r. PUI Effect (Variant ()) { | r }
 unitVR = lcmap case_ identity
 
 unitRV :: forall r. PUI Effect { | r } (Variant ())
@@ -606,20 +598,12 @@ laws =
     , left: vrTwo \a b -> variantToRecord (variantToRecord unitVR a) b, right: vrTwo variantToRecord }
   , { name: "+→× right unit", alphabet: evAlphabet, len: two, rel: Equal
     , left: vrTwo \a b -> variantToRecord (variantToRecord a unitVR) b, right: vrTwo variantToRecord }
-  , { name: "+→× exactness", alphabet: evAlphabet, len: two, rel: Equal
-    , left: do
-        a <- foldOp (match { x: fatA }) fatA
-        b <- vrB
-        rig case2 (variantToRecord a.p b.p) [ a.fire, b.fire ]
-    , right: vrTwo variantToRecord }
   , { name: "+→× monotonicity", alphabet: evAlphabet, len: two, rel: Refines
     , left: do
         a <- vrA >>= quieter
         b <- vrB
         rig case2 (variantToRecord a.p b.p) [ a.fire, b.fire ]
     , right: vrTwo variantToRecord }
-  , { name: "+→× conformance to PUI.Gate", alphabet: evAlphabet, len: two, rel: Equal
-    , left: vrTwo variantToRecord, right: pureGateVR }
   -- ×→+
   , { name: "×→+ symmetry", alphabet: evAlphabet, len: two, rel: Equal
     , left: rvTwo recordToVariant, right: rvTwo \a b -> recordToVariant b a }

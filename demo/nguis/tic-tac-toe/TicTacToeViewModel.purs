@@ -27,8 +27,8 @@ cellMark { mark } = markText { mark }
 markText :: forall r1. { mark :: [ x :: {}, o :: {}, free :: {} ] | r1 } -> String
 markText { mark } = match { x: \_ -> "X", o: \_ -> "O", free: \_ -> "" } mark
 
-claimCell :: String -> { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> { board :: Array [ free :: {}, o :: {}, x :: {} ] }
-claimCell key game@{ board } = case fromString key of
+claimCell :: { event :: String, model :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } } -> { board :: Array [ free :: {}, o :: {}, x :: {} ] }
+claimCell { event: key, model: game@{ board } } = case fromString key of
   Just i | index board i == Just (.free {}) && isNothing (winningLine board) ->
     game { board = fromMaybe board (updateAt i (playerToMove board) board) }
   _ -> game

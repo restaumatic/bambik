@@ -1,4 +1,4 @@
-module WeatherViewModel (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, servedLine, temperatureLine, warsawBulletin) where
+module WeatherViewModel (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, servedLine, temperatureLine, warsawBulletin) where
 
 import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (<>), (==))
 
@@ -54,10 +54,10 @@ firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == 
 unknownTerritory :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport :: { city :: String, sample :: Int } -> Aff [ reportServed :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number } } ]
-fetchReport { city, sample } = do
+fetchReport :: { event :: { city :: String, sample :: Int }, model :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } } -> Aff { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int }
+fetchReport { event: { city, sample }, model: forecast } = do
   delay (Milliseconds serviceDelay.ms)
-  pure (.reportServed { report: conditionsFor city sample })
+  pure (rememberReport { report: conditionsFor city sample } forecast)
 
 rememberReport :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number } } -> { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int }
 rememberReport { report } forecast = forecast { report = report, servedReports = forecast.servedReports + 1 }

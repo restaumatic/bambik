@@ -13,7 +13,8 @@
 -- |   * **free functions** — over the strength: `subResolving` (a
 -- |     sub-record, the background escaping as a case); over `Strong`:
 -- |     `replaying @l` (replay as `Strong`'s retention); over bare
--- |     `Profunctor`: the emit stage `armed`; over the co-strength
+-- |     `Profunctor`: the emit stage `armed`; over `Strong`: `joined @l` (an
+-- |     event joined with the row its emitter was fed); over the co-strength
 -- |     `Coresolving`: `folding @w @l` (the terminating fold at row
 -- |     granularity, its state one field `l` labelled on the view line —
 -- |     the `Coshutter` optic's row form).
@@ -89,6 +90,7 @@ module Data.Profunctor.Row.RecordToVariant
   , recordToVariant
   , silence
   , armed
+  , joined
   , bind
   , discard
   , subResolving
@@ -97,6 +99,7 @@ module Data.Profunctor.Row.RecordToVariant
   )
   where
 
+import Control.Category (identity)
 import Control.Semigroupoid ((>>>))
 import Data.Either (Either(..), either)
 import Data.Lens.Shutter (shutterE)
@@ -109,7 +112,7 @@ import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (expand, inj, on)
+import Data.Variant (case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
 import Record.Unsafe (unsafeSet)
@@ -172,6 +175,26 @@ replaying
   -> p { | r } [ | v1 ]
   -> p { | r } [ | v ]
 replaying f src = dimap (\r -> Tuple (unsafeCoerce r) r) (\(Tuple _ r) -> inj (Proxy @l) (f r)) (first src)
+
+-- | An event joined with the row its emitter was fed: the `×→+` stage's
+-- | `Strong` retention, exposed. `first` around the source — the fed row
+-- | rides the state channel and leaves beside each occurrence's payload as
+-- | one record, `{ event, model }`, under the same case. So a list pick, a
+-- | canvas click or a tick reaches the fold with the model in hand, and its
+-- | handler is one function of one record (`listOf … # joined @"toggled"`,
+-- | `fold (match { toggled: toggleTodo })` with `toggleTodo :: { event ::
+-- | Int, model :: { … } } -> { … }`, todo-list). `replaying @l f` is the
+-- | degenerate case where the occurrence carries nothing of its own
+-- | (2026-10-04).
+joined
+  :: forall @l p r a v v1
+   . Strong p
+  => IsSymbol l
+  => Cons l a () v
+  => Cons l { event :: a, model :: { | r } } () v1
+  => p { | r } [ | v ]
+  -> p { | r } [ | v1 ]
+joined src = dimap (\r -> Tuple r r) (\(Tuple e r) -> inj (Proxy @l) { event: on (Proxy @l) identity case_ e, model: r }) (first src)
 
 -- | Mark an event ensemble as fed the row its emitters replay.
 -- | The emitters replay the whole fed row; what a consumer reads of the

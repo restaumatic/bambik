@@ -6,7 +6,7 @@ import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, 
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
-import PUI (foreach, mvu, settled, updated)
+import PUI (fold, foreach, joined, mvu, settled)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, table, td, tr)
 import PUI.Web.MDC2 (body, body1, filledTextField)
@@ -23,7 +23,8 @@ cellsMDC2 =
           ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
           ( tr $ Semigroupoid.do
             ( td >>> "style" := headerFace $ text rowLabel ) # shown
-            ( clicked @"picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # updated (match { picked: selectCell })
+            ( clicked @"picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # joined @"picked"
+      fold @"picked" selectCell
     ) # mvu
       @( cells :: Object String
        , selected :: [ picked :: { name :: String }, none :: {} ]

@@ -1,13 +1,13 @@
 module EspressoBarMDC3 (espressoBarMDC3) where
 
-import Prelude (Unit, const, (#), ($), (<<<))
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Variant (match)
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import EspressoBarViewModel (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
-import PUI (armed, mvu, updated)
+import PUI (armed, fold, mvu)
 import PUI.Web ((<+>), choice, shown, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, button, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltipWith, topAppBar)
@@ -37,7 +37,10 @@ espressoBarMDC3 =
         divider # shown
         menu @"Presets" ( RecordToVariant.do
           menuItem @"The usual" {}
-          menuItem @"Espresso, no frills" {} ) # updated (match { "The usual": const <<< theUsual, "Espresso, no frills": const <<< espressoNoFrills })
+          menuItem @"Espresso, no frills" {} )
+        VariantToRecord.do
+          fold @"The usual" theUsual
+          fold @"Espresso, no frills" espressoNoFrills
       ) # mvu
         @( "Your name" :: String
          , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]

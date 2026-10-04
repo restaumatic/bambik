@@ -29,9 +29,9 @@ functionKeys = [ "C", "±" ]
 readout :: { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number } -> [ faulty :: {}, sound :: { entry :: String } ]
 readout { condition, entry } = match { sound: \_ -> .sound { entry }, faulty: \_ -> .faulty {} } condition
 
-pressKey :: String -> { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number } -> { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number }
-pressKey key tally@{ entry, operation, input }
-  | match { faulty: \_ -> key /= "C", sound: \_ -> false } tally.condition = pressKey key (cleared tally)
+pressKey :: { event :: String, model :: { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number } } -> { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number }
+pressKey { event: key, model: tally@{ entry, operation, input } }
+  | match { faulty: \_ -> key /= "C", sound: \_ -> false } tally.condition = pressKey { event: key, model: cleared tally }
   | key == "C" = cleared tally
   | key == "±" = tally { entry = negated entry }
   | key == "." && typing input =

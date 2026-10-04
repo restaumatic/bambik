@@ -14,8 +14,8 @@ gameStart = { beat: 0 }
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-tick :: { beat :: Int } -> Maybe { beat :: Int }
-tick { beat } = Just { beat: beat + 1 }
+tick :: { beat :: Int } -> { beat :: Int }
+tick { beat } = { beat: beat + 1 }
 
 goal :: { beat :: Int } -> { key :: String, value :: { points :: Int, team :: String } }
 goal { beat } =

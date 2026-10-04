@@ -24,8 +24,8 @@ questionCatalogue =
   , { prompt: "How many continents are there?", choices: [ "five", "six", "seven", "eight" ], answer: 2 }
   ]
 
-answer :: Int -> { correct :: Int, question :: Int } -> { correct :: Int, question :: Int }
-answer choice run@{ question, correct } = case index questionCatalogue question of
+answer :: { event :: Int, model :: { correct :: Int, question :: Int } } -> { correct :: Int, question :: Int }
+answer { event: choice, model: run@{ question, correct } } = case index questionCatalogue question of
   Just q -> run { question = question + 1, correct = correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 

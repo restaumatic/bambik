@@ -15,8 +15,8 @@ addTodo m@{ "What needs to be done?": entry, todos } =
   if trim entry == "" then m
   else m { todos = snoc todos { title: trim entry, status: .active {} }, "What needs to be done?" = "" }
 
-toggleTodo :: Int -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } }
-toggleTodo i m@{ todos } = m { todos = fromMaybe todos (modifyAt i (\t -> t { status = flipped t.status }) todos) }
+toggleTodo :: { event :: Int, model :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } } -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } }
+toggleTodo { event: i, model: m@{ todos } } = m { todos = fromMaybe todos (modifyAt i (\t -> t { status = flipped t.status }) todos) }
 
 clearCompleted :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } }
 clearCompleted m@{ todos } = m { todos = filter (isActive <<< _.status) todos }
