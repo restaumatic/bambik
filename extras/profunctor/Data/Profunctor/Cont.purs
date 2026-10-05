@@ -26,7 +26,7 @@
 -- |     `actedBy _ = map` for `(->)`
 -- |   * `Cochoice` — the continuation sits in tail position, so the `Right c`
 -- |     branch re-enters: `tailRec` at the optic level, and the honest
--- |     semantics of `iterate` (it may diverge; that is what iteration is)
+-- |     semantics of `cycled` (it may diverge; that is what iteration is)
 -- |   * `RecordToRecord` — the ×→× gate as continuation nesting: `p1` runs
 -- |     under a continuation that runs `p2`, the union at the innermost point
 -- |   * `VariantToVariant` — one input case reaches exactly one operand, so
@@ -54,8 +54,9 @@
 -- |   * `Costrong`/`Coresolving` — `unfirst`/`coresolve` need a `c` on the
 -- |     *input* side before any output exists. Contrast `Cochoice`, where
 -- |     `Left a` needs none: that asymmetry is why `looped` is a primitive
--- |     and `folding` takes a seed (`feedback` takes its seed through
--- |     `PointedCostrong`, which starts the state channel instead)
+-- |     and `debounced` seeds its loop branch (`PointedCostrong` starts the
+-- |     state channel instead; the field-level row forms
+-- |     `feedback`/`folding`/`unfolding` were retired 2026-10-05)
 -- |   * `Retaining` — must produce a `b` for a `Right c` input; a stateless
 -- |     carrier has none (same reason there is no `(->)` instance)
 -- |   * `VariantToRecord` — an input case reaches one operand only, so the

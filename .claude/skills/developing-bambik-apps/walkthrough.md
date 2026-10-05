@@ -274,9 +274,13 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
   `# settled fromCelsius` / `# settled fromFahrenheit`.
 - **todo-list** — a selectable list, `listOf @"toggled" @"key"`, a filter
   selector, and panes over `remainingItems`.
-- **checkout** — a wizard: `folding @"next" @"step"` loops the step state,
-  and Next/Back each emit their own case, joined into one loop case with
-  `toCase @"next"`.
+- **checkout** — a wizard: the step is a model field, Next/Back each emit
+  their own case `# joined` with the model, and one `stepTo` folds both.
+- **crud** — the loop cut at a variant junction: `# cycled # with (.load {})`,
+  the load action one `+→+` operand beside create/update/delete.
+- **tic-tac-toe** — the same cut with the seed event into the fold: the
+  app starts by playing its own `New game`, the button's case, and
+  `fold @"New game" @( board :: … ) newGame` declares the model.
 - **order-form** — all four shapes on one screen: a `looped` form in
   labelled groups, a variant editor under `bracketed @"Mode"`, the debounced
   summary, `armed` buttons, and each action followed by its statuses.

@@ -1,9 +1,9 @@
 -- | The **co-strength** of `Data.Profunctor.Resolving` — the `× → +` analogue
 -- | of the ecosystem's `Data.Profunctor.Costrong`, stated **positionally**
 -- | (`Tuple`/`Either`) with no row in sight, and living beside its strength
--- | exactly as `Costrong` lives beside `Strong`. The row form built on it is
--- | `Data.Profunctor.Row.RecordToVariant.folding`; the optic it generates is
--- | `Data.Lens.Coshutter`.
+-- | exactly as `Costrong` lives beside `Strong`. Its one library use is
+-- | `PUI.debounced` (the row form `folding` was retired 2026-10-05); the
+-- | optic it generates is `Data.Lens.Coshutter`.
 -- |
 -- | Like its strength, a **complement of the ecosystem's own** — hence the
 -- | `Data.Profunctor.*` name and the separate `extras/profunctor` source
@@ -36,8 +36,8 @@ import Data.Tuple (Tuple)
 -- | coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g
 -- | ```
 -- |
--- | — state must enter somewhere, and the seed is where; the row form
--- | `folding` takes it as its first argument. Tested in test/Main.purs.
+-- | — state must enter somewhere, and the seed is where; `debounced`
+-- | composes a `seeded` wire for it. Tested in test/Main.purs.
 -- |
 -- | (No `(->)` instance: tying a knot takes state.)
 class Profunctor p <= Coresolving p where

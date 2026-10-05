@@ -14,9 +14,10 @@
 -- |     sub-variant, the background wrapped as a field); over `Category`:
 -- |     `fold @l f` (one case folded into the record, `f` of its payload —
 -- |     the merge pinned at its unit, under `atCase @l`; a loop's folds, one
--- |     per case, merge here beside the statuses); over the co-strength
--- |     `Coretaining`: `unfolding @w @l` (the productive unfold at row
--- |     granularity, the `Coreel` optic's row form).
+-- |     per case, merge here beside the statuses). The co-strength
+-- |     `Coretaining` has no row form here: a chain of this shape is closed
+-- |     by a knot at one of its two junctions (`looped` or `cycled`), the
+-- |     shape change between them an explicit stage.
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
@@ -24,8 +25,7 @@
 -- | that genuinely span both sides.
 -- | The variant-input words `atCase` and `forCase` are therefore
 -- | `VariantToVariant`'s. A label `@w` appears exactly where a row is
--- | wrapped as one field or case to cross the shape change
--- | (`subRetaining`, `unfolding`).
+-- | wrapped as one field to cross the shape change (`subRetaining`).
 -- |
 -- | ## Laws at `+→×`
 -- |
@@ -44,9 +44,8 @@
 -- |      steps on each, a status renders each, and whether an occurrence
 -- |      releases is the fold's; a status owes the channel nothing. What
 -- |      is released is a `{ | r }` — whole by type, the operand's own —
--- |      and where a release needs retained state (`unfolding`,
--- |      `accumulated`) it is withheld, not invented, before that state
--- |      exists, which is why those forms take a seed.
+-- |      and where a release needs retained state (`accumulated`) it is
+-- |      withheld, not invented, before that state exists.
 -- |   3. **Monoid** — unit `lcmap case_ identity :: p (Variant ()) {}`,
 -- |      exact: `variantToRecord (lcmap case_ identity) g = g =
 -- |      variantToRecord g (lcmap case_ identity)`; symmetric and
@@ -75,8 +74,7 @@
 -- | releasing the whole next model, the shared row is the honest type and
 -- | the copairing the honest mechanism. Releasing on every occurrence is
 -- | the fold's choice (no row needs `Eq`), not a law. A merge silent on an
--- | occurrence has an operand that chose not to release — a status, or a
--- | seeded form before its seed (`unfolding`). Probes carry law and shape
+-- | occurrence has an operand that chose not to release — a status. Probes carry law and shape
 -- | in test/Main.purs; 3, 4 and 6 run over every script to a bound in
 -- | test/Exhaustive.purs.
 module Data.Profunctor.Row.VariantToRecord
@@ -86,27 +84,25 @@ module Data.Profunctor.Row.VariantToRecord
   , discard
   , subRetaining
   , fold
-  , unfolding
   )
   where
 
 import Control.Category (class Category, identity)
 import Control.Semigroupoid ((>>>))
-import Data.Either (either)
+import Data.Function (const)
 import Data.Lens.Reel (reelE)
-import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Coretaining (class Coretaining, coretain)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, splitVariant)
-import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, silence)
+import Data.Profunctor.Seeding (isHole)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, case_, expand, inj, on)
-import Prim.Row (class Cons, class Union)
+import Data.Variant (class Contractable, case_, on)
+import Prim.Row (class Cons)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= VariantToRecord p where
   variantToRecord
@@ -164,41 +160,27 @@ subRetaining g =
 -- | arrives `RecordToVariant.joined @l` with that row as `{ event, model }`,
 -- | and an effect returns the model (`fold @"created" identity`), so every
 -- | handler has the model in hand and the loop's memory stays at the
--- | emitters and in `mvu`. Laws on `(->)`: `fold @l f (inj @l a) = f a`; at
+-- | emitters and in `mvu`. The output row may be declared as a second
+-- | visible argument (`fold @"New game" @( board :: … ) newGame`): a loop
+-- | cut at a variant junction has no model on its seed line, so the fold
+-- | answering the seed event declares the model where it first appears
+-- | (guardrails L18, tic-tac-toe). A handler that is a hole is absent
+-- | (guardrails L18): the fold then consumes its case and releases nothing
+-- | — `silence` at the terminal record, entered from the empty variant —
+-- | so a seed event folded by logic not yet written reaches no hole. Laws on `(->)`: `fold @l f (inj @l a) = f a`; at
 -- | `identity` it is the closed singleton unwrapped to its row, an iso with
 -- | `toCase @l identity` both ways. A seeded, retaining fold (2026-10-03)
 -- | and a whole-variant `fold (match …)` (2026-10-04) both gave way to
 -- | this form.
 fold
-  :: forall @l p a r v
+  :: forall @l @r p a v
    . IsSymbol l
   => Cons l a () v
   => Profunctor p
   => Category p
+  => RecordToVariant p
   => (a -> { | r })
   -> p [ | v ] { | r }
-fold f = dimap (on (Proxy @l) identity case_) f identity
-
--- | Resume state field `l` of every emission as case `w`, seeded with its initial value.
--- | The state is one field labelled on the view line (`unfolding @"resume"
--- | @"next" firstTicket`); case `w` carries `{ l :: a }`. A seed that is a
--- | hole is not injected (guardrails L18).
-unfolding
-  :: forall @w @l @a p v r1 v1 v2 r r2
-   . Seeding p
-  => Coretaining p
-  => IsSymbol w
-  => IsSymbol l
-  => Cons l a () r1
-  => Cons w { | r1 } v v1
-  => Union v v2 v1
-  => Cons l a r r2
-  => a
-  -> p [ | v1 ] { | r2 }
-  -> p [ | v ] { | r }
-unfolding seed g =
-  coretain
-    (dimap
-      (either expand (inj (Proxy @w)))
-      (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
-      (if isHole seed then g else seeded (inj (Proxy @w) (unsafeSet (reflectSymbol (Proxy @l)) seed {} :: { | r1 })) >>> g))
+fold f =
+  if isHole f then lcmap (const {}) (silence >>> lcmap case_ identity)
+  else dimap (on (Proxy @l) identity case_) f identity

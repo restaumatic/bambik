@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, blank, fold, foreach, joined, looped, subChoice, toCase, with)
+import PUI (action, atCase, blank, cycled, fold, foreach, joined, subChoice, toCase, with)
 import PUI.Web.Bootstrap (body, button, listGroup, listGroupItem, textField)
 import PUI.Web (cl, clicked, clWhen, text, (:=))
 import PUI.Web.HTML (div)
@@ -17,26 +17,25 @@ crudBootstrap :: Effect Unit
 crudBootstrap =
   body $
     ( Semigroupoid.do
-      blank # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] } loadPeopleCatalogue
-      ( Semigroupoid.do
-        textField @"Filter prefix (surname)" {}
-        textField @"Name" {}
-        textField @"Surname" {}
-        RecordToVariant.do
-          ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
-            ( clicked @"picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key" @( key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] ) entries ) # joined @"picked"
-          ( div $ RecordToVariant.do
-            button @"Create" {}
-            button @"Update" {}
-            button @"Delete" {} ) # cl "d-flex" # cl "gap-2"
-        ( VariantToVariant.do
-          blank # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } createPerson # atCase @"Create" # toCase @"created" identity
-          blank # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } updatePerson # atCase @"Update" # toCase @"updated" identity
-          blank # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } deletePerson # atCase @"Delete" # toCase @"deleted" identity ) # subChoice
-        VariantToRecord.do
-          fold @"picked" pick
-          fold @"created" identity
-          fold @"updated" identity
-          fold @"deleted" identity
-      ) # looped
-    ) # with {}
+      ( VariantToVariant.do
+        blank # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ picked :: { index :: Int }, none :: {} ] } loadPeopleCatalogue # atCase @"load" # toCase @"loaded" identity
+        blank # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } createPerson # atCase @"Create" # toCase @"created" identity
+        blank # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } updatePerson # atCase @"Update" # toCase @"updated" identity
+        blank # action @{ "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } deletePerson # atCase @"Delete" # toCase @"deleted" identity ) # subChoice
+      VariantToRecord.do
+        fold @"picked" pick
+        fold @"loaded" identity
+        fold @"created" identity
+        fold @"updated" identity
+        fold @"deleted" identity
+      textField @"Filter prefix (surname)" {}
+      textField @"Name" {}
+      textField @"Surname" {}
+      RecordToVariant.do
+        ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
+          ( clicked @"picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key" @( key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] ) entries ) # joined @"picked"
+        ( div $ RecordToVariant.do
+          button @"Create" {}
+          button @"Update" {}
+          button @"Delete" {} ) # cl "d-flex" # cl "gap-2"
+    ) # cycled # with (.load {})

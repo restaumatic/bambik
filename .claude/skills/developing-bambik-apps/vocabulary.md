@@ -40,11 +40,10 @@ and emitters of a catalogue — are in the design-system module header
 | mounted | `body $ …`, imported from the design-system module | every demo | writing.md *App shape* |
 | a model edited and folded | `# mvu @( count :: Int ) freshCount`, the model row declared there | counter | writing.md *App shape* |
 | seeded, with no loop of its own | `# with invitation`; `# with {}` | potluck; order-form | writing.md *App shape* |
-| a form section looping inside it | `# looped` | order-form, crud | writing.md *App shape* |
-| a wizard whose step loops silently | `# folding @"next" @"step" cartStep` | checkout | `Data.Profunctor.Row.RecordToVariant` |
-| a state field looping output to input | `# feedback @"top" noBids` | auction | `Data.Profunctor.Row.RecordToRecord` |
-| an event that retries itself | `# iterate` | payment | `Data.Profunctor.Row.VariantToVariant` |
-| a counter resuming where it left off | `# unfolding @"resume" @"next" firstTicket` | ticket-dispenser | `Data.Profunctor.Row.VariantToRecord` |
+| a form section looping inside it | `# looped` | order-form | writing.md *App shape* |
+| a loop cut at a variant junction, opened by an event | `# cycled # with (.load {})` into an action; `# cycled # with (."New game" {})` into the fold | crud; tic-tac-toe | writing.md *App shape* |
+| an event that retries itself | `# cycled` around the action | payment | `Data.Profunctor.Row.VariantToVariant` |
+| a wizard's step, a running maximum, a counter | a model field, folded or normalized (`fold @"Next" stepTo`, `# settled raiseTop`, `fold @"Take a number" issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |
 
 ## Showing data
 
@@ -139,7 +138,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- |
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
 | the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, nothing unknown | writing.md *Writing order* |
-| the model row | `# mvu @( … ) seed` (counter, inbox) | writing.md *Types and values* |
-| a derived row, where it is introduced | a classifier's first pane `# shownWhen @l @( … ) f` (checkout), `# action @[ … ] f` (password-generator), `# foreach @k @( … ) proj` (color-mixer), `# with @( … ) payload` (cashbox), `# feedback @l @Number seed` (auction) | writing.md *Types and values* |
+| the model row | `# mvu @( … ) seed` (counter, inbox); at a variant cut `action @{ … }` (crud) or `fold @l @( … ) f` (tic-tac-toe) | writing.md *Types and values* |
+| a derived row, where it is introduced | a classifier's first pane `# shownWhen @l @( … ) f` (checkout), `# action @[ … ] f` (password-generator), `# foreach @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

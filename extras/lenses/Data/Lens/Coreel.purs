@@ -2,7 +2,8 @@
 -- | `Data.Profunctor.Coretaining`'s `coretain`, for the coined `+ → ×`
 -- | shape. Both the class and the optic are this library's. Its
 -- | strength-side sibling is `Data.Lens.Reel`, and nothing here mentions a
--- | row: the row form is `Data.Profunctor.Row.VariantToRecord.unfolding`.
+-- | row; its row form `unfolding @w` was retired 2026-10-05 — a chain of
+-- | this shape closes at a junction, with `looped` or `cycled`.
 -- |
 -- | Like the other coined optics: the existential constructor `coreelE` is
 -- | **sound**, and completeness is **not claimed** — see
@@ -33,8 +34,8 @@ import Data.Tuple (Tuple(..))
 -- | `∃c. (s + c → a) × (b → t × c)` to
 -- | `(embed : s → a) × (out : b → t) × (resume : b → a)`: every emission
 -- | both leaves as `t` and **re-enters as the next focus input** — a
--- | generator, producing on every step. `unfolding @w` is this optic at row
--- | granularity.
+-- | generator, producing on every step. `unfolding @w` was this optic at
+-- | row granularity, until 2026-10-05.
 type Coreel s t a b = forall p. Coretaining p => p a b -> p s t
 
 coreel :: forall s t a b. (s -> a) -> (b -> t) -> (b -> a) -> Coreel s t a b

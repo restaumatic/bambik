@@ -103,7 +103,7 @@ import Data.Profunctor.Row.RecordToVariant (armed, joined, replaying, silence) a
 -- `armed`, `edited`, `acted`), so a UI component's own row is always stated
 -- by a business function, never coerced at the call site. It stays exported
 -- from `Data.Profunctor.Row` as the merge instances' plumbing.
-import Data.Profunctor.Row.VariantToVariant (atCase, subChoice, toCase) as Adopters
+import Data.Profunctor.Row.VariantToVariant (atCase, cycled, subChoice, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (fold) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping, looped)
@@ -259,9 +259,9 @@ instance MonadEffect m => Choice (PUI m) where
 -- | unfirst (seeded (Tuple a0 c0) >>> first g) ≈ seeded a0 >>> g
 -- | ```
 -- |
--- | — which is why `feedback` is built on the pointed trace
--- | `PointedCostrong` instead, starting the state rather than the input.
--- | Contrast `Cochoice` below,
+-- | — which is why the knot at a record junction is `Looping`'s `looped`
+-- | (the self-feeding diagonal, ungated) rather than a derivation from
+-- | this class. Contrast `Cochoice` below,
 -- | whose retraction holds raw: this carrier is genuinely traced over `+`
 -- | and only pointed-traced over `×` (doc/observational-semantics.md).
 instance MonadEffect m => Costrong (PUI m) where
@@ -274,7 +274,7 @@ instance MonadEffect m => Costrong (PUI m) where
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw `unfirst`/`colens` chain from inside (`seeded`)." []
+              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `mvu`), or seed a raw `unfirst`/`colens` chain from inside (`seeded`)." []
               tr "Costrong.unfirst: input withheld (state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop ->
@@ -292,7 +292,7 @@ instance MonadEffect m => Costrong (PUI m) where
           ma <- Ref.read aRef
           case ma of
             Nothing -> do
-              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Use `feedback`, which takes the traced chain's initial state as an argument, or seed a raw chain from inside (`seeded`)." []
+              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `mvu`), or seed a raw chain from inside (`seeded`)." []
               tr "Costrong.unsecond: input withheld (state unprimed)" b
             Just a -> p'.toUser $ Tuple a b
       , fromUser: \prop ->
@@ -304,12 +304,14 @@ instance MonadEffect m => Costrong (PUI m) where
 
 -- | The **pointed** `×`-trace: `unfirst` with its state `Ref` starting at
 -- | `c0`, so the first input joins the starting state instead of waiting on
--- | an emission — `feedback`'s primitive, and why it needs no input seed.
+-- | an emission. The pointed trace at the value level; its row form
+-- | (`feedback`, until 2026-10-05) gave way to looping the state through
+-- | the model, so no library word stands on it now.
 instance MonadEffect m => PointedCostrong (PUI m) where
   -- a hole start (guardrails L18) is absent: the state channel is unprimed
-  -- and every input is withheld, as under the gated `unfirst` — so a `fold`
-  -- or `feedback` whose seed is not written yet lets nothing through to the
-  -- handlers that are not written yet either
+  -- and every input is withheld, as under the gated `unfirst` — so a chain
+  -- whose seed is not written yet lets nothing through to the handlers that
+  -- are not written yet either
   unfirstFrom c0 p = wrap do
     p' <- unwrap p
     cRef <- liftEffect $ Ref.new (if isHole c0 then Nothing else Just c0)
@@ -374,7 +376,7 @@ instance MonadEffect m => Coresolving (PUI m) where
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Coresolving.coresolve: inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Use `folding`, which takes the fold's initial state as an argument, or seed a raw `coshutter` chain's loop branch (`seeded`)." []
+              guard.blocked "Coresolving.coresolve: inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Seed the loop branch (`seeded`, as `debounced` does); an application loop closes at a junction instead (`looped`/`cycled`)." []
               tr "Coresolving.coresolve: input withheld (fold state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop -> p'.fromUser case _ of
@@ -451,9 +453,10 @@ instance MonadEffect m => Category (PUI m) where
 
 -- | The **point** (the `Seeding` instance): one emission of `a` at
 -- | registration, then nothing — the informationless `{}` it is fed is
--- | ignored. The pointedness primitive; the seeded echo wire the knot-tying
--- | row forms (`folding`/`unfolding`) prime their state channels
--- | with is derived from it through `Choice` (`Data.Profunctor.Seeding`).
+-- | ignored. The pointedness primitive: `with` closes a knot over it at
+-- | either junction, and the seeded echo wire `debounced` primes its loop
+-- | branch with is derived from it through `Choice`
+-- | (`Data.Profunctor.Seeding`).
 instance MonadEffect m => Seeding (PUI m) where
   announce a = wrap $ pure
     { toUser: mempty
@@ -812,7 +815,7 @@ instance MonadEffect m => Retaining (PUI m) where
             mc <- Ref.read cRef
             case mc of
               Nothing -> do
-                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: `unfolding` takes the unfold's initial state as an argument and feeds it as a first resume; raw chains seed the state case (`seeded`)." []
+                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: seed the state case (`seeded`); an application loop closes at a junction instead (`looped`/`cycled`)." []
                 tr "Retaining.retain: emission withheld (state unprimed)" b
               Just c -> prop $ Tuple b c
       }
@@ -1047,7 +1050,7 @@ applied f = updated (const f)
 -- | status consumes are also shown — `snackbar @"charge" retryLine
 -- | # observed` narrates a retry loop without interrupting it. The status
 -- | owns its cases within the stage's row (`Contractable s f`, the
--- | shot/focus relation `subChoice` and `iterate` dispatch by): the focus
+-- | shot/focus relation `subChoice` and `cycled` dispatch by): the focus
 -- | cases are contracted out and shown, the background cases pass
 -- | untouched. The status's own emissions are dropped, deliberately —
 -- | events are one-shot, so re-emitting the last event would duplicate it —
@@ -1222,7 +1225,7 @@ action' arr w = wrap do
 -- | Not primitive — the `× → +` trace at the value level, the stated law
 -- | `coresolve (resolve g) = debounced g` made the body: the quiescence
 -- | step composed with its retraction, the loop channel primed by a
--- | `seeded` wire exactly as `folding` primes its fold state.
+-- | `seeded` wire, the one place a seeded `×`-side trace survives.
 debounced :: forall m. MonadEffect m => { ms :: Number } -> Ocular (PUI m)
 debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 

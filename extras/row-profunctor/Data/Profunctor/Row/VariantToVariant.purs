@@ -17,9 +17,9 @@
 -- |     adopters `atCase` (the closed-singleton unwrap of an input case)
 -- |     and `toCase` (a bare output introduced as a case), plus
 -- |     `forCase @l` (business case `l` rendered into a single-case
--- |     status's own case); over the co-strength `Cochoice`: `iterate`
--- |     (the `+`-diagonal trace at row granularity, the `Coprism` optic's
--- |     row form).
+-- |     status's own case); over the co-strength `Cochoice`: `cycled`
+-- |     (the **variant knot** — the `+`-diagonal trace at row granularity,
+-- |     the `Coprism` optic's row form, `looped`'s sibling).
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
@@ -47,7 +47,7 @@
 -- |   1–2. **Repetition, Answer** — not owed. A variant input is
 -- |      dispatched to one owner and `≈` counts every occurrence: a
 -- |      handler may forward once (`identity`), respond later (`action`),
--- |      re-enter (`iterate`) or never answer, and nothing coalesces two
+-- |      re-enter (`cycled`) or never answer, and nothing coalesces two
 -- |      occurrences — no `Eq` is ever needed. Emitting inside `toUser`
 -- |      here is a response to an occurrence, not the echo law 2 forbids
 -- |      at `×→+`.
@@ -69,7 +69,7 @@
 -- |
 -- | On `PUI`: dispatch in, passage out — no broadcast, no gate, no state
 -- | (`Applicative m` suffices; the one merge with neither feed
--- | obligation). The loop at this shape is `Cochoice`'s `iterate`, whose
+-- | obligation). The knot at this shape is `Cochoice`'s `cycled`, whose
 -- | retraction holds raw — `unleft (left g) = g` — the one shape where it
 -- | does (doc §5). Probes carry law and shape in test/Main.purs; 3, 4 and
 -- | 6 run over every script to a bound in test/Exhaustive.purs.
@@ -99,7 +99,7 @@ module Data.Profunctor.Row.VariantToVariant
   , atCase
   , toCase
   , forCase
-  , iterate
+  , cycled
   )
   where
 import Control.Category (identity)
@@ -108,7 +108,7 @@ import Data.Lens.Prism.Existential (prismE)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice, unleft)
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs, splitVariant)
+import Data.Profunctor.Row (class ExclusiveRows, class LoopCases, class OwnedVariantInputs, class SharedVariantOutputs, splitVariant)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, case_, expand, inj, on)
@@ -210,13 +210,34 @@ forCase
   -> p [ | v ] d
 forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
 
--- | Loop the `again` cases of the output back into the input, emitting only the `done` cases.
-iterate
-  :: forall p v v1 v2
+-- | The variant knot: tie a chain's emitted cases back into its input.
+-- | The cases the body both accepts and emits are its **loop cases**
+-- | (`LoopCases`, computed from the two rows): each such emission re-enters
+-- | the body once and goes no further; a case emitted but not accepted
+-- | **exits**; a case accepted but never emitted is fed from outside only
+-- | — the knot's seed (`with (.load {}) (cycled w)`, crud) or an upstream
+-- | stage. `looped`'s sibling at the other junction: a loop through the
+-- | four shapes is cut either at a record junction, where the model
+-- | re-enters whole (`looped`, seeded with a model), or at a variant
+-- | junction, where each event re-enters (`cycled`, seeded with an event).
+-- | Over `Cochoice`'s `unleft`, whose retraction holds raw on `PUI` — the
+-- | carrier is genuinely traced over `+`, so this knot needs no class of
+-- | its own where `looped` does (`Data.Profunctor.Looping`). Laws: with no
+-- | loop case `cycled g = g`; each loop emission is re-fed exactly once
+-- | and leaves nothing on the output (`cycled` of a body emitting `again`
+-- | re-feeds `again` and emits only `done`, test/Main.purs); termination
+-- | is the no-synchronous-event-echo law — an event re-fed provokes no
+-- | synchronous event.
+cycled
+  :: forall p v vl v1 v1l v2 v3 b
    . Cochoice p
-  => ExclusiveRows v v1 v2
-  => Contractable v2 v
-  => Contractable v2 v1
-  => p [ | v1 ] [ | v2 ]
-  -> p [ | v1 ] [ | v ]
-iterate g = unleft (dimap (either identity identity) splitVariant g)
+  => RowToList v vl
+  => RowToList v1 v1l
+  => LoopCases vl v1l v2
+  => ExclusiveRows v3 v2 v1
+  => Contractable v1 v3
+  => Contractable v1 v2
+  => Union v2 b v
+  => p [ | v ] [ | v1 ]
+  -> p [ | v ] [ | v3 ]
+cycled g = unleft (dimap (either identity expand) splitVariant g)

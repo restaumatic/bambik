@@ -221,12 +221,19 @@ Every strength opens a channel; every **co-strength is its retraction** — it
 ties the channel back into a loop, with the law `co (strength g) ≅ g` once
 the channel is primed. This is the **trace quartet**:
 
-| strength | co-strength | ties into | co-optic | row form | example |
+| strength | co-strength | ties into | co-optic | knot | example |
 |---|---|---|---|---|---|
-| `Strong` | `Costrong` / `unfirst` (pointed: `unfirstFrom`) | state feedback | `Colens` | `feedback` | a session-peak readout chasing its own output |
-| `Choice` | `Cochoice` / `unleft` | iteration | `Coprism` | `iterate` | retrying a flaky publish with attempt+1 |
-| `Resolving` | `Coresolving` / `coresolve` | terminating fold | `Coshutter` | `folding @w` | an accumulating multi-step wizard |
-| `Retaining` | `Coretaining` / `coretain` | productive unfold | `Coreel` | `unfolding @w` | an activity meter counting every event |
+| `Strong` | `Costrong` / `unfirst` (pointed: `unfirstFrom`) | state feedback | `Colens` | `looped` (a class method — the gated `unfirst` cannot self-feed) | the model re-entering its own loop |
+| `Choice` | `Cochoice` / `unleft` | iteration | `Coprism` | `cycled` | retrying a flaky publish with attempt+1 |
+| `Resolving` | `Coresolving` / `coresolve` | terminating fold | `Coshutter` | — (`debounced` is its one seeded use) | an accumulating multi-step wizard, written as a model field folded per step |
+| `Retaining` | `Coretaining` / `coretain` | productive unfold | `Coreel` | — | an activity meter counting every event, written as a model field |
+
+A loop through the four shapes is cut at a junction, and a junction is a
+record or a variant, so the knots an application ties are exactly two:
+`looped` and `cycled`, each closed by `with` and the value its first stage
+takes. The mixed co-strengths keep their value-level laws and optics; their
+field-level row forms (`feedback @l`, `folding @w @l`, `unfolding @w @l`)
+were retired on 2026-10-05, a looped state being a model field.
 
 And just as each strength induces an optic (`Strong` the lens, `Choice`
 the prism, the coined pair `Shutter` and `Reel`), each co-strength induces

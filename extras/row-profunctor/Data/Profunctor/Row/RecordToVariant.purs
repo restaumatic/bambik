@@ -12,20 +12,19 @@
 -- |     qualified-do sugar (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `subResolving` (a
 -- |     sub-record, the background escaping as a case); over `Strong`:
--- |     `replaying @l` (replay as `Strong`'s retention); over bare
--- |     `Profunctor`: the emit stage `armed`; over `Strong`: `joined @l` (an
--- |     event joined with the row its emitter was fed); over the co-strength
--- |     `Coresolving`: `folding @w @l` (the terminating fold at row
--- |     granularity, its state one field `l` labelled on the view line —
--- |     the `Coshutter` optic's row form).
+-- |     `replaying @l` (replay as `Strong`'s retention) and `joined @l` (an
+-- |     event joined with the row its emitter was fed); over bare
+-- |     `Profunctor`: the emit stage `armed`. The co-strength `Coresolving`
+-- |     has no row form here: a chain of this shape is closed by a knot at
+-- |     one of its two junctions (`looped` or `cycled`), the shape change
+-- |     between them an explicit stage.
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
 -- | the mixed modules hold only their strength, their trace and the words
 -- | that genuinely span both sides.
 -- | The variant-output adopter `toCase` is therefore `VariantToVariant`'s. A label `@w` appears exactly where a row is
--- | wrapped as one case to cross the shape change (`subResolving`,
--- | `folding`).
+-- | wrapped as one case to cross the shape change (`subResolving`).
 -- |
 -- | ## Laws at `×→+`
 -- |
@@ -95,28 +94,22 @@ module Data.Profunctor.Row.RecordToVariant
   , discard
   , subResolving
   , replaying
-  , folding
   )
   where
 
 import Control.Category (identity)
-import Control.Semigroupoid ((>>>))
-import Data.Either (Either(..), either)
+import Data.Either (either)
 import Data.Lens.Shutter (shutterE)
 import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs, widenRecordInput)
-import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
 import Data.Profunctor.Strong (class Strong, first)
-import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Data.Variant (case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Type.Proxy (Proxy(..))
-import Record.Unsafe (unsafeSet)
-import Record.Unsafe.Union (unsafeUnion)
 import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToVariant p where
@@ -205,28 +198,3 @@ armed
   => p { | r } [ | o ]
   -> p { | r } [ | o ]
 armed = widenRecordInput
-
--- | Fold state field `l` through case `w` until a `done` case exits, seeded with its initial value.
--- | The state is one field labelled on the view line (`folding @"next"
--- | @"step" cartStep`); the loop case carries `{ l :: a }`. A seed that is
--- | a hole is not injected (guardrails L18).
-folding
-  :: forall @w @l @a p r r1 r2 v v1
-   . Seeding p
-  => Coresolving p
-  => IsSymbol w
-  => IsSymbol l
-  => Cons l a () r1
-  => Cons l a r r2
-  => Cons w { | r1 } v v1
-  => a
-  -> p { | r2 } [ | v1 ]
-  -> p { | r } [ | v ]
-folding seed g =
-  coresolve
-    (dimap
-      -- the fold state is written over the fresh input, so a fat upstream
-      -- emission's stale copy of it never shadows the folded state
-      (\(Tuple i fb) -> unsafeUnion fb i :: { | r2 })
-      (on (Proxy @w) Right Left)
-      (if isHole seed then g else g >>> seeded (inj (Proxy @w) (unsafeSet (reflectSymbol (Proxy @l)) seed {} :: { | r1 }))))

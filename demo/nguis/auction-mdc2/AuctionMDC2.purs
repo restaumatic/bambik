@@ -2,8 +2,7 @@ module AuctionMDC2 (auctionMDC2) where
 
 import Prelude ((#), ($), Unit)
 
-import AuctionViewModel (bidLine, noBids, openingBid, raiseTop, topLine)
-import Data.Profunctor.Row.RecordToRecord (feedback)
+import AuctionViewModel (bidLine, openingBid, raiseTop, topLine)
 import Effect (Effect)
 import PUI (mvu, settled)
 import PUI.Web (shown, text)
@@ -15,10 +14,10 @@ auctionMDC2 =
   body $
     ( Semigroupoid.do
       ( body2 $ text bidLine ) # shown
-      ( Semigroupoid.do
-        sliderLive @"Your bid ($)" {} # settled raiseTop
-        ( headline6 $ text topLine ) # shown ) # feedback @"top" @Number noBids
+      sliderLive @"Your bid ($)" {} # settled raiseTop
+      ( headline6 $ text topLine ) # shown
     ) # mvu
       @( "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+       , top :: Number
        )
       openingBid

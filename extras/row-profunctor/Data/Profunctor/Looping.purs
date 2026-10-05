@@ -11,9 +11,12 @@
 -- | self-feed (no `c` before the first emission, no emission before the
 -- | first input — the gate deadlocks), so the self-feeding special case is
 -- | carrier structure, not a derivation. Row-shaped in the method itself:
--- | the looped value is an entity (a model row) — self-feeding an event
--- | diagonal would replay one-shot events; the lawful `+`-loop is
--- | `Data.Profunctor.Row.VariantToVariant.iterate`.
+-- | the looped value is an entity (a model row). Its sibling at the other
+-- | junction, the variant knot `Data.Profunctor.Row.VariantToVariant.cycled`,
+-- | needs no class: `Cochoice`'s `unleft` holds raw on `PUI` (the carrier
+-- | is traced over `+`, pointed-traced over `×`), so the two knots a loop
+-- | through the four shapes can be cut at are one method and one
+-- | derivation.
 -- |
 -- | Laws — the trace axioms restricted to the diagonal (`identity` on
 -- | `Category` carriers), stated up to the observational equivalence of
@@ -49,16 +52,16 @@
 -- | loop-back and the outside are two feeders of one inclusive input row,
 -- | and shared inputs are ungated (`SharedRecordInputs`), where `unfirst`'s
 -- | `Tuple` input waits for both halves. What is not a row consequence is
--- | the cycle itself: an emission becoming a feed. That is the class. It is
--- | also why `looped` is not `feedback` at the degenerate case (state row =
--- | input row): `feedback` hides its state fields and takes a seed, while
--- | `looped` exposes the whole row and is primed by its first feed
--- | (`bracketed` loops the editor state the fed variant supplies) — the
--- | unseeded diagonal is the primitive, `feedback` the seeded, hidden form.
+-- | the cycle itself: an emission becoming a feed. That is the class. The
+-- | knot hides nothing and takes no seed of its own: it exposes the whole
+-- | row and is primed by its first feed (`bracketed` loops the editor state
+-- | the fed variant supplies; `with seed` feeds an app its model) — a
+-- | looped state is a model field, never a hidden channel (the field-level
+-- | `feedback @l` was retired 2026-10-05).
 -- |
--- | What the carrier-agnostic layer builds on it: `mvu` (the app shape, in
--- | `Data.Profunctor.Row.RecordToRecord`) and `bracketed` (the
--- | variant-editor bracket, in `Data.Profunctor.Row.VariantToVariant`).
+-- | What the carrier-agnostic layer builds on it: `mvu` (the app shape,
+-- | `with seed (looped w)`) and `bracketed` (the variant-editor bracket),
+-- | both in `Data.Profunctor.Row.RecordToRecord`.
 module Data.Profunctor.Looping
   ( class Looping
   , looped

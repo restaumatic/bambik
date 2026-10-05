@@ -1,19 +1,17 @@
-module CheckoutViewModel (cartLine, cartStep, checkoutStep, freshOrder, goneBack, goneOn, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine) where
+module CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo) where
 
-import Prelude (identity, (<>))
+import Prelude ((<>))
 
 import Data.Variant (match)
 
-freshOrder :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ] }
+freshOrder :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] }
 freshOrder =
   { item: "Wireless Headphones"
   , address: "221B Baker Street"
   , card: "•••• 4242"
   , status: .pending {}
+  , step: .cart {}
   }
-
-cartStep :: [ cart :: {}, payment :: {}, shipping :: {} ]
-cartStep = .cart {}
 
 checkoutStep :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } -> [ cart :: { item :: String }, payment :: { card :: String }, shipping :: { address :: String } ]
 checkoutStep { item, address, card, step } = match
@@ -45,16 +43,13 @@ previousOf { step } = match
   , payment: \_ -> .back { step: .shipping {} }
   } step
 
-goneOn :: [ "Next" :: { step :: [ cart :: {}, payment :: {}, shipping :: {} ] } ] -> { step :: [ cart :: {}, payment :: {}, shipping :: {} ] }
-goneOn = match { "Next": identity }
+stepTo :: { event :: { step :: [ cart :: {}, payment :: {}, shipping :: {} ] }, model :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } } -> { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] }
+stepTo { event: { step }, model } = model { step = step }
 
-goneBack :: [ "Back" :: { step :: [ cart :: {}, payment :: {}, shipping :: {} ] } ] -> { step :: [ cart :: {}, payment :: {}, shipping :: {} ] }
-goneBack = match { "Back": identity }
+orderPlaced :: { event :: { card :: String }, model :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } } -> { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] }
+orderPlaced { model } = model { status = .placed {} }
 
-orderPlaced :: { event :: { card :: String }, model :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } } -> { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ] }
-orderPlaced { model: { item, address, card } } = { item, address, card, status: .placed {} }
-
-orderStatus :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ] } -> [ pending :: {}, placed :: { address :: String, card :: String, item :: String } ]
+orderStatus :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } -> [ pending :: {}, placed :: { address :: String, card :: String, item :: String } ]
 orderStatus { item, address, card, status } = match { pending: \_ -> .pending {}, placed: \_ -> .placed { item, address, card } } status
 
 placedLine :: { address :: String, card :: String, item :: String } -> String

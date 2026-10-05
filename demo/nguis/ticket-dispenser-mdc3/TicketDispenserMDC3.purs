@@ -1,15 +1,13 @@
 module TicketDispenserMDC3 (ticketDispenserMDC3) where
 
-import Prelude ((#), ($), Unit, identity)
+import Prelude ((#), ($), Unit)
 
-import Data.Profunctor.Row.VariantToRecord (unfolding)
-import Data.Lens.Reel (reelE)
 import Effect (Effect)
-import PUI (mvu)
+import PUI (fold, mvu)
 import PUI.Web (shownWhen, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TicketDispenserViewModel (emptyQueue, firstTicket, firstTicketHint, issue, nextTicket, noTicketLine, servingLine, ticketLine)
+import TicketDispenserViewModel (emptyQueue, firstTicketHint, issue, noTicketLine, servingLine, ticketLine)
 
 ticketDispenserMDC3 :: Effect Unit
 ticketDispenserMDC3 =
@@ -21,7 +19,6 @@ ticketDispenserMDC3 =
       bodyMedium ( Semigroupoid.do
         (text firstTicketHint) # shownWhen @"waiting" _.display
         (text servingLine) # shownWhen @"serving" _.display )
-      ( Semigroupoid.do
-        button @"Take a number" {}
-        reelE @{ display :: [ waiting :: {}, serving :: { number :: Int } ] } @{ next :: Int } issue nextTicket identity # unfolding @"resume" @"next" @Int firstTicket )
-    ) # mvu @( display :: [ waiting :: {}, serving :: { number :: Int } ] ) emptyQueue
+      button @"Take a number" {}
+      fold @"Take a number" issue
+    ) # mvu @( display :: [ waiting :: {}, serving :: { number :: Int } ], next :: Int ) emptyQueue

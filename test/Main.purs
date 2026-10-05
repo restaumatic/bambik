@@ -20,10 +20,10 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (feedback, focusField, muted, subStrong, recordToRecord)
-import Data.Profunctor.Row.VariantToRecord (fold, unfolding, variantToRecord)
-import Data.Profunctor.Row.RecordToVariant (folding, recordToVariant)
-import Data.Profunctor.Row.VariantToVariant (focusCase, iterate, toCase, variantToVariant)
+import Data.Profunctor.Row.RecordToRecord (focusField, muted, subStrong, recordToRecord)
+import Data.Profunctor.Row.VariantToRecord (fold, variantToRecord)
+import Data.Profunctor.Row.RecordToVariant (recordToVariant)
+import Data.Profunctor.Row.VariantToVariant (cycled, focusCase, toCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
@@ -192,14 +192,21 @@ main = do
     (toCase @"picked" _.key identity { key: 7, label: "x" })
 
   -- fold @l f: one case folding into the record, f of its payload —
-  -- fold @l f (inj @l a) = f a; at identity the closed singleton is its
-  -- row, an iso with toCase @l identity both ways
-  assertEqual "fold" { count: 4 } (fold @"Count" (\r -> r { count = r.count + 1 }) (."Count" { count: 3 }))
-  assertEqual "fold/identity" { count: 5 } (fold @"Count" identity (."Count" { count: 5 }))
-  assertEqual "fold/section" { count: 5 } ((toCase @"Count" identity identity >>> fold @"Count" identity) { count: 5 })
-  assertEqual "fold/retraction"
-    (."Count" { count: 5 } :: [ "Count" :: { count :: Int } ])
-    ((fold @"Count" identity >>> toCase @"Count" identity identity) (."Count" { count: 5 }))
+  -- fed (inj @l a) it releases f a; at identity the closed singleton is
+  -- its row. On the PUI carrier: fold needs the carrier's silence for a
+  -- hole handler (guardrails L18), so it has no (->) form.
+  do
+    outs <- Ref.new ([] :: Array { count :: Int })
+    m <- unwrap (fold @"Count" (\r -> r { count = r.count + 1 }) :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (."Count" { count: 3 })
+    Ref.read outs >>= assertEqual "fold: f of the payload is the released row" [ { count: 4 } ]
+  do
+    outs <- Ref.new ([] :: Array { count :: Int })
+    m <- unwrap (fold @"Count" identity :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (."Count" { count: 5 })
+    Ref.read outs >>= assertEqual "fold/identity: the closed singleton unwrapped to its row" [ { count: 5 } ]
   -- two folds of one loop merge at +→×: each releases the whole row, the
   -- latest contribution winning (the copairing of the coproduct)
   do
@@ -291,20 +298,6 @@ main = do
     m.toUser (.x unit)
     m.toUser (.y unit)
     Ref.read outs >>= assertEqual "zero-participant +→×: a dispatched occurrence is owed nothing" []
-
-  -- a gated display inside feedback: the display renders the starting
-  -- state on the first input — pins the merge-with-wire operand order
-  -- (display first, wire second: render before release, since the release
-  -- may re-enter the loop)
-  do
-    shown <- Ref.new ([] :: Array { top :: Int })
-    outs <- Ref.new ([] :: Array {})
-    let display = PUI (pure { toUser: \s -> Ref.modify_ (_ <> [ s ]) shown, fromUser: \_ -> pure unit }) :: PUI Effect { top :: Int } {}
-    m <- unwrap (feedback @"top" 0 (recordToRecord display identity) :: PUI Effect {} {})
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    Ref.read shown >>= assertEqual "feedback + display beside the wire: nothing renders before the first input" []
-    m.toUser {}
-    Ref.read shown >>= assertEqual "feedback + display beside the wire: the first input renders the starting state" [ { top: 0 } ]
 
   -- ×→× runtime-exactness: the merge widens each operand's input by coercion,
   -- so an operand that echoes or lens-rebuilds its input emits an object
@@ -427,79 +420,52 @@ main = do
     Ref.read ins >>= assertEqual "looped: emission re-fed" [ { n: 5 }, { n: 7 } ]
     Ref.read outs >>= assertEqual "looped: emission propagates" [ { n: 7 } ]
 
-  -- iterate (the +-trace at row granularity): `again` cases loop back,
-  -- `done` cases exit.
+  -- cycled (the variant knot): the cases the body both accepts and emits
+  -- loop back, each re-fed once and leaving nothing on the output; a case
+  -- emitted but not accepted exits.
   do
     ins <- Ref.new ([] :: Array [ again :: Int ])
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ done :: String ])
-    m <- unwrap (iterate (probeIO ins gProp :: PUI Effect [ again :: Int ] [ done :: String, again :: Int ]))
+    m <- unwrap (cycled (probeIO ins gProp :: PUI Effect [ again :: Int ] [ done :: String, again :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (.again 1)
     fire gProp (.again 2)
-    Ref.read outs >>= assertEqual "iterate: again loops silently" []
-    Ref.read ins >>= assertEqual "iterate: again re-enters" [ .again 1, .again 2 ]
+    Ref.read outs >>= assertEqual "cycled: a loop case leaves nothing" []
+    Ref.read ins >>= assertEqual "cycled: a loop case re-enters" [ .again 1, .again 2 ]
     fire gProp (.done "d")
-    Ref.read outs >>= assertEqual "iterate: done exits" [ .done "d" ]
+    Ref.read outs >>= assertEqual "cycled: an exit case leaves" [ .done "d" ]
 
-  -- == The co-strengths' row forms: labeled channels for each trace. ==
-
-  -- feedback (×-trace at row granularity): the state's starting value is
-  -- the argument — the first input joins it, and each emission's state
-  -- fields replace it from then on.
+  -- cycled closed by `with`: a case the body accepts but never emits is
+  -- fed from outside only — the knot's seed event, announced at
+  -- registration (an app cut at a variant junction, crud's `.load {}`).
   do
-    ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
+    ins <- Ref.new ([] :: Array [ load :: Unit, again :: Int ])
     gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { o :: Int })
-    m <- unwrap (feedback @"acc" 0 (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } { o :: Int, acc :: Int }))
+    outs <- Ref.new ([] :: Array [ done :: String ])
+    m <- unwrap (with (.load unit) (cycled (probeIO ins gProp :: PUI Effect [ load :: Unit, again :: Int ] [ done :: String, again :: Int ])) :: PUI Effect {} [ done :: String ])
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    Ref.read ins >>= assertEqual "feedback: nothing fed before the first input" []
-    m.toUser { a: 1 }
-    Ref.read ins >>= assertEqual "feedback: first input joined with the starting state" [ { a: 1, acc: 0 } ]
-    fire gProp { o: 10, acc: 100 }
-    Ref.read outs >>= assertEqual "feedback: value fields pass" [ { o: 10 } ]
-    m.toUser { a: 2 }
-    Ref.read ins >>= assertEqual "feedback: input joined with looped state" [ { a: 1, acc: 0 }, { a: 2, acc: 100 } ]
+    Ref.read ins >>= assertEqual "cycled + with: the seed event enters at registration" [ .load unit ]
+    fire gProp (.again 2)
+    Ref.read ins >>= assertEqual "cycled + with: a loop case re-enters beside the seed" [ .load unit, .again 2 ]
+    fire gProp (.done "d")
+    Ref.read outs >>= assertEqual "cycled + with: an exit case leaves" [ .done "d" ]
+
+  -- cycled with no loop case is the body: nothing re-enters, every
+  -- emission exits.
+  do
+    ins <- Ref.new ([] :: Array [ go :: Int ])
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array [ done :: String ])
+    m <- unwrap (cycled (probeIO ins gProp :: PUI Effect [ go :: Int ] [ done :: String ]))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (.go 1)
+    fire gProp (.done "d")
+    Ref.read ins >>= assertEqual "cycled without loop cases: input passes once" [ .go 1 ]
+    Ref.read outs >>= assertEqual "cycled without loop cases: the emission exits" [ .done "d" ]
 
   -- unfirstFrom (the pointed ×-trace): yanking on the timeless carrier.
   assertEqual "unfirstFrom/yanking on (->)" 6 (unfirstFrom 0 (first (_ * 2)) 3)
-
-  -- folding @w (terminating fold at row granularity): the fold state's
-  -- initial value is the argument — emitted once as case w at
-  -- registration, priming the fold before any input; case w continues the
-  -- fold silently, done cases exit.
-  do
-    ins <- Ref.new ([] :: Array { a :: Int, acc :: Int })
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array [ done :: String ])
-    m <- unwrap (folding @"fold" @"acc" 5 (probeIO ins gProp :: PUI Effect { a :: Int, acc :: Int } [ done :: String, fold :: { acc :: Int } ]))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser { a: 1 }
-    Ref.read ins >>= assertEqual "folding: first input joined with the seed" [ { a: 1, acc: 5 } ]
-    fire gProp (.fold { acc: 6 })
-    Ref.read outs >>= assertEqual "folding: fold case withheld" []
-    Ref.read ins >>= assertEqual "folding: fold step re-fed eagerly" [ { a: 1, acc: 5 }, { a: 1, acc: 6 } ]
-    m.toUser { a: 2 }
-    Ref.read ins >>= assertEqual "folding: input joined with folded state" [ { a: 1, acc: 5 }, { a: 1, acc: 6 }, { a: 2, acc: 6 } ]
-    fire gProp (.done "d")
-    Ref.read outs >>= assertEqual "folding: done exits" [ .done "d" ]
-
-  -- unfolding @w (productive unfold at row granularity): the unfold
-  -- state's initial value is the argument — fed once as case w at
-  -- registration; value fields pass, state fields resume the UI component as
-  -- case w.
-  do
-    ins <- Ref.new ([] :: Array [ start :: Int, resume :: { acc :: Int } ])
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { o :: String })
-    m <- unwrap (unfolding @"resume" @"acc" 0 (probeIO ins gProp :: PUI Effect [ start :: Int, resume :: { acc :: Int } ] { o :: String, acc :: Int }))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    Ref.read ins >>= assertEqual "unfolding: seed enters as a first resume" [ .resume { acc: 0 } ]
-    m.toUser (.start 1)
-    Ref.read ins >>= assertEqual "unfolding: fresh input enters" [ .resume { acc: 0 }, .start 1 ]
-    fire gProp { o: "x", acc: 7 }
-    Ref.read outs >>= assertEqual "unfolding: value fields pass" [ { o: "x" } ]
-    Ref.read ins >>= assertEqual "unfolding: state resumes as its case" [ .resume { acc: 0 }, .start 1, .resume { acc: 7 } ]
 
   -- Resolving/resolveFor (the quiescence step): every emission loops
   -- immediately (Right, gated on a first state), and the last emission of a

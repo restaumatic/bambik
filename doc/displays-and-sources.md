@@ -93,7 +93,7 @@ current value can be *polled*:
 | seed | the program | t = 0 | entity | `with`/`mvu`/`announce`, `Seeding` |
 | sensor | a machine | t > 0 | entity | `p {} { \| r }` — pollable, so a lawful record channel (clock, `matchMedia`, online/offline; not yet in the vocabulary) |
 | editor's write half | the user | t > 0 | entity draft | fused into editors; the focus guard arbitrates between the display half and the write half |
-| emitter | the user | t > 0 | event | `button`/`clicked` — **no seed possible**: events occur, they don't pre-exist (the `×→+` unit is silent; `iterate` takes no seed) |
+| emitter | the user | t > 0 | event | `button`/`clicked` — **no seed possible**: events occur, they don't pre-exist (the `×→+` unit is silent; `cycled` takes no seed) |
 | `action` result | an effect | t > 0 | either | the Aff adapter |
 
 The dividing law: **a record-channel source must answer "what is your

@@ -1,16 +1,13 @@
-module AuctionViewModel (bidLine, noBids, openingBid, raiseTop, topLine) where
+module AuctionViewModel (bidLine, openingBid, raiseTop, topLine) where
 
 import Prelude (max, (<>))
 
 import Data.Number.Format (fixed, toStringWith)
 
-openingBid :: { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } }
-openingBid = { "Your bid ($)": biddingRange }
+openingBid :: { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, top :: Number }
+openingBid = { "Your bid ($)": biddingRange, top: 0.0 }
 
-noBids :: Number
-noBids = 0.0
-
-bidLine :: { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
+bidLine :: { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, top :: Number } -> String
 bidLine r = "Your current bid: $" <> dollars r."Your bid ($)".current
 
 topLine :: { "Your bid ($)" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, top :: Number } -> String

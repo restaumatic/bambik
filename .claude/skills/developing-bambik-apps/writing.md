@@ -246,7 +246,9 @@ compile error at `body` naming the missing fields.
 | effects and time | password-generator, stopwatch, timer, weather |
 | structure that varies with the data | markdown-previewer |
 | no design system at all | restaurant-menu, helloworld |
-| one state-loop each | auction (`feedback`), checkout (`folding`), payment (`iterate`), ticket-dispenser (`unfolding`) |
+| the loop cut at a variant junction, the seed event into an action or into the fold; a nested event loop | crud (`cycled # with (.load {})`), tic-tac-toe (`cycled # with (."New game" {})`), payment (`cycled`) |
+| a knot fed from upstream, no seed of its own | order-form (`looped` after the load action; `bracketed`), payment (`cycled` inside the loop) |
+| state that used to be a hidden loop, now a model field | auction (`settled raiseTop`), checkout (`stepTo`), ticket-dispenser (`issue`) |
 | a reusable sub-form; routing some events | parcel (`subStrong`), cashbox (`subChoice`) |
 | keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
 
@@ -353,9 +355,7 @@ model module that no view line asks for.
 The view hands the view model module **only arguments called on
 data**: a copy function, a handler, a classifier, an action, the seed,
 a period. It never runs one of its effects at the entry and never
-applies a component built there: an optic the view uses is assembled on
-the view line from view model functions (ticket-dispenser's `reelE issue
-nextTicket identity`). A stand-in server keeps its state in the view
+applies a component built there. A stand-in server keeps its state in the view
 model module, as a real server would (crud's catalogue).
 
 **Name each action's outcome cases where the action is**: a
@@ -391,7 +391,7 @@ the anchor's own position, and the anchor says what the line is:
 
 A **declared row** is not an anchor either. It is a visible type
 argument stating a shape the compiler could not otherwise know: the
-model row on the seed line, and a derived row where it is introduced
+model row where the model first appears, and a derived row where it is introduced
 (see *The model is declared once* in
 [Types and values](#types-and-values)). It names no field and no case.
 
@@ -441,8 +441,9 @@ text is computed, a chrome line nothing.
 - **Closing parens and `#` chains never start a line.** A trailing
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
-  it closes over: `… # shown ) # feedback @"top" @Number noBids`. The
-  exception is a seed closer, `) # mvu @( … ) seed` / `) # with @( … ) seed`,
+  it closes over: `… # shown ) # inCase @"Delivery" _.selected`. The
+  exception is a seed closer, `) # mvu @( … ) seed` / `) # with @{ … } seed`
+  / `) # cycled # with (.load {})`,
   on its own line — or, when the model row is long, `) # mvu` on its own
   line, the row's fields one per line beneath it and the seed last
   (inbox).
@@ -460,10 +461,14 @@ text is computed, a chrome line nothing.
 
 ### Types and values
 
-- **The model is declared once, on the seed line; every derived row
-  where it is introduced.** The seed line states the whole model
-  (`# mvu @( count :: Int ) freshCount`; inbox's two fields, one per
-  line), and every editor, selector, list and accessor is checked
+- **The model is declared once, where it first appears; every derived
+  row where it is introduced.** For a loop closed with a model that is
+  the seed line (`# mvu @( count :: Int ) freshCount`; inbox's two
+  fields, one per line). For a loop cut at a variant junction the seed
+  is an event, so the model is declared where the seed event becomes a
+  model: the action's outcome (`action @{ … } loadPeopleCatalogue`,
+  crud) or the fold answering the seed event (`fold @"New game"
+  @( board :: … ) newGame`, tic-tac-toe). Every editor, selector, list and accessor is checked
   against it — so a stored field is read with a plain accessor
   (`listOf … _.messages`, `# provided @"confirming" _.deletion`). A
   **derived row** is a shape no model field holds, and the line that
@@ -474,10 +479,8 @@ text is computed, a chrome line nothing.
   - a projection's element row
     (`# foreach @"name" @( name :: String, mix :: … ) (const palette)`,
     `# shownEach @"number" @( number :: Int, tenths :: Int ) lapRows`);
-  - a fixed payload (`# with @( amount :: Number ) courierFee`);
-  - a trace form's state (`# feedback @"top" @Number noBids`,
-    `# folding @"next" @"step" @[ cart :: {}, shipping :: {}, payment :: {} ] cartStep`),
-    a bracketed editor's state, a Reel's two types;
+  - a seed with no loop of its own (`# with @{ "Guests" :: Array { … } } invitation`);
+  - a bracketed editor's state;
   - an option list, closed by `<+>` (`choice @"one-way" <+> choice @"return"`).
 
   What no line declares is not in the model. State only the business
@@ -614,10 +617,11 @@ text is computed, a chrome line nothing.
   `settled normalize`, `bracketed @l stateOf caseOf`, with `identity`
   meaning "the value as it is". A shape none fits is a gap to report,
   not a reason to reach below the vocabulary.
-- **State lives in the model or in the state-loops.** No FFI stashes,
-  no module-level mutable references, no reading the DOM back, no window
-  globals. A component's private state is threaded by `feedback`,
-  `folding` or `unfolding`.
+- **State lives in the model.** No FFI stashes, no module-level mutable
+  references, no reading the DOM back, no window globals, and no hidden
+  loop channel: a running maximum, a wizard's step, a counter are model
+  fields the folds and normalizers update (auction, checkout,
+  ticket-dispenser).
 - **Lean on the design system; write no custom layout.** Stock
   components, surfaces and typography carry the design language; a
   styled flex, border or margin wrapper is a smell. An unstyled `div`
@@ -666,8 +670,8 @@ the watch build running ([building.md](building.md)):
 
    Nothing is unknown. An unknown anywhere (`Record t1`,
    `[ reading :: … | t2 ]`, a tail `| t0`) names a missing declaration:
-   the model row on the seed line, or a derived row where it is
-   introduced. Each `?name` is its own hole, so a function used on
+   the model row where the model first appears, or a derived row where
+   it is introduced. Each `?name` is its own hole, so a function used on
    several lines (`bookingState` on three panes) is declared on its
    first; once written, the compiler types its other uses.
 3. **Write the signatures down, verbatim.** The hint is the signature:

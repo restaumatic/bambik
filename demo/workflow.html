@@ -88,7 +88,7 @@ orderApp =
       headlineSmall (text ?orderLine) # shown
       button @"Order" {}
       snackbar @"Order" ?confirmedLine
-    ) # with @( "Pizza" :: String ) ?start
+    ) # with @{ "Pizza" :: String } ?start
 </code></pre>
 
     <p>The compiler answers with a message per hole and a last one listing
@@ -293,7 +293,7 @@ orderApp =
       headlineSmall (text orderLine) # shown
       button @"Order" {}
       snackbar @"Order" confirmedLine
-    ) # with @( "Pizza" :: String ) plainMargherita
+    ) # with @{ "Pizza" :: String } plainMargherita
 </code></pre>
 
 <pre class="compiler">[1 of 2] Compiling OrderViewModel

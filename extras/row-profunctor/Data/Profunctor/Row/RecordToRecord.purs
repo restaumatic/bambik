@@ -2,11 +2,11 @@
 -- | the four shape modules) as:
 -- |
 -- |   * **strength** — `Strong` (ecosystem, with a `(->)` instance): the
--- |     unary power, the field lens. Its trace is the pointed co-strength
--- |     `PointedCostrong` (`Data.Profunctor.PointedCostrong`: the
--- |     ecosystem's `Costrong` with its state channel started at a given
--- |     value), and their optics are `Data.Lens.Lens` and `Data.Lens.Colens`
--- |     — neither the classes nor the optics mention a row, so none of them
+-- |     unary power, the field lens. Its co-strength is the ecosystem's
+-- |     `Costrong` (gated on `PUI`, so the knot at this shape is
+-- |     `Looping`'s `looped`, not a derivation — `Data.Profunctor.Looping`),
+-- |     and their optics are `Data.Lens.Lens` and `Data.Lens.Colens` —
+-- |     neither the classes nor the optics mention a row, so none of them
 -- |     lives here.
 -- |   * **shape class** — `RecordToRecord`, the binary **merge**: the
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
@@ -16,12 +16,11 @@
 -- |     making every label-indexed editor a whole-row citizen) and, with
 -- |     `Looping`, `bracketed @l` (the sum-typed field editor); over the
 -- |     wire and the point: `blank` (the faceless leaf), `with`
--- |     (`announce a >>> w` — discharge the initial-state obligation) and
--- |     `mvu` (`with seed (looped w)` — the app shape); over bare
--- |     `Profunctor`: the rename `asField`, the counit `muted` and the
--- |     normalization `settled`; over the pointed co-strength: `feedback`
--- |     (the ×-trace at row granularity: one state field, labelled on the
--- |     view line, seeded with its starting value only).
+-- |     (`announce a >>> w` — discharge the initial-state obligation at
+-- |     either junction: a model for `looped`, an event for `cycled`) and
+-- |     `mvu` (`with seed (looped w)` — the app shape, the record knot
+-- |     closed); over bare `Profunctor`: the rename `asField`, the counit
+-- |     `muted` and the normalization `settled`.
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
@@ -91,7 +90,6 @@ module Data.Profunctor.Row.RecordToRecord
   , asField
   , muted
   , settled
-  , feedback
   )
   where
 
@@ -101,17 +99,15 @@ import Data.Function (const)
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Looping (class Looping, looped)
-import Data.Profunctor.PointedCostrong (class PointedCostrong, unfirstFrom)
 import Data.Profunctor.Row (class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow)
 import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Profunctor.Strong (class Strong, first)
-import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Record (get, insert, union) as Record
-import Record.Unsafe (unsafeSet)
 import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -200,10 +196,13 @@ bracketed f g w = focusField @l (dimap f g (looped w))
 blank :: forall p a. Category p => Profunctor p => p a {}
 blank = lcmap (const {}) identity
 
--- | Discharge a component's initial-state obligation by announcing its t=0 value.
--- | Its own input is ignored, so it sits at any row; a seed that is a hole is
+-- | Discharge a chain's initial obligation by announcing its t=0 value.
+-- | The seed is whatever the chain's first stage takes: a model row into a
+-- | record junction (`with @{ … } seed (looped w)`, which `mvu` names) or
+-- | an event into a variant junction (`with (.load {}) (cycled w)`). Its
+-- | own input is ignored, so it sits at any row; a seed that is a hole is
 -- | never announced (`announce`, guardrails L18).
-with :: forall @r1 p a r. Seeding p => { | r1 } -> p { | r1 } a -> p { | r } a
+with :: forall @a p b r. Seeding p => a -> p a b -> p { | r } b
 with a w = lcmap (const {}) (announce a >>> w)
 
 -- | The model–view–update shape: a self-looped pipeline over the model, seeded with its initial state — the model row declared here, on the seed line.
@@ -244,27 +243,3 @@ settled
   -> p a { | r }
   -> p a { | r }
 settled f = rmap f
-
--- | Loop state field `l` of the output back into the input, starting it at the given value.
--- | The state is one field, labelled on the view line (`feedback @"top"
--- | noBids`), so the split is a `Cons` at a label the view states: checked
--- | whatever the logic has written, and never stuck on an open row. The
--- | field is written over the fresh input, so a stale runtime copy of it
--- | never shadows the looped state.
-feedback
-  :: forall @l @a p r r1 r2 r3
-   . IsSymbol l
-  => PointedCostrong p
-  => Cons l a r r2
-  => Cons l a r1 r3
-  => a
-  -> p { | r2 } { | r3 }
-  -> p { | r } { | r1 }
-feedback seed g =
-  unfirstFrom seed
-    (dimap
-      -- the state field is written over the fresh input, so a fat upstream
-      -- emission's stale copy of it never shadows the looped state
-      (\(Tuple i a) -> unsafeSet (reflectSymbol (Proxy @l)) a i :: { | r2 })
-      (\ow -> Tuple (unsafeCoerce ow) (Record.get (Proxy @l) ow))
-      g)

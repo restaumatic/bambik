@@ -156,7 +156,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   text, known before runtime like every label, not an anchor). A
   **declared row** is not an anchor either: a visible row type argument
   by which a line states a shape the compiler could not otherwise know —
-  the model row on the seed line (`mvu`/`with @( … )`), and a derived
+  the model row where the model first appears (`mvu @( … )`/`with @{ … }`,
+  or at a variant cut `action @{ … }`/`fold @l @( … )`), and a derived
   row where it is introduced: a classifier's cases on its first pane
   (`provided`/`shownWhen`/`inCase @l @s`), an action's outcome, a
   projection's element row (`listOf`/`foreach`/`shownEach @… @r`), a
@@ -300,17 +301,22 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `PUI.Web.HTML.body`'s signature — and MUST feed it `{}` exactly once
   after registration (the terminal record's one value, so "closed" is
   literal; a point has answered already and by Repetition at `{}` answers
-  no further — 2026-09-15). Every knot-tying record-channel form (`feedback`, `folding`,
-  `unfolding`, `mvu`/`with`) MUST take its t=0 value as an argument the
-  caller cannot omit — for the trace forms the value of the one state
-  field their label names (L18). The point's *value* is row-forced (`announce a ≈
+  no further — 2026-09-15). A knot MUST be closed by its seed as an
+  argument the caller cannot omit (`with`, which `mvu` names for the record
+  knot): a model into a record junction, an event into a variant junction
+  (2026-10-05 — the knots are exactly two, `looped` and `cycled`, one per
+  junction kind; the field-level seeded forms are gone, a looped state
+  being a model field). The point's *value* is row-forced (`announce a ≈
   lcmap (const a) identity`, `Data.Profunctor.Seeding`); what the class
   adds is its *earliness*, the one moment a stateful carrier has and a
   timeless one lacks — so a proposal to derive `announce` from the wire is
-  right about the value and wrong about the moment the trace forms need.
-- Events MUST NOT be primed — no canonical first occurrence exists;
-  `iterate` stays seedless deliberately (events occur, they don't
-  pre-exist). The carrier tells you the shape axis, not the time axis:
+  right about the value and wrong about the moment the knots need.
+- An emitter MUST NOT be primed — no canonical first occurrence exists
+  (events occur, they don't pre-exist), so `cycled` itself takes no seed;
+  a loop cut at a variant junction is seeded by `with` with the one event
+  its first stage is to receive (crud's `.load {}`), which is an
+  application's opening act, not a leaf's. The carrier tells you the
+  shape axis, not the time axis:
   record-carried, event-natured channels (`select` before first pick,
   `acted`'s withheld aggregate) stay unpointed.
 
@@ -582,21 +588,19 @@ code below the UI) are algebra-layer material and exempt by location.
   (`Data.Profunctor.Row.Structural`, a key read through the ecosystem's
   `Foreign`), so an option or key type only a logic function names
   leaves nothing to solve.
-- **Splits at labels the view names.** A trace form's state is **one
-  field labelled on the view line** (`feedback @"top"`,
-  `folding @"next" @"step"`, `unfolding @"resume" @"next"`), so the
-  split is a `Cons` at a stated label. `subStrong` keeps only its
+- **Splits at labels the view names.** A knot splits nothing: `looped`
+  re-feeds the whole row and `cycled`'s loop cases are computed from the
+  two rows the body already states (`LoopCases`). `subStrong` keeps only its
   forward `Union`s — the focus is the component's closed row, the
   background is inferred and cannot overlap it — so the fed row may be
-  open. What a view cannot name — whether a model already has a field
-  of a trace state's name — goes unchecked; the state field is written
-  over the input, so the loop's state wins.
+  open.
 - **A hole consumed when built is absent.** A word that consumes a logic
   value at build — a seed it announces, a period it schedules, a settle
   time — or calls a business function on data a view's own literal
   supplies (`with {}` feeding a load action) MUST treat a hole as
-  absent: `announce`, the `folding`/`unfolding` seeds, `ticks`,
-  `debouncedTextField`, `action`, `foreach` and `each` do. A new word of
+  absent: `announce`, `ticks`, `debouncedTextField`, `action`, `foreach`,
+  `each` and `fold` (a hole handler consumes its case and releases
+  nothing, so a seed event into the fold reaches no hole) do. A new word of
   that kind MUST do the same.
 - The rule tightens the library itself: an exported signature MUST NOT
   carry a constraint only a concrete row can discharge, because at a
@@ -620,12 +624,13 @@ code below the UI) are algebra-layer material and exempt by location.
   that row as a **visible type argument after its anchor** — `mvu`/`with
   @model`, `action @outcome`, `listOf`/`foreach`/`shownEach`/`acted`/
   `edited @row`, `dispatched`/`accumulated @key @value`, the panes
-  `provided`/`shownWhen`/`inCase @l @s`, `feedback`/`folding`/`unfolding
-  @state`, `bracketed @variant @state`, `toCase`/`clicked @payload`,
-  `each @element`, `reelE @a @c`; a new word of that kind MUST do the
+  `provided`/`shownWhen`/`inCase @l @s`, `bracketed @variant @state`,
+  `toCase`/`clicked @payload`, `each @element`; a new word of that kind
+  MUST do the
   same — and an option list MUST close its row (`choice @"a" <+> choice
   @"b"`). What it demands of the application: the model row is declared
-  once, on the seed line; a stored variant field is read by accessor on
+  once, where the model first appears (the seed line, or at a variant
+  cut the action or fold answering the seed event); a stored variant field is read by accessor on
   its pane line; a derived row is declared once, where its function
   first appears (each `?name` is its own hole, so the function's later
   uses are typed once it is written); a view helper applies one view
