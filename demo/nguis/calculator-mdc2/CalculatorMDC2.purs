@@ -5,7 +5,7 @@ import Prelude (const, (#), ($), (<>), (>>>), Unit)
 import CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operatorKeys, pressKey, readout)
 import Data.Array (elem)
 import Effect (Effect)
-import PUI (fold, foreach, joined, mvu)
+import PUI (fold, foreach, joined, looped, with)
 import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body)
@@ -24,14 +24,13 @@ calculatorMDC2 =
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
         clicked @"entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" @( key :: String ) (const keyPad) ) # joined @"entered"
       fold @"entered" pressKey
-    ) # mvu
+    ) # looped
       @( total :: Number
        , operation :: [ pending :: { key :: String }, none :: {} ]
        , entry :: String
        , input :: [ entering :: {}, settled :: {} ]
        , condition :: [ sound :: {}, faulty :: {} ]
-       )
-      blankTally
+       ) # with blankTally
 
 keyFace :: { key :: String } -> String
 keyFace { key } =

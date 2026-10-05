@@ -3,7 +3,7 @@ module TicketDispenserMDC3 (ticketDispenserMDC3) where
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import PUI (fold, mvu)
+import PUI (fold, looped, with)
 import PUI.Web (shownWhen, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,4 +21,4 @@ ticketDispenserMDC3 =
         (text servingLine) # shownWhen @"serving" _.display )
       button @"Take a number" {}
       fold @"Take a number" issue
-    ) # mvu @( display :: [ waiting :: {}, serving :: { number :: Int } ], next :: Int ) emptyQueue
+    ) # looped @( display :: [ waiting :: {}, serving :: { number :: Int } ], next :: Int ) # with emptyQueue

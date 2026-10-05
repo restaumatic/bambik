@@ -224,10 +224,10 @@ The co-strengths are not a bambik invention either — they are **traces**:
   and the seeds are the operational ⊥
   (doc/observational-semantics.md §5).
 - By Hasegawa's correspondence (traces on cartesian structure ↔ Conway fixed
-  points), `looped`/`mvu` *is* a fixpoint operator — the model-view-update
+  points), `looped` *is* a fixpoint operator — the model-view-update
   loop is the Conway fixpoint of the update stage.
 - Collection traces come free once §3 exists: trace over the container action
-  = the homogeneous ensemble (the cells grid under `mvu` — elements
+  = the homogeneous ensemble (the cells grid under `looped` — elements
   cross-feeding with per-key retention, which is the gate again); the keyed
   Mealy and generators are the `+`-trace over the species action. No new
   classes; the same traces over one more action.

@@ -38,7 +38,7 @@ whichever twin matches your design system.
 - **merge** — several components over one shared value, written as a
   qualified `do` block (below).
 - **seed** — the model's value at start, on the line that declares the
-  model row (`# mvu @( count :: Int ) freshCount`). A pane
+  model row (`# looped @( count :: Int ) # with freshCount`). A pane
   stays blank until the fields it waits for have values; a seed gives
   them one.
 - **pane** — a component that exists only while the model is in one
@@ -114,7 +114,7 @@ How each kind takes its business meaning:
   rest on. A form is editors written as successive lines, never merge
   operands. Two controls writing one field are two lines in a row
   (tip-calculator's slider and range input). Editors live inside a loop
-  — `mvu`, `looped` or `bracketed` — so every editor sees its siblings'
+  — `looped` or `bracketed` — so every editor sees its siblings'
   latest values; a flow without a loop of its own wraps its form in
   `# looped` (order-form).
 - **Selectors** are editors, and the word depends on what the model
@@ -199,7 +199,7 @@ address is edited" is not.
 
 ## App shape
 
-An app is one loop through the four shapes, tied once by `# mvu seed`:
+An app is one loop through the four shapes, tied once by `# looped @( … ) # with seed`:
 
 ```purescript
 ( Semigroupoid.do
@@ -212,7 +212,7 @@ An app is one loop through the four shapes, tied once by `# mvu seed`:
     fold @"Add" addTodo
     fold @"toggled" toggleTodo
     snackbar @"created" createdLine
-) # mvu @( … ) seed
+) # looped @( … ) # with seed
 ```
 
 A fold is label-indexed like every other leaf, `fold @l f`, and
@@ -220,7 +220,7 @@ memoryless: a replaying emitter's payload is the row it was fed, an event
 with something of its own arrives `# joined @l` with that row as
 `{ event, model }`, and an effect returns the model. So every handler has
 the model in hand and the loop's memory stays at the emitters and in
-`mvu`. Each fold releases the whole next model, and the `+→×` merge
+the knot. Each fold releases the whole next model, and the `+→×` merge
 forwards each release as it comes — its output row is shared, where the
 `×→×` merge's operands own their fields — while a status beside the folds
 releases nothing and so fits any row. The seed and every later model enter at the top, so everything that
@@ -442,11 +442,11 @@ text is computed, a chrome line nothing.
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
   it closes over: `… # shown ) # inCase @"Delivery" _.selected`. The
-  exception is a seed closer, `) # mvu @( … ) seed` / `) # with @{ … } seed`
-  / `) # cycled # with (.load {})`,
-  on its own line — or, when the model row is long, `) # mvu` on its own
-  line, the row's fields one per line beneath it and the seed last
-  (inbox).
+  exception is a seed closer, `) # looped @( … ) # with seed` /
+  `) # with @{ … } seed` / `) # cycled # with (.load {})`, on its own
+  line — or, when the model row is long, `) # looped` on its own line,
+  the row's fields one per line beneath it and `) # with seed` closing
+  the last (inbox).
   `#` binds tighter than `$`: where a chain must apply to a whole
   wrapped element (a `foreach` multiplying a card), open the paren
   before the wrapper.
@@ -463,7 +463,7 @@ text is computed, a chrome line nothing.
 
 - **The model is declared once, where it first appears; every derived
   row where it is introduced.** For a loop closed with a model that is
-  the seed line (`# mvu @( count :: Int ) freshCount`; inbox's two
+  the seed line (`# looped @( count :: Int ) # with freshCount`; inbox's two
   fields, one per line). For a loop cut at a variant junction the seed
   is an event, so the model is declared where the seed event becomes a
   model: the action's outcome (`action @{ … } loadPeopleCatalogue`,
@@ -508,7 +508,7 @@ text is computed, a chrome line nothing.
   every signature that uses it (flight-booker's itinerary); pay it — the
   shape is the interface.
 - **Names say what, in business language.** Role names sit on values
-  and functions, never on types (`mvu plannedTrip`, `with emptyCanvas`).
+  and functions, never on types (`with plannedTrip`, `with emptyCanvas`).
   Never lifecycle words: no `initial`, `default` or `seed` as a name, no
   entry function called `main`.
 - **Business values are model data, not UI literals.** If the business
@@ -655,7 +655,7 @@ the watch build running ([building.md](building.md)):
    accessors and declared rows never need a hole, because writing them
    is writing the model. Every other value — a copy function, a
    handler, a classifier, an action, the seed — starts as a typed hole
-   (`text ?countLine`, `# mvu @( count :: Int ) ?start`).
+   (`text ?countLine`, `# looped @( count :: Int ) # with ?start`).
 2. **Read the holes.** Every hole reports a concrete type built from
    the pieces the lines state. With several holes, a last message lists
    them all, placed on the declaration's name: the view model module's
@@ -697,7 +697,7 @@ the watch build running ([building.md](building.md)):
    signature is the model row its line declares, and its value is one
    business-named record (`freshCount`, `mondayMail`).
 5. **Run the view on holes, at any point.** Replace the typed holes
-   with `hole` — inline (`text hole`, `# mvu hole`) or as view model exports
+   with `hole` — inline (`text hole`, `# with hole`) or as view model exports
    stubbed without signatures (`countLine = hole`, the view importing
    the names it will keep). The view builds and shows its initial UI —
    chrome, editors, buttons — before any business function exists. A
@@ -732,7 +732,7 @@ give you while writing:
 - **Faults are local.** A merge operand gets exactly its part of the
   value and never a sibling's emission, so a misbehaving line is found
   by reading that line. Lines influence each other only through a loop
-  you wrote (`mvu`, `looped`).
+  you wrote (`looped`, `cycled`).
 - **A change arrives whole.** A change to several fields renders once,
   every field fresh — never a half-updated row. Business functions read
   consistent state.

@@ -6,7 +6,7 @@ import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, 
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
-import PUI (fold, foreach, joined, mvu, settled)
+import PUI (fold, foreach, joined, looped, settled, with)
 import PUI.Web (attrWith, clicked, shown, staticText, text, (:=))
 import PUI.Web.HTML (body, div, input, label, p, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -25,12 +25,11 @@ cellsHTML =
           ( td >>> "style" := headerFace $ text rowLabel ) # shown
           ( clicked @"picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # joined @"picked"
     fold @"picked" selectCell
-  ) # mvu
+  ) # looped
     @( cells :: Object String
      , selected :: [ picked :: { name :: String }, none :: {} ]
      , "Formula (e.g. =SUM(A0:A5)*2)" :: String
-     )
-    orderSheet
+     ) # with orderSheet
 
 headerFace :: String
 headerFace = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"

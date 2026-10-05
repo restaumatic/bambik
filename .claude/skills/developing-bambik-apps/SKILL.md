@@ -16,7 +16,7 @@ counterMDC2 =
       headline4 (text countLine) # shown
       button @"Count" {}
       fold @"Count" increment
-    ) # mvu @( count :: Int ) freshCount
+    ) # looped @( count :: Int ) # with freshCount
 ```
 
 ```purescript

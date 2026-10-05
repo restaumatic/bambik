@@ -156,7 +156,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   text, known before runtime like every label, not an anchor). A
   **declared row** is not an anchor either: a visible row type argument
   by which a line states a shape the compiler could not otherwise know —
-  the model row where the model first appears (`mvu @( … )`/`with @{ … }`,
+  the model row where the model first appears (`looped @( … )`, or `with @{ … }` for a flow with no loop,
   or at a variant cut `action @{ … }`/`fold @l @( … )`), and a derived
   row where it is introduced: a classifier's cases on its first pane
   (`provided`/`shownWhen`/`inCase @l @s`), an action's outcome, a
@@ -302,8 +302,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   after registration (the terminal record's one value, so "closed" is
   literal; a point has answered already and by Repetition at `{}` answers
   no further — 2026-09-15). A knot MUST be closed by its seed as an
-  argument the caller cannot omit (`with`, which `mvu` names for the record
-  knot): a model into a record junction, an event into a variant junction
+  argument the caller cannot omit (`with`, after `looped @( … )` or `cycled`): a model into a record junction, an event into a variant junction
   (2026-10-05 — the knots are exactly two, `looped` and `cycled`, one per
   junction kind; the field-level seeded forms are gone, a looped state
   being a model field). The point's *value* is row-forced (`announce a ≈
@@ -621,8 +620,8 @@ code below the UI) are algebra-layer material and exempt by location.
   model module's signatures (writing.md, *Writing order*) and nothing in
   that module is designed. What it demands of the library: every word
   that introduces a row through a function or value argument MUST take
-  that row as a **visible type argument after its anchor** — `mvu`/`with
-  @model`, `action @outcome`, `listOf`/`foreach`/`shownEach`/`acted`/
+  that row as a **visible type argument after its anchor** — `looped @model` (`with
+  @model` for a flow with no loop), `action @outcome`, `listOf`/`foreach`/`shownEach`/`acted`/
   `edited @row`, `dispatched`/`accumulated @key @value`, the panes
   `provided`/`shownWhen`/`inCase @l @s`, `bracketed @variant @state`,
   `toCase`/`clicked @payload`, `each @element`; a new word of that kind

@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (atCase, fold, mvu, subChoice, toCase)
+import PUI (atCase, fold, looped, subChoice, toCase, with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, headlineSmall, confirmed)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -28,4 +28,4 @@ cashboxMDC3 =
         fold @"refunded" refundStandard
         fold @"paidOut" payCourier
         fold @"Take a deposit" takeDeposit
-    ) # mvu @( balance :: Number ) openedTill
+    ) # looped @( balance :: Number ) # with openedTill

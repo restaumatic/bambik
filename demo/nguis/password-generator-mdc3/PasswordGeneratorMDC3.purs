@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($), (>>>))
 
 import Effect (Effect)
 import PasswordGeneratorViewModel (passwordText, samplePassword, strengthLine, strongMixRecipe)
-import PUI (action, atCase, mvu)
+import PUI (action, atCase, looped, with)
 import PUI.Web (attr, shown, text)
 import PUI.Web.HTML (code)
 import PUI.Web.MDC3 (body, bodyMedium, button, indeterminateLinearProgress, slider, toggleSwitch)
@@ -23,12 +23,11 @@ passwordGeneratorMDC3 =
       code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
       button @"Generate" {}
       indeterminateLinearProgress @"Generating password" # action @{ "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } , "Uppercase letters" :: Boolean , "Lowercase letters" :: Boolean , "Digits" :: Boolean , "Symbols" :: Boolean , password :: String } samplePassword # atCase @"Generate"
-    ) # mvu
+    ) # looped
       @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Uppercase letters" :: Boolean
        , "Lowercase letters" :: Boolean
        , "Digits" :: Boolean
        , "Symbols" :: Boolean
        , password :: String
-       )
-      strongMixRecipe
+       ) # with strongMixRecipe

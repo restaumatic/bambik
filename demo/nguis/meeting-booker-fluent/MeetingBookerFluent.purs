@@ -5,7 +5,7 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import MeetingBookerViewModel (blankBooking, bookedLine, plan, planLine, ratedRoom, roomRatingCaption, roomStars, seatOccupancy, seatsInRoom, seatsTaken, seatsTakenCaption)
-import PUI (mvu, settled)
+import PUI (looped, settled, with)
 import PUI.Web ((<+>), choice, inCase, provided, shown, shownWhen, text)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdownOptional, dropdownUnpicked, messageBar, progressBar, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (div)
@@ -25,15 +25,14 @@ meetingBookerFluent =
       toggleSwitch @"Include a Teams link" {}
       divider # shown
       slider @"Attendees" {} # inCase @"chosen" _."Room"
-    ) # mvu
+    ) # looped
       @( "Meeting title" :: String
        , "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ]
        , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
        , "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Include a Teams link" :: Boolean
        , "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ]
-       )
-      blankBooking
+       ) # with blankBooking
     ( div $ RecordToRecord.do
       caption1 $ text roomRatingCaption
       ratingDisplay @"Room rating" roomStars ) # shownWhen @"rated" @( rated :: { rating :: Number }, unrated :: {} ) ratedRoom

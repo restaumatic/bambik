@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit, identity)
 
 import Effect (Effect)
 import PaymentViewModel (amountLine, chargeFlaky, retryLine, startCharge, statusLine, unpaidOrder)
-import PUI (action, atCase, cycled, fold, joined, mvu, observed, toCase)
+import PUI (action, atCase, cycled, fold, joined, looped, observed, toCase, with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, headlineSmall, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,4 +21,4 @@ paymentMDC3 =
           indeterminateCircularProgress @"Charging card" # action @[ charged :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }, charge :: { event :: { amount :: Number, attempt :: Int }, model :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } } ] chargeFlaky # atCase @"charge"
           snackbar @"charge" retryLine # observed ) # cycled )
       fold @"charged" identity
-    ) # mvu @( amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] ) unpaidOrder
+    ) # looped @( amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] ) # with unpaidOrder

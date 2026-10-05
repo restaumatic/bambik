@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import AuctionViewModel (bidLine, openingBid, raiseTop, topLine)
 import Effect (Effect)
-import PUI (mvu, settled)
+import PUI (looped, settled, with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, headlineSmall, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,8 +16,7 @@ auctionMDC3 =
       ( bodyMedium $ text bidLine ) # shown
       sliderLive @"Your bid ($)" {} # settled raiseTop
       ( headlineSmall $ text topLine ) # shown
-    ) # mvu
+    ) # looped
       @( "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , top :: Number
-       )
-      openingBid
+       ) # with openingBid

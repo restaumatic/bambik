@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import CounterViewModel (countLine, freshCount, increment)
 import Effect (Effect)
-import PUI (fold, mvu)
+import PUI (fold, looped, with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC2 (body, button, headline4)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,4 +16,4 @@ counterMDC2 =
       headline4 (text countLine) # shown
       button @"Count" {}
       fold @"Count" increment
-    ) # mvu @( count :: Int ) freshCount
+    ) # looped @( count :: Int ) # with freshCount

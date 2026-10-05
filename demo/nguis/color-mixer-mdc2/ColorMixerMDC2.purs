@@ -4,7 +4,7 @@ import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
 import ColorMixerViewModel (applyPreset, duskViolet, hexLine, mixedColor, palette, rgb, rgbLine)
 import Effect (Effect)
-import PUI (blank, fold, foreach, joined, mvu)
+import PUI (blank, fold, foreach, joined, looped, with)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body, body2, sliderLive)
@@ -24,12 +24,11 @@ colorMixerMDC2 =
         div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
           clicked @"preset" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" @( name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } ) (const palette) ) # joined @"preset"
       fold @"preset" applyPreset
-    ) # mvu
+    ) # looped
       @( "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       )
-      duskViolet
+       ) # with duskViolet
 
 chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipFace { mix } = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb mix <> ";"

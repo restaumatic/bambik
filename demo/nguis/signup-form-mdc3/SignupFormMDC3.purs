@@ -3,7 +3,7 @@ module SignupFormMDC3 (signupFormMDC3) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import PUI (armed, mvu)
+import PUI (armed, looped, with)
 import PUI.Web ((<+>), choice, shown, shownWhen, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, checkbox, debouncedTextField, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,14 +21,13 @@ signupFormMDC3 =
         (choice @"Poland" <+> choice @"Germany" <+> choice @"France" <+> choice @"Spain")
       filledTextField @"Email" {}
       checkbox @"Terms" @"accepted" @"declined" {} (staticText @"I accept the terms of service") # tooltip @"You must accept the terms of service to sign up"
-    ) # mvu
+    ) # looped
       @( "Username" :: String
        , "Email" :: String
        , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
        , "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ]
        , "Terms" :: [ accepted :: {}, declined :: {} ]
-       )
-      newApplicant
+       ) # with newApplicant
     ( bodyMedium $ text unnamedLine ) # shownWhen @"unnamed" @( unnamed :: {}, taken :: { "Username" :: String }, available :: { "Username" :: String } ) usernameStatus
     ( bodyMedium $ text takenLine ) # shownWhen @"taken" usernameStatus
     ( bodyMedium $ text availableLine ) # shownWhen @"available" usernameStatus

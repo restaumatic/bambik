@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import EspressoBarViewModel (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
-import PUI (armed, fold, mvu)
+import PUI (armed, fold, looped, with)
 import PUI.Web ((<+>), choice, shown, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body, body2, button, caption, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltipWith, topAppBar)
@@ -41,7 +41,7 @@ espressoBarMDC2 =
         VariantToRecord.do
           fold @"The usual" theUsual
           fold @"Espresso, no frills" espressoNoFrills
-      ) # mvu
+      ) # looped
         @( "Your name" :: String
          , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]
          , "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ]
@@ -53,8 +53,7 @@ espressoBarMDC2 =
          , "Takeaway cup" :: Boolean
          , "Mark as favorite" :: Boolean
          , "Loyalty" :: [ member :: {}, guest :: {} ]
-         )
-        usualOrder
+         ) # with usualOrder
       body2 (text cupLine) # shown
       ( div $ RecordToRecord.do
         caption $ staticText @"Caffeine"

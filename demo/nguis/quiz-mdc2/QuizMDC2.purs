@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, const)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, joined, mvu)
+import PUI (fold, joined, looped, with)
 import PUI.Web (provided, shown, text)
 import PUI.Web.MDC2 (body, body1, button, headline5, headline6, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -27,4 +27,4 @@ quizMDC2 =
       VariantToRecord.do
         fold @"answered" answer
         fold @"Restart" (const freshQuizRun)
-    ) # mvu @( question :: Int, correct :: Int ) freshQuizRun
+    ) # looped @( question :: Int, correct :: Int ) # with freshQuizRun

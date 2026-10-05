@@ -59,11 +59,12 @@
 -- | looped state is a model field, never a hidden channel (the field-level
 -- | `feedback @l` was retired 2026-10-05).
 -- |
--- | What the carrier-agnostic layer builds on it: `mvu` (the app shape,
--- | `with seed (looped w)`) and `bracketed` (the variant-editor bracket),
+-- | What the carrier-agnostic layer builds on it: `with seed (looped w)` (the
+-- | app shape) and `bracketed` (the variant-editor bracket),
 -- | both in `Data.Profunctor.Row.RecordToRecord`.
 module Data.Profunctor.Looping
   ( class Looping
+  , looping
   , looped
   )
   where
@@ -71,4 +72,11 @@ module Data.Profunctor.Looping
 import Data.Profunctor (class Profunctor)
 
 class Profunctor p <= Looping p where
-  looped :: forall r. p { | r } { | r } -> p { | r } { | r }
+  looping :: forall r. p { | r } { | r } -> p { | r } { | r }
+
+-- | The record knot at a declared row: `looped @{ count :: Int } w`, the
+-- | class method with the loop's row as its visible argument (a class
+-- | member's first visible argument would be the carrier, so the method is
+-- | `looping` and this is its face).
+looped :: forall @r p. Looping p => p { | r } { | r } -> p { | r } { | r }
+looped = looping

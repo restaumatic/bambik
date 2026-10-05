@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, joined, mvu)
+import PUI (fold, joined, looped, with)
 import PUI.Web ((<+>), choice, clWhen, shownWhen, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, button, bodySmall, filledTextField, listOf, segmentedButton)
@@ -29,9 +29,8 @@ todoListMDC3 =
         fold @"Add" addTodo
         fold @"toggled" toggleTodo
         fold @"Clear completed" clearCompleted
-    ) # mvu
+    ) # looped
       @( "What needs to be done?" :: String
        , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }
        , "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ]
-       )
-      emptyTodoList
+       ) # with emptyTodoList

@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blank, fold, foreach, joined, mvu, settled)
+import PUI (blank, fold, foreach, joined, looped, settled, with)
 import PUI.Web.Bootstrap (body, button, sliderLive)
 import PUI.Web (attrWith, cl, inCase, onClickedXY, (:=))
 import PUI.Web.HTML (div)
@@ -31,15 +31,14 @@ circleDrawerBootstrap =
         fold @"picked" selectOrAddCircle
         fold @"Undo" undo
         fold @"Redo" redo
-    ) # mvu
+    ) # looped
       @( circles :: Array { x :: Number, y :: Number, r :: Number }
        , selected :: [ chosen :: { index :: Int }, none :: {} ]
        , "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , drag :: [ adjusting :: {}, settled :: {} ]
        , undoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
        , redoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
-       )
-      emptyCanvas
+       ) # with emptyCanvas
 
 circleFill :: { key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 circleFill { status } = match { selected: \_ -> "#ddd", unselected: \_ -> "transparent" } status

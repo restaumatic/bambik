@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, identity)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, mvu, replaying, ticks)
+import PUI (fold, looped, replaying, ticks, with)
 import PUI.Web (shown, text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, progressBar, sliderLive)
@@ -25,8 +25,7 @@ timerShoelace =
       VariantToRecord.do
         fold @"tick" tick
         fold @"Reset" restarted
-    ) # mvu
+    ) # looped
       @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , elapsed :: Number
-       )
-      tenSecondFreshTimer
+       ) # with tenSecondFreshTimer

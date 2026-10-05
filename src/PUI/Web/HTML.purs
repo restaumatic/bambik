@@ -470,8 +470,8 @@ h6 :: Ocular (PUI Web)
 h6 = el "h6"
 
 -- | Mount the app in the page's `<body>` — the one call an application
--- | makes: `body $ with initialOrder $ …` or `body $ … $ screen # mvu
--- | initialGame`. This is the plain-HTML floor's entry; every design-system
+-- | makes: `body $ with initialOrder $ …` or `body $ … $ screen # looped @( … )
+-- | # with initialGame`. This is the plain-HTML floor's entry; every design-system
 -- | module exports a `body` of the same signature that first dresses the
 -- | page for its catalogue (MDC2's typography baseline, MDC3's typescale
 -- | stylesheet, Fluent's theme, Shoelace's icon base path) and then mounts
@@ -479,7 +479,7 @@ h6 = el "h6"
 -- | word and no vocabulary acts on the page at import time.
 -- |
 -- | The app has to be **complete**: everything on screen must have a value
--- | from the first frame, and `with`/`mvu` are where that starting state is
+-- | from the first frame, and `with` is where that starting state is
 -- | supplied. Anything left unsupplied is reported here as a compile error
 -- | naming the missing pieces — a screen can't reach a user half-filled.
 -- |
@@ -487,7 +487,7 @@ h6 = el "h6"
 -- | terminal record's one value — so "closed to `{}`" is literal: the app
 -- | is fed exactly what its type says it needs, which is nothing. A
 -- | `{}`-input display (`text (const "…")`) renders on that feed; a point
--- | (`announce`, `with`, `mvu`) has already answered at registration and,
+-- | (`announce`, `with`) has already answered at registration and,
 -- | by Repetition at `{}`, has nothing more to say (`Data.Profunctor.Seeding`).
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do

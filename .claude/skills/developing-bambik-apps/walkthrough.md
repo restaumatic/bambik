@@ -21,7 +21,7 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
-import PUI (action, atCase, debounced, mvu)
+import PUI (action, atCase, debounced, looped, with)
 import PUI.Web ((<+>), choice, inCase, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -34,12 +34,11 @@ flightBookerMDC2 =
         (choice @"one-way" <+> choice @"return")
       filledTextField @"Start date (DD.MM.YYYY)" {}
       filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
-    ) # mvu
+    ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
        , "Start date (DD.MM.YYYY)" :: String
        , "Return date (DD.MM.YYYY)" :: String
-       )
-      plannedTrip
+       ) # with plannedTrip
     ( Semigroupoid.do
       body1 (text problemLine) # shownWhen @"problem" @( problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ) bookingState
       body1 (text oneWayLine) # shownWhen @"one-way" bookingState
@@ -51,7 +50,7 @@ flightBookerMDC2 =
       snackbar @"rejected" rejectedLine
 ```
 
-**The imports.** `PUI` for the words that shape data flow (`mvu`,
+**The imports.** `PUI` for the words that shape data flow (`looped`, `with`,
 `debounced`, `action`, `atCase`); `PUI.Web` for the words every design
 system shares (`choice` and `<+>`, the panes `shownWhen` and `inCase`,
 the `text` leaf); `VariantToRecord` for the block that sets the two statuses side by
@@ -70,7 +69,7 @@ event into an outcome → a snackbar shows the outcome. Code order is DOM
 order and data order (writing.md *The pipeline*).
 
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
-with `# mvu @( … ) plannedTrip`, the model row declared there.
+with `# looped @( … ) # with plannedTrip`, the model row declared there.
 
 - `select @"Flight type" {} (choice @"one-way" <+> choice @"return")` —
   the type argument is both the caption and the model field, so this
@@ -89,7 +88,7 @@ with `# mvu @( … ) plannedTrip`, the model row declared there.
   visibility*).
 
 Each editor is fed the whole record and emits it with its own field
-changed. `mvu @( … ) plannedTrip` declares the model row — the three
+changed. `looped @( … ) # with plannedTrip` declares the model row — the three
 fields the editors bind, written once — supplies the starting record and
 loops each change back to the top, so all three editors see every edit;
 it also closes the app's input to `{}`, which `body` requires (writing.md
@@ -231,7 +230,7 @@ module*).
 
 **The exports, in the order the view uses them.**
 
-- `plannedTrip` — the starting record for `mvu`. Its keys are the leaves'
+- `plannedTrip` — the starting record `with` feeds the loop. Its keys are the leaves'
   labels, quoted because they are copy (`"Start date (DD.MM.YYYY)"`), and
   its variant field is written with the constructor sugar `."one-way" {}`
   (the type `[ … ]` is the matching type sugar).

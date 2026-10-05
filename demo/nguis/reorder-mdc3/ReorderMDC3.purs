@@ -5,7 +5,7 @@ import Prelude (identity, (#), ($), (>>>), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action, atCase, blank, edited, fold, mvu, static, toCase)
+import PUI (action, atCase, blank, edited, fold, looped, static, toCase, with)
 import PUI.Web (el, shown, (:=))
 import PUI.Web.MDC3 (body, button, filledTextField, group, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -26,4 +26,4 @@ reorderMDC3 =
         blank # action @{ "Setlist" :: Array { id :: String, "Title" :: String } } rotateAction # atCase @"Rotate" # toCase @"reordered" identity
         blank # action @{ "Setlist" :: Array { id :: String, "Title" :: String } } shuffleAction # atCase @"Shuffle" # toCase @"reordered" identity )
     fold @"reordered" identity
-  ) # mvu @( "Setlist" :: Array { id :: String, "Title" :: String } ) openingSetlist
+  ) # looped @( "Setlist" :: Array { id :: String, "Title" :: String } ) # with openingSetlist

@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import CounterViewModel (countLine, freshCount, increment)
 import Effect (Effect)
-import PUI (fold, mvu)
+import PUI (fold, looped, with)
 import PUI.Web (shown, text)
 import PUI.Web.HTML (h4)
 import PUI.Web.Shoelace (body, button)
@@ -17,4 +17,4 @@ counterShoelace =
       h4 (text countLine) # shown
       button @"Count" {}
       fold @"Count" increment
-    ) # mvu @( count :: Int ) freshCount
+    ) # looped @( count :: Int ) # with freshCount

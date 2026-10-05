@@ -75,7 +75,7 @@ Two structural facts follow from terminality, both already load-bearing:
   deleted: the rungs carry it). Dually, a map from `1` ignores everything
   before it, so sources sit at pipeline heads — which is what
   `body :: PUI Web {} o` says about the app itself: an application
-  begins at `1` (`mvu` = source, then loop).
+  begins at `1` (`with` = source, then `looped`).
 - **Why the display-beside-the-wire is derived but `seeded` is primitive**: a display's `{}`
   output is disjoint from every row, so it merges beside the wire for
   free; a source's output row collides with the wire's own, so the
@@ -90,7 +90,7 @@ current value can be *polled*:
 
 | Source | Who writes | When | Ontology | Form |
 | --- | --- | --- | --- | --- |
-| seed | the program | t = 0 | entity | `with`/`mvu`/`announce`, `Seeding` |
+| seed | the program | t = 0 | entity | `with`/`announce`, `Seeding` |
 | sensor | a machine | t > 0 | entity | `p {} { \| r }` — pollable, so a lawful record channel (clock, `matchMedia`, online/offline; not yet in the vocabulary) |
 | editor's write half | the user | t > 0 | entity draft | fused into editors; the focus guard arbitrates between the display half and the write half |
 | emitter | the user | t > 0 | event | `button`/`clicked` — **no seed possible**: events occur, they don't pre-exist (the `×→+` unit is silent; `cycled` takes no seed) |

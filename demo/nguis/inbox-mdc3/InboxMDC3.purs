@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import InboxViewModel (deletionPane, composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
-import PUI (fold, joined, mvu, observed)
+import PUI (fold, joined, looped, observed, with)
 import PUI.Web (provided, shown, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, bodyLarge, bodyMedium, bodySmall, button, dialog, fab, headlineSmall, iconButton, listOf, menu, menuItem, snackbar)
@@ -43,8 +43,7 @@ inboxMDC3 =
         fold @"By sender" sortBySender
         fold @"By subject" sortBySubject
         fold @"Unread first" sortUnreadFirst
-    ) # mvu
+    ) # looped
       @( messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] }
        , deletion :: [ silent :: {}, confirming :: {} ]
-       )
-      mondayMail
+       ) # with mondayMail

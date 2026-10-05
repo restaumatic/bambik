@@ -5,7 +5,7 @@ import Prelude (Unit, show, (#), ($), (<>), (>>>))
 import Data.Variant (match)
 import Effect (Effect)
 import MarkdownPreviewerViewModel (parseMarkdown, welcomeDocument)
-import PUI (PUI, mvu)
+import PUI (PUI, looped, with)
 import PUI.Web (Web, dynamic, each, el, shown, staticString, (:=))
 import PUI.Web.HTML (blockquote, code, em, li, p, strong, ul)
 import PUI.Web.MDC3 (body, filledTextArea, layoutCell, layoutGrid)
@@ -17,7 +17,7 @@ markdownPreviewerMDC3 =
     layoutGrid $ ( Semigroupoid.do
       layoutCell 6 $ filledTextArea @"Source" { columns: 60, rows: 24 }
       layoutCell 6 $ ( dynamic documentView ) # shown
-    ) # mvu @( "Source" :: String ) welcomeDocument
+    ) # looped @( "Source" :: String ) # with welcomeDocument
 
 documentView :: { "Source" :: String } -> PUI Web {} {}
 documentView document = each (parseMarkdown document) blockView

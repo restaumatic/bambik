@@ -28,7 +28,7 @@
 -- |
 -- | How applications are written over this module — the presentation rows,
 -- | copy as a read function at the leaf, no nominal types in UI, the
--- | `mvu` loop and how to read a pipeline — is
+-- | `looped` app loop and how to read a pipeline — is
 -- | `.claude/skills/developing-bambik-apps/writing.md` and
 -- | doc/research-copy-is-a-function.md, stated once there.
 -- |
@@ -96,7 +96,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- every vocabulary editor is `focusField @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself (the `widenRecordInput` precedent, one adopter later).
-import Data.Profunctor.Row.RecordToRecord (asField, blank, bracketed, mvu, subStrong, muted, settled, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, blank, bracketed, subStrong, muted, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (armed, joined, replaying, silence) as Adopters
 -- `widenRecordInput` is deliberately NOT re-exported: a stage is typed at
 -- one row (the gated displays, `updated`, `applied`, `every`, `settled`,
@@ -274,7 +274,7 @@ instance MonadEffect m => Costrong (PUI m) where
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `mvu`), or seed a raw `unfirst`/`colens` chain from inside (`seeded`)." []
+              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `with`), or seed a raw `unfirst`/`colens` chain from inside (`seeded`)." []
               tr "Costrong.unfirst: input withheld (state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop ->
@@ -292,7 +292,7 @@ instance MonadEffect m => Costrong (PUI m) where
           ma <- Ref.read aRef
           case ma of
             Nothing -> do
-              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `mvu`), or seed a raw chain from inside (`seeded`)." []
+              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `with`), or seed a raw chain from inside (`seeded`)." []
               tr "Costrong.unsecond: input withheld (state unprimed)" b
             Just a -> p'.toUser $ Tuple a b
       , fromUser: \prop ->
@@ -479,13 +479,13 @@ instance MonadEffect m => Seeding (PUI m) where
 -- | re-attaches the background it retained at its last feed, and the loop
 -- | re-feeds every stage on every emission, so no editor can emit a stale
 -- | sibling for longer than the turn in flight — which is why editor
--- | ensembles live inside `mvu`/`looped`/`bracketed`, and a loop-free
+-- | ensembles live inside `looped`/`bracketed`, and a loop-free
 -- | flow wraps its editor window in `looped` (order-form). The instance
 -- | is the primitive the class exists
 -- | for: `Costrong`'s gated `unfirst` cannot self-feed, so the knot is
 -- | tied directly here.
 instance MonadEffect m => Looping (PUI m) where
-  looped p = wrap do
+  looping p = wrap do
     p' <- unwrap p
     busyRef <- liftEffect $ Ref.new false
     -- `Just pending` while the body is being wired: downstream registers
@@ -1083,7 +1083,7 @@ observed status = dimap (\v -> { event: v }) (match { forwarded: identity }) $ r
 -- | or an `idle` occurrence (an `rmap` over the tick case), the idle case is handled by
 -- | `silence` in a `+ → +` merge so a pause emits nothing, and the stepped
 -- | row is folded in by `updated`; `looped` re-feeds each step so the
--- | next tick reads the value just stepped, as it would inside `mvu`. So
+-- | next tick reads the value just stepped, as it would inside `looped`. So
 -- | the heartbeat is source ∘ adopters ∘ stage with no retention of its
 -- | own — the same words a button's pipeline is written in.
 -- |
@@ -1352,7 +1352,7 @@ foreach f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs
 -- | as running state → `edited`; the aggregate as joint decision → `acted`;
 -- | individual emissions → `foreach`. A first-class `Array a → Array a`
 -- | editor citizen, nestable like any editor (`# focusField @l` into a form, or
--- | straight into `# mvu`); element addition, removal and reordering are
+-- | straight into `# looped`); element addition, removal and reordering are
 -- | array-level concerns and stay outside.
 -- |
 -- | Like every ×-member, `edited` is keyed by a **label**, and the key is

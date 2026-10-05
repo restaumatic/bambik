@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PhotoGalleryViewModel (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
-import PUI (mvu, updated)
+import PUI (looped, updated, with)
 import PUI.Web (each, shown, shownEach, staticText, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (body, divider, drawer, headline2, imageList, imageListItem, imagePane, list, listItem, listOf, overline, topAppBar)
@@ -29,4 +29,4 @@ photoGalleryMDC2 =
         ( Semigroupoid.do
           ( headline2 $ text albumTitle ) # shown
           imageList 3 $ imagePane developedShot # shownEach @"shot" @( shot :: String ) albumShots )
-      ) # mvu @( album :: String ) landscapesOpen
+      ) # looped @( album :: String ) # with landscapesOpen

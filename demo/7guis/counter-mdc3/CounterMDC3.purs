@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import CounterViewModel (countLine, freshCount, increment)
 import Effect (Effect)
-import PUI (fold, mvu)
+import PUI (fold, looped, with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, headlineLarge)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,7 +24,7 @@ counterMDC3 =
       -- releasing the record { count } again. A loop with several events has one such fold
       -- per case, merged beside its statuses in a VariantToRecord.do block.
       fold @"Count" increment
-    -- mvu loops the record released at the bottom back to the top, so the display re-renders
-    -- and the button retains the new row for its next click. The model row is declared here,
-    -- once, on the seed line; freshCount is the row fed first.
-    ) # mvu @( count :: Int ) freshCount
+    -- looped feeds the record released at the bottom back to the top, so the display re-renders
+    -- and the button retains the new row for its next click; with closes the loop by feeding it
+    -- first. The model row is declared here, once, on the seed line.
+    ) # looped @( count :: Int ) # with freshCount

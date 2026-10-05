@@ -160,7 +160,7 @@ subRetaining g =
 -- | arrives `RecordToVariant.joined @l` with that row as `{ event, model }`,
 -- | and an effect returns the model (`fold @"created" identity`), so every
 -- | handler has the model in hand and the loop's memory stays at the
--- | emitters and in `mvu`. The output row may be declared as a second
+-- | emitters and in the knot. The output row may be declared as a second
 -- | visible argument (`fold @"New game" @( board :: … ) newGame`): a loop
 -- | cut at a variant junction has no model on its seed line, so the fold
 -- | answering the seed event declares the model where it first appears

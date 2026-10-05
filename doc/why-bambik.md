@@ -177,7 +177,7 @@ contribution of zero fields as no contribution: whether the chrome echoes
 its informationless `{}`, announces it once, or stays mute, the merge
 cannot tell, and `identity` is the unit exactly. What *does* speak at
 registration is the point — `announce a`, `Seeding`'s primitive, one
-emission of `a` out of the terminal record, which `with`/`mvu` use to
+emission of `a` out of the terminal record, which `with` uses to
 supply an app its initial state, and from which the seeded echo wire
 `seeded a` is derived. The one merge whose unit no wire reaches is the
 event merge `×→+`: nothing maps the terminal `{}` into the initial
@@ -271,7 +271,7 @@ falling out of the merge gates. For whole-row editor stages the same
 re-broadcast is what keeps their retained backgrounds current — every
 stage is re-fed on every emission, so no editor can emit a stale sibling
 for longer than the turn in flight, which is why editor ensembles live
-inside `mvu`/`looped`/`bracketed`. The library once had bespoke `synced`
+inside `looped`/`bracketed`. The library once had bespoke `synced`
 and
 `latch` combinators for this; they dissolved into `looped` — the algebra
 subsumed them, which is how you know a design is converging.

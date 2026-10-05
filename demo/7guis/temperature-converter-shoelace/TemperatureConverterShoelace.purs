@@ -3,7 +3,7 @@ module TemperatureConverterShoelace (temperatureConverterShoelace) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import PUI (mvu, settled)
+import PUI (looped, settled, with)
 import PUI.Web.Shoelace (body, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TemperatureConverterViewModel (fromCelsius, fromFahrenheit, roomTemperature)
@@ -14,4 +14,4 @@ temperatureConverterShoelace =
     ( Semigroupoid.do
       textField @"°C" {} # settled fromCelsius
       textField @"°F" {} # settled fromFahrenheit
-    ) # mvu @( "°C" :: String, "°F" :: String ) roomTemperature
+    ) # looped @( "°C" :: String, "°F" :: String ) # with roomTemperature

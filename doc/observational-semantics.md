@@ -268,7 +268,7 @@ stands (2026-09-14, after `action`'s progress slot left the `×` side):
   as replay — and neither does a status (`+→×`), which is dispatched.
 - **Starvation is a priming failure of an owned field**, always: an editor
   or source never fed, never seeded, or sitting after a stage that never
-  released. The cure is `with`/`mvu`/`seeded`, the seed where the loop is
+  released. The cure is `with`/`seeded`, the seed where the loop is
   closed — never an echo added to a display, which no gate would hear.
   The watchdog names the missing fields for exactly this reason.
 - **The named cost.** Every `×`-side gate drops, not delays, a pre-feed

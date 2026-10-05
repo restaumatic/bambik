@@ -3,7 +3,7 @@ module TipCalculatorMDC2 (tipCalculatorMDC2) where
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import PUI (mvu)
+import PUI (looped, with)
 import PUI.Web (shown, text)
 import PUI.Web.HTML (rangeInput)
 import PUI.Web.MDC2 (body, body2, filledTextField, slider)
@@ -23,9 +23,8 @@ tipCalculatorMDC2 =
       body2 (text tipAmountLine) # shown
       body2 (text totalLine) # shown
       body2 (text perPersonLine) # shown
-    ) # mvu
+    ) # looped
       @( "Bill amount" :: String
        , "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Split between" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       )
-      dinnerBill
+       ) # with dinnerBill

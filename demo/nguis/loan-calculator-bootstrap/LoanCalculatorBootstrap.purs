@@ -5,7 +5,7 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import LoanCalculatorViewModel (appliedLine, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
-import PUI (armed, mvu)
+import PUI (armed, looped, with)
 import PUI.Web ((<+>), choice, shown, staticText, text)
 import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (div)
@@ -21,14 +21,13 @@ loanCalculatorBootstrap =
       select @"Purpose" {}
         (choice @"Car" <+> choice @"Home improvement" <+> choice @"Holiday")
       toggleSwitch @"Payment protection insurance" {}
-    ) # mvu
+    ) # looped
       @( "Applicant" :: String
        , "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
        , "Payment protection insurance" :: Boolean
-       )
-      cityCarLoan
+       ) # with cityCarLoan
     card $ Semigroupoid.do
       ( listGroup $ RecordToRecord.do
         listGroupItem (text monthlyLine)

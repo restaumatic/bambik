@@ -3,7 +3,7 @@ module TemperatureConverterHTML (temperatureConverterHTML) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import PUI (mvu, settled)
+import PUI (looped, settled, with)
 import PUI.Web (shown, staticText)
 import PUI.Web.HTML (body, div, input, label, p)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,4 +18,4 @@ temperatureConverterHTML =
     p ( label $ Semigroupoid.do
       (staticText @"°F ") # shown
       input @"°F" "text" ) # settled fromFahrenheit
-  ) # mvu @( "°C" :: String, "°F" :: String ) roomTemperature
+  ) # looped @( "°C" :: String, "°F" :: String ) # with roomTemperature

@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import ParcelViewModel (draftParcel, parcelLine)
-import PUI (PUI, subStrong, mvu)
+import PUI (PUI, looped, subStrong, with)
 import PUI.Web.MDC2 (body, body1, filledTextField)
 import PUI.Web (Web, shown, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,7 +16,7 @@ parcelMDC2 =
       filledTextField @"Recipient" {}
       addressForm # subStrong
       ( body1 $ text parcelLine ) # shown
-    ) # mvu @( "Recipient" :: String, "Street" :: String, "City" :: String ) draftParcel
+    ) # looped @( "Recipient" :: String, "Street" :: String, "City" :: String ) # with draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
 addressForm = Semigroupoid.do

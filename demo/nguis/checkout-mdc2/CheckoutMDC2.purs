@@ -6,7 +6,7 @@ import CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderP
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, joined, mvu)
+import PUI (fold, joined, looped, with)
 import PUI.Web (provided, shownWhen, text)
 import PUI.Web.MDC2 (body, body2, button)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -27,4 +27,4 @@ checkoutMDC2 =
         fold @"Back" stepTo
         fold @"Place order" orderPlaced
       ( body2 $ text placedLine ) # shownWhen @"placed" @( pending :: {}, placed :: { item :: String, address :: String, card :: String } ) orderStatus
-    ) # mvu @( item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, shipping :: {}, payment :: {} ] ) freshOrder
+    ) # looped @( item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, shipping :: {}, payment :: {} ] ) # with freshOrder

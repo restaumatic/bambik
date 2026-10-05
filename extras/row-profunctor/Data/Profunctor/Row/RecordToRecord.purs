@@ -17,10 +17,10 @@
 -- |     `Looping`, `bracketed @l` (the sum-typed field editor); over the
 -- |     wire and the point: `blank` (the faceless leaf), `with`
 -- |     (`announce a >>> w` — discharge the initial-state obligation at
--- |     either junction: a model for `looped`, an event for `cycled`) and
--- |     `mvu` (`with seed (looped w)` — the app shape, the record knot
--- |     closed); over bare `Profunctor`: the rename `asField`, the counit
--- |     `muted` and the normalization `settled`.
+-- |     either junction: a model for `looped`, an event for `cycled` — so
+-- |     `with seed (looped w)` is the app shape, the record knot closed);
+-- |     over bare `Profunctor`: the rename `asField`, the counit `muted`
+-- |     and the normalization `settled`.
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
@@ -73,7 +73,7 @@
 -- | retain each side's last contribution, release once both owned sides
 -- | have spoken, withhold and drop before. A merge silent after its first
 -- | feed has an operand breaking 2; one silent before any feed is unprimed
--- | (`with`/`mvu`, `seeded`). Probes carry law and shape in test/Main.purs;
+-- | (`with`, `seeded`). Probes carry law and shape in test/Main.purs;
 -- | 3–6, with 5's two clauses, run over every script to a bound in
 -- | test/Exhaustive.purs.
 module Data.Profunctor.Row.RecordToRecord
@@ -86,7 +86,6 @@ module Data.Profunctor.Row.RecordToRecord
   , bracketed
   , blank
   , with
-  , mvu
   , asField
   , muted
   , settled
@@ -198,22 +197,12 @@ blank = lcmap (const {}) identity
 
 -- | Discharge a chain's initial obligation by announcing its t=0 value.
 -- | The seed is whatever the chain's first stage takes: a model row into a
--- | record junction (`with @{ … } seed (looped w)`, which `mvu` names) or
+-- | record junction (`with seed (looped @( … ) w)`, the app shape) or
 -- | an event into a variant junction (`with (.load {}) (cycled w)`). Its
 -- | own input is ignored, so it sits at any row; a seed that is a hole is
 -- | never announced (`announce`, guardrails L18).
 with :: forall @a p b r. Seeding p => a -> p a b -> p { | r } b
 with a w = lcmap (const {}) (announce a >>> w)
-
--- | The model–view–update shape: a self-looped pipeline over the model, seeded with its initial state — the model row declared here, on the seed line.
-mvu
-  :: forall @r p
-   . Looping p
-  => Seeding p
-  => { | r }
-  -> p { | r } { | r }
-  -> p {} { | r }
-mvu seed w = with seed (looped w)
 
 -- | Rename a component's singleton field `c` to business field `l` on both sides.
 asField

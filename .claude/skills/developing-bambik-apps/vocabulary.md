@@ -38,7 +38,7 @@ and emitters of a catalogue — are in the design-system module header
 | The app is | Word | Demo | Read |
 | --- | --- | --- | --- |
 | mounted | `body $ …`, imported from the design-system module | every demo | writing.md *App shape* |
-| a model edited and folded | `# mvu @( count :: Int ) freshCount`, the model row declared there | counter | writing.md *App shape* |
+| a model edited and folded | `# looped @( count :: Int ) # with freshCount`, the model row declared on the knot | counter | writing.md *App shape* |
 | seeded, with no loop of its own | `# with invitation`; `# with {}` | potluck; order-form | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form | writing.md *App shape* |
 | a loop cut at a variant junction, opened by an event | `# cycled # with (.load {})` into an action; `# cycled # with (."New game" {})` into the fold | crud; tic-tac-toe | writing.md *App shape* |
@@ -138,7 +138,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- |
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
 | the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, nothing unknown | writing.md *Writing order* |
-| the model row | `# mvu @( … ) seed` (counter, inbox); at a variant cut `action @{ … }` (crud) or `fold @l @( … ) f` (tic-tac-toe) | writing.md *Types and values* |
+| the model row | `# looped @( … ) # with seed` (counter, inbox); at a variant cut `action @{ … }` (crud) or `fold @l @( … ) f` (tic-tac-toe) | writing.md *Types and values* |
 | a derived row, where it is introduced | a classifier's first pane `# shownWhen @l @( … ) f` (checkout), `# action @[ … ] f` (password-generator), `# foreach @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

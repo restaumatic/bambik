@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, foreach, joined, mvu)
+import PUI (fold, foreach, joined, looped, with)
 import PUI.Web (clicked, shown, text)
 import PUI.Web.MDC2 (body, body1, button, columnHeader, dataCell, dataRow, dataTable, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,4 +33,4 @@ shoppingCartMDC2 =
         fold @"added" addUnit
         fold @"removed" removeUnit
         fold @"Empty cart" (const emptyCart)
-    ) # mvu @( order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } ) emptyCart
+    ) # looped @( order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } ) # with emptyCart
