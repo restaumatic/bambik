@@ -49,7 +49,7 @@
 -- | `extras/lenses` source roots: complements of the ecosystem's families,
 -- | mentioning no `PUI`, no row and no carrier. A `Data.Profunctor.Row.*`
 -- | module holds only what is about rows — the merge, its unit, and the
--- | placements and trace row forms below.
+-- | placements and knots below.
 -- |
 -- | The row layer itself is a **third** source root, `extras/row-profunctor`,
 -- | which is a different claim again: these modules are bambik's own
@@ -283,8 +283,7 @@
 -- | `merge f g >>> merge (π₁ h) (π₂ k)`, `π` the widening
 -- | (`widenRecordInput`) of each second stage to the middle row. Starvation reads off the laws: a gated merge silent after
 -- | every owned side has been fed has an operand breaking 2; one silent
--- | before that has an unprimed owned field (`with`/`mvu`, `seeded`, the
--- | seed of a trace form).
+-- | before that has an unprimed owned field (`with`/`mvu`, `seeded`).
 -- |
 -- | **Coverage.** Laws 3, 4 and 6 and the gate's conformance to its pure
 -- | step are checked over every script to a bound at every shape in

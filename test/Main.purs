@@ -467,6 +467,22 @@ main = do
   -- unfirstFrom (the pointed ×-trace): yanking on the timeless carrier.
   assertEqual "unfirstFrom/yanking on (->)" 6 (unfirstFrom 0 (first (_ * 2)) 3)
 
+  -- unfirstFrom on the carrier: the state channel starts at c0, so the
+  -- first input joins it without waiting on an emission (the pointed
+  -- trace's primed yanking); each emission's state replaces it.
+  do
+    ins <- Ref.new ([] :: Array (Tuple Int Int))
+    gProp <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array String)
+    m <- unwrap (unfirstFrom 0 (probeIO ins gProp :: PUI Effect (Tuple Int Int) (Tuple String Int)))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser 1
+    Ref.read ins >>= assertEqual "unfirstFrom: the first input joins the starting state" [ Tuple 1 0 ]
+    fire gProp (Tuple "x" 100)
+    Ref.read outs >>= assertEqual "unfirstFrom: the value leg passes" [ "x" ]
+    m.toUser 2
+    Ref.read ins >>= assertEqual "unfirstFrom: the next input joins the emitted state" [ Tuple 1 0, Tuple 2 100 ]
+
   -- Resolving/resolveFor (the quiescence step): every emission loops
   -- immediately (Right, gated on a first state), and the last emission of a
   -- burst resolves (Left) once the UI component stays quiet for the window —

@@ -7,9 +7,9 @@
 // module renamed under `Determined.` — into .determined/ (gitignored),
 // compiles it against the real library into a copy of output/, and reads the
 // compiler's hole list back. It fails on a second unknown, on an unknown
-// anywhere (the model row not declared on the seed line, or a derived row —
-// a classifier's cases, an action's outcome, a projection's element row, a
-// payload, a trace state — not declared where it is introduced), on any
+// anywhere (the model row not declared where the model first appears, or a
+// derived row — a classifier's cases, an action's outcome, a projection's
+// element row, a payload — not declared where it is introduced), on any
 // error that is not a hole, on an exported signature that differs from
 // the hint its views report (whitespace aside; a name every view reports
 // at one type must be declared at exactly that type — a name reported at

@@ -23,7 +23,7 @@
 -- |     again: feeding it `{}` changes nothing.
 -- |
 -- | That earliness is the operational ⊥ of the trace asymmetry theorem
--- | (doc §5): the seeded `×`-trace forms compose a `seeded` wire into a
+-- | (doc §5): a seeded `×`-trace (`debounced`) composes a `seeded` wire into a
 -- | positional loop no feed can reach, and it primes the loop only because
 -- | the answer comes before the first input. On `(->)` earliness is vacuous
 -- | (no time). The knots need no seeded wire at all: `looped` and `cycled`

@@ -610,7 +610,7 @@ text is computed, a chrome line nothing.
 ### Wiring
 
 - **Speak the vocabulary; never import the ecosystem's
-  `Data.Profunctor`.** The merges and state-loops you import from
+  `Data.Profunctor`.** The merges and knots you import from
   `Data.Profunctor.Row.*` are vocabulary; raw `lcmap`/`rmap`/`dimap`
   are not. Every reshaping an app needs has a home in a word's own
   argument — `foreach @l rowsOf`, `toCase @l payloadOf`,

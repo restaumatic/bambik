@@ -133,10 +133,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   quoted strings, in the business rows as much as at the leaf
   (`{ "First name" :: String }`). A quoted label MUST NOT appear in a
   record pun (the compiler forbids it); bind explicitly instead. An
-  emitter MUST NOT be given a `label:` config: where a trace form's loop
-  case would force two buttons to share one case under different words,
-  they are two business actions — each emits its own case and `toCase`
-  introduces the loop case from it. An editor's caption config is held to the
+  emitter MUST NOT be given a `label:` config: where two buttons would
+  share one handler under different words, they are two business actions
+  — each emits its own case and the fold block applies the one handler to
+  both (checkout's `stepTo`). An editor's caption config is held to the
   same rule: the label carries the copy whole — punctuation, format hints
   and units included (`@"Start date (DD.MM.YYYY)"`, `@"Amount (€)"`) — and
   a caption that merely repeats what the label already says MUST move onto
@@ -161,7 +161,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   row where it is introduced: a classifier's cases on its first pane
   (`provided`/`shownWhen`/`inCase @l @s`), an action's outcome, a
   projection's element row (`listOf`/`foreach`/`shownEach @… @r`), a
-  payload, a trace form's state, a bracketed editor's state (2026-10-01
+  payload, a bracketed editor's state (2026-10-01
   on inbox, 2026-10-02 everywhere). It names no field and no case, and
   with it every typed hole in a view reports a concrete type with nothing
   unknown (L18). Every leaf therefore reads as a noun phrase — word, anchor,

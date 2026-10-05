@@ -91,7 +91,7 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
--- modules only for the `.do` merges and the trace forms
+-- modules only for the `.do` merges and the knots
 -- `focusField` is deliberately absent: the leaf lift is design-system plumbing —
 -- every vocabulary editor is `focusField @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
