@@ -41,8 +41,7 @@ and emitters of a catalogue — are in the design-system module header
 | a model edited and folded | `# looped @( count :: Int ) # with freshCount`, the model row declared on the knot | counter | writing.md *App shape* |
 | seeded, with no loop of its own | `# with invitation`; `# with {}` | potluck; order-form | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form | writing.md *App shape* |
-| a loop cut at a variant junction, opened by an event | `# cycled # with (.load {})` into an action; `# cycled # with (."New game" {})` into the fold | crud; tic-tac-toe | writing.md *App shape* |
-| an event that retries itself | `# cycled` around the action | payment | `Data.Profunctor.Row.VariantToVariant` |
+| an action that retries until it succeeds | the retry inside the action's `Aff` (`chargeFlaky`), the outcome one case | payment | writing.md *Business functions* |
 | a wizard's step, a running maximum, a counter | a model field, folded or normalized (`fold @"Next" stepTo`, `# settled raiseTop`, `fold @"Take a number" issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |
 
 ## Showing data
@@ -114,7 +113,7 @@ and emitters of a catalogue — are in the design-system module header
 | an action's outcome named on its line | `# toCase @"created" identity` | crud | writing.md *View module and view model module* |
 | a periodic occurrence | `ticks @"tick" tickPeriod # replaying @"tick" identity` and `fold @"tick" tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
-| narrate an event while passing it on | `snackbar @"charge" retryLine # observed` | payment, inbox | `PUI` |
+| narrate an event while passing it on | `snackbar @"Charge card" chargingLine # observed` | payment, inbox | `PUI` |
 | confirm before the flow continues | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox | writing.md *Modals* |
 | a dialog of choices | `dialog @"Delete the last message?" $ RecordToVariant.do …` | inbox | writing.md *Modals* |
 | an informational dialog | `simpleDialog @"Got it" @"About this dashboard" (…)` | weather | writing.md *Modals* |
@@ -138,7 +137,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- |
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
 | the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, nothing unknown | writing.md *Writing order* |
-| the model row | `# looped @( … ) # with seed` (counter, inbox); at a variant cut `action @{ … }` (crud) or `fold @l @( … ) f` (tic-tac-toe) | writing.md *Types and values* |
+| the model row | `# looped @( … ) # with seed` (counter, inbox); a load action's outcome `action @{ … }` when the load stands before the knot (crud, order-form) | writing.md *Types and values* |
 | a derived row, where it is introduced | a classifier's first pane `# shownWhen @l @( … ) f` (checkout), `# action @[ … ] f` (password-generator), `# foreach @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

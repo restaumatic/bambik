@@ -15,9 +15,9 @@
 -- |     `replaying @l` (replay as `Strong`'s retention) and `joined @l` (an
 -- |     event joined with the row its emitter was fed); over bare
 -- |     `Profunctor`: the emit stage `armed`. The co-strength `Coresolving`
--- |     has no row form here: a chain of this shape is closed by a knot at
--- |     one of its two junctions (`looped` or `cycled`), the shape change
--- |     between them an explicit stage.
+-- |     has no row form here: a chain of this shape is closed by the knot
+-- |     at its record junction (`looped`), the shape change between them
+-- |     an explicit stage.
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so

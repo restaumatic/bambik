@@ -246,8 +246,8 @@ compile error at `body` naming the missing fields.
 | effects and time | password-generator, stopwatch, timer, weather |
 | structure that varies with the data | markdown-previewer |
 | no design system at all | restaurant-menu, helloworld |
-| the loop cut at a variant junction, the seed event into an action or into the fold; a nested event loop | crud (`cycled # with (.load {})`), tic-tac-toe (`cycled # with (."New game" {})`), payment (`cycled`) |
-| a knot fed from upstream, no seed of its own | order-form (`looped` after the load action; `bracketed`), payment (`cycled` inside the loop) |
+| a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, `# with {}` feeding the load); `bracketed` |
+| an action that retries until it succeeds, narrated on its way in | payment (`chargeFlaky`, `# observed`) |
 | state that used to be a hidden loop, now a model field | auction (`settled raiseTop`), checkout (`stepTo`), ticket-dispenser (`issue`) |
 | a reusable sub-form; routing some events | parcel (`subStrong`), cashbox (`subChoice`) |
 | keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
@@ -443,7 +443,7 @@ text is computed, a chrome line nothing.
   nested closers cascade onto that same line, each spaced from the chain
   it closes over: `… # shown ) # inCase @"Delivery" _.selected`. The
   exception is a seed closer, `) # looped @( … ) # with seed` /
-  `) # with @{ … } seed` / `) # cycled # with (.load {})`, on its own
+  `) # with @{ … } seed` / `) # with {}`, on its own
   line — or, when the model row is long, `) # looped` on its own line,
   the row's fields one per line beneath it and `) # with seed` closing
   the last (inbox).
@@ -464,11 +464,10 @@ text is computed, a chrome line nothing.
 - **The model is declared once, where it first appears; every derived
   row where it is introduced.** For a loop closed with a model that is
   the seed line (`# looped @( count :: Int ) # with freshCount`; inbox's two
-  fields, one per line). For a loop cut at a variant junction the seed
-  is an event, so the model is declared where the seed event becomes a
-  model: the action's outcome (`action @{ … } loadPeopleCatalogue`,
-  crud) or the fold answering the seed event (`fold @"New game"
-  @( board :: … ) newGame`, tic-tac-toe). Every editor, selector, list and accessor is checked
+  fields, one per line). When a load action stands before the knot the
+  model first appears as its outcome, so that is where it is declared
+  (`action @{ … } loadPeopleCatalogue`, crud and order-form) and the
+  knot carries no row (`) # looped`). Every editor, selector, list and accessor is checked
   against it — so a stored field is read with a plain accessor
   (`listOf … _.messages`, `# provided @"confirming" _.deletion`). A
   **derived row** is a shape no model field holds, and the line that
@@ -610,7 +609,7 @@ text is computed, a chrome line nothing.
 ### Wiring
 
 - **Speak the vocabulary; never import the ecosystem's
-  `Data.Profunctor`.** The merges and knots you import from
+  `Data.Profunctor`.** The merges and the knot you import from
   `Data.Profunctor.Row.*` are vocabulary; raw `lcmap`/`rmap`/`dimap`
   are not. Every reshaping an app needs has a home in a word's own
   argument — `foreach @l rowsOf`, `toCase @l payloadOf`,
@@ -732,7 +731,7 @@ give you while writing:
 - **Faults are local.** A merge operand gets exactly its part of the
   value and never a sibling's emission, so a misbehaving line is found
   by reading that line. Lines influence each other only through a loop
-  you wrote (`looped`, `cycled`).
+  you wrote (`looped`).
 - **A change arrives whole.** A change to several fields renders once,
   every field fresh — never a half-updated row. Business functions read
   consistent state.

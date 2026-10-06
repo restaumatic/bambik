@@ -87,7 +87,7 @@ const check = (block, problems) => {
   const unknowns = [...new Set([...block.matchAll(/\b(t\d+) is an unknown type/g)].map(m => m[1]))]
   for (const t of unknowns) {
     const where = new RegExp(`(?<!\\| )\\b${t}\\b(?! is an unknown)`).test(block) ? 'inside a type' : 'as a row tail'
-    problems.push(`${declOf(block)}: ${t} is unknown ${where}: the model row is not declared where the model first appears (\`# looped @( … ) # with seed\`; for a loop cut at a variant junction, the action's outcome \`action @{ … }\` or the fold answering the seed event \`fold @l @( … ) f\`), or a derived row is not declared where it is introduced (a classifier's cases, an action's outcome, a projection's element row, a payload, a trace state)`)
+    problems.push(`${declOf(block)}: ${t} is unknown ${where}: the model row is not declared where the model first appears (\`# looped @( … ) # with seed\`, or the load action's outcome \`action @{ … }\` when a load stands before the knot), or a derived row is not declared where it is introduced (a classifier's cases, an action's outcome, a projection's element row, a payload, a trace state)`)
   }
   return unknowns
 }

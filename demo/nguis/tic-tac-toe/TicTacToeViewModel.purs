@@ -1,4 +1,4 @@
-module TicTacToeViewModel (cellMark, cells, claimCell, drawnLine, gameOutcome, newGame, toMoveLine, wonLine) where
+module TicTacToeViewModel (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine) where
 
 import Prelude ((&&), (/=), (<#>), (<>), (==), bind, mod, not, show)
 
@@ -7,8 +7,8 @@ import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Variant (match)
 
-newGame :: {} -> { board :: Array [ free :: {}, o :: {}, x :: {} ] }
-newGame _ =
+openingPosition :: { board :: Array [ free :: {}, o :: {}, x :: {} ] }
+openingPosition =
   { board:
     [ .free {}, .free {}, .free {}
     , .free {}, .free {}, .free {}

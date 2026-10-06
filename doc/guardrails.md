@@ -157,7 +157,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   **declared row** is not an anchor either: a visible row type argument
   by which a line states a shape the compiler could not otherwise know —
   the model row where the model first appears (`looped @( … )`, or `with @{ … }` for a flow with no loop,
-  or at a variant cut `action @{ … }`/`fold @l @( … )`), and a derived
+  or a load action's outcome `action @{ … }` standing before the knot), and a derived
   row where it is introduced: a classifier's cases on its first pane
   (`provided`/`shownWhen`/`inCase @l @s`), an action's outcome, a
   projection's element row (`listOf`/`foreach`/`shownEach @… @r`), a
@@ -301,20 +301,22 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `PUI.Web.HTML.body`'s signature — and MUST feed it `{}` exactly once
   after registration (the terminal record's one value, so "closed" is
   literal; a point has answered already and by Repetition at `{}` answers
-  no further — 2026-09-15). A knot MUST be closed by its seed as an
-  argument the caller cannot omit (`with`, after `looped @( … )` or `cycled`): a model into a record junction, an event into a variant junction
-  (2026-10-05 — the knots are exactly two, `looped` and `cycled`, one per
-  junction kind; the field-level seeded forms are gone, a looped state
-  being a model field). The point's *value* is row-forced (`announce a ≈
+  no further — 2026-09-15). The knot MUST be closed by its seed as an
+  argument the caller cannot omit (`with`, after `looped @( … )`): a
+  model into the record junction (2026-10-05 — the field-level seeded
+  forms are gone, a looped state being a model field; 2026-10-06 — the
+  knot is exactly one, `looped`: a variant knot `cycled` lasted a day, a
+  second way of writing the same loop whose model no line of the view
+  could declare, so a loop is cut at its record junction and an event
+  re-enters through its fold). The point's *value* is row-forced (`announce a ≈
   lcmap (const a) identity`, `Data.Profunctor.Seeding`); what the class
   adds is its *earliness*, the one moment a stateful carrier has and a
   timeless one lacks — so a proposal to derive `announce` from the wire is
-  right about the value and wrong about the moment the knots need.
+  right about the value and wrong about the moment the knot needs.
 - An emitter MUST NOT be primed — no canonical first occurrence exists
-  (events occur, they don't pre-exist), so `cycled` itself takes no seed;
-  a loop cut at a variant junction is seeded by `with` with the one event
-  its first stage is to receive (crud's `.load {}`), which is an
-  application's opening act, not a leaf's. The carrier tells you the
+  (events occur, they don't pre-exist); an application's opening act is
+  a model (`with seed`) or `{}` into a load action standing before the
+  knot (order-form, crud), never an event. The carrier tells you the
   shape axis, not the time axis:
   record-carried, event-natured channels (`select` before first pick,
   `acted`'s withheld aggregate) stay unpointed.
@@ -364,7 +366,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   All communication travels the wires: composition (`⊳`), merges (`⊗`),
   and the sanctioned loops (the trace quartet, `looped`). Local state
   exists only as the algebra's residuals (`Retaining`'s durable `c`,
-  `Resolving`'s ephemeral `c`, the seeded knots) — invisible in the
+  `Resolving`'s ephemeral `c`, the seeded knot) — invisible in the
   pipeline's types by co-optic hiding, never by side channel.
 - A vocabulary MUST NOT act on the page at import time: page-level setup
   (a theme, a stylesheet, an icon base path, a typography baseline) is the
@@ -587,9 +589,8 @@ code below the UI) are algebra-layer material and exempt by location.
   (`Data.Profunctor.Row.Structural`, a key read through the ecosystem's
   `Foreign`), so an option or key type only a logic function names
   leaves nothing to solve.
-- **Splits at labels the view names.** A knot splits nothing: `looped`
-  re-feeds the whole row and `cycled`'s loop cases are computed from the
-  two rows the body already states (`LoopCases`). `subStrong` keeps only its
+- **Splits at labels the view names.** The knot splits nothing: `looped`
+  re-feeds the whole row. `subStrong` keeps only its
   forward `Union`s — the focus is the component's closed row, the
   background is inferred and cannot overlap it — so the fed row may be
   open.
@@ -597,10 +598,8 @@ code below the UI) are algebra-layer material and exempt by location.
   value at build — a seed it announces, a period it schedules, a settle
   time — or calls a business function on data a view's own literal
   supplies (`with {}` feeding a load action) MUST treat a hole as
-  absent: `announce`, `ticks`, `debouncedTextField`, `action`, `foreach`,
-  `each` and `fold` (a hole handler consumes its case and releases
-  nothing, so a seed event into the fold reaches no hole) do. A new word of
-  that kind MUST do the same.
+  absent: `announce`, `ticks`, `debouncedTextField`, `action`, `foreach`
+  and `each` do. A new word of that kind MUST do the same.
 - The rule tightens the library itself: an exported signature MUST NOT
   carry a constraint only a concrete row can discharge, because at a
   hole the row is not concrete. (`listOf` and order-dashboard's `gauge`
@@ -628,8 +627,8 @@ code below the UI) are algebra-layer material and exempt by location.
   MUST do the
   same — and an option list MUST close its row (`choice @"a" <+> choice
   @"b"`). What it demands of the application: the model row is declared
-  once, where the model first appears (the seed line, or at a variant
-  cut the action or fold answering the seed event); a stored variant field is read by accessor on
+  once, where the model first appears (the seed line, or the load
+  action's outcome when a load stands before the knot); a stored variant field is read by accessor on
   its pane line; a derived row is declared once, where its function
   first appears (each `?name` is its own hole, so the function's later
   uses are typed once it is written); a view helper applies one view

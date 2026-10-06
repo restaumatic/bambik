@@ -40,8 +40,8 @@ that this layer does not depend on the one downstream of it.
 | Module | Holds |
 |---|---|
 | `Data.Profunctor.Row` | the shared floor: the row-constraint vocabulary and the two `dimap`-only widening reshapings |
-| `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, its unit, its placements, the record knot's closure `with` |
-| `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, its unit, its placements, the variant knot `cycled` |
+| `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, its unit, its placements, the knot's closure `with` |
+| `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, its unit, its placements |
 | `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `Resolving`'s row forms |
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `Retaining`'s row forms, `fold` |
 | `Data.Profunctor.Acting` | the container action `class Acting`/`actedBy` |

@@ -11,12 +11,13 @@
 -- | self-feed (no `c` before the first emission, no emission before the
 -- | first input — the gate deadlocks), so the self-feeding special case is
 -- | carrier structure, not a derivation. Row-shaped in the method itself:
--- | the looped value is an entity (a model row). Its sibling at the other
--- | junction, the variant knot `Data.Profunctor.Row.VariantToVariant.cycled`,
--- | needs no class: `Cochoice`'s `unleft` holds raw on `PUI` (the carrier
--- | is traced over `+`, pointed-traced over `×`), so the two knots a loop
--- | through the four shapes can be cut at are one method and one
--- | derivation.
+-- | the looped value is an entity (a model row). It is the one knot: a
+-- | loop through the four shapes is cut at its record junction, and an
+-- | event re-enters through its fold. The variant side needs none —
+-- | `Cochoice`'s `unleft` holds raw on `PUI` (the carrier is traced over
+-- | `+`, pointed-traced over `×`), and a variant knot (`cycled`, 2026-10-05
+-- | to 2026-10-06) was retired as a second way of writing the same loop
+-- | whose model no line of the view could declare.
 -- |
 -- | Laws — the trace axioms restricted to the diagonal (`identity` on
 -- | `Category` carriers), stated up to the observational equivalence of
@@ -74,7 +75,7 @@ import Data.Profunctor (class Profunctor)
 class Profunctor p <= Looping p where
   looping :: forall r. p { | r } { | r } -> p { | r } { | r }
 
--- | The record knot at a declared row: `looped @{ count :: Int } w`, the
+-- | The knot at a declared row: `looped @( count :: Int ) w`, the
 -- | class method with the loop's row as its visible argument (a class
 -- | member's first visible argument would be the carrier, so the method is
 -- | `looping` and this is its face).

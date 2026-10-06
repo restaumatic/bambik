@@ -224,16 +224,18 @@ the channel is primed. This is the **trace quartet**:
 | strength | co-strength | ties into | co-optic | knot | example |
 |---|---|---|---|---|---|
 | `Strong` | `Costrong` / `unfirst` (pointed: `unfirstFrom`) | state feedback | `Colens` | `looped` (a class method — the gated `unfirst` cannot self-feed) | the model re-entering its own loop |
-| `Choice` | `Cochoice` / `unleft` | iteration | `Coprism` | `cycled` | retrying a flaky publish with attempt+1 |
+| `Choice` | `Cochoice` / `unleft` | iteration | `Coprism` | — (holds raw; an event re-enters through its fold) | retrying a flaky charge, written inside the action |
 | `Resolving` | `Coresolving` / `coresolve` | terminating fold | `Coshutter` | — (`debounced` is its one seeded use) | an accumulating multi-step wizard, written as a model field folded per step |
 | `Retaining` | `Coretaining` / `coretain` | productive unfold | `Coreel` | — | an activity meter counting every event, written as a model field |
 
-A loop through the four shapes is cut at a junction, and a junction is a
-record or a variant, so the knots an application ties are exactly two:
-`looped` and `cycled`, each closed by `with` and the value its first stage
-takes. The mixed co-strengths keep their value-level laws and optics; their
-field-level row forms (`feedback @l`, `folding @w @l`, `unfolding @w @l`)
-were retired on 2026-10-05, a looped state being a model field.
+A loop through the four shapes is cut at its record junction, so the knot
+an application ties is exactly one, `looped`, closed by `with` and the
+model its first stage takes; an event re-enters through its fold. The
+co-strengths keep their value-level laws and optics; the field-level row
+forms (`feedback @l`, `folding @w @l`, `unfolding @w @l`) were retired on
+2026-10-05, a looped state being a model field, and a variant knot
+(`cycled`) on 2026-10-06, a second way of writing the same loop whose
+model no line of the view could declare.
 
 And just as each strength induces an optic (`Strong` the lens, `Choice`
 the prism, the coined pair `Shutter` and `Reel`), each co-strength induces

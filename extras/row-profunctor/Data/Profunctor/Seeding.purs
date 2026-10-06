@@ -26,8 +26,8 @@
 -- | (doc §5): a seeded `×`-trace (`debounced`) composes a `seeded` wire into a
 -- | positional loop no feed can reach, and it primes the loop only because
 -- | the answer comes before the first input. On `(->)` earliness is vacuous
--- | (no time). The knots need no seeded wire at all: `looped` and `cycled`
--- | are primed by their first feed, which `with` supplies.
+-- | (no time). The knot needs no seeded wire at all: `looped` is primed by
+-- | its first feed, which `with` supplies.
 -- |
 -- | The **seeded echo wire** `seeded a :: p a a` — `identity`'s pass-through
 -- | plus the point — is *derived*, through `Choice`: the point sits on the

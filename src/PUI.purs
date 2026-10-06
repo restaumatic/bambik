@@ -91,7 +91,7 @@ import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
--- modules only for the `.do` merges and the knots
+-- modules only for the `.do` merges and the knot
 -- `focusField` is deliberately absent: the leaf lift is design-system plumbing —
 -- every vocabulary editor is `focusField @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
@@ -103,7 +103,7 @@ import Data.Profunctor.Row.RecordToVariant (armed, joined, replaying, silence) a
 -- `armed`, `edited`, `acted`), so a UI component's own row is always stated
 -- by a business function, never coerced at the call site. It stays exported
 -- from `Data.Profunctor.Row` as the merge instances' plumbing.
-import Data.Profunctor.Row.VariantToVariant (atCase, cycled, subChoice, toCase) as Adopters
+import Data.Profunctor.Row.VariantToVariant (atCase, subChoice, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (fold) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping, looped)
@@ -453,8 +453,8 @@ instance MonadEffect m => Category (PUI m) where
 
 -- | The **point** (the `Seeding` instance): one emission of `a` at
 -- | registration, then nothing — the informationless `{}` it is fed is
--- | ignored. The pointedness primitive: `with` closes a knot over it at
--- | either junction, and the seeded echo wire `debounced` primes its loop
+-- | ignored. The pointedness primitive: `with` closes the knot over it,
+-- | and the seeded echo wire `debounced` primes its loop
 -- | branch with is derived from it through `Choice`
 -- | (`Data.Profunctor.Seeding`).
 instance MonadEffect m => Seeding (PUI m) where
@@ -1047,10 +1047,11 @@ applied f = updated (const f)
 -- | sibling on
 -- | the `+`-diagonal: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
--- | status consumes are also shown — `snackbar @"charge" retryLine
--- | # observed` narrates a retry loop without interrupting it. The status
+-- | status consumes are also shown — `snackbar @"Charge card" chargingLine
+-- | # observed` narrates a charge on its way to the action without
+-- | interrupting it (payment). The status
 -- | owns its cases within the stage's row (`Contractable s f`, the
--- | shot/focus relation `subChoice` and `cycled` dispatch by): the focus
+-- | shot/focus relation `subChoice` dispatches by): the focus
 -- | cases are contracted out and shown, the background cases pass
 -- | untouched. The status's own emissions are dropped, deliberately —
 -- | events are one-shot, so re-emitting the last event would duplicate it —

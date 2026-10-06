@@ -3,7 +3,7 @@
 -- | shape. Both the class and the optic are this library's. Its
 -- | strength-side sibling is `Data.Lens.Reel`, and nothing here mentions a
 -- | row; its row form `unfolding @w` was retired 2026-10-05 — a chain of
--- | this shape closes at a junction, with `looped` or `cycled`.
+-- | this shape closes at its record junction, with `looped`.
 -- |
 -- | Like the other coined optics: the existential constructor `coreelE` is
 -- | **sound**, and completeness is **not claimed** — see

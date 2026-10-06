@@ -16,8 +16,8 @@
 -- |     the merge pinned at its unit, under `atCase @l`; a loop's folds, one
 -- |     per case, merge here beside the statuses). The co-strength
 -- |     `Coretaining` has no row form here: a chain of this shape is closed
--- |     by a knot at one of its two junctions (`looped` or `cycled`), the
--- |     shape change between them an explicit stage.
+-- |     by the knot at its record junction (`looped`), the shape change
+-- |     between them an explicit stage.
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
@@ -88,14 +88,10 @@ module Data.Profunctor.Row.VariantToRecord
   where
 
 import Control.Category (class Category, identity)
-import Control.Semigroupoid ((>>>))
-import Data.Function (const)
 import Data.Lens.Reel (reelE)
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, splitVariant)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, silence)
-import Data.Profunctor.Seeding (isHole)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
@@ -160,27 +156,17 @@ subRetaining g =
 -- | arrives `RecordToVariant.joined @l` with that row as `{ event, model }`,
 -- | and an effect returns the model (`fold @"created" identity`), so every
 -- | handler has the model in hand and the loop's memory stays at the
--- | emitters and in the knot. The output row may be declared as a second
--- | visible argument (`fold @"New game" @( board :: … ) newGame`): a loop
--- | cut at a variant junction has no model on its seed line, so the fold
--- | answering the seed event declares the model where it first appears
--- | (guardrails L18, tic-tac-toe). A handler that is a hole is absent
--- | (guardrails L18): the fold then consumes its case and releases nothing
--- | — `silence` at the terminal record, entered from the empty variant —
--- | so a seed event folded by logic not yet written reaches no hole. Laws on `(->)`: `fold @l f (inj @l a) = f a`; at
+-- | emitters and in the knot. Laws on `(->)`: `fold @l f (inj @l a) = f a`; at
 -- | `identity` it is the closed singleton unwrapped to its row, an iso with
 -- | `toCase @l identity` both ways. A seeded, retaining fold (2026-10-03)
 -- | and a whole-variant `fold (match …)` (2026-10-04) both gave way to
 -- | this form.
 fold
-  :: forall @l @r p a v
+  :: forall @l p a v r
    . IsSymbol l
   => Cons l a () v
   => Profunctor p
   => Category p
-  => RecordToVariant p
   => (a -> { | r })
   -> p [ | v ] { | r }
-fold f =
-  if isHole f then lcmap (const {}) (silence >>> lcmap case_ identity)
-  else dimap (on (Proxy @l) identity case_) f identity
+fold f = dimap (on (Proxy @l) identity case_) f identity

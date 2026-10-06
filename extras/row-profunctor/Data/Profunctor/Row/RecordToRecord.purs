@@ -16,9 +16,8 @@
 -- |     making every label-indexed editor a whole-row citizen) and, with
 -- |     `Looping`, `bracketed @l` (the sum-typed field editor); over the
 -- |     wire and the point: `blank` (the faceless leaf), `with`
--- |     (`announce a >>> w` — discharge the initial-state obligation at
--- |     either junction: a model for `looped`, an event for `cycled` — so
--- |     `with seed (looped w)` is the app shape, the record knot closed);
+-- |     (`announce a >>> w` — discharge the initial-state obligation, so
+-- |     `with seed (looped w)` is the app shape, the knot closed);
 -- |     over bare `Profunctor`: the rename `asField`, the counit `muted`
 -- |     and the normalization `settled`.
 -- |
@@ -196,9 +195,10 @@ blank :: forall p a. Category p => Profunctor p => p a {}
 blank = lcmap (const {}) identity
 
 -- | Discharge a chain's initial obligation by announcing its t=0 value.
--- | The seed is whatever the chain's first stage takes: a model row into a
--- | record junction (`with seed (looped @( … ) w)`, the app shape) or
--- | an event into a variant junction (`with (.load {}) (cycled w)`). Its
+-- | The seed is whatever the chain's first stage takes: a model row into
+-- | the knot (`with seed (looped @( … ) w)`, the app shape), `{}` into a
+-- | load action standing before it (order-form, crud), an emitter's replay
+-- | payload (`button @l {} # with payload`). Its
 -- | own input is ignored, so it sits at any row; a seed that is a hole is
 -- | never announced (`announce`, guardrails L18).
 with :: forall @a p b r. Seeding p => a -> p a b -> p { | r } b

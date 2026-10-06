@@ -23,7 +23,7 @@ import Data.Profunctor.Coretaining (coretain)
 import Data.Profunctor.Row.RecordToRecord (focusField, muted, subStrong, recordToRecord)
 import Data.Profunctor.Row.VariantToRecord (fold, variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (recordToVariant)
-import Data.Profunctor.Row.VariantToVariant (cycled, focusCase, toCase, variantToVariant)
+import Data.Profunctor.Row.VariantToVariant (focusCase, toCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
@@ -192,9 +192,15 @@ main = do
     (toCase @"picked" _.key identity { key: 7, label: "x" })
 
   -- fold @l f: one case folding into the record, f of its payload —
-  -- fed (inj @l a) it releases f a; at identity the closed singleton is
-  -- its row. On the PUI carrier: fold needs the carrier's silence for a
-  -- hole handler (guardrails L18), so it has no (->) form.
+  -- fold @l f (inj @l a) = f a; at identity the closed singleton is its
+  -- row, an iso with toCase @l identity both ways
+  assertEqual "fold" { count: 4 } (fold @"Count" (\r -> r { count = r.count + 1 }) (."Count" { count: 3 }))
+  assertEqual "fold/identity" { count: 5 } (fold @"Count" identity (."Count" { count: 5 }))
+  assertEqual "fold/section" { count: 5 } ((toCase @"Count" identity identity >>> fold @"Count" identity) { count: 5 })
+  assertEqual "fold/retraction"
+    (."Count" { count: 5 } :: [ "Count" :: { count :: Int } ])
+    ((fold @"Count" identity >>> toCase @"Count" identity identity) (."Count" { count: 5 }))
+  -- and on the carrier, where the folds of a loop run
   do
     outs <- Ref.new ([] :: Array { count :: Int })
     m <- unwrap (fold @"Count" (\r -> r { count = r.count + 1 }) :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
@@ -419,50 +425,6 @@ main = do
     fire gProp { n: 7 }
     Ref.read ins >>= assertEqual "looped: emission re-fed" [ { n: 5 }, { n: 7 } ]
     Ref.read outs >>= assertEqual "looped: emission propagates" [ { n: 7 } ]
-
-  -- cycled (the variant knot): the cases the body both accepts and emits
-  -- loop back, each re-fed once and leaving nothing on the output; a case
-  -- emitted but not accepted exits.
-  do
-    ins <- Ref.new ([] :: Array [ again :: Int ])
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array [ done :: String ])
-    m <- unwrap (cycled (probeIO ins gProp :: PUI Effect [ again :: Int ] [ done :: String, again :: Int ]))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser (.again 1)
-    fire gProp (.again 2)
-    Ref.read outs >>= assertEqual "cycled: a loop case leaves nothing" []
-    Ref.read ins >>= assertEqual "cycled: a loop case re-enters" [ .again 1, .again 2 ]
-    fire gProp (.done "d")
-    Ref.read outs >>= assertEqual "cycled: an exit case leaves" [ .done "d" ]
-
-  -- cycled closed by `with`: a case the body accepts but never emits is
-  -- fed from outside only — the knot's seed event, announced at
-  -- registration (an app cut at a variant junction, crud's `.load {}`).
-  do
-    ins <- Ref.new ([] :: Array [ load :: Unit, again :: Int ])
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array [ done :: String ])
-    m <- unwrap (with (.load unit) (cycled (probeIO ins gProp :: PUI Effect [ load :: Unit, again :: Int ] [ done :: String, again :: Int ])) :: PUI Effect {} [ done :: String ])
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    Ref.read ins >>= assertEqual "cycled + with: the seed event enters at registration" [ .load unit ]
-    fire gProp (.again 2)
-    Ref.read ins >>= assertEqual "cycled + with: a loop case re-enters beside the seed" [ .load unit, .again 2 ]
-    fire gProp (.done "d")
-    Ref.read outs >>= assertEqual "cycled + with: an exit case leaves" [ .done "d" ]
-
-  -- cycled with no loop case is the body: nothing re-enters, every
-  -- emission exits.
-  do
-    ins <- Ref.new ([] :: Array [ go :: Int ])
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array [ done :: String ])
-    m <- unwrap (cycled (probeIO ins gProp :: PUI Effect [ go :: Int ] [ done :: String ]))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser (.go 1)
-    fire gProp (.done "d")
-    Ref.read ins >>= assertEqual "cycled without loop cases: input passes once" [ .go 1 ]
-    Ref.read outs >>= assertEqual "cycled without loop cases: the emission exits" [ .done "d" ]
 
   -- unfirstFrom (the pointed ×-trace): yanking on the timeless carrier.
   assertEqual "unfirstFrom/yanking on (->)" 6 (unfirstFrom 0 (first (_ * 2)) 3)

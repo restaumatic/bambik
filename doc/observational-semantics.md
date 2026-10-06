@@ -118,7 +118,7 @@ combinator laws below fail without them.
    source: `button`, `clicked`, `menuItem`, a status's event input) never
    emits from inside its own `toUser`. Events are occurrences, not
    responses; this is the termination argument for `Cochoice`'s re-entry
-   (an event loop, not a busy loop) and for `cycled`, and what lets
+   (an event loop, not a busy loop), and what lets
    `updated`/`applied` *arm* an emitter by feeding it without firing it.
    Forwarding an occurrence that *arrived* — `identity`, `observed` and
    `subChoice`'s background cases at `+→+` all emit inside `toUser` — is a
@@ -176,7 +176,7 @@ over retained state):
 | --- | --- | --- | --- | --- |
 | `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | the `{}` wire at the merge's row (`blank` = `lcmap (const {}) identity`); `identity` only at `{}` |
 | `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `replaying`, `first` around a payload-less source, so the replay is `Strong`'s retention and the protocol its primed law; `armed`, `# with payload`) or at quiescence (`resolve`) (law 3) | `silence` |
-| `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is `cycled`'s well-foundedness | `identity`, the forward wire |
+| `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is the well-foundedness of any `unleft` re-entry | `identity`, the forward wire |
 | `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is the whole row, one operand's own — a fold's next model — so a change can never stay private; a status releases nothing and is typed at every row | `lcmap case_ identity`, the never-fed wire |
 
 The criterion behind the column: **the output shape decides whether anything
@@ -375,9 +375,9 @@ unleft    (left g)                            =  g                 -- raw
 
 These are value-level laws; since 2026-10-05 no row form stands on the
 three seeded ones (the field-level `feedback`/`folding`/`unfolding` are
-gone — a looped state is a model field), and the two knots an application
-ties are `looped` and `cycled`, the latter `unleft`'s row form, which needs
-no seed of its own because events occur, they don't pre-exist.
+gone — a looped state is a model field), and the one knot an application
+ties is `looped` (a variant knot over `unleft`, `cycled`, lasted a day —
+2026-10-05 — as a second way of writing the same loop).
 This is the operational face of a classical fact: coproduct iteration
 (Elgot) is free, while product feedback (Conway/Hasegawa fixpoints) needs a
 starting point — **the seeds are the operational ⊥**. It is also why
@@ -630,7 +630,7 @@ runs — for the merges and the collection at once.
 ## 10. Where the tests live
 
 test/Main.purs, in order: the merge unit/zero-field/exactness/gating laws; the
-trace quartet and the two knots; the Category laws; the container-action
+trace quartet and the knot; the Category laws; the container-action
 laws; then the audit section — seeded retractions and the three raw
 deadlocks, the `Looping` triple (yanking, conjugation with the `dimap f f`
 counterexample, idempotence with the feed-duplication quotient made

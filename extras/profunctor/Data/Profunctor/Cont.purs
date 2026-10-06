@@ -25,8 +25,8 @@
 -- |   * `Acting` — `Wander` at `traverse`; the key is ignored, exactly as in
 -- |     `actedBy _ = map` for `(->)`
 -- |   * `Cochoice` — the continuation sits in tail position, so the `Right c`
--- |     branch re-enters: `tailRec` at the optic level, and the honest
--- |     semantics of `cycled` (it may diverge; that is what iteration is)
+-- |     branch re-enters: `tailRec` at the optic level (it may diverge; that
+-- |     is what iteration is)
 -- |   * `RecordToRecord` — the ×→× gate as continuation nesting: `p1` runs
 -- |     under a continuation that runs `p2`, the union at the innermost point
 -- |   * `VariantToVariant` — one input case reaches exactly one operand, so
