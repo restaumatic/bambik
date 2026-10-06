@@ -69,9 +69,9 @@ pass-through branch in the gate — which is a redesign, not a weakening.
    by a pure `isHole` (`Data.Profunctor.Seeding`). `announce`, the
    `folding`/`unfolding` seeds, `ticks`, the debounced text fields, `action`,
    `foreach` and `each` treat a hole as absent. This is needed even for a
-   view's own literal seed: `with {}` in crud, order-form, calculator and
-   restaurant-menu is real data, and it reaches a load action or a catalogue
-   that is a hole.
+   `{}` `body` feeds once (crud's and order-form's load actions; until
+   2026-10-06 written as a redundant `with {}`): it is real data, and it
+   reaches a load action that is a hole.
 
 ## What was lost
 

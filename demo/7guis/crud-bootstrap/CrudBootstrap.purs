@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, blank, fold, foreach, joined, looped, subChoice, toCase, with)
+import PUI (action, atCase, blank, fold, foreach, joined, looped, subChoice, toCase)
 import PUI.Web.Bootstrap (body, button, listGroup, listGroupItem, textField)
 import PUI.Web (cl, clicked, clWhen, text, (:=))
 import PUI.Web.HTML (div)
@@ -39,4 +39,4 @@ crudBootstrap =
           fold @"updated" identity
           fold @"deleted" identity
       ) # looped
-    ) # with {}
+    )

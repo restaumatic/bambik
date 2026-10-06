@@ -246,7 +246,7 @@ compile error at `body` naming the missing fields.
 | effects and time | password-generator, stopwatch, timer, weather |
 | structure that varies with the data | markdown-previewer |
 | no design system at all | restaurant-menu, helloworld |
-| a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, `# with {}` feeding the load); `bracketed` |
+| a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, which `body`'s one feed of `{}` runs); `bracketed` |
 | an action that retries until it succeeds, narrated on its way in | payment (`chargeFlaky`, `# observed`) |
 | state that used to be a hidden loop, now a model field | auction (`settled raiseTop`), checkout (`stepTo`), ticket-dispenser (`issue`) |
 | a reusable sub-form; routing some events | parcel (`subStrong`), cashbox (`subChoice`) |
@@ -428,10 +428,7 @@ text is computed, a chrome line nothing.
   the status merge). A UI function earns its name only by spanning
   lines.
 - **A line leads with what is seen, via `$`, and trails with data
-  concerns, via `#`.** No data word leads a line; an emitter's fixed
-  payload trails too (`button @"Take a deposit" { icon: "savings" } # with
-  customerDeposit`, cashbox), and
-  `# with {}` is written inline.
+  concerns, via `#`.** No data word leads a line.
 - **A decorator rides its element.** `cl`, `clWhen`, `attrWith`,
   `tooltip` and `tooltipWith` compose onto a container with `>>>`
   (`td >>> attrWith "style" cellFace $ …`) or trail a finished leaf with
@@ -443,7 +440,7 @@ text is computed, a chrome line nothing.
   nested closers cascade onto that same line, each spaced from the chain
   it closes over: `… # shown ) # inCase @"Delivery" _.selected`. The
   exception is a seed closer, `) # looped @( … ) # with seed` /
-  `) # with @{ … } seed` / `) # with {}`, on its own
+  `) # with @{ … } seed`, on its own
   line — or, when the model row is long, `) # looped` on its own line,
   the row's fields one per line beneath it and `) # with seed` closing
   the last (inbox).

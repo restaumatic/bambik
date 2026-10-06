@@ -7,7 +7,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
-import PUI (action, armed, atCase, bracketed, debounced, looped, settled, updated, with)
+import PUI (action, armed, atCase, bracketed, debounced, looped, settled, updated)
 import PUI.Web ((<+>), choice, inCase, shown, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -56,4 +56,4 @@ orderFormMDC2 =
       Semigroupoid.do
         indeterminateLinearProgress @"Printing receipt" # action @[ receiptPrinted :: { "Short ID" :: String } ] printReceipt # atCase @"Receipt"
         snackbar @"receiptPrinted" receiptLine
-  ) # with {}
+  )

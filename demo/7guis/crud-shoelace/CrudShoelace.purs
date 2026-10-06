@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, blank, fold, foreach, joined, looped, subChoice, toCase, with)
+import PUI (action, atCase, blank, fold, foreach, joined, looped, subChoice, toCase)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, li, ul)
 import PUI.Web.Shoelace (body, button, textField)
@@ -40,7 +40,7 @@ crudShoelace =
           fold @"updated" identity
           fold @"deleted" identity
       ) # looped
-    ) # with {}
+    )
 
 entryFace :: { key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: var(--sl-color-primary-100, #cde);", unselected: \_ -> "" } status

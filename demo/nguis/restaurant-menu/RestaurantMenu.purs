@@ -4,7 +4,7 @@ import Prelude ((#), ($), (>>>), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (foreach, static, with)
+import PUI (foreach, static)
 import PUI.Web (cl, staticText, text, (:=))
 import PUI.Web.HTML (a, article, blockquote, body, div, footer, h1, h2, h3, header, hr, li, p, section, span, ul)
 import PUI.Web.SVG as SVG
@@ -47,4 +47,4 @@ restaurantMenu =
         staticText @"A static page composed from HTML oculars with "
         a >>> "href" := "https://github.com/restaumatic/bambik" >>> "target" := "_blank" $ staticText @"Bambik"
         staticText @" — no Material components, just structure."
-  ) # with {}
+  )

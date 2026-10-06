@@ -233,7 +233,7 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   | `blank` | the faceless leaf `a → {}`, the wire's `lcmap`-closure at **every** input since `{}` is terminal: at record input the display reading `()` of the row (elements whose whole face is decorators), at variant input the status rendering no occurrence (`action`'s progress slot when there is no indicator, `blank # action …`); neither merge family awaits a zero-field contribution, so one word serves both |
   | `static` | an element with nothing in it — an ocular applied to the wire, pinned `{} → {}` (`static (span >>> cl "ripple")`); with `staticText`/`staticHTML` the three statics |
   | `announce` | the **point**, `Seeding`'s one primitive: one registration emission of `a` out of the terminal record, feeds ignored — what `with` closes over |
-  | `with` | discharge a chain's initial obligation, `announce a >>> w`, at any seed type (2026-10-05): a model into the knot (`looped @( … ) # with seed`), `{}` into a load action standing before it (`# with {}`, order-form, crud), a `×→+` emitter's replay payload (`button @l {…} # with payload`, leaf leading the line); its own input is ignored, so it sits at any row, and a hole seed is never announced |
+  | `with` | discharge a chain's initial obligation, `announce a >>> w`, at any seed type (2026-10-05): a model into the knot (`looped @( … ) # with seed`) or into a knotless flow (`# with @{ … } invitation`, potluck); its own input is ignored, so it sits at any row, and a hole seed is never announced. Never `with {}`: `body` feeds `{}` once itself, so a load action standing before the knot runs on that feed (2026-10-06, nine redundant `# with {}` lines dropped) |
   | `seeded` | the seeded echo wire, derived from the point through `Choice` (`dimap Right (either identity identity) (left (announce a))`): pass-through plus one emission of the seed |
   | `looped` | the **knot**: the `×`-diagonal self-trace (`Looping`'s method `looping` under a face whose visible argument is the loop's row, `looped @( count :: Int )`), re-entrancy-guarded; the model re-enters whole. `mvu` (`with seed (looped w)`) was DELETED 2026-10-05 — the acronym names an architecture the loop does not need, and the two words are as concise |
   | `settled` | `rmap`-only normalization of the row, the normalizer an update of the stage's row in the logic |
@@ -539,7 +539,7 @@ the dev server). Two suites: **demo/7guis/** (the
   stands before the ensemble, since a stage after the fold is fed only by
   events; `# with @{ … } seed` for a flow with no loop; a knot with a
   load action before it carries no row and takes no seed of its own —
-  the action's outcome declares the model and `# with {}` feeds the load
+  the action's outcome declares the model and `body`'s one feed of `{}` runs the load
   (order-form, crud); a loop with no
   events has no fold; the drawer's nav folds its pick in place with
   `updated`, its content being fed from it (photo-gallery).
@@ -555,7 +555,7 @@ the dev server). Two suites: **demo/7guis/** (the
 | temperature-converter | both fields in the model; non-numeric input leaves the other untouched |
 | flight-booker | type-changing `select @"Flight type" {}` over an anonymous variant row; both outcomes carry bare payloads into two sibling statuses, `snackbar @"booked" bookedLine` and `snackbar @"rejected" rejectedLine` |
 | timer | `ticks @"tick"` replayed and folded by a total `tick`; `sliderLive` duration re-scoped at runtime |
-| crud | **a load action before the knot**: `( action @{ … } loadPeopleCatalogue; ( editors; list and buttons; actions # subChoice; folds ) # looped ) # with {}` — the model declared as the load's outcome, the knot carrying no row; `MDC2.listOf @l` (keyed `foreach` of `clicked @l` rows elsewhere), its pick `# joined @"picked"`; Aff catalogue actions over the logic's module-level stand-in server returning the model, their cases `identity` in the fold, the edit cases passing under `subChoice` (guardrails L18) |
+| crud | **a load action before the knot**: `( action @{ … } loadPeopleCatalogue; ( editors; list and buttons; actions # subChoice; folds ) # looped )` — the model declared as the load's outcome, the knot carrying no row; `MDC2.listOf @l` (keyed `foreach` of `clicked @l` rows elsewhere), its pick `# joined @"picked"`; Aff catalogue actions over the logic's module-level stand-in server returning the model, their cases `identity` in the fold, the edit cases passing under `subChoice` (guardrails L18) |
 | circle-drawer | **channel-fed SVG canvas** — built once, updated via `attrWith`; container-level `onClickedXY @l`; the diameter a bounded quantity in the model, its slider `# inCase @"chosen" _.selected # settled resizeSelected` — live-preview resize as a state invariant — and the canvas click `# joined @"picked"`, an `adjusting` flag coalescing a drag into one undo transaction |
 | cells | **channel-fed 31×27 grid** — ~800 cells built once, `attrWith` + `text` in place, clicked key via `clicked @l _.key`; hand-rolled formula evaluator over an `Expr` AST (nominal, since rows can't express μ) |
 
@@ -631,8 +631,8 @@ weather (Aff service with a canned per-city delay), helloworld
 (`body $ staticText @"Hello, World!"` — the 5 kB bundle floor).
 
 **Vocabulary showcases.** restaurant-menu is the plain-HTML one (no design
-system: element oculars, `cl`/`:=` decorators, `each` from data, seeded
-`with {}`; the fine-dining look is ordinary CSS). espresso-bar is the MDC3 one
+system: element oculars, `cl`/`:=` decorators, `each` from data, no seed
+at all; the fine-dining look is ordinary CSS). espresso-bar is the MDC3 one
 (with an MDC2 twin generated in reverse). One per non-Material vocabulary,
 suffix naming the vocabulary rather than a twin (so a suffix means
 "this vocabulary", not "has a twin" — order-dashboard-mdc3 is single-variant

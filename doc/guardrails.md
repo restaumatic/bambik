@@ -596,8 +596,8 @@ code below the UI) are algebra-layer material and exempt by location.
   open.
 - **A hole consumed when built is absent.** A word that consumes a logic
   value at build — a seed it announces, a period it schedules, a settle
-  time — or calls a business function on data a view's own literal
-  supplies (`with {}` feeding a load action) MUST treat a hole as
+  time — or calls a business function on the `{}` `body` feeds once (a
+  load action standing before the knot) MUST treat a hole as
   absent: `announce`, `ticks`, `debouncedTextField`, `action`, `foreach`
   and `each` do. A new word of that kind MUST do the same.
 - The rule tightens the library itself: an exported signature MUST NOT

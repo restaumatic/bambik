@@ -277,7 +277,7 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
   their own case `# joined` with the model, and one `stepTo` folds both.
 - **crud** — a load action before the knot: `action @{ … } loadPeopleCatalogue`
   declares the model, the loop is `# looped` with no row of its own, and
-  `# with {}` feeds the load; create/update/delete are `+→+` operands
+  `body`'s one feed of `{}` runs the load; create/update/delete are `+→+` operands
   inside the loop, their outcomes `identity` in the fold.
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
   `fold @"New game" (const openingPosition)` the reset.

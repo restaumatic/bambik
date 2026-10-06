@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, blank, fold, foreach, joined, looped, subChoice, toCase, with)
+import PUI (action, atCase, blank, fold, foreach, joined, looped, subChoice, toCase)
 import PUI.Web (attrWith, clicked, shown, staticText, text, (:=))
 import PUI.Web.HTML (body, button, div, input, label, li, p, ul)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -44,7 +44,7 @@ crudHTML =
         fold @"updated" identity
         fold @"deleted" identity
     ) # looped
-  ) # with {}
+  )
 
 entryFace :: { key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: #cde;", unselected: \_ -> "" } status

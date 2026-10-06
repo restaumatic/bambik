@@ -39,7 +39,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- | --- |
 | mounted | `body $ …`, imported from the design-system module | every demo | writing.md *App shape* |
 | a model edited and folded | `# looped @( count :: Int ) # with freshCount`, the model row declared on the knot | counter | writing.md *App shape* |
-| seeded, with no loop of its own | `# with invitation`; `# with {}` | potluck; order-form | writing.md *App shape* |
+| seeded, with no loop of its own | `# with @{ … } invitation` | potluck | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form | writing.md *App shape* |
 | an action that retries until it succeeds | the retry inside the action's `Aff` (`chargeFlaky`), the outcome one case | payment | writing.md *Business functions* |
 | a wizard's step, a running maximum, a counter | a model field, folded or normalized (`fold @"Next" stepTo`, `# settled raiseTop`, `fold @"Take a number" issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |

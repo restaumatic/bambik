@@ -196,9 +196,10 @@ blank = lcmap (const {}) identity
 
 -- | Discharge a chain's initial obligation by announcing its t=0 value.
 -- | The seed is whatever the chain's first stage takes: a model row into
--- | the knot (`with seed (looped @( … ) w)`, the app shape), `{}` into a
--- | load action standing before it (order-form, crud), an emitter's replay
--- | payload (`button @l {} # with payload`). Its
+-- | the knot (`with seed (looped @( … ) w)`, the app shape) or into a
+-- | knotless flow (potluck). Never `{}`: `body` feeds the terminal record
+-- | once itself, so a load action standing before the knot runs on that
+-- | feed with no seed written. Its
 -- | own input is ignored, so it sits at any row; a seed that is a hole is
 -- | never announced (`announce`, guardrails L18).
 with :: forall @a p b r. Seeding p => a -> p a b -> p { | r } b

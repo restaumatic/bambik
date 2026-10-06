@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, fold, joined, looped, subChoice, toCase, with)
+import PUI (action, atCase, fold, joined, looped, subChoice, toCase)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, cardActions, filledTextField, indeterminateLinearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -37,4 +37,4 @@ crudMDC3 =
           fold @"updated" identity
           fold @"deleted" identity
       ) # looped
-    ) # with {}
+    )
