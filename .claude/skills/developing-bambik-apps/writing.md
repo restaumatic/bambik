@@ -367,8 +367,11 @@ model module that no view line asks for.
 The view hands the view model module **only arguments called on
 data**: a copy function, a handler, a classifier, an action, the seed,
 a period. It never runs one of its effects at the entry and never
-applies a component built there. A stand-in server keeps its state in the view
-model module, as a real server would (crud's catalogue).
+applies a component built there. A stand-in server is a module of its
+own beside the view model module (crud's `PeopleServer`), as a real
+server sits behind its client library: the view model module imports it
+like any domain module, the view never does, and its module-level state
+is the one fake in the app, named as such.
 
 **An action's outcome cases are named by its `Aff`** (`createPerson ::
 model -> Aff [ "Person created" :: model, "Person not created" :: model ]`,

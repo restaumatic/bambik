@@ -1,27 +1,18 @@
 module CrudViewModel (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleLoadedLine, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personPickedLine, personUpdatedLine, pick, updatePerson) where
 
-import Prelude ((<$>), (<>), (==), (||), ($), bind, discard, otherwise, pure, show)
+import Prelude ((<$>), (<>), (==), (||), bind, otherwise, pure, show)
 
 import Data.Array (deleteAt, filter, index, length, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.String (Pattern(..), stripPrefix)
 import Data.Variant (match)
-import Effect.Aff (Aff, Milliseconds(..), delay)
-import Effect.Class (liftEffect)
-import Effect.Ref (Ref)
-import Effect.Ref as Ref
-import Effect.Unsafe (unsafePerformEffect)
+import Effect.Aff (Aff)
+import PeopleServer (fetchPeople, storePeople)
 
-catalogue :: Ref (Array { "Name" :: String, "Surname" :: String })
-catalogue = unsafePerformEffect $ Ref.new
-  [ { "Name": "Hans", "Surname": "Emil" }
-  , { "Name": "Max", "Surname": "Mustermann" }
-  , { "Name": "Roman", "Surname": "Tisch" }
-  ]
 
 loadPeopleCatalogue :: {} -> Aff [ "People loaded" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } ]
 loadPeopleCatalogue _ = do
-  people <- readPeople catalogue
+  people <- fetchPeople
   pure (."People loaded" { "Filter prefix (surname)": "", "Name": "", "Surname": "", people, selected: .none {} })
 
 pick :: { event :: Int, model :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } } -> { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }
@@ -32,17 +23,17 @@ pick { event: i, model: m@{ people } } = case index people i of
 createPerson :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> Aff [ "Person created" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person deleted" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person not created" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person not deleted" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person not updated" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person updated" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } ]
 createPerson m@{ "Name": name, "Surname": surname, people }
   | name == "" || surname == "" = pure (."Person not created" m)
-  | otherwise = (\ps -> ."Person created" (refreshPeople ps m)) <$> writePeople catalogue (snoc people { "Name": name, "Surname": surname })
+  | otherwise = (\ps -> ."Person created" (refreshPeople ps m)) <$> storePeople (snoc people { "Name": name, "Surname": surname })
 
 updatePerson :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> Aff [ "Person created" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person deleted" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person not created" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person not deleted" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person not updated" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person updated" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } ]
 updatePerson m@{ "Name": name, "Surname": surname, people, selected } = match
-  { picked: \p -> (\ps -> ."Person updated" (refreshPeople ps m)) <$> writePeople catalogue (fromMaybe people (updateAt p.index { "Name": name, "Surname": surname } people))
+  { picked: \p -> (\ps -> ."Person updated" (refreshPeople ps m)) <$> storePeople (fromMaybe people (updateAt p.index { "Name": name, "Surname": surname } people))
   , none: \_ -> pure (."Person not updated" m)
   } selected
 
 deletePerson :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> Aff [ "Person created" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person deleted" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person not created" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person not deleted" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person not updated" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }, "Person updated" :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } ]
 deletePerson m@{ people, selected } = match
-  { picked: \p -> (\ps -> ."Person deleted" (peopleDeleted ps m)) <$> writePeople catalogue (fromMaybe people (deleteAt p.index people))
+  { picked: \p -> (\ps -> ."Person deleted" (peopleDeleted ps m)) <$> storePeople (fromMaybe people (deleteAt p.index people))
   , none: \_ -> pure (."Person not deleted" m)
   } selected
 
@@ -51,17 +42,6 @@ refreshPeople people m = m { people = people }
 
 peopleDeleted :: Array { "Name" :: String, "Surname" :: String } -> { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }
 peopleDeleted people m = m { people = people, selected = .none {} }
-
-readPeople :: Ref (Array { "Name" :: String, "Surname" :: String }) -> Aff (Array { "Name" :: String, "Surname" :: String })
-readPeople store = do
-  delay (Milliseconds 300.0)
-  liftEffect (Ref.read store)
-
-writePeople :: Ref (Array { "Name" :: String, "Surname" :: String }) -> Array { "Name" :: String, "Surname" :: String } -> Aff (Array { "Name" :: String, "Surname" :: String })
-writePeople store people = do
-  delay (Milliseconds 300.0)
-  liftEffect (Ref.write people store)
-  readPeople store
 
 entries :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> Array { "Name" :: String, "Surname" :: String, key :: Int, status :: [ selected :: {}, unselected :: {} ] }
 entries { "Filter prefix (surname)": prefix, selected, people } =
