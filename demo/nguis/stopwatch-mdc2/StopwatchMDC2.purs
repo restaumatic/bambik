@@ -30,4 +30,8 @@ stopwatchMDC2 =
         snackbar @"Lap" lapRecordedLine # fold recordLap
         snackbar @"Reset" stopwatchResetLine # fold clearStopwatch
       ul $ ( li $ text lapLine ) # shownEach @"number" @( number :: Int, tenths :: Int ) lapRows
-    # looped @( phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int ) # with zeroedStopwatch
+    # looped
+      @( phase :: [ halted :: {}, timing :: {} ]
+       , elapsedTenths :: Int
+       , laps :: Array Int
+       ) # with zeroedStopwatch

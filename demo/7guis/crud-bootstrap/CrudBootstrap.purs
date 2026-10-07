@@ -24,7 +24,12 @@ crudBootstrap =
         textField @"Surname" {}
         RecordToVariant.do
           ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
-            ( clicked @"Person picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key" @( key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] ) entries ) # joined @"Person picked"
+            ( clicked @"Person picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key"
+              @( key :: Int
+               , "Name" :: String
+               , "Surname" :: String
+               , status :: [ selected :: {}, unselected :: {} ]
+               ) entries ) # joined @"Person picked"
           button @"Create" {}
           button @"Update" {}
           button @"Delete" {}
@@ -40,4 +45,10 @@ crudBootstrap =
           toast @"Person not updated" personNotUpdatedLine # fold identity
           toast @"Person deleted" personDeletedLine # fold identity
           toast @"Person not deleted" personNotDeletedLine # fold identity
-      ) # looped @( "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] )
+      ) # looped
+        @( "Filter prefix (surname)" :: String
+         , "Name" :: String
+         , "Surname" :: String
+         , people :: Array { "Name" :: String, "Surname" :: String }
+         , selected :: [ none :: {}, picked :: { index :: Int } ]
+         )

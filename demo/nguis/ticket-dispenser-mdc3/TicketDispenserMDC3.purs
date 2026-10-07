@@ -21,4 +21,7 @@ ticketDispenserMDC3 =
         (text servingLine) # shownWhen @"serving" _.display )
       button @"Take a number" {}
       snackbar @"Take a number" ticketTakenLine # fold issue
-    # looped @( display :: [ waiting :: {}, serving :: { number :: Int } ], next :: Int ) # with emptyQueue
+    # looped
+      @( display :: [ waiting :: {}, serving :: { number :: Int } ]
+       , next :: Int
+       ) # with emptyQueue

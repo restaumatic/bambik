@@ -20,4 +20,7 @@ paymentMDC3 =
         snackbar @"Charge card" chargingLine # observed
         indeterminateCircularProgress # action chargeFlaky # atCase @"Charge card" )
       snackbar @"Card charged" cardChargedLine # fold identity
-    # looped @( amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] ) # with unpaidOrder
+    # looped
+      @( amount :: Number
+       , approval :: [ approved :: { attempt :: Int }, pending :: {} ]
+       ) # with unpaidOrder

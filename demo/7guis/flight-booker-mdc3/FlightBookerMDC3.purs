@@ -24,11 +24,18 @@ flightBookerMDC3 =
        , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
     ( Semigroupoid.do
-      bodyLarge (text problemLine) # shownWhen @"problem" @( problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ) bookingState
+      bodyLarge (text problemLine) # shownWhen @"problem"
+        @( problem :: { problem :: String }
+         , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }
+         , "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
+         ) bookingState
       bodyLarge (text oneWayLine) # shownWhen @"one-way" bookingState
       bodyLarge (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     ( VariantToRecord.do
       indeterminateLinearProgress
       snackbar @"Flight booked" bookedLine
-      snackbar @"Booking rejected" rejectedLine ) # action @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], "Booking rejected" :: String ) submit # atCase @"Book"
+      snackbar @"Booking rejected" rejectedLine ) # action
+        @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+         , "Booking rejected" :: String
+         ) submit # atCase @"Book"

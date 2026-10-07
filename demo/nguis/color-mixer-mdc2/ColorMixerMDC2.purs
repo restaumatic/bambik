@@ -22,7 +22,10 @@ colorMixerMDC2 =
       ( div $ Semigroupoid.do
         div >>> attrWith "style" swatchStyle $ blank
         div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-          clicked @"Preset applied" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" @( name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } ) (const palette) ) # joined @"Preset applied"
+          clicked @"Preset applied" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name"
+            @( name :: String
+             , mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
+             ) (const palette) ) # joined @"Preset applied"
       snackbar @"Preset applied" presetAppliedLine # fold applyPreset
     # looped
       @( "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

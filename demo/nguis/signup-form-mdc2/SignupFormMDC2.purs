@@ -28,10 +28,17 @@ signupFormMDC2 =
        , "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ]
        , "Terms" :: [ accepted :: {}, declined :: {} ]
        ) # with newApplicant
-    ( body2 $ text unnamedLine ) # shownWhen @"unnamed" @( unnamed :: {}, taken :: { "Username" :: String }, available :: { "Username" :: String } ) usernameStatus
+    ( body2 $ text unnamedLine ) # shownWhen @"unnamed"
+      @( unnamed :: {}
+       , taken :: { "Username" :: String }
+       , available :: { "Username" :: String }
+       ) usernameStatus
     ( body2 $ text takenLine ) # shownWhen @"taken" usernameStatus
     ( body2 $ text availableLine ) # shownWhen @"available" usernameStatus
-    ( subtitle2 $ text invalidLine ) # shownWhen @"invalid" @( invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }, ready :: { "Username" :: String } ) validation
+    ( subtitle2 $ text invalidLine ) # shownWhen @"invalid"
+      @( invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }
+       , ready :: { "Username" :: String }
+       ) validation
     ( subtitle2 $ text readyLine ) # shownWhen @"ready" validation
     button @"Sign up" { icon: "person_add" } # armed
     snackbar @"Sign up" signupLine

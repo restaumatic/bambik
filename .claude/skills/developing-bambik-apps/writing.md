@@ -468,7 +468,11 @@ text is computed, a chrome line nothing.
   `) # with @{ … } seed`, on its own
   line — or, when the model row is long, `) # looped` on its own line,
   the row's fields one per line beneath it and `) # with seed` closing
-  the last (inbox).
+  the last (inbox). Every declared row too long for its line breaks the
+  same way: the row starts a line of its own, two columns deeper than
+  the line it belongs to, one field per line, and its closer carries the
+  rest of the line (flight-booker's first pane and its action, crud's
+  list).
   `#` binds tighter than `$`: where a chain must apply to a whole
   wrapped element (a `foreach` multiplying a card), open the paren
   before the wrapper.

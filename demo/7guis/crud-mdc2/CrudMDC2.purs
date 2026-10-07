@@ -23,7 +23,12 @@ crudMDC2 =
         filledTextField @"Name" {}
         filledTextField @"Surname" {}
         RecordToVariant.do
-          listOf @"Person picked" @"key" @( key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] ) { selected: isSelected } entries (text personLine # shown) # joined @"Person picked"
+          listOf @"Person picked" @"key"
+            @( key :: Int
+             , "Name" :: String
+             , "Surname" :: String
+             , status :: [ selected :: {}, unselected :: {} ]
+             ) { selected: isSelected } entries (text personLine # shown) # joined @"Person picked"
           button @"Create" {}
           button @"Update" {}
           button @"Delete" {}
@@ -39,4 +44,10 @@ crudMDC2 =
           snackbar @"Person not updated" personNotUpdatedLine # fold identity
           snackbar @"Person deleted" personDeletedLine # fold identity
           snackbar @"Person not deleted" personNotDeletedLine # fold identity
-      ) # looped @( "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] )
+      ) # looped
+        @( "Filter prefix (surname)" :: String
+         , "Name" :: String
+         , "Surname" :: String
+         , people :: Array { "Name" :: String, "Surname" :: String }
+         , selected :: [ none :: {}, picked :: { index :: Int } ]
+         )

@@ -29,10 +29,17 @@ flightBookerHTML =
        , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
     ( Semigroupoid.do
-      p (text problemLine) # shownWhen @"problem" @( problem :: { problem :: String }, "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }, "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ) bookingState
+      p (text problemLine) # shownWhen @"problem"
+        @( problem :: { problem :: String }
+         , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }
+         , "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
+         ) bookingState
       p (text oneWayLine) # shownWhen @"one-way" bookingState
       p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" {}
     ( VariantToRecord.do
       output @"Flight booked" bookedLine
-      output @"Booking rejected" rejectedLine ) # action @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], "Booking rejected" :: String ) submit # atCase @"Book"
+      output @"Booking rejected" rejectedLine ) # action
+        @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+         , "Booking rejected" :: String
+         ) submit # atCase @"Book"

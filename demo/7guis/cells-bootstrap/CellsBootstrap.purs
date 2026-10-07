@@ -23,7 +23,10 @@ cellsBootstrap =
           ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
           ( tr $ Semigroupoid.do
             ( td >>> "style" := headerFace $ text rowLabel ) # shown
-            ( clicked @"Cell picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # joined @"Cell picked"
+            ( clicked @"Cell picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey"
+              @( rowKey :: String
+               , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
+               ) sheetRows ) ) # joined @"Cell picked"
       toast @"Cell picked" cellPickedLine # fold selectCell
     # looped
       @( cells :: Object String

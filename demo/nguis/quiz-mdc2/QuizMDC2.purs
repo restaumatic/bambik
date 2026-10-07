@@ -20,7 +20,10 @@ quizMDC2 =
       RecordToVariant.do
         ( Semigroupoid.do
           headline5 (text askedPrompt) # shown
-          listOf @"Question answered" @"key" {} _.choices (text _.label) ) # provided @"asking" @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { correct :: Int } ) quizPhase # joined @"Question answered"
+          listOf @"Question answered" @"key" {} _.choices (text _.label) ) # provided @"asking"
+            @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }
+             , finished :: { correct :: Int }
+             ) quizPhase # joined @"Question answered"
         ( Semigroupoid.do
           headline6 (text finalScoreLine) # shown
           button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase

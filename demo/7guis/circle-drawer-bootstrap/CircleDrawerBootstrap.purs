@@ -23,7 +23,13 @@ circleDrawerBootstrap =
         ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
           ( onClickedXY @"Canvas clicked"
             ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
-              >>> attrWith "fill" circleFill $ blank ) # foreach @"key" @( key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] ) canvasCircles ) ) ) # joined @"Canvas clicked"
+              >>> attrWith "fill" circleFill $ blank ) # foreach @"key"
+                @( key :: String
+                 , x :: String
+                 , y :: String
+                 , r :: String
+                 , status :: [ selected :: {}, unselected :: {} ]
+                 ) canvasCircles ) ) ) # joined @"Canvas clicked"
         ( ( div $ RecordToVariant.do
           button @"Undo" {}
           button @"Redo" {} ) # cl "d-flex" # cl "gap-2" )

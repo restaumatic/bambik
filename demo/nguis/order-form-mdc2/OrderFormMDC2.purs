@@ -37,14 +37,30 @@ orderFormMDC2 =
             ( Semigroupoid.do
               button @"Estimate distance" { icon: "near_me" }
               indeterminateLinearProgress # action @( estimated :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-            ( body1 $ text distanceLine ) # shownWhen @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf ) # inCase @"Delivery" _.selected ) # bracketed @"Mode" @( "Dine in" :: { "Table" :: String } , "Takeaway" :: { "Time" :: String } , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ) @( selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] ) fulfillmentState fulfillmentCase
+            ( body1 $ text distanceLine ) # shownWhen @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf ) # inCase @"Delivery" _.selected ) # bracketed @"Mode"
+              @( "Dine in" :: { "Table" :: String }
+               , "Takeaway" :: { "Time" :: String }
+               , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+               )
+              @( selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ]
+               , "Table" :: String
+               , "Time" :: String
+               , "Address" :: String
+               , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+               ) fulfillmentState fulfillmentCase
       group @"Payment" $ Semigroupoid.do
         filledTextField @"Total" {}
         segmentedButton @"Method"
           (choice @"cash" <+> choice @"card")
         filledTextField @"Paid" {}
         ( body1 $ text payingLine ) # shown
-      group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped @( "Identifier" :: { "Short ID" :: String , "Unique ID" :: String } , "Customer" :: { "First name" :: String , "Last name" :: String } , "Fulfillment" :: { "Mode" :: [ "Dine in" :: { "Table" :: String } , "Takeaway" :: { "Time" :: String } , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ] } , "Payment" :: { "Total" :: String , "Method" :: [ "cash" :: {} , "card" :: {} ] , "Paid" :: String } , "Kitchen" :: { "Remarks" :: String } )
+      group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
+        @( "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+         , "Customer" :: { "First name" :: String, "Last name" :: String }
+         , "Fulfillment" :: { "Mode" :: [ "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String }, "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ] }
+         , "Payment" :: { "Total" :: String, "Method" :: [ "cash" :: {}, "card" :: {} ], "Paid" :: String }
+         , "Kitchen" :: { "Remarks" :: String }
+         )
     card $ body1 (text summaryLine) # shown # debounced summarySettleTime
     ( RecordToVariant.do
       button @"Submit order" { icon: "save" }
@@ -53,7 +69,11 @@ orderFormMDC2 =
       ( VariantToRecord.do
         indeterminateLinearProgress
         snackbar @"Order submitted" submittedLine
-        snackbar @"Submission failed" rejectionLine ) # action @( "Order submitted" :: { "Short ID" :: String }, "Receipt printed" :: { "Short ID" :: String }, "Submission failed" :: { "Short ID" :: String, reason :: String } ) submitOrder # atCase @"Submit order"
+        snackbar @"Submission failed" rejectionLine ) # action
+          @( "Order submitted" :: { "Short ID" :: String }
+           , "Receipt printed" :: { "Short ID" :: String }
+           , "Submission failed" :: { "Short ID" :: String, reason :: String }
+           ) submitOrder # atCase @"Submit order"
       ( VariantToRecord.do
         indeterminateLinearProgress
         snackbar @"Receipt printed" receiptLine ) # action printReceipt # atCase @"Receipt"

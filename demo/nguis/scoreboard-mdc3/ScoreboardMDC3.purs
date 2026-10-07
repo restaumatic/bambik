@@ -15,7 +15,11 @@ scoreboardMDC3 =
     Semigroupoid.do
       ( Semigroupoid.do
         list $ ( listItem $ text scoreLine ) # shown # accumulated @String @{ team :: String, points :: Int } goal
-        ( bodyMedium $ text summaryLine # shown ) # foreach @"key" @( key :: String, teams :: Int, leader :: [ led :: { team :: String, points :: Int }, unled :: {} ] ) boardSummary # muted ) # shown
+        ( bodyMedium $ text summaryLine # shown ) # foreach @"key"
+          @( key :: String
+           , teams :: Int
+           , leader :: [ led :: { team :: String, points :: Int }, unled :: {} ]
+           ) boardSummary # muted ) # shown
       blankStatus @"Points scored" # ticks tickPeriod
       blankStatus @"Points scored" # fold tick
     # looped @( beat :: Int ) # with gameStart

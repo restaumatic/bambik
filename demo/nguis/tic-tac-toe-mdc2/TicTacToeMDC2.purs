@@ -17,12 +17,20 @@ ticTacToeMDC2 :: Effect Unit
 ticTacToeMDC2 =
   body $
     Semigroupoid.do
-      headline6 (text wonLine) # shownWhen @"won" @( won :: { mark :: [ x :: {}, o :: {}, free :: {} ] }, drawn :: {}, toMove :: { mark :: [ x :: {}, o :: {}, free :: {} ] } ) gameOutcome
+      headline6 (text wonLine) # shownWhen @"won"
+        @( won :: { mark :: [ x :: {}, o :: {}, free :: {} ] }
+         , drawn :: {}
+         , toMove :: { mark :: [ x :: {}, o :: {}, free :: {} ] }
+         ) gameOutcome
       headline6 (text drawnLine) # shownWhen @"drawn" gameOutcome
       headline6 (text toMoveLine) # shownWhen @"toMove" gameOutcome
       RecordToVariant.do
         ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-          clicked @"Cell claimed" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" @( key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] ) cells ) ) # joined @"Cell claimed"
+          clicked @"Cell claimed" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key"
+            @( key :: String
+             , mark :: [ x :: {}, o :: {}, free :: {} ]
+             , line :: [ winning :: {}, plain :: {} ]
+             ) cells ) ) # joined @"Cell claimed"
         button @"New game" { icon: "replay" }
       VariantToRecord.do
         snackbar @"Cell claimed" cellClaimedLine # fold claimCell

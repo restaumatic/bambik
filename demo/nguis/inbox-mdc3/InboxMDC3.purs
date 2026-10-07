@@ -23,11 +23,17 @@ inboxMDC3 =
           headlineSmall (text subjectLine) # shown
           bodyMedium (text fromLine) # shown
           bodyLarge (text bodyText) # shown
-          iconButton @"Delete message" {} "delete" ) # provided @"reading" @( reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ) messageView # joined @"Delete message"
+          iconButton @"Delete message" {} "delete" ) # provided @"reading"
+            @( reading :: { sender :: String, subject :: String, body :: String }
+             , browsing :: {}
+             ) messageView # joined @"Delete message"
         ( Semigroupoid.do
           ( dialog "Delete the last message?" $ RecordToVariant.do
             button @"Delete" {}
-            button @"Keep" {} ) # provided @"confirming" @( confirming :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] } , deletion :: [ silent :: {}, confirming :: {} ] }, silent :: {} ) deletionPane
+            button @"Keep" {} ) # provided @"confirming"
+              @( confirming :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] }, deletion :: [ silent :: {}, confirming :: {} ] }
+               , silent :: {}
+               ) deletionPane
           snackbar @"Delete" inboxZeroLine # observed )
         fab @"Compose" {} "edit"
         ( menu "Sort" $ RecordToVariant.do

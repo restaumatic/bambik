@@ -26,7 +26,12 @@ movieBrowserMDC2 =
           span (text titleLine) # shown
           span (text yearLine) # shown
           span (text ratingLine) # shown
-          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # foreach @"title" @( title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean ) visibleMovies # toCase @"Favorite changed" @{ title :: String, "Favorite" :: Boolean } favoriteMark # joined @"Favorite changed"
+          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # foreach @"title"
+            @( title :: String
+             , year :: Int
+             , rating :: Number
+             , "Favorite" :: Boolean
+             ) visibleMovies # toCase @"Favorite changed" @{ title :: String, "Favorite" :: Boolean } favoriteMark # joined @"Favorite changed"
       snackbar @"Favorite changed" favoriteChangedLine # fold markFavorite
     # looped
       @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]
