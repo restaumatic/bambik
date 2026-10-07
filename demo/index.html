@@ -67,18 +67,17 @@
           </ul>
         </li>
         <li>A visible <code>@"…"</code> names a field or a case, nothing else. Titles and static texts are strings: <code>topAppBar "Espresso Bar"</code>.</li>
-        <li>A leaf reads word, anchor, positional arguments. Its record holds only optional presentation: <code>{ icon: "person_add" }</code>, <code>{ hint: "DD.MM.YYYY" }</code>.</li>
+        <li>A leaf reads word, anchor, positional arguments. Its record holds only optional presentation: <code>{ icon: "person_add" }</code>, <code>{ columns: 80, rows: 3 }</code>.</li>
       </ul>
 
       <h3>Labels and copy</h3>
       <ul>
-        <li>A label is its caption verbatim, units included: <code>sliderLive @"Amount (€)" {}</code>.</li>
-        <li>A caption config is used only for translation (flight-booker-pl) or a glyph-only button.</li>
-        <li>How to fill a field in is its <code>hint</code>, never part of the label: <code>filledTextField @"Start date" { hint: "DD.MM.YYYY" }</code>.</li>
+        <li>A label is its caption verbatim, punctuation, format hints and units included: <code>filledTextField @"Start date (DD.MM.YYYY)" {}</code>, <code>sliderLive @"Amount (€)" {}</code>.</li>
+        <li>No demo passes a caption config: a leaf states its copy once, as its label.</li>
         <li>Options are one <code>choice</code> per case, joined by <code>&lt;+&gt;</code> in display order: <code>choice @"one-way" &lt;+&gt; choice @"return"</code>.</li>
         <li>A case label is read back with <code>caseText</code>, never restated in a <code>match</code>.</li>
         <li>A display's text is a named copy function in the view model, whole line including glue: <code>balanceLine :: { balance :: Number } -&gt; String</code>.</li>
-        <li>Static copy (headings, captions, hints) is a literal in the view: <code>staticText "Hours"</code>.</li>
+        <li>Static copy (a heading, a note) is a literal in the view: <code>staticText "Hours"</code>.</li>
         <li>Events and outcomes carry data, never copy: flight-booker's problems are reasons, phrased by <code>problemLine</code>.</li>
       </ul>
 
