@@ -9,13 +9,13 @@ import PUI.Web.Fluent (body, button, dropdown, dropdownOptional, dropdownUnpicke
 
 lawBenchFluent :: Effect Unit
 lawBenchFluent = do
-  body (staticText @"Leaf-law bench · Fluent")
+  body (staticText "Leaf-law bench · Fluent")
   runBench
     [ bench "textField" "×→×" texts (textField @"Name" {})
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
     , bench "slider" "×→×" quantities (slider @"Amount" {})
-    , bench "ratingDisplay" "×→×" fractions (ratingDisplay @"Stars" _.fraction)
-    , bench "progressBar" "×→×" fractions (progressBar @"Progress" _.fraction)
+    , bench "ratingDisplay" "×→×" fractions (ratingDisplay _.fraction)
+    , bench "progressBar" "×→×" fractions (progressBar _.fraction)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
     , bench "dropdown" "×→×" chosen (dropdown @"Pick" {} options)
     , bench "dropdownUnpicked" "×→×" picks (dropdownUnpicked @"Pick" @"chosen" {} options)

@@ -13,10 +13,10 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsHTML :: Effect Unit
 cellsHTML =
-  body $ div $ ( Semigroupoid.do
+  body $ div $ Semigroupoid.do
     p (text selectedLine) # shown
     p ( label $ Semigroupoid.do
-      (staticText @"Formula (e.g. =SUM(A0:A5)*2) ") # shown
+      (staticText "Formula (e.g. =SUM(A0:A5)*2) ") # shown
       input @"Formula (e.g. =SUM(A0:A5)*2)" "text" # "size" := "32" ) # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
       ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
@@ -25,7 +25,7 @@ cellsHTML =
           ( td >>> "style" := headerFace $ text rowLabel ) # shown
           ( clicked @"Cell picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # joined @"Cell picked"
     output @"Cell picked" cellPickedLine # fold selectCell
-  ) # looped
+  # looped
     @( cells :: Object String
      , selected :: [ picked :: { name :: String }, none :: {} ]
      , "Formula (e.g. =SUM(A0:A5)*2)" :: String

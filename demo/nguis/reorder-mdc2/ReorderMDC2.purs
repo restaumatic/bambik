@@ -14,7 +14,7 @@ import ReorderViewModel (openingSetlist, rotateAction, setlistRotatedLine, setli
 
 reorderMDC2 :: Effect Unit
 reorderMDC2 =
-  body $ ( Semigroupoid.do
+  body $ Semigroupoid.do
     group @"Setlist" $ list $
       ( listItem $ Semigroupoid.do
         static (el "input" >>> "type" := "checkbox") # shown
@@ -28,4 +28,4 @@ reorderMDC2 =
     VariantToRecord.do
       snackbar @"Setlist rotated" setlistRotatedLine # fold identity
       snackbar @"Setlist shuffled" setlistShuffledLine # fold identity
-  ) # looped @( "Setlist" :: Array { id :: String, "Title" :: String } ) # with openingSetlist
+  # looped @( "Setlist" :: Array { id :: String, "Title" :: String } ) # with openingSetlist

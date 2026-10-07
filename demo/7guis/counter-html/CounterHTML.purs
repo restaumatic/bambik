@@ -11,8 +11,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 counterHTML :: Effect Unit
 counterHTML =
-  body $ div $ ( Semigroupoid.do
+  body $ div $ Semigroupoid.do
     h4 (text countLine) # shown
     button @"Count" {}
     output @"Count" countedLine # fold increment
-  ) # looped @( count :: Int ) # with freshCount
+  # looped @( counted :: Int ) # with freshCount

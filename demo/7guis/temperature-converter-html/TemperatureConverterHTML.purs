@@ -11,11 +11,11 @@ import TemperatureConverterViewModel (fromCelsius, fromFahrenheit, roomTemperatu
 
 temperatureConverterHTML :: Effect Unit
 temperatureConverterHTML =
-  body $ div $ ( Semigroupoid.do
+  body $ div $ Semigroupoid.do
     p ( label $ Semigroupoid.do
-      (staticText @"°C ") # shown
-      input @"°C" "text" ) # settled fromCelsius
+      (staticText "°C ") # shown
+      input @"celsius" "text" ) # settled fromCelsius
     p ( label $ Semigroupoid.do
-      (staticText @"°F ") # shown
-      input @"°F" "text" ) # settled fromFahrenheit
-  ) # looped @( "°C" :: String, "°F" :: String ) # with roomTemperature
+      (staticText "°F ") # shown
+      input @"fahrenheit" "text" ) # settled fromFahrenheit
+  # looped @( celsius :: String, fahrenheit :: String ) # with roomTemperature

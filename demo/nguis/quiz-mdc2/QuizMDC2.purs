@@ -14,8 +14,8 @@ import QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questio
 quizMDC2 :: Effect Unit
 quizMDC2 =
   body $
-    ( Semigroupoid.do
-      linearProgress @"Progress" quizProgress # shown
+    Semigroupoid.do
+      linearProgress quizProgress # shown
       ( body1 $ text questionLine ) # shown
       RecordToVariant.do
         ( Semigroupoid.do
@@ -27,4 +27,4 @@ quizMDC2 =
       VariantToRecord.do
         snackbar @"Question answered" questionAnsweredLine # fold answer
         snackbar @"Restart" quizRestartedLine # fold (const freshQuizRun)
-    ) # looped @( question :: Int, correct :: Int ) # with freshQuizRun
+    # looped @( question :: Int, correct :: Int ) # with freshQuizRun

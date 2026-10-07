@@ -17,9 +17,9 @@ restaurantMenu =
       SVG.svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
         static (SVG.circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47")
         SVG.text >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
-          >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText @"Y"
-      h1 >>> cl "restaurant-name" $ staticText @"Osteria Yoneda"
-      p >>> cl "tagline" $ staticText @"Cucina componibile — a tasting menu, composed"
+          >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText "Y"
+      h1 >>> cl "restaurant-name" $ staticText "Osteria Yoneda"
+      p >>> cl "tagline" $ staticText "Cucina componibile — a tasting menu, composed"
       hr
     div >>> cl "courses" $
       ( section >>> cl "course" $ RecordToRecord.do
@@ -34,17 +34,17 @@ restaurantMenu =
             span >>> cl "tags" $
               ( span >>> cl "tag" $ text _.tag ) # foreach @"tag" @( tag :: String ) dishTags ) # foreach @"name" @( name :: String, price :: String, description :: String, tags :: Array String ) courseDishes ) # foreach @"name" @( name :: String, dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String } ) menuCourses
     blockquote >>> cl "chef-note" $ RecordToRecord.do
-      p (staticText @"Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
-      p >>> cl "attribution" $ staticText @"— from the kitchen"
+      p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
+      p >>> cl "attribution" $ staticText "— from the kitchen"
     footer >>> cl "menu-footer" $ RecordToRecord.do
       div >>> cl "info" $ RecordToRecord.do
-        h3 (staticText @"Hours")
-        p (staticText @"Tuesday – Sunday · 17:00 – 23:00")
+        h3 (staticText "Hours")
+        p (staticText "Tuesday – Sunday · 17:00 – 23:00")
       div >>> cl "info" $ RecordToRecord.do
-        h3 (staticText @"Find us")
-        p (staticText @"12 Category Lane · Kraków")
+        h3 (staticText "Find us")
+        p (staticText "12 Category Lane · Kraków")
       p >>> cl "colophon" $ RecordToRecord.do
-        staticText @"A static page composed from HTML oculars with "
-        a >>> "href" := "https://github.com/restaumatic/bambik" >>> "target" := "_blank" $ staticText @"Bambik"
-        staticText @" — no Material components, just structure."
+        staticText "A static page composed from HTML oculars with "
+        a >>> "href" := "https://github.com/restaumatic/bambik" >>> "target" := "_blank" $ staticText "Bambik"
+        staticText " — no Material components, just structure."
   )

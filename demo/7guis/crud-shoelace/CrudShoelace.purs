@@ -17,7 +17,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crudShoelace :: Effect Unit
 crudShoelace =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       indeterminateLinearProgress # action loadPeopleCatalogue
       toast @"People loaded" peopleLoadedLine # fold identity
       ( Semigroupoid.do
@@ -43,7 +43,6 @@ crudShoelace =
           toast @"Person deleted" personDeletedLine # fold identity
           toast @"Person not deleted" personNotDeletedLine # fold identity
       ) # looped @( "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] )
-    )
 
 entryFace :: { key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: var(--sl-color-primary-100, #cde);", unselected: \_ -> "" } status

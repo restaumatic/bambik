@@ -58,7 +58,7 @@ import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticString, text, textOf, uniqueId, (:=))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticText, text, textOf, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -115,7 +115,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- | the case label verbatim (`label:` overrides with real copy).
 button :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | v ]
 button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in eventLeaf @l $
-  (el "button" >>> "type" := "button" $ staticString config.label) # cl "btn" # cl "btn-primary"
+  (el "button" >>> "type" := "button" $ staticText config.label) # cl "btn" # cl "btn-primary"
 
 -- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
@@ -130,7 +130,7 @@ textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertO
 textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in, but still echo so the channel stays live
-  _ <- unwrap ((label $ staticString config.label) # cl "form-label")
+  _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "input" (pure unit)
   attribute "type" "text"
   attribute "class" "form-control"
@@ -167,7 +167,7 @@ textField provided = let config = convertOptionsWithDefaults OptCaption { label:
 sliderLive :: forall @l r b provided. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   readout <- unwrap $ (label $ wrap do
-      _ <- unwrap (span $ staticString config.label)
+      _ <- unwrap (span $ staticText config.label)
       unwrap ((span $ text _.readout) # cl "text-body-secondary")
     ) # cl "form-label" # cl "d-flex" # cl "justify-content-between"
   -- the readout is written, never listened to; text's echo needs a listener
@@ -222,7 +222,7 @@ selectOptional provided options = withStructuralEq @a (selectWith @l true (selec
 
 selectWith :: forall @l a i o provided. IsSymbol l => Eq a => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> { | provided } -> Array { value :: a, label :: String } -> PUI Web i o
 selectWith clearable lift provided options = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in lift $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
-  _ <- unwrap ((label $ staticString config.label) # cl "form-label")
+  _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "select" (void $ unwrap (optionLeaves))
   node <- gets _.sibling
   liftEffect $ setAttribute node "class" "form-select"
@@ -246,7 +246,7 @@ selectWith clearable lift provided options = let config = convertOptionsWithDefa
       noneNode <- gets _.sibling
       liftEffect $ setAttribute noneNode "value" ""
     forWithIndex_ options \idx o -> do
-      element "option" (void $ unwrap (staticString o.label))
+      element "option" (void $ unwrap (staticText o.label))
       optionNode <- gets _.sibling
       liftEffect $ setAttribute optionNode "value" (show idx)
     pure { toUser: mempty, fromUser: \prop -> prop {} }
@@ -263,7 +263,7 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
     setAttribute node "type" "checkbox"
     setAttribute node "role" "switch"
     setAttribute node "id" inputId
-  _ <- unwrap ((label >>> "for" := inputId $ staticString config.label) # cl "form-check-label")
+  _ <- unwrap ((label >>> "for" := inputId $ staticText config.label) # cl "form-check-label")
   mPropRef <- liftEffect $ Ref.new Nothing
   liftEffect $ void $ addEventListener "change" node $ const do
     b <- getChecked node
@@ -286,9 +286,8 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
 -- | of source fields), not state. The label is the accessible name only,
 -- | so it is copy, never a field reference.
 progress
-  :: forall @l reads
-   . IsSymbol l
-  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall reads
+   . ({ | reads } -> Number) -> PUI Web { | reads } {}
 progress f = wrap do
   barNode <- element "div" do
     element "div" (pure unit)
@@ -299,7 +298,6 @@ progress f = wrap do
   liftEffect do
     setAttribute node "class" "progress"
     setAttribute node "role" "progressbar"
-    setAttribute node "aria-label" (reflectSymbol (Proxy @l))
     setAttribute node "style" "width: 100%; min-width: 200px;"
   mPropRef <- liftEffect $ Ref.new Nothing
   pure

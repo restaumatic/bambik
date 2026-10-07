@@ -4,32 +4,32 @@ import Prelude hiding (div)
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, clicked, dynamic, each, inCase, onClickedXY, provided, shown, shownEach, shownWhen, staticString, staticText, text)
+import PUI.Web ((<+>), choice, clicked, dynamic, each, inCase, onClickedXY, provided, shown, shownEach, shownWhen, staticText, staticText, text)
 import PUI.Web.HTML (body, button, div, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
 lawBenchHTML = do
-  body (staticText @"Leaf-law bench · HTML")
+  body (staticText "Leaf-law bench · HTML")
   runBench
     [ bench "input" "×→×" texts (input @"Name" "text")
     , bench "textArea" "×→×" texts (textArea @"Name")
     , bench "rangeInput" "×→×" quantities (rangeInput @"Amount")
-    , bench "progress" "×→×" fractions (progress @"Progress" _.fraction)
+    , bench "progress" "×→×" fractions (progress _.fraction)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
     , bench "select" "×→×" chosen (select @"Pick" options)
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" options)
     , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
     , bench "text" "×→×" titled (text _.title)
-    , bench "dynamic" "×→×" titled (dynamic \r -> staticString r.title)
-    , bench "each" "×→×" units (each [ "a", "b" ] staticString)
+    , bench "dynamic" "×→×" titled (dynamic \r -> staticText r.title)
+    , bench "each" "×→×" units (each [ "a", "b" ] staticText)
     , bench "shown" "×→×" titled (shown (text titleOf))
     , bench "shownWhen" "×→×" gated (shownWhen @"on" modeOf (text _.n))
     , bench "inCase" "×→×" gated (inCase @"on" modeOf (input @"Name" "text"))
     , bench "shownEach" "×→×" lists (shownEach @"id" itemsOf (text _.title))
     , bench "provided" "×→+" modes (provided @"on" modeOf (button @"Go" {}))
     , bench "button" "×→+" rows (button @"Go" {})
-    , bench "clicked" "×→+" rows (clicked @"Go" identity (div (staticText @"Go")))
-    , bench "onClickedXY" "×→+" units (onClickedXY @"at" (div (staticText @"canvas")))
+    , bench "clicked" "×→+" rows (clicked @"Go" identity (div (staticText "Go")))
+    , bench "onClickedXY" "×→+" units (onClickedXY @"at" (div (staticText "canvas")))
     , bench "output" "+→×" events (output @"event" identity)
     ]
   where

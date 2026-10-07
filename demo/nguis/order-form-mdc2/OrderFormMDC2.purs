@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderFormMDC2 :: Effect Unit
 orderFormMDC2 =
-  body $ ( Semigroupoid.do
+  body $ Semigroupoid.do
     indeterminateLinearProgress # action loadOrder
     snackbar @"Order loaded" orderLoadedLine # fold identity
     ( Semigroupoid.do
@@ -57,4 +57,3 @@ orderFormMDC2 =
       ( VariantToRecord.do
         indeterminateLinearProgress
         snackbar @"Receipt printed" receiptLine ) # action printReceipt # atCase @"Receipt"
-  )

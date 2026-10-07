@@ -141,7 +141,7 @@ import Data.Profunctor.Seeding (isHole)
 import PUI (Ocular, PUI, blank, foreach, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, shown, staticHTML, staticString, staticText, text, textOf, uniqueId, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, shown, staticHTML, staticText, staticText, text, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -208,7 +208,7 @@ import Type.Proxy (Proxy(..))
 -- labels cannot flow through the merges' `Nub`, so a skolem-labeled
 -- operand can't be merged); all-chrome groups (button content, progress
 -- bars) have concrete rows and stay literal `RecordToRecord.do` merges of
--- announcing chrome (`staticString`/`staticHTML`/`static`, `{}`-output at any row).
+-- announcing chrome (`staticText`/`staticHTML`/`static`, `{}`-output at any row).
 -- Code order = DOM order throughout.
 --
 -- **The `dimap` round-trip contract for editors.** An editor bracketed by
@@ -326,10 +326,10 @@ buttonOf mModifier provided = eventLeaf @l $
     static (span >>> cl "mdc-button__ripple")
     static (span >>> cl "mdc-button__focus-ring")
     case config.icon of
-      Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> "aria-hidden" := "true" $ staticString icon'
+      Just icon' -> i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> "aria-hidden" := "true" $ staticText icon'
       Nothing -> blank
     case config.label of
-      Just label' -> span >>> cl "mdc-button__label" $ staticString label'
+      Just label' -> span >>> cl "mdc-button__label" $ staticText label'
       Nothing -> blank
   where
   config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
@@ -363,9 +363,9 @@ fab provided icon = eventLeaf @l $
   el "button" >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe (reflectSymbol (Proxy @l)) config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     static (div >>> cl "mdc-fab__ripple")
     static (span >>> cl "mdc-fab__focus-ring")
-    span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticString icon
+    span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticText icon
     case config.label of
-      Just label' -> span >>> cl "mdc-fab__label" $ staticString label'
+      Just label' -> span >>> cl "mdc-fab__label" $ staticText label'
       Nothing -> blank
   where
   config = convertOptionsWithDefaults OptLabel { label: Just (reflectSymbol (Proxy @l)) } provided :: { label :: Maybe String }
@@ -383,7 +383,7 @@ iconButton provided icon = eventLeaf @l $
   el "button" >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
     static (div >>> cl "mdc-icon-button__ripple")
     static (span >>> cl "mdc-icon-button__focus-ring")
-    staticString icon
+    staticText icon
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 
@@ -394,7 +394,7 @@ menuItem :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => Convert
 menuItem provided = eventLeaf @l $
   li >>> cl "mdc-deprecated-list-item" >>> "role" := "menuitem" >>> "tabindex" := "-1" $ RecordToRecord.do
     static (span >>> cl "mdc-deprecated-list-item__ripple")
-    span >>> cl "mdc-deprecated-list-item__text" $ staticString config.label
+    span >>> cl "mdc-deprecated-list-item__text" $ staticText config.label
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 
@@ -435,11 +435,11 @@ textFieldLeaf variant mDebounce floatingLabel = wrap do
       then void $ unwrap $ span >>> cl "mdc-notched-outline" $ RecordToRecord.do
         static (span >>> cl "mdc-notched-outline__leading")
         span >>> cl "mdc-notched-outline__notch" $
-          span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticString floatingLabel
+          span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel
         static (span >>> cl "mdc-notched-outline__trailing")
       else do
         _ <- unwrap (static (span >>> cl "mdc-text-field__ripple"))
-        void $ unwrap (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticString floatingLabel)
+        void $ unwrap (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel)
     element "input" (pure unit)
     clazz "mdc-text-field__input"
     attribute "type" "text"
@@ -483,7 +483,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
   labelId <- liftEffect uniqueId
   inputNode <- element "label" do
     _ <- unwrap (static (span >>> cl "mdc-text-field__ripple"))
-    _ <- unwrap (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticString config.floatingLabel)
+    _ <- unwrap (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText config.floatingLabel)
     node <- element "span" do
       element "textarea" (pure unit)
       clazz "mdc-text-field__input"
@@ -502,12 +502,12 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
   liftEffect $ textFieldWiring comp inputNode Nothing
 
 -- | The Material **checkbox**, with its label beside it: the label is
--- | ordinary content (usually a `staticString`), properly associated, so
+-- | ordinary content (usually a `staticText`), properly associated, so
 -- | clicking the words toggles the box and the whole line is a comfortable
 -- | target.
 -- |
 -- | The field is a **named two-case variant** the application spells:
--- | `checkbox @"Terms" @"accepted" @"declined" {} (staticString …)`
+-- | `checkbox @"Terms" @"accepted" @"declined" {} (staticText …)`
 -- | is ticked exactly while `"Terms"` sits at `accepted`; ticking reports
 -- | `.accepted ticked`, clearing reports `.declined {}` — so an optional part
 -- | of the model *is* the box's state under its own names, with no second
@@ -1084,9 +1084,8 @@ indeterminateLinearProgress = wrap do
 -- | a bar showing 42% must announce *what* is 42% — so it is copy, never a
 -- | field reference.
 linearProgress
-  :: forall @l reads
-   . IsSymbol l
-  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall reads
+   . ({ | reads } -> Number) -> PUI Web { | reads } {}
 linearProgress f = wrap do
   _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
   node <- gets _.sibling
@@ -1262,7 +1261,7 @@ cardActions = div >>> cl "mdc-card__actions"
 -- | appear once. It draws the surface, so it **leads its lines like any
 -- | container** (`group @"Customer" $ …`), never trailing as a `#` chain.
 -- | Without it a labelled group is three hand-aligned spellings — the
--- | `card`, a `staticString` heading, a trailing `# focusField @l` — free to
+-- | `card`, a `staticText` heading, a trailing `# focusField @l` — free to
 -- | drift apart.
 -- |
 -- | Derived, not primitive:
@@ -1292,7 +1291,7 @@ group
 group w = wrap do
   headingId <- liftEffect uniqueId
   unwrap $ "role" := "group" $ "aria-labelledby" := headingId $ card $
-    shown ("id" := headingId $ subtitle1 $ staticText @l) >>> focusField @l w
+    shown ("id" := headingId $ subtitle1 $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
 
 -- | A **modal dialog** — dimmed backdrop, trapped focus, Esc to leave — for
 -- | the decision that must be made before anything else continues.
@@ -1314,7 +1313,7 @@ dialogFace title content = wrap do
     result <- unwrap $
       div >>> cl "mdc-dialog__container" $
         div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ wrap do
-          _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticString title)
+          _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
           unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
     _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
     pure result
@@ -1352,12 +1351,12 @@ simpleDialog content = wrap do
       div >>> cl "mdc-dialog__container" $
         div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ Semigroupoid.do
           wrap do
-            _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticString title)
+            _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
             unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
           div >>> cl "mdc-dialog__actions" $ (eventLeaf @"confirmed" $
-            el "button" >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
+            el "button" >>> "type" := "button" >>> "aria-label" := reflectSymbol (Proxy @l) >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
               static (div >>> cl "mdc-button__ripple")
-              span >>> cl "mdc-button__label" $ staticText @l) # Profunctor.rmap (Variant.match { confirmed: identity })
+              span >>> cl "mdc-button__label" $ staticText (reflectSymbol (Proxy @l))) # Profunctor.rmap (Variant.match { confirmed: identity })
     _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
     pure result
   where
@@ -1540,7 +1539,7 @@ dataTable headerCells content =
 -- | One **column header** of a `dataTable` — static copy naming the column,
 -- | written as a type like every static: `columnHeader @"Qty"`.
 columnHeaderExact :: forall @s. IsSymbol s => PUI Web {} {}
-columnHeaderExact = th >>> cl "mdc-data-table__header-cell" >>> "role" := "columnheader" >>> "scope" := "col" $ staticText @s
+columnHeaderExact = th >>> cl "mdc-data-table__header-cell" >>> "role" := "columnheader" >>> "scope" := "col" $ staticText (reflectSymbol (Proxy @s))
 
 columnHeader :: forall @s in_. IsSymbol s => PUI Web { | in_ } {}
 columnHeader = unsafeCoerce (columnHeaderExact @s :: PUI Web {} {})
@@ -1604,7 +1603,7 @@ drawer nav content = div >>> "style" := "display: flex;" $
 -- | information the user needs to complete the task, which belongs on the
 -- | screen. Wrap a single control, and write it trailing so the control
 -- | still reads first:
--- | `checkbox @"Loyalty" @"member" @"guest" {} (staticText @"Loyalty member") # tooltip @"Members get 10% off"`.
+-- | `checkbox @"Loyalty" @"member" @"guest" {} (staticText "Loyalty member") # tooltip @"Members get 10% off"`.
 tooltip :: forall @s. IsSymbol s => Ocular (PUI Web)
 tooltip = tooltipFace (reflectSymbol (Proxy @s))
 

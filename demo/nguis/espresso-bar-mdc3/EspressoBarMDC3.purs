@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import EspressoBarViewModel (brewedLine, caffeineFraction, cupLine, espressoNoFrills, espressoNoFrillsLine, loyaltyNote, theUsual, theUsualLine, usualOrder)
-import PUI (armed, fold, looped, with)
+import PUI (fold, looped, with)
 import PUI.Web ((<+>), choice, shown, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, button, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltipWith, topAppBar)
@@ -17,7 +17,6 @@ espressoBarMDC3 :: Effect Unit
 espressoBarMDC3 =
   body $
     topAppBar @"Espresso Bar" $ Semigroupoid.do
-      ( Semigroupoid.do
         tabBar @"Drink"
           (choice @"Espresso" <+> choice @"Cappuccino" <+> choice @"Latte")
         filledTextField @"Your name" {}
@@ -33,15 +32,22 @@ espressoBarMDC3 =
           filterChip @"Decaf" {}
         toggleSwitch @"Takeaway cup" {}
         iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "heart_plus" }
-        checkbox @"Loyalty" @"member" @"guest" {} (staticText @"Loyalty member") # tooltipWith loyaltyNote
+        checkbox @"Loyalty" @"member" @"guest" {} (staticText "Loyalty member") # tooltipWith loyaltyNote
         divider # shown
-        menu @"Presets" ( RecordToVariant.do
-          menuItem @"The usual" {}
-          menuItem @"Espresso, no frills" {} )
+        bodyMedium (text cupLine) # shown
+        ( div $ RecordToRecord.do
+          labelMedium $ staticText "Caffeine"
+          linearProgress caffeineFraction ) # shown
+        RecordToVariant.do
+          menu @"Presets" ( RecordToVariant.do
+            menuItem @"The usual" {}
+            menuItem @"Espresso, no frills" {} )
+          button @"Place order" { icon: "local_cafe" }
         VariantToRecord.do
           snackbar @"The usual" theUsualLine # fold theUsual
           snackbar @"Espresso, no frills" espressoNoFrillsLine # fold espressoNoFrills
-      ) # looped
+          snackbar @"Place order" brewedLine
+      # looped
         @( "Your name" :: String
          , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]
          , "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ]
@@ -54,9 +60,3 @@ espressoBarMDC3 =
          , "Mark as favorite" :: Boolean
          , "Loyalty" :: [ member :: {}, guest :: {} ]
          ) # with usualOrder
-      bodyMedium (text cupLine) # shown
-      ( div $ RecordToRecord.do
-        labelMedium $ staticText @"Caffeine"
-        linearProgress @"Caffeine" caffeineFraction ) # shown
-      button @"Place order" { icon: "local_cafe" } # armed
-      snackbar @"Place order" brewedLine

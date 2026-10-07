@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crudBootstrap :: Effect Unit
 crudBootstrap =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       indeterminateLinearProgress # action loadPeopleCatalogue
       toast @"People loaded" peopleLoadedLine # fold identity
       ( Semigroupoid.do
@@ -41,4 +41,3 @@ crudBootstrap =
           toast @"Person deleted" personDeletedLine # fold identity
           toast @"Person not deleted" personNotDeletedLine # fold identity
       ) # looped @( "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] )
-    )

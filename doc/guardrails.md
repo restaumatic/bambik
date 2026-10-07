@@ -152,7 +152,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   argument (`@l` on an editor, selector, emitter, pane or status), a
   **named read function** as a display's positional argument (L17), or
   **nothing** (chrome — statics and oculars write nothing and so name
-  nothing; a static's type argument, `staticText @"Hours"`, is its own
+  nothing; a static's type argument, `staticText "Hours"`, is its own
   text, known before runtime like every label, not an anchor). A
   **declared row** is not an anchor either: a visible row type argument
   by which a line states a shape the compiler could not otherwise know —
@@ -525,7 +525,7 @@ code below the UI) are algebra-layer material and exempt by location.
   fields), and derivation is the same act as formatting. Its label
   survives as the **accessible name only** (a bar showing 42% must
   announce *what* is 42%), so it is copy like an editor's caption, not
-  a field reference: `progressBar @"Elapsed" elapsedFraction`.
+  a field reference: `progressBar elapsedFraction`.
   Quantity *editors* are untouched — a slider genuinely edits a field,
   so `sliderLive @l` keeps label-as-field.
 - A model field MUST exist because the app's state needs it, never
@@ -576,10 +576,10 @@ code below the UI) are algebra-layer material and exempt by location.
   stage is fed, and a shared record input is an **equality** (every
   operand is fed the merge's row, L4). A business function's signature
   is that row, **verbatim from the view's hole hint**
-  (`countLine :: { count :: Int } -> String`, 2026-10-03): checked by
+  (`countLine :: { counted :: Int } -> String`, 2026-10-03): checked by
   unification, and never stuck on a hole, where a `Union small rest big`
   is. Until 2026-10-03 the signature was an open-row footprint,
-  `forall r. { count :: Int | r } -> String`, narrowed by hand from the
+  `forall r. { counted :: Int | r } -> String`, narrowed by hand from the
   hint; the hint never suggested the quantifier, so the view did not
   determine it, and it went. A name two lines call at different rows is
   generalized to what they share, and only then carries a `forall`;

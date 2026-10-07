@@ -15,7 +15,7 @@ import ShoppingCartViewModel (addUnit, cartEmptiedLine, cartLines, catalogueLine
 shoppingCartMDC3 :: Effect Unit
 shoppingCartMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       bodyLarge (text totalLine) # shown
       RecordToVariant.do
         listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) {} productCatalogue (text catalogueLine) # joined @"Unit added"
@@ -33,4 +33,4 @@ shoppingCartMDC3 =
         snackbar @"Unit added" unitAddedLine # fold addUnit
         snackbar @"Unit removed" unitRemovedLine # fold removeUnit
         snackbar @"Empty cart" cartEmptiedLine # fold (const emptyCart)
-    ) # looped @( order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } ) # with emptyCart
+    # looped @( order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } ) # with emptyCart

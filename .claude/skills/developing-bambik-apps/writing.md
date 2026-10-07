@@ -38,7 +38,7 @@ whichever twin matches your design system.
 - **merge** — several components over one shared value, written as a
   qualified `do` block (below).
 - **seed** — the model's value at start, on the line that declares the
-  model row (`# looped @( count :: Int ) # with freshCount`). A pane
+  model row (`# looped @( counted :: Int ) # with freshCount`). A pane
   stays blank until the fields it waits for have values; a seed gives
   them one.
 - **pane** — a component that exists only while the model is in one
@@ -102,7 +102,7 @@ Field access (`r."Name"`), accessor sections (`_."Name"`) and update
 syntax (`r { "Name" = … }`) work as usual. Put punctuation and units on
 the label (`filledTextField @"Start date (DD.MM.YYYY)" {}`,
 `sliderLive @"Amount (€)" {}`); where a symbol is the conventional
-caption, write the symbol (`@"°C"`). A caption config (`floatingLabel:`,
+caption, write the symbol (`@celsius`). A caption config (`floatingLabel:`,
 `label:`) is only for copy the label cannot be — localized wording,
 passed from the app's copy table — and, on a button, hiding the caption
 of a glyph-only face (see the component's header).
@@ -126,7 +126,7 @@ How each kind takes its business meaning:
 - **Displays** take a copy function, not a label:
   `headline4 (text countLine) # shown` (counter). A number shown as a
   bar or gauge takes a function too, and keeps its label only as the
-  accessible name (`linearProgress @"Elapsed" elapsedFraction`, timer).
+  accessible name (`linearProgress elapsedFraction`, timer).
   See *Copy is a function* in [Types and values](#types-and-values).
 - **Emitters** emit their own case. Whatever the business decides about
   it is decided where the case is consumed — the fold's handler, the
@@ -147,7 +147,7 @@ How each kind takes its business meaning:
   entry is `body $ …`, never `body $ card $ …`.
 
 **A component's type is its shape, and so is every component the app
-packages itself** (order-dashboard's `statTile @"Orders placed"
+packages itself** (order-dashboard's `statTile "Orders placed"
 ordersCount`). A signature with a bare `String`, `Maybe a` or `a` on
 either side is a smell: that value belongs in a field of the row, read
 by a business function.
@@ -172,8 +172,8 @@ a trailing word that says what it is for:
 | content that waits for the user to confirm | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox |
 | an event folded into the model | `snackbar @"Add" todoAddedLine # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
-| a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` | stopwatch, timer |
-| an invariant between edited fields | `filledTextField @"°C" {} # settled fromCelsius` | temperature-converter |
+| a periodic occurrence | `blankStatus @"Clock ticked" # ticks tickPeriod` | stopwatch, timer |
+| an invariant between edited fields | `filledTextField @celsius {} # settled fromCelsius` | temperature-converter |
 | buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
 | effects on the buttons' cases, the other events passing | `( VariantToVariant.do { indeterminateLinearProgress # action createPerson # atCase @"Create"; … } ) # subChoice`, every action typed at the block's outcome row, every outcome folded once by its status | crud |
 | an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `snackbar @"Forecast fetched" forecastFetchedLine # fold identity` | weather |
@@ -203,7 +203,7 @@ address is edited" is not.
 An app is one loop through the four shapes, tied once by `# looped @( … ) # with seed`:
 
 ```purescript
-( Semigroupoid.do
+Semigroupoid.do
   headline4 (text countLine) # shown          -- ×→× displays and editors, fed by the loop
   RecordToVariant.do                          -- ×→+ the event ensemble: every emitter and pane
     button @"Add" {}
@@ -216,7 +216,7 @@ An app is one loop through the four shapes, tied once by `# looped @( … ) # wi
       VariantToRecord.do
         snackbar @"Person created" personCreatedLine # fold identity
         snackbar @"Person not created" personNotCreatedLine # fold identity ) # atCase @"Create"
-) # looped @( … ) # with seed
+# looped @( … ) # with seed
 ```
 
 A fold opens with its status, `snackbar @l line # fold f`, as an effect
@@ -482,7 +482,7 @@ text is computed, a chrome line nothing.
 
 - **The model is declared once, where it first appears; every derived
   row where it is introduced.** For a loop closed with a model that is
-  the seed line (`# looped @( count :: Int ) # with freshCount`; inbox's two
+  the seed line (`# looped @( counted :: Int ) # with freshCount`; inbox's two
   fields, one per line). A load action before the knot
   emits its outcome as an event folded into the loop (`snackbar @"People
   loaded" peopleLoadedLine # fold identity`, crud and order-form), so the
@@ -538,7 +538,7 @@ text is computed, a chrome line nothing.
   styles, structure, layout numbers (`{ columns: 80, rows: 3 }`).
 - **Copy is a function, not a field.** A display's text comes from a
   copy function in the view model module, named on the view line and
-  unit-testable (`countLine { count: 3 } == "3"`). A whole line is one
+  unit-testable (`countLine { counted: 3 } == "3"`). A whole line is one
   function, glue included — never several leaves with `staticText`
   between them, never a formatter in the view:
 
@@ -554,11 +554,13 @@ text is computed, a chrome line nothing.
   `String`.
 - **Fixed copy is static or constant.** A **static** is on screen before
   and regardless of any data — a heading, a note, a checkbox's caption —
-  and is a type: `staticText @"Hours"`, `tooltip @"…"`. A **constant**
-  shows only through data — a sentence's glue, a pane's message — and
-  lives in a copy function: `text faultLine # shownWhen @"faulty"
-  readout` (calculator), `# tooltipWith loyaltyNote` (espresso-bar).
-  Text that *is* data (a parsed markdown run) is `staticString`.
+  and is a value, never a label, since it names no field and no case:
+  `staticText "Hours"` (2026-10-07; until then a type, `staticText
+  @"Hours"`). A **constant** shows only through data — a sentence's glue,
+  a pane's message — and lives in a copy function: `text faultLine #
+  shownWhen @"faulty" readout` (calculator), `# tooltipWith loyaltyNote`
+  (espresso-bar). Text that *is* data (a parsed markdown run) is
+  `staticText` too.
 - **A label is read back, never restated.** A case label is the copy it
   draws, so write it as the exact copy the line needs
   (`choice @"with oat milk"`, `choice @"cash"`) and read it back with
@@ -577,7 +579,7 @@ text is computed, a chrome line nothing.
 
 - **The signature is the hint, verbatim.** Every business function is
   typed exactly as the view reports it: the row the stage is fed, closed
-  (`countLine :: { count :: Int } -> String`). Never narrowed to the
+  (`countLine :: { counted :: Int } -> String`). Never narrowed to the
   fields the body reads, never opened with a tail, never coerced at the
   call site. Which fields the body uses is the body's business; the
   compiler checks the body against the row it is given. A name two lines
@@ -587,7 +589,7 @@ text is computed, a chrome line nothing.
   like (flight-booker's `parse`, `formatDate`).
 - **Update the row you are given.** A function returning the row it
   takes — a handler, a `settled` normalizer, a periodic step — updates
-  it (`increment m = m { count = m.count + 1 }`), never builds a
+  it (`increment m = m { counted = m.counted + 1 }`), never builds a
   literal.
 - **A preset is a field update**, even one that reads nothing:
   `beginTiming { model: sw } = sw { phase = .timing {} }` (stopwatch),
@@ -678,7 +680,7 @@ the watch build running ([building.md](building.md)):
    accessors and declared rows never need a hole, because writing them
    is writing the model. Every other value — a copy function, a
    handler, a classifier, an action, the seed — starts as a typed hole
-   (`text ?countLine`, `# looped @( count :: Int ) # with ?start`).
+   (`text ?countLine`, `# looped @( counted :: Int ) # with ?start`).
 2. **Read the holes.** Every hole reports a concrete type built from
    the pieces the lines state. With several holes, a last message lists
    them all, placed on the declaration's name: the view model module's

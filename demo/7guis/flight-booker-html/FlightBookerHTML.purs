@@ -15,13 +15,13 @@ flightBookerHTML =
   body $ div $ Semigroupoid.do
     ( Semigroupoid.do
       p ( label $ Semigroupoid.do
-        (staticText @"Flight type ") # shown
+        (staticText "Flight type ") # shown
         select @"Flight type" (choice @"one-way" <+> choice @"return") )
       p ( label $ Semigroupoid.do
-        (staticText @"Start date (DD.MM.YYYY) ") # shown
+        (staticText "Start date (DD.MM.YYYY) ") # shown
         input @"Start date (DD.MM.YYYY)" "text" )
       p ( label $ Semigroupoid.do
-        (staticText @"Return date (DD.MM.YYYY) ") # shown
+        (staticText "Return date (DD.MM.YYYY) ") # shown
         input @"Return date (DD.MM.YYYY)" "text" ) # inCase @"return" _."Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]

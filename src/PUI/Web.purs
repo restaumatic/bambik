@@ -14,7 +14,7 @@
 -- |   effect-computed attributes), `cl`, and the channel-fed `attrWith` and
 -- |   `clWhen`; `init` for per-element setup;
 -- | - **text leaves** — `text` (copy from a read function), `textOf` (a
--- |   status's payload), `staticString`, and `staticHTML`, kept off the public
+-- |   status's payload), `staticText`, and `staticHTML`, kept off the public
 -- |   vocabularies (L10);
 -- | - **occurrence sources** — `clicked @l f`, `onClickedXY @l`;
 -- | - **visibility and the gated displays** — `provided`, and the rungs
@@ -81,7 +81,6 @@ module PUI.Web
   , shownEach
   , text
   , textOf
-  , staticString
   , staticText
   , attr
   , (:=)
@@ -314,7 +313,7 @@ instance Hosting Web Node where
       }
 
 -- | Fixed decoration given as a raw markup string — for chrome a design
--- | system only documents as markup. Like `staticString` it never changes and
+-- | system only documents as markup. Like `staticText` it never changes and
 -- | carries no data; unlike it, the string is inserted as markup, so it must
 -- | be written in the source and never assembled from model or user text.
 -- |
@@ -571,7 +570,7 @@ shownEach :: forall @l @r1 r k b a . IsSymbol l => Cons l k b r1 => ({ | r } -> 
 shownEach proj item = shown (muted (foreach @l proj item))
 
 -- | Show a string that changes — a readout, a total, a sentence, a name in
--- | a list row. (Wording that doesn't change is `staticString`.)
+-- | a list row. (Wording that doesn't change is `staticText`.)
 -- |
 -- | **Copy is a function, not a field**: the argument is the read — a named
 -- | function from the fields it needs to the words on the screen, living in
@@ -580,13 +579,13 @@ shownEach proj item = shown (muted (foreach @l proj item))
 -- | the row the hosting stage (`shown`/`shownWhen`/`shownEach`) feeds it,
 -- | so no call site coerces. This is why `text` takes no label:
 -- | its content *is* the copy, so there is no field to name and nothing to
--- | caption — a caption is surrounding chrome (`staticString`, a `label`, a
+-- | caption — a caption is surrounding chrome (`staticText`, a `label`, a
 -- | column header). A leaf that renders a *number* keeps its label and
 -- | reads its field verbatim (`progressBar @"fraction"`): numbers need no
 -- | formatting.
 -- |
 -- | A whole line is one function, glue included — never several leaves with
--- | `staticString` between them, and never a formatter in the view.
+-- | `staticText` between them, and never a formatter in the view.
 -- | doc/research-copy-is-a-function.md is the rationale.
 text :: forall r. ({ | r } -> String) -> PUI Web { | r } {}
 text = textLeaf
@@ -641,18 +640,13 @@ textLeaf f = wrap do
 -- | rendered at build. Copy that is fixed but shows only through data — a
 -- | pane's message, the glue of a sentence, a formatted value — is a
 -- | *constant*, and lives in a copy function of the logic module
--- | (`text faultLine`); text that *is* data is `staticString`.
-staticTextExact :: forall @t. IsSymbol t => PUI Web {} {}
-staticTextExact = staticString (reflectSymbol (Proxy @t))
-
-staticText :: forall @t r. IsSymbol t => PUI Web { | r } {}
-staticText = unsafeCoerce (staticTextExact @t :: PUI Web {} {})
+-- | (`text faultLine`); text that *is* data is `staticText`.
 
 -- | Fixed text given as a runtime string — for vocabulary code captioning
 -- | from its configuration, and for closure-known text that is data (a
--- | parsed markdown run). Application copy that is static is `staticText @s`.
-staticStringExact :: String -> PUI Web {} {}
-staticStringExact content = wrap do
+-- | parsed markdown run). Application copy that is static is `staticText (reflectSymbol (Proxy @s))`.
+staticTextExact :: String -> PUI Web {} {}
+staticTextExact content = wrap do
   -- decoration contributes nothing: the `{}` it announces is ignored by
   -- the gates (a zero-field side is pre-known and inert), so this is the
   -- chrome's own completeness, not a merge requirement
@@ -667,8 +661,8 @@ staticStringExact content = wrap do
     , fromUser: \prop -> prop {}
     }
 
-staticString :: forall r. String -> PUI Web { | r } {}
-staticString = unsafeCoerce (staticStringExact :: String -> PUI Web {} {})
+staticText :: forall r. String -> PUI Web { | r } {}
+staticText = unsafeCoerce (staticTextExact :: String -> PUI Web {} {})
 
 -- | Set a fixed attribute on the element being decorated, written infix as
 -- | `:=`: `"placeholder" := "you@example.com" $ input "email" $ …`. For an

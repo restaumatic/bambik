@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, identity)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blankStatus, fold, joined, looped, replaying, ticks, with)
+import PUI (blankStatus, fold, joined, looped, ticks, with)
 import PUI.Web (provided, shown, shownEach, text)
 import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC3 (body, button, displaySmall, snackbar)
@@ -15,10 +15,10 @@ import StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming,
 stopwatchMDC3 :: Effect Unit
 stopwatchMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       displaySmall (text elapsedText) # shown
       RecordToVariant.do
-        ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity
+        blankStatus @"Clock ticked" # ticks tickPeriod
         button @"Start" { icon: "play_arrow" } # provided @"halted" _.phase # joined @"Start"
         button @"Stop" { icon: "stop" } # provided @"timing" _.phase # joined @"Stop"
         button @"Lap" { icon: "flag" } # provided @"timing" _.phase # joined @"Lap"
@@ -30,4 +30,4 @@ stopwatchMDC3 =
         snackbar @"Lap" lapRecordedLine # fold recordLap
         snackbar @"Reset" stopwatchResetLine # fold clearStopwatch
       ul $ ( li $ text lapLine ) # shownEach @"number" @( number :: Int, tenths :: Int ) lapRows
-    ) # looped @( phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int ) # with zeroedStopwatch
+    # looped @( phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int ) # with zeroedStopwatch

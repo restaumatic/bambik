@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 cashboxMDC3 :: Effect Unit
 cashboxMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       ( headlineSmall $ text balanceLine ) # shown
       RecordToVariant.do
         button @"Refund a customer" { icon: "undo" }
@@ -28,4 +28,4 @@ cashboxMDC3 =
         snackbar @"Customer refunded" customerRefundedLine # fold refundStandard
         snackbar @"Courier paid out" courierPaidOutLine # fold payCourier
         snackbar @"Take a deposit" depositTakenLine # fold takeDeposit
-    ) # looped @( balance :: Number ) # with openedTill
+    # looped @( balance :: Number ) # with openedTill

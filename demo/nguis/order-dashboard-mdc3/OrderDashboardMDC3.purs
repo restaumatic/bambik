@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, identity)
 import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Effect (Effect)
 import OrderDashboardViewModel (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
-import PUI (blankStatus, fold, looped, replaying, ticks, with)
+import PUI (blankStatus, fold, looped, ticks, with)
 import PUI.Web ((<+>), choice, shown)
 import PUI.Web.MDC3 (body, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,12 +17,12 @@ orderDashboardMDC3 =
       rangePicker @"Showing" {}
         (choice @"Last minute" <+> choice @"Last 15 min" <+> choice @"Since open")
       board $ Semigroupoid.do
-        statTile @"Orders placed" ordersCount # shown
-        statTile @"Revenue (EUR)" revenue # shown
-        gauge @"Kitchen load" kitchenLoad # shown
-        trendChart @"Order flow" orderFlow # shown
-        leaderboard @"Top dishes" topDishes # shown
-      ticks @"Orders arrived" tickPeriod # replaying @"Orders arrived" identity
+        statTile "Orders placed" ordersCount # shown
+        statTile "Revenue (EUR)" revenue # shown
+        gauge "Kitchen load" kitchenLoad # shown
+        trendChart "Order flow" orderFlow # shown
+        leaderboard "Top dishes" topDishes # shown
+      blankStatus @"Orders arrived" # ticks tickPeriod
       blankStatus @"Orders arrived" # fold ordersArrive
     ) # looped
       @( tick :: Int

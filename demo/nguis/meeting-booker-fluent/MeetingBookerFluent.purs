@@ -35,10 +35,10 @@ meetingBookerFluent =
        ) # with blankBooking
     ( div $ RecordToRecord.do
       caption1 $ text roomRatingCaption
-      ratingDisplay @"Room rating" roomStars ) # shownWhen @"rated" @( rated :: { rating :: Number }, unrated :: {} ) ratedRoom
+      ratingDisplay roomStars ) # shownWhen @"rated" @( rated :: { rating :: Number }, unrated :: {} ) ratedRoom
     ( div $ RecordToRecord.do
       caption1 $ text seatsTakenCaption
-      progressBar @"Seats taken" seatOccupancy ) # shownWhen @"seated" @( seated :: { occupancy :: Number }, unseated :: {} ) seatsTaken
+      progressBar seatOccupancy ) # shownWhen @"seated" @( seated :: { occupancy :: Number }, unseated :: {} ) seatsTaken
     ( card $ Semigroupoid.do
       body1 (text planLine) # shown
       button @"Book the room" {} ) # provided @"complete" @( complete :: { "Meeting title" :: String, room :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], duration :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean, catering :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ] }, incomplete :: {} ) plan

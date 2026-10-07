@@ -56,7 +56,7 @@ import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, clicked, el, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticString, textOf, (:=))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, clicked, el, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, textOf, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -113,7 +113,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- | the case label verbatim (`label:` overrides with real copy).
 button :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | v ]
 button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in eventLeaf @l $
-  el "sl-button" >>> "variant" := "primary" $ staticString config.label
+  el "sl-button" >>> "variant" := "primary" $ staticText config.label
 
 -- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
@@ -180,7 +180,7 @@ textArea provided = let config = convertOptionsWithDefaults OptCaption { label: 
 rating :: forall @l r b provided. IsSymbol l => Cons l { current :: Number, max :: Int } b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 rating provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ wrap do
-    _ <- unwrap (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticString config.label)
+    _ <- unwrap (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
     element "sl-rating" (pure unit)
     attribute "label" config.label
     node <- gets _.sibling
@@ -256,7 +256,7 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
 -- | words toggles it too.
 toggleSwitch :: forall @l r b provided. IsSymbol l => Cons l Boolean b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
-  element "sl-switch" (void $ unwrap (staticString config.label))
+  element "sl-switch" (void $ unwrap (staticText config.label))
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   liftEffect $ listenNode node "sl-change" do
@@ -334,12 +334,10 @@ selectWith clearable lift provided options = lift $ "name" := reflectSymbol (Pro
 -- | accessible name only — a bar showing 42% must announce *what* is 42% —
 -- | so it is copy, never a field reference.
 progressBar
-  :: forall @l reads
-   . IsSymbol l
-  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall reads
+   . ({ | reads } -> Number) -> PUI Web { | reads } {}
 progressBar f = wrap do
   element "sl-progress-bar" (pure unit)
-  attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "style" "width: 100%; min-width: 200px;"
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -372,7 +370,7 @@ toastFace :: forall r. PUI Web [ event :: String ] { | r }
 toastFace = wrap do
   w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ wrap do
-    _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticString "")
+    _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
     unwrap (textOf eventText)
   node <- gets _.sibling
   pure

@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 checkoutMDC2 :: Effect Unit
 checkoutMDC2 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       ( body2 $ text cartLine ) # shownWhen @"cart" @( cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ) checkoutStep
       ( body2 $ text shippingLine ) # shownWhen @"shipping" checkoutStep
       ( body2 $ text paymentLine ) # shownWhen @"payment" checkoutStep
@@ -27,4 +27,4 @@ checkoutMDC2 =
         snackbar @"Back" steppedBackLine # fold stepTo
         snackbar @"Place order" orderPlacedLine # fold orderPlaced
       ( body2 $ text placedLine ) # shownWhen @"placed" @( pending :: {}, placed :: { item :: String, address :: String, card :: String } ) orderStatus
-    ) # looped @( item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, shipping :: {}, payment :: {} ] ) # with freshOrder
+    # looped @( item :: String, address :: String, card :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, shipping :: {}, payment :: {} ] ) # with freshOrder

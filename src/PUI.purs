@@ -113,12 +113,12 @@ import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
 import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant, replaying, silence)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant, silence)
 import Data.Profunctor.Row (class RowLabels, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
-import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
+import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, blankStatus)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, variantToVariant)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Time.Duration (Milliseconds(..))
@@ -1102,32 +1102,47 @@ every
 every interval step = looped (updated (\e _ -> match { stepped: identity } e) (classified >>> stepsOnly))
   where
   classified :: PUI m { | r } [ stepped :: { | r }, idle :: {} ]
-  classified = ticks @"tick" interval
-    # replaying @"tick" identity
+  classified = ticks interval (blankStatus @"tick")
     # rmap (match { tick: \v -> maybe (inj (Proxy @"idle") {}) (inj (Proxy @"stepped")) (step v) })
   -- a pause is the idle case handled by silence: nothing leaves
   stepsOnly :: PUI m [ stepped :: { | r }, idle :: {} ] [ stepped :: { | r } ]
   stepsOnly = variantToVariant (lcmap (const {}) silence :: PUI m [ idle :: {} ] [ stepped :: { | r } ]) identity
 
--- | The **tick source**: an occurrence of case `l` every `interval`, at any
--- | row — the timer's `× → +` leaf, exactly as a click
--- | source is a button's, and the point's dual (`announce` is one
--- | occurrence at registration; this is one per period). Feeds are ignored,
--- | so it sits at any row, and nothing is emitted inside a feed. A period
--- | that is a hole schedules nothing (guardrails L18). The loop
--- | runs for the UI component's whole life (no cancellation — a prototype
--- | limitation shared with `action'`).
-ticks :: forall @l m v r. IsSymbol l => Cons l {} () v => MonadEffect m => { ms :: Number } -> PUI m { | r } [ | v ]
-ticks interval = wrap $ pure
-  { toUser: mempty
-  , fromUser: \prop -> if isHole interval then pure unit else do
-      let
-        loop = do
-          delay (Milliseconds interval.ms)
-          liftEffect $ prop (inj (Proxy @l) {})
-          loop
-      launchAff_ loop
-  }
+-- | The **tick source**, opened by its status like a fold or an action
+-- | (`blankStatus @"Clock ticked" # ticks tickPeriod`, timer): every
+-- | `interval`, the row it was last fed leaves as case `l`, told to the
+-- | status first — replay is `Strong`'s retention, the fed row riding the
+-- | state channel as under `clicked`. Feeds are retained, never answered;
+-- | nothing ticks before the first feed or while the period is a hole
+-- | (guardrails L18).
+ticks
+  :: forall m l r v
+   . MonadEffect m
+  => RowToList v (RL.Cons l { | r } RL.Nil)
+  => IsSymbol l
+  => Cons l { | r } () v
+  => { ms :: Number }
+  -> PUI m [ | v ] {}
+  -> PUI m { | r } [ | v ]
+ticks interval status = wrap do
+  status' <- unwrap status
+  lastRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \r -> Ref.write (Just r) lastRef
+    , fromUser: \prop -> if isHole interval then pure unit else do
+        status'.fromUser \_ -> pure unit
+        let
+          loop = do
+            delay (Milliseconds interval.ms)
+            liftEffect do
+              fed <- Ref.read lastRef
+              for_ fed \r -> do
+                let occurrence = inj (Proxy @l) r
+                status'.toUser occurrence
+                prop occurrence
+            loop
+        launchAff_ loop
+    }
 
 
 -- Optics
@@ -1169,7 +1184,7 @@ type Ocular p = forall a b. Optic p a b a b
 -- | output `{}` at any input row — a ripple, a focus ring, a decorative
 -- | circle, an empty cell. Reads nothing, contributes nothing; the merge
 -- | gates ignore its echo (a zero-field side is pre-known and inert), so it
--- | sits in any `RecordToRecord.do` beside `staticString` and `staticHTML`,
+-- | sits in any `RecordToRecord.do` beside `staticText` and `staticHTML`,
 -- | the other two statics. `static (span >>> cl "mdc-button__ripple")`.
 static :: forall p r. Category p => Profunctor p => Ocular p -> p { | r } {}
 static o = widenRecordInput (o identity :: p {} {})

@@ -34,7 +34,7 @@ loanCalculatorBootstrap =
         listGroupItem (text rateLine)
         listGroupItem (text totalInterestLine) ) # shown
       ( div $ RecordToRecord.do
-        staticText @"Interest share of total repayment"
-        progress @"Interest share" interestShare ) # shown
+        staticText "Interest share of total repayment"
+        progress interestShare ) # shown
     button @"Apply for this loan" {} # armed
     toast @"Apply for this loan" appliedLine

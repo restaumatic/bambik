@@ -16,7 +16,7 @@ import TicTacToeViewModel (cellClaimedLine, cellMark, cells, claimCell, drawnLin
 ticTacToeMDC3 :: Effect Unit
 ticTacToeMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       headlineSmall (text wonLine) # shownWhen @"won" @( won :: { mark :: [ x :: {}, o :: {}, free :: {} ] }, drawn :: {}, toMove :: { mark :: [ x :: {}, o :: {}, free :: {} ] } ) gameOutcome
       headlineSmall (text drawnLine) # shownWhen @"drawn" gameOutcome
       headlineSmall (text toMoveLine) # shownWhen @"toMove" gameOutcome
@@ -27,7 +27,7 @@ ticTacToeMDC3 =
       VariantToRecord.do
         snackbar @"Cell claimed" cellClaimedLine # fold claimCell
         snackbar @"New game" newGameLine # fold (const openingPosition)
-    ) # looped @( board :: Array [ x :: {}, o :: {}, free :: {} ] ) # with openingPosition
+    # looped @( board :: Array [ x :: {}, o :: {}, free :: {} ] ) # with openingPosition
 
 cellFace :: { key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String
 cellFace { line } = cellStyle <> match { winning: \_ -> "background: #a5d6a7;", plain: \_ -> "background: #eceff1;" } line

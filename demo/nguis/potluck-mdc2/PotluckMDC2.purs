@@ -11,7 +11,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 potluckMDC2 :: Effect Unit
 potluckMDC2 =
-  body $ ( Semigroupoid.do
+  body $ Semigroupoid.do
     body2 (text guestCountLine) # shown
     group @"Guests" $ list $
       ( listItem $ Semigroupoid.do
@@ -20,7 +20,7 @@ potluckMDC2 =
           (choice @"Salad" <+> choice @"Lasagna" <+> choice @"Pavlova") ) # acted @"name"
     headline6 (text menuLine) # shownWhen @"complete" @( complete :: { dishes :: Array { name :: String, dish :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }, waiting :: { remaining :: Array String } ) menuState
     body2 (text waitingLine) # shownWhen @"waiting" menuState
-  ) # with
+  # with
     @{ "Guests" :: Array { name :: String, "Dish" :: [ chosen :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ], unchosen :: {} ] }
      }
     invitation

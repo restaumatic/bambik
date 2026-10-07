@@ -9,14 +9,14 @@ import PUI.Web.Shoelace (body, button, indeterminateLinearProgress, progressBar,
 
 lawBenchShoelace :: Effect Unit
 lawBenchShoelace = do
-  body (staticText @"Leaf-law bench · Shoelace")
+  body (staticText "Leaf-law bench · Shoelace")
   runBench
     [ bench "textField" "×→×" texts (textField @"Name" {})
     , bench "textArea" "×→×" texts (textArea @"Name" { rows: 2 })
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
     , bench "rating" "×→×" ratings (rating @"Stars" {})
-    , bench "progressBar" "×→×" fractions (progressBar @"Progress" _.fraction)
+    , bench "progressBar" "×→×" fractions (progressBar _.fraction)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
     , bench "select" "×→×" chosen (select @"Pick" {} options)
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)

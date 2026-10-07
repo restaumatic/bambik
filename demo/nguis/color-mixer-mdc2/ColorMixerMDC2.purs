@@ -13,7 +13,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 colorMixerMDC2 :: Effect Unit
 colorMixerMDC2 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       sliderLive @"Red" {}
       sliderLive @"Green" {}
       sliderLive @"Blue" {}
@@ -24,7 +24,7 @@ colorMixerMDC2 =
         div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
           clicked @"Preset applied" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" @( name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } ) (const palette) ) # joined @"Preset applied"
       snackbar @"Preset applied" presetAppliedLine # fold applyPreset
-    ) # looped
+    # looped
       @( "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

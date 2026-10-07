@@ -13,8 +13,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 counterShoelace :: Effect Unit
 counterShoelace =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       h4 (text countLine) # shown
       button @"Count" {}
       toast @"Count" countedLine # fold increment
-    ) # looped @( count :: Int ) # with freshCount
+    # looped @( counted :: Int ) # with freshCount

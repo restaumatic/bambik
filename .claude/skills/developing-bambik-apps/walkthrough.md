@@ -264,12 +264,12 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 - **counter** — one display reading one function
   (`headline4 (text countLine) # shown`), one button, one fold opened by
   its status (`snackbar @"Count" countedLine # fold increment`), over a
-  model of `{ count :: Int }`.
+  model of `{ counted :: Int }`.
 - **timer** — two displays of different sorts,
-  `linearProgress @"Elapsed" elapsedFraction` and `text progressLine`,
-  both computed from the model, neither stored; `ticks @"Clock ticked"
-  tickPeriod # replaying @"Clock ticked" identity` drives it through
-  `snackbar @"Clock ticked" clockTickedLine # fold tick`.
+  `linearProgress elapsedFraction` and `text progressLine`,
+  both computed from the model, neither stored; `blankStatus @"Clock
+  ticked" # ticks tickPeriod` drives it through `blankStatus @"Clock
+  ticked" # fold tick`.
 - **temperature-converter** — two editors kept consistent with
   `# settled fromCelsius` / `# settled fromFahrenheit`.
 - **todo-list** — a selectable list, `listOf @"Todo toggled" @"key"`, a filter

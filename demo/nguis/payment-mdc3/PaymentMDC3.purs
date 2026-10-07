@@ -12,7 +12,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 paymentMDC3 :: Effect Unit
 paymentMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       ( headlineSmall $ text amountLine ) # shown
       ( bodyMedium $ text statusLine ) # shown
       button @"Charge card" { icon: "credit_card" }
@@ -20,4 +20,4 @@ paymentMDC3 =
         snackbar @"Charge card" chargingLine # observed
         indeterminateCircularProgress # action chargeFlaky # atCase @"Charge card" )
       snackbar @"Card charged" cardChargedLine # fold identity
-    ) # looped @( amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] ) # with unpaidOrder
+    # looped @( amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] ) # with unpaidOrder

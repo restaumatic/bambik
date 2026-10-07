@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crudMDC3 :: Effect Unit
 crudMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       indeterminateLinearProgress # action loadPeopleCatalogue
       snackbar @"People loaded" peopleLoadedLine # fold identity
       ( Semigroupoid.do
@@ -40,4 +40,3 @@ crudMDC3 =
           snackbar @"Person deleted" personDeletedLine # fold identity
           snackbar @"Person not deleted" personNotDeletedLine # fold identity
       ) # looped @( "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] )
-    )

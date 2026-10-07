@@ -15,18 +15,18 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudHTML :: Effect Unit
 crudHTML =
-  body $ div $ ( Semigroupoid.do
+  body $ div $ Semigroupoid.do
     indeterminateLinearProgress # action loadPeopleCatalogue
     output @"People loaded" peopleLoadedLine # fold identity
     ( Semigroupoid.do
       p ( label $ Semigroupoid.do
-        (staticText @"Filter prefix (surname) ") # shown
+        (staticText "Filter prefix (surname) ") # shown
         input @"Filter prefix (surname)" "text" )
       p ( label $ Semigroupoid.do
-        (staticText @"Name ") # shown
+        (staticText "Name ") # shown
         input @"Name" "text" )
       p ( label $ Semigroupoid.do
-        (staticText @"Surname ") # shown
+        (staticText "Surname ") # shown
         input @"Surname" "text" )
       RecordToVariant.do
         ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
@@ -47,7 +47,6 @@ crudHTML =
         output @"Person deleted" personDeletedLine # fold identity
         output @"Person not deleted" personNotDeletedLine # fold identity
     ) # looped @( "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] )
-  )
 
 entryFace :: { key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 entryFace { status } = "padding: 4px 8px; cursor: pointer;" <> match { selected: \_ -> " background: #cde;", unselected: \_ -> "" } status

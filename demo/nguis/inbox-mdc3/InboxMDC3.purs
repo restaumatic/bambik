@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 inboxMDC3 :: Effect Unit
 inboxMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       ( bodySmall $ text unreadLine ) # shown
       RecordToVariant.do
         listOf @"Message opened" @"id" { selected: highlighted } _.messages ( span $ text messageLine # shown ) # joined @"Message opened"
@@ -43,7 +43,7 @@ inboxMDC3 =
         snackbar @"By sender" sortedBySenderLine # fold sortBySender
         snackbar @"By subject" sortedBySubjectLine # fold sortBySubject
         snackbar @"Unread first" sortedUnreadFirstLine # fold sortUnreadFirst
-    ) # looped
+    # looped
       @( messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] }
        , deletion :: [ silent :: {}, confirming :: {} ]
        ) # with mondayMail

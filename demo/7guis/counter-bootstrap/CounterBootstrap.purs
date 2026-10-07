@@ -13,8 +13,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 counterBootstrap :: Effect Unit
 counterBootstrap =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       h4 (text countLine) # shown
       button @"Count" {}
       toast @"Count" countedLine # fold increment
-    ) # looped @( count :: Int ) # with freshCount
+    # looped @( counted :: Int ) # with freshCount

@@ -9,12 +9,12 @@ import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, progress, s
 
 lawBenchBootstrap :: Effect Unit
 lawBenchBootstrap = do
-  body (staticText @"Leaf-law bench · Bootstrap")
+  body (staticText "Leaf-law bench · Bootstrap")
   runBench
     [ bench "textField" "×→×" texts (textField @"Name" {})
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
-    , bench "progress" "×→×" fractions (progress @"Progress" _.fraction)
+    , bench "progress" "×→×" fractions (progress _.fraction)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
     , bench "select" "×→×" chosen (select @"Pick" {} options)
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)

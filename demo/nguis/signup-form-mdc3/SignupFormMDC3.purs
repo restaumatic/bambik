@@ -13,14 +13,14 @@ signupFormMDC3 :: Effect Unit
 signupFormMDC3 =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      (headlineLarge $ staticText @"Create account") # shown
+      (headlineLarge $ staticText "Create account") # shown
       debouncedTextField @"Username" {} usernameSettleTime
       radioButton @"Plan"
         (choice @"Free" <+> choice @"Pro" <+> choice @"Team")
       select @"Country" {}
         (choice @"Poland" <+> choice @"Germany" <+> choice @"France" <+> choice @"Spain")
       filledTextField @"Email" {}
-      checkbox @"Terms" @"accepted" @"declined" {} (staticText @"I accept the terms of service") # tooltip @"You must accept the terms of service to sign up"
+      checkbox @"Terms" @"accepted" @"declined" {} (staticText "I accept the terms of service") # tooltip @"You must accept the terms of service to sign up"
     ) # looped
       @( "Username" :: String
        , "Email" :: String

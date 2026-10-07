@@ -13,7 +13,7 @@ import TipCalculatorViewModel (dinnerBill, perPersonLine, splitLine, tipAmountLi
 tipCalculatorMDC2 :: Effect Unit
 tipCalculatorMDC2 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       filledTextField @"Bill amount" {}
       slider @"Tip percentage" {}
       rangeInput @"Tip percentage"
@@ -23,7 +23,7 @@ tipCalculatorMDC2 =
       body2 (text tipAmountLine) # shown
       body2 (text totalLine) # shown
       body2 (text perPersonLine) # shown
-    ) # looped
+    # looped
       @( "Bill amount" :: String
        , "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Split between" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

@@ -17,7 +17,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 circleDrawerShoelace :: Effect Unit
 circleDrawerShoelace =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       sliderLive @"Diameter" {} # inCase @"chosen" _.selected # settled resizeSelected
       RecordToVariant.do
         ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
@@ -31,7 +31,7 @@ circleDrawerShoelace =
         toast @"Canvas clicked" canvasClickedLine # fold selectOrAddCircle
         toast @"Undo" undoneLine # fold undo
         toast @"Redo" redoneLine # fold redo
-    ) # looped
+    # looped
       @( circles :: Array { x :: Number, y :: Number, r :: Number }
        , selected :: [ chosen :: { index :: Int }, none :: {} ]
        , "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

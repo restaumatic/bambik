@@ -13,7 +13,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 movieBrowserMDC2 :: Effect Unit
 movieBrowserMDC2 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       tabBar @"category"
         (choice @"All" <+> choice @"Action" <+> choice @"Drama" <+> choice @"Comedy")
       chipSet ( Semigroupoid.do
@@ -28,7 +28,7 @@ movieBrowserMDC2 =
           span (text ratingLine) # shown
           iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # foreach @"title" @( title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean ) visibleMovies # toCase @"Favorite changed" @{ title :: String, "Favorite" :: Boolean } favoriteMark # joined @"Favorite changed"
       snackbar @"Favorite changed" favoriteChangedLine # fold markFavorite
-    ) # looped
+    # looped
       @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]
        , "Classic" :: Boolean
        , "Cult" :: Boolean

@@ -15,7 +15,7 @@ import TodoListViewModel (addTodo, clearCompleted, completedClearedLine, emptyTo
 todoListMDC3 :: Effect Unit
 todoListMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       filledTextField @"What needs to be done?" {}
       segmentedButton @"Visibility"
         (choice @"All" <+> choice @"Active" <+> choice @"Completed")
@@ -29,7 +29,7 @@ todoListMDC3 =
         snackbar @"Add" todoAddedLine # fold addTodo
         snackbar @"Todo toggled" todoToggledLine # fold toggleTodo
         snackbar @"Clear completed" completedClearedLine # fold clearCompleted
-    ) # looped
+    # looped
       @( "What needs to be done?" :: String
        , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }
        , "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ]

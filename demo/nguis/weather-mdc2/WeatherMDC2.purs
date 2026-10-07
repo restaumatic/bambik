@@ -12,7 +12,7 @@ import WeatherViewModel (aboutLine, conditionLine, fetchReport, forecastFetchedL
 weatherMDC2 :: Effect Unit
 weatherMDC2 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       headline1 (text temperatureLine) # shown
       headline5 (text conditionLine) # shown
       body1 (text humidityWindLine) # shown
@@ -24,7 +24,7 @@ weatherMDC2 =
       listOf @"Forecast requested" @"request" @( request :: { city :: String, sample :: Int }, focus :: [ current :: {}, other :: {} ] ) { selected: isCurrent } forecastRequests (text _.request.city) # joined @"Forecast requested"
       indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"
       snackbar @"Forecast fetched" forecastFetchedLine # fold identity
-    ) # looped
+    # looped
       @( report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
        , servedReports :: Int
        ) # with warsawBulletin

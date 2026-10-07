@@ -38,7 +38,7 @@ and emitters of a catalogue — are in the design-system module header
 | The app is | Word | Demo | Read |
 | --- | --- | --- | --- |
 | mounted | `body $ …`, imported from the design-system module | every demo | writing.md *App shape* |
-| a model edited and folded | `# looped @( count :: Int ) # with freshCount`, the model row declared on the knot | counter | writing.md *App shape* |
+| a model edited and folded | `# looped @( counted :: Int ) # with freshCount`, the model row declared on the knot | counter | writing.md *App shape* |
 | seeded, with no loop of its own | `# with @{ … } invitation` | potluck | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form | writing.md *App shape* |
 | an action that retries until it succeeds | the retry inside the action's `Aff` (`chargeFlaky`), the outcome one case | payment | writing.md *Business functions* |
@@ -52,8 +52,8 @@ and emitters of a catalogue — are in the design-system module header
 | a field verbatim | `text _.request.city`; `text _.entry` | weather; calculator | writing.md *Components* |
 | a sentence composed from several fields | `( headline6 $ text balanceLine ) # shown` | cashbox | writing.md *Code style* → *Types and values* |
 | a case label read as copy | `caseText` (`Data.Variant.Case`), in the view model module | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
-| a number as a bar, gauge or stars | `linearProgress @"Elapsed" elapsedFraction`; `progressBar @"Seats taken" seatOccupancy` | timer; meeting-booker | the design-system module |
-| fixed copy | `(headline4 $ staticText @"Create account") # shown` | signup-form | writing.md *Components* |
+| a number as a bar, gauge or stars | `linearProgress elapsedFraction`; `progressBar seatOccupancy` | timer; meeting-booker | the design-system module |
+| fixed copy | `(headline4 $ staticText "Create account") # shown` | signup-form | writing.md *Components* |
 | a record-reading group of displays | `# shown` | loan-calculator | writing.md *Stages* |
 | a pane for one state of the model | `# shownWhen @"faulty" readout` | calculator, flight-booker, checkout | writing.md *Conditional visibility* |
 | a list, displayed | `ul $ ( li $ text lapLine ) # shownEach @"number" lapRows` | stopwatch | writing.md *Collections* |
@@ -111,7 +111,7 @@ and emitters of a catalogue — are in the design-system module header
 | … opened by its outcome statuses | `( VariantToRecord.do { snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker | writing.md *Business functions* |
 | an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine # fold identity` | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
-| a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` and `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch, scoreboard | `PUI` |
+| a periodic occurrence | `blankStatus @"Clock ticked" # ticks tickPeriod` and `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
 | narrate an event while passing it on | `snackbar @"Charge card" chargingLine # observed` | payment, inbox | `PUI` |
 | confirm before the flow continues | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox | writing.md *Modals* |

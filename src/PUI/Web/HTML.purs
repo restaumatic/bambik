@@ -9,7 +9,7 @@
 -- | and `body` mounts the finished screen.
 -- |
 -- | Everything that names no element — the decorators (`attr`/`:=`, `cl`,
--- | `attrWith`, `clWhen`), the text leaves (`text`, `staticString`), the
+-- | `attrWith`, `clWhen`), the text leaves (`text`, `staticText`), the
 -- | occurrence sources (`clicked`, `onClickedXY`), visibility (`provided`)
 -- | and the gated displays (`shown`, `shownWhen`, `inCase`, `shownEach`),
 -- | and the structure builders (`dynamic`, `each`, `el`) — lives in the
@@ -85,7 +85,7 @@ import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticString, textOf, (:=), (:=>))
+import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
 
 -- UIs
 
@@ -93,7 +93,7 @@ import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpicked
 -- | "email", ...), label-indexed at the `String` field it edits (L3):
 -- | shows the string it is given, reports every keystroke, and stamps its
 -- | label as the host `name`. The floor has no caption chrome of its own,
--- | so a caption stays a sibling `label`+`staticString` merge — and the
+-- | so a caption stays a sibling `label`+`staticText` merge — and the
 -- | `focusField @l` lift is fused in here as in every vocabulary's editors, so
 -- | application code never lifts a scalar leaf itself.
 -- |
@@ -190,7 +190,7 @@ selectWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ 
       noneNode <- gets _.sibling
       liftEffect $ setAttribute noneNode "value" ""
     forWithIndex_ options \idx o -> do
-      element "option" (void $ unwrap (staticString o.label))
+      element "option" (void $ unwrap (staticText o.label))
       optionNode <- gets _.sibling
       liftEffect $ setAttribute optionNode "value" (show idx)
     pure { toUser: mempty, fromUser: \prop -> prop {} }
@@ -237,13 +237,11 @@ rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "ran
 -- | a bar showing 42% must announce *what* is 42% — so it is copy, never a
 -- | field reference.
 progress
-  :: forall @l reads
-   . IsSymbol l
-  => ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall reads
+   . ({ | reads } -> Number) -> PUI Web { | reads } {}
 progress f = wrap do
   element "progress" (pure unit)
   attribute "max" "1"
-  attribute "aria-label" (reflectSymbol (Proxy @l))
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
@@ -291,7 +289,7 @@ eventText = on (Proxy @"event") identity case_
 -- | model never came back.
 button :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | v ]
 button provided = wrap do
-  w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticString config.label)
+  w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticText config.label)
   -- a click before any value arrived has nothing valid to emit — withheld
   mARef <- liftEffect $ Ref.new Nothing
   node <- gets _.sibling

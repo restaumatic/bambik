@@ -16,7 +16,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 circleDrawerMDC3 :: Effect Unit
 circleDrawerMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       sliderLive @"Diameter" {} # inCase @"chosen" _.selected # settled resizeSelected
       RecordToVariant.do
         ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
@@ -30,7 +30,7 @@ circleDrawerMDC3 =
         snackbar @"Canvas clicked" canvasClickedLine # fold selectOrAddCircle
         snackbar @"Undo" undoneLine # fold undo
         snackbar @"Redo" redoneLine # fold redo
-    ) # looped
+    # looped
       @( circles :: Array { x :: Number, y :: Number, r :: Number }
        , selected :: [ chosen :: { index :: Int }, none :: {} ]
        , "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

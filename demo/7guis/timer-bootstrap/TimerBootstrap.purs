@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, identity)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (blankStatus, fold, looped, replaying, ticks, with)
+import PUI (blankStatus, fold, looped, ticks, with)
 import PUI.Web.Bootstrap (body, button, progress, sliderLive, toast)
 import PUI.Web (shown, text)
 import PUI.Web.HTML (p)
@@ -15,17 +15,17 @@ import TimerViewModel (elapsedFraction, resetLine, restarted, progressLine, tenS
 timerBootstrap :: Effect Unit
 timerBootstrap =
   body $
-    ( Semigroupoid.do
-      progress @"Elapsed" elapsedFraction # shown
+    Semigroupoid.do
+      progress elapsedFraction # shown
       (p $ text progressLine) # shown
       sliderLive @"Duration" {}
       RecordToVariant.do
-        ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity
+        blankStatus @"Clock ticked" # ticks tickPeriod
         button @"Reset" {}
       VariantToRecord.do
         blankStatus @"Clock ticked" # fold tick
         toast @"Reset" resetLine # fold restarted
-    ) # looped
+    # looped
       @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , elapsed :: Number
        ) # with tenSecondFreshTimer

@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 cellsMDC3 :: Effect Unit
 cellsMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       bodyLarge (text selectedLine) # shown
       filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
@@ -25,7 +25,7 @@ cellsMDC3 =
             ( td >>> "style" := headerFace $ text rowLabel ) # shown
             ( clicked @"Cell picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # joined @"Cell picked"
       snackbar @"Cell picked" cellPickedLine # fold selectCell
-    ) # looped
+    # looped
       @( cells :: Object String
        , selected :: [ picked :: { name :: String }, none :: {} ]
        , "Formula (e.g. =SUM(A0:A5)*2)" :: String

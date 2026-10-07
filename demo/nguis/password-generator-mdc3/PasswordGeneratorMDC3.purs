@@ -13,7 +13,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 passwordGeneratorMDC3 :: Effect Unit
 passwordGeneratorMDC3 =
   body $
-    ( Semigroupoid.do
+    Semigroupoid.do
       slider @"Length" {}
       toggleSwitch @"Uppercase letters" {}
       toggleSwitch @"Lowercase letters" {}
@@ -24,7 +24,7 @@ passwordGeneratorMDC3 =
       button @"Generate" {}
       indeterminateLinearProgress # action samplePassword # atCase @"Generate"
       snackbar @"Password generated" passwordGeneratedLine # fold identity
-    ) # looped
+    # looped
       @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Uppercase letters" :: Boolean
        , "Lowercase letters" :: Boolean

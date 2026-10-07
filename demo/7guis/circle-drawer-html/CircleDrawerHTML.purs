@@ -15,9 +15,9 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 circleDrawerHTML :: Effect Unit
 circleDrawerHTML =
-  body $ div $ ( Semigroupoid.do
+  body $ div $ Semigroupoid.do
     p ( label $ Semigroupoid.do
-      (staticText @"Diameter ") # shown
+      (staticText "Diameter ") # shown
       rangeInput @"Diameter" ) # inCase @"chosen" _.selected # settled resizeSelected
     RecordToVariant.do
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
@@ -31,7 +31,7 @@ circleDrawerHTML =
       output @"Canvas clicked" canvasClickedLine # fold selectOrAddCircle
       output @"Undo" undoneLine # fold undo
       output @"Redo" redoneLine # fold redo
-  ) # looped
+  # looped
     @( circles :: Array { x :: Number, y :: Number, r :: Number }
      , selected :: [ chosen :: { index :: Int }, none :: {} ]
      , "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
