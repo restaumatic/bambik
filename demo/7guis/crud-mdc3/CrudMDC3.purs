@@ -5,8 +5,9 @@ import Prelude (Unit, identity, (#), ($))
 import CrudViewModel (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleLoadedLine, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personPickedLine, personUpdatedLine, pick, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action, atCase, fold, joined, looped)
+import PUI (action, atCase, fold, joined, looped, subChoice)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, button, cardActions, filledTextField, indeterminateLinearProgress, listOf, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -27,22 +28,17 @@ crudMDC3 =
             button @"Create" {}
             button @"Update" {}
             button @"Delete" {}
+        ( VariantToVariant.do
+          indeterminateLinearProgress # action createPerson # atCase @"Create"
+          indeterminateLinearProgress # action updatePerson # atCase @"Update"
+          indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
         VariantToRecord.do
           snackbar @"Person picked" personPickedLine # fold pick
-          ( Semigroupoid.do
-              indeterminateLinearProgress # action createPerson
-              VariantToRecord.do
-                snackbar @"Person created" personCreatedLine # fold identity
-                snackbar @"Person not created" personNotCreatedLine # fold identity ) # atCase @"Create"
-          ( Semigroupoid.do
-              indeterminateLinearProgress # action updatePerson
-              VariantToRecord.do
-                snackbar @"Person updated" personUpdatedLine # fold identity
-                snackbar @"Person not updated" personNotUpdatedLine # fold identity ) # atCase @"Update"
-          ( Semigroupoid.do
-              indeterminateLinearProgress # action deletePerson
-              VariantToRecord.do
-                snackbar @"Person deleted" personDeletedLine # fold identity
-                snackbar @"Person not deleted" personNotDeletedLine # fold identity ) # atCase @"Delete"
+          snackbar @"Person created" personCreatedLine # fold identity
+          snackbar @"Person not created" personNotCreatedLine # fold identity
+          snackbar @"Person updated" personUpdatedLine # fold identity
+          snackbar @"Person not updated" personNotUpdatedLine # fold identity
+          snackbar @"Person deleted" personDeletedLine # fold identity
+          snackbar @"Person not deleted" personNotDeletedLine # fold identity
       ) # looped @( "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] )
     )

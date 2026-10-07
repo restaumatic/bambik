@@ -107,8 +107,7 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| an `Aff` action on an event, folded by its outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { … } } ) # atCase @"Create"` | crud | writing.md *Business functions* |
-| … several `Aff`s with one outcome row | `VariantToVariant.do { indeterminateLinearProgress # action rotateAction # atCase @"Rotate"; … # atCase @"Shuffle" }`, the block's outputs one row | reorder | writing.md *Business functions* |
+| an `Aff` action on an event | `indeterminateLinearProgress # action createPerson # atCase @"Create"`, in the `VariantToVariant.do` of the loop's actions, typed at the block's outcome row | crud, reorder | writing.md *Business functions* |
 | … opened by its outcome statuses | `( VariantToRecord.do { snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker | writing.md *Business functions* |
 | an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine # fold identity` | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |

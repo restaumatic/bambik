@@ -1181,12 +1181,11 @@ static o = widenRecordInput (o identity :: p {} {})
 -- | submit`), or a `VariantToRecord.do` block of both. The slot's row is
 -- | `[ started, ended | t ]`, so a status names only the cases it shows,
 -- | and the outcome leaves as the variant `[ | t ]` named by the `Aff`, so
--- | no `toCase` follows. The row is fixed by what the action composes into
--- | — its own fold block (`… # action createPerson` then the folds of its
--- | outcomes, the chain adopted `# atCase @"Create"`, crud) — or declared
--- | `@( … )` where only statuses follow (flight-booker). Several `Aff`s
--- | sharing an outcome row merge in `VariantToVariant.do`, one line per
--- | case, the block's outputs one row (reorder). No application owns a
+-- | no `toCase` follows. A loop's actions stand in one
+-- | `VariantToVariant.do`, one line per case, each typed at the block's
+-- | outcome row — one row, an equality — which the fold block after it
+-- | fixes (crud, reorder), or which `@( … )` declares where only statuses
+-- | follow (flight-booker). No application owns a
 -- | "busy": the indicator shows between `started` and `ended` and, like
 -- | every status, owes the channel nothing. A stage with nothing to show
 -- | opens with `blankStatus @l` naming its outcome case; `blank` alone

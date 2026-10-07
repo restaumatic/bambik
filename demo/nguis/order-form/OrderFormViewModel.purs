@@ -92,7 +92,7 @@ loadOrder _ = do
     , "Kitchen": { "Remarks": "Very spicy, please!" }
     }
 
-submitOrder :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } -> Aff [ "Order submitted" :: { "Short ID" :: String }, "Submission failed" :: { "Short ID" :: String, reason :: String } ]
+submitOrder :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } -> Aff [ "Order submitted" :: { "Short ID" :: String }, "Receipt printed" :: { "Short ID" :: String }, "Submission failed" :: { "Short ID" :: String, reason :: String } ]
 submitOrder { "Identifier": { "Short ID": shortId, "Unique ID": orderId }, "Payment": { "Total": total } } = do
   liftEffect $ log $ "submitting order " <> orderId
   delay (Milliseconds 1000.0)
@@ -110,7 +110,7 @@ submittedLine { "Short ID": shortId } = "Order " <> shortId <> " submitted"
 rejectionLine :: { "Short ID" :: String, reason :: String } -> String
 rejectionLine { "Short ID": shortId, reason } = "Order " <> shortId <> " rejected: " <> reason
 
-printReceipt :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } -> Aff [ "Receipt printed" :: { "Short ID" :: String } ]
+printReceipt :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } -> Aff [ "Order submitted" :: { "Short ID" :: String }, "Receipt printed" :: { "Short ID" :: String }, "Submission failed" :: { "Short ID" :: String, reason :: String } ]
 printReceipt { "Identifier": { "Short ID": shortId, "Unique ID": orderId } } = do
   liftEffect $ log $ "printing receipt for order " <> orderId
   delay (Milliseconds 2000.0)

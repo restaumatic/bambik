@@ -4,10 +4,11 @@ import Prelude (identity, Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
-import PUI (action, armed, atCase, bracketed, debounced, fold, looped, muted, settled, updated)
+import PUI (action, armed, atCase, bracketed, debounced, fold, looped, settled, updated)
 import PUI.Web ((<+>), choice, inCase, shown, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -48,12 +49,12 @@ orderFormMDC2 =
     ( RecordToVariant.do
       button @"Submit order" { icon: "save" }
       button @"Receipt" { icon: "file" } ) # armed
-    VariantToRecord.do
-      ( ( VariantToRecord.do
+    VariantToVariant.do
+      ( VariantToRecord.do
         indeterminateLinearProgress
         snackbar @"Order submitted" submittedLine
-        snackbar @"Submission failed" rejectionLine ) # action @( "Order submitted" :: { "Short ID" :: String }, "Submission failed" :: { "Short ID" :: String, reason :: String } ) submitOrder # muted ) # atCase @"Submit order"
-      ( ( VariantToRecord.do
+        snackbar @"Submission failed" rejectionLine ) # action @( "Order submitted" :: { "Short ID" :: String }, "Receipt printed" :: { "Short ID" :: String }, "Submission failed" :: { "Short ID" :: String, reason :: String } ) submitOrder # atCase @"Submit order"
+      ( VariantToRecord.do
         indeterminateLinearProgress
-        snackbar @"Receipt printed" receiptLine ) # action @( "Receipt printed" :: { "Short ID" :: String } ) printReceipt # muted ) # atCase @"Receipt"
+        snackbar @"Receipt printed" receiptLine ) # action printReceipt # atCase @"Receipt"
   )

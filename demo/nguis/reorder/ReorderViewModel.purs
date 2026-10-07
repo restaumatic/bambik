@@ -1,4 +1,4 @@
-module ReorderViewModel (openingSetlist, rotateAction, setlistReorderedLine, shuffleAction) where
+module ReorderViewModel (openingSetlist, rotateAction, setlistRotatedLine, setlistShuffledLine, shuffleAction) where
 
 import Prelude ((<$>), (<>), bind, compare, map, pure)
 
@@ -21,11 +21,11 @@ openingSetlist =
     ]
   }
 
-rotateAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff [ "Setlist reordered" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
-rotateAction pl@{ "Setlist": tracks } = pure (."Setlist reordered" (pl { "Setlist" = rotate tracks }))
+rotateAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff [ "Setlist rotated" :: { "Setlist" :: Array { "Title" :: String, id :: String } }, "Setlist shuffled" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
+rotateAction pl@{ "Setlist": tracks } = pure (."Setlist rotated" (pl { "Setlist" = rotate tracks }))
 
-shuffleAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff [ "Setlist reordered" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
-shuffleAction pl@{ "Setlist": tracks } = (\ts -> ."Setlist reordered" (pl { "Setlist" = ts })) <$> liftEffect (shuffleOrder tracks)
+shuffleAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff [ "Setlist rotated" :: { "Setlist" :: Array { "Title" :: String, id :: String } }, "Setlist shuffled" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
+shuffleAction pl@{ "Setlist": tracks } = (\ts -> ."Setlist shuffled" (pl { "Setlist" = ts })) <$> liftEffect (shuffleOrder tracks)
 
 rotate :: Array { id :: String, "Title" :: String } -> Array { id :: String, "Title" :: String }
 rotate tracks = maybe tracks (\{ head, tail } -> snoc tail head) (uncons tracks)
@@ -40,5 +40,8 @@ shuffleOrder tracks = do
     k <- randomInt 0 1000000
     pure (Tuple k t)
 
-setlistReorderedLine :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> String
-setlistReorderedLine { "Setlist": tracks } = maybe "Setlist is empty" (\track -> "Setlist now opens with " <> track."Title") (head tracks)
+setlistRotatedLine :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> String
+setlistRotatedLine { "Setlist": tracks } = maybe "Setlist is empty" (\track -> "Rotated, now opening with " <> track."Title") (head tracks)
+
+setlistShuffledLine :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> String
+setlistShuffledLine { "Setlist": tracks } = maybe "Setlist is empty" (\track -> "Shuffled, now opening with " <> track."Title") (head tracks)

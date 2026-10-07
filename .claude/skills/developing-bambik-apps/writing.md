@@ -175,9 +175,8 @@ a trailing word that says what it is for:
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"°C" {} # settled fromCelsius` | temperature-converter |
 | buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
-| an effect on a button's case, folded by its outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" … # fold identity; snackbar @"Person not created" … # fold identity } } ) # atCase @"Create"`, one chain per button in the fold block | crud |
+| effects on the buttons' cases, the other events passing | `( VariantToVariant.do { indeterminateLinearProgress # action createPerson # atCase @"Create"; … } ) # subChoice`, every action typed at the block's outcome row, every outcome folded once by its status | crud |
 | an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `snackbar @"Forecast fetched" forecastFetchedLine # fold identity` | weather |
-| several effects with one outcome row | `VariantToVariant.do { indeterminateLinearProgress # action rotateAction # atCase @"Rotate"; indeterminateLinearProgress # action shuffleAction # atCase @"Shuffle" }`, the block's outputs one row | reorder |
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
 | a heartbeat folded silently | `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch |
 
@@ -375,26 +374,18 @@ model module, as a real server would (crud's catalogue).
 model -> Aff [ "Person created" :: model, "Person not created" :: model ]`,
 crud) and **opened by its statuses**: a progress indicator for
 `started`/`ended`, a status per outcome case it shows, or both in one
-`VariantToRecord.do`. Its outcome row is fixed by what it composes into,
-never split out of a merge, so an action takes one of three shapes:
-- **folded**: the action and the fold block of its outcomes form one
-  chain, adopted under its button's case in the fold block
-  (`( Semigroupoid.do { indeterminateLinearProgress # action createPerson;
-  VariantToRecord.do { … } } ) # atCase @"Create"`, crud) — every case
-  named once, at its status;
-- **several `Aff`s, one outcome row**: merged in a `VariantToVariant.do`,
-  one line per case (`indeterminateLinearProgress # action rotateAction #
-  atCase @"Rotate"`, reorder); the block's outputs are one row every
-  operand is typed at, an equality like the `×→×` merge's inputs, so
-  nothing names the shared outcome and the fold after the block fixes it;
-- **statuses only**: the statuses open the action and `@( … )` declares
-  the payloads nothing downstream fixes (flight-booker's
-  `indeterminateLinearProgress` beside `snackbar @"Flight booked"
-  bookedLine` and `snackbar @"Booking rejected" rejectedLine`).
-Actions with distinct outcome rows are not merged in a
-`VariantToVariant.do` (its outputs are one row): they fold their own
-outcomes, or, where only statuses follow, each ends `# muted` in the
-`VariantToRecord.do` of the event (order-form's submit and receipt).
+`VariantToRecord.do`. The actions of a loop stand in one
+`VariantToVariant.do`, one line per button's case, and **every action is
+typed at the block's outcome row** — the union of all their outcomes,
+as a display's function is typed at the whole model though it reads one
+field (`createPerson :: model -> Aff [ "Person created" :: model, "Person
+deleted" :: model, … ]`, the six cases of crud's three actions, each
+`Aff` returning its own). The block's outputs are one row (an equality,
+like the `×→×` merge's inputs), so the fold block after it fixes the row
+and nothing names an outcome on an action line; events the actions do
+not handle pass `# subChoice`. Where only statuses follow (flight-booker,
+order-form's submit and receipt), `@( … )` on one line declares the
+payloads nothing downstream fixes, and the block ends the pipeline.
 
 Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app
