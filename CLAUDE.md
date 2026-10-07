@@ -502,7 +502,7 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
 
 ## Demo Structure
 
-103 pages over **40 app families**, registered in **scripts/demos.mjs** (the
+102 pages over **40 app families**, registered in **scripts/demos.mjs** (the
 single source of truth: directory + module + entry, shared by the bundler and
 the dev server). Two suites: **demo/7guis/** (the
 [7GUIs](https://eugenkiss.github.io/7guis/) benchmark) and **demo/nguis/**
@@ -559,8 +559,6 @@ the dev server). Two suites: **demo/7guis/** (the
 | crud | **a load action before the knot**: `( indeterminateLinearProgress # action loadPeopleCatalogue; snackbar @"People loaded" … # fold identity; ( editors; list and buttons; folds ) # looped @( … ) )` — the load's outcome folded in, the knot declaring the model; `MDC2.listOf @l` (keyed `foreach` of `clicked @l` rows elsewhere), its pick `# joined @"Person picked"`; Aff catalogue actions over a stand-in server in its own module (`PeopleServer`), each typed at the actions block's six-case outcome row and returning its own two, every outcome folded once by its status (experiment 2026-10-07) |
 | circle-drawer | **channel-fed SVG canvas** — built once, updated via `attrWith`; container-level `onClickedXY @l`; the diameter a bounded quantity in the model, its slider `# inCase @"chosen" _.selected # settled resizeSelected` — live-preview resize as a state invariant — and the canvas click `# joined @"picked"`, an `adjusting` flag coalescing a drag into one undo transaction |
 | cells | **channel-fed 31×27 grid** — ~800 cells built once, `attrWith` + `text` in place, clicked key via `clicked @l _.key`; hand-rolled formula evaluator over an `Expr` AST (nominal, since rows can't express μ) |
-
-**flight-booker-pl-mdc2** is a translation twin: the MDC2 view in Polish, captions, hints and the button's label as literals through the caption config (static copy is the view's: a caption is consumed when the view is built, so one imported from the view model would make the holey twin throw at mount — L18, caught by the holey sweep; a button's MDC2/MDC3 `label:` could not be determined from a hole anyway, its option taking both `String` and `Nothing` under `ConvertOption`'s fundep `t p -> o`), every sentence a copy function in `FlightBookerPolishViewModel`, which delegates the business functions to `FlightBookerViewModel`; the select's options stay English, the documented gap (an option has no caption of its own).
 
 The `-html` variants are the **plain-HTML floor**: one container `div` (so
 case panes re-attach inside the demo's own DOM), label-indexed leaves like

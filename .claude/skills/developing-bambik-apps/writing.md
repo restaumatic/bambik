@@ -106,16 +106,9 @@ user how to fill a field in rather than naming it — a format, an
 example, a question — is the text field's `hint:`
 (`filledTextField @"Start date" { hint: "DD.MM.YYYY" }`, flight-booker),
 so the label stays the name the business functions read. A caption config (`floatingLabel:`,
-`label:`) is only for copy the label cannot be — localized wording —
-and, on a button, hiding the caption of a glyph-only face (see the
-component's header). A translation (flight-booker-pl) keeps the model's
-labels. Its captions and hints are static copy, so they are literals in
-its view, passed through the caption config: a caption is read when the
-view is built, and one imported from the view model would stop the view
-running before the view model exists. Its sentences are copy functions
-in a view model module of its own, every business function delegated to
-the original's. An option has no caption of its own, so a select's
-options stay in the model's language.
+`label:`) is only for copy the label cannot be — localized wording,
+passed from the app's copy table — and, on a button, hiding the caption
+of a glyph-only face (see the component's header).
 
 How each kind takes its business meaning:
 
