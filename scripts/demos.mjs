@@ -51,6 +51,9 @@ export const sets = {
     'crud-html': ['CrudHTML', 'crudHTML'],
     'circle-drawer-html': ['CircleDrawerHTML', 'circleDrawerHTML'],
     'cells-html': ['CellsHTML', 'cellsHTML'],
+    // a translation twin: the MDC2 view in Polish over its own view model of
+    // Polish copy, every business function delegated to flight-booker's
+    'flight-booker-pl-mdc2': ['FlightBookerPolishMDC2', 'flightBookerPolishMDC2'],
   },
   'nguis': {
     'order-form-mdc2': ['OrderFormMDC2', 'orderFormMDC2'],
