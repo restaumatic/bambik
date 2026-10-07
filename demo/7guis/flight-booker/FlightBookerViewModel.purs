@@ -59,13 +59,13 @@ summary = match
   , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
   }
 
-submit :: { "Flight type" :: [ "one-way" :: {}, return :: {} ], "Return date (DD.MM.YYYY)" :: String, "Start date (DD.MM.YYYY)" :: String } -> Aff [ booked :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }, returnBetween :: { back :: { d :: Int, m :: Int, y :: Int }, out :: { d :: Int, m :: Int, y :: Int } } ], rejected :: String ]
+submit :: { "Flight type" :: [ "one-way" :: {}, return :: {} ], "Return date (DD.MM.YYYY)" :: String, "Start date (DD.MM.YYYY)" :: String } -> Aff [ "Booking rejected" :: String, "Flight booked" :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }, returnBetween :: { back :: { d :: Int, m :: Int, y :: Int }, out :: { d :: Int, m :: Int, y :: Int } } ] ]
 submit trip = case parse trip of
-  Left problem -> pure (.rejected problem)
+  Left problem -> pure (."Booking rejected" problem)
   Right itinerary -> expand <$> bookFlight itinerary
 
-bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] ]
-bookFlight itinerary = pure (.booked itinerary)
+bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] ]
+bookFlight itinerary = pure (."Flight booked" itinerary)
 
 parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
 parseDate s = case split (Pattern ".") s of

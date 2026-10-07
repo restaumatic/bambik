@@ -5,12 +5,12 @@ import Prelude ((#), ($), Unit, identity)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, joined, looped, replaying, ticks, with)
+import PUI (blankStatus, fold, joined, looped, replaying, ticks, with)
 import PUI.Web (provided, shown, shownEach, text)
 import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC2 (body, button, headline3, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import StopwatchViewModel (beginTiming, clearStopwatch, clockTickedLine, elapsedText, haltTiming, lapLine, lapRecordedLine, lapRows, recordLap, stopwatchResetLine, tick, tickPeriod, timingBegunLine, timingHaltedLine, zeroedStopwatch)
+import StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRecordedLine, lapRows, recordLap, stopwatchResetLine, tick, tickPeriod, timingBegunLine, timingHaltedLine, zeroedStopwatch)
 
 stopwatchMDC2 :: Effect Unit
 stopwatchMDC2 =
@@ -24,7 +24,7 @@ stopwatchMDC2 =
         button @"Lap" { icon: "flag" } # provided @"timing" _.phase # joined @"Lap"
         button @"Reset" { icon: "replay" } # provided @"halted" _.phase # joined @"Reset"
       VariantToRecord.do
-        snackbar @"Clock ticked" clockTickedLine # fold tick
+        blankStatus @"Clock ticked" # fold tick
         snackbar @"Start" timingBegunLine # fold beginTiming
         snackbar @"Stop" timingHaltedLine # fold haltTiming
         snackbar @"Lap" lapRecordedLine # fold recordLap

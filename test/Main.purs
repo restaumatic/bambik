@@ -39,7 +39,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import OrderFormViewModel (fulfillmentCase, fulfillmentState)
-import PUI (PUI(..), accumulated, acted, announce, applied, blank, dispatched, edited, fold, foreach, looped, observed, optioned, replaying, resolveFor, seeded, silence, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, blankStatus, dispatched, edited, fold, foreach, looped, observed, optioned, replaying, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -197,25 +197,25 @@ main = do
   -- row, an iso with toCase @l identity both ways
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (fold (\r -> r { count = r.count + 1 }) blank :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m <- unwrap (fold (\r -> r { count = r.count + 1 }) (blankStatus @"Count") :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 3 })
     Ref.read outs >>= assertEqual "fold: f of the payload is the released row" [ { count: 4 } ]
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (fold identity blank :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m <- unwrap (fold identity (blankStatus @"Count") :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 5 })
     Ref.read outs >>= assertEqual "fold/identity: the closed singleton unwrapped to its row" [ { count: 5 } ]
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (toCase @"Count" identity identity >>> fold identity blank :: PUI Effect { count :: Int } { count :: Int })
+    m <- unwrap (toCase @"Count" identity identity >>> fold identity (blankStatus @"Count") :: PUI Effect { count :: Int } { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { count: 5 }
     Ref.read outs >>= assertEqual "fold/section" [ { count: 5 } ]
   do
     outs <- Ref.new ([] :: Array [ "Count" :: { count :: Int } ])
-    m <- unwrap (fold identity blank >>> toCase @"Count" identity identity :: PUI Effect [ "Count" :: { count :: Int } ] [ "Count" :: { count :: Int } ])
+    m <- unwrap (fold identity (blankStatus @"Count") >>> toCase @"Count" identity identity :: PUI Effect [ "Count" :: { count :: Int } ] [ "Count" :: { count :: Int } ])
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 5 })
     Ref.read outs >>= assertEqual "fold/retraction" [ ."Count" { count: 5 } ]
@@ -224,8 +224,8 @@ main = do
   do
     outs <- Ref.new ([] :: Array { n :: Int })
     m <- unwrap (variantToRecord
-      (fold (\r -> r { n = r.n + 1 }) blank :: PUI Effect [ "A" :: { n :: Int } ] { n :: Int })
-      (fold (\r -> r { n = r.n * 2 }) blank :: PUI Effect [ "B" :: { n :: Int } ] { n :: Int }))
+      (fold (\r -> r { n = r.n + 1 }) (blankStatus @"A") :: PUI Effect [ "A" :: { n :: Int } ] { n :: Int })
+      (fold (\r -> r { n = r.n * 2 }) (blankStatus @"B") :: PUI Effect [ "B" :: { n :: Int } ] { n :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."A" { n: 1 })
     m.toUser (."B" { n: 5 })

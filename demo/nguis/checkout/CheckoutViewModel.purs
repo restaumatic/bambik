@@ -55,14 +55,14 @@ orderStatus { item, address, card, status } = match { pending: \_ -> .pending {}
 placedLine :: { address :: String, card :: String, item :: String } -> String
 placedLine { item, address, card } = "Order placed: " <> item <> " → " <> address <> " (card " <> card <> ")"
 
-steppedOnLine :: { event :: { step :: [ cart :: {}, payment :: {}, shipping :: {} ] }, model :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } } -> String
-steppedOnLine { event: { step } } = "Went on to " <> stepName step
+steppedOnLine :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } -> String
+steppedOnLine { step } = "Went on to " <> stepName step
 
-steppedBackLine :: { event :: { step :: [ cart :: {}, payment :: {}, shipping :: {} ] }, model :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } } -> String
-steppedBackLine { event: { step } } = "Went back to " <> stepName step
+steppedBackLine :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } -> String
+steppedBackLine { step } = "Went back to " <> stepName step
 
-orderPlacedLine :: { event :: { card :: String }, model :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } } -> String
-orderPlacedLine { event: { card }, model: { item } } = "Placed the order for " <> item <> ", paid with card " <> card
+orderPlacedLine :: { address :: String, card :: String, item :: String, status :: [ pending :: {}, placed :: {} ], step :: [ cart :: {}, payment :: {}, shipping :: {} ] } -> String
+orderPlacedLine { item, card } = "Placed the order for " <> item <> ", paid with card " <> card
 
 stepName :: [ cart :: {}, payment :: {}, shipping :: {} ] -> String
 stepName = match { cart: \_ -> "the cart", shipping: \_ -> "shipping", payment: \_ -> "payment" }

@@ -33,11 +33,11 @@ claimCell { event: key, model: game@{ board } } = case fromString key of
     game { board = fromMaybe board (updateAt i (playerToMove board) board) }
   _ -> game
 
-cellClaimedLine :: { event :: String, model :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } } -> String
-cellClaimedLine { event: key, model: { board } } = markText { mark: playerToMove board } <> " claimed cell " <> key
+cellClaimedLine :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> String
+cellClaimedLine game = match { won: wonLine, drawn: drawnLine, toMove: toMoveLine } (gameOutcome game)
 
 newGameLine :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> String
-newGameLine _ = "Started a new game"
+newGameLine game = "New game, " <> toMoveLine { mark: playerToMove game.board }
 
 playerToMove :: Array [ x :: {}, o :: {}, free :: {} ] -> [ x :: {}, o :: {}, free :: {} ]
 playerToMove board = if length (filter (_ == .free {}) board) `mod` 2 == 1 then .x {} else .o {}

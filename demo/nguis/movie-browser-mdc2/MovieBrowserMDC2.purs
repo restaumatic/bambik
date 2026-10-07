@@ -3,7 +3,7 @@ module MovieBrowserMDC2 (movieBrowserMDC2) where
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import MovieBrowserViewModel (favoriteMark, favoritesLine, isFavorite, markFavorite, movieCatalogue, movieFavoredLine, ratingLine, titleLine, visibleMovies, yearLine)
+import MovieBrowserViewModel (favoriteMark, favoritesLine, isFavorite, markFavorite, movieCatalogue, favoriteChangedLine, ratingLine, titleLine, visibleMovies, yearLine)
 import PUI (fold, foreach, joined, looped, toCase, with)
 import PUI.Web ((<+>), choice, clWhen, shown, text)
 import PUI.Web.HTML (span)
@@ -26,8 +26,8 @@ movieBrowserMDC2 =
           span (text titleLine) # shown
           span (text yearLine) # shown
           span (text ratingLine) # shown
-          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # foreach @"title" @( title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean ) visibleMovies # toCase @"Movie favored" @{ title :: String, "Favorite" :: Boolean } favoriteMark # joined @"Movie favored"
-      snackbar @"Movie favored" movieFavoredLine # fold markFavorite
+          iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # foreach @"title" @( title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean ) visibleMovies # toCase @"Favorite changed" @{ title :: String, "Favorite" :: Boolean } favoriteMark # joined @"Favorite changed"
+      snackbar @"Favorite changed" favoriteChangedLine # fold markFavorite
     ) # looped
       @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]
        , "Classic" :: Boolean

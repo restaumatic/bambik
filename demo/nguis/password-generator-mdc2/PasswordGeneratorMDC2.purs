@@ -1,13 +1,14 @@
 module PasswordGeneratorMDC2 (passwordGeneratorMDC2) where
 
-import Prelude (Unit, (#), ($), (>>>))
+import Prelude (identity, Unit, (#), ($), (>>>))
 
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PasswordGeneratorViewModel (passwordText, samplePassword, strengthLine, strongMixRecipe)
-import PUI (action, atCase, looped, with)
+import PasswordGeneratorViewModel (passwordGeneratedLine, passwordText, samplePassword, strengthLine, strongMixRecipe)
+import PUI (action, atCase, blankStatus, fold, looped, with)
 import PUI.Web (attr, shown, text)
 import PUI.Web.HTML (code)
-import PUI.Web.MDC2 (body, body2, button, indeterminateLinearProgress, slider, toggleSwitch)
+import PUI.Web.MDC2 (body, body2, button, indeterminateLinearProgress, slider, snackbar, toggleSwitch)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 passwordGeneratorMDC2 :: Effect Unit
@@ -22,7 +23,10 @@ passwordGeneratorMDC2 =
       body2 (text strengthLine) # shown
       code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
       button @"Generate" {}
-      indeterminateLinearProgress @"Generating password" # action @{ "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } , "Uppercase letters" :: Boolean , "Lowercase letters" :: Boolean , "Digits" :: Boolean , "Symbols" :: Boolean , password :: String } samplePassword # atCase @"Generate"
+      ( VariantToRecord.do
+        indeterminateLinearProgress @"Generating password"
+        blankStatus @"Password generated" ) # action samplePassword # atCase @"Generate"
+      snackbar @"Password generated" passwordGeneratedLine # fold identity
     ) # looped
       @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Uppercase letters" :: Boolean

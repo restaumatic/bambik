@@ -83,18 +83,20 @@ module Data.Profunctor.Row.VariantToRecord
   , bind
   , discard
   , subRetaining
+  , blankStatus
   )
   where
 
 import Control.Category (class Category, identity)
 import Data.Lens.Reel (reelE)
-import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, splitVariant)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
+import Data.Function (const)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, case_, on)
+import Data.Variant (class Contractable)
 import Prim.Row (class Cons)
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
@@ -144,3 +146,11 @@ subRetaining g =
     (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
     g
 
+-- | The **blank status**: the faceless `+→×` leaf owning case `l` and
+-- | showing nothing of it — `blank` with a name, so it can open a fold
+-- | (`blankStatus @"Clock ticked" # fold tick`, a heartbeat nobody needs
+-- | told about) or an action (`blankStatus @"Setlist reordered" # action
+-- | rotateAction`) where the merge needs the case named and there is no
+-- | face to name it. `lcmap (const {}) identity`, like `blank`.
+blankStatus :: forall @l p a v. Cons l a () v => Profunctor p => Category p => p [ | v ] {}
+blankStatus = lcmap (const {}) identity

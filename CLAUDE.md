@@ -530,7 +530,7 @@ the dev server). Two suites: **demo/7guis/** (the
   honest catalog mapping (typography renames per the Material migration guide;
   vocabularies lacking `listOf` build selectable lists as a keyed `foreach` of
   `clicked @l` rows; those lacking an indeterminate progress run Aff stages as
-  `blank # action …`).
+  `blankStatus @l # action …`).
 - **The app shape** is one loop through the four shapes, `( Semigroupoid.do
   … displays and editors …; RecordToVariant.do { emitters, panes, joined
   picks }; … actions # subChoice …; VariantToRecord.do { status @l line # fold f …; statuses } ) # looped @( … ) # with seed`

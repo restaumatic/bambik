@@ -2,7 +2,7 @@ module ShoppingCartViewModel (addUnit, cartEmptiedLine, cartLines, catalogueLine
 
 import Prelude ((<>), (*), (+), (-), (/), (<), (==), map, mod, otherwise, show)
 
-import Data.Array (any, foldl, mapMaybe, snoc)
+import Data.Array (any, foldl, length, mapMaybe, snoc)
 import Data.Maybe (Maybe(..))
 
 emptyCart :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
@@ -37,11 +37,14 @@ removeUnit { event: name, model: cart } = cart { order = mapMaybe oneFewer cart.
     | l.product.name == name = if l.quantity == 1 then Nothing else Just l { quantity = l.quantity - 1 }
     | otherwise = Just l
 
-unitAddedLine :: { event :: { name :: String, unitPrice :: Int }, model :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } } -> String
-unitAddedLine { event: product } = "Added " <> product.name
+unitAddedLine :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
+unitAddedLine { order } = "Added — " <> cartSummary order
 
-unitRemovedLine :: { event :: String, model :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } } -> String
-unitRemovedLine { event: name } = "Removed " <> name
+unitRemovedLine :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
+unitRemovedLine { order } = if length order == 0 then "Removed the last item" else "Removed — " <> cartSummary order
+
+cartSummary :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } -> String
+cartSummary order = show (foldl (\n l -> n + l.quantity) 0 order) <> " items, $" <> formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 order)
 
 cartEmptiedLine :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
 cartEmptiedLine _ = "Emptied the cart"

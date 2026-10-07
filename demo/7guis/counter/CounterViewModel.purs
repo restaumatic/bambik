@@ -12,4 +12,4 @@ increment :: { count :: Int } -> { count :: Int }
 increment m = m { count = m.count + 1 }
 
 countedLine :: { count :: Int } -> String
-countedLine { count } = "Counted to " <> show (count + 1)
+countedLine { count } = "Counted to " <> show count

@@ -1,9 +1,10 @@
-module StopwatchViewModel (beginTiming, clearStopwatch, clockTickedLine, elapsedText, haltTiming, lapLine, lapRecordedLine, lapRows, recordLap, stopwatchResetLine, tick, tickPeriod, timingBegunLine, timingHaltedLine, zeroedStopwatch) where
+module StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRecordedLine, lapRows, recordLap, stopwatchResetLine, tick, tickPeriod, timingBegunLine, timingHaltedLine, zeroedStopwatch) where
 
 import Prelude ((<>), (+), (<), show)
 
-import Data.Array (length, mapWithIndex, snoc)
+import Data.Array (last, length, mapWithIndex, snoc)
 import Data.Int (quot, rem)
+import Data.Maybe (maybe)
 import Data.Variant (match)
 
 zeroedStopwatch :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
@@ -31,20 +32,17 @@ tick :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timi
 tick sw@{ phase, elapsedTenths } =
   match { timing: \_ -> sw { elapsedTenths = elapsedTenths + 1 }, halted: \_ -> sw } phase
 
-clockTickedLine :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> String
-clockTickedLine { elapsedTenths } = "Ticked past " <> formatTime elapsedTenths
+timingBegunLine :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> String
+timingBegunLine { elapsedTenths } = "Started timing at " <> formatTime elapsedTenths
 
-timingBegunLine :: { event :: {}, model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } } -> String
-timingBegunLine { model: { elapsedTenths } } = "Started timing at " <> formatTime elapsedTenths
+timingHaltedLine :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> String
+timingHaltedLine { elapsedTenths } = "Stopped at " <> formatTime elapsedTenths
 
-timingHaltedLine :: { event :: {}, model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } } -> String
-timingHaltedLine { model: { elapsedTenths } } = "Stopped at " <> formatTime elapsedTenths
+lapRecordedLine :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> String
+lapRecordedLine { laps } = "Lap " <> show (length laps) <> " at " <> maybe "—" formatTime (last laps)
 
-lapRecordedLine :: { event :: {}, model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } } -> String
-lapRecordedLine { model: { laps, elapsedTenths } } = "Lap " <> show (length laps + 1) <> " at " <> formatTime elapsedTenths
-
-stopwatchResetLine :: { event :: {}, model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } } -> String
-stopwatchResetLine { model: { elapsedTenths } } = "Reset from " <> formatTime elapsedTenths
+stopwatchResetLine :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> String
+stopwatchResetLine { elapsedTenths } = "Reset to " <> formatTime elapsedTenths
 
 lapRows :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] } -> Array { number :: Int, tenths :: Int }
 lapRows { laps } = mapWithIndex (\i t -> { number: i + 1, tenths: t }) laps

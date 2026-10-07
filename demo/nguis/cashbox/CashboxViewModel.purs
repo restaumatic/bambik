@@ -39,10 +39,10 @@ euros :: Number -> String
 euros n = let s = show n in fromMaybe s (stripSuffix (Pattern ".0") s)
 
 customerRefundedLine :: { balance :: Number } -> String
-customerRefundedLine _ = "Refunded €" <> euros standardRefund <> " to the customer"
+customerRefundedLine { balance } = "Refunded €" <> euros standardRefund <> " to the customer, €" <> euros balance <> " left in the till"
 
 courierPaidOutLine :: { balance :: Number } -> String
-courierPaidOutLine _ = "Paid €" <> euros courierFee <> " to the courier"
+courierPaidOutLine { balance } = "Paid €" <> euros courierFee <> " to the courier, €" <> euros balance <> " left in the till"
 
 depositTakenLine :: { balance :: Number } -> String
-depositTakenLine _ = "Took a €" <> euros customerDeposit <> " deposit"
+depositTakenLine { balance } = "Took a €" <> euros customerDeposit <> " deposit, €" <> euros balance <> " in the till"

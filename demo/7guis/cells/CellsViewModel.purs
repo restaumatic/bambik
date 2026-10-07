@@ -59,8 +59,8 @@ rowLabel { rowKey } = rowKey
 selectCell :: { event :: String, model :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } } -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
 selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
 
-cellPickedLine :: { event :: String, model :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } } -> String
-cellPickedLine { event: key } = "Picked cell " <> key
+cellPickedLine :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> String
+cellPickedLine { selected } = match { picked: \p -> "Picked cell " <> p.name, none: \_ -> "No cell picked" } selected
 
 commit :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
 commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = match

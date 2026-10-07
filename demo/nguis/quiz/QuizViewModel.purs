@@ -4,7 +4,7 @@ import Prelude (show, (+), (/), (<>), (==), min)
 
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 
 freshQuizRun :: { correct :: Int, question :: Int }
 freshQuizRun = { question: 0, correct: 0 }
@@ -40,10 +40,8 @@ askedPrompt { prompt } = prompt
 finalScoreLine :: { correct :: Int } -> String
 finalScoreLine { correct } = "Final score: " <> show correct <> " / " <> show (length questionCatalogue)
 
-questionAnsweredLine :: { event :: Int, model :: { correct :: Int, question :: Int } } -> String
-questionAnsweredLine { event: choice, model: { question } } = case index questionCatalogue question of
-  Just q -> if choice == q.answer then "Correct!" else "Wrong — " <> fromMaybe "" (index q.choices q.answer) <> " was right"
-  Nothing -> "The quiz is already over"
+questionAnsweredLine :: { correct :: Int, question :: Int } -> String
+questionAnsweredLine { question, correct } = "Score " <> show correct <> " after " <> show question <> " of " <> show (length questionCatalogue) <> " questions"
 
-quizRestartedLine :: { correct :: Int } -> String
-quizRestartedLine { correct } = "Restarted after scoring " <> show correct <> " / " <> show (length questionCatalogue)
+quizRestartedLine :: { correct :: Int, question :: Int } -> String
+quizRestartedLine _ = "Quiz restarted"

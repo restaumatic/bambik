@@ -47,6 +47,8 @@ module PUI
   , Hooks
   , Logged
   , Sink
+  , class ActionOutcomes
+  , class OutcomesOf
   , class Hosting
   , hosting
   , setSink
@@ -105,6 +107,7 @@ import Data.Profunctor.Row.RecordToVariant (armed, joined, replaying, silence) a
 -- by a business function, never coerced at the call site. It stays exported
 -- from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Row.VariantToVariant (atCase, subChoice, toCase) as Adopters
+import Data.Profunctor.Row.VariantToRecord (blankStatus) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
@@ -1173,14 +1176,21 @@ type Ocular p = forall a b. Optic p a b a b
 static :: forall p r. Category p => Profunctor p => Ocular p -> p { | r } {}
 static o = widenRecordInput (o identity :: p {} {})
 
--- | The progress slot is a **status**, `[ started :: {}, ended :: {} ] → {}`
--- | — a `+→×` citizen like `snackbar`, because what it is fed is not a model
--- | field but the run's two lifecycle **occurrences**: no application owns a
--- | "busy" (the slot's earlier `{ busy :: Boolean }` was a two-case phase
--- | written as the Boolean nobody edits), so the indicator shows between
--- | `started` and `ended` and, like every status, owes the channel nothing.
--- | A stage with no indicator passes `blank`, the faceless leaf, which
--- | stands at variant input as it does at record input: `blank # action …`.
+-- | An action is **opened by its statuses**: the slot is a `+→×` citizen
+-- | owning any of the run's cases — the two lifecycle occurrences `started`
+-- | and `ended` (a progress indicator, `indeterminateLinearProgress @"Creating
+-- | person" # action createPerson`) and the **outcome cases** the `Aff`
+-- | returns as a variant (`snackbar @"Flight booked" bookedLine # action
+-- | submit`), or a `VariantToRecord.do` block of both. The slot's row is
+-- | `[ started, ended | t ]` with `t` **read off the slot**: the statuses
+-- | opening an action name every outcome case its `Aff` returns, with
+-- | `blankStatus @l` for a case nothing shows, and the outcome leaves as
+-- | the variant `[ | t ]` — so no `toCase` follows, and `@t` is declared
+-- | only where no status or fold downstream fixes a payload. No application owns a
+-- | "busy": the indicator shows between `started` and `ended` and, like
+-- | every status, owes the channel nothing. A stage with nothing to show
+-- | opens with `blankStatus @l` naming its outcome case; `blank` alone
+-- | names no case and so leaves the slot's row undetermined.
 -- |
 -- | A failing action is **reported, not swallowed**: `ended` is dispatched
 -- | whichever way the `Aff` ends — so a throw cannot strand the spinner —
@@ -1188,48 +1198,77 @@ static o = widenRecordInput (o identity :: p {} {})
 -- | onward, since there is no output to post. An action whose function is a
 -- | hole never runs (guardrails L18): a view's own literal seed may reach
 -- | it before its logic exists.
-action :: forall @t a. (a -> Aff t) -> Action a t [ started :: {}, ended :: {} ] {}
+-- | The slot's row minus the lifecycle cases is the action's outcome row:
+-- | the statuses opening an action name every case its `Aff` can return.
+class ActionOutcomes (v1 :: Row Type) (t :: Row Type) | v1 -> t
+instance (RowToList v1 rl, OutcomesOf rl t) => ActionOutcomes v1 t
+
+class OutcomesOf (rl :: RL.RowList Type) (t :: Row Type) | rl -> t
+instance OutcomesOf RL.Nil ()
+else instance OutcomesOf rl t => OutcomesOf (RL.Cons "started" a rl) t
+else instance OutcomesOf rl t => OutcomesOf (RL.Cons "ended" a rl) t
+else instance (OutcomesOf rl t1, Cons l a t1 t) => OutcomesOf (RL.Cons l a rl) t
+
+action
+  :: forall @t a v1 m
+   . MonadEffect m
+  => ActionOutcomes v1 t
+  => Contractable ( started :: {}, ended :: {} | t ) v1
+  => (a -> Aff [ | t ])
+  -> PUI m [ | v1 ] {}
+  -> PUI m a [ | t ]
 action arr w = action'
   (\i pro post -> if isHole arr then pure unit else do
-    liftEffect $ pro (inj (Proxy @"started") {})
+    let tell v = for_ (contract (v :: [ started :: {}, ended :: {} | t ]) :: Maybe _) pro
+    liftEffect $ tell (inj (Proxy @"started") {})
     result <- attempt (arr i)
-    liftEffect $ pro (inj (Proxy @"ended") {})
+    liftEffect $ tell (inj (Proxy @"ended") {})
     case result of
       Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
-      Right o -> liftEffect $ post o)
+      Right o -> liftEffect do
+        post o
+        -- the outcome widened to the slot's row: a variant is a tagged value,
+        -- so the widening is the identity (`expand` cannot solve `Union` at
+        -- an open tail)
+        tell (unsafeCoerce o))
   w
 
 -- | One case **folded into the record** (`+→×`), opened by its status —
 -- | `snackbar @"Person created" personCreatedLine # fold identity`, as a
 -- | run is opened by its progress indicator (`indeterminateLinearProgress
 -- | @"Creating person" # action createPerson`). The status names the case
--- | (its closed singleton row is the fold's input) and renders each
--- | occurrence; `f` of the occurrence's payload is the row released, so a
--- | loop's folds are one per event case, merged by `VariantToRecord.do`,
--- | each releasing the whole next model. Memoryless: a replaying emitter's
+-- | (its label is the fold's input case) and shows the **outcome**: the
+-- | fold happens first, `f` of the occurrence's payload is the row
+-- | released, and the status is fed that row under the same case, so its
+-- | copy function is typed at the model (`personCreatedLine :: model ->
+-- | String`) and narrates what the handler decided. A heartbeat nobody
+-- | needs told about opens with `blankStatus @l`. A loop's folds are one
+-- | per event case, merged by `VariantToRecord.do`, each releasing the
+-- | whole next model. Memoryless: a replaying emitter's
 -- | payload is the row it was fed, an event with something of its own
 -- | arrives `joined @l` with that row as `{ event, model }`, and an effect
 -- | returns the model (`… # fold identity`), so every handler has the model
 -- | in hand and the loop's memory stays at the emitters and in the knot.
 -- |
--- | **Derived**: the status and the wire under the `×→×` merge, both fed
--- | the occurrence as a one-field record — the status contributes no field
--- | and is inert to the gate, the wire answers every feed with `f` of the
--- | payload, released once per feed. Experiment of 2026-10-07: until then
+-- | **Derived**: the wire and the status under the `×→×` merge, both fed
+-- | the outcome (as the row and as the case) in one two-field record — the
+-- | status contributes no field and is inert to the gate, the wire answers
+-- | every feed with the row, released once per feed. Experiment of 2026-10-07: until then
 -- | `fold @l f` was carrier-free in `Data.Profunctor.Row.VariantToRecord`
 -- | and a status stood beside the folds as a sibling operand.
 fold
-  :: forall m l a v r
+  :: forall m l a v vs r
    . MonadEffect m
-  => RowToList v (RL.Cons l a RL.Nil)
+  => RowToList vs (RL.Cons l { | r } RL.Nil)
   => IsSymbol l
   => Cons l a () v
+  => Cons l { | r } () vs
   => (a -> { | r })
-  -> PUI m [ | v ] {}
+  -> PUI m [ | vs ] {}
   -> PUI m [ | v ] { | r }
-fold f status = dimap { event: _ } _.model $ recordToRecord
-  (lcmap _.event status :: PUI m { event :: [ | v ] } {})
-  (dimap (on (Proxy @l) f case_ <<< _.event) { model: _ } identity :: PUI m { event :: [ | v ] } { model :: { | r } })
+fold f status = dimap (\v -> let o = on (Proxy @l) f case_ v in { outcome: inj (Proxy @l) o, model: o }) _.model $ recordToRecord
+  (dimap _.model { model: _ } identity :: PUI m { outcome :: [ | vs ], model :: { | r } } { model :: { | r } })
+  (lcmap _.outcome status :: PUI m { outcome :: [ | vs ], model :: { | r } } {})
 
 action' :: forall a b s t m. MonadEffect m => (s -> (a -> Effect Unit) -> (t -> Effect Unit) -> Aff Unit) -> Optic (PUI m) s t a b
 action' arr w = wrap do

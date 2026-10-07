@@ -21,11 +21,11 @@ openingSetlist =
     ]
   }
 
-rotateAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff { "Setlist" :: Array { "Title" :: String, id :: String } }
-rotateAction pl@{ "Setlist": tracks } = pure (pl { "Setlist" = rotate tracks })
+rotateAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff [ "Setlist reordered" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
+rotateAction pl@{ "Setlist": tracks } = pure (."Setlist reordered" (pl { "Setlist" = rotate tracks }))
 
-shuffleAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff { "Setlist" :: Array { "Title" :: String, id :: String } }
-shuffleAction pl@{ "Setlist": tracks } = (\ts -> pl { "Setlist" = ts }) <$> liftEffect (shuffleOrder tracks)
+shuffleAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff [ "Setlist reordered" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
+shuffleAction pl@{ "Setlist": tracks } = (\ts -> ."Setlist reordered" (pl { "Setlist" = ts })) <$> liftEffect (shuffleOrder tracks)
 
 rotate :: Array { id :: String, "Title" :: String } -> Array { id :: String, "Title" :: String }
 rotate tracks = maybe tracks (\{ head, tail } -> snoc tail head) (uncons tracks)

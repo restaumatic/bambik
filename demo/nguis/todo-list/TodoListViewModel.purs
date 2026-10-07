@@ -2,7 +2,7 @@ module TodoListViewModel (addTodo, clearCompleted, completedClearedLine, emptyTo
 
 import Prelude ((<<<), (<>), (==), const, not, show)
 
-import Data.Array (filter, index, length, mapWithIndex, modifyAt, snoc)
+import Data.Array (filter, last, length, mapWithIndex, modifyAt, snoc)
 import Data.Maybe (fromMaybe, maybe)
 import Data.String (trim)
 import Data.Variant (match)
@@ -22,13 +22,13 @@ clearCompleted :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :
 clearCompleted m@{ todos } = m { todos = filter (isActive <<< _.status) todos }
 
 todoAddedLine :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } -> String
-todoAddedLine { "What needs to be done?": entry } = "Added " <> trim entry
+todoAddedLine { todos } = maybe "No todos yet" (\t -> "Last added: " <> t.title) (last todos)
 
-todoToggledLine :: { event :: Int, model :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } } -> String
-todoToggledLine { event: i, model: { todos } } = "Toggled " <> maybe "nothing" _.title (index todos i)
+todoToggledLine :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } -> String
+todoToggledLine m = show (itemsLeft m) <> " left to do"
 
 completedClearedLine :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } -> String
-completedClearedLine _ = "Cleared completed todos"
+completedClearedLine { todos } = show (length todos) <> " todos left, none completed"
 
 itemsLeft :: forall r1. { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } | r1 } -> Int
 itemsLeft { todos } = length (filter (isActive <<< _.status) todos)

@@ -1,6 +1,6 @@
-module PasswordGeneratorViewModel (passwordText, samplePassword, strengthLine, strongMixRecipe) where
+module PasswordGeneratorViewModel (passwordGeneratedLine, passwordText, samplePassword, strengthLine, strongMixRecipe) where
 
-import Prelude ((<>), (*), (-), (/), (<), bind, otherwise, pure)
+import Prelude ((<>), (*), (-), (/), (<), bind, otherwise, pure, show)
 
 import Data.Array (index, length, null, replicate)
 import Data.Int (round, toNumber)
@@ -29,11 +29,11 @@ strengthLine r = "Strength: " <> strengthGrade (entropyBits r)
 passwordLengths :: Number -> { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
 passwordLengths n = { current: n, min: 8.0, max: 64.0, step: .discrete 1.0 }
 
-samplePassword :: { "Digits" :: Boolean, "Length" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Lowercase letters" :: Boolean, "Symbols" :: Boolean, "Uppercase letters" :: Boolean, password :: String } -> Aff { "Digits" :: Boolean, "Length" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Lowercase letters" :: Boolean, "Symbols" :: Boolean, "Uppercase letters" :: Boolean, password :: String }
+samplePassword :: { "Digits" :: Boolean, "Length" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Lowercase letters" :: Boolean, "Symbols" :: Boolean, "Uppercase letters" :: Boolean, password :: String } -> Aff [ "Password generated" :: { "Digits" :: Boolean, "Length" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Lowercase letters" :: Boolean, "Symbols" :: Boolean, "Uppercase letters" :: Boolean, password :: String } ]
 samplePassword recipe@{ "Length": length, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = liftEffect do
   let alphabet = effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols }
   chars <- sequence (replicate (round length.current) (randomCharacter alphabet))
-  pure (rememberPassword (fromCharArray chars) recipe)
+  pure (."Password generated" (rememberPassword (fromCharArray chars) recipe))
 
 randomCharacter :: Array Char -> Effect Char
 randomCharacter alphabet = do
@@ -75,3 +75,6 @@ digitCharacters = toCharArray "0123456789"
 
 symbolCharacters :: Array Char
 symbolCharacters = toCharArray "!@#$%^&*()-_=+[]{};:,.<>?/"
+
+passwordGeneratedLine :: { "Digits" :: Boolean, "Length" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Lowercase letters" :: Boolean, "Symbols" :: Boolean, "Uppercase letters" :: Boolean, password :: String } -> String
+passwordGeneratedLine { password } = "Generated a " <> show (length (toCharArray password)) <> "-character password"

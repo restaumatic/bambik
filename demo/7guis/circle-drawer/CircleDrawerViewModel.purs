@@ -66,13 +66,11 @@ pushUndo { undoStack, circles } = { undoStack: take 100 (snoc undoStack circles)
 dist :: forall r1. { x :: Number, y :: Number, r :: Number | r1 } -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))
 
-canvasClickedLine :: { event :: { x :: Number, y :: Number }, model :: { "Diameter" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, circles :: Array { r :: Number, x :: Number, y :: Number }, drag :: [ adjusting :: {}, settled :: {} ], redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } ), selected :: [ chosen :: { index :: Int }, none :: {} ], undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } ) } } -> String
-canvasClickedLine { event: { x, y }, model: { circles } } = case findIndex (\c -> dist c x y <= c.r) circles of
-  Just i -> "Selected circle " <> show (i + 1)
-  Nothing -> "Added circle " <> show (length circles + 1) <> " at " <> show x <> ", " <> show y
+canvasClickedLine :: { "Diameter" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, circles :: Array { r :: Number, x :: Number, y :: Number }, drag :: [ adjusting :: {}, settled :: {} ], redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } ), selected :: [ chosen :: { index :: Int }, none :: {} ], undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } ) } -> String
+canvasClickedLine { circles, selected } = match { chosen: \s -> "Selected circle " <> show (s.index + 1), none: \_ -> "Added circle " <> show (length circles) } selected
 
 undoneLine :: { "Diameter" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, circles :: Array { r :: Number, x :: Number, y :: Number }, drag :: [ adjusting :: {}, settled :: {} ], redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } ), selected :: [ chosen :: { index :: Int }, none :: {} ], undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } ) } -> String
-undoneLine { undoStack } = if length undoStack == 0 then "Nothing to undo" else "Undid the last change"
+undoneLine { undoStack, redoStack } = "Undo: " <> show (length undoStack) <> " left to undo, " <> show (length redoStack) <> " to redo"
 
 redoneLine :: { "Diameter" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, circles :: Array { r :: Number, x :: Number, y :: Number }, drag :: [ adjusting :: {}, settled :: {} ], redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } ), selected :: [ chosen :: { index :: Int }, none :: {} ], undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } ) } -> String
-redoneLine { redoStack } = if length redoStack == 0 then "Nothing to redo" else "Redid the last undone change"
+redoneLine { undoStack, redoStack } = "Redo: " <> show (length redoStack) <> " left to redo, " <> show (length undoStack) <> " to undo"

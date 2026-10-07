@@ -108,10 +108,11 @@ and emitters of a catalogue — are in the design-system module header
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
 | an `Aff` action on an event | `indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"` | flight-booker, crud | writing.md *Stages* |
-| … with no progress indicator | `blank # action rotateAction # atCase @"Rotate"` | reorder, flight-booker (fluent, bootstrap, html) | writing.md *Stages* |
-| an action at load | `indeterminateLinearProgress @"Loading order" # action loadOrder` | order-form, crud | writing.md *App shape* |
-| an action's outcome named on its line | `# toCase @"created" identity` | crud | writing.md *View module and view model module* |
-| a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` and `snackbar @"Clock ticked" clockTickedLine # fold tick` | timer, stopwatch, scoreboard | `PUI` |
+| … with no progress indicator | `blankStatus @"Setlist reordered" # action rotateAction # atCase @"Rotate"` | reorder | writing.md *Stages* |
+| … opened by its outcome statuses | `( VariantToRecord.do { snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker | writing.md *Business functions* |
+| an action at load | `indeterminateLinearProgress @"Loading order" # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine # fold identity` | order-form, crud | writing.md *App shape* |
+| an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
+| a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` and `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
 | narrate an event while passing it on | `snackbar @"Charge card" chargingLine # observed` | payment, inbox | `PUI` |
 | confirm before the flow continues | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox | writing.md *Modals* |
@@ -137,7 +138,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- |
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
 | the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, nothing unknown | writing.md *Writing order* |
-| the model row | `# looped @( … ) # with seed` (counter, inbox); a load action's outcome `action @{ … }` when the load stands before the knot (crud, order-form) | writing.md *Types and values* |
-| a derived row, where it is introduced | a classifier's first pane `# shownWhen @l @( … ) f` (checkout), `# action @[ … ] f` (password-generator), `# foreach @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
+| the model row | `# looped @( … ) # with seed` (counter, inbox); `# looped @( … )` after a load action folded in (crud, order-form) | writing.md *Types and values* |
+| a derived row, where it is introduced | a classifier's first pane `# shownWhen @l @( … ) f` (checkout), `# action @( … ) f` (flight-booker), `# foreach @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

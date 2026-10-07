@@ -175,9 +175,11 @@ a trailing word that says what it is for:
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"°C" {} # settled fromCelsius` | temperature-converter |
 | buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
-| an effect run on a button's case, the other events passing | `indeterminateLinearProgress @"Creating person" # action createPerson # atCase @"Create" … # subChoice` | crud |
-| an effect whose outcome is the model | `indeterminateCircularProgress @"Fetching forecast" # action @{ … } fetchReport # atCase @"requested"` | weather |
-| an effect with no progress indicator | `blank # action rotateAction # atCase @"Rotate"` | reorder |
+| an effect run on a button's case, the other events passing | `indeterminateLinearProgress @"Creating person" # action createPerson # atCase @"Create" … # subChoice`, its outcome cases named by the `Aff` and folded by their statuses | crud |
+| an effect whose outcome is the model | `indeterminateCircularProgress @"Fetching forecast" # action fetchReport # atCase @"Forecast requested"` then `snackbar @"Forecast fetched" forecastFetchedLine # fold identity` | weather |
+| an effect with no progress indicator | `blankStatus @"Setlist reordered" # action rotateAction # atCase @"Rotate"` | reorder |
+| an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress @"Booking flight"; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
+| a heartbeat folded silently | `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch |
 
 Content inside `shown`, the panes and `confirmed` must output `{}`. An
 assembly that emits something you mean to drop is dropped **in
@@ -219,9 +221,11 @@ A fold opens with its status, `snackbar @l line # fold f`, as an effect
 opens with its progress indicator (`indeterminateLinearProgress @l #
 action f`): every line, whatever its shape, starts with a UI component.
 The status names the case — its label is the event's, human copy like
-`"Person created"` — and shows each occurrence through its copy function,
-which reads the event's payload (the row before the fold, so it narrates
-what was asked, not what the handler decided). A fold is memoryless: a replaying emitter's payload is the row it was fed, an event
+`"Person created"` — and shows the **outcome**: the fold happens first,
+and the status is fed the row it released, so its copy function is typed
+at the model (`personCreatedLine :: model -> String`) and narrates what
+the handler decided. A heartbeat nobody needs told about opens with
+`blankStatus @"Clock ticked"`, the faceless status. A fold is memoryless: a replaying emitter's payload is the row it was fed, an event
 with something of its own arrives `# joined @l` with that row as
 `{ event, model }`, and an effect returns the model. So every handler has
 the model in hand and the loop's memory stays at the emitters and in
@@ -364,12 +368,17 @@ a period. It never runs one of its effects at the entry and never
 applies a component built there. A stand-in server keeps its state in the view
 model module, as a real server would (crud's catalogue).
 
-**Name each action's outcome cases where the action is**: a
-single-outcome action's line names its case
-(`… # action createPerson # atCase @"Create" # toCase @"created" identity`,
-crud); a multi-outcome action is followed directly by its own statuses
-(order-form's submit). Do not merge two actions before their outcomes
-are named.
+**An action's outcome cases are named by its `Aff`** (`createPerson ::
+model -> Aff [ "Person created" :: model, "Person not created" :: model ]`,
+crud) and **opened by its statuses**: the line starts with the status
+block that shows the run — a progress indicator for `started`/`ended`, a
+status per outcome case it shows, or both in one `VariantToRecord.do`
+(flight-booker's `indeterminateLinearProgress @"Booking flight"` beside
+`snackbar @"Flight booked" bookedLine` and `snackbar @"Booking rejected"
+rejectedLine`); an outcome folded into the model is shown by its fold's
+status instead. Declare `@( … )` on the action only where no status or
+fold downstream fixes a payload. Do not merge two actions before their
+outcomes are named.
 
 Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app
@@ -467,17 +476,17 @@ text is computed, a chrome line nothing.
 - **The model is declared once, where it first appears; every derived
   row where it is introduced.** For a loop closed with a model that is
   the seed line (`# looped @( count :: Int ) # with freshCount`; inbox's two
-  fields, one per line). When a load action stands before the knot the
-  model first appears as its outcome, so that is where it is declared
-  (`action @{ … } loadPeopleCatalogue`, crud and order-form) and the
-  knot carries no row (`) # looped`). Every editor, selector, list and accessor is checked
+  fields, one per line). A load action before the knot
+  emits its outcome as an event folded into the loop (`snackbar @"People
+  loaded" peopleLoadedLine # fold identity`, crud and order-form), so the
+  knot declares the model like any other. Every editor, selector, list and accessor is checked
   against it — so a stored field is read with a plain accessor
   (`listOf … _.messages`, `# provided @"confirming" _.deletion`). A
   **derived row** is a shape no model field holds, and the line that
   introduces it declares it after its anchor:
   - a classifier's cases, on its first pane
     (`# shownWhen @"cart" @( cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ) checkoutStep`);
-  - an action's outcome (`# action @[ generated :: String ] samplePassword`);
+  - an action's outcome, where no status or fold fixes it (`# action @( "Flight booked" :: …, "Booking rejected" :: String ) submit`, flight-booker);
   - a projection's element row
     (`# foreach @"name" @( name :: String, mix :: … ) (const palette)`,
     `# shownEach @"number" @( number :: Int, tenths :: Int ) lapRows`);
@@ -595,11 +604,13 @@ text is computed, a chrome line nothing.
   a payload of its own is `# joined @l` on its line and handled by one
   function of one record (`toggleTodo :: { event :: Int, model :: … } ->
   …`); a fixed payload is baked into its handler (cashbox's
-  `refundStandard`); an effect returns the model (`createPerson :: model
-  -> Aff model`), so its fold is `snackbar @"Person created"
-  personCreatedLine # fold identity`; a constant replacing the model is
-  `snackbar @"New game" newGameLine # fold (const openingPosition)`. The
-  status's copy function takes the same payload as the handler.
+  `refundStandard`); an effect returns the model under its outcome case
+  (`createPerson :: model -> Aff [ "Person created" :: model, "Person not
+  created" :: model ]`), so each outcome's fold is `snackbar @"Person
+  created" personCreatedLine # fold identity`; a constant replacing the
+  model is `snackbar @"New game" newGameLine # fold (const
+  openingPosition)`. The status's copy function takes the handler's
+  result, the model.
 - **A handler carries no field it does not touch.** Group buttons into
   stages by the fields their handlers touch (circle-drawer keeps undo and
   redo apart from the canvas click). An identity handler means the

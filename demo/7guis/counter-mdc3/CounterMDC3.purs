@@ -20,10 +20,10 @@ counterMDC3 =
       -- nothing; on a click it replays the row it was last fed as the event [ "Count" :: { count } ].
       button @"Count" {}
       -- +→× variant to record: the status opening the fold. The snackbar is a +→× citizen
-      -- owning the case "Count": it renders countedLine of each occurrence and releases no
-      -- field of its own; fold puts the wire beside it, so increment has the model in hand
-      -- (the payload is the row the button was fed), the fold retains nothing and releases
-      -- the record { count } again. A loop with several events has one such status-opened
+      -- owning the case "Count"; fold applies increment first (the payload is the row the
+      -- button was fed, so the handler has the model in hand), releases the record { count }
+      -- again, and feeds the snackbar that outcome, which renders countedLine of it and
+      -- releases no field of its own. A loop with several events has one such status-opened
       -- fold per case, merged in a VariantToRecord.do block.
       snackbar @"Count" countedLine # fold increment
     -- looped feeds the record released at the bottom back to the top, so the display re-renders

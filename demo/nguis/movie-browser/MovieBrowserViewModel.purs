@@ -1,4 +1,4 @@
-module MovieBrowserViewModel (favoriteMark, favoritesLine, isFavorite, markFavorite, movieCatalogue, movieFavoredLine, ratingLine, titleLine, visibleMovies, yearLine) where
+module MovieBrowserViewModel (favoriteMark, favoritesLine, isFavorite, markFavorite, movieCatalogue, favoriteChangedLine, ratingLine, titleLine, visibleMovies, yearLine) where
 
 import Prelude ((&&), (||), (==), (<>), const, map, not, show)
 
@@ -59,5 +59,5 @@ favoritesLine { movies } =
   let count = length (filter _."Favorite" movies)
   in if count == 1 then "1 favorite" else show count <> " favorites"
 
-movieFavoredLine :: { event :: { "Favorite" :: Boolean, title :: String }, model :: { "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], movies :: Array { "Favorite" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], rating :: Number, tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], title :: String, year :: Int } } } -> String
-movieFavoredLine { event: { title, "Favorite": favorite } } = if favorite then title <> " is a favorite" else title <> " is no longer a favorite"
+favoriteChangedLine :: { "Classic" :: Boolean, "Cult" :: Boolean, "Oscar" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], movies :: Array { "Favorite" :: Boolean, category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ], rating :: Number, tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], title :: String, year :: Int } } -> String
+favoriteChangedLine { movies } = show (length (filter _."Favorite" movies)) <> " favorites now"

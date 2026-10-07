@@ -5,7 +5,7 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
-import PUI (action, atCase, blank, debounced, looped, with)
+import PUI (action, atCase, debounced, looped, with)
 import PUI.Web ((<+>), choice, inCase, shownWhen, text)
 import PUI.Web.Bootstrap (body, button, select, textField, toast)
 import PUI.Web.HTML (p)
@@ -29,7 +29,6 @@ flightBookerBootstrap =
       p (text oneWayLine) # shownWhen @"one-way" bookingState
       p (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" {}
-    blank # action @[ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] submit # atCase @"Book"
-    VariantToRecord.do
-      toast @"booked" bookedLine
-      toast @"rejected" rejectedLine
+    ( VariantToRecord.do
+      toast @"Flight booked" bookedLine
+      toast @"Booking rejected" rejectedLine ) # action @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], "Booking rejected" :: String ) submit # atCase @"Book"
