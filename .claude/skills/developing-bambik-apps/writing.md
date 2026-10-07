@@ -411,8 +411,8 @@ the anchor's own position, and the anchor says what the line is:
 - a **copy function or accessor** — the positional argument of a
   display (`text balanceLine`, `text _.title`, `imagePane developedShot`);
 - **nothing** — chrome (`card`, `h1 >>> cl "restaurant-name" $ staticText
-  @"Osteria Yoneda"`, `topAppBar "Espresso Bar"`). A static's type argument is its own
-  text, not an anchor: it needs no data to be seen.
+  "Osteria Yoneda"`, `topAppBar "Espresso Bar"`). A static's text is a
+  value, not an anchor: it needs no data to be seen.
 
 A **declared row** is not an anchor either. It is a visible type
 argument stating a shape the compiler could not otherwise know: the
@@ -425,7 +425,7 @@ arguments:
 
 ```purescript
 snackbar  @"booked"  bookedLine              -- the booked snackbar, saying bookedLine
-confirmed @"Refund"  @"Refund the customer?"  -- the title is static: a type
+confirmed "Refund"   "Refund the customer?"   -- the title is static: a value
 button    @"Sign up" { icon: "person_add" }  -- the record: optional presentation
 ```
 
@@ -558,8 +558,7 @@ text is computed, a chrome line nothing.
 - **Fixed copy is static or constant.** A **static** is on screen before
   and regardless of any data — a heading, a note, a checkbox's caption —
   and is a value, never a label, since it names no field and no case:
-  `staticText "Hours"` (2026-10-07; until then a type, `staticText
-  @"Hours"`). A **constant** shows only through data — a sentence's glue,
+  `staticText "Hours"`. A **constant** shows only through data — a sentence's glue,
   a pane's message — and lives in a copy function: `text faultLine #
   shownWhen @"faulty" readout` (calculator), `# tooltipWith loyaltyNote`
   (espresso-bar). Text that *is* data (a parsed markdown run) is
