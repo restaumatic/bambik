@@ -43,8 +43,8 @@ lawBenchMDC2 = do
     , bench "listOf" "×→+" lists (listOf @"picked" @"id" {} _.items (text _.title))
     , bench "snackbar" "+→×" events (snackbar @"event" identity)
     , bench "banner" "+→×" events (banner @"event" identity)
-    , bench "indeterminateLinearProgress" "+→×" runs (indeterminateLinearProgress @"Loading")
-    , bench "indeterminateCircularProgress" "+→×" runs (indeterminateCircularProgress @"Loading")
+    , bench "indeterminateLinearProgress" "+→×" runs (indeterminateLinearProgress)
+    , bench "indeterminateCircularProgress" "+→×" runs (indeterminateCircularProgress)
     ]
   where
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]

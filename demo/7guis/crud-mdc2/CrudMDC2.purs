@@ -17,7 +17,7 @@ crudMDC2 =
   body $
     ( Semigroupoid.do
       ( VariantToRecord.do
-        indeterminateLinearProgress @"Loading people"
+        indeterminateLinearProgress
         blankStatus @"People loaded" ) # action loadPeopleCatalogue
       snackbar @"People loaded" peopleLoadedLine # fold identity
       ( Semigroupoid.do
@@ -32,15 +32,15 @@ crudMDC2 =
             button @"Delete" {}
         ( VariantToVariant.do
           ( VariantToRecord.do
-            indeterminateLinearProgress @"Creating person"
+            indeterminateLinearProgress
             blankStatus @"Person created"
             blankStatus @"Person not created" ) # action createPerson # atCase @"Create"
           ( VariantToRecord.do
-            indeterminateLinearProgress @"Updating person"
+            indeterminateLinearProgress
             blankStatus @"Person updated"
             blankStatus @"Person not updated" ) # action updatePerson # atCase @"Update"
           ( VariantToRecord.do
-            indeterminateLinearProgress @"Deleting person"
+            indeterminateLinearProgress
             blankStatus @"Person deleted"
             blankStatus @"Person not deleted" ) # action deletePerson # atCase @"Delete" ) # subChoice
         VariantToRecord.do

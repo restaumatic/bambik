@@ -1178,8 +1178,7 @@ static o = widenRecordInput (o identity :: p {} {})
 
 -- | An action is **opened by its statuses**: the slot is a `+→×` citizen
 -- | owning any of the run's cases — the two lifecycle occurrences `started`
--- | and `ended` (a progress indicator, `indeterminateLinearProgress @"Creating
--- | person" # action createPerson`) and the **outcome cases** the `Aff`
+-- | and `ended` (a progress indicator, `indeterminateLinearProgress # action createPerson`) and the **outcome cases** the `Aff`
 -- | returns as a variant (`snackbar @"Flight booked" bookedLine # action
 -- | submit`), or a `VariantToRecord.do` block of both. The slot's row is
 -- | `[ started, ended | t ]` with `t` **read off the slot**: the statuses
@@ -1235,8 +1234,8 @@ action arr w = action'
 
 -- | One case **folded into the record** (`+→×`), opened by its status —
 -- | `snackbar @"Person created" personCreatedLine # fold identity`, as a
--- | run is opened by its progress indicator (`indeterminateLinearProgress
--- | @"Creating person" # action createPerson`). The status names the case
+-- | run is opened by its progress indicator (`indeterminateLinearProgress #
+-- | action createPerson`). The status names the case
 -- | (its label is the fold's input case) and shows the **outcome**: the
 -- | fold happens first, `f` of the occurrence's payload is the row
 -- | released, and the status is fed that row under the same case, so its

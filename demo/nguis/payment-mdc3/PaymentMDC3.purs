@@ -20,7 +20,7 @@ paymentMDC3 =
       ( Semigroupoid.do
         snackbar @"Charge card" chargingLine # observed
         ( VariantToRecord.do
-          indeterminateCircularProgress @"Charging card"
+          indeterminateCircularProgress
           blankStatus @"Card charged" ) # action chargeFlaky # atCase @"Charge card" )
       snackbar @"Card charged" cardChargedLine # fold identity
     ) # looped @( amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] ) # with unpaidOrder

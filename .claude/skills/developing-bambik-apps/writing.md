@@ -175,10 +175,10 @@ a trailing word that says what it is for:
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"°C" {} # settled fromCelsius` | temperature-converter |
 | buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
-| an effect run on a button's case, the other events passing | `indeterminateLinearProgress @"Creating person" # action createPerson # atCase @"Create" … # subChoice`, its outcome cases named by the `Aff` and folded by their statuses | crud |
-| an effect whose outcome is the model | `indeterminateCircularProgress @"Fetching forecast" # action fetchReport # atCase @"Forecast requested"` then `snackbar @"Forecast fetched" forecastFetchedLine # fold identity` | weather |
+| an effect run on a button's case, the other events passing | `indeterminateLinearProgress # action createPerson # atCase @"Create" … # subChoice`, its outcome cases named by the `Aff` and folded by their statuses | crud |
+| an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `snackbar @"Forecast fetched" forecastFetchedLine # fold identity` | weather |
 | an effect with no progress indicator | `blankStatus @"Setlist reordered" # action rotateAction # atCase @"Rotate"` | reorder |
-| an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress @"Booking flight"; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
+| an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
 | a heartbeat folded silently | `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch |
 
 Content inside `shown`, the panes and `confirmed` must output `{}`. An
@@ -218,8 +218,8 @@ An app is one loop through the four shapes, tied once by `# looped @( … ) # wi
 ```
 
 A fold opens with its status, `snackbar @l line # fold f`, as an effect
-opens with its progress indicator (`indeterminateLinearProgress @l #
-action f`): every line, whatever its shape, starts with a UI component.
+opens with its progress indicator (`indeterminateLinearProgress # action
+f`): every line, whatever its shape, starts with a UI component.
 The status names the case — its label is the event's, human copy like
 `"Person created"` — and shows the **outcome**: the fold happens first,
 and the status is fed the row it released, so its copy function is typed
@@ -373,7 +373,7 @@ model -> Aff [ "Person created" :: model, "Person not created" :: model ]`,
 crud) and **opened by its statuses**: the line starts with the status
 block that shows the run — a progress indicator for `started`/`ended`, a
 status per outcome case it shows, or both in one `VariantToRecord.do`
-(flight-booker's `indeterminateLinearProgress @"Booking flight"` beside
+(flight-booker's `indeterminateLinearProgress` beside
 `snackbar @"Flight booked" bookedLine` and `snackbar @"Booking rejected"
 rejectedLine`); an outcome folded into the model is shown by its fold's
 status instead. Declare `@( … )` on the action only where no status or

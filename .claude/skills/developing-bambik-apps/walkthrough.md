@@ -44,7 +44,7 @@ flightBookerMDC2 =
       body1 (text oneWayLine) # shownWhen @"one-way" bookingState
       body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
-    indeterminateLinearProgress @"Booking flight" # action @[ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] submit # atCase @"Book"
+    indeterminateLinearProgress # action @[ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] submit # atCase @"Book"
     VariantToRecord.do
       snackbar @"booked" bookedLine
       snackbar @"rejected" rejectedLine
@@ -118,7 +118,7 @@ one `# debounced itinerarySettleTime`.
 change, `×→+`: fed the model, it emits case `"Book"` carrying the model on
 click. Its case is its caption; `icon` is presentation config.
 
-**Stage 4 — `indeterminateLinearProgress @"Booking flight" # action @[ … ] submit # atCase @"Book"`.**
+**Stage 4 — `indeterminateLinearProgress # action @[ … ] submit # atCase @"Book"`.**
 `+→+`: `atCase @"Book"` takes the button's case, its payload goes to
 `submit`, the progress bar shows while the `Aff` runs, and the outcome —
 `[ booked :: …, rejected :: String ]`, declared on the line since no model

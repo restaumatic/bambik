@@ -17,7 +17,7 @@ orderFormMDC3 :: Effect Unit
 orderFormMDC3 =
   body $ ( Semigroupoid.do
     ( VariantToRecord.do
-      indeterminateLinearProgress @"Loading order"
+      indeterminateLinearProgress
       blankStatus @"Order loaded" ) # action loadOrder
     snackbar @"Order loaded" orderLoadedLine # fold identity
     ( Semigroupoid.do
@@ -39,7 +39,7 @@ orderFormMDC3 =
             ( Semigroupoid.do
               button @"Estimate distance" { icon: "near_me" }
               ( VariantToRecord.do
-                indeterminateLinearProgress @"Estimating distance"
+                indeterminateLinearProgress
                 blankStatus @"estimated" ) # action @( estimated :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
             ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf ) # inCase @"Delivery" _.selected ) # bracketed @"Mode" @( "Dine in" :: { "Table" :: String } , "Takeaway" :: { "Time" :: String } , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ) @( selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] ) fulfillmentState fulfillmentCase
       group @"Payment" $ Semigroupoid.do
@@ -55,10 +55,10 @@ orderFormMDC3 =
       button @"Receipt" { icon: "file" } ) # armed
     VariantToVariant.do
       ( VariantToRecord.do
-        indeterminateLinearProgress @"Submitting order"
+        indeterminateLinearProgress
         snackbar @"Order submitted" submittedLine
         snackbar @"Submission failed" rejectionLine ) # action @( "Order submitted" :: { "Short ID" :: String }, "Submission failed" :: { "Short ID" :: String, reason :: String } ) submitOrder # atCase @"Submit order"
       ( VariantToRecord.do
-        indeterminateLinearProgress @"Printing receipt"
+        indeterminateLinearProgress
         snackbar @"Receipt printed" receiptLine ) # action @( "Receipt printed" :: { "Short ID" :: String } ) printReceipt # atCase @"Receipt"
   )

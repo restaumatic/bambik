@@ -24,7 +24,7 @@ passwordGeneratorMDC3 =
       code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
       button @"Generate" {}
       ( VariantToRecord.do
-        indeterminateLinearProgress @"Generating password"
+        indeterminateLinearProgress
         blankStatus @"Password generated" ) # action samplePassword # atCase @"Generate"
       snackbar @"Password generated" passwordGeneratedLine # fold identity
     ) # looped

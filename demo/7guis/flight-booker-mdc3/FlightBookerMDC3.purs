@@ -29,6 +29,6 @@ flightBookerMDC3 =
       bodyLarge (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
     ( VariantToRecord.do
-      indeterminateLinearProgress @"Booking flight"
+      indeterminateLinearProgress
       snackbar @"Flight booked" bookedLine
       snackbar @"Booking rejected" rejectedLine ) # action @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], "Booking rejected" :: String ) submit # atCase @"Book"

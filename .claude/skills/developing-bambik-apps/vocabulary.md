@@ -107,10 +107,10 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| an `Aff` action on an event | `indeterminateLinearProgress @"Booking flight" # action submit # atCase @"Book"` | flight-booker, crud | writing.md *Stages* |
+| an `Aff` action on an event | `indeterminateLinearProgress # action submit # atCase @"Book"` | flight-booker, crud | writing.md *Stages* |
 | … with no progress indicator | `blankStatus @"Setlist reordered" # action rotateAction # atCase @"Rotate"` | reorder | writing.md *Stages* |
 | … opened by its outcome statuses | `( VariantToRecord.do { snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker | writing.md *Business functions* |
-| an action at load | `indeterminateLinearProgress @"Loading order" # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine # fold identity` | order-form, crud | writing.md *App shape* |
+| an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine # fold identity` | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` and `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |

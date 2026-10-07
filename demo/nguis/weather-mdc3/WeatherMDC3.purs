@@ -24,7 +24,7 @@ weatherMDC3 =
           ( bodyLarge (text aboutLine) ) # atCase @"About this dashboard" ) # shown
       listOf @"Forecast requested" @"request" @( request :: { city :: String, sample :: Int }, focus :: [ current :: {}, other :: {} ] ) { selected: isCurrent } forecastRequests (text _.request.city) # joined @"Forecast requested"
       ( VariantToRecord.do
-        indeterminateCircularProgress @"Fetching forecast"
+        indeterminateCircularProgress
         blankStatus @"Forecast fetched" ) # action fetchReport # atCase @"Forecast requested"
       snackbar @"Forecast fetched" forecastFetchedLine # fold identity
     ) # looped

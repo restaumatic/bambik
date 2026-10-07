@@ -187,7 +187,7 @@ import Type.Proxy (Proxy(..))
 --         MD3 emphasis levels), `fab @l`, `iconButton @l`, `menuItem @l`;
 --       `+→×` statuses — `snackbar` (MD3 dropped the banner from the
 --         catalog, so `banner` has no citizen here) and
---         `indeterminateLinearProgress @l`/`indeterminateCircularProgress @l`
+--         `indeterminateLinearProgress`/`indeterminateCircularProgress`
 --         (`[ started, ended ] → { | r }` — the run's two occurrences, the shape
 --         `PUI.action`'s progress slot dispatches).
 --   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
@@ -901,15 +901,15 @@ tabBarLeaf options = wrap do
 -- | telling how long — a request in flight, a file being processed. A
 -- | **status**, not a display: it is fed the run's two occurrences,
 -- | `started` and `ended`, and shows between them — exactly what
--- | `PUI.action`'s progress slot dispatches (`indeterminateLinearProgress
--- | @"Booking flight" # action submit`). No model owns a "busy" field, so nothing
--- | here is state; the label is the accessible name, and nothing else — so
--- | it names the run (`@"Loading order"`), never a generic "busy".
-indeterminateLinearProgress :: forall @l r. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] { | r }
+-- | `PUI.action`'s slot dispatches (`indeterminateLinearProgress # action
+-- | submit`). No model owns a "busy" field, so nothing here is state, and
+-- | it carries no label: it names no field and no case, and a caption is
+-- | copy, which is a function, not a label (2026-10-07; until then the
+-- | label was its accessible name).
+indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateLinearProgress = wrap do
   element "md-linear-progress" (pure unit)
   attribute "indeterminate" ""
-  attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "style" hiddenStyle
   node <- gets _.sibling
   pure
@@ -953,11 +953,10 @@ linearProgress f = wrap do
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
 -- | the width would be too much.
-indeterminateCircularProgress :: forall @l r. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] { | r }
+indeterminateCircularProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateCircularProgress = wrap do
   element "md-circular-progress" (pure unit)
   attribute "indeterminate" ""
-  attribute "aria-label" (reflectSymbol (Proxy @l))
   attribute "style" hiddenStyle
   node <- gets _.sibling
   pure

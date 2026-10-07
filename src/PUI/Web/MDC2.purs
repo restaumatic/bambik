@@ -177,7 +177,7 @@ import Type.Proxy (Proxy(..))
 --         `menuItem @l`;
 --       `+→×` statuses — `snackbar`, `banner` (MD2 still has the banner;
 --         MD3 dropped it, so `PUI.Web.MDC3` has no citizen for it), and
---         `indeterminateLinearProgress @l`/`indeterminateCircularProgress @l`
+--         `indeterminateLinearProgress`/`indeterminateCircularProgress`
 --         (`[ started, ended ] → { | r }` — the run's two occurrences, the shape
 --         `PUI.action`'s progress slot dispatches).
 --     No scalar or polymorphic component interfaces. Variant *editing* has
@@ -1057,13 +1057,14 @@ tabBarLeaf options = wrap do
 -- | telling how long — a request in flight, a file being processed. A
 -- | **status**, not a display: it is fed the run's two occurrences,
 -- | `started` and `ended`, and shows between them — exactly what
--- | `PUI.action`'s progress slot dispatches (`indeterminateLinearProgress
--- | @"Booking flight" # action submit`). No model owns a "busy" field, so nothing
--- | here is state; the label is the accessible name, and nothing else — so
--- | it names the run (`@"Loading order"`), never a generic "busy".
-indeterminateLinearProgress :: forall @l r. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] { | r }
+-- | `PUI.action`'s slot dispatches (`indeterminateLinearProgress # action
+-- | submit`). No model owns a "busy" field, so nothing here is state, and
+-- | it carries no label: it names no field and no case, and a caption is
+-- | copy, which is a function, not a label (2026-10-07; until then the
+-- | label was its accessible name).
+indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateLinearProgress = wrap do
-  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
+  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   liftEffect $ close comp
@@ -1087,7 +1088,7 @@ linearProgress
    . IsSymbol l
   => ({ | reads } -> Number) -> PUI Web { | reads } {}
 linearProgress f = wrap do
-  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
+  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   mPropRef <- liftEffect $ Ref.new Nothing
@@ -1114,9 +1115,9 @@ linearProgressInnards = RecordToRecord.do
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
 -- | the width would be too much.
-indeterminateCircularProgress :: forall @l r. IsSymbol l => PUI Web [ started :: {}, ended :: {} ] { | r }
+indeterminateCircularProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateCircularProgress = wrap do
-  _ <- unwrap $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-label" := reflectSymbol (Proxy @l) >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
+  _ <- unwrap $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.circularProgress."MDCCircularProgress" node
   liftEffect $ close comp
@@ -1354,7 +1355,7 @@ simpleDialog content = wrap do
             _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticString title)
             unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
           div >>> cl "mdc-dialog__actions" $ (eventLeaf @"confirmed" $
-            el "button" >>> "type" := "button" >>> "aria-label" := reflectSymbol (Proxy @l) >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
+            el "button" >>> "type" := "button" >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ RecordToRecord.do
               static (div >>> cl "mdc-button__ripple")
               span >>> cl "mdc-button__label" $ staticText @l) # Profunctor.rmap (Variant.match { confirmed: identity })
     _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
