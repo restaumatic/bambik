@@ -26,7 +26,7 @@ flightBookerBootstrap =
        ) # with plannedTrip
     ( Semigroupoid.do
       p (text problemLine) # shownWhen @"problem"
-        @( problem :: { problem :: String }
+        @( problem :: { problem :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] }
          , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }
          , "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
          ) bookingState
@@ -37,5 +37,5 @@ flightBookerBootstrap =
       toast @"Flight booked" bookedLine
       toast @"Booking rejected" rejectedLine ) # action
         @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
-         , "Booking rejected" :: String
+         , "Booking rejected" :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ]
          ) submit # atCase @"Book"

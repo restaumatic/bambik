@@ -25,7 +25,7 @@ flightBookerMDC2 =
        ) # with plannedTrip
     ( Semigroupoid.do
       body1 (text problemLine) # shownWhen @"problem"
-        @( problem :: { problem :: String }
+        @( problem :: { problem :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] }
          , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }
          , "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
          ) bookingState
@@ -37,5 +37,5 @@ flightBookerMDC2 =
       snackbar @"Flight booked" bookedLine
       snackbar @"Booking rejected" rejectedLine ) # action
         @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
-         , "Booking rejected" :: String
+         , "Booking rejected" :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ]
          ) submit # atCase @"Book"

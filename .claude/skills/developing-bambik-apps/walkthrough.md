@@ -41,7 +41,7 @@ flightBookerMDC2 =
        ) # with plannedTrip
     ( Semigroupoid.do
       body1 (text problemLine) # shownWhen @"problem"
-        @( problem :: { problem :: String }
+        @( problem :: { problem :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] }
          , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }
          , "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
          ) bookingState
@@ -53,7 +53,7 @@ flightBookerMDC2 =
       snackbar @"Flight booked" bookedLine
       snackbar @"Booking rejected" rejectedLine ) # action
         @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
-         , "Booking rejected" :: String
+         , "Booking rejected" :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ]
          ) submit # atCase @"Book"
 ```
 
@@ -171,23 +171,28 @@ bookedLine
   -> String
 bookedLine itinerary = "You have booked: " <> summary itinerary
 
-rejectedLine :: String -> String
-rejectedLine problem = "Cannot book: " <> problem
+rejectedLine
+  :: [ returnBeforeStart :: {}
+     , unreadableReturn :: { input :: String }
+     , unreadableStart :: { input :: String }
+     ]
+  -> String
+rejectedLine problem = "Cannot book: " <> problemText problem
 
 returnBetween :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
-parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date" :: String, "Return date" :: String | r1 } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date" :: String, "Return date" :: String | r1 } -> Either [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } = case parseDate startInput of
-  Nothing -> Left ("start date " <> show startInput <> " is not a valid DD.MM.YYYY date")
+  Nothing -> Left (.unreadableStart { input: startInput })
   Just start ->
     if flightType /= ."return" {} then Right (.oneWayOn start)
     else case parseDate returnInput of
-      Nothing -> Left ("return date " <> show returnInput <> " is not a valid DD.MM.YYYY date")
+      Nothing -> Left (.unreadableReturn { input: returnInput })
       Just back -> case returnBetween { out: start, back } of
-        Nothing -> Left "the return date is before the start date"
+        Nothing -> Left (.returnBeforeStart {})
         Just itinerary -> Right itinerary
 
 bookingState
@@ -196,7 +201,11 @@ bookingState
      , "Start date" :: String
      }
   -> [ "one-way" :: { out :: { d :: Int, m :: Int, y :: Int } }
-     , problem :: { problem :: String }
+     , problem :: { problem :: [ returnBeforeStart :: {}
+                               , unreadableReturn :: { input :: String }
+                               , unreadableStart :: { input :: String }
+                               ]
+                  }
      , return :: { back :: { d :: Int, m :: Int, y :: Int }
                  , out :: { d :: Int, m :: Int, y :: Int }
                  }
@@ -207,8 +216,21 @@ bookingState = parse >>> either (\problem -> .problem { problem })
     , returnBetween: ."return"
     })
 
-problemLine :: { problem :: String } -> String
-problemLine { problem } = "⚠ " <> problem
+problemLine
+  :: { problem :: [ returnBeforeStart :: {}
+                  , unreadableReturn :: { input :: String }
+                  , unreadableStart :: { input :: String }
+                  ]
+     }
+  -> String
+problemLine { problem } = "⚠ " <> problemText problem
+
+problemText :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] -> String
+problemText = match
+  { unreadableStart: \{ input } -> "start date " <> show input <> " is not a valid DD.MM.YYYY date"
+  , unreadableReturn: \{ input } -> "return date " <> show input <> " is not a valid DD.MM.YYYY date"
+  , returnBeforeStart: \_ -> "the return date is before the start date"
+  }
 
 oneWayLine :: { out :: { d :: Int, m :: Int, y :: Int } } -> String
 oneWayLine { out } = summary (.oneWayOn out)
@@ -229,7 +251,10 @@ submit
      , "Return date" :: String
      , "Start date" :: String
      }
-  -> Aff [ "Booking rejected" :: String
+  -> Aff [ "Booking rejected" :: [ returnBeforeStart :: {}
+                                 , unreadableReturn :: { input :: String }
+                                 , unreadableStart :: { input :: String }
+                                 ]
          , "Flight booked" :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }
                               , returnBetween :: { back :: { d :: Int, m :: Int, y :: Int }
                                                  , out :: { d :: Int, m :: Int, y :: Int }
@@ -279,7 +304,10 @@ module*).
 - `bookingState` — the classifier behind the three `shownWhen` panes: one
   of three exclusive states, each carrying exactly the data its line is
   computed from (`{ problem }`, `{ out }`, `{ out, back }`), so a pane's
-  `text oneWayLine` is typed against it.
+  `text oneWayLine` is typed against it. A problem is a reason
+  (`.returnBeforeStart {}`, `.unreadableStart { input }`), never a
+  sentence: the copy functions spell it out, so a translation replaces
+  them and no business function.
 - `problemLine`/`oneWayLine`/`returnLine` — the panes' copy functions,
   glue and warning glyph included.
 - `submit` — the `Aff` boundary. It shares `parse` with `bookingState`, so
@@ -288,7 +316,7 @@ module*).
   outcome case to its sentence.
 
 **Three things worth noticing.** The rows are spelled out in full — the
-itinerary variant seven times — because application code declares no
+itinerary variant six times — because application code declares no
 `type` synonyms: the shape is the interface (writing.md *Code style* →
 *Types and values*). Every exported function carries the signature the
 view reported for it, verbatim — the row its pane or stage is fed, closed,
