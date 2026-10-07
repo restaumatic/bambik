@@ -10,7 +10,6 @@ import Effect (Effect)
 import PUI (action, atCase, fold, foreach, joined, looped, subChoice)
 import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, listGroup, listGroupItem, textField, toast)
 import PUI.Web (cl, clicked, clWhen, text, (:=))
-import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudBootstrap :: Effect Unit
@@ -26,10 +25,9 @@ crudBootstrap =
         RecordToVariant.do
           ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
             ( clicked @"Person picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key" @( key :: Int, "Name" :: String, "Surname" :: String, status :: [ selected :: {}, unselected :: {} ] ) entries ) # joined @"Person picked"
-          ( div $ RecordToVariant.do
-            button @"Create" {}
-            button @"Update" {}
-            button @"Delete" {} ) # cl "d-flex" # cl "gap-2"
+          button @"Create" {}
+          button @"Update" {}
+          button @"Delete" {}
         ( VariantToVariant.do
           indeterminateLinearProgress # action createPerson # atCase @"Create"
           indeterminateLinearProgress # action updatePerson # atCase @"Update"
