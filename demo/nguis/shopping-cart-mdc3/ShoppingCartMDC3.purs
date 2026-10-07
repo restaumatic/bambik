@@ -8,9 +8,9 @@ import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (fold, foreach, joined, looped, with)
 import PUI.Web (clicked, shown, text)
-import PUI.Web.MDC3 (body, bodyLarge, button, columnHeader, dataCell, dataRow, dataTable, listOf)
+import PUI.Web.MDC3 (body, bodyLarge, button, columnHeader, dataCell, dataRow, dataTable, listOf, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import ShoppingCartViewModel (addUnit, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine)
+import ShoppingCartViewModel (addUnit, cartEmptiedLine, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine, unitAddedLine, unitRemovedLine)
 
 shoppingCartMDC3 :: Effect Unit
 shoppingCartMDC3 =
@@ -18,19 +18,19 @@ shoppingCartMDC3 =
     ( Semigroupoid.do
       bodyLarge (text totalLine) # shown
       RecordToVariant.do
-        listOf @"added" @"product" @( product :: { name :: String, unitPrice :: Int } ) {} productCatalogue (text catalogueLine) # joined @"added"
+        listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) {} productCatalogue (text catalogueLine) # joined @"Unit added"
         dataTable @"Cart"
           ( RecordToRecord.do
             columnHeader @"Product"
             columnHeader @"Qty"
             columnHeader @"Total" )
-          ( ( clicked @"removed" _.product $ dataRow RecordToRecord.do
+          ( ( clicked @"Unit removed" _.product $ dataRow RecordToRecord.do
             dataCell (text productLine)
             dataCell (text quantityLine)
-            dataCell (text lineTotalLine) ) # foreach @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"removed"
+            dataCell (text lineTotalLine) ) # foreach @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"Unit removed"
         button @"Empty cart" {}
       VariantToRecord.do
-        fold @"added" addUnit
-        fold @"removed" removeUnit
-        fold @"Empty cart" (const emptyCart)
+        snackbar @"Unit added" unitAddedLine # fold addUnit
+        snackbar @"Unit removed" unitRemovedLine # fold removeUnit
+        snackbar @"Empty cart" cartEmptiedLine # fold (const emptyCart)
     ) # looped @( order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } ) # with emptyCart

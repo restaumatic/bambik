@@ -2,12 +2,12 @@ module CellsBootstrap (cellsBootstrap) where
 
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
-import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
+import CellsViewModel (cellPickedLine, columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
 import PUI (fold, foreach, joined, looped, settled, with)
-import PUI.Web.Bootstrap (body, textField)
+import PUI.Web.Bootstrap (body, textField, toast)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, p, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,8 +23,8 @@ cellsBootstrap =
           ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
           ( tr $ Semigroupoid.do
             ( td >>> "style" := headerFace $ text rowLabel ) # shown
-            ( clicked @"picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # joined @"picked"
-      fold @"picked" selectCell
+            ( clicked @"Cell picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # joined @"Cell picked"
+      toast @"Cell picked" cellPickedLine # fold selectCell
     ) # looped
       @( cells :: Object String
        , selected :: [ picked :: { name :: String }, none :: {} ]

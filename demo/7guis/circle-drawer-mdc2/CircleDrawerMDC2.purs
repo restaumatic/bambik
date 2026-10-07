@@ -2,14 +2,14 @@ module CircleDrawerMDC2 (circleDrawerMDC2) where
 
 import Prelude ((#), ($), (>>>), Unit)
 
-import CircleDrawerViewModel (canvasCircles, emptyCanvas, redo, resizeSelected, selectOrAddCircle, undo)
+import CircleDrawerViewModel (canvasCircles, canvasClickedLine, emptyCanvas, redo, redoneLine, resizeSelected, selectOrAddCircle, undo, undoneLine)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (blank, fold, foreach, joined, looped, settled, with)
 import PUI.Web (attrWith, inCase, onClickedXY, (:=))
-import PUI.Web.MDC2 (body, button, cardActions, sliderLive)
+import PUI.Web.MDC2 (body, button, cardActions, sliderLive, snackbar)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -20,16 +20,16 @@ circleDrawerMDC2 =
       sliderLive @"Diameter" {} # inCase @"chosen" _.selected # settled resizeSelected
       RecordToVariant.do
         ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
-          ( onClickedXY @"picked"
+          ( onClickedXY @"Canvas clicked"
             ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
-              >>> attrWith "fill" circleFill $ blank ) # foreach @"key" @( key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] ) canvasCircles ) ) ) # joined @"picked"
+              >>> attrWith "fill" circleFill $ blank ) # foreach @"key" @( key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] ) canvasCircles ) ) ) # joined @"Canvas clicked"
         ( cardActions $ RecordToVariant.do
           button @"Undo" { icon: "undo" }
           button @"Redo" { icon: "redo" } )
       VariantToRecord.do
-        fold @"picked" selectOrAddCircle
-        fold @"Undo" undo
-        fold @"Redo" redo
+        snackbar @"Canvas clicked" canvasClickedLine # fold selectOrAddCircle
+        snackbar @"Undo" undoneLine # fold undo
+        snackbar @"Redo" redoneLine # fold redo
     ) # looped
       @( circles :: Array { x :: Number, y :: Number, r :: Number }
        , selected :: [ chosen :: { index :: Int }, none :: {} ]

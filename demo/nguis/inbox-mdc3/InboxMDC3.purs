@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import InboxViewModel (deletionPane, composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
+import InboxViewModel (deletionPane, composeMessage, deleteOpened, deleteRequestedLine, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageComposedLine, messageDeletedLine, messageKeptLine, messageLine, messageOpenedLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, sortedBySenderLine, sortedBySubjectLine, sortedUnreadFirstLine, subjectLine, unreadLine)
 import PUI (fold, joined, looped, observed, with)
 import PUI.Web (provided, shown, text)
 import PUI.Web.HTML (span)
@@ -18,7 +18,7 @@ inboxMDC3 =
     ( Semigroupoid.do
       ( bodySmall $ text unreadLine ) # shown
       RecordToVariant.do
-        listOf @"opened" @"id" { selected: highlighted } _.messages ( span $ text messageLine # shown ) # joined @"opened"
+        listOf @"Message opened" @"id" { selected: highlighted } _.messages ( span $ text messageLine # shown ) # joined @"Message opened"
         ( Semigroupoid.do
           headlineSmall (text subjectLine) # shown
           bodyMedium (text fromLine) # shown
@@ -35,14 +35,14 @@ inboxMDC3 =
           menuItem @"By subject" {}
           menuItem @"Unread first" {} )
       VariantToRecord.do
-        fold @"opened" openMessage
-        fold @"Delete message" requestDelete
-        fold @"Delete" deleteOpened
-        fold @"Keep" keepMessages
-        fold @"Compose" composeMessage
-        fold @"By sender" sortBySender
-        fold @"By subject" sortBySubject
-        fold @"Unread first" sortUnreadFirst
+        snackbar @"Message opened" messageOpenedLine # fold openMessage
+        snackbar @"Delete message" deleteRequestedLine # fold requestDelete
+        snackbar @"Delete" messageDeletedLine # fold deleteOpened
+        snackbar @"Keep" messageKeptLine # fold keepMessages
+        snackbar @"Compose" messageComposedLine # fold composeMessage
+        snackbar @"By sender" sortedBySenderLine # fold sortBySender
+        snackbar @"By subject" sortedBySubjectLine # fold sortBySubject
+        snackbar @"Unread first" sortedUnreadFirstLine # fold sortUnreadFirst
     ) # looped
       @( messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] }
        , deletion :: [ silent :: {}, confirming :: {} ]

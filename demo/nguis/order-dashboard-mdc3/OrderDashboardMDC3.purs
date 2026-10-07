@@ -4,10 +4,10 @@ import Prelude ((#), ($), Unit, identity)
 
 import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Effect (Effect)
-import OrderDashboardViewModel (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
+import OrderDashboardViewModel (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersArrivedLine, ordersCount, revenue, tickPeriod, topDishes)
 import PUI (fold, looped, replaying, ticks, with)
 import PUI.Web ((<+>), choice, shown)
-import PUI.Web.MDC3 (body, topAppBar)
+import PUI.Web.MDC3 (body, snackbar, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderDashboardMDC3 :: Effect Unit
@@ -22,8 +22,8 @@ orderDashboardMDC3 =
         gauge @"Kitchen load" kitchenLoad # shown
         trendChart @"Order flow" orderFlow # shown
         leaderboard @"Top dishes" topDishes # shown
-      ticks @"tick" tickPeriod # replaying @"tick" identity
-      fold @"tick" ordersArrive
+      ticks @"Orders arrived" tickPeriod # replaying @"Orders arrived" identity
+      snackbar @"Orders arrived" ordersArrivedLine # fold ordersArrive
     ) # looped
       @( tick :: Int
        , orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }

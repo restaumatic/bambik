@@ -8,9 +8,9 @@ import Effect (Effect)
 import PUI (fold, joined, looped, replaying, ticks, with)
 import PUI.Web (provided, shown, shownEach, text)
 import PUI.Web.HTML (li, ul)
-import PUI.Web.MDC2 (body, button, headline3)
+import PUI.Web.MDC2 (body, button, headline3, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch)
+import StopwatchViewModel (beginTiming, clearStopwatch, clockTickedLine, elapsedText, haltTiming, lapLine, lapRecordedLine, lapRows, recordLap, stopwatchResetLine, tick, tickPeriod, timingBegunLine, timingHaltedLine, zeroedStopwatch)
 
 stopwatchMDC2 :: Effect Unit
 stopwatchMDC2 =
@@ -18,16 +18,16 @@ stopwatchMDC2 =
     ( Semigroupoid.do
       headline3 (text elapsedText) # shown
       RecordToVariant.do
-        ticks @"tick" tickPeriod # replaying @"tick" identity
+        ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity
         button @"Start" { icon: "play_arrow" } # provided @"halted" _.phase # joined @"Start"
         button @"Stop" { icon: "stop" } # provided @"timing" _.phase # joined @"Stop"
         button @"Lap" { icon: "flag" } # provided @"timing" _.phase # joined @"Lap"
         button @"Reset" { icon: "replay" } # provided @"halted" _.phase # joined @"Reset"
       VariantToRecord.do
-        fold @"tick" tick
-        fold @"Start" beginTiming
-        fold @"Stop" haltTiming
-        fold @"Lap" recordLap
-        fold @"Reset" clearStopwatch
+        snackbar @"Clock ticked" clockTickedLine # fold tick
+        snackbar @"Start" timingBegunLine # fold beginTiming
+        snackbar @"Stop" timingHaltedLine # fold haltTiming
+        snackbar @"Lap" lapRecordedLine # fold recordLap
+        snackbar @"Reset" stopwatchResetLine # fold clearStopwatch
       ul $ ( li $ text lapLine ) # shownEach @"number" @( number :: Int, tenths :: Int ) lapRows
     ) # looped @( phase :: [ halted :: {}, timing :: {} ], elapsedTenths :: Int, laps :: Array Int ) # with zeroedStopwatch

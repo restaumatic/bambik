@@ -1,10 +1,10 @@
-module QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
+module QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questionAnsweredLine, questionLine, quizProgress, quizPhase, quizRestartedLine) where
 
 import Prelude (show, (+), (/), (<>), (==), min)
 
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 
 freshQuizRun :: { correct :: Int, question :: Int }
 freshQuizRun = { question: 0, correct: 0 }
@@ -39,3 +39,11 @@ askedPrompt { prompt } = prompt
 
 finalScoreLine :: { correct :: Int } -> String
 finalScoreLine { correct } = "Final score: " <> show correct <> " / " <> show (length questionCatalogue)
+
+questionAnsweredLine :: { event :: Int, model :: { correct :: Int, question :: Int } } -> String
+questionAnsweredLine { event: choice, model: { question } } = case index questionCatalogue question of
+  Just q -> if choice == q.answer then "Correct!" else "Wrong — " <> fromMaybe "" (index q.choices q.answer) <> " was right"
+  Nothing -> "The quiz is already over"
+
+quizRestartedLine :: { correct :: Int } -> String
+quizRestartedLine { correct } = "Restarted after scoring " <> show correct <> " / " <> show (length questionCatalogue)

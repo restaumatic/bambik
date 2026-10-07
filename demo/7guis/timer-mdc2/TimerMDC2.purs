@@ -7,9 +7,9 @@ import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (fold, looped, replaying, ticks, with)
 import PUI.Web (shown, text)
-import PUI.Web.MDC2 (body, body1, button, linearProgress, sliderLive)
+import PUI.Web.MDC2 (body, body1, button, linearProgress, sliderLive, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
+import TimerViewModel (clockTickedLine, elapsedFraction, resetLine, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerMDC2 :: Effect Unit
 timerMDC2 =
@@ -19,11 +19,11 @@ timerMDC2 =
       (body1 $ text progressLine) # shown
       sliderLive @"Duration" {}
       RecordToVariant.do
-        ticks @"tick" tickPeriod # replaying @"tick" identity
+        ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity
         button @"Reset" { icon: "replay" }
       VariantToRecord.do
-        fold @"tick" tick
-        fold @"Reset" restarted
+        snackbar @"Clock ticked" clockTickedLine # fold tick
+        snackbar @"Reset" resetLine # fold restarted
     ) # looped
       @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , elapsed :: Number

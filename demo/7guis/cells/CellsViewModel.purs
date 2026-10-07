@@ -1,4 +1,4 @@
-module CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows) where
+module CellsViewModel (cellPickedLine, columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows) where
 
 import Prelude ((<>), bind, identity, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
 
@@ -58,6 +58,9 @@ rowLabel { rowKey } = rowKey
 
 selectCell :: { event :: String, model :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } } -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
 selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
+
+cellPickedLine :: { event :: String, model :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } } -> String
+cellPickedLine { event: key } = "Picked cell " <> key
 
 commit :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
 commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = match

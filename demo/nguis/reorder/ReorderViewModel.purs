@@ -1,8 +1,8 @@
-module ReorderViewModel (openingSetlist, rotateAction, shuffleAction) where
+module ReorderViewModel (openingSetlist, rotateAction, setlistReorderedLine, shuffleAction) where
 
-import Prelude ((<$>), bind, compare, map, pure)
+import Prelude ((<$>), (<>), bind, compare, map, pure)
 
-import Data.Array (snoc, sortBy, uncons)
+import Data.Array (head, snoc, sortBy, uncons)
 import Data.Maybe (maybe)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -39,3 +39,6 @@ shuffleOrder tracks = do
   withKey t = do
     k <- randomInt 0 1000000
     pure (Tuple k t)
+
+setlistReorderedLine :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> String
+setlistReorderedLine { "Setlist": tracks } = maybe "Setlist is empty" (\track -> "Setlist now opens with " <> track."Title") (head tracks)

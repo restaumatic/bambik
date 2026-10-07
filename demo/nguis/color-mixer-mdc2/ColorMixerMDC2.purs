@@ -2,12 +2,12 @@ module ColorMixerMDC2 (colorMixerMDC2) where
 
 import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
-import ColorMixerViewModel (applyPreset, duskViolet, hexLine, mixedColor, palette, rgb, rgbLine)
+import ColorMixerViewModel (applyPreset, duskViolet, hexLine, mixedColor, palette, presetAppliedLine, rgb, rgbLine)
 import Effect (Effect)
 import PUI (blank, fold, foreach, joined, looped, with)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC2 (body, body2, sliderLive)
+import PUI.Web.MDC2 (body, body2, sliderLive, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 colorMixerMDC2 :: Effect Unit
@@ -22,8 +22,8 @@ colorMixerMDC2 =
       ( div $ Semigroupoid.do
         div >>> attrWith "style" swatchStyle $ blank
         div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-          clicked @"preset" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" @( name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } ) (const palette) ) # joined @"preset"
-      fold @"preset" applyPreset
+          clicked @"Preset applied" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name" @( name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } ) (const palette) ) # joined @"Preset applied"
+      snackbar @"Preset applied" presetAppliedLine # fold applyPreset
     ) # looped
       @( "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

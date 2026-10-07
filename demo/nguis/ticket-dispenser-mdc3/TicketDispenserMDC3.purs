@@ -5,9 +5,9 @@ import Prelude ((#), ($), Unit)
 import Effect (Effect)
 import PUI (fold, looped, with)
 import PUI.Web (shownWhen, text)
-import PUI.Web.MDC3 (body, bodyMedium, button, displaySmall)
+import PUI.Web.MDC3 (body, bodyMedium, button, displaySmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TicketDispenserViewModel (emptyQueue, firstTicketHint, issue, noTicketLine, servingLine, ticketLine)
+import TicketDispenserViewModel (emptyQueue, firstTicketHint, issue, noTicketLine, servingLine, ticketLine, ticketTakenLine)
 
 ticketDispenserMDC3 :: Effect Unit
 ticketDispenserMDC3 =
@@ -20,5 +20,5 @@ ticketDispenserMDC3 =
         (text firstTicketHint) # shownWhen @"waiting" _.display
         (text servingLine) # shownWhen @"serving" _.display )
       button @"Take a number" {}
-      fold @"Take a number" issue
+      snackbar @"Take a number" ticketTakenLine # fold issue
     ) # looped @( display :: [ waiting :: {}, serving :: { number :: Int } ], next :: Int ) # with emptyQueue

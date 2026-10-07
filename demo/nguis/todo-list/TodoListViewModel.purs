@@ -1,9 +1,9 @@
-module TodoListViewModel (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, toggleTodo, visibleEntries) where
+module TodoListViewModel (addTodo, clearCompleted, completedClearedLine, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, todoAddedLine, todoToggledLine, toggleTodo, visibleEntries) where
 
 import Prelude ((<<<), (<>), (==), const, not, show)
 
-import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
-import Data.Maybe (fromMaybe)
+import Data.Array (filter, index, length, mapWithIndex, modifyAt, snoc)
+import Data.Maybe (fromMaybe, maybe)
 import Data.String (trim)
 import Data.Variant (match)
 
@@ -20,6 +20,15 @@ toggleTodo { event: i, model: m@{ todos } } = m { todos = fromMaybe todos (modif
 
 clearCompleted :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } }
 clearCompleted m@{ todos } = m { todos = filter (isActive <<< _.status) todos }
+
+todoAddedLine :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } -> String
+todoAddedLine { "What needs to be done?": entry } = "Added " <> trim entry
+
+todoToggledLine :: { event :: Int, model :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } } -> String
+todoToggledLine { event: i, model: { todos } } = "Toggled " <> maybe "nothing" _.title (index todos i)
+
+completedClearedLine :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ], "What needs to be done?" :: String, todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String } } -> String
+completedClearedLine _ = "Cleared completed todos"
 
 itemsLeft :: forall r1. { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } | r1 } -> Int
 itemsLeft { todos } = length (filter (isActive <<< _.status) todos)

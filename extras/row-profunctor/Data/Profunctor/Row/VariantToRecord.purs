@@ -83,7 +83,6 @@ module Data.Profunctor.Row.VariantToRecord
   , bind
   , discard
   , subRetaining
-  , fold
   )
   where
 
@@ -145,28 +144,3 @@ subRetaining g =
     (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
     g
 
--- | One case folded into the record: the closed singleton `[ l :: a ]`
--- | consumed by `f`, which turns its payload into the row — `atCase @l` of
--- | the function, the `+→×` merge pinned at its unit. Label-indexed like
--- | every leaf (`button @l`, `snackbar @l f`): a loop's folds are one
--- | `fold @l f` per event case, merged by `VariantToRecord.do` beside the
--- | statuses, each releasing the whole next model (the merge's output row
--- | is shared, the copairing). Memoryless: a replaying emitter's
--- | payload is the row it was fed, an event with something of its own
--- | arrives `RecordToVariant.joined @l` with that row as `{ event, model }`,
--- | and an effect returns the model (`fold @"created" identity`), so every
--- | handler has the model in hand and the loop's memory stays at the
--- | emitters and in the knot. Laws on `(->)`: `fold @l f (inj @l a) = f a`; at
--- | `identity` it is the closed singleton unwrapped to its row, an iso with
--- | `toCase @l identity` both ways. A seeded, retaining fold (2026-10-03)
--- | and a whole-variant `fold (match …)` (2026-10-04) both gave way to
--- | this form.
-fold
-  :: forall @l p a v r
-   . IsSymbol l
-  => Cons l a () v
-  => Profunctor p
-  => Category p
-  => (a -> { | r })
-  -> p [ | v ] { | r }
-fold f = dimap (on (Proxy @l) identity case_) f identity

@@ -1,6 +1,6 @@
-module DeparturesViewModel (arrival, boardOpening, flightLine, tick, tickPeriod, updateLine) where
+module DeparturesViewModel (arrival, boardOpening, boardRefreshedLine, flightLine, tick, tickPeriod, updateLine) where
 
-import Prelude ((+), (<>), div, mod)
+import Prelude ((+), (<>), div, mod, show)
 
 import Data.Array (index, length)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -36,3 +36,6 @@ flights = [ "LH 441", "BA 902", "LO 331", "AF 118", "KL 605" ]
 
 statuses :: Array String
 statuses = [ "Scheduled", "Check-in", "Boarding", "Departed" ]
+
+boardRefreshedLine :: { beat :: Int } -> String
+boardRefreshedLine { beat } = "Board refreshed, update " <> show (beat + 1)

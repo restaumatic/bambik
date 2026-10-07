@@ -2,10 +2,10 @@ module CounterFluent (counterFluent) where
 
 import Prelude ((#), ($), Unit)
 
-import CounterViewModel (countLine, freshCount, increment)
+import CounterViewModel (countedLine, countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (fold, looped, with)
-import PUI.Web.Fluent (body, button, title3)
+import PUI.Web.Fluent (body, button, messageBar, title3)
 import PUI.Web (shown, text)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -15,5 +15,5 @@ counterFluent =
     ( Semigroupoid.do
       title3 (text countLine) # shown
       button @"Count" {}
-      fold @"Count" increment
+      messageBar @"Count" countedLine # fold increment
     ) # looped @( count :: Int ) # with freshCount

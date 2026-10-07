@@ -1,4 +1,4 @@
-module PaymentViewModel (amountLine, chargeFlaky, chargingLine, statusLine, unpaidOrder) where
+module PaymentViewModel (amountLine, cardChargedLine, chargeFlaky, chargingLine, statusLine, unpaidOrder) where
 
 import Prelude (show, (<>), ($), (+), (<), discard, pure)
 
@@ -20,12 +20,18 @@ statusLine { amount, approval } = match
 chargingLine :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> String
 chargingLine { amount } = "Charging $" <> show amount <> " — the gateway is flaky, retrying until approved"
 
-chargeFlaky :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> Aff [ charged :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } ]
+chargeFlaky :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> Aff [ "Card charged" :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } ]
 chargeFlaky order = attempt 1
   where
   attempt n = do
     delay (Milliseconds 700.0)
-    if n < 3 then attempt (n + 1) else pure $ .charged (recordCharged { attempt: n } order)
+    if n < 3 then attempt (n + 1) else pure $ ."Card charged" (recordCharged { attempt: n } order)
 
 recordCharged :: { attempt :: Int } -> { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
 recordCharged approved charge = charge { approval = .approved { attempt: approved.attempt } }
+
+cardChargedLine :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> String
+cardChargedLine { amount, approval } = match
+  { pending: \_ -> "Charge of $" <> show amount <> " still pending"
+  , approved: \{ attempt } -> "Charged $" <> show amount <> " on attempt " <> show attempt
+  } approval

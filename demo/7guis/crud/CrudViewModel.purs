@@ -1,4 +1,4 @@
-module CrudViewModel (createPerson, deletePerson, entries, isSelected, personLine, loadPeopleCatalogue, pick, updatePerson) where
+module CrudViewModel (createPerson, deletePerson, entries, isSelected, personCreatedLine, personDeletedLine, personLine, personPickedLine, personUpdatedLine, loadPeopleCatalogue, pick, updatePerson) where
 
 import Prelude ((<$>), (<>), (==), ($), bind, discard, pure)
 
@@ -74,3 +74,17 @@ personLine { "Name": name, "Surname": surname } = surname <> ", " <> name
 
 isSelected :: { "Name" :: String, "Surname" :: String, key :: Int, status :: [ selected :: {}, unselected :: {} ] } -> Boolean
 isSelected { status } = match { selected: \_ -> true, unselected: \_ -> false } status
+
+personPickedLine :: { event :: Int, model :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } } -> String
+personPickedLine { event: i, model: { people } } = case index people i of
+  Just p -> "Picked " <> p."Name" <> " " <> p."Surname"
+  Nothing -> "Picked nobody"
+
+personCreatedLine :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> String
+personCreatedLine { "Name": name, "Surname": surname } = "Created " <> name <> " " <> surname
+
+personUpdatedLine :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> String
+personUpdatedLine { "Name": name, "Surname": surname } = "Updated " <> name <> " " <> surname
+
+personDeletedLine :: { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> String
+personDeletedLine { "Name": name, "Surname": surname } = "Deleted " <> name <> " " <> surname

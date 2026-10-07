@@ -1,4 +1,4 @@
-module InboxViewModel (deletionPane, mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, inboxZeroLine, openMessage, requestDelete, deleteOpened, keepMessages, composeMessage, sortBySender, sortBySubject, sortUnreadFirst) where
+module InboxViewModel (deletionPane, mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, inboxZeroLine, openMessage, requestDelete, deleteOpened, keepMessages, composeMessage, sortBySender, sortBySubject, sortUnreadFirst, messageOpenedLine, deleteRequestedLine, messageDeletedLine, messageKeptLine, messageComposedLine, sortedBySenderLine, sortedBySubjectLine, sortedUnreadFirstLine) where
 
 import Prelude ((<<<), (<>), (+), (==), comparing, const, map, max, not, show)
 
@@ -79,3 +79,33 @@ readRank = match { unread: const 0, read: const 1, open: const 1 }
 
 deletionPane :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> [ confirming :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } }, silent :: {} ]
 deletionPane m = match { confirming: \_ -> .confirming m, silent: \_ -> .silent {} } m.deletion
+
+messageOpenedLine :: { event :: Int, model :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } } -> String
+messageOpenedLine { event: id, model: { messages } } = case find (\g -> g.id == id) messages of
+  Just message -> "Opened “" <> message.subject <> "” from " <> message.sender
+  Nothing -> "Opened a message"
+
+deleteRequestedLine :: { event :: { body :: String, sender :: String, subject :: String }, model :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } } -> String
+deleteRequestedLine { event: { subject }, model: { messages } } = if length messages == 1 then "Deleting the last message, “" <> subject <> "”" else "Deleted “" <> subject <> "”"
+
+messageDeletedLine :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> String
+messageDeletedLine { messages } = case find (isOpen <<< _.status) messages of
+  Just message -> "Deleted “" <> message.subject <> "”"
+  Nothing -> "Deleted the last message"
+
+messageKeptLine :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> String
+messageKeptLine { messages } = case find (isOpen <<< _.status) messages of
+  Just message -> "Kept “" <> message.subject <> "”"
+  Nothing -> "Kept the last message"
+
+messageComposedLine :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> String
+messageComposedLine { messages } = "Composed Draft " <> show (foldl max 0 (map _.id messages) + 1)
+
+sortedBySenderLine :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> String
+sortedBySenderLine { messages } = "Sorted " <> show (length messages) <> " messages by sender"
+
+sortedBySubjectLine :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> String
+sortedBySubjectLine { messages } = "Sorted " <> show (length messages) <> " messages by subject"
+
+sortedUnreadFirstLine :: { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array { body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } } -> String
+sortedUnreadFirstLine { messages } = "Sorted " <> show (length messages) <> " messages, unread first"

@@ -7,9 +7,9 @@ import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (fold, joined, looped, with)
 import PUI.Web (provided, shown, text)
-import PUI.Web.MDC3 (body, bodyLarge, button, headlineMedium, headlineSmall, linearProgress, listOf)
+import PUI.Web.MDC3 (body, bodyLarge, button, headlineMedium, headlineSmall, linearProgress, listOf, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizPhase, quizProgress)
+import QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questionAnsweredLine, questionLine, quizPhase, quizProgress, quizRestartedLine)
 
 quizMDC3 :: Effect Unit
 quizMDC3 =
@@ -20,11 +20,11 @@ quizMDC3 =
       RecordToVariant.do
         ( Semigroupoid.do
           headlineMedium (text askedPrompt) # shown
-          listOf @"answered" @"key" {} _.choices (text _.label) ) # provided @"asking" @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { correct :: Int } ) quizPhase # joined @"answered"
+          listOf @"Question answered" @"key" {} _.choices (text _.label) ) # provided @"asking" @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }, finished :: { correct :: Int } ) quizPhase # joined @"Question answered"
         ( Semigroupoid.do
           headlineSmall (text finalScoreLine) # shown
           button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase
       VariantToRecord.do
-        fold @"answered" answer
-        fold @"Restart" (const freshQuizRun)
+        snackbar @"Question answered" questionAnsweredLine # fold answer
+        snackbar @"Restart" quizRestartedLine # fold (const freshQuizRun)
     ) # looped @( question :: Int, correct :: Int ) # with freshQuizRun

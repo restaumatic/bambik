@@ -9,9 +9,9 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (fold, foreach, joined, looped, with)
 import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC3 (body, button, headlineSmall)
+import PUI.Web.MDC3 (body, button, headlineSmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TicTacToeViewModel (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine)
+import TicTacToeViewModel (cellClaimedLine, cellMark, cells, claimCell, drawnLine, gameOutcome, newGameLine, openingPosition, toMoveLine, wonLine)
 
 ticTacToeMDC3 :: Effect Unit
 ticTacToeMDC3 =
@@ -22,11 +22,11 @@ ticTacToeMDC3 =
       headlineSmall (text toMoveLine) # shownWhen @"toMove" gameOutcome
       RecordToVariant.do
         ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-          clicked @"claimed" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" @( key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] ) cells ) ) # joined @"claimed"
+          clicked @"Cell claimed" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key" @( key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] ) cells ) ) # joined @"Cell claimed"
         button @"New game" { icon: "replay" }
       VariantToRecord.do
-        fold @"claimed" claimCell
-        fold @"New game" (const openingPosition)
+        snackbar @"Cell claimed" cellClaimedLine # fold claimCell
+        snackbar @"New game" newGameLine # fold (const openingPosition)
     ) # looped @( board :: Array [ x :: {}, o :: {}, free :: {} ] ) # with openingPosition
 
 cellFace :: { key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String

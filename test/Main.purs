@@ -21,7 +21,7 @@ import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
 import Data.Profunctor.Row.RecordToRecord (focusField, muted, subStrong, recordToRecord)
-import Data.Profunctor.Row.VariantToRecord (fold, variantToRecord)
+import Data.Profunctor.Row.VariantToRecord (variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (recordToVariant)
 import Data.Profunctor.Row.VariantToVariant (focusCase, toCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
@@ -39,7 +39,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import OrderFormViewModel (fulfillmentCase, fulfillmentState)
-import PUI (PUI(..), accumulated, acted, announce, applied, dispatched, edited, foreach, looped, observed, optioned, replaying, resolveFor, seeded, silence, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, blank, dispatched, edited, fold, foreach, looped, observed, optioned, replaying, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -191,33 +191,41 @@ main = do
     (.picked 7 :: [ picked :: Int ])
     (toCase @"picked" _.key identity { key: 7, label: "x" })
 
-  -- fold @l f: one case folding into the record, f of its payload —
-  -- fold @l f (inj @l a) = f a; at identity the closed singleton is its
+  -- fold f status: one case folding into the record, f of its payload,
+  -- opened by its status (here the faceless `blank`) — on the carrier,
+  -- where the folds of a loop run; at identity the closed singleton is its
   -- row, an iso with toCase @l identity both ways
-  assertEqual "fold" { count: 4 } (fold @"Count" (\r -> r { count = r.count + 1 }) (."Count" { count: 3 }))
-  assertEqual "fold/identity" { count: 5 } (fold @"Count" identity (."Count" { count: 5 }))
-  assertEqual "fold/section" { count: 5 } ((toCase @"Count" identity identity >>> fold @"Count" identity) { count: 5 })
-  assertEqual "fold/retraction"
-    (."Count" { count: 5 } :: [ "Count" :: { count :: Int } ])
-    ((fold @"Count" identity >>> toCase @"Count" identity identity) (."Count" { count: 5 }))
-  -- and on the carrier, where the folds of a loop run
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (fold @"Count" (\r -> r { count = r.count + 1 }) :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m <- unwrap (fold (\r -> r { count = r.count + 1 }) blank :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 3 })
     Ref.read outs >>= assertEqual "fold: f of the payload is the released row" [ { count: 4 } ]
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (fold @"Count" identity :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m <- unwrap (fold identity blank :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 5 })
     Ref.read outs >>= assertEqual "fold/identity: the closed singleton unwrapped to its row" [ { count: 5 } ]
+  do
+    outs <- Ref.new ([] :: Array { count :: Int })
+    m <- unwrap (toCase @"Count" identity identity >>> fold identity blank :: PUI Effect { count :: Int } { count :: Int })
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { count: 5 }
+    Ref.read outs >>= assertEqual "fold/section" [ { count: 5 } ]
+  do
+    outs <- Ref.new ([] :: Array [ "Count" :: { count :: Int } ])
+    m <- unwrap (fold identity blank >>> toCase @"Count" identity identity :: PUI Effect [ "Count" :: { count :: Int } ] [ "Count" :: { count :: Int } ])
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (."Count" { count: 5 })
+    Ref.read outs >>= assertEqual "fold/retraction" [ ."Count" { count: 5 } ]
   -- two folds of one loop merge at +→×: each releases the whole row, the
   -- latest contribution winning (the copairing of the coproduct)
   do
     outs <- Ref.new ([] :: Array { n :: Int })
-    m <- unwrap (variantToRecord (fold @"A" (\r -> r { n = r.n + 1 })) (fold @"B" (\r -> r { n = r.n * 2 })) :: PUI Effect [ "A" :: { n :: Int }, "B" :: { n :: Int } ] { n :: Int })
+    m <- unwrap (variantToRecord
+      (fold (\r -> r { n = r.n + 1 }) blank :: PUI Effect [ "A" :: { n :: Int } ] { n :: Int })
+      (fold (\r -> r { n = r.n * 2 }) blank :: PUI Effect [ "B" :: { n :: Int } ] { n :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."A" { n: 1 })
     m.toUser (."B" { n: 5 })

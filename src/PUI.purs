@@ -54,6 +54,7 @@ module PUI
   , setDiagnostics
   , diagnosticsOn
   , action
+  , fold
   , static
   , ticks
   , accumulated
@@ -89,7 +90,7 @@ import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the knot
 -- `focusField` is deliberately absent: the leaf lift is design-system plumbing —
@@ -104,7 +105,6 @@ import Data.Profunctor.Row.RecordToVariant (armed, joined, replaying, silence) a
 -- by a business function, never coerced at the call site. It stays exported
 -- from `Data.Profunctor.Row` as the merge instances' plumbing.
 import Data.Profunctor.Row.VariantToVariant (atCase, subChoice, toCase) as Adopters
-import Data.Profunctor.Row.VariantToRecord (fold) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping, looped)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
@@ -124,9 +124,10 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, contract, inj, match)
+import Data.Variant (class Contractable, case_, contract, inj, match, on)
 import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
+import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Effect (Effect)
@@ -1197,6 +1198,38 @@ action arr w = action'
       Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
       Right o -> liftEffect $ post o)
   w
+
+-- | One case **folded into the record** (`+→×`), opened by its status —
+-- | `snackbar @"Person created" personCreatedLine # fold identity`, as a
+-- | run is opened by its progress indicator (`indeterminateLinearProgress
+-- | @"Creating person" # action createPerson`). The status names the case
+-- | (its closed singleton row is the fold's input) and renders each
+-- | occurrence; `f` of the occurrence's payload is the row released, so a
+-- | loop's folds are one per event case, merged by `VariantToRecord.do`,
+-- | each releasing the whole next model. Memoryless: a replaying emitter's
+-- | payload is the row it was fed, an event with something of its own
+-- | arrives `joined @l` with that row as `{ event, model }`, and an effect
+-- | returns the model (`… # fold identity`), so every handler has the model
+-- | in hand and the loop's memory stays at the emitters and in the knot.
+-- |
+-- | **Derived**: the status and the wire under the `×→×` merge, both fed
+-- | the occurrence as a one-field record — the status contributes no field
+-- | and is inert to the gate, the wire answers every feed with `f` of the
+-- | payload, released once per feed. Experiment of 2026-10-07: until then
+-- | `fold @l f` was carrier-free in `Data.Profunctor.Row.VariantToRecord`
+-- | and a status stood beside the folds as a sibling operand.
+fold
+  :: forall m l a v r
+   . MonadEffect m
+  => RowToList v (RL.Cons l a RL.Nil)
+  => IsSymbol l
+  => Cons l a () v
+  => (a -> { | r })
+  -> PUI m [ | v ] {}
+  -> PUI m [ | v ] { | r }
+fold f status = dimap { event: _ } _.model $ recordToRecord
+  (lcmap _.event status :: PUI m { event :: [ | v ] } {})
+  (dimap (on (Proxy @l) f case_ <<< _.event) { model: _ } identity :: PUI m { event :: [ | v ] } { model :: { | r } })
 
 action' :: forall a b s t m. MonadEffect m => (s -> (a -> Effect Unit) -> (t -> Effect Unit) -> Aff Unit) -> Optic (PUI m) s t a b
 action' arr w = wrap do

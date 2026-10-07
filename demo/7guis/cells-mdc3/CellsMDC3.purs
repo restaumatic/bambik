@@ -2,14 +2,14 @@ module CellsMDC3 (cellsMDC3) where
 
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
-import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
+import CellsViewModel (cellPickedLine, columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
 import PUI (fold, foreach, joined, looped, settled, with)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, table, td, tr)
-import PUI.Web.MDC3 (body, bodyLarge, filledTextField)
+import PUI.Web.MDC3 (body, bodyLarge, filledTextField, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsMDC3 :: Effect Unit
@@ -23,8 +23,8 @@ cellsMDC3 =
           ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
           ( tr $ Semigroupoid.do
             ( td >>> "style" := headerFace $ text rowLabel ) # shown
-            ( clicked @"picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # joined @"picked"
-      fold @"picked" selectCell
+            ( clicked @"Cell picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey" @( rowKey :: String, cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] } ) sheetRows ) ) # joined @"Cell picked"
+      snackbar @"Cell picked" cellPickedLine # fold selectCell
     ) # looped
       @( cells :: Object String
        , selected :: [ picked :: { name :: String }, none :: {} ]

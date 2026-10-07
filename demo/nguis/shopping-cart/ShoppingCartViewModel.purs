@@ -1,4 +1,4 @@
-module ShoppingCartViewModel (addUnit, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine) where
+module ShoppingCartViewModel (addUnit, cartEmptiedLine, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine, unitAddedLine, unitRemovedLine) where
 
 import Prelude ((<>), (*), (+), (-), (/), (<), (==), map, mod, otherwise, show)
 
@@ -36,6 +36,15 @@ removeUnit { event: name, model: cart } = cart { order = mapMaybe oneFewer cart.
   oneFewer l
     | l.product.name == name = if l.quantity == 1 then Nothing else Just l { quantity = l.quantity - 1 }
     | otherwise = Just l
+
+unitAddedLine :: { event :: { name :: String, unitPrice :: Int }, model :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } } -> String
+unitAddedLine { event: product } = "Added " <> product.name
+
+unitRemovedLine :: { event :: String, model :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } } -> String
+unitRemovedLine { event: name } = "Removed " <> name
+
+cartEmptiedLine :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> String
+cartEmptiedLine _ = "Emptied the cart"
 
 cartLines :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } } -> Array { product :: String, quantity :: Int, unitPrice :: Int }
 cartLines { order } = map line order

@@ -263,15 +263,17 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 ## What to read next
 
 - **counter** — one display reading one function
-  (`headline4 (text countLine) # shown`), one button, one fold
-  (`fold @"Count" increment`), over a model of `{ count :: Int }`.
+  (`headline4 (text countLine) # shown`), one button, one fold opened by
+  its status (`snackbar @"Count" countedLine # fold increment`), over a
+  model of `{ count :: Int }`.
 - **timer** — two displays of different sorts,
   `linearProgress @"Elapsed" elapsedFraction` and `text progressLine`,
-  both computed from the model, neither stored; `ticks @"tick" tickPeriod
-  # replaying @"tick" identity` drives it through `fold @"tick" tick`.
+  both computed from the model, neither stored; `ticks @"Clock ticked"
+  tickPeriod # replaying @"Clock ticked" identity` drives it through
+  `snackbar @"Clock ticked" clockTickedLine # fold tick`.
 - **temperature-converter** — two editors kept consistent with
   `# settled fromCelsius` / `# settled fromFahrenheit`.
-- **todo-list** — a selectable list, `listOf @"toggled" @"key"`, a filter
+- **todo-list** — a selectable list, `listOf @"Todo toggled" @"key"`, a filter
   selector, and panes over `remainingItems`.
 - **checkout** — a wizard: the step is a model field, Next/Back each emit
   their own case `# joined` with the model, and one `stepTo` folds both.
@@ -280,7 +282,7 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
   `body`'s one feed of `{}` runs the load; create/update/delete are `+→+` operands
   inside the loop, their outcomes `identity` in the fold.
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
-  `fold @"New game" (const openingPosition)` the reset.
+  `snackbar @"New game" newGameLine # fold (const openingPosition)` the reset.
 - **order-form** — all four shapes on one screen: a `looped` form in
   labelled groups, a variant editor under `bracketed @"Mode"`, the debounced
   summary, `armed` buttons, and each action followed by its statuses.

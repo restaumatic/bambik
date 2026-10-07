@@ -1,6 +1,6 @@
-module OrderDashboardViewModel (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes) where
+module OrderDashboardViewModel (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersArrivedLine, ordersCount, revenue, tickPeriod, topDishes) where
 
-import Prelude (compare, max, min, mod, negate, show, ($), (&&), (*), (+), (-), (/), (<), (<$>), (>), (>=))
+import Prelude (compare, max, min, mod, negate, show, ($), (&&), (*), (+), (-), (/), (<), (<$>), (<>), (>), (>=))
 
 import Data.Array (filter, index, length, mapMaybe, range, snoc, sortBy, take)
 import Data.Foldable (sum)
@@ -24,6 +24,11 @@ ordersArrive day@{ tick, orders } = day
     Just order -> snoc orders order
     Nothing -> orders
   }
+
+ordersArrivedLine :: { "Showing" :: [ "Last 15 min" :: {}, "Last minute" :: {}, "Since open" :: {} ], orders :: Array { at :: Int, dish :: String, id :: Int, total :: Number }, tick :: Int } -> String
+ordersArrivedLine { tick } = case arrival (tick + 1) of
+  Just order -> order.dish <> " ordered, EUR " <> toStringWith (fixed 2) order.total
+  Nothing -> "No new orders"
 
 arrival :: Int -> Maybe { id :: Int, dish :: String, total :: Number, at :: Int }
 arrival t = case pseudo t `mod` 3 of

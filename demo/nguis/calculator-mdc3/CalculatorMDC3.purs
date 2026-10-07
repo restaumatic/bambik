@@ -2,13 +2,13 @@ module CalculatorMDC3 (calculatorMDC3) where
 
 import Prelude (const, (#), ($), (<>), (>>>), Unit)
 
-import CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operatorKeys, pressKey, readout)
+import CalculatorViewModel (blankTally, faultLine, functionKeys, keyEnteredLine, keyPad, operatorKeys, pressKey, readout)
 import Data.Array (elem)
 import Effect (Effect)
 import PUI (fold, foreach, joined, looped, with)
 import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC3 (body)
+import PUI.Web.MDC3 (body, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 calculatorMDC3 :: Effect Unit
@@ -22,8 +22,8 @@ calculatorMDC3 =
           text faultLine # shownWhen @"faulty" @( sound :: { entry :: String }, faulty :: {} ) readout
           text _.entry # shownWhen @"sound" readout
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-        clicked @"entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" @( key :: String ) (const keyPad) ) # joined @"entered"
-      fold @"entered" pressKey
+        clicked @"Key entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" @( key :: String ) (const keyPad) ) # joined @"Key entered"
+      snackbar @"Key entered" keyEnteredLine # fold pressKey
     ) # looped
       @( total :: Number
        , operation :: [ pending :: { key :: String }, none :: {} ]

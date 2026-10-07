@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import EspressoBarViewModel (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder)
+import EspressoBarViewModel (brewedLine, caffeineFraction, cupLine, espressoNoFrills, espressoNoFrillsLine, loyaltyNote, theUsual, theUsualLine, usualOrder)
 import PUI (armed, fold, looped, with)
 import PUI.Web ((<+>), choice, shown, staticText, text)
 import PUI.Web.HTML (div)
@@ -39,8 +39,8 @@ espressoBarMDC2 =
           menuItem @"The usual" {}
           menuItem @"Espresso, no frills" {} )
         VariantToRecord.do
-          fold @"The usual" theUsual
-          fold @"Espresso, no frills" espressoNoFrills
+          snackbar @"The usual" theUsualLine # fold theUsual
+          snackbar @"Espresso, no frills" espressoNoFrillsLine # fold espressoNoFrills
       ) # looped
         @( "Your name" :: String
          , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]

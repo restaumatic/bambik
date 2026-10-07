@@ -42,7 +42,7 @@ and emitters of a catalogue — are in the design-system module header
 | seeded, with no loop of its own | `# with @{ … } invitation` | potluck | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form | writing.md *App shape* |
 | an action that retries until it succeeds | the retry inside the action's `Aff` (`chargeFlaky`), the outcome one case | payment | writing.md *Business functions* |
-| a wizard's step, a running maximum, a counter | a model field, folded or normalized (`fold @"Next" stepTo`, `# settled raiseTop`, `fold @"Take a number" issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |
+| a wizard's step, a running maximum, a counter | a model field, folded or normalized (`snackbar @"Next" steppedOnLine # fold stepTo`, `# settled raiseTop`, `snackbar @"Take a number" ticketTakenLine # fold issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |
 
 ## Showing data
 
@@ -90,9 +90,9 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| a button stepping the model | `button @"Count" {}` and `fold @"Count" increment` | counter, todo-list | writing.md *Stages* |
+| a button stepping the model | `button @"Count" {}` and `snackbar @"Count" countedLine # fold increment` | counter, todo-list | writing.md *Stages* |
 | a button with a fixed payload | `button @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
-| an event folded into the model | `fold @"claimed" claimCell`, the loop's folds merged in `VariantToRecord.do` | tic-tac-toe, cashbox | writing.md *Code style* → *Business functions* |
+| an event folded into the model | `snackbar @"Cell claimed" cellClaimedLine # fold claimCell`, each fold opened by its status, the loop's folds merged in `VariantToRecord.do` | tic-tac-toe, cashbox | writing.md *Code style* → *Business functions* |
 | a clicked element naming itself | `clicked @"claimed" _.key (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
 | an emitter shown in one state | `# provided @"confirming" _.deletion` | inbox, stopwatch, quiz | writing.md *Conditional visibility* |
@@ -111,7 +111,7 @@ and emitters of a catalogue — are in the design-system module header
 | … with no progress indicator | `blank # action rotateAction # atCase @"Rotate"` | reorder, flight-booker (fluent, bootstrap, html) | writing.md *Stages* |
 | an action at load | `indeterminateLinearProgress @"Loading order" # action loadOrder` | order-form, crud | writing.md *App shape* |
 | an action's outcome named on its line | `# toCase @"created" identity` | crud | writing.md *View module and view model module* |
-| a periodic occurrence | `ticks @"tick" tickPeriod # replaying @"tick" identity` and `fold @"tick" tick` | timer, stopwatch, scoreboard | `PUI` |
+| a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` and `snackbar @"Clock ticked" clockTickedLine # fold tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
 | narrate an event while passing it on | `snackbar @"Charge card" chargingLine # observed` | payment, inbox | `PUI` |
 | confirm before the flow continues | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox | writing.md *Modals* |

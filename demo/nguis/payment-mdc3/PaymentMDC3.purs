@@ -3,7 +3,7 @@ module PaymentMDC3 (paymentMDC3) where
 import Prelude ((#), ($), Unit, identity)
 
 import Effect (Effect)
-import PaymentViewModel (amountLine, chargeFlaky, chargingLine, statusLine, unpaidOrder)
+import PaymentViewModel (amountLine, cardChargedLine, chargeFlaky, chargingLine, statusLine, unpaidOrder)
 import PUI (action, atCase, fold, looped, observed, with)
 import PUI.Web (shown, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, headlineSmall, indeterminateCircularProgress, snackbar)
@@ -18,6 +18,6 @@ paymentMDC3 =
       button @"Charge card" { icon: "credit_card" }
       ( Semigroupoid.do
         snackbar @"Charge card" chargingLine # observed
-        indeterminateCircularProgress @"Charging card" # action @[ charged :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } ] chargeFlaky # atCase @"Charge card" )
-      fold @"charged" identity
+        indeterminateCircularProgress @"Charging card" # action @[ "Card charged" :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } ] chargeFlaky # atCase @"Charge card" )
+      snackbar @"Card charged" cardChargedLine # fold identity
     ) # looped @( amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] ) # with unpaidOrder

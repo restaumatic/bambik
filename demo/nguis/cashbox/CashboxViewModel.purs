@@ -1,4 +1,4 @@
-module CashboxViewModel (balanceLine, openedTill, payCourier, payoutLine, refundLine, refundStandard, takeDeposit) where
+module CashboxViewModel (balanceLine, courierPaidOutLine, customerRefundedLine, depositTakenLine, openedTill, payCourier, payoutLine, refundLine, refundStandard, takeDeposit) where
 
 import Prelude ((+), (-), (<>), show)
 
@@ -37,3 +37,12 @@ customerDeposit = 50.0
 
 euros :: Number -> String
 euros n = let s = show n in fromMaybe s (stripSuffix (Pattern ".0") s)
+
+customerRefundedLine :: { balance :: Number } -> String
+customerRefundedLine _ = "Refunded €" <> euros standardRefund <> " to the customer"
+
+courierPaidOutLine :: { balance :: Number } -> String
+courierPaidOutLine _ = "Paid €" <> euros courierFee <> " to the courier"
+
+depositTakenLine :: { balance :: Number } -> String
+depositTakenLine _ = "Took a €" <> euros customerDeposit <> " deposit"

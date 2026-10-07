@@ -8,9 +8,9 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (fold, joined, looped, with)
 import PUI.Web ((<+>), choice, clWhen, shownWhen, text)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC3 (body, button, bodySmall, filledTextField, listOf, segmentedButton)
+import PUI.Web.MDC3 (body, button, bodySmall, filledTextField, listOf, segmentedButton, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TodoListViewModel (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, toggleTodo, visibleEntries)
+import TodoListViewModel (addTodo, clearCompleted, completedClearedLine, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, todoAddedLine, todoToggledLine, toggleTodo, visibleEntries)
 
 todoListMDC3 :: Effect Unit
 todoListMDC3 =
@@ -23,12 +23,12 @@ todoListMDC3 =
       bodySmall (text severalLine) # shownWhen @"several" remainingItems
       RecordToVariant.do
         button @"Add" {}
-        listOf @"toggled" @"key" @( key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] ) { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # joined @"toggled"
+        listOf @"Todo toggled" @"key" @( key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] ) { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # joined @"Todo toggled"
         button @"Clear completed" {}
       VariantToRecord.do
-        fold @"Add" addTodo
-        fold @"toggled" toggleTodo
-        fold @"Clear completed" clearCompleted
+        snackbar @"Add" todoAddedLine # fold addTodo
+        snackbar @"Todo toggled" todoToggledLine # fold toggleTodo
+        snackbar @"Clear completed" completedClearedLine # fold clearCompleted
     ) # looped
       @( "What needs to be done?" :: String
        , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }

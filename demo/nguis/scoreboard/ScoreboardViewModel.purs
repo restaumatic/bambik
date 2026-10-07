@@ -1,4 +1,4 @@
-module ScoreboardViewModel (boardSummary, gameStart, goal, scoreLine, summaryLine, tick, tickPeriod) where
+module ScoreboardViewModel (boardSummary, gameStart, goal, pointsScoredLine, scoreLine, summaryLine, tick, tickPeriod) where
 
 import Prelude (const, show, (+), (<>), (==), mod)
 
@@ -16,6 +16,9 @@ tickPeriod = { ms: 1000.0 }
 
 tick :: { beat :: Int } -> { beat :: Int }
 tick { beat } = { beat: beat + 1 }
+
+pointsScoredLine :: { beat :: Int } -> String
+pointsScoredLine { beat } = pick teams (beat + 1) <> " scored"
 
 goal :: { beat :: Int } -> { key :: String, value :: { points :: Int, team :: String } }
 goal { beat } =

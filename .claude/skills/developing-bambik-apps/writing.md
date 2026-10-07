@@ -170,9 +170,9 @@ a trailing word that says what it is for:
 | a button that exists in one case | `button @"Start" {…} # provided @"halted" _.phase` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # shownEach @"number" lapRows` | stopwatch |
 | content that waits for the user to confirm | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox |
-| an event folded into the model | `fold @"Add" addTodo`, one per case, merged in `VariantToRecord.do` beside the statuses | todo-list |
-| an event carrying something of its own, joined with the model | `listOf @"toggled" … # joined @"toggled"` | todo-list, cells, inbox |
-| a periodic occurrence | `ticks @"tick" tickPeriod # replaying @"tick" identity` | stopwatch, timer |
+| an event folded into the model | `snackbar @"Add" todoAddedLine # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
+| an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
+| a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"°C" {} # settled fromCelsius` | temperature-converter |
 | buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
 | an effect run on a button's case, the other events passing | `indeterminateLinearProgress @"Creating person" # action createPerson # atCase @"Create" … # subChoice` | crud |
@@ -206,24 +206,30 @@ An app is one loop through the four shapes, tied once by `# looped @( … ) # wi
   headline4 (text countLine) # shown          -- ×→× displays and editors, fed by the loop
   RecordToVariant.do                          -- ×→+ the event ensemble: every emitter and pane
     button @"Add" {}
-    listOf @"toggled" … # joined @"toggled"   --   an event with a payload of its own, joined with the model
+    listOf @"Todo toggled" … # joined @"Todo toggled"   --   an event with a payload of its own, joined with the model
   … # action createPerson # atCase @"Create" # subChoice   -- +→+ effects on some events, the rest passing
-  VariantToRecord.do                          -- +→× the folds, one per case, and the statuses
-    fold @"Add" addTodo
-    fold @"toggled" toggleTodo
-    snackbar @"created" createdLine
+  VariantToRecord.do                          -- +→× the folds, one per case, each opened by its status
+    snackbar @"Add" todoAddedLine # fold addTodo
+    snackbar @"Todo toggled" todoToggledLine # fold toggleTodo
+    snackbar @"Person created" personCreatedLine # fold identity
 ) # looped @( … ) # with seed
 ```
 
-A fold is label-indexed like every other leaf, `fold @l f`, and
-memoryless: a replaying emitter's payload is the row it was fed, an event
+A fold opens with its status, `snackbar @l line # fold f`, as an effect
+opens with its progress indicator (`indeterminateLinearProgress @l #
+action f`): every line, whatever its shape, starts with a UI component.
+The status names the case — its label is the event's, human copy like
+`"Person created"` — and shows each occurrence through its copy function,
+which reads the event's payload (the row before the fold, so it narrates
+what was asked, not what the handler decided). A fold is memoryless: a replaying emitter's payload is the row it was fed, an event
 with something of its own arrives `# joined @l` with that row as
 `{ event, model }`, and an effect returns the model. So every handler has
 the model in hand and the loop's memory stays at the emitters and in
 the knot. Each fold releases the whole next model, and the `+→×` merge
 forwards each release as it comes — its output row is shared, where the
-`×→×` merge's operands own their fields — while a status beside the folds
-releases nothing and so fits any row. The seed and every later model enter at the top, so everything that
+`×→×` merge's operands own their fields — and a status with nothing to
+fold (an outcome outside any loop, flight-booker) stands alone in the
+block, releasing nothing and so fitting any row. The seed and every later model enter at the top, so everything that
 must be on screen at mount — displays, editors, the list a pick comes
 from — stands before the ensemble; a stage after the fold is fed only by
 events. Editors before the ensemble flow forward only; an editor whose
@@ -569,17 +575,18 @@ text is computed, a chrome line nothing.
   literal.
 - **A preset is a field update**, even one that reads nothing:
   `beginTiming { model: sw } = sw { phase = .timing {} }` (stopwatch),
-  `fold @"Reset" restarted` (timer). A constant replaces the model only
-  as a whole, and in a fold: `fold @"New game" (const openingPosition)`
-  (tic-tac-toe).
+  `snackbar @"Reset" resetLine # fold restarted` (timer). A constant
+  replaces the model only as a whole, and in a fold: `snackbar @"New
+  game" newGameLine # fold (const openingPosition)` (tic-tac-toe).
 - **One record per business function.** Records that travel together
   are one row; let field names carry the roles positional arguments
   lose. A fold handler is no exception: a joined event arrives as one
   record, the payload under `event` and the model under `model`:
 
   ```purescript
-  fold @"toggled" toggleTodo
+  snackbar @"Todo toggled" todoToggledLine # fold toggleTodo
   toggleTodo :: { event :: Int, model :: { todos :: …, … } } -> { todos :: …, … }
+  todoToggledLine :: { event :: Int, model :: { todos :: …, … } } -> String
   toggleTodo { event: i, model: m@{ todos } } = m { todos = … }
   ```
 
@@ -589,8 +596,10 @@ text is computed, a chrome line nothing.
   function of one record (`toggleTodo :: { event :: Int, model :: … } ->
   …`); a fixed payload is baked into its handler (cashbox's
   `refundStandard`); an effect returns the model (`createPerson :: model
-  -> Aff model`), so its fold is `fold @"created" identity`; a constant
-  replacing the model is `fold @"New game" (const openingPosition)`.
+  -> Aff model`), so its fold is `snackbar @"Person created"
+  personCreatedLine # fold identity`; a constant replacing the model is
+  `snackbar @"New game" newGameLine # fold (const openingPosition)`. The
+  status's copy function takes the same payload as the handler.
 - **A handler carries no field it does not touch.** Group buttons into
   stages by the fields their handlers touch (circle-drawer keeps undo and
   redo apart from the canvas click). An identity handler means the
@@ -600,8 +609,8 @@ text is computed, a chrome line nothing.
   stage (cells' formula field `# settled commit`), never hidden inside
   the component.
 - **No dispatcher.** A function that only `match`es event cases has no
-  place: each case is its own `fold @l f` line, `f` a named business
-  function in the view model module.
+  place: each case is its own `status @l line # fold f` line, `f` and
+  `line` named business functions in the view model module.
 
 ### Wiring
 
