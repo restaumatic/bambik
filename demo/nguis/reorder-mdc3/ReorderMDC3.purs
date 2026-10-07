@@ -3,8 +3,9 @@ module ReorderMDC3 (reorderMDC3) where
 import Prelude (identity, (#), ($), (>>>), Unit)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (actions, edited, fold, looped, static, with)
+import PUI (action, atCase, edited, fold, looped, static, with)
 import PUI.Web (el, shown, (:=))
 import PUI.Web.MDC3 (body, button, filledTextField, group, indeterminateLinearProgress, list, listItem, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,6 +22,8 @@ reorderMDC3 =
       RecordToVariant.do
         button @"Rotate" { icon: "sync" }
         button @"Shuffle" { icon: "shuffle" }
-      indeterminateLinearProgress # actions { "Rotate": rotateAction, "Shuffle": shuffleAction } )
+      VariantToVariant.do
+        indeterminateLinearProgress # action rotateAction # atCase @"Rotate"
+        indeterminateLinearProgress # action shuffleAction # atCase @"Shuffle" )
     snackbar @"Setlist reordered" setlistReorderedLine # fold identity
   ) # looped @( "Setlist" :: Array { id :: String, "Title" :: String } ) # with openingSetlist

@@ -177,7 +177,7 @@ a trailing word that says what it is for:
 | buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
 | an effect on a button's case, folded by its outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" … # fold identity; snackbar @"Person not created" … # fold identity } } ) # atCase @"Create"`, one chain per button in the fold block | crud |
 | an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `snackbar @"Forecast fetched" forecastFetchedLine # fold identity` | weather |
-| several effects with one outcome row | `indeterminateLinearProgress # actions { "Rotate": rotateAction, "Shuffle": shuffleAction }`, keyed by input case like `match` | reorder |
+| several effects with one outcome row | `VariantToVariant.do { indeterminateLinearProgress # action rotateAction # atCase @"Rotate"; indeterminateLinearProgress # action shuffleAction # atCase @"Shuffle" }`, the block's outputs one row | reorder |
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
 | a heartbeat folded silently | `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch |
 
@@ -382,16 +382,19 @@ never split out of a merge, so an action takes one of three shapes:
   (`( Semigroupoid.do { indeterminateLinearProgress # action createPerson;
   VariantToRecord.do { … } } ) # atCase @"Create"`, crud) — every case
   named once, at its status;
-- **several `Aff`s, one outcome row**: `actions { "Rotate": rotateAction,
-  "Shuffle": shuffleAction }`, the record keyed by input case like
-  `match`'s, each function typed at the shared row (reorder);
+- **several `Aff`s, one outcome row**: merged in a `VariantToVariant.do`,
+  one line per case (`indeterminateLinearProgress # action rotateAction #
+  atCase @"Rotate"`, reorder); the block's outputs are one row every
+  operand is typed at, an equality like the `×→×` merge's inputs, so
+  nothing names the shared outcome and the fold after the block fixes it;
 - **statuses only**: the statuses open the action and `@( … )` declares
   the payloads nothing downstream fixes (flight-booker's
   `indeterminateLinearProgress` beside `snackbar @"Flight booked"
   bookedLine` and `snackbar @"Booking rejected" rejectedLine`).
-Actions with distinct outcome rows are never merged in a
-`VariantToVariant.do`: under holes the shared union cannot be split back
-into their rows.
+Actions with distinct outcome rows are not merged in a
+`VariantToVariant.do` (its outputs are one row): they fold their own
+outcomes, or, where only statuses follow, each ends `# muted` in the
+`VariantToRecord.do` of the event (order-form's submit and receipt).
 
 Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app

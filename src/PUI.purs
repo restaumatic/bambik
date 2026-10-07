@@ -54,7 +54,6 @@ module PUI
   , setDiagnostics
   , diagnosticsOn
   , action
-  , actions
   , fold
   , static
   , ticks
@@ -125,8 +124,8 @@ import Data.Profunctor.Strong (class Strong, first)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
-import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant (class Contractable, class VariantMatchCases, Unvariant(..), case_, contract, inj, match, on, unvariant)
+import Data.Symbol (class IsSymbol)
+import Data.Variant (class Contractable, case_, contract, inj, match, on)
 import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -573,8 +572,8 @@ instance Applicative m => RecordToVariant (PUI m) where
 -- `Applicative m`: the one merge with no state at all.
 instance Applicative m => VariantToVariant (PUI m) where
   variantToVariant p1 p2 = wrap ado
-    p1' <- unwrap (widenVariantOutput p1)
-    p2' <- unwrap (widenVariantOutput p2)
+    p1' <- unwrap p1
+    p2' <- unwrap p2
     in
       { toUser: \v -> do
           for_ (contract v :: Maybe _) \v1 -> p1'.toUser v1
@@ -1108,7 +1107,7 @@ every interval step = looped (updated (\e _ -> match { stepped: identity } e) (c
     # rmap (match { tick: \v -> maybe (inj (Proxy @"idle") {}) (inj (Proxy @"stepped")) (step v) })
   -- a pause is the idle case handled by silence: nothing leaves
   stepsOnly :: PUI m [ stepped :: { | r }, idle :: {} ] [ stepped :: { | r } ]
-  stepsOnly = variantToVariant (lcmap (const {}) silence :: PUI m [ idle :: {} ] [ | () ]) identity
+  stepsOnly = variantToVariant (lcmap (const {}) silence :: PUI m [ idle :: {} ] [ stepped :: { | r } ]) identity
 
 -- | The **tick source**: an occurrence of case `l` every `interval`, at any
 -- | row — the timer's `× → +` leaf, exactly as a click
@@ -1186,7 +1185,8 @@ static o = widenRecordInput (o identity :: p {} {})
 -- | — its own fold block (`… # action createPerson` then the folds of its
 -- | outcomes, the chain adopted `# atCase @"Create"`, crud) — or declared
 -- | `@( … )` where only statuses follow (flight-booker). Several `Aff`s
--- | sharing an outcome row open under one slot with `actions`. No application owns a
+-- | sharing an outcome row merge in `VariantToVariant.do`, one line per
+-- | case, the block's outputs one row (reorder). No application owns a
 -- | "busy": the indicator shows between `started` and `ended` and, like
 -- | every status, owes the channel nothing. A stage with nothing to show
 -- | opens with `blankStatus @l` naming its outcome case; `blank` alone
@@ -1207,33 +1207,7 @@ action
   -> PUI m a [ | t ]
 action arr = running \i -> if isHole arr then Nothing else Just (arr i)
 
--- | **Several separate `Aff`s with distinct input cases and one outcome
--- | row**, opened by one slot: the record is keyed by input case exactly as
--- | `match`'s is (`indeterminateLinearProgress # actions { "Rotate":
--- | rotateAction, "Shuffle": shuffleAction }`, reorder), each function typed
--- | `payload -> Aff [ | t ]` at the shared outcome row, and the stage owns
--- | exactly the record's cases. Where `action` on one function dispatching
--- | inside would make the dispatch the business function's job, this keeps
--- | the functions separate and the dispatch the view's, like a fold block;
--- | and where a `VariantToVariant.do` of actions would leave each action's
--- | outcome row to be split backwards from the shared union (impossible
--- | under holes, L18), one row shared by construction needs no naming on
--- | any line. A hole in a field never runs.
-actions
-  :: forall @t rec rl v v1 m
-   . MonadEffect m
-  => RowToList rec rl
-  => VariantMatchCases rl v (Aff [ | t ])
-  => Contractable ( started :: {}, ended :: {} | t ) v1
-  => Record rec
-  -> PUI m [ | v1 ] {}
-  -> PUI m [ | v ] [ | t ]
-actions fs = running \v -> case unvariant v of
-  Unvariant k -> k \sym a ->
-    let f = unsafeGet (reflectSymbol sym) fs
-    in if isHole f then Nothing else Just (f a)
-
--- The run shared by `action` and `actions`: `Nothing` is a hole, which
+-- The run behind `action`: `Nothing` is a hole, which
 -- never runs (guardrails L18); otherwise `started` and `ended` are told to
 -- the slot around the `Aff`, and its outcome is posted onward and told too.
 running

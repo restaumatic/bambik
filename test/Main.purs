@@ -27,7 +27,7 @@ import Data.Profunctor.Row.VariantToVariant (focusCase, toCase, variantToVariant
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
-import Data.Profunctor.Row (widenRecordInput)
+import Data.Profunctor.Row (widenRecordInput, widenVariantOutput)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
 import Data.Variant (Variant, case_, inj, match)
@@ -699,7 +699,7 @@ main = do
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ ok :: Int, err :: String ])
     m <- unwrap (variantToVariant
-      (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int ])
+      (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int, err :: String ])
       (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ ok :: Int, err :: String ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (.x 5)
@@ -717,7 +717,7 @@ main = do
     ins <- Ref.new ([] :: Array [ x :: Unit ])
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ ok :: Int ])
-    m <- unwrap (variantToVariant (identity :: PUI Effect (Variant ()) (Variant ())) (probeIO ins gProp :: PUI Effect [ x :: Unit ] [ ok :: Int ]))
+    m <- unwrap (variantToVariant (lcmap case_ identity :: PUI Effect (Variant ()) [ ok :: Int ]) (probeIO ins gProp :: PUI Effect [ x :: Unit ] [ ok :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (.x unit)
     Ref.read ins >>= assertEqual "unit law +→+: input reaches g" [ .x unit ]
@@ -1016,8 +1016,8 @@ main = do
         o <- Ref.read outs
         pure { i, o }
     bare <- run \g -> g
-    onLeft <- run \g -> variantToVariant (identity :: PUI Effect (Variant ()) (Variant ())) g
-    onRight <- run \g -> variantToVariant g (identity :: PUI Effect (Variant ()) (Variant ()))
+    onLeft <- run \g -> variantToVariant (lcmap case_ identity) g
+    onRight <- run \g -> variantToVariant g (lcmap case_ identity)
     assertEqual "+→+ left unit: identity beside g observes g's streams" bare onLeft
     assertEqual "+→+ right unit: g beside identity observes g's streams" bare onRight
     assertEqual "+→+ unit laws: the streams are the full script" { i: [ .x 1, .x 2 ], o: [ .ok 3, .ok 4 ] } bare
@@ -1591,13 +1591,13 @@ main = do
 
   assertEqual "variantToVariant/(->): dispatch, first handler"
     (.ok 5 :: [ ok :: Int, err :: String ])
-    (variantToVariant (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int ]) }) (match { y: \(s :: String) -> (.err s :: [ err :: String ]) }) (.x 5))
+    (variantToVariant (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int, err :: String ]) }) (match { y: \(s :: String) -> (.err s :: [ ok :: Int, err :: String ]) }) (.x 5))
   assertEqual "variantToVariant/(->): dispatch, second handler"
     (.err "boom" :: [ ok :: Int, err :: String ])
-    (variantToVariant (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int ]) }) (match { y: \(s :: String) -> (.err s :: [ err :: String ]) }) (.y "boom"))
+    (variantToVariant (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int, err :: String ]) }) (match { y: \(s :: String) -> (.err s :: [ ok :: Int, err :: String ]) }) (.y "boom"))
   assertEqual "variantToVariant/(->): left unit"
     (.ok 5 :: [ ok :: Int ])
-    (variantToVariant (identity :: Variant () -> Variant ()) (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int ]) }) (.x 5))
+    (variantToVariant (case_ :: Variant () -> [ ok :: Int ]) (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int ]) }) (.x 5))
   do
     let
       hx = match { x: \(n :: Int) -> (.ok (n + 1) :: [ ok :: Int ]) }
@@ -1787,7 +1787,7 @@ main = do
         gProp <- Ref.new Nothing
         rProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ ok :: Int, err :: String ])
-        m <- unwrap (variantToVariant (q (probe gProp :: PUI Effect [ a :: Int ] [ ok :: Int ])) (probe rProp :: PUI Effect [ b :: String ] [ ok :: Int, err :: String ]))
+        m <- unwrap (variantToVariant (q (probe gProp :: PUI Effect [ a :: Int ] [ ok :: Int, err :: String ])) (probe rProp :: PUI Effect [ b :: String ] [ ok :: Int, err :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser (.a 0)
         fire gProp (.ok 1)
@@ -1881,7 +1881,7 @@ main = do
     m.toUser (.x 1)
     Ref.read outs >>= assertEqual "repetition +→+: twice is two" [ .x 1, .x 1 ]
     outs2 <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-    m2 <- unwrap (variantToVariant (identity :: PUI Effect [ x :: Int ] [ x :: Int ]) (identity :: PUI Effect [ y :: String ] [ y :: String ]))
+    m2 <- unwrap (variantToVariant (widenVariantOutput identity :: PUI Effect [ x :: Int ] [ x :: Int, y :: String ]) (widenVariantOutput identity :: PUI Effect [ y :: String ] [ x :: Int, y :: String ]))
     m2.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs2
     m2.toUser (.x 1) *> m2.toUser (.x 1) *> m2.toUser (.y "e")
     Ref.read outs2 >>= assertEqual "repetition +→+: the merge coalesces nothing either" [ .x 1, .x 1, .y "e" ]
@@ -1943,7 +1943,7 @@ main = do
         p1Prop <- Ref.new Nothing
         p2Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ ok :: Int, err :: String ])
-        m <- unwrap (wrapper (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int ]) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ err :: String ]))
+        m <- unwrap (wrapper (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int, err :: String ]) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ ok :: Int, err :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser (.x 1) *> m.toUser (.y "b")
         fire p1Prop (.ok 1) *> fire p2Prop (.err "e") *> fire p1Prop (.ok 2)

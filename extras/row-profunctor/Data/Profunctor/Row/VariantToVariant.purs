@@ -42,8 +42,11 @@
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
 -- | a component `w :: p [ | i ] [ | o ]` is a **handler** of occurrences;
 -- | the merge is `m = variantToVariant w1 w2`, inputs owned
--- | (`OwnedVariantInputs`: exactly one handler per case), outputs shared
--- | (`SharedVariantOutputs`).
+-- | (`OwnedVariantInputs`: exactly one handler per case), outputs **one
+-- | row** every operand is typed at — an equality, as the `×→×` merge's
+-- | inputs are (2026-10-07; until then the inclusive union, which no
+-- | operand's row could be split back out of under holes, so two actions
+-- | sharing an outcome had to name it on each line).
 -- |
 -- |   1–2. **Repetition, Answer** — not owed. A variant input is
 -- |      dispatched to one owner and `≈` counts every occurrence: a
@@ -52,8 +55,9 @@
 -- |      `Eq` is ever needed. Emitting inside `toUser`
 -- |      here is a response to an occurrence, not the echo law 2 forbids
 -- |      at `×→+`.
--- |   3. **Monoid** — unit `identity :: p (Variant ()) (Variant ())`,
--- |      exact: `variantToVariant identity g = g = variantToVariant g identity`;
+-- |   3. **Monoid** — unit `lcmap case_ identity`, the wire entered from
+-- |      the empty variant at any output row,
+-- |      exact: `variantToVariant unit g = g = variantToVariant g unit`;
 -- |      symmetric and associative up to `≈`. Both ends uninhabited, the
 -- |      wire there is silence, forced. The merge pinned at its unit is
 -- |      the operand, so this shape names no introducer (`atCase` is bare
@@ -107,7 +111,7 @@ import Data.Either (Either(..), either)
 import Data.Lens.Prism.Existential (prismE)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Choice (class Choice, left)
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, class SharedVariantOutputs, splitVariant)
+import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, splitVariant)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, case_, expand, inj, on)
@@ -118,36 +122,33 @@ import Type.Proxy (Proxy(..))
 
 class Profunctor p <= VariantToVariant p where
   variantToVariant
-    :: forall i1 i1l i2 i2l o1 o2 o12 o1x o2x i o
-     . OwnedVariantInputs i1 i2 i i1l i2l
-    => SharedVariantOutputs o1 o2 o o12 o1x o2x
-    => p [ | i1 ] [ | o1 ]
-    -> p [ | i2 ] [ | o2 ]
-    -> p [ | i ] [ | o ]
+    :: forall v1 rl1 v2 rl2 v o
+     . OwnedVariantInputs v1 v2 v rl1 rl2
+    => p [ | v1 ] [ | o ]
+    -> p [ | v2 ] [ | o ]
+    -> p [ | v ] [ | o ]
 
 instance VariantToVariant (->) where
   variantToVariant p1 p2 v = case splitVariant v of
-    Left v1 -> expand (p1 v1)
-    Right v2 -> expand (p2 v2)
+    Left v1 -> p1 v1
+    Right v2 -> p2 v2
 
 bind
-  :: forall p v1 rl1 v2 rl2 v4 v5 v6 v7 v8 v3 v
+  :: forall p v1 rl1 v2 rl2 v3 o
    . VariantToVariant p
   => OwnedVariantInputs v1 v2 v3 rl1 rl2
-  => SharedVariantOutputs v4 v5 v v6 v7 v8
-  => p [ | v1 ] [ | v4 ]
-  -> (p [ | v1 ] [ | v4 ] -> p [ | v2 ] [ | v5 ])
-  -> p [ | v3 ] [ | v ]
+  => p [ | v1 ] [ | o ]
+  -> (p [ | v1 ] [ | o ] -> p [ | v2 ] [ | o ])
+  -> p [ | v3 ] [ | o ]
 bind first cont = variantToVariant first (cont first)
 
 discard
-  :: forall p v1 rl1 v2 rl2 v4 v5 v6 v7 v8 v3 v
+  :: forall p v1 rl1 v2 rl2 v3 o
    . VariantToVariant p
   => OwnedVariantInputs v1 v2 v3 rl1 rl2
-  => SharedVariantOutputs v4 v5 v v6 v7 v8
-  => p [ | v1 ] [ | v4 ]
-  -> (Unit -> p [ | v2 ] [ | v5 ])
-  -> p [ | v3 ] [ | v ]
+  => p [ | v1 ] [ | o ]
+  -> (Unit -> p [ | v2 ] [ | o ])
+  -> p [ | v3 ] [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Focus a sub-variant, passing the background cases through untouched.
@@ -186,9 +187,9 @@ atCase = lcmap (on (Proxy @l) identity case_)
 
 -- | Emit a component's bare output, mapped by the projection, as case `l`.
 toCase
-  :: forall @l @b p c a v
+  :: forall @l @b p c a b' v
    . IsSymbol l
-  => Cons l b () v
+  => Cons l b b' v
   => Profunctor p
   => (a -> b)
   -> p c a

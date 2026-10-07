@@ -148,8 +148,10 @@
 -- | their output (any operand may emit any case). A shared record input is
 -- | **one row** — the operands' inputs are the merge's, and an operand's
 -- | business functions are typed at that row (guardrails L18); a shared variant output is **inclusive**
--- | (`InclusiveRows`); ownership is exclusive (`ExclusiveRows`) — so a merge
--- | signature is two words, one per side.
+-- | (`InclusiveRows`) at `×→+`, where each emitter's row is fixed by its
+-- | label, and **one row** at `+→+`, where a handler's row comes from a
+-- | function (an equality, no class — 2026-10-07); ownership is exclusive
+-- | (`ExclusiveRows`) — so a merge signature is two words, one per side.
 -- |
 -- | `Data.Profunctor.Acting` extends the family one step past rows: rows are
 -- | the finitary μ-free fragment of the container grammar, and `Array` is
@@ -479,7 +481,8 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- The four merges' constraints factor exactly by side, under one law:
 -- **sharing is open, responsibility is exclusive** — a shared record input
 -- is one row every operand is fed whole, a shared variant output an
--- inclusive union any operand may emit into — and runtime
+-- inclusive union any emitter may emit into (`×→+`) or one row every
+-- handler is typed at (`+→+`) — and runtime
 -- label evidence appears only on the exclusive sides, where the merge's
 -- runtime action is label-driven (dispatch, union) rather than
 -- label-blind (broadcast, expand). Records are read-shared but
@@ -488,7 +491,7 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 --
 --   recordToRecord   : SharedRecordInputs  + OwnedRecordOutputs
 --   recordToVariant  : SharedRecordInputs  + SharedVariantOutputs
---   variantToVariant : OwnedVariantInputs  + SharedVariantOutputs
+--   variantToVariant : OwnedVariantInputs  + one output row (an equality, no class)
 --   variantToRecord  : OwnedVariantInputs  + OwnedRecordOutputs
 --
 -- **What a shared input side obliges.** A shared record input is a

@@ -417,22 +417,22 @@ rvThree merge = do
   rig recordFeed (merge a.p b.p c.p) [ a.fire, b.fire, c.fire ]
 
 -- +→+
-vvA :: Effect (Op (Variant (x :: Int)) (Variant (ok :: Int)))
+vvA :: Effect (Op (Variant (x :: Int)) (Variant (ok :: Int, err :: Int)))
 vvA = forwardOp (match { x: \n -> .ok n }) \n -> .ok n
 
-vvB :: Effect (Op (Variant (y :: Int)) (Variant (err :: Int)))
+vvB :: Effect (Op (Variant (y :: Int)) (Variant (ok :: Int, err :: Int)))
 vvB = forwardOp (match { y: \n -> .err n }) \n -> .err n
 
-vvC :: Effect (Op (Variant (z :: Int)) (Variant (ok :: Int)))
+vvC :: Effect (Op (Variant (z :: Int)) (Variant (ok :: Int, err :: Int)))
 vvC = forwardOp (match { z: \n -> .ok n }) \n -> .ok n
 
-vvTwo :: (PUI Effect (Variant (x :: Int)) (Variant (ok :: Int)) -> PUI Effect (Variant (y :: Int)) (Variant (err :: Int)) -> PUI Effect (Variant (x :: Int, y :: Int)) (Variant (ok :: Int, err :: Int))) -> Effect Rig
+vvTwo :: (PUI Effect (Variant (x :: Int)) (Variant (ok :: Int, err :: Int)) -> PUI Effect (Variant (y :: Int)) (Variant (ok :: Int, err :: Int)) -> PUI Effect (Variant (x :: Int, y :: Int)) (Variant (ok :: Int, err :: Int))) -> Effect Rig
 vvTwo merge = do
   a <- vvA
   b <- vvB
   rig case2 (merge a.p b.p) [ a.fire, b.fire ]
 
-vvThree :: (PUI Effect (Variant (x :: Int)) (Variant (ok :: Int)) -> PUI Effect (Variant (y :: Int)) (Variant (err :: Int)) -> PUI Effect (Variant (z :: Int)) (Variant (ok :: Int)) -> PUI Effect (Variant (x :: Int, y :: Int, z :: Int)) (Variant (ok :: Int, err :: Int))) -> Effect Rig
+vvThree :: (PUI Effect (Variant (x :: Int)) (Variant (ok :: Int, err :: Int)) -> PUI Effect (Variant (y :: Int)) (Variant (ok :: Int, err :: Int)) -> PUI Effect (Variant (z :: Int)) (Variant (ok :: Int, err :: Int)) -> PUI Effect (Variant (x :: Int, y :: Int, z :: Int)) (Variant (ok :: Int, err :: Int))) -> Effect Rig
 vvThree merge = do
   a <- vvA
   b <- vvB
@@ -553,8 +553,8 @@ gatherFeeds = [ Feed, FeedAgain, FeedOnly1, FeedNone ]
 unitRR :: forall r. PUI Effect { | r } {}
 unitRR = lcmap (const {}) identity
 
-unitVV :: PUI Effect (Variant ()) (Variant ())
-unitVV = identity
+unitVV :: forall o. PUI Effect (Variant ()) (Variant o)
+unitVV = lcmap case_ identity
 
 unitVR :: forall r. PUI Effect (Variant ()) { | r }
 unitVR = lcmap case_ identity

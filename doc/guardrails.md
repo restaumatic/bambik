@@ -214,9 +214,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 - A shared record input is **one row**: every operand is fed the merge's
   whole row (an equality), and its business functions are typed at that
-  row (L18). Variant emissions may overlap — a shared
+  row (L18). Emitters' cases may overlap — a `×→+` merge's
   variant output is the inclusive union of the operands' cases, so a
-  handler missing for one of them is a type error. Variant handling and
+  handler missing for one of them is a type error — while a `+→+`
+  merge's variant output is **one row** every handler is typed at (an
+  equality, 2026-10-07), since a handler's row comes from a function
+  and could not be split back out of a union under holes. Variant handling and
   record production MUST be disjoint (responsibility never splits). Runtime evidence appears exactly where responsibility
   does (`DispatchableVariants`, `MergeableRecords`) and nowhere else.
 - Merge operands' emissions MUST be runtime-exact: trimmed to their
@@ -581,9 +584,9 @@ code below the UI) are algebra-layer material and exempt by location.
   determine it, and it went. A name two lines call at different rows is
   generalized to what they share, and only then carries a `forall`;
   `npm run check-determined` checks every exported signature against its
-  hint. A shared *variant* output
-  stays an inclusive union (`SharedVariantOutputs`): which operand emits
-  which case is checked, so a view names it (below).
+  hint. An emitter block's variant output
+  stays an inclusive union (`SharedVariantOutputs`): which emitter emits
+  which case is fixed by its label; a handler block's is one row.
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
   a keyed collection's keys are compared **structurally**
   (`Data.Profunctor.Row.Structural`, a key read through the ecosystem's

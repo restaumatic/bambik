@@ -181,8 +181,8 @@ instance RecordToRecord (Cont r) where
 
 instance VariantToVariant (Cont r) where
   variantToVariant p1 p2 = wrap \k v -> case splitVariant v of
-    Left v1 -> unwrap (widenVariantOutput p1) k v1
-    Right v2 -> unwrap (widenVariantOutput p2) k v2
+    Left v1 -> unwrap p1 k v1
+    Right v2 -> unwrap p2 k v2
 
 instance Monoid r => RecordToVariant (Cont r) where
   silence = wrap \_ _ -> mempty
