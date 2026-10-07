@@ -48,6 +48,7 @@ import TodoListViewModelTest (todoListClaims)
 import PUI (PUI(..), accumulated, acted, announce, applied, blankStatus, dispatched, edited, fold, foreach, looped, observed, optioned, replaying, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
+import Data.Profunctor.Row.RecordUpdate (recordUpdate)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
 assertEqual msg expected actual =
@@ -201,6 +202,31 @@ main = do
   assertEqual "toCase"
     (.picked 7 :: [ picked :: Int ])
     (toCase @"picked" _.key identity { key: 7, label: "x" })
+
+  -- recordUpdate (experiment): operands fed one record, each writing its
+  -- declared fields, the rest passing through; on (->) the later operand wins
+  assertEqual "recordUpdate on (->): a display writes nothing, a field writer its field"
+    { a: 1, b: 20, c: 3 }
+    (recordUpdate (\(_ :: { a :: Int, b :: Int, c :: Int }) -> {}) (\r -> { b: r.b * 10 }) { a: 1, b: 2, c: 3 })
+  assertEqual "recordUpdate on (->): the later operand wins an overlap"
+    { a: 9, b: 2 }
+    (recordUpdate (\(_ :: { a :: Int, b :: Int }) -> { a: 5 }) (\r -> r { a = 9 }) { a: 1, b: 2 })
+  do
+    p1prop <- Ref.new Nothing
+    p2prop <- Ref.new Nothing
+    p1ins <- Ref.new []
+    outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
+    m <- unwrap (recordUpdate (probeIO p1ins p1prop :: PUI Effect { a :: Int, b :: Int } { a :: Int }) (probe p2prop :: PUI Effect { a :: Int, b :: Int } { a :: Int, b :: Int }))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { a: 1, b: 2 }
+    Ref.read outs >>= assertEqual "recordUpdate answer: a feed is released once, whole" [ { a: 1, b: 2 } ]
+    Ref.read p1ins >>= assertEqual "recordUpdate projection: each operand is fed the record" [ { a: 1, b: 2 } ]
+    fire p1prop { a: 7 }
+    Ref.read outs >>= assertEqual "recordUpdate write: an emission patches its declared fields only" [ { a: 1, b: 2 }, { a: 7, b: 2 } ]
+    fire p2prop { a: 0, b: 5 }
+    Ref.read outs >>= assertEqual "recordUpdate write: the latest emission wins" [ { a: 1, b: 2 }, { a: 7, b: 2 }, { a: 0, b: 5 } ]
+    fire p1prop (unsafeCoerce ({ a: 4, b: 99 } :: { a :: Int, b :: Int }) :: { a :: Int })
+    Ref.read outs >>= assertEqual "recordUpdate exactness: undeclared runtime fields are not written" [ { a: 1, b: 2 }, { a: 7, b: 2 }, { a: 0, b: 5 }, { a: 4, b: 5 } ]
 
   -- fold f status: one case folding into the record, f of its payload,
   -- opened by its status (here the faceless `blank`) — on the carrier,

@@ -91,6 +91,7 @@ import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
+import Data.Profunctor.Row.RecordUpdate (class RecordUpdate)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the knot
 -- `focusField` is deliberately absent: the leaf lift is design-system plumbing —
@@ -544,6 +545,42 @@ instance MonadEffect m => RecordToRecord (PUI m) where
     where
     labels1 = labelsOf p1
     labels2 = labelsOf p2
+
+-- The update merge (experiment, Data.Profunctor.Row.RecordUpdate): every
+-- operand fed the record, each emission patching its declared fields onto
+-- the current record. A feed is one step: the record is replaced by the fed
+-- one, the operands answer, and the block releases once, whole; an emission
+-- outside a feed patches and releases at once.
+instance MonadEffect m => RecordUpdate (PUI m) where
+  recordUpdate p1 p2 = wrap do
+    p1' <- unwrap p1
+    p2' <- unwrap p2
+    current <- liftEffect $ Ref.new Nothing
+    depth <- liftEffect $ Ref.new 0
+    propRef <- liftEffect $ Ref.new Nothing
+    let
+      release = do
+        mRow <- Ref.read current
+        mProp <- Ref.read propRef
+        for_ mRow \row -> for_ mProp \prop -> prop row
+      patch :: forall o. { | o } -> Effect Unit
+      patch fields = do
+        Ref.modify_ (map (unsafeUnion fields)) current
+        feeding <- Ref.read depth
+        when (feeding == 0) release
+    pure
+      { toUser: \new -> do
+          Ref.write (Just new) current
+          Ref.modify_ (_ + 1) depth
+          p1'.toUser new
+          p2'.toUser new
+          Ref.modify_ (_ - 1) depth
+          release
+      , fromUser: \prop -> do
+          Ref.write (Just prop) propRef
+          p1'.fromUser \o -> patch (exactRow o)
+          p2'.fromUser \o -> patch (exactRow o)
+      }
 
 instance Applicative m => RecordToVariant (PUI m) where
   -- the one unit no wire reaches (terminal → initial): silent at any rows

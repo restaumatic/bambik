@@ -6,6 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
+import Data.Profunctor.Row.RecordUpdate as RecordUpdate
 import Effect (Effect)
 import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
 import PUI (action, armed, atCase, blankStatus, bracketed, debounced, fold, looped, settled, updated)
@@ -18,8 +19,8 @@ orderFormMDC2 =
   body $ Semigroupoid.do
     indeterminateLinearProgress # action loadOrder
     blankStatus @"Order loaded" # fold identity
-    ( Semigroupoid.do
-      ( headline6 $ text orderLine ) # shown
+    ( RecordUpdate.do
+      headline6 $ text orderLine
       group @"Identifier" $ Semigroupoid.do
         filledTextField @"Short ID" {}
         filledTextField @"Unique ID" {}
@@ -48,7 +49,7 @@ orderFormMDC2 =
                , "Address" :: String
                , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
                ) fulfillmentState fulfillmentCase
-      group @"Payment" $ Semigroupoid.do
+      group @"Payment" $ RecordUpdate.do
         filledTextField @"Total" {}
         segmentedButton @"Method"
           (choice @"cash" <+> choice @"card")
