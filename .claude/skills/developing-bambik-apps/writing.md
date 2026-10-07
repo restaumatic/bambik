@@ -726,9 +726,7 @@ the watch build running ([building.md](building.md)):
    lines call it, is the one case for a `forall`: generalize to the
    fields both rows share, with a tail. The hole's message goes away,
    and from then on the compiler checks the function against the
-   declared rows; `npm run check-determined` checks that every exported
-   signature still equals its hint and that every export is a name some
-   view imports.
+   declared rows.
 4. **Fill the holes in any order.** The compiler reports one
    declaration's holes per build, and an app is one pipeline in one
    declaration, so its holes report together; a view helper's holes
