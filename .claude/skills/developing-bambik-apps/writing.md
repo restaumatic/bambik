@@ -779,6 +779,23 @@ give you while writing:
 They do not guarantee that your business functions are correct — that
 is what the view model module's unit tests are for.
 
+## When it does not compile
+
+Most wiring mistakes surface as `Could not match type` between two rows,
+reported where the rows meet rather than where the mistake is: a row
+flows down the pipeline until a line cannot take it. Read the two rows
+in the message, the one the line wants and the one it got, and look
+**upstream** of the reported line for the stage that changed the row.
+
+| The message | Reported at | The mistake | The fix |
+| --- | --- | --- | --- |
+| the model row against `()` | the whole app expression | the loop has no seed: the entry feeds only `{}` | close the loop with `# with seed` (counter) |
+| the model row against `()`, `while matching label "Count"` | the status or fold of that case | a display above the emitter lacks `# shown`, so it passes on `{}` and the emitter replays it | add `# shown` to the display |
+| `()` against `( event :: …, model :: … )`, `while matching label "Start"` | the fold of that case | an emitter inside a pane lacks `# joined @"Start"`, so it replays the pane's payload instead of the model | add `# joined` to the emitter (stopwatch) |
+| `( "Cout" :: … )` against `( "Count" :: … )` | the fold | one case spelled two ways | spell the case the same on the emitter and its fold |
+| `( "Reset" :: … )` against `( … )` | the emitter | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `blankStatus @"Clock ticked" # fold tick`), or remove the emitter |
+| `( size :: Int … )` against `( … )` | the seed line | a business function names a field the model does not have | copy the signature from the hole its line reports ([Writing order](#writing-order)) |
+
 ## When it does not propagate
 
 The compiler proves the wiring, not that data reaches the screen. A

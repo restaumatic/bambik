@@ -306,7 +306,46 @@ orderApp =
     is both the button's caption and the case the snackbar renders, and the
     chrome names nothing because it writes nothing.</p>
 
-    <h2>5 · Compile-green is not done — run it</h2>
+    <h2>5 · A slip, and where the compiler points</h2>
+
+    <p>Now make the most common first slip: delete <code># shown</code>
+    from the display line. The compiler does not point at that line.</p>
+
+<pre class="compiler">Error found:
+in module Order
+<mark>at src/Order.purs:19:7 - 19:38 (line 19, column 7 - line 19, column 38)</mark>
+
+  Could not match type
+
+    ( "Pizza" :: String
+    )
+
+  with type
+
+    ()
+
+
+while trying to match type { "Pizza" :: String
+                           }
+  with type Record (() @Type)
+while matching label "Order"
+  ⋯
+while checking that expression (snackbar) confirmedLine
+  has type PUI Web (Variant t0) t1
+  ⋯</pre>
+
+    <p>It points two lines below, at the snackbar. Without
+    <code># shown</code> the display passes on the empty record instead of
+    the model. The button replays what it was fed, so the
+    <code>"Order"</code> case arrives carrying <code>{}</code>, and the first
+    line that needs the model is where the rows fail to match. So read the
+    two rows in the message, the model the line wants against the
+    <code>()</code> it got, and look <em>upstream</em> for the stage that
+    dropped the row: a display without <code># shown</code>, or an emitter
+    inside a pane without <code># joined</code>. The skill's writing.md lists
+    the other common messages under <em>When it does not compile</em>.</p>
+
+    <h2>6 · Compile-green is not done — run it</h2>
 
     <p class="note">The types prove the wiring, not that data reaches the
     screen: a record merge withholds until every field of its row has been fed,

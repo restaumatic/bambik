@@ -31,6 +31,7 @@ and emitters of a catalogue — are in the design-system module header
 | one stage per event case | `VariantToVariant.do` | crud, cashbox, reorder | `Data.Profunctor.Row.VariantToVariant` |
 | one status per outcome case | `VariantToRecord.do` | flight-booker, order-form | `Data.Profunctor.Row.VariantToRecord` |
 | what a composition guarantees | — | — | writing.md *What the laws guarantee* |
+| a compile error between two rows | — | — | writing.md *When it does not compile* |
 | a pane stays blank | — | — | writing.md *When it does not propagate* |
 
 ## App shape

@@ -54,7 +54,7 @@ copy function (`countLine`), taken by the display at the leaf.
    contract for application code: *Layout*, *Types and values*,
    *Business functions*, *Wiring*), *Writing order* (view first; its holes list the
    view model's signatures), *What the laws guarantee*, *When it does not
-   propagate*, *Finish by running it*, *Looking things up*.
+   compile*, *When it does not propagate*, *Finish by running it*, *Looking things up*.
    Companions, stating no rules of their own:
    [walkthrough.md](walkthrough.md) (flight-booker read line by line —
    read it after the counter) and [vocabulary.md](vocabulary.md) (from
