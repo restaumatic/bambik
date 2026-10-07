@@ -785,7 +785,10 @@ give you while writing:
   a twin over another design system behaves the same.
 
 They do not guarantee that your business functions are correct — that
-is what the view model module's unit tests are for.
+is what the view model module's unit tests are for. Business functions
+are pure, so their tests can be plain values: counter's
+`CounterViewModelTest` beside its view model is a list of named claims,
+each a `Boolean`, and a test entry fails on any that does not hold.
 
 ## When it does not compile
 

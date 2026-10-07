@@ -39,6 +39,12 @@ import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import OrderFormViewModel (fulfillmentCase, fulfillmentState)
+import CheckoutViewModelTest (checkoutClaims)
+import CounterViewModelTest (counterClaims)
+import FlightBookerViewModelTest (flightBookerClaims)
+import OrderFormViewModelTest (orderFormClaims)
+import TemperatureConverterViewModelTest (temperatureConverterClaims)
+import TodoListViewModelTest (todoListClaims)
 import PUI (PUI(..), accumulated, acted, announce, applied, blankStatus, dispatched, edited, fold, foreach, looped, observed, optioned, replaying, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
@@ -164,6 +170,11 @@ fireElem roster n o = do
 
 main :: Effect Unit
 main = do
+  -- == The reading-order demos' view model claims (demo/*/<demo>/*ViewModelTest.purs):
+  -- business functions are pure, so their tests are values; every claim must hold. ==
+  for_ (counterClaims <> temperatureConverterClaims <> flightBookerClaims <> todoListClaims <> checkoutClaims <> orderFormClaims) \{ claim, holds } ->
+    unless holds $ void $ throw ("view model claim does not hold: " <> claim)
+
   -- == subStrong: row-typed Strong, focus a sub-record carrying the rest. On `(->)`. ==
 
   -- subStrong: rows on both sides. Here a one-field sub-record { a } is transformed
