@@ -2,13 +2,13 @@ module CellsHTML (cellsHTML) where
 
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
-import CellsViewModel (cellPickedLine, columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
+import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
-import PUI (fold, foreach, joined, looped, settled, with)
+import PUI (blankStatus, fold, foreach, joined, looped, settled, with)
 import PUI.Web (attrWith, clicked, shown, staticText, text, (:=))
-import PUI.Web.HTML (body, div, input, label, output, p, table, td, tr)
+import PUI.Web.HTML (body, div, input, label, p, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsHTML :: Effect Unit
@@ -27,7 +27,7 @@ cellsHTML =
             @( rowKey :: String
              , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
              ) sheetRows ) ) # joined @"Cell picked"
-    output @"Cell picked" cellPickedLine # fold selectCell
+    blankStatus @"Cell picked" # fold selectCell
   # looped
     @( cells :: Object String
      , selected :: [ picked :: { name :: String }, none :: {} ]

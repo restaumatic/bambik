@@ -2,12 +2,12 @@ module CellsFluent (cellsFluent) where
 
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
-import CellsViewModel (cellPickedLine, columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
+import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
-import PUI (fold, foreach, joined, looped, settled, with)
-import PUI.Web.Fluent (body, body1, messageBar, textField)
+import PUI (blankStatus, fold, foreach, joined, looped, settled, with)
+import PUI.Web.Fluent (body, body1, textField)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -27,7 +27,7 @@ cellsFluent =
               @( rowKey :: String
                , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
                ) sheetRows ) ) # joined @"Cell picked"
-      messageBar @"Cell picked" cellPickedLine # fold selectCell
+      blankStatus @"Cell picked" # fold selectCell
     # looped
       @( cells :: Object String
        , selected :: [ picked :: { name :: String }, none :: {} ]

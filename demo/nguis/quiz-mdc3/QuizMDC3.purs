@@ -5,11 +5,11 @@ import Prelude ((#), ($), Unit, const)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, joined, looped, with)
+import PUI (blankStatus, fold, joined, looped, with)
 import PUI.Web (provided, shown, text)
-import PUI.Web.MDC3 (body, bodyLarge, button, headlineMedium, headlineSmall, linearProgress, listOf, snackbar)
+import PUI.Web.MDC3 (body, bodyLarge, button, headlineMedium, headlineSmall, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questionAnsweredLine, questionLine, quizPhase, quizProgress, quizRestartedLine)
+import QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizPhase, quizProgress)
 
 quizMDC3 :: Effect Unit
 quizMDC3 =
@@ -28,6 +28,6 @@ quizMDC3 =
           headlineSmall (text finalScoreLine) # shown
           button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase
       VariantToRecord.do
-        snackbar @"Question answered" questionAnsweredLine # fold answer
-        snackbar @"Restart" quizRestartedLine # fold (const freshQuizRun)
+        blankStatus @"Question answered" # fold answer
+        blankStatus @"Restart" # fold (const freshQuizRun)
     # looped @( question :: Int, correct :: Int ) # with freshQuizRun

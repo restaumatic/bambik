@@ -8,9 +8,9 @@ import Effect (Effect)
 import PUI (blankStatus, fold, joined, looped, ticks, with)
 import PUI.Web (provided, shown, shownEach, text)
 import PUI.Web.HTML (li, ul)
-import PUI.Web.MDC2 (body, button, headline3, snackbar)
+import PUI.Web.MDC2 (body, button, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRecordedLine, lapRows, recordLap, stopwatchResetLine, tick, tickPeriod, timingBegunLine, timingHaltedLine, zeroedStopwatch)
+import StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch)
 
 stopwatchMDC2 :: Effect Unit
 stopwatchMDC2 =
@@ -25,10 +25,10 @@ stopwatchMDC2 =
         button @"Reset" { icon: "replay" } # provided @"halted" _.phase # joined @"Reset"
       VariantToRecord.do
         blankStatus @"Clock ticked" # fold tick
-        snackbar @"Start" timingBegunLine # fold beginTiming
-        snackbar @"Stop" timingHaltedLine # fold haltTiming
-        snackbar @"Lap" lapRecordedLine # fold recordLap
-        snackbar @"Reset" stopwatchResetLine # fold clearStopwatch
+        blankStatus @"Start" # fold beginTiming
+        blankStatus @"Stop" # fold haltTiming
+        blankStatus @"Lap" # fold recordLap
+        blankStatus @"Reset" # fold clearStopwatch
       ul $ ( li $ text lapLine ) # shownEach @"number" @( number :: Int, tenths :: Int ) lapRows
     # looped
       @( phase :: [ halted :: {}, timing :: {} ]

@@ -2,12 +2,12 @@ module CrudMDC2 (crudMDC2) where
 
 import Prelude (Unit, identity, (#), ($))
 
-import CrudViewModel (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleLoadedLine, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personPickedLine, personUpdatedLine, pick, updatePerson)
+import CrudViewModel (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personUpdatedLine, pick, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action, atCase, fold, joined, looped, subChoice)
+import PUI (action, atCase, blankStatus, fold, joined, looped, subChoice)
 import PUI.Web (shown, text)
 import PUI.Web.MDC2 (body, button, filledTextField, indeterminateLinearProgress, listOf, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,7 +17,7 @@ crudMDC2 =
   body $
     Semigroupoid.do
       indeterminateLinearProgress # action loadPeopleCatalogue
-      snackbar @"People loaded" peopleLoadedLine # fold identity
+      blankStatus @"People loaded" # fold identity
       ( Semigroupoid.do
         filledTextField @"Filter prefix (surname)" {}
         filledTextField @"Name" {}
@@ -37,7 +37,7 @@ crudMDC2 =
           indeterminateLinearProgress # action updatePerson # atCase @"Update"
           indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
         VariantToRecord.do
-          snackbar @"Person picked" personPickedLine # fold pick
+          blankStatus @"Person picked" # fold pick
           snackbar @"Person created" personCreatedLine # fold identity
           snackbar @"Person not created" personNotCreatedLine # fold identity
           snackbar @"Person updated" personUpdatedLine # fold identity

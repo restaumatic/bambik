@@ -3,11 +3,11 @@ module PasswordGeneratorMDC3 (passwordGeneratorMDC3) where
 import Prelude (identity, Unit, (#), ($), (>>>))
 
 import Effect (Effect)
-import PasswordGeneratorViewModel (passwordGeneratedLine, passwordText, samplePassword, strengthLine, strongMixRecipe)
-import PUI (action, atCase, fold, looped, with)
+import PasswordGeneratorViewModel (passwordText, samplePassword, strengthLine, strongMixRecipe)
+import PUI (action, atCase, blankStatus, fold, looped, with)
 import PUI.Web (attr, shown, text)
 import PUI.Web.HTML (code)
-import PUI.Web.MDC3 (body, bodyMedium, button, indeterminateLinearProgress, slider, snackbar, toggleSwitch)
+import PUI.Web.MDC3 (body, bodyMedium, button, indeterminateLinearProgress, slider, toggleSwitch)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 passwordGeneratorMDC3 :: Effect Unit
@@ -23,7 +23,7 @@ passwordGeneratorMDC3 =
       code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
       button @"Generate" {}
       indeterminateLinearProgress # action samplePassword # atCase @"Generate"
-      snackbar @"Password generated" passwordGeneratedLine # fold identity
+      blankStatus @"Password generated" # fold identity
     # looped
       @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Uppercase letters" :: Boolean

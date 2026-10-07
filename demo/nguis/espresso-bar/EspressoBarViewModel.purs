@@ -1,4 +1,4 @@
-module EspressoBarViewModel (brewedLine, caffeineFraction, cupLine, espressoNoFrills, espressoNoFrillsLine, loyaltyNote, theUsual, theUsualLine, usualOrder) where
+module EspressoBarViewModel (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder) where
 
 import Prelude (min, otherwise, (*), (+), (-), (<>), (==))
 
@@ -279,51 +279,3 @@ noSugar = 0.0
 
 maxSugar :: Number
 maxSugar = 4.0
-
-theUsualLine
-  :: { "Decaf" :: Boolean
-     , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
-     , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
-     , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
-                 ]
-     , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
-     , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
-     , "Sugar" :: { current :: Number
-                  , max :: Number
-                  , min :: Number
-                  , step :: [ continuous :: {}, discrete :: Number ]
-                  }
-     , "Takeaway cup" :: Boolean
-     , "Your name" :: String
-     }
-  -> String
-theUsualLine order = "The usual" <> forCustomer { "Your name": order."Your name" } <> ": " <> summaryText order
-
-espressoNoFrillsLine
-  :: { "Decaf" :: Boolean
-     , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
-     , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
-     , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
-                 ]
-     , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
-     , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
-     , "Sugar" :: { current :: Number
-                  , max :: Number
-                  , min :: Number
-                  , step :: [ continuous :: {}, discrete :: Number ]
-                  }
-     , "Takeaway cup" :: Boolean
-     , "Your name" :: String
-     }
-  -> String
-espressoNoFrillsLine order = "Espresso, no frills" <> forCustomer { "Your name": order."Your name" } <> ": " <> summaryText order

@@ -344,13 +344,13 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 - **checkout** — a wizard: the step is a model field, Next/Back each emit
   their own case `# joined` with the model, and one `stepTo` folds both.
 - **crud** — a load action before the knot, `indeterminateLinearProgress #
-  action loadPeopleCatalogue`, its outcome folded in by `snackbar @"People
-  loaded" peopleLoadedLine # fold identity`, run by `body`'s one feed of
+  action loadPeopleCatalogue`, its outcome folded in by `blankStatus @"People
+  loaded" # fold identity`, run by `body`'s one feed of
   `{}`; create/update/delete are chains in the fold block, each an action
   followed by the folds of its two outcomes, adopted `# atCase` under its
   button's case.
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
-  `snackbar @"New game" newGameLine # fold (const openingPosition)` the reset.
+  `blankStatus @"New game" # fold (const openingPosition)` the reset.
 - **order-form** — all four shapes on one screen: a `looped` form in
   labelled groups, a variant editor under `bracketed @"Mode"`, the debounced
   summary, `armed` buttons, and each action followed by its statuses.

@@ -1,4 +1,4 @@
-module CalculatorViewModel (blankTally, faultLine, functionKeys, keyEnteredLine, keyPad, operatorKeys, pressKey, readout) where
+module CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operatorKeys, pressKey, readout) where
 
 import Prelude ((&&), (<$>), (<>), (==), (/=), (+), (-), (*), (/), otherwise, show)
 
@@ -108,13 +108,3 @@ format n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
 
 faultLine :: {} -> String
 faultLine _ = "Error"
-
-keyEnteredLine
-  :: { condition :: [ faulty :: {}, sound :: {} ]
-     , entry :: String
-     , input :: [ entering :: {}, settled :: {} ]
-     , operation :: [ none :: {}, pending :: { key :: String } ]
-     , total :: Number
-     }
-  -> String
-keyEnteredLine tally = match { sound: \{ entry } -> "Showing " <> entry, faulty: faultLine } (readout tally)

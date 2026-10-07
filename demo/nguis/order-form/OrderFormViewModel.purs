@@ -1,4 +1,4 @@
-module OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime) where
+module OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime) where
 
 import Prelude ((<>), ($), (==), (/=), bind, const, discard, pure, show)
 
@@ -282,23 +282,3 @@ receiptLine { "Short ID": shortId } = "Receipt for order " <> shortId <> " print
 
 summarySettleTime :: { ms :: Number }
 summarySettleTime = { ms: 300.0 }
-
-orderLoadedLine
-  :: { "Customer" :: { "First name" :: String, "Last name" :: String }
-     , "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String
-                                                    , distance :: [ estimated :: { km :: Int
-                                                                                 , to :: String
-                                                                                 }
-                                                                  , unknown :: {}
-                                                                  ]
-                                                    }
-                                    , "Dine in" :: { "Table" :: String }
-                                    , "Takeaway" :: { "Time" :: String }
-                                    ]
-                        }
-     , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
-     , "Kitchen" :: { "Remarks" :: String }
-     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
-     }
-  -> String
-orderLoadedLine { "Identifier": { "Short ID": shortId } } = "Order " <> shortId <> " loaded"

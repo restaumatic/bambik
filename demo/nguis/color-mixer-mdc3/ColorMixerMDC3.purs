@@ -2,12 +2,12 @@ module ColorMixerMDC3 (colorMixerMDC3) where
 
 import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
-import ColorMixerViewModel (applyPreset, duskViolet, hexLine, mixedColor, palette, presetAppliedLine, rgb, rgbLine)
+import ColorMixerViewModel (applyPreset, duskViolet, hexLine, mixedColor, palette, rgb, rgbLine)
 import Effect (Effect)
-import PUI (blank, fold, foreach, joined, looped, with)
+import PUI (blank, blankStatus, fold, foreach, joined, looped, with)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC3 (body, bodyMedium, sliderLive, snackbar)
+import PUI.Web.MDC3 (body, bodyMedium, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 colorMixerMDC3 :: Effect Unit
@@ -26,7 +26,7 @@ colorMixerMDC3 =
             @( name :: String
              , mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
              ) (const palette) ) # joined @"Preset applied"
-      snackbar @"Preset applied" presetAppliedLine # fold applyPreset
+      blankStatus @"Preset applied" # fold applyPreset
     # looped
       @( "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

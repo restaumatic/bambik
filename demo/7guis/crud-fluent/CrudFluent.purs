@@ -2,13 +2,13 @@ module CrudFluent (crudFluent) where
 
 import Prelude (Unit, identity, (#), ($), (<>), (>>>))
 
-import CrudViewModel (createPerson, deletePerson, entries, loadPeopleCatalogue, peopleLoadedLine, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personPickedLine, personUpdatedLine, pick, updatePerson)
+import CrudViewModel (createPerson, deletePerson, entries, loadPeopleCatalogue, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personUpdatedLine, pick, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action, atCase, fold, foreach, joined, looped, subChoice)
+import PUI (action, atCase, blankStatus, fold, foreach, joined, looped, subChoice)
 import PUI.Web.Fluent (body, button, indeterminateLinearProgress, messageBar, textField)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (li, ul)
@@ -19,7 +19,7 @@ crudFluent =
   body $
     Semigroupoid.do
       indeterminateLinearProgress # action loadPeopleCatalogue
-      messageBar @"People loaded" peopleLoadedLine # fold identity
+      blankStatus @"People loaded" # fold identity
       ( Semigroupoid.do
         textField @"Filter prefix (surname)" {}
         textField @"Name" {}
@@ -40,7 +40,7 @@ crudFluent =
           indeterminateLinearProgress # action updatePerson # atCase @"Update"
           indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
         VariantToRecord.do
-          messageBar @"Person picked" personPickedLine # fold pick
+          blankStatus @"Person picked" # fold pick
           messageBar @"Person created" personCreatedLine # fold identity
           messageBar @"Person not created" personNotCreatedLine # fold identity
           messageBar @"Person updated" personUpdatedLine # fold identity

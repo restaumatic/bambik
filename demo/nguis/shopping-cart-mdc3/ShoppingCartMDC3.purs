@@ -6,11 +6,11 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, foreach, joined, looped, with)
+import PUI (blankStatus, fold, foreach, joined, looped, with)
 import PUI.Web (clicked, shown, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, columnHeader, dataCell, dataRow, dataTable, listOf, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import ShoppingCartViewModel (addUnit, cartEmptiedLine, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine, unitAddedLine, unitRemovedLine)
+import ShoppingCartViewModel (addUnit, cartEmptiedLine, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine)
 
 shoppingCartMDC3 :: Effect Unit
 shoppingCartMDC3 =
@@ -30,7 +30,7 @@ shoppingCartMDC3 =
             dataCell (text lineTotalLine) ) # foreach @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"Unit removed"
         button @"Empty cart" {}
       VariantToRecord.do
-        snackbar @"Unit added" unitAddedLine # fold addUnit
-        snackbar @"Unit removed" unitRemovedLine # fold removeUnit
+        blankStatus @"Unit added" # fold addUnit
+        blankStatus @"Unit removed" # fold removeUnit
         snackbar @"Empty cart" cartEmptiedLine # fold (const emptyCart)
     # looped @( order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } ) # with emptyCart

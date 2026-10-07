@@ -2,11 +2,11 @@ module CheckoutMDC2 (checkoutMDC2) where
 
 import Prelude ((#), ($), Unit)
 
-import CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderPlacedLine, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo, steppedBackLine, steppedOnLine)
+import CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderPlacedLine, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, joined, looped, with)
+import PUI (blankStatus, fold, joined, looped, with)
 import PUI.Web (provided, shownWhen, text)
 import PUI.Web.MDC2 (body, body2, button, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,8 +33,8 @@ checkoutMDC2 =
            ) previousOf # joined @"Back"
         button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep # joined @"Place order"
       VariantToRecord.do
-        snackbar @"Next" steppedOnLine # fold stepTo
-        snackbar @"Back" steppedBackLine # fold stepTo
+        blankStatus @"Next" # fold stepTo
+        blankStatus @"Back" # fold stepTo
         snackbar @"Place order" orderPlacedLine # fold orderPlaced
       ( body2 $ text placedLine ) # shownWhen @"placed"
         @( pending :: {}

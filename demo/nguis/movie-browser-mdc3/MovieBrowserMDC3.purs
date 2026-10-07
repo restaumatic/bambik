@@ -3,11 +3,11 @@ module MovieBrowserMDC3 (movieBrowserMDC3) where
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import MovieBrowserViewModel (favoriteMark, favoritesLine, markFavorite, movieCatalogue, favoriteChangedLine, ratingLine, titleLine, visibleMovies, yearLine)
-import PUI (fold, foreach, joined, looped, toCase, with)
+import MovieBrowserViewModel (favoriteMark, favoritesLine, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
+import PUI (blankStatus, fold, foreach, joined, looped, toCase, with)
 import PUI.Web ((<+>), choice, shown, text)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC3 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, snackbar, titleMedium, tabBar)
+import PUI.Web.MDC3 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 movieBrowserMDC3 :: Effect Unit
@@ -32,7 +32,7 @@ movieBrowserMDC3 =
              , rating :: Number
              , "Favorite" :: Boolean
              ) visibleMovies # toCase @"Favorite changed" @{ title :: String, "Favorite" :: Boolean } favoriteMark # joined @"Favorite changed"
-      snackbar @"Favorite changed" favoriteChangedLine # fold markFavorite
+      blankStatus @"Favorite changed" # fold markFavorite
     # looped
       @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]
        , "Classic" :: Boolean

@@ -1,10 +1,9 @@
-module StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRecordedLine, lapRows, recordLap, stopwatchResetLine, tick, tickPeriod, timingBegunLine, timingHaltedLine, zeroedStopwatch) where
+module StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch) where
 
 import Prelude ((<>), (+), (<), show)
 
-import Data.Array (last, length, mapWithIndex, snoc)
+import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
-import Data.Maybe (maybe)
 import Data.Variant (match)
 
 zeroedStopwatch
@@ -52,26 +51,6 @@ tick
   -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
 tick sw@{ phase, elapsedTenths } =
   match { timing: \_ -> sw { elapsedTenths = elapsedTenths + 1 }, halted: \_ -> sw } phase
-
-timingBegunLine
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> String
-timingBegunLine { elapsedTenths } = "Started timing at " <> formatTime elapsedTenths
-
-timingHaltedLine
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> String
-timingHaltedLine { elapsedTenths } = "Stopped at " <> formatTime elapsedTenths
-
-lapRecordedLine
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> String
-lapRecordedLine { laps } = "Lap " <> show (length laps) <> " at " <> maybe "—" formatTime (last laps)
-
-stopwatchResetLine
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> String
-stopwatchResetLine { elapsedTenths } = "Reset to " <> formatTime elapsedTenths
 
 lapRows
   :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }

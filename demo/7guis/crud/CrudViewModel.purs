@@ -1,9 +1,9 @@
-module CrudViewModel (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, peopleLoadedLine, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personPickedLine, personUpdatedLine, pick, updatePerson) where
+module CrudViewModel (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personUpdatedLine, pick, updatePerson) where
 
-import Prelude ((<$>), (<>), (==), (||), bind, otherwise, pure, show)
+import Prelude (bind, otherwise, pure, (<$>), (<>), (==), (||))
 
-import Data.Array (deleteAt, filter, index, length, mapWithIndex, snoc, updateAt)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String (Pattern(..), stripPrefix)
 import Data.Variant (match)
 import Effect.Aff (Aff)
@@ -229,29 +229,6 @@ isSelected
      }
   -> Boolean
 isSelected { status } = match { selected: \_ -> true, unselected: \_ -> false } status
-
-peopleLoadedLine
-  :: { "Filter prefix (surname)" :: String
-     , "Name" :: String
-     , "Surname" :: String
-     , people :: Array { "Name" :: String, "Surname" :: String }
-     , selected :: [ none :: {}, picked :: { index :: Int } ]
-     }
-  -> String
-peopleLoadedLine { people } = "Loaded " <> show (length people) <> " people"
-
-personPickedLine
-  :: { "Filter prefix (surname)" :: String
-     , "Name" :: String
-     , "Surname" :: String
-     , people :: Array { "Name" :: String, "Surname" :: String }
-     , selected :: [ none :: {}, picked :: { index :: Int } ]
-     }
-  -> String
-personPickedLine { people, selected } = match
-  { picked: \p -> maybe "Picked nobody" (\q -> "Picked " <> q."Name" <> " " <> q."Surname") (index people p.index)
-  , none: \_ -> "Picked nobody"
-  } selected
 
 personCreatedLine
   :: { "Filter prefix (surname)" :: String

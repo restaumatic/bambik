@@ -6,12 +6,12 @@ import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, foreach, joined, looped, with)
+import PUI (blankStatus, fold, foreach, joined, looped, with)
 import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC3 (body, button, headlineSmall, snackbar)
+import PUI.Web.MDC3 (body, button, headlineSmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TicTacToeViewModel (cellClaimedLine, cellMark, cells, claimCell, drawnLine, gameOutcome, newGameLine, openingPosition, toMoveLine, wonLine)
+import TicTacToeViewModel (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine)
 
 ticTacToeMDC3 :: Effect Unit
 ticTacToeMDC3 =
@@ -33,8 +33,8 @@ ticTacToeMDC3 =
              ) cells ) ) # joined @"Cell claimed"
         button @"New game" { icon: "replay" }
       VariantToRecord.do
-        snackbar @"Cell claimed" cellClaimedLine # fold claimCell
-        snackbar @"New game" newGameLine # fold (const openingPosition)
+        blankStatus @"Cell claimed" # fold claimCell
+        blankStatus @"New game" # fold (const openingPosition)
     # looped @( board :: Array [ x :: {}, o :: {}, free :: {} ] ) # with openingPosition
 
 cellFace :: { key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String

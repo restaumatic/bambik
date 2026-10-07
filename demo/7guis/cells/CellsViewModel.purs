@@ -1,4 +1,4 @@
-module CellsViewModel (cellPickedLine, columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows) where
+module CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows) where
 
 import Prelude ((<>), bind, identity, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
 
@@ -99,14 +99,6 @@ selectCell
      , selected :: [ none :: {}, picked :: { name :: String } ]
      }
 selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
-
-cellPickedLine
-  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
-     , cells :: Object String
-     , selected :: [ none :: {}, picked :: { name :: String } ]
-     }
-  -> String
-cellPickedLine { selected } = match { picked: \p -> "Picked cell " <> p.name, none: \_ -> "No cell picked" } selected
 
 commit
   :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String

@@ -2,14 +2,14 @@ module CellsMDC2 (cellsMDC2) where
 
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
-import CellsViewModel (cellPickedLine, columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
+import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
-import PUI (fold, foreach, joined, looped, settled, with)
+import PUI (blankStatus, fold, foreach, joined, looped, settled, with)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, table, td, tr)
-import PUI.Web.MDC2 (body, body1, filledTextField, snackbar)
+import PUI.Web.MDC2 (body, body1, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsMDC2 :: Effect Unit
@@ -27,7 +27,7 @@ cellsMDC2 =
               @( rowKey :: String
                , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
                ) sheetRows ) ) # joined @"Cell picked"
-      snackbar @"Cell picked" cellPickedLine # fold selectCell
+      blankStatus @"Cell picked" # fold selectCell
     # looped
       @( cells :: Object String
        , selected :: [ picked :: { name :: String }, none :: {} ]

@@ -1,4 +1,4 @@
-module ColorMixerViewModel (mixedColor, applyPreset, duskViolet, hexLine, palette, presetAppliedLine, rgb, rgbLine) where
+module ColorMixerViewModel (mixedColor, applyPreset, duskViolet, hexLine, palette, rgb, rgbLine) where
 
 import Prelude ((<>), (<<<), (==), max, min, show)
 
@@ -165,23 +165,3 @@ minChannel = 0.0
 
 maxChannel :: Number
 maxChannel = 255.0
-
-presetAppliedLine
-  :: { "Blue" :: { current :: Number
-                 , max :: Number
-                 , min :: Number
-                 , step :: [ continuous :: {}, discrete :: Number ]
-                 }
-     , "Green" :: { current :: Number
-                  , max :: Number
-                  , min :: Number
-                  , step :: [ continuous :: {}, discrete :: Number ]
-                  }
-     , "Red" :: { current :: Number
-                , max :: Number
-                , min :: Number
-                , step :: [ continuous :: {}, discrete :: Number ]
-                }
-     }
-  -> String
-presetAppliedLine channels = "Now mixing " <> hexLine channels

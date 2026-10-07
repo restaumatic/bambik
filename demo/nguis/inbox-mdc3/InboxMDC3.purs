@@ -5,8 +5,8 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import InboxViewModel (deletionPane, composeMessage, deleteOpened, deleteRequestedLine, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageComposedLine, messageDeletedLine, messageKeptLine, messageLine, messageOpenedLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, sortedBySenderLine, sortedBySubjectLine, sortedUnreadFirstLine, subjectLine, unreadLine)
-import PUI (fold, joined, looped, observed, with)
+import InboxViewModel (deletionPane, composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageComposedLine, messageDeletedLine, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
+import PUI (blankStatus, fold, joined, looped, observed, with)
 import PUI.Web (provided, shown, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, bodyLarge, bodyMedium, bodySmall, button, dialog, fab, headlineSmall, iconButton, listOf, menu, menuItem, snackbar)
@@ -41,14 +41,14 @@ inboxMDC3 =
           menuItem @"By subject" {}
           menuItem @"Unread first" {} )
       VariantToRecord.do
-        snackbar @"Message opened" messageOpenedLine # fold openMessage
-        snackbar @"Delete message" deleteRequestedLine # fold requestDelete
+        blankStatus @"Message opened" # fold openMessage
+        blankStatus @"Delete message" # fold requestDelete
         snackbar @"Delete" messageDeletedLine # fold deleteOpened
-        snackbar @"Keep" messageKeptLine # fold keepMessages
+        blankStatus @"Keep" # fold keepMessages
         snackbar @"Compose" messageComposedLine # fold composeMessage
-        snackbar @"By sender" sortedBySenderLine # fold sortBySender
-        snackbar @"By subject" sortedBySubjectLine # fold sortBySubject
-        snackbar @"Unread first" sortedUnreadFirstLine # fold sortUnreadFirst
+        blankStatus @"By sender" # fold sortBySender
+        blankStatus @"By subject" # fold sortBySubject
+        blankStatus @"Unread first" # fold sortUnreadFirst
     # looped
       @( messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] }
        , deletion :: [ silent :: {}, confirming :: {} ]

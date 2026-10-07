@@ -170,15 +170,15 @@ a trailing word that says what it is for:
 | a button that exists in one case | `button @"Start" {…} # provided @"halted" _.phase` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # shownEach @"number" lapRows` | stopwatch |
 | content that waits for the user to confirm | `confirmed "Refund" "Refund the customer?" $ …` | cashbox |
-| an event folded into the model | `snackbar @"Add" todoAddedLine # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
+| an event folded into the model | `blankStatus @"Add" # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
 | a periodic occurrence | `blankStatus @"Clock ticked" # ticks tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @celsius {} # settled fromCelsius` | temperature-converter |
 | buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
 | effects on the buttons' cases, the other events passing | `( VariantToVariant.do { indeterminateLinearProgress # action createPerson # atCase @"Create"; … } ) # subChoice`, every action typed at the block's outcome row, every outcome folded once by its status | crud |
-| an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `snackbar @"Forecast fetched" forecastFetchedLine # fold identity` | weather |
+| an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `blankStatus @"Forecast fetched" # fold identity` | weather |
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
-| a heartbeat folded silently | `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch |
+| a fold nothing needs telling about | `blankStatus @"Todo toggled" # fold toggleTodo`, `blankStatus @"Clock ticked" # fold tick` | todo-list, timer, stopwatch |
 
 Content inside `shown`, the panes and `confirmed` must output `{}`. An
 assembly that emits something you mean to drop is dropped **in
@@ -209,8 +209,8 @@ Semigroupoid.do
     button @"Add" {}
     listOf @"Todo toggled" … # joined @"Todo toggled"   --   an event with a payload of its own, joined with the model
   VariantToRecord.do                          -- +→× the folds, one per case, each opened by its status
-    snackbar @"Add" todoAddedLine # fold addTodo
-    snackbar @"Todo toggled" todoToggledLine # fold toggleTodo
+    blankStatus @"Add" # fold addTodo
+    blankStatus @"Todo toggled" # fold toggleTodo
     ( Semigroupoid.do                         --   an effect on a case, folded by its own outcomes
       indeterminateLinearProgress # action createPerson
       VariantToRecord.do
@@ -496,8 +496,8 @@ text is computed, a chrome line nothing.
   row where it is introduced.** For a loop closed with a model that is
   the seed line (`# looped @( counted :: Int ) # with freshCount`; inbox's two
   fields, one per line). A load action before the knot
-  emits its outcome as an event folded into the loop (`snackbar @"People
-  loaded" peopleLoadedLine # fold identity`, crud and order-form), so the
+  emits its outcome as an event folded into the loop (`blankStatus @"People
+  loaded" # fold identity`, crud and order-form), so the
   knot declares the model like any other. Every editor, selector, list and accessor is checked
   against it — so a stored field is read with a plain accessor
   (`listOf … _.messages`, `# provided @"confirming" _.deletion`). A
@@ -604,18 +604,17 @@ text is computed, a chrome line nothing.
   literal.
 - **A preset is a field update**, even one that reads nothing:
   `beginTiming { model: sw } = sw { phase = .timing {} }` (stopwatch),
-  `snackbar @"Reset" resetLine # fold restarted` (timer). A constant
-  replaces the model only as a whole, and in a fold: `snackbar @"New
-  game" newGameLine # fold (const openingPosition)` (tic-tac-toe).
+  `blankStatus @"Reset" # fold restarted` (timer). A constant
+  replaces the model only as a whole, and in a fold: `blankStatus @"New
+  game" # fold (const openingPosition)` (tic-tac-toe).
 - **One record per business function.** Records that travel together
   are one row; let field names carry the roles positional arguments
   lose. A fold handler is no exception: a joined event arrives as one
   record, the payload under `event` and the model under `model`:
 
   ```purescript
-  snackbar @"Todo toggled" todoToggledLine # fold toggleTodo
+  blankStatus @"Todo toggled" # fold toggleTodo
   toggleTodo :: { event :: Int, model :: { todos :: …, … } } -> { todos :: …, … }
-  todoToggledLine :: { event :: Int, model :: { todos :: …, … } } -> String
   toggleTodo { event: i, model: m@{ todos } } = m { todos = … }
   ```
 
@@ -628,9 +627,14 @@ text is computed, a chrome line nothing.
   (`createPerson :: model -> Aff [ "Person created" :: model, "Person not
   created" :: model ]`), so each outcome's fold is `snackbar @"Person
   created" personCreatedLine # fold identity`; a constant replacing the
-  model is `snackbar @"New game" newGameLine # fold (const
-  openingPosition)`. The status's copy function takes the handler's
+  model is `blankStatus @"New game" # fold (const
+  openingPosition)`. A status's copy function takes the handler's
   result, the model.
+- **A status only where a real app would tell.** A fold opens with a
+  visible status for a backend outcome, money moved or a destructive
+  action (crud's `snackbar @"Person created" personCreatedLine # fold
+  identity`, cashbox's refunds). Direct manipulation the screen already
+  shows folds silently: `blankStatus @"Todo toggled" # fold toggleTodo`.
 - **A handler carries no field it does not touch.** Group buttons into
   stages by the fields their handlers touch (circle-drawer keeps undo and
   redo apart from the canvas click). An identity handler means the

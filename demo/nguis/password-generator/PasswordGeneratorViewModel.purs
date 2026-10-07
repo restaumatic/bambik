@@ -1,6 +1,6 @@
-module PasswordGeneratorViewModel (passwordGeneratedLine, passwordText, samplePassword, strengthLine, strongMixRecipe) where
+module PasswordGeneratorViewModel (passwordText, samplePassword, strengthLine, strongMixRecipe) where
 
-import Prelude ((<>), (*), (-), (/), (<), bind, otherwise, pure, show)
+import Prelude (bind, otherwise, pure, (*), (-), (/), (<), (<>))
 
 import Data.Array (index, length, null, replicate)
 import Data.Int (round, toNumber)
@@ -133,18 +133,3 @@ digitCharacters = toCharArray "0123456789"
 
 symbolCharacters :: Array Char
 symbolCharacters = toCharArray "!@#$%^&*()-_=+[]{};:,.<>?/"
-
-passwordGeneratedLine
-  :: { "Digits" :: Boolean
-     , "Length" :: { current :: Number
-                   , max :: Number
-                   , min :: Number
-                   , step :: [ continuous :: {}, discrete :: Number ]
-                   }
-     , "Lowercase letters" :: Boolean
-     , "Symbols" :: Boolean
-     , "Uppercase letters" :: Boolean
-     , password :: String
-     }
-  -> String
-passwordGeneratedLine { password } = "Generated a " <> show (length (toCharArray password)) <> "-character password"

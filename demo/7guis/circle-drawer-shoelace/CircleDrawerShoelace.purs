@@ -2,15 +2,15 @@ module CircleDrawerShoelace (circleDrawerShoelace) where
 
 import Prelude ((#), ($), (>>>), Unit)
 
-import CircleDrawerViewModel (canvasCircles, canvasClickedLine, emptyCanvas, redo, redoneLine, resizeSelected, selectOrAddCircle, undo, undoneLine)
+import CircleDrawerViewModel (canvasCircles, emptyCanvas, redo, resizeSelected, selectOrAddCircle, undo)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blank, fold, foreach, joined, looped, settled, with)
+import PUI (blank, blankStatus, fold, foreach, joined, looped, settled, with)
 import PUI.Web (attrWith, inCase, onClickedXY, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.Shoelace (body, button, sliderLive, toast)
+import PUI.Web.Shoelace (body, button, sliderLive)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -34,9 +34,9 @@ circleDrawerShoelace =
           button @"Undo" {}
           button @"Redo" {} )
       VariantToRecord.do
-        toast @"Canvas clicked" canvasClickedLine # fold selectOrAddCircle
-        toast @"Undo" undoneLine # fold undo
-        toast @"Redo" redoneLine # fold redo
+        blankStatus @"Canvas clicked" # fold selectOrAddCircle
+        blankStatus @"Undo" # fold undo
+        blankStatus @"Redo" # fold redo
     # looped
       @( circles :: Array { x :: Number, y :: Number, r :: Number }
        , selected :: [ chosen :: { index :: Int }, none :: {} ]

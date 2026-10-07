@@ -99,7 +99,8 @@
         <li>A signature is the compiler's hint verbatim: the row the stage is fed, closed. <code>countLine :: { counted :: Int } -&gt; String</code>, never narrowed, never opened with a tail.</li>
         <li>A handler updates the row it is given: <code>increment m = m { counted = m.counted + 1 }</code>.</li>
         <li>A constant replaces the model only whole, in a fold: <code>fold (const openingPosition)</code>.</li>
-        <li>Each event case has its own fold, opened by its status: <code>snackbar @"Count" countedLine # fold increment</code>. A silent fold opens with <code>blankStatus</code>.</li>
+        <li>Each event case has its own fold, opened by its status: <code>snackbar @"Count" countedLine # fold increment</code>.</li>
+        <li>A fold shows a status only where a real app would notify: a backend outcome, money moved, a destructive action. Direct manipulation folds silently: <code>blankStatus @"Todo toggled" # fold toggleTodo</code>.</li>
         <li>An event with a payload of its own is <code># joined @l</code> and handled by one record: <code>toggleTodo :: { event :: Int, model :: … } -&gt; …</code>.</li>
         <li>An action returns the model under its outcome case, folded by <code>identity</code>.</li>
         <li>A business function takes one record; field names carry the roles: <code>returnBetween { out, back }</code>.</li>

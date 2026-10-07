@@ -1,9 +1,9 @@
-module TodoListViewModel (addTodo, clearCompleted, completedClearedLine, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, todoAddedLine, todoToggledLine, toggleTodo, visibleEntries) where
+module TodoListViewModel (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, toggleTodo, visibleEntries) where
 
 import Prelude ((<<<), (<>), (==), const, not, show)
 
-import Data.Array (filter, last, length, mapWithIndex, modifyAt, snoc)
-import Data.Maybe (fromMaybe, maybe)
+import Data.Array (filter, length, mapWithIndex, modifyAt, snoc)
+import Data.Maybe (fromMaybe)
 import Data.String (trim)
 import Data.Variant (match)
 
@@ -50,30 +50,6 @@ clearCompleted
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
 clearCompleted m@{ todos } = m { todos = filter (isActive <<< _.status) todos }
-
-todoAddedLine
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
-     , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
-     }
-  -> String
-todoAddedLine { todos } = maybe "No todos yet" (\t -> "Last added: " <> t.title) (last todos)
-
-todoToggledLine
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
-     , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
-     }
-  -> String
-todoToggledLine m = show (itemsLeft m) <> " left to do"
-
-completedClearedLine
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
-     , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
-     }
-  -> String
-completedClearedLine { todos } = show (length todos) <> " todos left, none completed"
 
 itemsLeft :: forall r1. { todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] } | r1 } -> Int
 itemsLeft { todos } = length (filter (isActive <<< _.status) todos)

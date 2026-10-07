@@ -7,8 +7,8 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
-import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
-import PUI (action, armed, atCase, bracketed, debounced, fold, looped, settled, updated)
+import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
+import PUI (action, armed, atCase, blankStatus, bracketed, debounced, fold, looped, settled, updated)
 import PUI.Web ((<+>), choice, inCase, shown, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,7 +17,7 @@ orderFormMDC2 :: Effect Unit
 orderFormMDC2 =
   body $ Semigroupoid.do
     indeterminateLinearProgress # action loadOrder
-    snackbar @"Order loaded" orderLoadedLine # fold identity
+    blankStatus @"Order loaded" # fold identity
     ( Semigroupoid.do
       ( headline6 $ text orderLine ) # shown
       group @"Identifier" $ Semigroupoid.do

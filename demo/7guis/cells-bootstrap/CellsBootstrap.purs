@@ -2,12 +2,12 @@ module CellsBootstrap (cellsBootstrap) where
 
 import Prelude (Unit, (#), ($), (<>), (>>>))
 
-import CellsViewModel (cellPickedLine, columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
+import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
-import PUI (fold, foreach, joined, looped, settled, with)
-import PUI.Web.Bootstrap (body, textField, toast)
+import PUI (blankStatus, fold, foreach, joined, looped, settled, with)
+import PUI.Web.Bootstrap (body, textField)
 import PUI.Web (attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div, p, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -27,7 +27,7 @@ cellsBootstrap =
               @( rowKey :: String
                , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
                ) sheetRows ) ) # joined @"Cell picked"
-      toast @"Cell picked" cellPickedLine # fold selectCell
+      blankStatus @"Cell picked" # fold selectCell
     # looped
       @( cells :: Object String
        , selected :: [ picked :: { name :: String }, none :: {} ]

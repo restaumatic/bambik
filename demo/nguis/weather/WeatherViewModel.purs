@@ -1,4 +1,4 @@
-module WeatherViewModel (aboutLine, conditionLine, fetchReport, forecastFetchedLine, forecastRequests, humidityWindLine, isCurrent, servedLine, temperatureLine, warsawBulletin) where
+module WeatherViewModel (aboutLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, servedLine, temperatureLine, warsawBulletin) where
 
 import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (<>), (==))
 
@@ -151,15 +151,3 @@ isCurrent
   :: { focus :: [ current :: {}, other :: {} ], request :: { city :: String, sample :: Int } }
   -> Boolean
 isCurrent { focus } = match { current: \_ -> true, other: \_ -> false } focus
-
-forecastFetchedLine
-  :: { report :: { city :: String
-                 , condition :: String
-                 , humidity :: Int
-                 , temperature :: Number
-                 , wind :: Number
-                 }
-     , servedReports :: Int
-     }
-  -> String
-forecastFetchedLine { report } = "Forecast for " <> report.city <> " served"

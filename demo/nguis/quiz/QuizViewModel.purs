@@ -1,4 +1,4 @@
-module QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questionAnsweredLine, questionLine, quizProgress, quizPhase, quizRestartedLine) where
+module QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
 
 import Prelude (show, (+), (/), (<>), (==), min)
 
@@ -45,9 +45,3 @@ askedPrompt { prompt } = prompt
 
 finalScoreLine :: { correct :: Int } -> String
 finalScoreLine { correct } = "Final score: " <> show correct <> " / " <> show (length questionCatalogue)
-
-questionAnsweredLine :: { correct :: Int, question :: Int } -> String
-questionAnsweredLine { question, correct } = "Score " <> show correct <> " after " <> show question <> " of " <> show (length questionCatalogue) <> " questions"
-
-quizRestartedLine :: { correct :: Int, question :: Int } -> String
-quizRestartedLine _ = "Quiz restarted"

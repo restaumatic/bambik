@@ -1,4 +1,4 @@
-module TimerViewModel (elapsedFraction, resetLine, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod) where
+module TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod) where
 
 import Prelude ((/), (+), (<), (<=), (<>), min, show)
 
@@ -72,14 +72,3 @@ progressLine
      }
   -> String
 progressLine { "Duration": duration, elapsed } = show elapsed <> "s / " <> show duration.current <> "s"
-
-resetLine
-  :: { "Duration" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , elapsed :: Number
-     }
-  -> String
-resetLine { elapsed } = "Reset to " <> show elapsed <> "s"

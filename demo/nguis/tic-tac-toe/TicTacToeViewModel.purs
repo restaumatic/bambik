@@ -1,4 +1,4 @@
-module TicTacToeViewModel (cellClaimedLine, cellMark, cells, claimCell, drawnLine, gameOutcome, newGameLine, openingPosition, toMoveLine, wonLine) where
+module TicTacToeViewModel (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine) where
 
 import Prelude ((&&), (/=), (<#>), (<>), (==), bind, mod, not, show)
 
@@ -44,12 +44,6 @@ claimCell { event: key, model: game@{ board } } = case fromString key of
   Just i | index board i == Just (.free {}) && isNothing (winningLine board) ->
     game { board = fromMaybe board (updateAt i (playerToMove board) board) }
   _ -> game
-
-cellClaimedLine :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> String
-cellClaimedLine game = match { won: wonLine, drawn: drawnLine, toMove: toMoveLine } (gameOutcome game)
-
-newGameLine :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> String
-newGameLine game = "New game, " <> toMoveLine { mark: playerToMove game.board }
 
 playerToMove :: Array [ x :: {}, o :: {}, free :: {} ] -> [ x :: {}, o :: {}, free :: {} ]
 playerToMove board = if length (filter (_ == .free {}) board) `mod` 2 == 1 then .x {} else .o {}

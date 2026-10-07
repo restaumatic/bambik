@@ -7,9 +7,9 @@ import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (blankStatus, fold, looped, ticks, with)
 import PUI.Web (shown, staticText, text)
-import PUI.Web.HTML (body, button, div, label, output, p, progress, rangeInput)
+import PUI.Web.HTML (body, button, div, label, p, progress, rangeInput)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TimerViewModel (elapsedFraction, resetLine, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
+import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerHTML :: Effect Unit
 timerHTML =
@@ -24,7 +24,7 @@ timerHTML =
       button @"Reset" {}
     VariantToRecord.do
       blankStatus @"Clock ticked" # fold tick
-      output @"Reset" resetLine # fold restarted
+      blankStatus @"Reset" # fold restarted
   # looped
     @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
      , elapsed :: Number
