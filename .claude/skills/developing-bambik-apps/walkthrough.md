@@ -32,12 +32,12 @@ flightBookerMDC2 =
     ( Semigroupoid.do
       select @"Flight type" {}
         (choice @"one-way" <+> choice @"return")
-      filledTextField @"Start date (DD.MM.YYYY)" {}
-      filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
+      filledTextField @"Start date" { hint: "DD.MM.YYYY" }
+      filledTextField @"Return date" { hint: "DD.MM.YYYY" } # inCase @"return" _."Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-       , "Start date (DD.MM.YYYY)" :: String
-       , "Return date (DD.MM.YYYY)" :: String
+       , "Start date" :: String
+       , "Return date" :: String
        ) # with plannedTrip
     ( Semigroupoid.do
       body1 (text problemLine) # shownWhen @"problem"
@@ -85,9 +85,11 @@ with `# looped @( … ) # with plannedTrip`, the model row declared there.
   the options in writing order while closing their row. A trip always
   has a type, so the plain `select` fits: the field holds the variant
   itself.
-- `filledTextField @"Start date (DD.MM.YYYY)" {}` — the label carries the
-  whole copy, format hint included; `{}` is empty presentation config.
-- `filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"`
+- `filledTextField @"Start date" { hint: "DD.MM.YYYY" }` — the label is
+  the field's name and the caption; how to fill it in is the `hint`,
+  presentation under the field, so no business function reads the
+  format.
+- `filledTextField @"Return date" { hint: "DD.MM.YYYY" } # inCase @"return" _."Flight type"`
   — the editor pane: this field exists only while the stored
   `"Flight type"` is at case `return`, and the model passes straight
   through otherwise. The pane reads the field with a plain accessor; the
@@ -152,10 +154,10 @@ import Effect.Aff (Aff)
 
 plannedTrip
   :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date (DD.MM.YYYY)" :: String
-     , "Start date (DD.MM.YYYY)" :: String
+     , "Return date" :: String
+     , "Start date" :: String
      }
-plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.2026", "Return date (DD.MM.YYYY)": "27.03.2026" }
+plannedTrip = { "Flight type": ."one-way" {}, "Start date": "27.03.2026", "Return date": "27.03.2026" }
 
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
@@ -177,8 +179,8 @@ returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
-parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
-parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } = case parseDate startInput of
+parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date" :: String, "Return date" :: String | r1 } -> Either String [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } = case parseDate startInput of
   Nothing -> Left ("start date " <> show startInput <> " is not a valid DD.MM.YYYY date")
   Just start ->
     if flightType /= ."return" {} then Right (.oneWayOn start)
@@ -190,8 +192,8 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
 
 bookingState
   :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date (DD.MM.YYYY)" :: String
-     , "Start date (DD.MM.YYYY)" :: String
+     , "Return date" :: String
+     , "Start date" :: String
      }
   -> [ "one-way" :: { out :: { d :: Int, m :: Int, y :: Int } }
      , problem :: { problem :: String }
@@ -224,8 +226,8 @@ summary = match
 
 submit
   :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date (DD.MM.YYYY)" :: String
-     , "Start date (DD.MM.YYYY)" :: String
+     , "Return date" :: String
+     , "Start date" :: String
      }
   -> Aff [ "Booking rejected" :: String
          , "Flight booked" :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }
@@ -270,7 +272,7 @@ module*).
 **The exports, in the order the view uses them.**
 
 - `plannedTrip` — the starting record `with` feeds the loop. Its keys are the leaves'
-  labels, quoted because they are copy (`"Start date (DD.MM.YYYY)"`), and
+  labels, quoted because they are copy (`"Start date"`), and
   its variant field is written with the constructor sugar `."one-way" {}`
   (the type `[ … ]` is the matching type sugar).
 - `itinerarySettleTime` — a duration, `{ ms :: Number }`.

@@ -396,19 +396,26 @@ menuItem provided = eventLeaf @l $
 -- | Shows the string it is given and reports each edit; typing is never
 -- | interrupted by values arriving from elsewhere. A whole-row citizen:
 -- | fed the wide row, it edits field `l` and carries the rest.
-filledTextField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
-filledTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
+-- |
+-- | `hint:` is a line of guidance under the field — the format a value
+-- | takes (`{ hint: "DD.MM.YYYY" }`), an example, a question to answer —
+-- | for copy that tells the user how to fill the field in rather than
+-- | naming it, so the label stays the name of the datum. MD3's supporting
+-- | text; no hint, none shown. The same option on every text field of
+-- | every vocabulary.
+filledTextField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String, hint :: String } { | provided } { floatingLabel :: String, hint :: String } => { | provided } -> PUI Web { | r } { | r }
+filledTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), hint: "" } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel config.hint)
 
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.
-outlinedTextField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> PUI Web { | r } { | r }
-outlinedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
+outlinedTextField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String, hint :: String } { | provided } { floatingLabel :: String, hint :: String } => { | provided } -> PUI Web { | r } { | r }
+outlinedTextField provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), hint: "" } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel config.hint)
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
-debouncedTextField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String } => { | provided } -> { ms :: Number } -> PUI Web { | r } { | r }
-debouncedTextField provided settleTime = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel)
+debouncedTextField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String, hint :: String } { | provided } { floatingLabel :: String, hint :: String } => { | provided } -> { ms :: Number } -> PUI Web { | r } { | r }
+debouncedTextField provided settleTime = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), hint: "" } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel config.hint)
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
@@ -417,10 +424,11 @@ debouncedTextField provided settleTime = let config = convertOptionsWithDefaults
 -- activeElement), but still echo so the channel stays live. Debouncing
 -- sits at the DOM boundary (`Web.onInputDebounced`), in front of the wire
 -- rather than on it, so the field stays loop-safe.
-textFieldLeaf :: String -> Maybe Number -> String -> PUI Web String String
-textFieldLeaf tag mDebounce floatingLabel = wrap do
+textFieldLeaf :: String -> Maybe Number -> String -> String -> PUI Web String String
+textFieldLeaf tag mDebounce floatingLabel hint = wrap do
   element tag (pure unit)
   attribute "label" floatingLabel
+  when (hint /= "") $ attribute "supporting-text" hint
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure

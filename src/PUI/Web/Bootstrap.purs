@@ -126,8 +126,15 @@ eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
 -- | string it is given and reports each edit; typing is never interrupted
 -- | by values arriving from elsewhere. Attach it to a field of the model
 -- | with `# asField @l`.
-textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
+-- |
+-- | `hint:` is a line of guidance under the field — the format a value
+-- | takes (`{ hint: "DD.MM.YYYY" }`), an example, a question to answer —
+-- | for copy that tells the user how to fill the field in rather than
+-- | naming it, so the label stays the name of the datum. Bootstrap's form text, described to the input by `aria-describedby`; no
+-- | hint, none shown. The same option on every text field of every
+-- | vocabulary.
+textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String, hint :: String } { | provided } { label :: String, hint :: String } => { | provided } -> PUI Web { | r } { | r }
+textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l), hint: "" } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in, but still echo so the channel stays live
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
@@ -135,6 +142,10 @@ textField provided = let config = convertOptionsWithDefaults OptCaption { label:
   attribute "type" "text"
   attribute "class" "form-control"
   node <- gets _.sibling
+  when (config.hint /= "") do
+    hintId <- liftEffect uniqueId
+    liftEffect $ setAttribute node "aria-describedby" hintId
+    void $ unwrap (div >>> cl "form-text" >>> "id" := hintId $ staticText config.hint)
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \newa -> do

@@ -124,13 +124,21 @@ eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
 -- | is given and reports each edit; typing is never interrupted by values
 -- | arriving from elsewhere. Attach it to a field of the model with
 -- | `# asField @l`.
-textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+-- |
+-- | `hint:` is a line of guidance under the field — the format a value
+-- | takes (`{ hint: "DD.MM.YYYY" }`), an example, a question to answer —
+-- | for copy that tells the user how to fill the field in rather than
+-- | naming it, so the label stays the name of the datum. Shoelace's help text; no
+-- | hint, none shown. The same option on every text field of every
+-- | vocabulary.
+textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String, hint :: String } { | provided } { label :: String, hint :: String } => { | provided } -> PUI Web { | r } { | r }
+textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l), hint: "" } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (the shadow input keeps the host as `activeElement`),
   -- but still echo so the channel stays live
   element "sl-input" (pure unit)
   attribute "label" config.label
+  when (config.hint /= "") $ attribute "help-text" config.hint
   node <- gets _.sibling
   mPropRef <- liftEffect $ Ref.new Nothing
   pure

@@ -100,9 +100,12 @@ createPerson { "Name": name, "Surname": surname, people } = …
 
 Field access (`r."Name"`), accessor sections (`_."Name"`) and update
 syntax (`r { "Name" = … }`) work as usual. Put punctuation and units on
-the label (`filledTextField @"Start date (DD.MM.YYYY)" {}`,
-`sliderLive @"Amount (€)" {}`); where a symbol is the conventional
-caption, write the symbol (`@celsius`). A caption config (`floatingLabel:`,
+the label (`sliderLive @"Amount (€)" {}`); where a symbol is the
+conventional caption, write the symbol (`@celsius`). Copy that tells the
+user how to fill a field in rather than naming it — a format, an
+example, a question — is the text field's `hint:`
+(`filledTextField @"Start date" { hint: "DD.MM.YYYY" }`, flight-booker),
+so the label stays the name the business functions read. A caption config (`floatingLabel:`,
 `label:`) is only for copy the label cannot be — localized wording,
 passed from the app's copy table — and, on a button, hiding the caption
 of a glyph-only face (see the component's header).

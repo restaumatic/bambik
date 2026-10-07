@@ -59,7 +59,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
-import PUI.Web.HTML (div)
+import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
 import Type.Proxy (Proxy(..))
@@ -138,14 +138,22 @@ fieldWith position lbl editor = el "fluent-field" >>> "label-position" := positi
 -- | is given and reports each edit; typing is never interrupted by values
 -- | arriving from elsewhere. Attach it to a field of the model with
 -- | `# asField @l`.
-textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
-textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
+-- |
+-- | `hint:` is a line of guidance under the field — the format a value
+-- | takes (`{ hint: "DD.MM.YYYY" }`), an example, a question to answer —
+-- | for copy that tells the user how to fill the field in rather than
+-- | naming it, so the label stays the name of the datum. Fluent's field message; no
+-- | hint, none shown. The same option on every text field of every
+-- | vocabulary.
+textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String, hint :: String } { | provided } { label :: String, hint :: String } => { | provided } -> PUI Web { | r } { | r }
+textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l), hint: "" } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   -- focus-guarded like `Web.input`: model updates never clobber the field
   -- being typed in (Fluent keeps the real `<input>` in the light DOM, so
   -- the guard checks containment), but still echo so the channel stays live
   element "fluent-text-input" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
+  when (config.hint /= "") $ void $ unwrap (span >>> "slot" := "message" $ staticText config.hint)
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \newa -> do

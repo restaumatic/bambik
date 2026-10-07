@@ -16,12 +16,12 @@ flightBookerFluent =
     ( Semigroupoid.do
       dropdown @"Flight type" {}
         (choice @"one-way" <+> choice @"return")
-      textField @"Start date (DD.MM.YYYY)" {}
-      textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
+      textField @"Start date" { hint: "DD.MM.YYYY" }
+      textField @"Return date" { hint: "DD.MM.YYYY" } # inCase @"return" _."Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-       , "Start date (DD.MM.YYYY)" :: String
-       , "Return date (DD.MM.YYYY)" :: String
+       , "Start date" :: String
+       , "Return date" :: String
        ) # with plannedTrip
     ( Semigroupoid.do
       body1 (text problemLine) # shownWhen @"problem"

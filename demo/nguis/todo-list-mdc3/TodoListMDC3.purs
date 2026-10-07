@@ -16,7 +16,7 @@ todoListMDC3 :: Effect Unit
 todoListMDC3 =
   body $
     Semigroupoid.do
-      filledTextField @"What needs to be done?" {}
+      filledTextField @"New todo" { hint: "What needs to be done?" }
       segmentedButton @"Visibility"
         (choice @"All" <+> choice @"Active" <+> choice @"Completed")
       bodySmall (text soleLine) # shownWhen @"sole" @( sole :: { count :: Int }, several :: { count :: Int } ) remainingItems
@@ -34,7 +34,7 @@ todoListMDC3 =
         snackbar @"Todo toggled" todoToggledLine # fold toggleTodo
         snackbar @"Clear completed" completedClearedLine # fold clearCompleted
     # looped
-      @( "What needs to be done?" :: String
+      @( "New todo" :: String
        , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }
        , "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ]
        ) # with emptyTodoList

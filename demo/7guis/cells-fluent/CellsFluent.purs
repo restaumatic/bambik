@@ -17,7 +17,7 @@ cellsFluent =
   body $
     Semigroupoid.do
       body1 (text selectedLine) # shown
-      textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
+      textField @"Formula" { hint: "e.g. =SUM(A0:A5)*2" } # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
         ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
           ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
@@ -31,7 +31,7 @@ cellsFluent =
     # looped
       @( cells :: Object String
        , selected :: [ picked :: { name :: String }, none :: {} ]
-       , "Formula (e.g. =SUM(A0:A5)*2)" :: String
+       , "Formula" :: String
        ) # with orderSheet
 
 headerFace :: String

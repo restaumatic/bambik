@@ -8,68 +8,68 @@ import Data.String (trim)
 import Data.Variant (match)
 
 emptyTodoList
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  :: { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
-emptyTodoList = { "What needs to be done?": "", todos: [], "Visibility": ."All" {} }
+emptyTodoList = { "New todo": "", todos: [], "Visibility": ."All" {} }
 
 addTodo
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  :: { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
-  -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  -> { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
-addTodo m@{ "What needs to be done?": entry, todos } =
+addTodo m@{ "New todo": entry, todos } =
   if trim entry == "" then m
-  else m { todos = snoc todos { title: trim entry, status: .active {} }, "What needs to be done?" = "" }
+  else m { todos = snoc todos { title: trim entry, status: .active {} }, "New todo" = "" }
 
 toggleTodo
   :: { event :: Int
-     , model :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-                , "What needs to be done?" :: String
+     , model :: { "New todo" :: String
+                , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
                 , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
                 }
      }
-  -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  -> { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
 toggleTodo { event: i, model: m@{ todos } } = m { todos = fromMaybe todos (modifyAt i (\t -> t { status = flipped t.status }) todos) }
 
 clearCompleted
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  :: { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
-  -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  -> { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
 clearCompleted m@{ todos } = m { todos = filter (isActive <<< _.status) todos }
 
 todoAddedLine
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  :: { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> String
 todoAddedLine { todos } = maybe "No todos yet" (\t -> "Last added: " <> t.title) (last todos)
 
 todoToggledLine
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  :: { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> String
 todoToggledLine m = show (itemsLeft m) <> " left to do"
 
 completedClearedLine
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  :: { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> String
@@ -79,8 +79,8 @@ itemsLeft :: forall r1. { todos :: Array { title :: String, status :: [ active :
 itemsLeft { todos } = length (filter (isActive <<< _.status) todos)
 
 remainingItems
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  :: { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> [ several :: { count :: Int }, sole :: { count :: Int } ]
@@ -95,8 +95,8 @@ severalLine :: { count :: Int } -> String
 severalLine { count } = show count <> " items left"
 
 visibleEntries
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+  :: { "New todo" :: String
+     , "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> Array { key :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
