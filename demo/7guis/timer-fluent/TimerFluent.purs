@@ -1,6 +1,6 @@
 module TimerFluent (timerFluent) where
 
-import Prelude ((#), ($), Unit, identity)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)

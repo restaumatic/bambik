@@ -1,6 +1,6 @@
 module DeparturesMDC3 (departuresMDC3) where
 
-import Prelude ((#), ($), Unit, identity)
+import Prelude ((#), ($), Unit)
 
 import DeparturesViewModel (arrival, boardOpening, flightLine, tick, tickPeriod, updateLine)
 import Effect (Effect)

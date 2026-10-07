@@ -59,7 +59,7 @@ and emitters of a catalogue — are in the design-system module header
 | a list, displayed | `ul $ ( li $ text lapLine ) # shownEach @"number" lapRows` | stopwatch | writing.md *Collections* |
 | a card that edits nothing | `card $ body1 (text summaryLine) # shown` | order-form, product-review | writing.md *Components* |
 | a readout that settles before it redraws | `# debounced summarySettleTime` | order-form, flight-booker | `PUI` |
-| a hint on hover | `# tooltip @"You must accept the terms of service to sign up"`; `# tooltipWith loyaltyNote` | signup-form; espresso-bar | the design-system module |
+| a hint on hover | `# tooltip "You must accept the terms of service to sign up"`; `# tooltipWith loyaltyNote` | signup-form; espresso-bar | the design-system module |
 | a value-computed attribute | `attrWith "style" keyFace` | calculator, cells, circle-drawer | `PUI.Web` |
 | a fixed attribute or class | `"style" := "…"`; `cl "dish"` | cells; restaurant-menu | `PUI.Web` |
 | a class that depends on the value | `# clWhen isCompleted "todo-done"` | todo-list | `PUI.Web` |
@@ -101,7 +101,7 @@ and emitters of a catalogue — are in the design-system module header
 | some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
 | an event carrying something of its own | `listOf @"toggled" … # joined @"toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, stopwatch | writing.md *Stages* |
 | a button group fed the record it replays | `( RecordToVariant.do … ) # armed` | order-form, espresso-bar, signup-form | writing.md *Stages* |
-| a menu of presets | `menu @"Presets" ( RecordToVariant.do menuItem @"The usual" {} … )` | espresso-bar, inbox | the design-system module |
+| a menu of presets | `menu "Presets" ( RecordToVariant.do menuItem @"The usual" {} … )` | espresso-bar, inbox | the design-system module |
 
 ## Effects, time, statuses
 
@@ -114,9 +114,9 @@ and emitters of a catalogue — are in the design-system module header
 | a periodic occurrence | `blankStatus @"Clock ticked" # ticks tickPeriod` and `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
 | narrate an event while passing it on | `snackbar @"Charge card" chargingLine # observed` | payment, inbox | `PUI` |
-| confirm before the flow continues | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox | writing.md *Modals* |
-| a dialog of choices | `dialog @"Delete the last message?" $ RecordToVariant.do …` | inbox | writing.md *Modals* |
-| an informational dialog | `simpleDialog @"Got it" @"About this dashboard" (…)` | weather | writing.md *Modals* |
+| confirm before the flow continues | `confirmed "Refund" "Refund the customer?" $ …` | cashbox | writing.md *Modals* |
+| a dialog of choices | `dialog "Delete the last message?" $ RecordToVariant.do …` | inbox | writing.md *Modals* |
+| an informational dialog | `simpleDialog "Got it" "About this dashboard" (…)` | weather | writing.md *Modals* |
 | discard an assembly's output deliberately | `# muted` | scoreboard, order-dashboard | writing.md *Stages* |
 
 ## Collections

@@ -1,6 +1,6 @@
 module ScoreboardMDC3 (scoreboardMDC3) where
 
-import Prelude ((#), ($), Unit, identity)
+import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import PUI (accumulated, blankStatus, fold, foreach, looped, muted, ticks, with)

@@ -152,8 +152,14 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   argument (`@l` on an editor, selector, emitter, pane or status), a
   **named read function** as a display's positional argument (L17), or
   **nothing** (chrome — statics and oculars write nothing and so name
-  nothing; a static's type argument, `staticText "Hours"`, is its own
-  text, known before runtime like every label, not an anchor). A
+  nothing). **A visible symbol argument `@"…"` names a row label — a
+  model field or a business case — and nothing else** (2026-10-07): the
+  copy a line carries that is no label — a static's text, a bar's title,
+  a dialog's caption and question, a column heading, a tip — is a String
+  value (`staticText "Hours"`, `topAppBar "Espresso Bar"`, `confirmed
+  "Refund" "Refund the customer?"`, `columnHeader "Qty"`), and a
+  quantity display takes only its read function (`linearProgress
+  elapsedFraction`). A
   **declared row** is not an anchor either: a visible row type argument
   by which a line states a shape the compiler could not otherwise know —
   the model row where the model first appears (`looped @( … )`, or `with @{ … }` for a flow with no loop,
@@ -177,8 +183,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   take a label (no model interface, nothing to anchor) nor copy that has a
   place in its content (a card's heading is typography in its content) —
   copy with no content position, a tooltip's text or a dialog's title, is
-  a type argument when it is static (`tooltip @"…"`, `dialog @"…"`,
-  `topAppBar @"…"` — the static's own text, not an anchor) and a copy
+  a type argument when it is static (`tooltip "…"`, `dialog "…"`,
+  `topAppBar "…"` — the static's own text, not an anchor) and a copy
   function when it is formatted or read from data (`tooltipWith f`); a display MUST NOT carry a label except as
   an accessible name (L17); and no mechanism may leave a line's meaning in
   an anonymous position. The stronger rule — *every line a field*, oculars

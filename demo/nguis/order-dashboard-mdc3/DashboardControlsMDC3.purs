@@ -17,7 +17,7 @@ import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons)
 import PUI (Ocular, PUI, blank, foreach, muted)
-import PUI.Web (OptCaption(..), Web, attrWith, shown, staticText, staticText, text, (:=))
+import PUI.Web (OptCaption(..), Web, attrWith, shown, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG

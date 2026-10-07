@@ -4,7 +4,7 @@ import Prelude hiding (div)
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, clicked, dynamic, each, inCase, onClickedXY, provided, shown, shownEach, shownWhen, staticText, staticText, text)
+import PUI.Web ((<+>), choice, clicked, dynamic, each, inCase, onClickedXY, provided, shown, shownEach, shownWhen, staticText, text)
 import PUI.Web.HTML (body, button, div, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit

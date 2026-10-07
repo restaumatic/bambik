@@ -1,6 +1,6 @@
 module OrderDashboardMDC3 (orderDashboardMDC3) where
 
-import Prelude ((#), ($), Unit, identity)
+import Prelude ((#), ($), Unit)
 
 import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Effect (Effect)
@@ -13,7 +13,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderDashboardMDC3 :: Effect Unit
 orderDashboardMDC3 =
   body $
-    topAppBar @"Order Dashboard" $ ( Semigroupoid.do
+    topAppBar "Order Dashboard" $ ( Semigroupoid.do
       rangePicker @"Showing" {}
         (choice @"Last minute" <+> choice @"Last 15 min" <+> choice @"Since open")
       board $ Semigroupoid.do

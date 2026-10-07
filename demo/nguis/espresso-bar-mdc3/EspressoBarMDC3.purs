@@ -16,7 +16,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 espressoBarMDC3 :: Effect Unit
 espressoBarMDC3 =
   body $
-    topAppBar @"Espresso Bar" $ Semigroupoid.do
+    topAppBar "Espresso Bar" $ Semigroupoid.do
         tabBar @"Drink"
           (choice @"Espresso" <+> choice @"Cappuccino" <+> choice @"Latte")
         filledTextField @"Your name" {}
@@ -39,7 +39,7 @@ espressoBarMDC3 =
           labelMedium $ staticText "Caffeine"
           linearProgress caffeineFraction ) # shown
         RecordToVariant.do
-          menu @"Presets" ( RecordToVariant.do
+          menu "Presets" ( RecordToVariant.do
             menuItem @"The usual" {}
             menuItem @"Espresso, no frills" {} )
           button @"Place order" { icon: "local_cafe" }

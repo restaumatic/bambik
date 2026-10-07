@@ -19,11 +19,11 @@ shoppingCartMDC2 =
       body1 (text totalLine) # shown
       RecordToVariant.do
         listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) {} productCatalogue (text catalogueLine) # joined @"Unit added"
-        dataTable @"Cart"
+        dataTable "Cart"
           ( RecordToRecord.do
-            columnHeader @"Product"
-            columnHeader @"Qty"
-            columnHeader @"Total" )
+            columnHeader "Product"
+            columnHeader "Qty"
+            columnHeader "Total" )
           ( ( clicked @"Unit removed" _.product $ dataRow RecordToRecord.do
             dataCell (text productLine)
             dataCell (text quantityLine)

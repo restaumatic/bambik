@@ -19,7 +19,7 @@ weatherMDC2 =
       caption (text servedLine) # shown
       ( Semigroupoid.do
         iconButton @"About this dashboard" {} "info"
-        simpleDialog @"Got it" @"About this dashboard"
+        simpleDialog "Got it" "About this dashboard"
           ( body1 (text aboutLine) ) # atCase @"About this dashboard" ) # shown
       listOf @"Forecast requested" @"request" @( request :: { city :: String, sample :: Int }, focus :: [ current :: {}, other :: {} ] ) { selected: isCurrent } forecastRequests (text _.request.city) # joined @"Forecast requested"
       indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"

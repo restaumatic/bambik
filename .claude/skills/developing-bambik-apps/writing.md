@@ -169,7 +169,7 @@ a trailing word that says what it is for:
 | an editor that exists in one case | `filledTextField @"Table" {} # inCase @"Dine in" selection` | order-form |
 | a button that exists in one case | `button @"Start" {…} # provided @"halted" _.phase` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # shownEach @"number" lapRows` | stopwatch |
-| content that waits for the user to confirm | `confirmed @"Refund" @"Refund the customer?" $ …` | cashbox |
+| content that waits for the user to confirm | `confirmed "Refund" "Refund the customer?" $ …` | cashbox |
 | an event folded into the model | `snackbar @"Add" todoAddedLine # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
 | a periodic occurrence | `blankStatus @"Clock ticked" # ticks tickPeriod` | stopwatch, timer |
@@ -303,7 +303,7 @@ in `# bracketed @"Mode" …` (order-form).
 
 A dialog opens when it is fed and closes when one of its buttons emits.
 Feed it only in the state that asks for it and put the deciding buttons
-inside: inbox's `dialog @"Delete the last message?" $ RecordToVariant.do
+inside: inbox's `dialog "Delete the last message?" $ RecordToVariant.do
 …` under `# provided @"confirming" _.deletion`. For a confirmation step
 inside a flow, `confirmed` (cashbox).
 
@@ -408,7 +408,7 @@ the anchor's own position, and the anchor says what the line is:
 - a **copy function or accessor** — the positional argument of a
   display (`text balanceLine`, `text _.title`, `imagePane developedShot`);
 - **nothing** — chrome (`card`, `h1 >>> cl "restaurant-name" $ staticText
-  @"Osteria Yoneda"`, `topAppBar @"Espresso Bar"`). A static's type argument is its own
+  @"Osteria Yoneda"`, `topAppBar "Espresso Bar"`). A static's type argument is its own
   text, not an anchor: it needs no data to be seen.
 
 A **declared row** is not an anchor either. It is a visible type
@@ -429,7 +429,7 @@ button    @"Sign up" { icon: "person_add" }  -- the record: optional presentatio
 **A record never holds an anchor or a required value.** A record stays
 only for optional presentation (`{ icon }`, `{ floatingLabel }`) or for
 two same-typed values a positional pair could swap
-(`drawer @( title :: "Darkroom", subtitle :: "photos drawn on the spot" )`).
+(`drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }`).
 If you must open a record to learn what the line is about, the line
 breaks the invariant. Two value types from the library appear in
 application rows like `Number` does: the bounded quantity
