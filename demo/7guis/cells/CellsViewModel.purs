@@ -14,7 +14,11 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 
-orderSheet :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
+orderSheet
+  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     , cells :: Object String
+     , selected :: [ none :: {}, picked :: { name :: String } ]
+     }
 orderSheet =
   { cells: fromHomogeneous
     { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
@@ -26,7 +30,12 @@ orderSheet =
   , "Formula (e.g. =SUM(A0:A5)*2)": ""
   }
 
-selectedLine :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> String
+selectedLine
+  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     , cells :: Object String
+     , selected :: [ none :: {}, picked :: { name :: String } ]
+     }
+  -> String
 selectedLine { selected } = "Cell " <> match { picked: _.name, none: \_ -> "—" } selected
 
 cols :: Int
@@ -41,10 +50,25 @@ colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
 refKey :: forall r1. { c :: Int, r :: Int | r1 } -> String
 refKey { c, r } = colName c <> show r
 
-columnHeaders :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> Array { key :: String, text :: String }
+columnHeaders
+  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     , cells :: Object String
+     , selected :: [ none :: {}, picked :: { name :: String } ]
+     }
+  -> Array { key :: String, text :: String }
 columnHeaders _ = [ { key: "corner", text: "" } ] <> (range 0 (cols - 1) <#> \c -> { key: colName c, text: colName c })
 
-sheetRows :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> Array { cells :: Array { key :: String, status :: [ selected :: {}, unselected :: {} ], text :: String }, rowKey :: String }
+sheetRows
+  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     , cells :: Object String
+     , selected :: [ none :: {}, picked :: { name :: String } ]
+     }
+  -> Array { cells :: Array { key :: String
+                            , status :: [ selected :: {}, unselected :: {} ]
+                            , text :: String
+                            }
+           , rowKey :: String
+           }
 sheetRows m =
   let
     values = evalSheet m.cells
@@ -53,16 +77,46 @@ sheetRows m =
   in
     range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r }
 
-rowLabel :: { cells :: Array { key :: String, status :: [ selected :: {}, unselected :: {} ], text :: String }, rowKey :: String } -> String
+rowLabel
+  :: { cells :: Array { key :: String
+                      , status :: [ selected :: {}, unselected :: {} ]
+                      , text :: String
+                      }
+     , rowKey :: String
+     }
+  -> String
 rowLabel { rowKey } = rowKey
 
-selectCell :: { event :: String, model :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } } -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
+selectCell
+  :: { event :: String
+     , model :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+                , cells :: Object String
+                , selected :: [ none :: {}, picked :: { name :: String } ]
+                }
+     }
+  -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     , cells :: Object String
+     , selected :: [ none :: {}, picked :: { name :: String } ]
+     }
 selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
 
-cellPickedLine :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> String
+cellPickedLine
+  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     , cells :: Object String
+     , selected :: [ none :: {}, picked :: { name :: String } ]
+     }
+  -> String
 cellPickedLine { selected } = match { picked: \p -> "Picked cell " <> p.name, none: \_ -> "No cell picked" } selected
 
-commit :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] } -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String, cells :: Object String, selected :: [ none :: {}, picked :: { name :: String } ] }
+commit
+  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     , cells :: Object String
+     , selected :: [ none :: {}, picked :: { name :: String } ]
+     }
+  -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     , cells :: Object String
+     , selected :: [ none :: {}, picked :: { name :: String } ]
+     }
 commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = match
   { picked: \p ->
     if lookup p.name m.cells /= Just formula then m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells } else m

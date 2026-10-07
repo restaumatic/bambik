@@ -30,7 +30,7 @@ for (const file of walk("demo")) {
     // Maybe below the UI is what the rule permits
     if (/^[A-Za-z_][A-Za-z0-9_']* ::/.test(line)) return;
     for (const m of line.matchAll(fieldRe)) {
-      if (!allow.has(m[1])) hits.push(`${file}:${i + 1}: ${m[1]}`);
+      if (!allow.has(m[1].replace(/\\'/g, "'"))) hits.push(`${file}:${i + 1}: ${m[1]}`);
     }
   });
 }

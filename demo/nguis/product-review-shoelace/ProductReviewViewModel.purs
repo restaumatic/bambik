@@ -7,7 +7,17 @@ import Data.Monoid (power)
 import Data.String (trim)
 import Data.Variant.Case (caseText)
 
-freshImpression :: { "Headline" :: String, "How long have you owned it?" :: [ "1–12 months" :: {}, "less than a month" :: {}, "more than a year" :: {} ], "I\'d recommend it to a friend" :: Boolean, "Nickname" :: String, "Overall rating" :: { current :: Number, max :: Int }, "Your review" :: String }
+freshImpression
+  :: { "Headline" :: String
+     , "How long have you owned it?" :: [ "1–12 months" :: {}
+                                        , "less than a month" :: {}
+                                        , "more than a year" :: {}
+                                        ]
+     , "I\'d recommend it to a friend" :: Boolean
+     , "Nickname" :: String
+     , "Overall rating" :: { current :: Number, max :: Int }
+     , "Your review" :: String
+     }
 freshImpression =
   { "Overall rating": { current: 0.0, max: maxStars }
   , "Headline": ""
@@ -17,11 +27,33 @@ freshImpression =
   , "Nickname": ""
   }
 
-previewLine :: { "Headline" :: String, "How long have you owned it?" :: [ "1–12 months" :: {}, "less than a month" :: {}, "more than a year" :: {} ], "I\'d recommend it to a friend" :: Boolean, "Nickname" :: String, "Overall rating" :: { current :: Number, max :: Int }, "Your review" :: String } -> String
+previewLine
+  :: { "Headline" :: String
+     , "How long have you owned it?" :: [ "1–12 months" :: {}
+                                        , "less than a month" :: {}
+                                        , "more than a year" :: {}
+                                        ]
+     , "I\'d recommend it to a friend" :: Boolean
+     , "Nickname" :: String
+     , "Overall rating" :: { current :: Number, max :: Int }
+     , "Your review" :: String
+     }
+  -> String
 previewLine r =
   "Preview: " <> starGlyphs r."Overall rating" <> headlineQuote r."Headline" <> " · owned " <> caseText r."How long have you owned it?" <> recommendNote r."I'd recommend it to a friend"
 
-submittedLine :: { "Headline" :: String, "How long have you owned it?" :: [ "1–12 months" :: {}, "less than a month" :: {}, "more than a year" :: {} ], "I\'d recommend it to a friend" :: Boolean, "Nickname" :: String, "Overall rating" :: { current :: Number, max :: Int }, "Your review" :: String } -> String
+submittedLine
+  :: { "Headline" :: String
+     , "How long have you owned it?" :: [ "1–12 months" :: {}
+                                        , "less than a month" :: {}
+                                        , "more than a year" :: {}
+                                        ]
+     , "I\'d recommend it to a friend" :: Boolean
+     , "Nickname" :: String
+     , "Overall rating" :: { current :: Number, max :: Int }
+     , "Your review" :: String
+     }
+  -> String
 submittedLine r =
   "Thanks" <> forReviewer { "Nickname": r."Nickname" } <> "! Your " <> starGlyphs r."Overall rating" <> " review is in."
 

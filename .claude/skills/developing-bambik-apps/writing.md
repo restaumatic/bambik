@@ -472,6 +472,11 @@ text is computed, a chrome line nothing.
   `#` binds tighter than `$`: where a chain must apply to a whole
   wrapped element (a `foreach` multiplying a card), open the paren
   before the wrapper.
+- **A long signature breaks.** A view model signature that does not fit
+  100 columns puts the name on a line of its own, `::` and each `->`
+  leading a line beneath it, and a record or variant too long for its
+  line one field per line under its opening bracket (crud). Only the
+  whitespace differs from the hint.
 - **Two-space indentation.** A block's lines sit two columns deeper
   than its opener, `( Semigroupoid.do` included; a closer returns to its
   opener's column. No four-space steps, no alignment to a token

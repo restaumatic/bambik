@@ -2,19 +2,47 @@ module RestaurantMenuViewModel (courseDishes, courseName, dishDescription, dishN
 
 import Prelude ((<>), map)
 
-courseName :: { dishes :: Array { description :: String, name :: String, price :: String, tags :: Array String }, name :: String } -> String
+courseName
+  :: { dishes :: Array { description :: String
+                       , name :: String
+                       , price :: String
+                       , tags :: Array String
+                       }
+     , name :: String
+     }
+  -> String
 courseName = _.name
 
-courseDishes :: { dishes :: Array { description :: String, name :: String, price :: String, tags :: Array String }, name :: String } -> Array { description :: String, name :: String, price :: String, tags :: Array String }
+courseDishes
+  :: { dishes :: Array { description :: String
+                       , name :: String
+                       , price :: String
+                       , tags :: Array String
+                       }
+     , name :: String
+     }
+  -> Array { description :: String, name :: String, price :: String, tags :: Array String }
 courseDishes = _.dishes
 
-dishName :: { description :: String, name :: String, price :: String, tags :: Array String } -> String
+dishName
+  :: { description :: String, name :: String, price :: String, tags :: Array String }
+  -> String
 dishName = _.name
 
-dishDescription :: { description :: String, name :: String, price :: String, tags :: Array String } -> String
+dishDescription
+  :: { description :: String, name :: String, price :: String, tags :: Array String }
+  -> String
 dishDescription = _.description
 
-menuCourses :: {} -> Array { dishes :: Array { description :: String, name :: String, price :: String, tags :: Array String }, name :: String }
+menuCourses
+  :: {}
+  -> Array { dishes :: Array { description :: String
+                             , name :: String
+                             , price :: String
+                             , tags :: Array String
+                             }
+           , name :: String
+           }
 menuCourses _ =
   [ { name: "Antipasti"
     , dishes:
@@ -39,8 +67,12 @@ menuCourses _ =
     }
   ]
 
-priceLine :: { description :: String, name :: String, price :: String, tags :: Array String } -> String
+priceLine
+  :: { description :: String, name :: String, price :: String, tags :: Array String }
+  -> String
 priceLine { price } = "€" <> price
 
-dishTags :: { description :: String, name :: String, price :: String, tags :: Array String } -> Array { tag :: String }
+dishTags
+  :: { description :: String, name :: String, price :: String, tags :: Array String }
+  -> Array { tag :: String }
 dishTags { tags } = map { tag: _ } tags

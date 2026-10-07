@@ -21,10 +21,18 @@ openingSetlist =
     ]
   }
 
-rotateAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff [ "Setlist rotated" :: { "Setlist" :: Array { "Title" :: String, id :: String } }, "Setlist shuffled" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
+rotateAction
+  :: { "Setlist" :: Array { "Title" :: String, id :: String } }
+  -> Aff [ "Setlist rotated" :: { "Setlist" :: Array { "Title" :: String, id :: String } }
+         , "Setlist shuffled" :: { "Setlist" :: Array { "Title" :: String, id :: String } }
+         ]
 rotateAction pl@{ "Setlist": tracks } = pure (."Setlist rotated" (pl { "Setlist" = rotate tracks }))
 
-shuffleAction :: { "Setlist" :: Array { "Title" :: String, id :: String } } -> Aff [ "Setlist rotated" :: { "Setlist" :: Array { "Title" :: String, id :: String } }, "Setlist shuffled" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
+shuffleAction
+  :: { "Setlist" :: Array { "Title" :: String, id :: String } }
+  -> Aff [ "Setlist rotated" :: { "Setlist" :: Array { "Title" :: String, id :: String } }
+         , "Setlist shuffled" :: { "Setlist" :: Array { "Title" :: String, id :: String } }
+         ]
 shuffleAction pl@{ "Setlist": tracks } = (\ts -> ."Setlist shuffled" (pl { "Setlist" = ts })) <$> liftEffect (shuffleOrder tracks)
 
 rotate :: Array { id :: String, "Title" :: String } -> Array { id :: String, "Title" :: String }

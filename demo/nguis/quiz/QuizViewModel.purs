@@ -24,12 +24,18 @@ questionCatalogue =
   , { prompt: "How many continents are there?", choices: [ "five", "six", "seven", "eight" ], answer: 2 }
   ]
 
-answer :: { event :: Int, model :: { correct :: Int, question :: Int } } -> { correct :: Int, question :: Int }
+answer
+  :: { event :: Int, model :: { correct :: Int, question :: Int } }
+  -> { correct :: Int, question :: Int }
 answer { event: choice, model: run@{ question, correct } } = case index questionCatalogue question of
   Just q -> run { question = question + 1, correct = correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
-quizPhase :: { correct :: Int, question :: Int } -> [ asking :: { choices :: Array { key :: Int, label :: String }, prompt :: String }, finished :: { correct :: Int } ]
+quizPhase
+  :: { correct :: Int, question :: Int }
+  -> [ asking :: { choices :: Array { key :: Int, label :: String }, prompt :: String }
+     , finished :: { correct :: Int }
+     ]
 quizPhase { question, correct } = case index questionCatalogue question of
   Just q -> .asking { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
   Nothing -> .finished { correct }

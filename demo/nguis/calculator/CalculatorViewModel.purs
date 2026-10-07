@@ -8,7 +8,13 @@ import Data.Number (fromString)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 
-blankTally :: { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number }
+blankTally
+  :: { condition :: [ faulty :: {}, sound :: {} ]
+     , entry :: String
+     , input :: [ entering :: {}, settled :: {} ]
+     , operation :: [ none :: {}, pending :: { key :: String } ]
+     , total :: Number
+     }
 blankTally = { total: 0.0, operation: .none {}, entry: "0", input: .settled {}, condition: .sound {} }
 
 keyPad :: Array { key :: String }
@@ -26,10 +32,31 @@ operatorKeys = [ "÷", "×", "−", "+", "=" ]
 functionKeys :: Array String
 functionKeys = [ "C", "±" ]
 
-readout :: { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number } -> [ faulty :: {}, sound :: { entry :: String } ]
+readout
+  :: { condition :: [ faulty :: {}, sound :: {} ]
+     , entry :: String
+     , input :: [ entering :: {}, settled :: {} ]
+     , operation :: [ none :: {}, pending :: { key :: String } ]
+     , total :: Number
+     }
+  -> [ faulty :: {}, sound :: { entry :: String } ]
 readout { condition, entry } = match { sound: \_ -> .sound { entry }, faulty: \_ -> .faulty {} } condition
 
-pressKey :: { event :: String, model :: { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number } } -> { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number }
+pressKey
+  :: { event :: String
+     , model :: { condition :: [ faulty :: {}, sound :: {} ]
+                , entry :: String
+                , input :: [ entering :: {}, settled :: {} ]
+                , operation :: [ none :: {}, pending :: { key :: String } ]
+                , total :: Number
+                }
+     }
+  -> { condition :: [ faulty :: {}, sound :: {} ]
+     , entry :: String
+     , input :: [ entering :: {}, settled :: {} ]
+     , operation :: [ none :: {}, pending :: { key :: String } ]
+     , total :: Number
+     }
 pressKey { event: key, model: tally@{ entry, operation, input } }
   | match { faulty: \_ -> key /= "C", sound: \_ -> false } tally.condition = pressKey { event: key, model: cleared tally }
   | key == "C" = cleared tally
@@ -82,5 +109,12 @@ format n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
 faultLine :: {} -> String
 faultLine _ = "Error"
 
-keyEnteredLine :: { condition :: [ faulty :: {}, sound :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], operation :: [ none :: {}, pending :: { key :: String } ], total :: Number } -> String
+keyEnteredLine
+  :: { condition :: [ faulty :: {}, sound :: {} ]
+     , entry :: String
+     , input :: [ entering :: {}, settled :: {} ]
+     , operation :: [ none :: {}, pending :: { key :: String } ]
+     , total :: Number
+     }
+  -> String
 keyEnteredLine tally = match { sound: \{ entry } -> "Showing " <> entry, faulty: faultLine } (readout tally)

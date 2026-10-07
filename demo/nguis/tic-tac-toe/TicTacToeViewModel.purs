@@ -16,18 +16,30 @@ openingPosition =
     ]
   }
 
-cells :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> Array { key :: String, line :: [ plain :: {}, winning :: {} ], mark :: [ free :: {}, o :: {}, x :: {} ] }
+cells
+  :: { board :: Array [ free :: {}, o :: {}, x :: {} ] }
+  -> Array { key :: String
+           , line :: [ plain :: {}, winning :: {} ]
+           , mark :: [ free :: {}, o :: {}, x :: {} ]
+           }
 cells { board } =
   let winners = fromMaybe [] (winningLine board)
   in range 0 8 <#> \i -> { key: show i, mark: fromMaybe (.free {}) (index board i), line: if i `elem` winners then .winning {} else .plain {} }
 
-cellMark :: { key :: String, line :: [ plain :: {}, winning :: {} ], mark :: [ free :: {}, o :: {}, x :: {} ] } -> String
+cellMark
+  :: { key :: String
+     , line :: [ plain :: {}, winning :: {} ]
+     , mark :: [ free :: {}, o :: {}, x :: {} ]
+     }
+  -> String
 cellMark { mark } = markText { mark }
 
 markText :: forall r1. { mark :: [ x :: {}, o :: {}, free :: {} ] | r1 } -> String
 markText { mark } = match { x: \_ -> "X", o: \_ -> "O", free: \_ -> "" } mark
 
-claimCell :: { event :: String, model :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } } -> { board :: Array [ free :: {}, o :: {}, x :: {} ] }
+claimCell
+  :: { event :: String, model :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } }
+  -> { board :: Array [ free :: {}, o :: {}, x :: {} ] }
 claimCell { event: key, model: game@{ board } } = case fromString key of
   Just i | index board i == Just (.free {}) && isNothing (winningLine board) ->
     game { board = fromMaybe board (updateAt i (playerToMove board) board) }
@@ -65,7 +77,12 @@ winner board = do
 boardFull :: Array [ x :: {}, o :: {}, free :: {} ] -> Boolean
 boardFull board = not ((.free {}) `elem` board)
 
-gameOutcome :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> [ drawn :: {}, toMove :: { mark :: [ free :: {}, o :: {}, x :: {} ] }, won :: { mark :: [ free :: {}, o :: {}, x :: {} ] } ]
+gameOutcome
+  :: { board :: Array [ free :: {}, o :: {}, x :: {} ] }
+  -> [ drawn :: {}
+     , toMove :: { mark :: [ free :: {}, o :: {}, x :: {} ] }
+     , won :: { mark :: [ free :: {}, o :: {}, x :: {} ] }
+     ]
 gameOutcome { board } = case winner board of
   Just m -> .won { mark: m }
   Nothing -> if boardFull board then .drawn {} else .toMove { mark: playerToMove board }

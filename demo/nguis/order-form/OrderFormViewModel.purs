@@ -9,7 +9,14 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Effect.Random (randomInt)
 
-estimateDistance :: { "Address" :: String, "Table" :: String, "Time" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ], selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ] } -> Aff [ estimated :: { km :: Int, to :: String } ]
+estimateDistance
+  :: { "Address" :: String
+     , "Table" :: String
+     , "Time" :: String
+     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+     }
+  -> Aff [ estimated :: { km :: Int, to :: String } ]
 estimateDistance { "Address": address } = do
   liftEffect $ log $ "estimating the distance to " <> address
   delay (Milliseconds 700.0)
@@ -17,39 +24,129 @@ estimateDistance { "Address": address } = do
   liftEffect $ log $ "estimated " <> show km <> " km"
   pure $ .estimated { km, to: address }
 
-setDistance :: { km :: Int, to :: String } -> { "Address" :: String, "Table" :: String, "Time" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ], selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ] } -> { "Address" :: String, "Table" :: String, "Time" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ], selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ] }
+setDistance
+  :: { km :: Int, to :: String }
+  -> { "Address" :: String
+     , "Table" :: String
+     , "Time" :: String
+     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+     }
+  -> { "Address" :: String
+     , "Table" :: String
+     , "Time" :: String
+     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+     }
 setDistance estimate order = order { distance = .estimated { km: estimate.km, to: estimate.to } }
 
-staleDistanceForgotten :: { "Address" :: String, "Table" :: String, "Time" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ], selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ] } -> { "Address" :: String, "Table" :: String, "Time" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ], selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ] }
+staleDistanceForgotten
+  :: { "Address" :: String
+     , "Table" :: String
+     , "Time" :: String
+     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+     }
+  -> { "Address" :: String
+     , "Table" :: String
+     , "Time" :: String
+     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+     }
 staleDistanceForgotten r@{ "Address": address, distance } = match
   { estimated: \e -> if e.to /= address then r { distance = .unknown {} } else r
   , unknown: \_ -> r
   } distance
 
-distanceOf :: { "Address" :: String, "Table" :: String, "Time" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ], selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ] } -> [ estimated :: { km :: Int }, unknown :: {} ]
+distanceOf
+  :: { "Address" :: String
+     , "Table" :: String
+     , "Time" :: String
+     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+     }
+  -> [ estimated :: { km :: Int }, unknown :: {} ]
 distanceOf { distance } = match { estimated: \e -> .estimated { km: e.km }, unknown: const (.unknown {}) } distance
 
 distanceLine :: { km :: Int } -> String
 distanceLine { km } = "Distance " <> show km <> " km"
 
-fulfillmentState :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] -> { "Address" :: String, "Table" :: String, "Time" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ], selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ] }
+fulfillmentState
+  :: [ "Delivery" :: { "Address" :: String
+                     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+                     }
+     , "Dine in" :: { "Table" :: String }
+     , "Takeaway" :: { "Time" :: String }
+     ]
+  -> { "Address" :: String
+     , "Table" :: String
+     , "Time" :: String
+     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+     }
 fulfillmentState = match
   { "Dine in": \r -> { selected: ."Dine in" {}, "Table": r."Table", "Time": "12:00", "Address": "", distance: .unknown {} }
   , "Takeaway": \r -> { selected: ."Takeaway" {}, "Table": "1", "Time": r."Time", "Address": "", distance: .unknown {} }
   , "Delivery": \r -> { selected: ."Delivery" {}, "Table": "1", "Time": "12:00", "Address": r."Address", distance: r.distance }
   }
 
-fulfillmentCase :: { "Address" :: String, "Table" :: String, "Time" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ], selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ] } -> [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ]
+fulfillmentCase
+  :: { "Address" :: String
+     , "Table" :: String
+     , "Time" :: String
+     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+     }
+  -> [ "Delivery" :: { "Address" :: String
+                     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+                     }
+     , "Dine in" :: { "Table" :: String }
+     , "Takeaway" :: { "Time" :: String }
+     ]
 fulfillmentCase { selected, "Table": table, "Time": time, "Address": address, distance } = match
   { "Dine in": \_ -> ."Dine in" { "Table": table }
   , "Takeaway": \_ -> ."Takeaway" { "Time": time }
   , "Delivery": \_ -> ."Delivery" { "Address": address, distance }
   } selected
 
-orderLine :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } -> String
+orderLine
+  :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+     , "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String
+                                                    , distance :: [ estimated :: { km :: Int
+                                                                                 , to :: String
+                                                                                 }
+                                                                  , unknown :: {}
+                                                                  ]
+                                                    }
+                                    , "Dine in" :: { "Table" :: String }
+                                    , "Takeaway" :: { "Time" :: String }
+                                    ]
+                        }
+     , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+     , "Kitchen" :: { "Remarks" :: String }
+     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     }
+  -> String
 orderLine r = "Order " <> r."Identifier"."Short ID"
 
-summaryLine :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } -> String
+summaryLine
+  :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+     , "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String
+                                                    , distance :: [ estimated :: { km :: Int
+                                                                                 , to :: String
+                                                                                 }
+                                                                  , unknown :: {}
+                                                                  ]
+                                                    }
+                                    , "Dine in" :: { "Table" :: String }
+                                    , "Takeaway" :: { "Time" :: String }
+                                    ]
+                        }
+     , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+     , "Kitchen" :: { "Remarks" :: String }
+     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     }
+  -> String
 summaryLine r = "Summary: Order " <> r."Identifier"."Short ID" <> " (uniquely " <> r."Identifier"."Unique ID" <> ") for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name" <> ", fulfilled as " <> fulfillmentText r."Fulfillment"."Mode" <> ", paid " <> r."Payment"."Paid" <> " by " <> caseText r."Payment"."Method"
 
 fulfillmentText ::
@@ -70,10 +167,33 @@ awayText = match
   , unknown: const ""
   }
 
-payingLine :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } -> String
+payingLine
+  :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+  -> String
 payingLine r = "Paying by " <> caseText r."Method"
 
-loadOrder :: {} -> Aff [ "Order loaded" :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } ]
+loadOrder
+  :: {}
+  -> Aff [ "Order loaded" :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+                             , "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String
+                                                                            , distance :: [ estimated :: { km :: Int
+                                                                                                         , to :: String
+                                                                                                         }
+                                                                                          , unknown :: {}
+                                                                                          ]
+                                                                            }
+                                                            , "Dine in" :: { "Table" :: String }
+                                                            , "Takeaway" :: { "Time" :: String }
+                                                            ]
+                                                }
+                             , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+                             , "Kitchen" :: { "Remarks" :: String }
+                             , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ]
+                                            , "Paid" :: String
+                                            , "Total" :: String
+                                            }
+                             }
+         ]
 loadOrder _ = do
   liftEffect $ log "loading order"
   delay (Milliseconds 1000.0)
@@ -92,7 +212,27 @@ loadOrder _ = do
     , "Kitchen": { "Remarks": "Very spicy, please!" }
     }
 
-submitOrder :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } -> Aff [ "Order submitted" :: { "Short ID" :: String }, "Receipt printed" :: { "Short ID" :: String }, "Submission failed" :: { "Short ID" :: String, reason :: String } ]
+submitOrder
+  :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+     , "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String
+                                                    , distance :: [ estimated :: { km :: Int
+                                                                                 , to :: String
+                                                                                 }
+                                                                  , unknown :: {}
+                                                                  ]
+                                                    }
+                                    , "Dine in" :: { "Table" :: String }
+                                    , "Takeaway" :: { "Time" :: String }
+                                    ]
+                        }
+     , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+     , "Kitchen" :: { "Remarks" :: String }
+     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     }
+  -> Aff [ "Order submitted" :: { "Short ID" :: String }
+         , "Receipt printed" :: { "Short ID" :: String }
+         , "Submission failed" :: { "Short ID" :: String, reason :: String }
+         ]
 submitOrder { "Identifier": { "Short ID": shortId, "Unique ID": orderId }, "Payment": { "Total": total } } = do
   liftEffect $ log $ "submitting order " <> orderId
   delay (Milliseconds 1000.0)
@@ -110,7 +250,27 @@ submittedLine { "Short ID": shortId } = "Order " <> shortId <> " submitted"
 rejectionLine :: { "Short ID" :: String, reason :: String } -> String
 rejectionLine { "Short ID": shortId, reason } = "Order " <> shortId <> " rejected: " <> reason
 
-printReceipt :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } -> Aff [ "Order submitted" :: { "Short ID" :: String }, "Receipt printed" :: { "Short ID" :: String }, "Submission failed" :: { "Short ID" :: String, reason :: String } ]
+printReceipt
+  :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+     , "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String
+                                                    , distance :: [ estimated :: { km :: Int
+                                                                                 , to :: String
+                                                                                 }
+                                                                  , unknown :: {}
+                                                                  ]
+                                                    }
+                                    , "Dine in" :: { "Table" :: String }
+                                    , "Takeaway" :: { "Time" :: String }
+                                    ]
+                        }
+     , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+     , "Kitchen" :: { "Remarks" :: String }
+     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     }
+  -> Aff [ "Order submitted" :: { "Short ID" :: String }
+         , "Receipt printed" :: { "Short ID" :: String }
+         , "Submission failed" :: { "Short ID" :: String, reason :: String }
+         ]
 printReceipt { "Identifier": { "Short ID": shortId, "Unique ID": orderId } } = do
   liftEffect $ log $ "printing receipt for order " <> orderId
   delay (Milliseconds 2000.0)
@@ -123,5 +283,22 @@ receiptLine { "Short ID": shortId } = "Receipt for order " <> shortId <> " print
 summarySettleTime :: { ms :: Number }
 summarySettleTime = { ms: 300.0 }
 
-orderLoadedLine :: { "Customer" :: { "First name" :: String, "Last name" :: String }, "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }, "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String } ] }, "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }, "Kitchen" :: { "Remarks" :: String }, "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String } } -> String
+orderLoadedLine
+  :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+     , "Fulfillment" :: { "Mode" :: [ "Delivery" :: { "Address" :: String
+                                                    , distance :: [ estimated :: { km :: Int
+                                                                                 , to :: String
+                                                                                 }
+                                                                  , unknown :: {}
+                                                                  ]
+                                                    }
+                                    , "Dine in" :: { "Table" :: String }
+                                    , "Takeaway" :: { "Time" :: String }
+                                    ]
+                        }
+     , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+     , "Kitchen" :: { "Remarks" :: String }
+     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     }
+  -> String
 orderLoadedLine { "Identifier": { "Short ID": shortId } } = "Order " <> shortId <> " loaded"

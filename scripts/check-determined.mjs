@@ -19,14 +19,20 @@
 // Runs over every registered demo (an all-view demo passes trivially);
 // `node scripts/check-determined.mjs inbox-mdc3 …` narrows to named demos.
 // About a minute for all, ten seconds for a few. `SHOW=all` prints every hint.
+// `--write` writes the signatures instead of comparing them: every exported
+// signature becomes its hint in the layout of scripts/signature-layout.mjs, a
+// definition without one gets one, and a name with no definition yet is
+// appended as a signature over a runtime `hole`, ready to be filled.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { sets } from './demos.mjs'
+import { layoutSignature } from './signature-layout.mjs'
 
 const importRe = /^import (\w+ViewModel) \(([^)]*)\)[ \t]*\n/m
 const demos = Object.entries(sets).flatMap(([set, byDir]) =>
   Object.entries(byDir).map(([dir, [mod]]) => ({ dir, set, mod, file: `demo/${set}/${dir}/${mod}.purs` })))
-const wanted = process.argv.slice(2)
+const write = process.argv.includes('--write')
+const wanted = process.argv.slice(2).filter(a => a !== '--write')
 const chosen = wanted.length ? demos.filter(d => wanted.includes(d.dir)) : demos
 if (chosen.length === 0) { console.error('check-determined: no demo selected'); process.exit(2) }
 
@@ -52,7 +58,7 @@ const holed = chosen.flatMap(d => {
   // written. Each `?name` is its own hole, so that second step is emulated:
   // the first occurrence's declaration is copied to the later, undeclared ones.
   const declared = new Map()
-  for (const d of out.matchAll(/@\(((?:[^()]|\([^()]*\))*)\) ([A-Za-z_][\w']*)\b/g)) if (!declared.has(d[2])) declared.set(d[2], d[1])
+  for (const d of out.matchAll(/@\(((?:[^()]|\([^()]*\))*)\) ([A-Za-z_][\w']*)\b/g)) if (!declared.has(d[2])) declared.set(d[2], d[1].replace(/\s+/g, ' '))
   for (const [n, row] of declared)
     out = out.replace(new RegExp(`((?:shownWhen|inCase|provided|foreach|shownEach|listOf) @"[^"]+"(?: @"[^"]+")?(?: \\{[^}]*\\})?) ${n}\\b`, 'g'), `$1 @(${row}) ${n}`)
   // a record label (`tick:` in a `match`) or a field accessor is not the value
@@ -96,7 +102,7 @@ const check = (block, problems) => {
 // whose helper functions also hold holes is read in rounds: each round's
 // reported holes become `hole` (the same fresh unknown to the checker) and
 // the next declaration surfaces, until no hole is left.
-const results = new Map(holed.map(d => [d.dir, { listed: [], tails: [], problems: [], seen: false, hints: new Map(), shown: [] }]))
+const results = new Map(holed.map(d => [d.dir, { listed: [], tails: [], problems: [], seen: false, hints: new Map(), shown: [], written: [] }]))
 const hint = (r, decl, name, type) => {
   const t = oneLine(type)
   if (!r.hints.has(name)) r.hints.set(name, new Set())
@@ -143,9 +149,28 @@ for (let round = 0; round < 12; round++) {
 // name reported at one type everywhere a view uses it is declared at that
 // type, whitespace aside. A name two lines report at different rows is the
 // one case for a `forall`, and is left to the compiler.
+const signatureRe = name => new RegExp(`^${name}\\s+::([\\s\\S]*?)(?=^${name}(?![\\w']))`, 'm')
 const signatureOf = (src, name) => {
-  const m = src.match(new RegExp(`^${name} ::([\\s\\S]*?)(?=^${name}(?![\\w']))`, 'm'))
+  const m = src.match(signatureRe(name))
   return m && oneLine(m[1])
+}
+// --write: the signature laid out from the hint, inserted above a definition
+// that has none, or appended with a `hole` body when the name is not written yet
+const writeSignature = (file, name, h) => {
+  let src = readFileSync(file, 'utf8')
+  const want = layoutSignature(name, h)
+  const re = signatureRe(name)
+  if (re.test(src)) src = src.replace(re, `${want}\n`)
+  else if (new RegExp(`^${name}\\b`, 'm').test(src)) src = src.replace(new RegExp(`^(?=${name}\\b)`, 'm'), `${want}\n`)
+  else {
+    src = `${src.replace(/\n*$/, '\n')}\n${want}\n${name} = hole\n`
+    src = src.replace(/^module (\w+) \(([\s\S]*?)\) where/m, (m, mod, list) =>
+      `module ${mod} (${[...list.split(',').map(x => x.trim()).filter(Boolean), name].sort((a, b) => a.localeCompare(b)).join(', ')}) where`)
+    if (!/^import PUI\.Web \(hole\)/m.test(src)) src = src.replace(/^(import .*\n)(?!import)/m, `$1import PUI.Web (hole)\n`)
+  }
+  const before = readFileSync(file, 'utf8')
+  if (src !== before) { writeFileSync(file, src); return true }
+  return false
 }
 let failed = false
 for (const d of holed) {
@@ -161,13 +186,16 @@ for (const d of holed) {
         const hints = r.hints.get(name)
         if (!hints || hints.size !== 1) continue
         const [h] = hints
+        if (write) { if (writeSignature(d.viewModel, name, h)) r.written.push(name); continue }
         const sig = signatureOf(src, name)
         if (sig === null) r.problems.push(`${name}: no signature in ${d.viewModel}; the view reports ${h}`)
         else if (sig !== h) r.problems.push(`${name}: declared\n      ${sig}\n    but the view reports\n      ${h}`)
       }
     }
   }
-  if (r.problems.length === 0)
+  if (r.problems.length === 0 && write)
+    console.log(`✎ ${d.dir}: ${r.listed.length} holes determined, ${r.written.length ? `wrote ${r.written.join(', ')}` : 'every signature already written'}`)
+  else if (r.problems.length === 0)
     console.log(`✓ ${d.dir}: ${r.listed.length} holes determined, nothing unknown, signatures verbatim`)
   else { failed = true; console.error(`✗ ${d.dir}\n  ${r.problems.join('\n  ')}`) }
   if (process.env.SHOW && (r.problems.length || process.env.SHOW === 'all')) for (const l of r.shown) console.log(`    ${l}`)

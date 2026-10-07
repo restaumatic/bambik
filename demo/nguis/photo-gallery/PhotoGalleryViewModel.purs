@@ -39,7 +39,9 @@ albumCatalogue =
     }
   ]
 
-albumChoices :: { album :: String } -> Array { name :: String, state :: [ closed :: {}, open :: {} ] }
+albumChoices
+  :: { album :: String }
+  -> Array { name :: String, state :: [ closed :: {}, open :: {} ] }
 albumChoices { album } = albumCatalogue <#> \a -> { name: a.name, state: if a.name == album then .open {} else .closed {} }
 
 isOpen :: { name :: String, state :: [ closed :: {}, open :: {} ] } -> Boolean

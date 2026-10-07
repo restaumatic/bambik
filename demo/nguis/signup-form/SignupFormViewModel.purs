@@ -7,7 +7,13 @@ import Data.Foldable (elem)
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 
-newApplicant :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ], "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ], "Username" :: String }
+newApplicant
+  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+     , "Email" :: String
+     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+     , "Terms" :: [ accepted :: {}, declined :: {} ]
+     , "Username" :: String
+     }
 newApplicant =
   { "Username": ""
   , "Email": ""
@@ -19,7 +25,14 @@ newApplicant =
 usernameSettleTime :: { ms :: Number }
 usernameSettleTime = { ms: 300.0 }
 
-signupLine :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ], "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ], "Username" :: String } -> String
+signupLine
+  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+     , "Email" :: String
+     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+     , "Terms" :: [ accepted :: {}, declined :: {} ]
+     , "Username" :: String
+     }
+  -> String
 signupLine applicant = either rejectionLine welcomeLine (validate applicant)
 
 welcomeLine :: String -> String
@@ -46,16 +59,44 @@ validate applicant@{ "Email": email, "Terms": terms } =
     else if declined terms then Left (.termsUnaccepted {})
     else Right username
 
-validation :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ], "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ], "Username" :: String } -> [ invalid :: { reason :: [ badEmail :: {}, taken :: { "Username" :: String }, termsUnaccepted :: {}, unnamed :: {} ] }, ready :: { "Username" :: String } ]
+validation
+  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+     , "Email" :: String
+     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+     , "Terms" :: [ accepted :: {}, declined :: {} ]
+     , "Username" :: String
+     }
+  -> [ invalid :: { reason :: [ badEmail :: {}
+                              , taken :: { "Username" :: String }
+                              , termsUnaccepted :: {}
+                              , unnamed :: {}
+                              ]
+                  }
+     , ready :: { "Username" :: String }
+     ]
 validation applicant = either (\reason -> .invalid { reason }) (\name -> .ready { "Username": name }) (validate applicant)
 
-invalidLine :: { reason :: [ badEmail :: {}, taken :: { "Username" :: String }, termsUnaccepted :: {}, unnamed :: {} ] } -> String
+invalidLine
+  :: { reason :: [ badEmail :: {}
+                 , taken :: { "Username" :: String }
+                 , termsUnaccepted :: {}
+                 , unnamed :: {}
+                 ]
+     }
+  -> String
 invalidLine { reason } = "⚠ " <> refusalText reason
 
 readyLine :: { "Username" :: String } -> String
 readyLine { "Username": username } = "Ready to sign up as " <> username
 
-usernameStatus :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ], "Email" :: String, "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ], "Terms" :: [ accepted :: {}, declined :: {} ], "Username" :: String } -> [ available :: { "Username" :: String }, taken :: { "Username" :: String }, unnamed :: {} ]
+usernameStatus
+  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+     , "Email" :: String
+     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+     , "Terms" :: [ accepted :: {}, declined :: {} ]
+     , "Username" :: String
+     }
+  -> [ available :: { "Username" :: String }, taken :: { "Username" :: String }, unnamed :: {} ]
 usernameStatus { "Username": username } = case trim username of
   "" -> .unnamed {}
   name | usernameTaken name -> .taken { "Username": name }

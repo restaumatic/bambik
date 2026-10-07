@@ -29,10 +29,20 @@ scoreLine { team, points } = team <> ": " <> show points
 scored :: String -> Int -> Int
 scored team beat = length (filter (\i -> pick teams i == team) (range 0 beat))
 
-boardSummary :: Array { points :: Int, team :: String } -> Array { key :: String, leader :: [ led :: { points :: Int, team :: String }, unled :: {} ], teams :: Int }
+boardSummary
+  :: Array { points :: Int, team :: String }
+  -> Array { key :: String
+           , leader :: [ led :: { points :: Int, team :: String }, unled :: {} ]
+           , teams :: Int
+           }
 boardSummary scores = [ { key: "summary", teams: length scores, leader: leaderOf scores } ]
 
-summaryLine :: { key :: String, leader :: [ led :: { points :: Int, team :: String }, unled :: {} ], teams :: Int } -> String
+summaryLine
+  :: { key :: String
+     , leader :: [ led :: { points :: Int, team :: String }, unled :: {} ]
+     , teams :: Int
+     }
+  -> String
 summaryLine r = show r.teams <> " teams on the board — leading: " <> match { led: \{ team, points } -> team <> " (" <> show points <> ")", unled: const "—" } r.leader
 
 leaderOf :: Array { team :: String, points :: Int } -> [ led :: { team :: String, points :: Int }, unled :: {} ]

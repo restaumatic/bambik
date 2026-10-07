@@ -7,7 +7,13 @@ import Data.String (joinWith)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 
-invitation :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], unchosen :: {} ], name :: String } }
+invitation
+  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+                                     , unchosen :: {}
+                                     ]
+                         , name :: String
+                         }
+     }
 invitation =
   { "Guests":
     [ { name: "Ada", "Dish": .unchosen {} }
@@ -17,13 +23,36 @@ invitation =
     ]
   }
 
-guestCountLine :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], unchosen :: {} ], name :: String } } -> String
+guestCountLine
+  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+                                     , unchosen :: {}
+                                     ]
+                         , name :: String
+                         }
+     }
+  -> String
 guestCountLine { "Guests": guests } = show (length guests) <> " guests invited — everyone picks one dish; the menu prints once the table is complete."
 
-guestName :: { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], unchosen :: {} ], name :: String } -> String
+guestName
+  :: { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], unchosen :: {} ]
+     , name :: String
+     }
+  -> String
 guestName { name } = name
 
-menuState :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], unchosen :: {} ], name :: String } } -> [ complete :: { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], name :: String } }, waiting :: { remaining :: Array String } ]
+menuState
+  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+                                     , unchosen :: {}
+                                     ]
+                         , name :: String
+                         }
+     }
+  -> [ complete :: { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+                                     , name :: String
+                                     }
+                   }
+     , waiting :: { remaining :: Array String }
+     ]
 menuState { "Guests": guests } = case foldr sorted { dishes: [], remaining: [] } guests of
   { dishes, remaining: [] } -> .complete { dishes }
   { remaining } -> .waiting { remaining }
@@ -33,7 +62,12 @@ menuState { "Guests": guests } = case foldr sorted { dishes: [], remaining: [] }
     , unchosen: \_ -> table { remaining = cons guest.name table.remaining }
     }
 
-menuLine :: { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], name :: String } } -> String
+menuLine
+  :: { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+                       , name :: String
+                       }
+     }
+  -> String
 menuLine { dishes } = "On the table: " <> joinWith ", " (map (\d -> d.name <> "’s " <> caseText d.dish) dishes)
 
 waitingLine :: { remaining :: Array String } -> String

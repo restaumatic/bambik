@@ -7,16 +7,100 @@ import Data.Int (hexadecimal, round, toStringAs)
 import Data.Maybe (maybe)
 import Data.String (length, toUpper)
 
-duskViolet :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } }
+duskViolet
+  :: { "Blue" :: { current :: Number
+                 , max :: Number
+                 , min :: Number
+                 , step :: [ continuous :: {}, discrete :: Number ]
+                 }
+     , "Green" :: { current :: Number
+                  , max :: Number
+                  , min :: Number
+                  , step :: [ continuous :: {}, discrete :: Number ]
+                  }
+     , "Red" :: { current :: Number
+                , max :: Number
+                , min :: Number
+                , step :: [ continuous :: {}, discrete :: Number ]
+                }
+     }
 duskViolet = let m = mix 96.0 64.0 160.0 in { "Red": channelRange m."Red", "Green": channelRange m."Green", "Blue": channelRange m."Blue" }
 
-hexLine :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
+hexLine
+  :: { "Blue" :: { current :: Number
+                 , max :: Number
+                 , min :: Number
+                 , step :: [ continuous :: {}, discrete :: Number ]
+                 }
+     , "Green" :: { current :: Number
+                  , max :: Number
+                  , min :: Number
+                  , step :: [ continuous :: {}, discrete :: Number ]
+                  }
+     , "Red" :: { current :: Number
+                , max :: Number
+                , min :: Number
+                , step :: [ continuous :: {}, discrete :: Number ]
+                }
+     }
+  -> String
 hexLine channels = hex (mixOf channels)
 
-rgbLine :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
+rgbLine
+  :: { "Blue" :: { current :: Number
+                 , max :: Number
+                 , min :: Number
+                 , step :: [ continuous :: {}, discrete :: Number ]
+                 }
+     , "Green" :: { current :: Number
+                  , max :: Number
+                  , min :: Number
+                  , step :: [ continuous :: {}, discrete :: Number ]
+                  }
+     , "Red" :: { current :: Number
+                , max :: Number
+                , min :: Number
+                , step :: [ continuous :: {}, discrete :: Number ]
+                }
+     }
+  -> String
 rgbLine channels = rgb (mixOf channels)
 
-applyPreset :: { event :: String, model :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } } -> { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } }
+applyPreset
+  :: { event :: String
+     , model :: { "Blue" :: { current :: Number
+                            , max :: Number
+                            , min :: Number
+                            , step :: [ continuous :: {}, discrete :: Number ]
+                            }
+                , "Green" :: { current :: Number
+                             , max :: Number
+                             , min :: Number
+                             , step :: [ continuous :: {}, discrete :: Number ]
+                             }
+                , "Red" :: { current :: Number
+                           , max :: Number
+                           , min :: Number
+                           , step :: [ continuous :: {}, discrete :: Number ]
+                           }
+                }
+     }
+  -> { "Blue" :: { current :: Number
+                 , max :: Number
+                 , min :: Number
+                 , step :: [ continuous :: {}, discrete :: Number ]
+                 }
+     , "Green" :: { current :: Number
+                  , max :: Number
+                  , min :: Number
+                  , step :: [ continuous :: {}, discrete :: Number ]
+                  }
+     , "Red" :: { current :: Number
+                , max :: Number
+                , min :: Number
+                , step :: [ continuous :: {}, discrete :: Number ]
+                }
+     }
 applyPreset { event: name, model: channels } = maybe channels
   (\p -> channels { "Red" = channels."Red" { current = p.mix."Red" }, "Green" = channels."Green" { current = p.mix."Green" }, "Blue" = channels."Blue" { current = p.mix."Blue" } })
   (find (\p -> p.name == name) palette)
@@ -33,7 +117,24 @@ palette =
 mix :: Number -> Number -> Number -> { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
 mix red green blue = { "Red": clampChannel red, "Green": clampChannel green, "Blue": clampChannel blue }
 
-mixedColor :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
+mixedColor
+  :: { "Blue" :: { current :: Number
+                 , max :: Number
+                 , min :: Number
+                 , step :: [ continuous :: {}, discrete :: Number ]
+                 }
+     , "Green" :: { current :: Number
+                  , max :: Number
+                  , min :: Number
+                  , step :: [ continuous :: {}, discrete :: Number ]
+                  }
+     , "Red" :: { current :: Number
+                , max :: Number
+                , min :: Number
+                , step :: [ continuous :: {}, discrete :: Number ]
+                }
+     }
+  -> String
 mixedColor = rgb <<< mixOf
 
 mixOf :: forall r1. { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
@@ -65,5 +166,22 @@ minChannel = 0.0
 maxChannel :: Number
 maxChannel = 255.0
 
-presetAppliedLine :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }, "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] } } -> String
+presetAppliedLine
+  :: { "Blue" :: { current :: Number
+                 , max :: Number
+                 , min :: Number
+                 , step :: [ continuous :: {}, discrete :: Number ]
+                 }
+     , "Green" :: { current :: Number
+                  , max :: Number
+                  , min :: Number
+                  , step :: [ continuous :: {}, discrete :: Number ]
+                  }
+     , "Red" :: { current :: Number
+                , max :: Number
+                , min :: Number
+                , step :: [ continuous :: {}, discrete :: Number ]
+                }
+     }
+  -> String
 presetAppliedLine channels = "Now mixing " <> hexLine channels

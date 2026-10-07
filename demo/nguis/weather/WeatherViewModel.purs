@@ -8,22 +8,75 @@ import Data.Maybe (fromMaybe)
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
-warsawBulletin :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int }
+warsawBulletin
+  :: { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
 warsawBulletin = { report: conditionsFor "Warsaw" 0, servedReports: 1 }
 
-temperatureLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
+temperatureLine
+  :: { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
+  -> String
 temperatureLine { report } = show report.temperature <> " °C"
 
-conditionLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
+conditionLine
+  :: { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
+  -> String
 conditionLine { report } = report.condition <> " in " <> report.city
 
-humidityWindLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
+humidityWindLine
+  :: { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
+  -> String
 humidityWindLine { report } = "Humidity " <> show report.humidity <> "% · Wind " <> show report.wind <> " km/h"
 
-servedLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
+servedLine
+  :: { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
+  -> String
 servedLine { servedReports } = "Simulated service · " <> if servedReports == 1 then "1 report served" else show servedReports <> " reports served"
 
-aboutLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
+aboutLine
+  :: { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
+  -> String
 aboutLine { servedReports } = "A simulated weather service: canned per-city climate with slight variation per reading, served with a " <> show (round serviceDelay.ms) <> " ms delay. Reports served so far: " <> show servedReports <> "."
 
 serviceDelay :: { ms :: Number }
@@ -54,7 +107,26 @@ firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == 
 unknownTerritory :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport :: { event :: { city :: String, sample :: Int }, model :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } } -> Aff [ "Forecast fetched" :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } ]
+fetchReport
+  :: { event :: { city :: String, sample :: Int }
+     , model :: { report :: { city :: String
+                            , condition :: String
+                            , humidity :: Int
+                            , temperature :: Number
+                            , wind :: Number
+                            }
+                , servedReports :: Int
+                }
+     }
+  -> Aff [ "Forecast fetched" :: { report :: { city :: String
+                                             , condition :: String
+                                             , humidity :: Int
+                                             , temperature :: Number
+                                             , wind :: Number
+                                             }
+                                 , servedReports :: Int
+                                 }
+         ]
 fetchReport { event: { city, sample }, model: forecast } = do
   delay (Milliseconds serviceDelay.ms)
   pure (."Forecast fetched" (rememberReport { report: conditionsFor city sample } forecast))
@@ -62,12 +134,32 @@ fetchReport { event: { city, sample }, model: forecast } = do
 rememberReport :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number } } -> { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int }
 rememberReport { report } forecast = forecast { report = report, servedReports = forecast.servedReports + 1 }
 
-forecastRequests :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> Array { focus :: [ current :: {}, other :: {} ], request :: { city :: String, sample :: Int } }
+forecastRequests
+  :: { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
+  -> Array { focus :: [ current :: {}, other :: {} ], request :: { city :: String, sample :: Int } }
 forecastRequests { servedReports, report } = climateTable <#> \r ->
   { request: { city: r.city, sample: servedReports }, focus: if r.city == report.city then .current {} else .other {} }
 
-isCurrent :: { focus :: [ current :: {}, other :: {} ], request :: { city :: String, sample :: Int } } -> Boolean
+isCurrent
+  :: { focus :: [ current :: {}, other :: {} ], request :: { city :: String, sample :: Int } }
+  -> Boolean
 isCurrent { focus } = match { current: \_ -> true, other: \_ -> false } focus
 
-forecastFetchedLine :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> String
+forecastFetchedLine
+  :: { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
+  -> String
 forecastFetchedLine { report } = "Forecast for " <> report.city <> " served"
