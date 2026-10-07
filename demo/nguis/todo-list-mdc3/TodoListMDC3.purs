@@ -23,7 +23,7 @@ todoListMDC3 =
       bodySmall (text severalLine) # shownWhen @"several" remainingItems
       RecordToVariant.do
         button @"Add" {}
-        listOf @"Todo toggled" @"key" @( key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] ) { selected: isCompleted } visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # joined @"Todo toggled"
+        listOf @"Todo toggled" @"key" @( key :: Int, title :: String, status :: [ active :: {}, completed :: {} ] ) {} visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # joined @"Todo toggled"
         button @"Clear completed" {}
       VariantToRecord.do
         snackbar @"Add" todoAddedLine # fold addTodo
