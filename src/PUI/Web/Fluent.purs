@@ -26,6 +26,7 @@ module PUI.Web.Fluent
   , dropdownUnpicked
   , dropdownOptional
   , messageBar
+  , indeterminateLinearProgress
   , progressBar
   , radioGroup
   , radioGroupUnpicked
@@ -504,3 +505,22 @@ body ui = do
   HTML.body ui
 
 foreign import adoptTheme :: Effect Unit
+
+-- | The **indeterminate progress bar**: a status fed a run's `started` and
+-- | `ended`, shown between them — what `PUI.action`'s slot dispatches
+-- | (`indeterminateLinearProgress # action submit`). No label: it names no
+-- | field and no case (2026-10-07, with the Material twins).
+indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
+indeterminateLinearProgress = wrap do
+  element "fluent-progress-bar" (pure unit)
+  attribute "style" hiddenStyle
+  node <- gets _.sibling
+  pure
+    { toUser: Variant.match
+        { started: \_ -> setAttribute node "style" visibleStyle
+        , ended: \_ -> setAttribute node "style" hiddenStyle }
+    , fromUser: \_ -> pure unit
+    }
+  where
+  visibleStyle = "width: 100%; min-width: 200px;"
+  hiddenStyle = "width: 100%; min-width: 200px; visibility: hidden;"

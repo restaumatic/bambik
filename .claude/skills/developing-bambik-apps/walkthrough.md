@@ -44,10 +44,10 @@ flightBookerMDC2 =
       body1 (text oneWayLine) # shownWhen @"one-way" bookingState
       body1 (text returnLine) # shownWhen @"return" bookingState ) # debounced itinerarySettleTime
     button @"Book" { icon: "flight_takeoff" }
-    indeterminateLinearProgress # action @[ booked :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], rejected :: String ] submit # atCase @"Book"
-    VariantToRecord.do
-      snackbar @"booked" bookedLine
-      snackbar @"rejected" rejectedLine
+    ( VariantToRecord.do
+      indeterminateLinearProgress
+      snackbar @"Flight booked" bookedLine
+      snackbar @"Booking rejected" rejectedLine ) # action @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ], "Booking rejected" :: String ) submit # atCase @"Book"
 ```
 
 **The imports.** `PUI` for the words that shape data flow (`looped`, `with`,
@@ -118,17 +118,16 @@ one `# debounced itinerarySettleTime`.
 change, `×→+`: fed the model, it emits case `"Book"` carrying the model on
 click. Its case is its caption; `icon` is presentation config.
 
-**Stage 4 — `indeterminateLinearProgress # action @[ … ] submit # atCase @"Book"`.**
-`+→+`: `atCase @"Book"` takes the button's case, its payload goes to
-`submit`, the progress bar shows while the `Aff` runs, and the outcome —
-`[ booked :: …, rejected :: String ]`, declared on the line since no model
-field holds it — is emitted when it settles.
-
-**Stage 5 — `VariantToRecord.do` of two snackbars.** `+→×`:
-`snackbar @"booked" bookedLine` and `snackbar @"rejected" rejectedLine`
-each take one outcome case of `submit` and render it with its copy
-function. Together they cover every case, and the block's output is `{}`,
-where the pipeline ends (writing.md *Components*).
+**Stage 4 — the statuses, then `# action @( … ) submit # atCase @"Book"`.**
+`+→+` opened by `+→×`: `atCase @"Book"` takes the button's case, its
+payload goes to `submit`, and the action is opened by a
+`VariantToRecord.do` of three statuses — the progress bar, shown between
+the run's `started` and `ended`, and `snackbar @"Flight booked"
+bookedLine` and `snackbar @"Booking rejected" rejectedLine`, each
+rendering one outcome case with its copy function. The outcome row,
+declared `@( … )` on the line since nothing downstream folds it, is
+emitted when the `Aff` settles, and the pipeline ends there (writing.md
+*Components*).
 
 ## The view model
 
@@ -277,10 +276,12 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
   selector, and panes over `remainingItems`.
 - **checkout** — a wizard: the step is a model field, Next/Back each emit
   their own case `# joined` with the model, and one `stepTo` folds both.
-- **crud** — a load action before the knot: `action @{ … } loadPeopleCatalogue`
-  declares the model, the loop is `# looped` with no row of its own, and
-  `body`'s one feed of `{}` runs the load; create/update/delete are `+→+` operands
-  inside the loop, their outcomes `identity` in the fold.
+- **crud** — a load action before the knot, `indeterminateLinearProgress #
+  action loadPeopleCatalogue`, its outcome folded in by `snackbar @"People
+  loaded" peopleLoadedLine # fold identity`, run by `body`'s one feed of
+  `{}`; create/update/delete are chains in the fold block, each an action
+  followed by the folds of its two outcomes, adopted `# atCase` under its
+  button's case.
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
   `snackbar @"New game" newGameLine # fold (const openingPosition)` the reset.
 - **order-form** — all four shapes on one screen: a `looped` form in

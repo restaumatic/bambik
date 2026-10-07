@@ -5,7 +5,7 @@ import Prelude
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI.Web ((<+>), choice, staticText)
-import PUI.Web.Fluent (body, button, dropdown, dropdownOptional, dropdownUnpicked, messageBar, progressBar, radioGroup, radioGroupOptional, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
+import PUI.Web.Fluent (body, button, dropdown, dropdownOptional, dropdownUnpicked, indeterminateLinearProgress, messageBar, progressBar, radioGroup, radioGroupOptional, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 
 lawBenchFluent :: Effect Unit
 lawBenchFluent = do
@@ -16,6 +16,7 @@ lawBenchFluent = do
     , bench "slider" "×→×" quantities (slider @"Amount" {})
     , bench "ratingDisplay" "×→×" fractions (ratingDisplay @"Stars" _.fraction)
     , bench "progressBar" "×→×" fractions (progressBar @"Progress" _.fraction)
+    , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
     , bench "dropdown" "×→×" chosen (dropdown @"Pick" {} options)
     , bench "dropdownUnpicked" "×→×" picks (dropdownUnpicked @"Pick" @"chosen" {} options)
     , bench "dropdownOptional" "×→×" picks (dropdownOptional @"Pick" @"chosen" @"unchosen" {} options)
@@ -31,6 +32,7 @@ lawBenchFluent = do
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
+  runs = [ .started {}, .ended {} ]
   options = (choice @"one" <+> choice @"two") :: Array { value :: [ one :: {}, two :: {} ], label :: String }
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }

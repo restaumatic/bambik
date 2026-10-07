@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
-import PUI (action, armed, atCase, blankStatus, bracketed, debounced, fold, looped, settled, updated)
+import PUI (action, armed, atCase, bracketed, debounced, fold, looped, settled, updated)
 import PUI.Web ((<+>), choice, inCase, shown, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,9 +16,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderFormMDC3 :: Effect Unit
 orderFormMDC3 =
   body $ ( Semigroupoid.do
-    ( VariantToRecord.do
-      indeterminateLinearProgress
-      blankStatus @"Order loaded" ) # action loadOrder
+    indeterminateLinearProgress # action loadOrder
     snackbar @"Order loaded" orderLoadedLine # fold identity
     ( Semigroupoid.do
       ( headlineSmall $ text orderLine ) # shown
@@ -38,9 +36,7 @@ orderFormMDC3 =
             filledTextField @"Address" {} # settled staleDistanceForgotten
             ( Semigroupoid.do
               button @"Estimate distance" { icon: "near_me" }
-              ( VariantToRecord.do
-                indeterminateLinearProgress
-                blankStatus @"estimated" ) # action @( estimated :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
+              indeterminateLinearProgress # action @( estimated :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
             ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf ) # inCase @"Delivery" _.selected ) # bracketed @"Mode" @( "Dine in" :: { "Table" :: String } , "Takeaway" :: { "Time" :: String } , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ) @( selected :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] ) fulfillmentState fulfillmentCase
       group @"Payment" $ Semigroupoid.do
         filledTextField @"Total" {}

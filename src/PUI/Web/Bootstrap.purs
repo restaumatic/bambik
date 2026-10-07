@@ -24,6 +24,7 @@ module PUI.Web.Bootstrap
   , card
   , listGroup
   , listGroupItem
+  , indeterminateLinearProgress
   , progress
   , select
   , selectUnpicked
@@ -387,3 +388,29 @@ foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
 -- | closed-app demand), switching design system with the rest of the import.
 body :: forall o. PUI Web {} o -> Effect Unit
 body = HTML.body
+
+-- | The **indeterminate progress bar**: a status fed a run's `started` and
+-- | `ended`, shown between them — what `PUI.action`'s slot dispatches
+-- | (`indeterminateLinearProgress # action submit`). No label: it names no
+-- | field and no case (2026-10-07, with the Material twins).
+indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
+indeterminateLinearProgress = wrap do
+  _ <- element "div" do
+    element "div" (pure unit)
+    bar <- gets _.sibling
+    liftEffect $ setAttribute bar "class" "progress-bar progress-bar-striped progress-bar-animated w-100"
+  node0 <- gets _.sibling
+  liftEffect do
+    setAttribute node0 "class" "progress"
+    setAttribute node0 "role" "progressbar"
+    setAttribute node0 "style" hiddenStyle
+  node <- gets _.sibling
+  pure
+    { toUser: Variant.match
+        { started: \_ -> setAttribute node "style" visibleStyle
+        , ended: \_ -> setAttribute node "style" hiddenStyle }
+    , fromUser: \_ -> pure unit
+    }
+  where
+  visibleStyle = "width: 100%; min-width: 200px;"
+  hiddenStyle = "width: 100%; min-width: 200px; visibility: hidden;"

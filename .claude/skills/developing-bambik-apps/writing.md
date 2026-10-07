@@ -175,9 +175,9 @@ a trailing word that says what it is for:
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod # replaying @"Clock ticked" identity` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"°C" {} # settled fromCelsius` | temperature-converter |
 | buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
-| an effect run on a button's case, the other events passing | `indeterminateLinearProgress # action createPerson # atCase @"Create" … # subChoice`, its outcome cases named by the `Aff` and folded by their statuses | crud |
+| an effect on a button's case, folded by its outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" … # fold identity; snackbar @"Person not created" … # fold identity } } ) # atCase @"Create"`, one chain per button in the fold block | crud |
 | an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `snackbar @"Forecast fetched" forecastFetchedLine # fold identity` | weather |
-| an effect with no progress indicator | `blankStatus @"Setlist reordered" # action rotateAction # atCase @"Rotate"` | reorder |
+| several effects with one outcome row | `indeterminateLinearProgress # actions { "Rotate": rotateAction, "Shuffle": shuffleAction }`, keyed by input case like `match` | reorder |
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
 | a heartbeat folded silently | `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch |
 
@@ -209,11 +209,14 @@ An app is one loop through the four shapes, tied once by `# looped @( … ) # wi
   RecordToVariant.do                          -- ×→+ the event ensemble: every emitter and pane
     button @"Add" {}
     listOf @"Todo toggled" … # joined @"Todo toggled"   --   an event with a payload of its own, joined with the model
-  … # action createPerson # atCase @"Create" # subChoice   -- +→+ effects on some events, the rest passing
   VariantToRecord.do                          -- +→× the folds, one per case, each opened by its status
     snackbar @"Add" todoAddedLine # fold addTodo
     snackbar @"Todo toggled" todoToggledLine # fold toggleTodo
-    snackbar @"Person created" personCreatedLine # fold identity
+    ( Semigroupoid.do                         --   an effect on a case, folded by its own outcomes
+      indeterminateLinearProgress # action createPerson
+      VariantToRecord.do
+        snackbar @"Person created" personCreatedLine # fold identity
+        snackbar @"Person not created" personNotCreatedLine # fold identity ) # atCase @"Create"
 ) # looped @( … ) # with seed
 ```
 
@@ -370,15 +373,25 @@ model module, as a real server would (crud's catalogue).
 
 **An action's outcome cases are named by its `Aff`** (`createPerson ::
 model -> Aff [ "Person created" :: model, "Person not created" :: model ]`,
-crud) and **opened by its statuses**: the line starts with the status
-block that shows the run — a progress indicator for `started`/`ended`, a
-status per outcome case it shows, or both in one `VariantToRecord.do`
-(flight-booker's `indeterminateLinearProgress` beside
-`snackbar @"Flight booked" bookedLine` and `snackbar @"Booking rejected"
-rejectedLine`); an outcome folded into the model is shown by its fold's
-status instead. Declare `@( … )` on the action only where no status or
-fold downstream fixes a payload. Do not merge two actions before their
-outcomes are named.
+crud) and **opened by its statuses**: a progress indicator for
+`started`/`ended`, a status per outcome case it shows, or both in one
+`VariantToRecord.do`. Its outcome row is fixed by what it composes into,
+never split out of a merge, so an action takes one of three shapes:
+- **folded**: the action and the fold block of its outcomes form one
+  chain, adopted under its button's case in the fold block
+  (`( Semigroupoid.do { indeterminateLinearProgress # action createPerson;
+  VariantToRecord.do { … } } ) # atCase @"Create"`, crud) — every case
+  named once, at its status;
+- **several `Aff`s, one outcome row**: `actions { "Rotate": rotateAction,
+  "Shuffle": shuffleAction }`, the record keyed by input case like
+  `match`'s, each function typed at the shared row (reorder);
+- **statuses only**: the statuses open the action and `@( … )` declares
+  the payloads nothing downstream fixes (flight-booker's
+  `indeterminateLinearProgress` beside `snackbar @"Flight booked"
+  bookedLine` and `snackbar @"Booking rejected" rejectedLine`).
+Actions with distinct outcome rows are never merged in a
+`VariantToVariant.do`: under holes the shared union cannot be split back
+into their rows.
 
 Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app

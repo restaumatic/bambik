@@ -149,8 +149,8 @@ subRetaining g =
 -- | The **blank status**: the faceless `+→×` leaf owning case `l` and
 -- | showing nothing of it — `blank` with a name, so it can open a fold
 -- | (`blankStatus @"Clock ticked" # fold tick`, a heartbeat nobody needs
--- | told about) or an action (`blankStatus @"Setlist reordered" # action
--- | rotateAction`) where the merge needs the case named and there is no
--- | face to name it. `lcmap (const {}) identity`, like `blank`.
+-- | told about), or declare an outcome case of an action that is only
+-- | merged, never folded, where the merge needs the case named and there
+-- | is no face to name it. `lcmap (const {}) identity`, like `blank`.
 blankStatus :: forall @l p a v. Cons l a () v => Profunctor p => Category p => p [ | v ] {}
 blankStatus = lcmap (const {}) identity

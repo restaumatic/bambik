@@ -5,7 +5,7 @@ import Prelude hiding (div)
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI.Web ((<+>), choice, clicked, dynamic, each, inCase, onClickedXY, provided, shown, shownEach, shownWhen, staticString, staticText, text)
-import PUI.Web.HTML (body, button, div, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
+import PUI.Web.HTML (body, button, div, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
 lawBenchHTML = do
@@ -15,6 +15,7 @@ lawBenchHTML = do
     , bench "textArea" "×→×" texts (textArea @"Name")
     , bench "rangeInput" "×→×" quantities (rangeInput @"Amount")
     , bench "progress" "×→×" fractions (progress @"Progress" _.fraction)
+    , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
     , bench "select" "×→×" chosen (select @"Pick" options)
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" options)
     , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
@@ -36,6 +37,7 @@ lawBenchHTML = do
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
+  runs = [ .started {}, .ended {} ]
   options = (choice @"one" <+> choice @"two") :: Array { value :: [ one :: {}, two :: {} ], label :: String }
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }

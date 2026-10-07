@@ -47,8 +47,6 @@ module PUI
   , Hooks
   , Logged
   , Sink
-  , class ActionOutcomes
-  , class OutcomesOf
   , class Hosting
   , hosting
   , setSink
@@ -56,6 +54,7 @@ module PUI
   , setDiagnostics
   , diagnosticsOn
   , action
+  , actions
   , fold
   , static
   , ticks
@@ -126,8 +125,8 @@ import Data.Profunctor.Strong (class Strong, first)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence)
 import Data.Tuple (Tuple(..), fst, snd)
-import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, case_, contract, inj, match, on)
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Variant (class Contractable, class VariantMatchCases, Unvariant(..), case_, contract, inj, match, on, unvariant)
 import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -1181,11 +1180,13 @@ static o = widenRecordInput (o identity :: p {} {})
 -- | and `ended` (a progress indicator, `indeterminateLinearProgress # action createPerson`) and the **outcome cases** the `Aff`
 -- | returns as a variant (`snackbar @"Flight booked" bookedLine # action
 -- | submit`), or a `VariantToRecord.do` block of both. The slot's row is
--- | `[ started, ended | t ]` with `t` **read off the slot**: the statuses
--- | opening an action name every outcome case its `Aff` returns, with
--- | `blankStatus @l` for a case nothing shows, and the outcome leaves as
--- | the variant `[ | t ]` — so no `toCase` follows, and `@t` is declared
--- | only where no status or fold downstream fixes a payload. No application owns a
+-- | `[ started, ended | t ]`, so a status names only the cases it shows,
+-- | and the outcome leaves as the variant `[ | t ]` named by the `Aff`, so
+-- | no `toCase` follows. The row is fixed by what the action composes into
+-- | — its own fold block (`… # action createPerson` then the folds of its
+-- | outcomes, the chain adopted `# atCase @"Create"`, crud) — or declared
+-- | `@( … )` where only statuses follow (flight-booker). Several `Aff`s
+-- | sharing an outcome row open under one slot with `actions`. No application owns a
 -- | "busy": the indicator shows between `started` and `ended` and, like
 -- | every status, owes the channel nothing. A stage with nothing to show
 -- | opens with `blankStatus @l` naming its outcome case; `blank` alone
@@ -1197,39 +1198,67 @@ static o = widenRecordInput (o identity :: p {} {})
 -- | onward, since there is no output to post. An action whose function is a
 -- | hole never runs (guardrails L18): a view's own literal seed may reach
 -- | it before its logic exists.
--- | The slot's row minus the lifecycle cases is the action's outcome row:
--- | the statuses opening an action name every case its `Aff` can return.
-class ActionOutcomes (v1 :: Row Type) (t :: Row Type) | v1 -> t
-instance (RowToList v1 rl, OutcomesOf rl t) => ActionOutcomes v1 t
-
-class OutcomesOf (rl :: RL.RowList Type) (t :: Row Type) | rl -> t
-instance OutcomesOf RL.Nil ()
-else instance OutcomesOf rl t => OutcomesOf (RL.Cons "started" a rl) t
-else instance OutcomesOf rl t => OutcomesOf (RL.Cons "ended" a rl) t
-else instance (OutcomesOf rl t1, Cons l a t1 t) => OutcomesOf (RL.Cons l a rl) t
-
 action
   :: forall @t a v1 m
    . MonadEffect m
-  => ActionOutcomes v1 t
   => Contractable ( started :: {}, ended :: {} | t ) v1
   => (a -> Aff [ | t ])
   -> PUI m [ | v1 ] {}
   -> PUI m a [ | t ]
-action arr w = action'
-  (\i pro post -> if isHole arr then pure unit else do
-    let tell v = for_ (contract (v :: [ started :: {}, ended :: {} | t ]) :: Maybe _) pro
-    liftEffect $ tell (inj (Proxy @"started") {})
-    result <- attempt (arr i)
-    liftEffect $ tell (inj (Proxy @"ended") {})
-    case result of
-      Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
-      Right o -> liftEffect do
-        post o
-        -- the outcome widened to the slot's row: a variant is a tagged value,
-        -- so the widening is the identity (`expand` cannot solve `Union` at
-        -- an open tail)
-        tell (unsafeCoerce o))
+action arr = running \i -> if isHole arr then Nothing else Just (arr i)
+
+-- | **Several separate `Aff`s with distinct input cases and one outcome
+-- | row**, opened by one slot: the record is keyed by input case exactly as
+-- | `match`'s is (`indeterminateLinearProgress # actions { "Rotate":
+-- | rotateAction, "Shuffle": shuffleAction }`, reorder), each function typed
+-- | `payload -> Aff [ | t ]` at the shared outcome row, and the stage owns
+-- | exactly the record's cases. Where `action` on one function dispatching
+-- | inside would make the dispatch the business function's job, this keeps
+-- | the functions separate and the dispatch the view's, like a fold block;
+-- | and where a `VariantToVariant.do` of actions would leave each action's
+-- | outcome row to be split backwards from the shared union (impossible
+-- | under holes, L18), one row shared by construction needs no naming on
+-- | any line. A hole in a field never runs.
+actions
+  :: forall @t rec rl v v1 m
+   . MonadEffect m
+  => RowToList rec rl
+  => VariantMatchCases rl v (Aff [ | t ])
+  => Contractable ( started :: {}, ended :: {} | t ) v1
+  => Record rec
+  -> PUI m [ | v1 ] {}
+  -> PUI m [ | v ] [ | t ]
+actions fs = running \v -> case unvariant v of
+  Unvariant k -> k \sym a ->
+    let f = unsafeGet (reflectSymbol sym) fs
+    in if isHole f then Nothing else Just (f a)
+
+-- The run shared by `action` and `actions`: `Nothing` is a hole, which
+-- never runs (guardrails L18); otherwise `started` and `ended` are told to
+-- the slot around the `Aff`, and its outcome is posted onward and told too.
+running
+  :: forall t a v1 m
+   . MonadEffect m
+  => Contractable ( started :: {}, ended :: {} | t ) v1
+  => (a -> Maybe (Aff [ | t ]))
+  -> PUI m [ | v1 ] {}
+  -> PUI m a [ | t ]
+running run w = action'
+  (\i pro post -> case run i of
+    Nothing -> pure unit
+    Just aff -> do
+      let tell v = for_ (contract (v :: [ started :: {}, ended :: {} | t ]) :: Maybe _) pro
+      liftEffect $ tell (inj (Proxy @"started") {})
+      result <- attempt aff
+      liftEffect $ tell (inj (Proxy @"ended") {})
+      case result of
+        Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
+        Right o -> liftEffect do
+          post o
+          -- the outcome widened to the slot's row: a variant is a tagged value,
+          -- so the widening is the identity (`expand` cannot solve `Union` at
+          -- an open tail)
+          tell (unsafeCoerce o))
   w
 
 -- | One case **folded into the record** (`+→×`), opened by its status —

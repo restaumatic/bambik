@@ -529,11 +529,10 @@ the dev server). Two suites: **demo/7guis/** (the
   ones that exist; unsuffixed pages get none. The per-variant diff is the
   honest catalog mapping (typography renames per the Material migration guide;
   vocabularies lacking `listOf` build selectable lists as a keyed `foreach` of
-  `clicked @l` rows; those lacking an indeterminate progress run Aff stages as
-  `blankStatus @l # action …`).
+  `clicked @l` rows; every vocabulary has `indeterminateLinearProgress` since 2026-10-07).
 - **The app shape** is one loop through the four shapes, `( Semigroupoid.do
   … displays and editors …; RecordToVariant.do { emitters, panes, joined
-  picks }; … actions # subChoice …; VariantToRecord.do { status @l line # fold f …; statuses } ) # looped @( … ) # with seed`
+  picks }; VariantToRecord.do { status @l line # fold f …; ( action, then the folds of its outcomes ) # atCase @l …; statuses } ) # looped @( … ) # with seed`
   — the model row declared where the model first appears, every event into its own
   memoryless `status @l line # fold f`, closed to `PUI Web {} model`; what must show at mount
   stands before the ensemble, since a stage after the fold is fed only by
@@ -555,7 +554,7 @@ the dev server). Two suites: **demo/7guis/** (the
 | temperature-converter | both fields in the model; non-numeric input leaves the other untouched |
 | flight-booker | type-changing `select @"Flight type" {}` over an anonymous variant row; both outcomes carry bare payloads into two sibling statuses, `snackbar @"booked" bookedLine` and `snackbar @"rejected" rejectedLine` |
 | timer | `ticks @"tick"` replayed and folded by a total `tick`; `sliderLive` duration re-scoped at runtime |
-| crud | **a load action before the knot**: `( action @{ … } loadPeopleCatalogue; ( editors; list and buttons; actions # subChoice; folds ) # looped )` — the model declared as the load's outcome, the knot carrying no row; `MDC2.listOf @l` (keyed `foreach` of `clicked @l` rows elsewhere), its pick `# joined @"picked"`; Aff catalogue actions over the logic's module-level stand-in server returning the model, their cases `identity` in the fold, the edit cases passing under `subChoice` (guardrails L18) |
+| crud | **a load action before the knot**: `( indeterminateLinearProgress # action loadPeopleCatalogue; snackbar @"People loaded" … # fold identity; ( editors; list and buttons; folds ) # looped @( … ) )` — the load's outcome folded in, the knot declaring the model; `MDC2.listOf @l` (keyed `foreach` of `clicked @l` rows elsewhere), its pick `# joined @"Person picked"`; Aff catalogue actions over the logic's module-level stand-in server, each returning its two outcome cases and standing in the fold block as a chain with their folds, adopted `# atCase` under its button (experiment 2026-10-07) |
 | circle-drawer | **channel-fed SVG canvas** — built once, updated via `attrWith`; container-level `onClickedXY @l`; the diameter a bounded quantity in the model, its slider `# inCase @"chosen" _.selected # settled resizeSelected` — live-preview resize as a state invariant — and the canvas click `# joined @"picked"`, an `adjusting` flag coalescing a drag into one undo transaction |
 | cells | **channel-fed 31×27 grid** — ~800 cells built once, `attrWith` + `text` in place, clicked key via `clicked @l _.key`; hand-rolled formula evaluator over an `Expr` AST (nominal, since rows can't express μ) |
 
