@@ -17,12 +17,12 @@ flightBookerShoelace =
     ( Semigroupoid.do
       select @"Flight type" {}
         (choice @"one-way" <+> choice @"return")
-      textField @"Start date" { hint: "DD.MM.YYYY" }
-      textField @"Return date" { hint: "DD.MM.YYYY" } # inCase @"return" _."Flight type"
+      textField @"Start date (DD.MM.YYYY)" {}
+      textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-       , "Start date" :: String
-       , "Return date" :: String
+       , "Start date (DD.MM.YYYY)" :: String
+       , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
     ( Semigroupoid.do
       p (text problemLine) # shownWhen @"problem"

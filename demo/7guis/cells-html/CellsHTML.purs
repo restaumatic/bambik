@@ -15,11 +15,9 @@ cellsHTML :: Effect Unit
 cellsHTML =
   body $ div $ Semigroupoid.do
     p (text selectedLine) # shown
-    p ( Semigroupoid.do
-      label $ Semigroupoid.do
-        (staticText "Formula ") # shown
-        input @"Formula" "text" # "size" := "32"
-      (staticText " e.g. =SUM(A0:A5)*2") # shown ) # settled commit
+    p ( label $ Semigroupoid.do
+      (staticText "Formula (e.g. =SUM(A0:A5)*2) ") # shown
+      input @"Formula (e.g. =SUM(A0:A5)*2)" "text" # "size" := "32" ) # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
       ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
         ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
@@ -33,7 +31,7 @@ cellsHTML =
   # looped
     @( cells :: Object String
      , selected :: [ picked :: { name :: String }, none :: {} ]
-     , "Formula" :: String
+     , "Formula (e.g. =SUM(A0:A5)*2)" :: String
      ) # with orderSheet
 
 headerFace :: String

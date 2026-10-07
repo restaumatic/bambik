@@ -11,10 +11,10 @@ import Effect.Aff (Aff)
 
 plannedTrip
   :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date" :: String
-     , "Start date" :: String
+     , "Return date (DD.MM.YYYY)" :: String
+     , "Start date (DD.MM.YYYY)" :: String
      }
-plannedTrip = { "Flight type": ."one-way" {}, "Start date": "27.03.2026", "Return date": "27.03.2026" }
+plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.2026", "Return date (DD.MM.YYYY)": "27.03.2026" }
 
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
@@ -41,8 +41,8 @@ returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
-parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date" :: String, "Return date" :: String | r1 } -> Either [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
-parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } = case parseDate startInput of
+parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> Either [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } = case parseDate startInput of
   Nothing -> Left (.unreadableStart { input: startInput })
   Just start ->
     if flightType /= ."return" {} then Right (.oneWayOn start)
@@ -54,8 +54,8 @@ parse { "Flight type": flightType, "Start date": startInput, "Return date": retu
 
 bookingState
   :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date" :: String
-     , "Start date" :: String
+     , "Return date (DD.MM.YYYY)" :: String
+     , "Start date (DD.MM.YYYY)" :: String
      }
   -> [ "one-way" :: { out :: { d :: Int, m :: Int, y :: Int } }
      , problem :: { problem :: [ returnBeforeStart :: {}
@@ -105,8 +105,8 @@ summary = match
 
 submit
   :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date" :: String
-     , "Start date" :: String
+     , "Return date (DD.MM.YYYY)" :: String
+     , "Start date (DD.MM.YYYY)" :: String
      }
   -> Aff [ "Booking rejected" :: [ returnBeforeStart :: {}
                                  , unreadableReturn :: { input :: String }

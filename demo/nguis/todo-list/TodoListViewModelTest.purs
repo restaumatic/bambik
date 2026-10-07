@@ -6,8 +6,8 @@ import TodoListViewModel (addTodo, clearCompleted, emptyTodoList, remainingItems
 
 todoListClaims :: Array { claim :: String, holds :: Boolean }
 todoListClaims =
-  [ { claim: "adding stores the trimmed title and clears the field", holds: withMilk.todos == [ { title: "Buy milk", status: .active {} } ] && withMilk."New todo" == "" }
-  , { claim: "a blank entry adds nothing", holds: addTodo (emptyTodoList { "New todo" = "   " }) == emptyTodoList { "New todo" = "   " } }
+  [ { claim: "adding stores the trimmed title and clears the field", holds: withMilk.todos == [ { title: "Buy milk", status: .active {} } ] && withMilk."What needs to be done?" == "" }
+  , { claim: "a blank entry adds nothing", holds: addTodo (emptyTodoList { "What needs to be done?" = "   " }) == emptyTodoList { "What needs to be done?" = "   " } }
   , { claim: "toggling completes the todo", holds: map _.status milkBought.todos == [ .completed {} ] }
   , { claim: "one active todo is the sole case", holds: remainingItems withMilk == .sole { count: 1 } }
   , { claim: "the counts read naturally", holds: soleLine { count: 1 } == "1 item left" && severalLine { count: 3 } == "3 items left" }
@@ -15,5 +15,5 @@ todoListClaims =
   , { claim: "clearing completed removes them", holds: (clearCompleted milkBought).todos == [] }
   ]
   where
-  withMilk = addTodo (emptyTodoList { "New todo" = "  Buy milk  " })
+  withMilk = addTodo (emptyTodoList { "What needs to be done?" = "  Buy milk  " })
   milkBought = toggleTodo { event: 0, model: withMilk }

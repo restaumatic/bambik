@@ -16,12 +16,12 @@ flightBookerMDC2 =
     ( Semigroupoid.do
       select @"Flight type" {}
         (choice @"one-way" <+> choice @"return")
-      filledTextField @"Start date" { hint: "DD.MM.YYYY" }
-      filledTextField @"Return date" { hint: "DD.MM.YYYY" } # inCase @"return" _."Flight type"
+      filledTextField @"Start date (DD.MM.YYYY)" {}
+      filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-       , "Start date" :: String
-       , "Return date" :: String
+       , "Start date (DD.MM.YYYY)" :: String
+       , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
     ( Semigroupoid.do
       body1 (text problemLine) # shownWhen @"problem"

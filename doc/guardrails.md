@@ -137,14 +137,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   share one handler under different words, they are two business actions
   — each emits its own case and the fold block applies the one handler to
   both (checkout's `stepTo`). An editor's caption config is held to the
-  same rule: the label carries the name whole — punctuation and units
-  included (`@"Amount (€)"`) — and a caption that merely repeats what the
-  label already says MUST move onto the label. Copy that tells the user
-  how to fill a field in rather than naming it — a format, an example, a
-  question — is the text field's `hint:`, optional presentation like an
-  icon (`filledTextField @"Start date" { hint: "DD.MM.YYYY" }`): on the
-  label it would become the model field's name, and every business
-  function would read the instruction. Only copy a label genuinely cannot be (localized wording)
+  same rule: the label carries the copy whole — punctuation, format hints
+  and units included (`@"Start date (DD.MM.YYYY)"`, `@"Amount (€)"`) — and
+  a caption that merely repeats what the label already says MUST move onto
+  the label. Only copy a label genuinely cannot be (localized wording)
   stays in config. A selector's **options** are its ordered case labels
   (`choice @l` per option), never a hand-written `{ value, label }` array;
   the order MUST be the order written, never the variant row's, which the

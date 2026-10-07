@@ -15,5 +15,5 @@ flightBookerClaims =
   , { claim: "a rejection says why it cannot book", holds: rejectedLine (.unreadableReturn { input: "soon" }) == "Cannot book: return date \"soon\" is not a valid DD.MM.YYYY date" }
   ]
   where
-  backBeforeOut = plannedTrip { "Flight type" = ."return" {}, "Return date" = "26.03.2026" }
-  badStart = plannedTrip { "Start date" = "32.03.2026" }
+  backBeforeOut = plannedTrip { "Flight type" = ."return" {}, "Return date (DD.MM.YYYY)" = "26.03.2026" }
+  badStart = plannedTrip { "Start date (DD.MM.YYYY)" = "32.03.2026" }

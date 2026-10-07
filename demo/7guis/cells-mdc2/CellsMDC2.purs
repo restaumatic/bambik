@@ -17,7 +17,7 @@ cellsMDC2 =
   body $
     Semigroupoid.do
       body1 (text selectedLine) # shown
-      filledTextField @"Formula" { hint: "e.g. =SUM(A0:A5)*2" } # settled commit
+      filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
       ( div >>> "style" := "overflow: auto; max-height: 420px;" $
         ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
           ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
@@ -31,7 +31,7 @@ cellsMDC2 =
     # looped
       @( cells :: Object String
        , selected :: [ picked :: { name :: String }, none :: {} ]
-       , "Formula" :: String
+       , "Formula (e.g. =SUM(A0:A5)*2)" :: String
        ) # with orderSheet
 
 headerFace :: String

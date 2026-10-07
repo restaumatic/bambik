@@ -17,20 +17,16 @@ flightBookerHTML =
       p ( label $ Semigroupoid.do
         (staticText "Flight type ") # shown
         select @"Flight type" (choice @"one-way" <+> choice @"return") )
-      p ( Semigroupoid.do
-        label $ Semigroupoid.do
-          (staticText "Start date ") # shown
-          input @"Start date" "text"
-        (staticText " DD.MM.YYYY") # shown )
-      p ( Semigroupoid.do
-        label $ Semigroupoid.do
-          (staticText "Return date ") # shown
-          input @"Return date" "text"
-        (staticText " DD.MM.YYYY") # shown ) # inCase @"return" _."Flight type"
+      p ( label $ Semigroupoid.do
+        (staticText "Start date (DD.MM.YYYY) ") # shown
+        input @"Start date (DD.MM.YYYY)" "text" )
+      p ( label $ Semigroupoid.do
+        (staticText "Return date (DD.MM.YYYY) ") # shown
+        input @"Return date (DD.MM.YYYY)" "text" ) # inCase @"return" _."Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-       , "Start date" :: String
-       , "Return date" :: String
+       , "Start date (DD.MM.YYYY)" :: String
+       , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
     ( Semigroupoid.do
       p (text problemLine) # shownWhen @"problem"
