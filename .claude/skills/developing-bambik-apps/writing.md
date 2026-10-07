@@ -89,9 +89,11 @@ find which field is missing.
 label is the copy it draws.** `filledTextField @"First name" {}`
 captions itself "First name" and edits the field `"First name"`;
 `button @"Submit order" {}` draws "Submit order" and emits the case
-`"Submit order"`. Labels are human copy, so they are usually quoted,
-and the model's rows carry the same quoted labels
-(`{ "First name" :: String }`). A quoted label cannot be a record pun,
+`"Submit order"`. This keeps the code as close to the running UI as
+possible: the words on the screen are the words in the code, so a line
+is found from the screen and the screen from a line. Labels are human
+copy, so they are usually quoted, and the model's rows carry the same
+quoted labels (`{ "First name" :: String }`). A quoted label cannot be a record pun,
 so bind explicitly:
 
 ```purescript

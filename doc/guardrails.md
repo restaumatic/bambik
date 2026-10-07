@@ -131,7 +131,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   to its label verbatim — nothing derives copy from an identifier — so
   labels are written as the words they render and are therefore usually
   quoted strings, in the business rows as much as at the leaf
-  (`{ "First name" :: String }`). A quoted label MUST NOT appear in a
+  (`{ "First name" :: String }`). The reason is relatability: the code
+  stays as close to the running UI as possible, the words on the screen
+  being the words in the code. A quoted label MUST NOT appear in a
   record pun (the compiler forbids it); bind explicitly instead. An
   emitter MUST NOT be given a `label:` config: where two buttons would
   share one handler under different words, they are two business actions
