@@ -12,19 +12,18 @@ import TipCalculatorViewModel (dinnerBill, perPersonLine, splitLine, tipAmountLi
 
 tipCalculatorMDC3 :: Effect Unit
 tipCalculatorMDC3 =
-  body $
-    Semigroupoid.do
-      filledTextField @"Bill amount" {}
-      slider @"Tip percentage" {}
-      rangeInput @"Tip percentage"
-      bodyMedium (text tipLine) # shown
-      bodyMedium (text splitLine) # shown
-      slider @"Split between" {}
-      bodyMedium (text tipAmountLine) # shown
-      bodyMedium (text totalLine) # shown
-      bodyMedium (text perPersonLine) # shown
-    # looped
-      @( "Bill amount" :: String
-       , "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Split between" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       ) # with dinnerBill
+  body $ Semigroupoid.do
+    filledTextField @"Bill amount" {}
+    slider @"Tip percentage" {}
+    rangeInput @"Tip percentage"
+    bodyMedium (text tipLine) # shown
+    bodyMedium (text splitLine) # shown
+    slider @"Split between" {}
+    bodyMedium (text tipAmountLine) # shown
+    bodyMedium (text totalLine) # shown
+    bodyMedium (text perPersonLine) # shown
+  # looped
+    @( "Bill amount" :: String
+     , "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , "Split between" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     ) # with dinnerBill

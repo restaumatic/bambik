@@ -10,8 +10,7 @@ import TemperatureConverterViewModel (fromCelsius, fromFahrenheit, roomTemperatu
 
 temperatureConverterBootstrap :: Effect Unit
 temperatureConverterBootstrap =
-  body $
-    Semigroupoid.do
-      textField @"celsius" {} # settled fromCelsius
-      textField @"fahrenheit" {} # settled fromFahrenheit
-    # looped @( celsius :: String, fahrenheit :: String ) # with roomTemperature
+  body $ Semigroupoid.do
+    textField @"celsius" {} # settled fromCelsius
+    textField @"fahrenheit" {} # settled fromFahrenheit
+  # looped @( celsius :: String, fahrenheit :: String ) # with roomTemperature

@@ -13,18 +13,17 @@ import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshT
 
 timerFluent :: Effect Unit
 timerFluent =
-  body $
-    Semigroupoid.do
-      progressBar elapsedFraction # shown
-      (body1 $ text progressLine) # shown
-      slider @"Duration" {}
-      RecordToVariant.do
-        blankStatus @"Clock ticked" # ticks tickPeriod
-        button @"Reset" {}
-      VariantToRecord.do
-        blankStatus @"Clock ticked" # fold tick
-        blankStatus @"Reset" # fold restarted
-    # looped
-      @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , elapsed :: Number
-       ) # with tenSecondFreshTimer
+  body $ Semigroupoid.do
+    progressBar elapsedFraction # shown
+    (body1 $ text progressLine) # shown
+    slider @"Duration" {}
+    RecordToVariant.do
+      blankStatus @"Clock ticked" # ticks tickPeriod
+      button @"Reset" {}
+    VariantToRecord.do
+      blankStatus @"Clock ticked" # fold tick
+      blankStatus @"Reset" # fold restarted
+  # looped
+    @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , elapsed :: Number
+     ) # with tenSecondFreshTimer

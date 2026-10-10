@@ -11,11 +11,10 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 departuresMDC3 :: Effect Unit
 departuresMDC3 =
-  body $
-    Semigroupoid.do
-      ( Semigroupoid.do
-        list $ ( listItem $ text flightLine ) # shown # dispatched @String @{ code :: String, status :: String } arrival
-        bodyMedium (text updateLine) ) # shown
-      blankStatus @"Board refreshed" # ticks tickPeriod
-      blankStatus @"Board refreshed" # fold tick
-    # looped @( beat :: Int ) # with boardOpening
+  body $ Semigroupoid.do
+    ( Semigroupoid.do
+      list $ ( listItem $ text flightLine ) # shown # dispatched @String @{ code :: String, status :: String } arrival
+      bodyMedium (text updateLine) ) # shown
+    blankStatus @"Board refreshed" # ticks tickPeriod
+    blankStatus @"Board refreshed" # fold tick
+  # looped @( beat :: Int ) # with boardOpening

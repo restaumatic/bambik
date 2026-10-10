@@ -11,12 +11,11 @@ a model, the counter (MDC2):
 ```purescript
 counterMDC2 :: Effect Unit
 counterMDC2 =
-  body $
-    Semigroupoid.do
-      headline4 (text countLine) # shown
-      button @"Count" {}
-      snackbar @"Count" countedLine # fold increment
-    # looped @( counted :: Int ) # with freshCount
+  body $ Semigroupoid.do
+    headline4 (text countLine) # shown
+    button @"Count" {}
+    snackbar @"Count" countedLine # fold increment
+  # looped @( counted :: Int ) # with freshCount
 ```
 
 ```purescript

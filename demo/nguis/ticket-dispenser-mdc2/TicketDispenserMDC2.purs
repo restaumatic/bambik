@@ -11,17 +11,16 @@ import TicketDispenserViewModel (emptyQueue, firstTicketHint, issue, noTicketLin
 
 ticketDispenserMDC2 :: Effect Unit
 ticketDispenserMDC2 =
-  body $
-    Semigroupoid.do
-      headline3 ( Semigroupoid.do
-        (text noTicketLine) # shownWhen @"waiting" _.display
-        (text ticketLine) # shownWhen @"serving" _.display )
-      body2 ( Semigroupoid.do
-        (text firstTicketHint) # shownWhen @"waiting" _.display
-        (text servingLine) # shownWhen @"serving" _.display )
-      button @"Take a number" {}
-      snackbar @"Take a number" ticketTakenLine # fold issue
-    # looped
-      @( display :: [ waiting :: {}, serving :: { number :: Int } ]
-       , next :: Int
-       ) # with emptyQueue
+  body $ Semigroupoid.do
+    headline3 ( Semigroupoid.do
+      (text noTicketLine) # shownWhen @"waiting" _.display
+      (text ticketLine) # shownWhen @"serving" _.display )
+    body2 ( Semigroupoid.do
+      (text firstTicketHint) # shownWhen @"waiting" _.display
+      (text servingLine) # shownWhen @"serving" _.display )
+    button @"Take a number" {}
+    snackbar @"Take a number" ticketTakenLine # fold issue
+  # looped
+    @( display :: [ waiting :: {}, serving :: { number :: Int } ]
+     , next :: Int
+     ) # with emptyQueue

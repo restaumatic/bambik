@@ -14,25 +14,24 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsMDC2 :: Effect Unit
 cellsMDC2 =
-  body $
-    Semigroupoid.do
-      body1 (text selectedLine) # shown
-      filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
-      ( div >>> "style" := "overflow: auto; max-height: 420px;" $
-        ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
-          ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
-          ( tr $ Semigroupoid.do
-            ( td >>> "style" := headerFace $ text rowLabel ) # shown
-            ( clicked @"Cell picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey"
-              @( rowKey :: String
-               , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
-               ) sheetRows ) ) # joined @"Cell picked"
-      blankStatus @"Cell picked" # fold selectCell
-    # looped
-      @( cells :: Object String
-       , selected :: [ picked :: { name :: String }, none :: {} ]
-       , "Formula (e.g. =SUM(A0:A5)*2)" :: String
-       ) # with orderSheet
+  body $ Semigroupoid.do
+    body1 (text selectedLine) # shown
+    filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
+    ( div >>> "style" := "overflow: auto; max-height: 420px;" $
+      ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
+        ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
+        ( tr $ Semigroupoid.do
+          ( td >>> "style" := headerFace $ text rowLabel ) # shown
+          ( clicked @"Cell picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey"
+            @( rowKey :: String
+             , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
+             ) sheetRows ) ) # joined @"Cell picked"
+    blankStatus @"Cell picked" # fold selectCell
+  # looped
+    @( cells :: Object String
+     , selected :: [ picked :: { name :: String }, none :: {} ]
+     , "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     ) # with orderSheet
 
 headerFace :: String
 headerFace = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"

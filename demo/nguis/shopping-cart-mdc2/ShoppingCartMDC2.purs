@@ -14,23 +14,22 @@ import ShoppingCartViewModel (addUnit, cartEmptiedLine, cartLines, catalogueLine
 
 shoppingCartMDC2 :: Effect Unit
 shoppingCartMDC2 =
-  body $
-    Semigroupoid.do
-      body1 (text totalLine) # shown
-      RecordToVariant.do
-        listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) {} productCatalogue (text catalogueLine) # joined @"Unit added"
-        dataTable "Cart"
-          ( RecordToRecord.do
-            columnHeader "Product"
-            columnHeader "Qty"
-            columnHeader "Total" )
-          ( ( clicked @"Unit removed" _.product $ dataRow RecordToRecord.do
-            dataCell (text productLine)
-            dataCell (text quantityLine)
-            dataCell (text lineTotalLine) ) # foreach @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"Unit removed"
-        button @"Empty cart" {}
-      VariantToRecord.do
-        blankStatus @"Unit added" # fold addUnit
-        blankStatus @"Unit removed" # fold removeUnit
-        snackbar @"Empty cart" cartEmptiedLine # fold (const emptyCart)
-    # looped @( order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } ) # with emptyCart
+  body $ Semigroupoid.do
+    body1 (text totalLine) # shown
+    RecordToVariant.do
+      listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) {} productCatalogue (text catalogueLine) # joined @"Unit added"
+      dataTable "Cart"
+        ( RecordToRecord.do
+          columnHeader "Product"
+          columnHeader "Qty"
+          columnHeader "Total" )
+        ( ( clicked @"Unit removed" _.product $ dataRow RecordToRecord.do
+          dataCell (text productLine)
+          dataCell (text quantityLine)
+          dataCell (text lineTotalLine) ) # foreach @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"Unit removed"
+      button @"Empty cart" {}
+    VariantToRecord.do
+      blankStatus @"Unit added" # fold addUnit
+      blankStatus @"Unit removed" # fold removeUnit
+      snackbar @"Empty cart" cartEmptiedLine # fold (const emptyCart)
+  # looped @( order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } ) # with emptyCart

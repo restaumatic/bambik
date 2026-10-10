@@ -12,26 +12,25 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 colorMixerMDC3 :: Effect Unit
 colorMixerMDC3 =
-  body $
-    Semigroupoid.do
-      sliderLive @"Red" {}
-      sliderLive @"Green" {}
-      sliderLive @"Blue" {}
-      ( bodyMedium $ text hexLine ) # shown
-      ( bodyMedium $ text rgbLine ) # shown
-      ( div $ Semigroupoid.do
-        div >>> attrWith "style" swatchStyle $ blank
-        div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-          clicked @"Preset applied" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name"
-            @( name :: String
-             , mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
-             ) (const palette) ) # joined @"Preset applied"
-      blankStatus @"Preset applied" # fold applyPreset
-    # looped
-      @( "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       ) # with duskViolet
+  body $ Semigroupoid.do
+    sliderLive @"Red" {}
+    sliderLive @"Green" {}
+    sliderLive @"Blue" {}
+    ( bodyMedium $ text hexLine ) # shown
+    ( bodyMedium $ text rgbLine ) # shown
+    ( div $ Semigroupoid.do
+      div >>> attrWith "style" swatchStyle $ blank
+      div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
+        clicked @"Preset applied" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name"
+          @( name :: String
+           , mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
+           ) (const palette) ) # joined @"Preset applied"
+    blankStatus @"Preset applied" # fold applyPreset
+  # looped
+    @( "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     ) # with duskViolet
 
 chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
 chipFace { mix } = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb mix <> ";"

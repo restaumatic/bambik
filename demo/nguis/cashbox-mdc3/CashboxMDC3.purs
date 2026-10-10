@@ -14,18 +14,17 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 cashboxMDC3 :: Effect Unit
 cashboxMDC3 =
-  body $
-    Semigroupoid.do
-      ( headlineSmall $ text balanceLine ) # shown
-      RecordToVariant.do
-        button @"Refund a customer" { icon: "undo" }
-        button @"Pay the courier" { icon: "local_shipping" }
-        button @"Take a deposit" { icon: "savings" }
-      ( VariantToVariant.do
-        ( confirmed "Refund" "Refund the customer?" $ bodyLarge $ text refundLine ) # atCase @"Refund a customer" # toCase @"Customer refunded" identity
-        ( confirmed "Pay" "Pay the courier?" $ bodyLarge $ text payoutLine ) # atCase @"Pay the courier" # toCase @"Courier paid out" identity ) # subChoice
-      VariantToRecord.do
-        snackbar @"Customer refunded" customerRefundedLine # fold refundStandard
-        snackbar @"Courier paid out" courierPaidOutLine # fold payCourier
-        snackbar @"Take a deposit" depositTakenLine # fold takeDeposit
-    # looped @( balance :: Number ) # with openedTill
+  body $ Semigroupoid.do
+    ( headlineSmall $ text balanceLine ) # shown
+    RecordToVariant.do
+      button @"Refund a customer" { icon: "undo" }
+      button @"Pay the courier" { icon: "local_shipping" }
+      button @"Take a deposit" { icon: "savings" }
+    ( VariantToVariant.do
+      ( confirmed "Refund" "Refund the customer?" $ bodyLarge $ text refundLine ) # atCase @"Refund a customer" # toCase @"Customer refunded" identity
+      ( confirmed "Pay" "Pay the courier?" $ bodyLarge $ text payoutLine ) # atCase @"Pay the courier" # toCase @"Courier paid out" identity ) # subChoice
+    VariantToRecord.do
+      snackbar @"Customer refunded" customerRefundedLine # fold refundStandard
+      snackbar @"Courier paid out" courierPaidOutLine # fold payCourier
+      snackbar @"Take a deposit" depositTakenLine # fold takeDeposit
+  # looped @( balance :: Number ) # with openedTill

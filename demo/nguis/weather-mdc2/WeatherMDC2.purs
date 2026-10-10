@@ -12,24 +12,23 @@ import WeatherViewModel (aboutLine, conditionLine, fetchReport, forecastRequests
 
 weatherMDC2 :: Effect Unit
 weatherMDC2 =
-  body $
-    RecordUpdate.do
-      headline1 (text temperatureLine)
-      headline5 (text conditionLine)
-      body1 (text humidityWindLine)
-      caption (text servedLine)
-      ( Semigroupoid.do
-        iconButton @"About this dashboard" {} "info"
-        simpleDialog "Got it" "About this dashboard"
-          ( body1 (text aboutLine) ) # atCase @"About this dashboard" )
-      ( Semigroupoid.do
-        listOf @"Forecast requested" @"request"
-          @( request :: { city :: String, sample :: Int }
-           , focus :: [ current :: {}, other :: {} ]
-           ) { selected: isCurrent } forecastRequests (text _.request.city) # joined @"Forecast requested"
-        indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"
-        blankStatus @"Forecast fetched" # fold identity )
-    # looped
-      @( report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
-       , servedReports :: Int
-       ) # with warsawBulletin
+  body $ RecordUpdate.do
+    headline1 (text temperatureLine)
+    headline5 (text conditionLine)
+    body1 (text humidityWindLine)
+    caption (text servedLine)
+    ( Semigroupoid.do
+      iconButton @"About this dashboard" {} "info"
+      simpleDialog "Got it" "About this dashboard"
+        ( body1 (text aboutLine) ) # atCase @"About this dashboard" )
+    ( Semigroupoid.do
+      listOf @"Forecast requested" @"request"
+        @( request :: { city :: String, sample :: Int }
+         , focus :: [ current :: {}, other :: {} ]
+         ) { selected: isCurrent } forecastRequests (text _.request.city) # joined @"Forecast requested"
+      indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"
+      blankStatus @"Forecast fetched" # fold identity )
+  # looped
+    @( report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
+     , servedReports :: Int
+     ) # with warsawBulletin

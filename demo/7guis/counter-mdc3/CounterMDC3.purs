@@ -11,9 +11,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 counterMDC3 :: Effect Unit
 counterMDC3 =
-  body $
-    Semigroupoid.do
-      headlineLarge (text countLine) # shown
-      button @"Count" {}
-      snackbar @"Count" countedLine # fold increment
-    # looped @( counted :: Int ) # with freshCount
+  body $ Semigroupoid.do
+    headlineLarge (text countLine) # shown
+    button @"Count" {}
+    snackbar @"Count" countedLine # fold increment
+  # looped @( counted :: Int ) # with freshCount

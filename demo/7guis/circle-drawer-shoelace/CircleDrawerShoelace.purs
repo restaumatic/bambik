@@ -16,35 +16,34 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 circleDrawerShoelace :: Effect Unit
 circleDrawerShoelace =
-  body $
-    Semigroupoid.do
-      sliderLive @"Diameter" {} # inCase @"chosen" _.selected # settled resizeSelected
-      RecordToVariant.do
-        ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
-          ( onClickedXY @"Canvas clicked"
-            ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
-              >>> attrWith "fill" circleFill $ blank ) # foreach @"key"
-                @( key :: String
-                 , x :: String
-                 , y :: String
-                 , r :: String
-                 , status :: [ selected :: {}, unselected :: {} ]
-                 ) canvasCircles ) ) ) # joined @"Canvas clicked"
-        ( div $ RecordToVariant.do
-          button @"Undo" {}
-          button @"Redo" {} )
-      VariantToRecord.do
-        blankStatus @"Canvas clicked" # fold selectOrAddCircle
-        blankStatus @"Undo" # fold undo
-        blankStatus @"Redo" # fold redo
-    # looped
-      @( circles :: Array { x :: Number, y :: Number, r :: Number }
-       , selected :: [ chosen :: { index :: Int }, none :: {} ]
-       , "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , drag :: [ adjusting :: {}, settled :: {} ]
-       , undoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
-       , redoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
-       ) # with emptyCanvas
+  body $ Semigroupoid.do
+    sliderLive @"Diameter" {} # inCase @"chosen" _.selected # settled resizeSelected
+    RecordToVariant.do
+      ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
+        ( onClickedXY @"Canvas clicked"
+          ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
+            >>> attrWith "fill" circleFill $ blank ) # foreach @"key"
+              @( key :: String
+               , x :: String
+               , y :: String
+               , r :: String
+               , status :: [ selected :: {}, unselected :: {} ]
+               ) canvasCircles ) ) ) # joined @"Canvas clicked"
+      ( div $ RecordToVariant.do
+        button @"Undo" {}
+        button @"Redo" {} )
+    VariantToRecord.do
+      blankStatus @"Canvas clicked" # fold selectOrAddCircle
+      blankStatus @"Undo" # fold undo
+      blankStatus @"Redo" # fold redo
+  # looped
+    @( circles :: Array { x :: Number, y :: Number, r :: Number }
+     , selected :: [ chosen :: { index :: Int }, none :: {} ]
+     , "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , drag :: [ adjusting :: {}, settled :: {} ]
+     , undoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
+     , redoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
+     ) # with emptyCanvas
 
 circleFill :: { key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 circleFill { status } = match { selected: \_ -> "#ddd", unselected: \_ -> "transparent" } status

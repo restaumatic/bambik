@@ -10,8 +10,7 @@ import TemperatureConverterViewModel (fromCelsius, fromFahrenheit, roomTemperatu
 
 temperatureConverterMDC2 :: Effect Unit
 temperatureConverterMDC2 =
-  body $
-    RecordUpdate.do
-      filledTextField @"celsius" {} # settled fromCelsius
-      filledTextField @"fahrenheit" {} # settled fromFahrenheit
-    # looped @( celsius :: String, fahrenheit :: String ) # with roomTemperature
+  body $ RecordUpdate.do
+    filledTextField @"celsius" {} # settled fromCelsius
+    filledTextField @"fahrenheit" {} # settled fromFahrenheit
+  # looped @( celsius :: String, fahrenheit :: String ) # with roomTemperature

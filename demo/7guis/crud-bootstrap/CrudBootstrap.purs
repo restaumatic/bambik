@@ -14,41 +14,40 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudBootstrap :: Effect Unit
 crudBootstrap =
-  body $
-    Semigroupoid.do
-      indeterminateLinearProgress # action loadPeopleCatalogue
-      blankStatus @"People loaded" # fold identity
-      ( Semigroupoid.do
-        textField @"Filter prefix (surname)" {}
-        textField @"Name" {}
-        textField @"Surname" {}
-        RecordToVariant.do
-          ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
-            ( clicked @"Person picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key"
-              @( key :: Int
-               , "Name" :: String
-               , "Surname" :: String
-               , status :: [ selected :: {}, unselected :: {} ]
-               ) entries ) # joined @"Person picked"
-          button @"Create" {}
-          button @"Update" {}
-          button @"Delete" {}
-        ( VariantToVariant.do
-          indeterminateLinearProgress # action createPerson # atCase @"Create"
-          indeterminateLinearProgress # action updatePerson # atCase @"Update"
-          indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
-        VariantToRecord.do
-          blankStatus @"Person picked" # fold pick
-          toast @"Person created" personCreatedLine # fold identity
-          toast @"Person not created" personNotCreatedLine # fold identity
-          toast @"Person updated" personUpdatedLine # fold identity
-          toast @"Person not updated" personNotUpdatedLine # fold identity
-          toast @"Person deleted" personDeletedLine # fold identity
-          toast @"Person not deleted" personNotDeletedLine # fold identity
-      ) # looped
-        @( "Filter prefix (surname)" :: String
-         , "Name" :: String
-         , "Surname" :: String
-         , people :: Array { "Name" :: String, "Surname" :: String }
-         , selected :: [ none :: {}, picked :: { index :: Int } ]
-         )
+  body $ Semigroupoid.do
+    indeterminateLinearProgress # action loadPeopleCatalogue
+    blankStatus @"People loaded" # fold identity
+    ( Semigroupoid.do
+      textField @"Filter prefix (surname)" {}
+      textField @"Name" {}
+      textField @"Surname" {}
+      RecordToVariant.do
+        ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
+          ( clicked @"Person picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key"
+            @( key :: Int
+             , "Name" :: String
+             , "Surname" :: String
+             , status :: [ selected :: {}, unselected :: {} ]
+             ) entries ) # joined @"Person picked"
+        button @"Create" {}
+        button @"Update" {}
+        button @"Delete" {}
+      ( VariantToVariant.do
+        indeterminateLinearProgress # action createPerson # atCase @"Create"
+        indeterminateLinearProgress # action updatePerson # atCase @"Update"
+        indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
+      VariantToRecord.do
+        blankStatus @"Person picked" # fold pick
+        toast @"Person created" personCreatedLine # fold identity
+        toast @"Person not created" personNotCreatedLine # fold identity
+        toast @"Person updated" personUpdatedLine # fold identity
+        toast @"Person not updated" personNotUpdatedLine # fold identity
+        toast @"Person deleted" personDeletedLine # fold identity
+        toast @"Person not deleted" personNotDeletedLine # fold identity
+    ) # looped
+      @( "Filter prefix (surname)" :: String
+       , "Name" :: String
+       , "Surname" :: String
+       , people :: Array { "Name" :: String, "Surname" :: String }
+       , selected :: [ none :: {}, picked :: { index :: Int } ]
+       )

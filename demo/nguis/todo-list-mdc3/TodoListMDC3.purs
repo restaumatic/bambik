@@ -14,27 +14,26 @@ import TodoListViewModel (addTodo, clearCompleted, emptyTodoList, isCompleted, r
 
 todoListMDC3 :: Effect Unit
 todoListMDC3 =
-  body $
-    Semigroupoid.do
-      filledTextField @"What needs to be done?" {}
-      segmentedButton @"Visibility"
-        (choice @"All" <+> choice @"Active" <+> choice @"Completed")
-      bodySmall (text soleLine) # shownWhen @"sole" @( sole :: { count :: Int }, several :: { count :: Int } ) remainingItems
-      bodySmall (text severalLine) # shownWhen @"several" remainingItems
-      RecordToVariant.do
-        button @"Add" {}
-        listOf @"Todo toggled" @"key"
-          @( key :: Int
-           , title :: String
-           , status :: [ active :: {}, completed :: {} ]
-           ) {} visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # joined @"Todo toggled"
-        button @"Clear completed" {}
-      VariantToRecord.do
-        blankStatus @"Add" # fold addTodo
-        blankStatus @"Todo toggled" # fold toggleTodo
-        blankStatus @"Clear completed" # fold clearCompleted
-    # looped
-      @( "What needs to be done?" :: String
-       , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }
-       , "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ]
-       ) # with emptyTodoList
+  body $ Semigroupoid.do
+    filledTextField @"What needs to be done?" {}
+    segmentedButton @"Visibility"
+      (choice @"All" <+> choice @"Active" <+> choice @"Completed")
+    bodySmall (text soleLine) # shownWhen @"sole" @( sole :: { count :: Int }, several :: { count :: Int } ) remainingItems
+    bodySmall (text severalLine) # shownWhen @"several" remainingItems
+    RecordToVariant.do
+      button @"Add" {}
+      listOf @"Todo toggled" @"key"
+        @( key :: Int
+         , title :: String
+         , status :: [ active :: {}, completed :: {} ]
+         ) {} visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # joined @"Todo toggled"
+      button @"Clear completed" {}
+    VariantToRecord.do
+      blankStatus @"Add" # fold addTodo
+      blankStatus @"Todo toggled" # fold toggleTodo
+      blankStatus @"Clear completed" # fold clearCompleted
+  # looped
+    @( "What needs to be done?" :: String
+     , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }
+     , "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ]
+     ) # with emptyTodoList

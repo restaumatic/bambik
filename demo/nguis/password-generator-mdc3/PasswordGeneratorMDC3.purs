@@ -12,23 +12,22 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 passwordGeneratorMDC3 :: Effect Unit
 passwordGeneratorMDC3 =
-  body $
-    Semigroupoid.do
-      slider @"Length" {}
-      toggleSwitch @"Uppercase letters" {}
-      toggleSwitch @"Lowercase letters" {}
-      toggleSwitch @"Digits" {}
-      toggleSwitch @"Symbols" {}
-      bodyMedium (text strengthLine) # shown
-      code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
-      button @"Generate" {}
-      indeterminateLinearProgress # action samplePassword # atCase @"Generate"
-      blankStatus @"Password generated" # fold identity
-    # looped
-      @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Uppercase letters" :: Boolean
-       , "Lowercase letters" :: Boolean
-       , "Digits" :: Boolean
-       , "Symbols" :: Boolean
-       , password :: String
-       ) # with strongMixRecipe
+  body $ Semigroupoid.do
+    slider @"Length" {}
+    toggleSwitch @"Uppercase letters" {}
+    toggleSwitch @"Lowercase letters" {}
+    toggleSwitch @"Digits" {}
+    toggleSwitch @"Symbols" {}
+    bodyMedium (text strengthLine) # shown
+    code >>> attr "style" "word-break: break-all;" $ text passwordText # shown
+    button @"Generate" {}
+    indeterminateLinearProgress # action samplePassword # atCase @"Generate"
+    blankStatus @"Password generated" # fold identity
+  # looped
+    @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , "Uppercase letters" :: Boolean
+     , "Lowercase letters" :: Boolean
+     , "Digits" :: Boolean
+     , "Symbols" :: Boolean
+     , password :: String
+     ) # with strongMixRecipe

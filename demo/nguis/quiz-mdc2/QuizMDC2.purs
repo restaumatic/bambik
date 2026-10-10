@@ -14,22 +14,21 @@ import QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questio
 
 quizMDC2 :: Effect Unit
 quizMDC2 =
-  body $
-    RecordUpdate.do
-      linearProgress quizProgress
-      body1 $ text questionLine
-      ( Semigroupoid.do
-        RecordToVariant.do
-          ( Semigroupoid.do
-            headline5 (text askedPrompt) # shown
-            listOf @"Question answered" @"key" {} _.choices (text _.label) ) # provided @"asking"
-              @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }
-               , finished :: { correct :: Int }
-               ) quizPhase # joined @"Question answered"
-          ( Semigroupoid.do
-            headline6 (text finalScoreLine) # shown
-            button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase
-        VariantToRecord.do
-          blankStatus @"Question answered" # fold answer
-          blankStatus @"Restart" # fold (const freshQuizRun) )
-    # looped @( question :: Int, correct :: Int ) # with freshQuizRun
+  body $ RecordUpdate.do
+    linearProgress quizProgress
+    body1 $ text questionLine
+    ( Semigroupoid.do
+      RecordToVariant.do
+        ( Semigroupoid.do
+          headline5 (text askedPrompt) # shown
+          listOf @"Question answered" @"key" {} _.choices (text _.label) ) # provided @"asking"
+            @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }
+             , finished :: { correct :: Int }
+             ) quizPhase # joined @"Question answered"
+        ( Semigroupoid.do
+          headline6 (text finalScoreLine) # shown
+          button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase
+      VariantToRecord.do
+        blankStatus @"Question answered" # fold answer
+        blankStatus @"Restart" # fold (const freshQuizRun) )
+  # looped @( question :: Int, correct :: Int ) # with freshQuizRun

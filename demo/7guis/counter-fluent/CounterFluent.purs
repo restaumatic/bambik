@@ -11,9 +11,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 counterFluent :: Effect Unit
 counterFluent =
-  body $
-    Semigroupoid.do
-      title3 (text countLine) # shown
-      button @"Count" {}
-      messageBar @"Count" countedLine # fold increment
-    # looped @( counted :: Int ) # with freshCount
+  body $ Semigroupoid.do
+    title3 (text countLine) # shown
+    button @"Count" {}
+    messageBar @"Count" countedLine # fold increment
+  # looped @( counted :: Int ) # with freshCount

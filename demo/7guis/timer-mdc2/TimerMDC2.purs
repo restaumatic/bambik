@@ -14,19 +14,18 @@ import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshT
 
 timerMDC2 :: Effect Unit
 timerMDC2 =
-  body $
-    RecordUpdate.do
-      linearProgress elapsedFraction
-      body1 $ text progressLine
-      sliderLive @"Duration" {}
-      ( Semigroupoid.do
-        RecordToVariant.do
-          blankStatus @"Clock ticked" # ticks tickPeriod
-          button @"Reset" { icon: "replay" }
-        VariantToRecord.do
-          blankStatus @"Clock ticked" # fold tick
-          blankStatus @"Reset" # fold restarted )
-    # looped
-      @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , elapsed :: Number
-       ) # with tenSecondFreshTimer
+  body $ RecordUpdate.do
+    linearProgress elapsedFraction
+    body1 $ text progressLine
+    sliderLive @"Duration" {}
+    ( Semigroupoid.do
+      RecordToVariant.do
+        blankStatus @"Clock ticked" # ticks tickPeriod
+        button @"Reset" { icon: "replay" }
+      VariantToRecord.do
+        blankStatus @"Clock ticked" # fold tick
+        blankStatus @"Reset" # fold restarted )
+  # looped
+    @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , elapsed :: Number
+     ) # with tenSecondFreshTimer

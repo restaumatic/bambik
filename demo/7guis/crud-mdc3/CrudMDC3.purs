@@ -14,40 +14,39 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudMDC3 :: Effect Unit
 crudMDC3 =
-  body $
-    Semigroupoid.do
-      indeterminateLinearProgress # action loadPeopleCatalogue
-      blankStatus @"People loaded" # fold identity
-      ( Semigroupoid.do
-        filledTextField @"Filter prefix (surname)" {}
-        filledTextField @"Name" {}
-        filledTextField @"Surname" {}
-        RecordToVariant.do
-          listOf @"Person picked" @"key"
-            @( key :: Int
-             , "Name" :: String
-             , "Surname" :: String
-             , status :: [ selected :: {}, unselected :: {} ]
-             ) { selected: isSelected } entries (text personLine # shown) # joined @"Person picked"
-          button @"Create" {}
-          button @"Update" {}
-          button @"Delete" {}
-        ( VariantToVariant.do
-          indeterminateLinearProgress # action createPerson # atCase @"Create"
-          indeterminateLinearProgress # action updatePerson # atCase @"Update"
-          indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
-        VariantToRecord.do
-          blankStatus @"Person picked" # fold pick
-          snackbar @"Person created" personCreatedLine # fold identity
-          snackbar @"Person not created" personNotCreatedLine # fold identity
-          snackbar @"Person updated" personUpdatedLine # fold identity
-          snackbar @"Person not updated" personNotUpdatedLine # fold identity
-          snackbar @"Person deleted" personDeletedLine # fold identity
-          snackbar @"Person not deleted" personNotDeletedLine # fold identity
-      ) # looped
-        @( "Filter prefix (surname)" :: String
-         , "Name" :: String
-         , "Surname" :: String
-         , people :: Array { "Name" :: String, "Surname" :: String }
-         , selected :: [ none :: {}, picked :: { index :: Int } ]
-         )
+  body $ Semigroupoid.do
+    indeterminateLinearProgress # action loadPeopleCatalogue
+    blankStatus @"People loaded" # fold identity
+    ( Semigroupoid.do
+      filledTextField @"Filter prefix (surname)" {}
+      filledTextField @"Name" {}
+      filledTextField @"Surname" {}
+      RecordToVariant.do
+        listOf @"Person picked" @"key"
+          @( key :: Int
+           , "Name" :: String
+           , "Surname" :: String
+           , status :: [ selected :: {}, unselected :: {} ]
+           ) { selected: isSelected } entries (text personLine # shown) # joined @"Person picked"
+        button @"Create" {}
+        button @"Update" {}
+        button @"Delete" {}
+      ( VariantToVariant.do
+        indeterminateLinearProgress # action createPerson # atCase @"Create"
+        indeterminateLinearProgress # action updatePerson # atCase @"Update"
+        indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
+      VariantToRecord.do
+        blankStatus @"Person picked" # fold pick
+        snackbar @"Person created" personCreatedLine # fold identity
+        snackbar @"Person not created" personNotCreatedLine # fold identity
+        snackbar @"Person updated" personUpdatedLine # fold identity
+        snackbar @"Person not updated" personNotUpdatedLine # fold identity
+        snackbar @"Person deleted" personDeletedLine # fold identity
+        snackbar @"Person not deleted" personNotDeletedLine # fold identity
+    ) # looped
+      @( "Filter prefix (surname)" :: String
+       , "Name" :: String
+       , "Surname" :: String
+       , people :: Array { "Name" :: String, "Surname" :: String }
+       , selected :: [ none :: {}, picked :: { index :: Int } ]
+       )

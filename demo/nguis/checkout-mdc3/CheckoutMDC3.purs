@@ -13,37 +13,36 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkoutMDC3 :: Effect Unit
 checkoutMDC3 =
-  body $
-    Semigroupoid.do
-      ( bodyMedium $ text cartLine ) # shownWhen @"cart"
-        @( cart :: { item :: String }
-         , shipping :: { address :: String }
-         , payment :: { card :: String }
-         ) checkoutStep
-      ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
-      ( bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
-      RecordToVariant.do
-        button @"Next" {} # provided @"onward"
-          @( onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
-           , last :: {}
-           ) onwardFrom # joined @"Next"
-        button @"Back" {} # provided @"back"
-          @( back :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
-           , first :: {}
-           ) previousOf # joined @"Back"
-        button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep # joined @"Place order"
-      VariantToRecord.do
-        blankStatus @"Next" # fold stepTo
-        blankStatus @"Back" # fold stepTo
-        snackbar @"Place order" orderPlacedLine # fold orderPlaced
-      ( bodyMedium $ text placedLine ) # shownWhen @"placed"
-        @( pending :: {}
-         , placed :: { item :: String, address :: String, card :: String }
-         ) orderStatus
-    # looped
-      @( item :: String
-       , address :: String
-       , card :: String
-       , status :: [ pending :: {}, placed :: {} ]
-       , step :: [ cart :: {}, shipping :: {}, payment :: {} ]
-       ) # with freshOrder
+  body $ Semigroupoid.do
+    ( bodyMedium $ text cartLine ) # shownWhen @"cart"
+      @( cart :: { item :: String }
+       , shipping :: { address :: String }
+       , payment :: { card :: String }
+       ) checkoutStep
+    ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
+    ( bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
+    RecordToVariant.do
+      button @"Next" {} # provided @"onward"
+        @( onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+         , last :: {}
+         ) onwardFrom # joined @"Next"
+      button @"Back" {} # provided @"back"
+        @( back :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
+         , first :: {}
+         ) previousOf # joined @"Back"
+      button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep # joined @"Place order"
+    VariantToRecord.do
+      blankStatus @"Next" # fold stepTo
+      blankStatus @"Back" # fold stepTo
+      snackbar @"Place order" orderPlacedLine # fold orderPlaced
+    ( bodyMedium $ text placedLine ) # shownWhen @"placed"
+      @( pending :: {}
+       , placed :: { item :: String, address :: String, card :: String }
+       ) orderStatus
+  # looped
+    @( item :: String
+     , address :: String
+     , card :: String
+     , status :: [ pending :: {}, placed :: {} ]
+     , step :: [ cart :: {}, shipping :: {}, payment :: {} ]
+     ) # with freshOrder

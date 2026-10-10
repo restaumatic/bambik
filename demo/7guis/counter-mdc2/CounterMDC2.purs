@@ -12,10 +12,9 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 counterMDC2 :: Effect Unit
 counterMDC2 =
-  body $
-    RecordUpdate.do
-      headline4 (text countLine)
-      ( Semigroupoid.do
-        button @"Count" {}
-        snackbar @"Count" countedLine # fold increment )
-    # looped @( counted :: Int ) # with freshCount
+  body $ RecordUpdate.do
+    headline4 (text countLine)
+    ( Semigroupoid.do
+      button @"Count" {}
+      snackbar @"Count" countedLine # fold increment )
+  # looped @( counted :: Int ) # with freshCount

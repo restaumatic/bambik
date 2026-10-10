@@ -14,24 +14,23 @@ import StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming,
 
 stopwatchMDC2 :: Effect Unit
 stopwatchMDC2 =
-  body $
-    Semigroupoid.do
-      headline3 (text elapsedText) # shown
-      RecordToVariant.do
-        blankStatus @"Clock ticked" # ticks tickPeriod
-        button @"Start" { icon: "play_arrow" } # provided @"halted" _.phase # joined @"Start"
-        button @"Stop" { icon: "stop" } # provided @"timing" _.phase # joined @"Stop"
-        button @"Lap" { icon: "flag" } # provided @"timing" _.phase # joined @"Lap"
-        button @"Reset" { icon: "replay" } # provided @"halted" _.phase # joined @"Reset"
-      VariantToRecord.do
-        blankStatus @"Clock ticked" # fold tick
-        blankStatus @"Start" # fold beginTiming
-        blankStatus @"Stop" # fold haltTiming
-        blankStatus @"Lap" # fold recordLap
-        blankStatus @"Reset" # fold clearStopwatch
-      ul $ ( li $ text lapLine ) # shownEach @"number" @( number :: Int, tenths :: Int ) lapRows
-    # looped
-      @( phase :: [ halted :: {}, timing :: {} ]
-       , elapsedTenths :: Int
-       , laps :: Array Int
-       ) # with zeroedStopwatch
+  body $ Semigroupoid.do
+    headline3 (text elapsedText) # shown
+    RecordToVariant.do
+      blankStatus @"Clock ticked" # ticks tickPeriod
+      button @"Start" { icon: "play_arrow" } # provided @"halted" _.phase # joined @"Start"
+      button @"Stop" { icon: "stop" } # provided @"timing" _.phase # joined @"Stop"
+      button @"Lap" { icon: "flag" } # provided @"timing" _.phase # joined @"Lap"
+      button @"Reset" { icon: "replay" } # provided @"halted" _.phase # joined @"Reset"
+    VariantToRecord.do
+      blankStatus @"Clock ticked" # fold tick
+      blankStatus @"Start" # fold beginTiming
+      blankStatus @"Stop" # fold haltTiming
+      blankStatus @"Lap" # fold recordLap
+      blankStatus @"Reset" # fold clearStopwatch
+    ul $ ( li $ text lapLine ) # shownEach @"number" @( number :: Int, tenths :: Int ) lapRows
+  # looped
+    @( phase :: [ halted :: {}, timing :: {} ]
+     , elapsedTenths :: Int
+     , laps :: Array Int
+     ) # with zeroedStopwatch

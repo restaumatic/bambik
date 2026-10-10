@@ -11,12 +11,11 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 auctionMDC2 :: Effect Unit
 auctionMDC2 =
-  body $
-    Semigroupoid.do
-      ( body2 $ text bidLine ) # shown
-      sliderLive @"Your bid ($)" {} # settled raiseTop
-      ( headline6 $ text topLine ) # shown
-    # looped
-      @( "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , top :: Number
-       ) # with openingBid
+  body $ Semigroupoid.do
+    ( body2 $ text bidLine ) # shown
+    sliderLive @"Your bid ($)" {} # settled raiseTop
+    ( headline6 $ text topLine ) # shown
+  # looped
+    @( "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , top :: Number
+     ) # with openingBid
