@@ -3,7 +3,6 @@ module QuizMDC2 (quizMDC2) where
 import Prelude ((#), ($), Unit, const)
 
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.RecordUpdate as RecordUpdate
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (blankStatus, fold, joined, looped, with)
@@ -14,21 +13,20 @@ import QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questio
 
 quizMDC2 :: Effect Unit
 quizMDC2 =
-  body $ RecordUpdate.do
-    linearProgress quizProgress
-    body1 $ text questionLine
-    ( Semigroupoid.do
-      RecordToVariant.do
-        ( Semigroupoid.do
-          headline5 (text askedPrompt) # shown
-          listOf @"Question answered" @"key" {} _.choices (text _.label) ) # provided @"asking"
-            @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }
-             , finished :: { correct :: Int }
-             ) quizPhase # joined @"Question answered"
-        ( Semigroupoid.do
-          headline6 (text finalScoreLine) # shown
-          button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase
-      VariantToRecord.do
-        blankStatus @"Question answered" # fold answer
-        blankStatus @"Restart" # fold (const freshQuizRun) )
+  body $ Semigroupoid.do
+    linearProgress quizProgress # shown
+    ( body1 $ text questionLine ) # shown
+    RecordToVariant.do
+      ( Semigroupoid.do
+        headline5 (text askedPrompt) # shown
+        listOf @"Question answered" @"key" {} _.choices (text _.label) ) # provided @"asking"
+          @( asking :: { prompt :: String, choices :: Array { key :: Int, label :: String } }
+           , finished :: { correct :: Int }
+           ) quizPhase # joined @"Question answered"
+      ( Semigroupoid.do
+        headline6 (text finalScoreLine) # shown
+        button @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase
+    VariantToRecord.do
+      blankStatus @"Question answered" # fold answer
+      blankStatus @"Restart" # fold (const freshQuizRun)
   # looped @( question :: Int, correct :: Int ) # with freshQuizRun
