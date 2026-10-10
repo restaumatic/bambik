@@ -6,7 +6,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (blankStatus, fold, joined, looped, with)
-import PUI.Web ((<+>), choice, clWhen, shownWhen, text)
+import PUI.Web ((<+>), choice, clWhen, shownWhen, text, textAt)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, button, bodySmall, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -26,7 +26,7 @@ todoListMDC3 =
         @( key :: Int
          , title :: String
          , status :: [ active :: {}, completed :: {} ]
-         ) {} visibleEntries (span (text _.title) # clWhen isCompleted "todo-done") # joined @"Todo toggled"
+         ) {} visibleEntries (span (textAt @"title") # clWhen isCompleted "todo-done") # joined @"Todo toggled"
       button @"Clear completed" {}
     VariantToRecord.do
       blankStatus @"Add" # fold addTodo

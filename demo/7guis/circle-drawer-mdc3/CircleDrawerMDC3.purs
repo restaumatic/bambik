@@ -8,7 +8,7 @@ import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (blank, blankStatus, fold, foreach, joined, looped, settled, with)
-import PUI.Web (attrWith, inCase, onClickedXY, (:=))
+import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, (:=))
 import PUI.Web.MDC3 (body, button, cardActions, sliderLive)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,11 +16,11 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 circleDrawerMDC3 :: Effect Unit
 circleDrawerMDC3 =
   body $ Semigroupoid.do
-    sliderLive @"Diameter" {} # inCase @"chosen" _.selected # settled resizeSelected
+    sliderLive @"Diameter" {} # inCaseAt @"chosen" @"selected" # settled resizeSelected
     RecordToVariant.do
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
         ( onClickedXY @"Canvas clicked"
-          ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
+          ( ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
             >>> attrWith "fill" circleFill $ blank ) # foreach @"key"
               @( key :: String
                , x :: String

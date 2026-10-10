@@ -23,7 +23,7 @@ shoppingCartMDC3 =
           columnHeader "Product"
           columnHeader "Qty"
           columnHeader "Total" )
-        ( ( clicked @"Unit removed" _.product $ dataRow RecordToRecord.do
+        ( ( clicked @"Unit removed" @"product" $ dataRow RecordToRecord.do
           dataCell (text productLine)
           dataCell (text quantityLine)
           dataCell (text lineTotalLine) ) # foreach @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"Unit removed"

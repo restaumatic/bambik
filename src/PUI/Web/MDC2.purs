@@ -86,6 +86,7 @@ module PUI.Web.MDC2
   , list
   , listItem
   , listOf
+  , listOfAt
   , menu
   , menuItem
   , outlinedButton
@@ -141,7 +142,7 @@ import Data.Profunctor.Seeding (isHole)
 import PUI (Ocular, PUI, blank, foreach, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, shown, staticHTML, staticText, text, textOf, uniqueId, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clickedRow, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, shown, staticHTML, staticText, text, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -339,9 +340,9 @@ buttonOf mModifier provided = eventLeaf @l $
 
 -- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld) —
--- `clicked` over the input-freed chrome, the last-built element listening
+-- `clickedRow` over the input-freed chrome, the last-built element listening
 eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
-eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
+eventLeaf chrome = clickedRow @l (widenRecordInput chrome)
 
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
@@ -1497,7 +1498,7 @@ listOf
   -> PUI Web { | i } [ | v ]
 listOf provided f item = withStructuralOrd @key $ wrap do
   w <- unwrap $ ul >>> cl "mdc-deprecated-list" >>> "style" := "overflow-y: auto;" $
-    ( clicked @l (Record.get (Proxy @k)) $ clWhen config.selected "mdc-deprecated-list-item--selected"
+    ( clicked @l @k $ clWhen config.selected "mdc-deprecated-list-item--selected"
         $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
     ) # foreach @k f
   node <- gets _.sibling
@@ -1511,6 +1512,24 @@ listOf provided f item = withStructuralOrd @key $ wrap do
     }
   where
   config = convertOptionsWithDefaults OptSelected { selected: const false } provided
+
+-- | `listOf` over an array the model stores: the rows are field `t` of the
+-- | fed row, named by its label after the key
+-- | (`listOfAt @"Message opened" @"id" @"messages" {} item`). Rows derived
+-- | from the row are a projection, `listOf`.
+listOfAt
+  :: forall @l @k @t provided i r b1 b2 o key v
+   . IsSymbol l
+  => IsSymbol k
+  => IsSymbol t
+  => Cons l key () v
+  => Cons k key b1 r
+  => Cons t (Array { | r }) b2 i
+  => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
+  => { | provided }
+  -> PUI Web { | r } o
+  -> PUI Web { | i } [ | v ]
+listOfAt provided = listOf @l @k @r provided (Record.get (Proxy @t))
 
 -- | A **data table**: values in rows and columns, where the column a value
 -- | sits in is what says what it means. its header slot holds the

@@ -100,8 +100,10 @@ so bind explicitly:
 createPerson { "Name": name, "Surname": surname, people } = …
 ```
 
-Field access (`r."Name"`), accessor sections (`_."Name"`) and update
-syntax (`r { "Name" = … }`) work as usual. Put punctuation and units on
+In the view model module, field access (`r."Name"`), accessor sections
+(`_."Name"`) and update syntax (`r { "Name" = … }`) work as usual; a
+view names a field only by its label (see
+[The anchor invariant](#code-style)). Put punctuation and units on
 the label (`filledTextField @"Start date (DD.MM.YYYY)" {}`,
 `sliderLive @"Amount (€)" {}`); where a symbol is the conventional
 caption, write the symbol (`@celsius`). A caption config (`floatingLabel:`,
@@ -168,8 +170,8 @@ a trailing word that says what it is for:
 | --- | --- | --- |
 | a display or chrome, always there | `(headlineSmall $ text orderLine) # shown` | order-form |
 | a display shown in one case | `text distanceLine # shownWhen @"estimated" distanceOf` | order-form |
-| an editor that exists in one case | `filledTextField @"Table" {} # inCase @"Dine in" selection` | order-form |
-| a button that exists in one case | `button @"Start" {…} # provided @"halted" _.phase` | stopwatch |
+| an editor that exists in one case | `filledTextField @"Table" {} # inCaseAt @"Dine in" @"selected"` | order-form |
+| a button that exists in one case | `button @"Start" {…} # providedAt @"halted" @"phase"` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # shownEach @"number" lapRows` | stopwatch |
 | content that waits for the user to confirm | `confirmed "Refund" "Refund the customer?" $ …` | cashbox |
 | an event folded into the model | `blankStatus @"Add" # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
@@ -275,9 +277,10 @@ the variant is at the named case and is given that case's payload:
 `shownWhen` for a display, `inCase` for an editor, `provided` for an
 emitter.
 
-When the state is stored in the model as a variant, the pane reads the
-field with an accessor (inbox's `# provided @"confirming" _.deletion`,
-flight-booker's `# inCase @"return" _."Flight type"`), typed by the
+When the state is stored in the model as a variant, the pane names the
+case and then the field, both by label — `providedAt`, `shownWhenAt`,
+`inCaseAt` (stopwatch's `# providedAt @"halted" @"phase"`,
+flight-booker's `# inCaseAt @"return" @"Flight type"`) — typed by the
 model row the seed line declares. When it is derived, one classifier
 derives it, naming every case and giving each case exactly what its
 pane shows — checkout's `checkoutStep`, calculator's `readout`, inbox's
@@ -294,8 +297,8 @@ UI — a lookup, an `Aff` result — and a classifier converts it (inbox's
 
 An editor that exists only in one mode is `# inCase`, not a pane whose
 edits you fold back by hand. Order-form's fulfillment fields,
-flight-booker's return date (`# inCase @"return" _."Flight type"`) and
-meeting-booker's attendees slider (`# inCase @"chosen" _."Room"`) are the
+flight-booker's return date (`# inCaseAt @"return" @"Flight type"`) and
+meeting-booker's attendees slider (`# inCaseAt @"chosen" @"Room"`) are the
 examples; a variant field edited through several such panes is wrapped
 in `# bracketed @"Mode" …` (order-form).
 
@@ -306,7 +309,7 @@ in `# bracketed @"Mode" …` (order-form).
 A dialog opens when it is fed and closes when one of its buttons emits.
 Feed it only in the state that asks for it and put the deciding buttons
 inside: inbox's `dialog "Delete the last message?" $ RecordToVariant.do
-…` under `# provided @"confirming" _.deletion`. For a confirmation step
+…` under `# provided @"confirming" deletionPane`. For a confirmation step
 inside a flow, `confirmed` (cashbox).
 
 A drawer's navigation is the first stage and its content the second, so
@@ -315,7 +318,9 @@ the pick reaches the content directly (photo-gallery).
 ## Collections
 
 - **Keyed and kept.** `foreach @"key" rowsOf` and `listOf @l @k` render
-  one element per row, identified by a key field of the row. An element
+  one element per row, identified by a key field of the row; an array
+  the model stores is named instead of projected (`foreachAt @"key"
+  @"cells"`, `listOfAt @l @k @"messages"`). An element
   whose key survives a change is updated in place and keeps its focus
   and local state; a reordered list moves elements with their keys. Rows
   therefore need an id field — an array of bare strings cannot be
@@ -410,11 +415,24 @@ the anchor's own position, and the anchor says what the line is:
 - a **case** — the type argument of an emitter, pane or status
   (`button @"Submit order" {}`, `# shownWhen @"estimated" distanceOf`,
   `snackbar @"booked" bookedLine`);
-- a **copy function or accessor** — the positional argument of a
-  display (`text balanceLine`, `text _.title`, `imagePane developedShot`);
+- a **copy function** — the positional argument of a display
+  (`text balanceLine`, `imagePane developedShot`);
 - **nothing** — chrome (`card`, `h1 >>> cl "restaurant-name" $ staticText
   "Osteria Yoneda"`, `topAppBar "Espresso Bar"`). A static's text is a
   value, not an anchor: it needs no data to be seen.
+
+**A field is named, never picked.** A line that reads a field the model
+stores names it by its label, in the word's own slot, never with an
+accessor: a display shows it (`textAt @"title"`, todo-list), a decorator
+sets it (`attrAt @"x" "cx"`, circle-drawer), a click reports it
+(`clicked @"Cell picked" @"key"`, cells), a pane is in one of its cases
+(`# providedAt @"halted" @"phase"`, stopwatch), a collection repeats it
+(`# foreachAt @"key" @"cells"`, cells; `listOfAt @"Message opened"
+@"id" @"messages"`, inbox). Each `…At` word is the sibling of a word
+that takes a function, and the function form is for what is derived —
+a copy function, a classifier, a projection, a read deeper than one
+field (weather's `text cityLine`) — named in the view model module. So
+no view contains `_.`.
 
 A **declared row** is not an anchor either. It is a visible type
 argument stating a shape the compiler could not otherwise know: the
@@ -459,13 +477,13 @@ text is computed, a chrome line nothing.
 - **A decorator rides its element.** `cl`, `clWhen`, `attrWith`,
   `tooltip` and `tooltipWith` compose onto a container with `>>>`
   (`td >>> attrWith "style" cellFace $ …`) or trail a finished leaf with
-  `#` (`span (text _.title) # clWhen isCompleted "todo-done"`,
+  `#` (`span (textAt @"title") # clWhen isCompleted "todo-done"`,
   `checkbox @"Loyalty" … # tooltipWith loyaltyNote`); never lead with
   one.
 - **Closing parens and `#` chains never start a line.** A trailing
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
-  it closes over: `… # shown ) # inCase @"Delivery" _.selected`. The
+  it closes over: `… # shown ) # inCaseAt @"Delivery" @"selected"`. The
   exception is a seed closer, `) # looped @( … ) # with seed` /
   `) # with @{ … } seed`, on its own
   line — or, when the model row is long, `) # looped` on its own line,
@@ -500,9 +518,9 @@ text is computed, a chrome line nothing.
   fields, one per line). A load action before the knot
   emits its outcome as an event folded into the loop (`blankStatus @"People
   loaded" # fold identity`, crud and order-form), so the
-  knot declares the model like any other. Every editor, selector, list and accessor is checked
-  against it — so a stored field is read with a plain accessor
-  (`listOf … _.messages`, `# provided @"confirming" _.deletion`). A
+  knot declares the model like any other. Every editor, selector, list and field label is checked
+  against it — so a stored field is read by its label
+  (`listOfAt … @"messages"`, `# providedAt @"halted" @"phase"`). A
   **derived row** is a shape no model field holds, and the line that
   introduces it declares it after its anchor:
   - a classifier's cases, on its first pane
@@ -561,8 +579,8 @@ text is computed, a chrome line nothing.
   ```
 
   with `balanceLine :: { balance :: Number } -> String`. A
-  display that shows one field verbatim takes the accessor
-  (`text _.title`). A number drawn as a bar is a function too — a
+  display that shows one field as it is stored names the field
+  (`textAt @"title"`). A number drawn as a bar is a function too — a
   fraction is derived from state, like a sentence. A model field exists
   because the app's state needs it, never because a display wanted a
   `String`.
@@ -693,8 +711,8 @@ the watch build running ([building.md](building.md)):
 
 1. **Write the view**, each line naming its anchors, the seed line
    declaring the model row and each derived row declared where it is
-   introduced ([Types and values](#types-and-values)). Labels,
-   accessors and declared rows never need a hole, because writing them
+   introduced ([Types and values](#types-and-values)). Labels and
+   declared rows never need a hole, because writing them
    is writing the model. Every other value — a copy function, a
    handler, a classifier, an action, the seed — starts as a typed hole
    (`text ?countLine`, `# looped @( counted :: Int ) # with ?start`).

@@ -59,8 +59,8 @@ if (banned.length) {
   process.exit(1);
 }
 // Copy is a function, not a field: the read `text` takes is a NAMED function
-// living in the logic module (or a bare accessor section), never a lambda
-// composing copy at the view site — that is the whole point of the rule.
+// living in the logic module, never a lambda composing copy at the view
+// site — that is the whole point of the rule.
 const lambdaRe = /\btext \(?\\/;
 const lambdas = [];
 for (const file of walk("demo")) {
@@ -73,6 +73,26 @@ for (const file of walk("demo")) {
 if (lambdas.length) {
   console.error("copy-is-a-function violations (lambda in a `text` read — name it in the logic module):");
   for (const l of lambdas) console.error("  " + l);
+  process.exit(1);
+}
+// A field is named by its label, never picked by a function: a view reads a
+// stored field through the word's own label slot (`textAt @"title"`,
+// `clicked @l @"key"`, `# providedAt @"halted" @"phase"`, `foreachAt`,
+// `listOfAt`, `attrAt`), so an accessor section in view code is a field read
+// that skipped its label — and anything more than one field is a named
+// function in the view model module.
+const accessorRe = /(?<![\w)\]])_\.(?:"[^"]+"|[A-Za-z][\w']*)/;
+const accessors = [];
+for (const file of walk("demo")) {
+  if (isViewModel(file) || file.endsWith("ViewModelTest.purs")) continue;
+  const src = readFileSync(file, "utf8");
+  src.split("\n").forEach((line, i) => {
+    if (accessorRe.test(line)) accessors.push(`${file}:${i + 1}: ${line.trim()}`);
+  });
+}
+if (accessors.length) {
+  console.error("field-label violations (accessor section in view code — name the field in the word's label slot):");
+  for (const a of accessors) console.error("  " + a);
   process.exit(1);
 }
 console.log("view-model rule: clean");

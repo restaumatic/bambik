@@ -97,7 +97,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
 // ×→× components with no input of their own: displays and panes
 const displays = new Set(['progress', 'linearProgress', 'progressBar', 'ratingDisplay', 'imagePane',
-  'text', 'dynamic', 'each', 'shown', 'shownWhen', 'inCase', 'shownEach'])
+  'text', 'textAt', 'dynamic', 'each', 'shown', 'shownWhen', 'shownWhenAt', 'inCase', 'inCaseAt', 'shownEach'])
 
 // Readies the platform's own input on an editor's bench section: focuses a
 // text field ('type') or a range ('key') for the harness to drive through

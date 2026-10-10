@@ -9,7 +9,7 @@ import InboxViewModel (deletionPane, composeMessage, deleteOpened, bodyText, fro
 import PUI (blankStatus, fold, joined, looped, observed, with)
 import PUI.Web (provided, shown, text)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, dialog, fab, headline6, iconButton, listOf, menu, menuItem, snackbar)
+import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, dialog, fab, headline6, iconButton, listOfAt, menu, menuItem, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 inboxMDC2 :: Effect Unit
@@ -17,7 +17,7 @@ inboxMDC2 =
   body $ Semigroupoid.do
     ( caption $ text unreadLine ) # shown
     RecordToVariant.do
-      listOf @"Message opened" @"id" { selected: highlighted } _.messages ( span $ text messageLine # shown ) # joined @"Message opened"
+      listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } ( span $ text messageLine # shown ) # joined @"Message opened"
       ( Semigroupoid.do
         headline6 (text subjectLine) # shown
         body2 (text fromLine) # shown

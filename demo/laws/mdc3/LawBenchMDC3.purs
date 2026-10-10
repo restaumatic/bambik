@@ -4,8 +4,8 @@ import Prelude
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, staticText, text)
-import PUI.Web.MDC3 (body, button, checkbox, debouncedTextField, elevatedButton, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, textButton, toggleSwitch, tonalButton)
+import PUI.Web ((<+>), choice, staticText, textAt)
+import PUI.Web.MDC3 (body, button, checkbox, debouncedTextField, elevatedButton, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, textButton, toggleSwitch, tonalButton)
 
 lawBenchMDC3 :: Effect Unit
 lawBenchMDC3 = do
@@ -22,7 +22,7 @@ lawBenchMDC3 = do
     , bench "slider" "×→×" quantities (slider @"Amount" {})
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
     , bench "tabBar" "×→×" tabs (tabBar @"Tab" [ { value: tabA, label: "A" }, { value: tabB, label: "B" } ])
-    , bench "linearProgress" "×→×" fractions (linearProgress _.fraction)
+    , bench "linearProgress" "×→×" fractions (linearProgress fractionOf)
     , bench "imagePane" "×→×" images (imagePane identity)
     , bench "group" "×→×" grouped (group @"Customer" (filledTextField @"Name" {}))
     , bench "select" "×→×" chosen (select @"Pick" {} options)
@@ -42,12 +42,15 @@ lawBenchMDC3 = do
     , bench "fab" "×→+" rows (fab @"Go" {} "add")
     , bench "iconButton" "×→+" rows (iconButton @"Go" {} "add")
     , bench "menuItem" "×→+" rows (menuItem @"Go" {})
-    , bench "listOf" "×→+" lists (listOf @"picked" @"id" {} _.items (text _.title))
+    , bench "listOf" "×→+" lists (listOf @"picked" @"id" {} itemsOf (textAt @"title"))
+    , bench "listOfAt" "×→+" lists (listOfAt @"picked" @"id" @"items" {} (textAt @"title"))
     , bench "snackbar" "+→×" events (snackbar @"event" identity)
     , bench "indeterminateLinearProgress" "+→×" runs (indeterminateLinearProgress)
     , bench "indeterminateCircularProgress" "+→×" runs (indeterminateCircularProgress)
     ]
   where
+  fractionOf { fraction } = fraction
+  itemsOf { items } = items
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
   ticks = [ { "Terms": .accepted {}, other: 1 }, { "Terms": .declined {}, other: 2 } ]
   flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]

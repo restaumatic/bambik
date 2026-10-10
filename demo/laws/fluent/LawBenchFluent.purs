@@ -14,8 +14,8 @@ lawBenchFluent = do
     [ bench "textField" "×→×" texts (textField @"Name" {})
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
     , bench "slider" "×→×" quantities (slider @"Amount" {})
-    , bench "ratingDisplay" "×→×" fractions (ratingDisplay _.fraction)
-    , bench "progressBar" "×→×" fractions (progressBar _.fraction)
+    , bench "ratingDisplay" "×→×" fractions (ratingDisplay fractionOf)
+    , bench "progressBar" "×→×" fractions (progressBar fractionOf)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
     , bench "dropdown" "×→×" chosen (dropdown @"Pick" {} options)
     , bench "dropdownUnpicked" "×→×" picks (dropdownUnpicked @"Pick" @"chosen" {} options)
@@ -27,6 +27,7 @@ lawBenchFluent = do
     , bench "messageBar" "+→×" events (messageBar @"event" identity)
     ]
   where
+  fractionOf { fraction } = fraction
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
   flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }

@@ -14,7 +14,7 @@ lawBenchBootstrap = do
     [ bench "textField" "×→×" texts (textField @"Name" {})
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
-    , bench "progress" "×→×" fractions (progress _.fraction)
+    , bench "progress" "×→×" fractions (progress fractionOf)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
     , bench "select" "×→×" chosen (select @"Pick" {} options)
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)
@@ -23,6 +23,7 @@ lawBenchBootstrap = do
     , bench "toast" "+→×" events (toast @"event" identity)
     ]
   where
+  fractionOf { fraction } = fraction
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
   flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }

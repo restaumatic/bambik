@@ -16,7 +16,7 @@ lawBenchShoelace = do
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
     , bench "rating" "×→×" ratings (rating @"Stars" {})
-    , bench "progressBar" "×→×" fractions (progressBar _.fraction)
+    , bench "progressBar" "×→×" fractions (progressBar fractionOf)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
     , bench "select" "×→×" chosen (select @"Pick" {} options)
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)
@@ -25,6 +25,7 @@ lawBenchShoelace = do
     , bench "toast" "+→×" events (toast @"event" identity)
     ]
   where
+  fractionOf { fraction } = fraction
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
   flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }

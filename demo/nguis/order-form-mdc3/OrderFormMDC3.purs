@@ -9,7 +9,7 @@ import Data.Variant (match)
 import Effect (Effect)
 import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
 import PUI (action, armed, atCase, blankStatus, bracketed, debounced, fold, looped, settled, updated)
-import PUI.Web ((<+>), choice, inCase, shown, shownWhen, text)
+import PUI.Web ((<+>), choice, inCaseAt, shown, shownWhen, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -30,14 +30,14 @@ orderFormMDC3 =
         ( Semigroupoid.do
           tabBar @"selected"
             (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
-          filledTextField @"Table" {} # inCase @"Dine in" _.selected
-          filledTextField @"Time" {} # inCase @"Takeaway" _.selected
+          filledTextField @"Table" {} # inCaseAt @"Dine in" @"selected"
+          filledTextField @"Time" {} # inCaseAt @"Takeaway" @"selected"
           ( Semigroupoid.do
             filledTextField @"Address" {} # settled staleDistanceForgotten
             ( Semigroupoid.do
               button @"Estimate distance" { icon: "near_me" }
               indeterminateLinearProgress # action @( estimated :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-            ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf ) # inCase @"Delivery" _.selected ) # bracketed @"Mode"
+            ( bodyLarge $ text distanceLine ) # shownWhen @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf ) # inCaseAt @"Delivery" @"selected" ) # bracketed @"Mode"
               @( "Dine in" :: { "Table" :: String }
                , "Takeaway" :: { "Time" :: String }
                , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }

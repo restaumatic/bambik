@@ -522,7 +522,8 @@ code below the UI) are algebra-layer material and exempt by location.
   { | reads } {}` — and MUST carry no label: its content is the copy,
   so there is no field to name and nothing to caption (a caption is
   surrounding chrome). The function MUST be a named function of the
-  view model module or a bare accessor section; a formatter bracket, a
+  view model module; a field shown as it is stored is not copy and is
+  named by its label (`textAt @l`, L3); a formatter bracket, a
   view-side lambda and a `staticText`-plus-leaf text run are all
   forbidden. `projection` (2026-08-31) and `projected` (2026-09-02) are
   deleted; the vocabulary-internal `textOf` serves the statuses' own
@@ -623,6 +624,24 @@ code below the UI) are algebra-layer material and exempt by location.
   folds as record updates, no editor or selector as a merge operand, each
   action's outcome cases named where the action is, the view handing its
   logic only arguments called on data.
+- **A field is named, never picked** (2026-10-10; application-side
+  statement: writing.md's *The anchor invariant*). A line that reads one
+  field the model stores MUST name it by its label, in the reading word's
+  own type-argument slot, and application code MUST NOT write an accessor
+  section (`_.l`) — `npm run check-view-model` rejects one in any demo
+  view, law benches included. So every word taking a read function that
+  an application feeds a stored field has a **label sibling**, `…At`,
+  whose label slot is that read: `textAt @l`, `attrAt @l name`,
+  `providedAt`/`shownWhenAt`/`inCaseAt @case @field`, `foreachAt @key
+  @field`, `listOfAt @l @key @field`. The function form stays for what
+  is *derived* — a copy function, a classifier, a projection, a read
+  deeper than one field (weather's `cityLine`) — named in the view model
+  module. A word whose every reach reads one field takes only the label:
+  `clicked @l @k` reports field `k` (as `listOf @l @k` does), and the
+  vocabularies' whole-row replay behind every emitter is the internal
+  `clickedRow @l`. A new reading word MUST come with its label sibling
+  as soon as a demo reads a stored field through it, and not before
+  (L14).
 - **The view determines the view model** (2026-10-01 on inbox, every
   demo 2026-10-02). The rule's converse: a view compiled with a typed
   hole in place of every value it imports MUST report each hole at a
@@ -634,13 +653,13 @@ code below the UI) are algebra-layer material and exempt by location.
   @model` for a flow with no loop), `action @outcome`, `listOf`/`foreach`/`shownEach`/`acted`/
   `edited @row`, `dispatched`/`accumulated @key @value`, the panes
   `provided`/`shownWhen`/`inCase @l @s`, `bracketed @variant @state`,
-  `toCase`/`clicked @payload`, `each @element`; a new word of that kind
+  `toCase @payload`, `each @element`; a new word of that kind
   MUST do the
   same — and an option list MUST close its row (`choice @"a" <+> choice
   @"b"`). What it demands of the application: the model row is declared
   once, where the model first appears (the seed line, or the load
-  action's outcome when a load stands before the knot); a stored variant field is read by accessor on
-  its pane line; a derived row is declared once, where its function
+  action's outcome when a load stands before the knot); a stored variant field is named by label on
+  its pane line (`providedAt`/`shownWhenAt`/`inCaseAt @case @field`); a derived row is declared once, where its function
   first appears (each `?name` is its own hole, so the function's later
   uses are typed once it is written); a view helper applies one view
   model function per value. An unknown anywhere names a missing

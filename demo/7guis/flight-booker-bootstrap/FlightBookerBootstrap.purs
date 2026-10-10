@@ -6,7 +6,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
 import PUI (action, atCase, debounced, looped, with)
-import PUI.Web ((<+>), choice, inCase, shownWhen, text)
+import PUI.Web ((<+>), choice, inCaseAt, shownWhen, text)
 import PUI.Web.Bootstrap (body, button, select, textField, toast)
 import PUI.Web.HTML (p)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,7 +18,7 @@ flightBookerBootstrap =
       select @"Flight type" {}
         (choice @"one-way" <+> choice @"return")
       textField @"Start date (DD.MM.YYYY)" {}
-      textField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
+      textField @"Return date (DD.MM.YYYY)" {} # inCaseAt @"return" @"Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
        , "Start date (DD.MM.YYYY)" :: String

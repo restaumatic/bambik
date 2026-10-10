@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import MeetingBookerViewModel (blankBooking, bookedLine, plan, planLine, ratedRoom, roomRatingCaption, roomStars, seatOccupancy, seatsInRoom, seatsTaken, seatsTakenCaption)
 import PUI (looped, settled, with)
-import PUI.Web ((<+>), choice, inCase, provided, shown, shownWhen, text)
+import PUI.Web ((<+>), choice, inCaseAt, provided, shown, shownWhen, text)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdownOptional, dropdownUnpicked, messageBar, progressBar, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,7 +24,7 @@ meetingBookerFluent =
         (choice @"coffee and pastries" <+> choice @"sandwich lunch")
       toggleSwitch @"Include a Teams link" {}
       divider # shown
-      slider @"Attendees" {} # inCase @"chosen" _."Room"
+      slider @"Attendees" {} # inCaseAt @"chosen" @"Room"
     ) # looped
       @( "Meeting title" :: String
        , "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ]

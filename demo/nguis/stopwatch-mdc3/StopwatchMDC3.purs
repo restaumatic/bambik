@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (blankStatus, fold, joined, looped, ticks, with)
-import PUI.Web (provided, shown, shownEach, text)
+import PUI.Web (providedAt, shown, shownEach, text)
 import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC3 (body, button, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,10 +18,10 @@ stopwatchMDC3 =
     displaySmall (text elapsedText) # shown
     RecordToVariant.do
       blankStatus @"Clock ticked" # ticks tickPeriod
-      button @"Start" { icon: "play_arrow" } # provided @"halted" _.phase # joined @"Start"
-      button @"Stop" { icon: "stop" } # provided @"timing" _.phase # joined @"Stop"
-      button @"Lap" { icon: "flag" } # provided @"timing" _.phase # joined @"Lap"
-      button @"Reset" { icon: "replay" } # provided @"halted" _.phase # joined @"Reset"
+      button @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase" # joined @"Start"
+      button @"Stop" { icon: "stop" } # providedAt @"timing" @"phase" # joined @"Stop"
+      button @"Lap" { icon: "flag" } # providedAt @"timing" @"phase" # joined @"Lap"
+      button @"Reset" { icon: "replay" } # providedAt @"halted" @"phase" # joined @"Reset"
     VariantToRecord.do
       blankStatus @"Clock ticked" # fold tick
       blankStatus @"Start" # fold beginTiming

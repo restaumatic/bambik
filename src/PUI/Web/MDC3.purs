@@ -96,6 +96,7 @@ module PUI.Web.MDC3
   , list
   , listItem
   , listOf
+  , listOfAt
   , menu
   , menuItem
   , outlinedButton
@@ -152,7 +153,7 @@ import Data.Profunctor.Seeding (isHole)
 import PUI (Ocular, PUI, blank, foreach)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, shown, staticHTML, staticText, text, textContent, textOf, uniqueId, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clickedRow, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, shown, staticHTML, staticText, text, textContent, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -340,9 +341,9 @@ buttonOf tag provided = eventLeaf @l $ el tag $ RecordToRecord.do
 
 -- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld) —
--- `clicked` over the input-freed chrome, the last-built element listening
+-- `clickedRow` over the input-freed chrome, the last-built element listening
 eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
-eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
+eventLeaf chrome = clickedRow @l (widenRecordInput chrome)
 
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
@@ -1170,7 +1171,7 @@ simpleDialog confirmCaption title content =
     wrap do
       _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
       unwrap (div >>> "slot" := "content" $ content)
-    div >>> "slot" := "actions" $ (clicked @"confirmed" identity (el "md-text-button" $ staticText (confirmCaption))) # Profunctor.rmap (Variant.match { confirmed: identity })
+    div >>> "slot" := "actions" $ (clickedRow @"confirmed" (el "md-text-button" $ staticText (confirmCaption))) # Profunctor.rmap (Variant.match { confirmed: identity })
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just
@@ -1266,11 +1267,29 @@ listOf
 listOf provided f item = withStructuralOrd @key $ wrap do
   liftEffect $ ensureStyle "md3-list" listCss
   unwrap $ el "md-list" >>> "style" := "overflow-y: auto;" $
-    ( clicked @l (Record.get (Proxy @k)) $ clWhen config.selected "md3-list-item--selected"
+    ( clicked @l @k $ clWhen config.selected "md3-list-item--selected"
         $ el "md-list-item" >>> "type" := "button" $ item
     ) # foreach @k f
   where
   config = convertOptionsWithDefaults OptSelected { selected: const false } provided
+
+-- | `listOf` over an array the model stores: the rows are field `t` of the
+-- | fed row, named by its label after the key
+-- | (`listOfAt @"Message opened" @"id" @"messages" {} item`). Rows derived
+-- | from the row are a projection, `listOf`.
+listOfAt
+  :: forall @l @k @t provided i r b1 b2 o key v
+   . IsSymbol l
+  => IsSymbol k
+  => IsSymbol t
+  => Cons l key () v
+  => Cons k key b1 r
+  => Cons t (Array { | r }) b2 i
+  => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
+  => { | provided }
+  -> PUI Web { | r } o
+  -> PUI Web { | i } [ | v ]
+listOfAt provided = listOf @l @k @r provided (Record.get (Proxy @t))
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String
 eventText = Variant.on (Proxy @"event") identity Variant.case_

@@ -64,6 +64,7 @@ module PUI
   , edited
   , every
   , foreach
+  , foreachAt
   , observed
   , resolveFor
   , updated
@@ -1007,7 +1008,7 @@ updated handler w = dimap (\s -> { s }) (match { fed: identity, folded: identity
 
 -- | The **occurrence stage** — `updated` for an emitter that carries no
 -- | payload of its own. A `× → +` leaf fed the row it acts on (a button,
--- | a `fab`, a `menuItem`, a `clicked @l identity` row)
+-- | a `fab`, a `menuItem`, a `clickedRow @l` row)
 -- | replays that row on click, so its "payload" is the very row the stage
 -- | retains: the Mealy step degenerates to a state transformer, and this
 -- | rung takes it as one — `f :: { | r } -> { | r }`, an open-row
@@ -1030,7 +1031,7 @@ updated handler w = dimap (\s -> { s }) (match { fed: identity, folded: identity
 -- | model whose footprint is its own open row.
 -- |
 -- | Not the Mealy form under a second name: an emitter whose payload is
--- | real — a key from `clicked @l _.key`, an `action`'s outcome, a pane's
+-- | real — a key from `clicked @l @"key"`, an `action`'s outcome, a pane's
 -- | payload under `provided`, an amount under `# with payment` — keeps
 -- | `updated (match { … })`, as does a stage whose emitters mean different
 -- | things. A constant is never a payload that *replaces* part of the
@@ -1428,6 +1429,13 @@ foreach :: forall @l @r m node k b a c. Hosting m node => IsSymbol l => Cons l k
 foreach f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs = f r in if isHole xs then [] else xs) $ wrap do
   hooks <- hosting w
   liftEffect $ collapsedWith (Record.get (Proxy @l)) hooks)
+
+-- | `foreach` over an array the model stores: keyed by field `l` of each
+-- | element, the array field `t` of the fed row, both named by label
+-- | (`item # foreachAt @"key" @"cells"`). An array derived from the row is
+-- | a projection, `foreach`.
+foreachAt :: forall @l @t m node k b1 b2 r1 r c. Hosting m node => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => PUI m { | r1 } c -> PUI m { | r } c
+foreachAt = foreach @l @r1 (Record.get (Proxy @t))
 
 -- | The **collection editor** — lift an element *editor* (`p a a`, emitting
 -- | its own edited row, the whole-row-citizen shape a `focusField @l`-lifted

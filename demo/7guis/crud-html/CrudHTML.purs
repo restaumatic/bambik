@@ -30,7 +30,7 @@ crudHTML =
         input @"Surname" "text" )
       RecordToVariant.do
         ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
-          ( clicked @"Person picked" _.key ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key"
+          ( clicked @"Person picked" @"key" ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key"
             @( key :: Int
              , "Name" :: String
              , "Surname" :: String

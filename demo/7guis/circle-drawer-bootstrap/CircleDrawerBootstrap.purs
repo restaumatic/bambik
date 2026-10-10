@@ -9,7 +9,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (blank, blankStatus, fold, foreach, joined, looped, settled, with)
 import PUI.Web.Bootstrap (body, button, sliderLive)
-import PUI.Web (attrWith, cl, inCase, onClickedXY, (:=))
+import PUI.Web (attrAt, attrWith, cl, inCaseAt, onClickedXY, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -17,11 +17,11 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 circleDrawerBootstrap :: Effect Unit
 circleDrawerBootstrap =
   body $ Semigroupoid.do
-    sliderLive @"Diameter" {} # inCase @"chosen" _.selected # settled resizeSelected
+    sliderLive @"Diameter" {} # inCaseAt @"chosen" @"selected" # settled resizeSelected
     RecordToVariant.do
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
         ( onClickedXY @"Canvas clicked"
-          ( ( circle >>> "stroke" := "#333" >>> attrWith "cx" _.x >>> attrWith "cy" _.y >>> attrWith "r" _.r
+          ( ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
             >>> attrWith "fill" circleFill $ blank ) # foreach @"key"
               @( key :: String
                , x :: String

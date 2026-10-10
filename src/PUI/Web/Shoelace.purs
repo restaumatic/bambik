@@ -56,7 +56,7 @@ import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, clicked, el, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, textOf, (:=))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, clickedRow, el, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, textOf, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -118,7 +118,7 @@ button provided = let config = convertOptionsWithDefaults OptCaption { label: re
 -- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
 eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
-eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
+eventLeaf chrome = clickedRow @l (widenRecordInput chrome)
 
 -- | The **text field**: a labelled single-line input. Shows the string it
 -- | is given and reports each edit; typing is never interrupted by values

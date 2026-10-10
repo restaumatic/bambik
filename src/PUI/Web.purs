@@ -11,14 +11,16 @@
 -- | every design system use it as readily as HTML does:
 -- |
 -- | - **decorators** — `attr`/`:=` and `attrDyn`/`:=>` (static and
--- |   effect-computed attributes), `cl`, and the channel-fed `attrWith` and
--- |   `clWhen`; `init` for per-element setup;
--- | - **text leaves** — `text` (copy from a read function), `textOf` (a
--- |   status's payload), `staticText`, and `staticHTML`, kept off the public
--- |   vocabularies (L10);
--- | - **occurrence sources** — `clicked @l f`, `onClickedXY @l`;
+-- |   effect-computed attributes), `cl`, and the channel-fed `attrWith`,
+-- |   `attrAt` and `clWhen`; `init` for per-element setup;
+-- | - **text leaves** — `text` (copy from a read function), `textAt` (a
+-- |   field shown as stored), `textOf` (a status's payload), `staticText`,
+-- |   and `staticHTML`, kept off the public vocabularies (L10);
+-- | - **occurrence sources** — `clicked @l @k`, `onClickedXY @l`;
 -- | - **visibility and the gated displays** — `provided`, and the rungs
--- |   `shown`, `shownWhen`, `inCase`, `shownEach`;
+-- |   `shown`, `shownWhen`, `inCase`, `shownEach`; a pane over a variant
+-- |   the model stores names its field by label (`providedAt`,
+-- |   `shownWhenAt`, `inCaseAt`);
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
 -- |   tag.
 -- |
@@ -77,9 +79,12 @@ module PUI.Web
   , hole
   , shown
   , shownWhen
+  , shownWhenAt
   , inCase
+  , inCaseAt
   , shownEach
   , text
+  , textAt
   , textOf
   , staticText
   , attr
@@ -89,9 +94,12 @@ module PUI.Web
   , attrDyn
   , (:=>)
   , provided
+  , providedAt
   , clWhen
   , attrWith
+  , attrAt
   , clicked
+  , clickedRow
   , onClickedXY
   , dynamic
   , each
@@ -120,6 +128,7 @@ import PUI (class Hosting, Ocular, PUI, Logged, diagnosticsOn, foreach, muted, r
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Prim.Row (class Cons)
 import Data.Profunctor.Seeding (isHole)
+import Record as Record
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | A value of any type standing for logic not written yet (guardrails L18):
@@ -514,6 +523,15 @@ shownWhen
   => ({ | r } -> [ | v ]) -> PUI Web { | r1 } {} -> PUI Web { | r } { | r }
 shownWhen f content = shown (attachedOn @l f content)
 
+-- | `shownWhen` over a variant the model stores: the pane names case `c` of
+-- | field `l`, both by label (`# shownWhenAt @"serving" @"display"`). A
+-- | state derived from several fields is a classifier, `shownWhen`.
+shownWhenAt
+  :: forall @c @l r r1 v b1 b2
+   . IsSymbol c => IsSymbol l => Cons c { | r1 } b1 v => Cons l [ | v ] b2 r
+  => PUI Web { | r1 } {} -> PUI Web { | r } { | r }
+shownWhenAt = shownWhen @c @v (Record.get (Proxy @l))
+
 -- | The **editor pane** — `shownWhen`'s
 -- | editor sibling. A whole-row citizen (an editor, or a pipeline of them)
 -- | that *exists* only while the classifier yields case `l`: attached and
@@ -529,9 +547,9 @@ shownWhen f content = shown (attachedOn @l f content)
 -- | (`# provided @l paneOf # updated setField` with `setField`
 -- | the identity) — it is a whole-row editor whose existence is gated, and
 -- | its `focusField @l` lift already re-attaches the rest of the row. The
--- | classifier is typed at the stage's row — a stored variant read by its
--- | accessor (`# inCase @"Delivery" _.selected`, order-form) or a business
--- | function at that row — exactly as `shownWhen`'s is. One release per feed either way: attached, the
+-- | classifier is a business function typed at the stage's row, exactly as
+-- | `shownWhen`'s is; a variant the model stores is named by its label
+-- | instead, `inCaseAt` (`# inCaseAt @"Delivery" @"selected"`, order-form). One release per feed either way: attached, the
 -- | editor's own echo is the release; detached, the wire speaks for the
 -- | absent editor. What the edit does to the rest of the row is a `settled`
 -- | normalization on the same stage when it is a state invariant
@@ -561,6 +579,14 @@ inCase f w = wrap do
         pane.fromUser prop
     }
 
+-- | `inCase` over a variant the model stores: the editor exists in case `c`
+-- | of field `l`, both named by label (`# inCaseAt @"return" @"Flight type"`).
+inCaseAt
+  :: forall @c @l r a v b1 b2
+   . IsSymbol c => IsSymbol l => Cons c a b1 v => Cons l [ | v ] b2 r
+  => PUI Web { | r } { | r } -> PUI Web { | r } { | r }
+inCaseAt = inCase @c @v (Record.get (Proxy @l))
+
 -- | The **collection rung** — render the keyed,
 -- | retained list from the projection, release the fed row per feed.
 -- | Derived: the collection, muted, merged with the wire. Trails its
@@ -575,20 +601,25 @@ shownEach proj item = shown (muted (foreach @l proj item))
 -- | **Copy is a function, not a field**: the argument is the read — a named
 -- | function from the fields it needs to the words on the screen, living in
 -- | the logic module where it is one pure function and one unit test
--- | (`text progressLineOf`, `text _.title`). The read function is typed at
+-- | (`text progressLineOf`). The read function is typed at
 -- | the row the hosting stage (`shown`/`shownWhen`/`shownEach`) feeds it,
 -- | so no call site coerces. This is why `text` takes no label:
 -- | its content *is* the copy, so there is no field to name and nothing to
 -- | caption — a caption is surrounding chrome (`staticText`, a `label`, a
--- | column header). A leaf that renders a *number* keeps its label and
--- | reads its field verbatim (`progressBar @"fraction"`): numbers need no
--- | formatting.
+-- | column header). A field shown as it is stored is not copy but the
+-- | field itself, named by its label: `textAt @"title"`.
 -- |
 -- | A whole line is one function, glue included — never several leaves with
 -- | `staticText` between them, and never a formatter in the view.
 -- | doc/research-copy-is-a-function.md is the rationale.
 text :: forall r. ({ | r } -> String) -> PUI Web { | r } {}
 text = textLeaf
+
+-- | `text` of one field shown as it is stored: the field is named by its
+-- | label, never picked by a function (`textAt @"title"`). A line that
+-- | formats, joins or derives is a copy function, `text`.
+textAt :: forall @l b r. IsSymbol l => Cons l String b r => PUI Web { | r } {}
+textAt = text (Record.get (Proxy @l))
 
 -- | `text`'s variant-input sibling: a status renders its own payload
 -- | (`textOf eventText`), a `+→×` leaf. Vocabulary-internal — application
@@ -770,9 +801,15 @@ infixr 10 attrDyn as :=>
 -- |
 -- | The classifier's variant is a visible type argument after the case, so
 -- | the view can declare every state the pane chooses among
--- | (`# provided @"confirming" @( confirming :: {}, silent :: {} ) _.deletion`).
+-- | (`# provided @"reading" @( reading :: { … }, browsing :: {} ) messageView`).
+-- | A variant the model stores is named by its label instead, `providedAt`.
 provided :: forall @l @v r r1 b v1. IsSymbol l => Cons l { | r1 } b v => ({ | r } -> [ | v ]) -> PUI Web { | r1 } [ | v1 ] -> PUI Web { | r } [ | v1 ]
 provided = attachedOn @l
+
+-- | `provided` over a variant the model stores: the emitter exists in case
+-- | `c` of field `l`, both named by label (`# providedAt @"halted" @"phase"`).
+providedAt :: forall @c @l r r1 v v1 b1 b2. IsSymbol c => IsSymbol l => Cons c { | r1 } b1 v => Cons l [ | v ] b2 r => PUI Web { | r1 } [ | v1 ] -> PUI Web { | r } [ | v1 ]
+providedAt = provided @c @v (Record.get (Proxy @l))
 
 -- The pane mechanism every pane shares, at any content output: attach and
 -- feed the payload on case `l`, detach on every other case. Public only
@@ -815,7 +852,7 @@ clWhen pred name w = wrap do
 
 -- | An attribute computed from the data being shown — a swatch's colour, a
 -- | circle's centre, a bar's width, a cell's inline style
--- | (`circle >>> attrWith "cx" (show <<< _.x)`).
+-- | (`circle >>> attrWith "style" cellFace`).
 -- |
 -- | This is what keeps a drawing or a large grid from being rebuilt: the
 -- | element is created once and restyled in place as values arrive, so
@@ -832,11 +869,17 @@ attrWith name valueOf w = wrap do
     , fromUser: w'.fromUser
     }
 
--- | Make any element clickable: it reports, as case `l`, `f` of whatever it
--- | is currently showing. A grid cell, a list row, a chip, a picture — the
--- | content is the display, the click is the report, so the identity of
--- | what was picked comes from what was on screen and cannot be got wrong:
--- | `clicked @"picked" _.key (td $ text _.text)`. A click before the
+-- | `attrWith` of one field set as it is stored, the field named by its
+-- | label before the attribute's name: `circle >>> attrAt @"x" "cx"`.
+attrAt :: forall @l b r a. IsSymbol l => Cons l String b r => String -> PUI Web { | r } a -> PUI Web { | r } a
+attrAt name = attrWith name (Record.get (Proxy @l))
+
+-- | Make any element clickable: it reports, as case `l`, field `k` of
+-- | whatever it is currently showing. A grid cell, a list row, a chip, a
+-- | picture — the content is the display, the click is the report, so the
+-- | identity of what was picked comes from what was on screen and cannot be
+-- | got wrong: `clicked @"picked" @"key" (td $ textAt @"text")`, the field
+-- | named by its label as `listOf @l @k` names its key. A click before the
 -- | element has been shown anything does nothing. An **event source**,
 -- | `× → +` by shape as by behaviour: the click **replays** the last row
 -- | fed — replay is lawful over records only, an entity's value may be
@@ -844,15 +887,23 @@ attrWith name valueOf w = wrap do
 -- | `simpleDialog` argument) — and leaves as an occurrence of `l`, so
 -- | nothing record-shaped ever stands for a click. The content is fed the
 -- | row it replays; statics and chrome sit at any row, so
--- | `clicked @l f staticChrome` needs no adapter.
+-- | `clicked @l @k staticChrome` needs no adapter.
 -- |
 -- | The **replay contract**, a law of this word rather than of the shape
 -- | (the shape's two are Data.Profunctor.Row's Repetition and Answer, both
 -- | held: a feed rewrites the replay slot, and a feed never fires): a click
--- | emits `f` of the row last fed, as case `l`; before the first feed a
--- | click emits nothing.
-clicked :: forall @l @k r a v. IsSymbol l => Cons l k () v => ({ | r } -> k) -> PUI Web { | r } a -> PUI Web { | r } [ | v ]
-clicked f w = replaying @l f (occurrences w)
+-- | emits field `k` of the row last fed, as case `l`; before the first feed
+-- | a click emits nothing.
+clicked :: forall @l @k r a b f v. IsSymbol l => IsSymbol k => Cons k f b r => Cons l f () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+clicked w = replaying @l (Record.get (Proxy @k)) (occurrences w)
+
+-- | `clicked` replaying the whole row it was last fed, as case `l` — the
+-- | click half of every vocabulary's emitter family (`button @l` emits the
+-- | row it replays). Vocabulary-internal: application code emits through
+-- | the vocabulary's emitters, or names the field a click reports with
+-- | `clicked @l @k`.
+clickedRow :: forall @l r a v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+clickedRow w = replaying @l identity (occurrences w)
 
 -- The click source `clicked` is built from: each click on the last-built
 -- element (the content's own node) leaves as an occurrence carrying nothing;

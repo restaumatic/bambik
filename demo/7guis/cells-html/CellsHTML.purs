@@ -6,8 +6,8 @@ import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, 
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
-import PUI (blankStatus, fold, foreach, joined, looped, settled, with)
-import PUI.Web (attrWith, clicked, shown, staticText, text, (:=))
+import PUI (blankStatus, fold, foreach, foreachAt, joined, looped, settled, with)
+import PUI.Web (attrWith, clicked, shown, staticText, text, textAt, (:=))
 import PUI.Web.HTML (body, div, input, label, p, table, td, tr)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -20,10 +20,10 @@ cellsHTML =
       input @"Formula (e.g. =SUM(A0:A5)*2)" "text" # "size" := "32" ) # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
       ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
-        ( tr $ ( td >>> "style" := headerFace $ text _.text ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
+        ( tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
         ( tr $ Semigroupoid.do
           ( td >>> "style" := headerFace $ text rowLabel ) # shown
-          ( clicked @"Cell picked" _.key ( td >>> attrWith "style" cellFace $ text _.text ) ) # foreach @"key" _.cells ) # foreach @"rowKey"
+          ( clicked @"Cell picked" @"key" ( td >>> attrWith "style" cellFace $ textAt @"text" ) ) # foreachAt @"key" @"cells" ) # foreach @"rowKey"
             @( rowKey :: String
              , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
              ) sheetRows ) ) # joined @"Cell picked"

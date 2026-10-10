@@ -5,7 +5,7 @@ import Prelude ((#), ($), (<>), (>>>), Unit, const)
 import ColorMixerViewModel (applyPreset, duskViolet, hexLine, mixedColor, palette, rgb, rgbLine)
 import Effect (Effect)
 import PUI (blank, blankStatus, fold, foreach, joined, looped, with)
-import PUI.Web (attrWith, clicked, shown, text, (:=))
+import PUI.Web (attrAt, attrWith, clicked, shown, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body, body2, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -21,7 +21,7 @@ colorMixerMDC2 =
     ( div $ Semigroupoid.do
       div >>> attrWith "style" swatchStyle $ blank
       div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-        clicked @"Preset applied" _.name ( div >>> attrWith "title" _.name >>> attrWith "style" chipFace $ blank ) # foreach @"name"
+        clicked @"Preset applied" @"name" ( div >>> attrAt @"name" "title" >>> attrWith "style" chipFace $ blank ) # foreach @"name"
           @( name :: String
            , mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
            ) (const palette) ) # joined @"Preset applied"

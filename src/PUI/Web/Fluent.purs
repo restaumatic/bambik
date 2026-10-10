@@ -61,7 +61,7 @@ import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clicked, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clickedRow, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -125,7 +125,7 @@ button provided = let config = convertOptionsWithDefaults OptCaption { label: re
 -- the click-emitter protocol over any `{}`-output element chrome: replay the
 -- last value fed on click (a click before any value arrived is withheld)
 eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
-eventLeaf chrome = clicked @l identity (widenRecordInput chrome)
+eventLeaf chrome = clickedRow @l (widenRecordInput chrome)
 
 -- a `<fluent-field>` associating a label with the editor its builder
 -- appends (Fluent's label protocol: both are slotted children of the field)

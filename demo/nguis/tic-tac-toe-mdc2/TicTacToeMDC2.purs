@@ -25,7 +25,7 @@ ticTacToeMDC2 =
     headline6 (text toMoveLine) # shownWhen @"toMove" gameOutcome
     RecordToVariant.do
       ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-        clicked @"Cell claimed" _.key ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key"
+        clicked @"Cell claimed" @"key" ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key"
           @( key :: String
            , mark :: [ x :: {}, o :: {}, free :: {} ]
            , line :: [ winning :: {}, plain :: {} ]

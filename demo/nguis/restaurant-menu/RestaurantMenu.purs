@@ -5,7 +5,7 @@ import Prelude ((#), ($), (>>>), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (foreach, static)
-import PUI.Web (cl, staticText, text, (:=))
+import PUI.Web (cl, staticText, text, textAt, (:=))
 import PUI.Web.HTML (a, article, blockquote, body, div, footer, h1, h2, h3, header, hr, li, p, section, span, ul)
 import PUI.Web.SVG as SVG
 import RestaurantMenuViewModel (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine)
@@ -32,7 +32,7 @@ restaurantMenu =
               span >>> cl "dish-price" $ text priceLine
             p >>> cl "dish-desc" $ text dishDescription
             span >>> cl "tags" $
-              ( span >>> cl "tag" $ text _.tag ) # foreach @"tag" @( tag :: String ) dishTags ) # foreach @"name"
+              ( span >>> cl "tag" $ textAt @"tag" ) # foreach @"tag" @( tag :: String ) dishTags ) # foreach @"name"
                 @( name :: String
                  , price :: String
                  , description :: String

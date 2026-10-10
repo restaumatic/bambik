@@ -50,18 +50,19 @@ and emitters of a catalogue — are in the design-system module header
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
 | a value, formatted | `headline4 (text countLine) # shown` | counter | writing.md *Components*; `PUI.Web` |
-| a field verbatim | `text _.request.city`; `text _.entry` | weather; calculator | writing.md *Components* |
+| a field as it is stored | `textAt @"title"`; `textAt @"entry"` | todo-list; calculator | writing.md *Code style* |
 | a sentence composed from several fields | `( headline6 $ text balanceLine ) # shown` | cashbox | writing.md *Code style* → *Types and values* |
 | a case label read as copy | `caseText` (`Data.Variant.Case`), in the view model module | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
 | a number as a bar, gauge or stars | `linearProgress elapsedFraction`; `progressBar seatOccupancy` | timer; meeting-booker | the design-system module |
 | fixed copy | `(headline4 $ staticText "Create account") # shown` | signup-form | writing.md *Components* |
 | a record-reading group of displays | `# shown` | loan-calculator | writing.md *Stages* |
-| a pane for one state of the model | `# shownWhen @"faulty" readout` | calculator, flight-booker, checkout | writing.md *Conditional visibility* |
+| a pane for one state of the model | `# shownWhen @"faulty" readout`; `# shownWhenAt @"serving" @"display"` | calculator, flight-booker, checkout; ticket-dispenser | writing.md *Conditional visibility* |
 | a list, displayed | `ul $ ( li $ text lapLine ) # shownEach @"number" lapRows` | stopwatch | writing.md *Collections* |
 | a card that edits nothing | `card $ body1 (text summaryLine) # shown` | order-form, product-review | writing.md *Components* |
 | a readout that settles before it redraws | `# debounced summarySettleTime` | order-form, flight-booker | `PUI` |
 | a hint on hover | `# tooltip "You must accept the terms of service to sign up"`; `# tooltipWith loyaltyNote` | signup-form; espresso-bar | the design-system module |
 | a value-computed attribute | `attrWith "style" keyFace` | calculator, cells, circle-drawer | `PUI.Web` |
+| a field as an attribute | `attrAt @"x" "cx"` | circle-drawer | writing.md *Code style* |
 | a fixed attribute or class | `"style" := "…"`; `cl "dish"` | cells; restaurant-menu | `PUI.Web` |
 | a class that depends on the value | `# clWhen isCompleted "todo-done"` | todo-list | `PUI.Web` |
 | structure that varies with the value | `dynamic documentView`; `each items …`; `el ("h" <> show h.level)` | markdown-previewer | `PUI.Web` |
@@ -83,7 +84,7 @@ and emitters of a catalogue — are in the design-system module header
 | two controls on one field | `slider @"Tip percentage" {}` then `rangeInput @"Tip percentage"` | tip-calculator | writing.md *Components* |
 | a labelled group over a sub-record | `group @"Customer" $ Semigroupoid.do …` | order-form, potluck, reorder | writing.md *Components* |
 | a reusable sub-form over a flat sub-row | `addressForm # subStrong` | parcel | `PUI` |
-| an editor that exists in one state | `# inCase @"return" _."Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
+| an editor that exists in one state | `# inCaseAt @"return" @"Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
 | an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |
 | a variant field with an editor per case | `# bracketed @"Mode" fulfillmentState fulfillmentCase` | order-form | writing.md *Stages* |
 
@@ -94,9 +95,9 @@ and emitters of a catalogue — are in the design-system module header
 | a button stepping the model | `button @"Count" {}` and `snackbar @"Count" countedLine # fold increment` | counter, todo-list | writing.md *Stages* |
 | a button with a fixed payload | `button @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
 | an event folded into the model | `snackbar @"Customer refunded" customerRefundedLine # fold refundStandard`, each fold opened by its status, silent where nothing needs telling (`blankStatus @"Cell claimed" # fold claimCell`), the loop's folds merged in `VariantToRecord.do` | cashbox, tic-tac-toe | writing.md *Code style* → *Business functions* |
-| a clicked element naming itself | `clicked @"claimed" _.key (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
+| a clicked element naming itself | `clicked @"Cell claimed" @"key" (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
-| an emitter shown in one state | `# provided @"confirming" _.deletion` | inbox, stopwatch, quiz | writing.md *Conditional visibility* |
+| an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"finished" quizPhase` | stopwatch; quiz, inbox | writing.md *Conditional visibility* |
 | two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn` | checkout | `PUI` |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
 | some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
@@ -124,13 +125,13 @@ and emitters of a catalogue — are in the design-system module header
 
 | What comes in → what goes out | Word | Demo | Read |
 | --- | --- | --- | --- |
-| the array → each element's event | `# foreach @"key" cells` | tic-tac-toe, cells, shopping-cart | writing.md *Collections* |
+| the array → each element's event | `# foreachAt @"key" @"cells"`; `# foreach @"key" (const keyPad)` | cells; calculator, tic-tac-toe, shopping-cart | writing.md *Collections* |
 | the array → the array, decided jointly | `# acted @"name"` | potluck | writing.md *Collections* |
 | the array → the array, edited in place | `# edited @"id"` | reorder | writing.md *Collections* |
 | one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
 | one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
-| a selectable list (MDC2, MDC3) | `listOf @"opened" @"id" { selected: highlighted } _.messages (…)` | inbox | writing.md *Collections* |
-| a selectable list elsewhere | `clicked @"picked" _.key (…) # foreach @"key" entries` | crud (html) | writing.md *Collections* |
+| a selectable list (MDC2, MDC3) | `listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |
+| a selectable list elsewhere | `clicked @"Person picked" @"key" (…) # foreach @"key" …` | crud (html) | writing.md *Collections* |
 
 ## View model not written yet
 

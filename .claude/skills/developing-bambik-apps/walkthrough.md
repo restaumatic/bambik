@@ -22,7 +22,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
 import PUI (action, atCase, debounced, looped, with)
-import PUI.Web ((<+>), choice, inCase, shownWhen, text)
+import PUI.Web ((<+>), choice, inCaseAt, shownWhen, text)
 import PUI.Web.MDC2 (body, body1, button, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -33,7 +33,7 @@ flightBookerMDC2 =
       select @"Flight type" {}
         (choice @"one-way" <+> choice @"return")
       filledTextField @"Start date (DD.MM.YYYY)" {}
-      filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"
+      filledTextField @"Return date (DD.MM.YYYY)" {} # inCaseAt @"return" @"Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
        , "Start date (DD.MM.YYYY)" :: String
@@ -59,7 +59,7 @@ flightBookerMDC2 =
 
 **The imports.** `PUI` for the words that shape data flow (`looped`, `with`,
 `debounced`, `action`, `atCase`); `PUI.Web` for the words every design
-system shares (`choice` and `<+>`, the panes `shownWhen` and `inCase`,
+system shares (`choice` and `<+>`, the panes `shownWhen` and `inCaseAt`,
 the `text` leaf); `VariantToRecord` for the block that sets the two statuses side by
 side; and `PUI.Web.MDC2` for the design system, its `body` included. The
 MDC3 twin differs in its module and entry name, that one vocabulary import,
@@ -87,11 +87,11 @@ with `# looped @( … ) # with plannedTrip`, the model row declared there.
   itself.
 - `filledTextField @"Start date (DD.MM.YYYY)" {}` — the label carries the
   whole copy, format hint included; `{}` is empty presentation config.
-- `filledTextField @"Return date (DD.MM.YYYY)" {} # inCase @"return" _."Flight type"`
+- `filledTextField @"Return date (DD.MM.YYYY)" {} # inCaseAt @"return" @"Flight type"`
   — the editor pane: this field exists only while the stored
   `"Flight type"` is at case `return`, and the model passes straight
-  through otherwise. The pane reads the field with a plain accessor; the
-  model row on the seed line types it (writing.md *Conditional
+  through otherwise. The pane names the case and then the field, both
+  by label; the model row on the seed line types it (writing.md *Conditional
   visibility*).
 
 Each editor is fed the whole record and emits it with its own field

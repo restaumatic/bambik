@@ -6,7 +6,7 @@ import CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operato
 import Data.Array (elem)
 import Effect (Effect)
 import PUI (blankStatus, fold, foreach, joined, looped, with)
-import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
+import PUI.Web (attrWith, clicked, shownWhen, text, textAt, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,9 +20,9 @@ calculatorMDC2 =
           <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
           <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
           text faultLine # shownWhen @"faulty" @( sound :: { entry :: String }, faulty :: {} ) readout
-          text _.entry # shownWhen @"sound" readout
+          textAt @"entry" # shownWhen @"sound" readout
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-        clicked @"Key entered" _.key ( div >>> attrWith "style" keyFace $ text _.key ) # foreach @"key" @( key :: String ) (const keyPad) ) # joined @"Key entered"
+        clicked @"Key entered" @"key" ( div >>> attrWith "style" keyFace $ textAt @"key" ) # foreach @"key" @( key :: String ) (const keyPad) ) # joined @"Key entered"
       blankStatus @"Key entered" # fold pressKey
     ) # looped
       @( total :: Number

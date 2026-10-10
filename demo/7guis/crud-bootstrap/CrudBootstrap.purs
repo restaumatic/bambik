@@ -23,7 +23,7 @@ crudBootstrap =
       textField @"Surname" {}
       RecordToVariant.do
         ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
-          ( clicked @"Person picked" _.key ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key"
+          ( clicked @"Person picked" @"key" ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key"
             @( key :: Int
              , "Name" :: String
              , "Surname" :: String
