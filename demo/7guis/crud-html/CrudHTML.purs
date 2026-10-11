@@ -9,16 +9,16 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import PUI (action, atCase, blankStatus, fold, foreach, joined, looped, prefixed, subChoice)
-import PUI.Pipeline as Pipeline
 import PUI.Web (attrWith, clicked, staticText, text, (:=))
 import PUI.Web.HTML (body, button, div, indeterminateLinearProgress, input, label, li, output, p, ul)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudHTML :: Effect Unit
 crudHTML =
-  body $ div $ Pipeline.do
+  body $ div $ Semigroupoid.do
     indeterminateLinearProgress # action loadPeopleCatalogue
     blankStatus @"People loaded" # fold identity
-    ( Pipeline.do
+    ( Semigroupoid.do
       p ( label $ prefixed (staticText "Filter prefix (surname) ") $ input @"Filter prefix (surname)" "text" )
       p ( label $ prefixed (staticText "Name ") $ input @"Name" "text" )
       p ( label $ prefixed (staticText "Surname ") $ input @"Surname" "text" )

@@ -2,22 +2,23 @@ module TimerBootstrap (timerBootstrap) where
 
 import Prelude ((#), ($), Unit)
 
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (blankStatus, fold, looped, ticks, with)
-import PUI.Pipeline as Pipeline
+import PUI (blankStatus, fold, looped, prefixed, ticks, with)
 import PUI.Web.Bootstrap (body, button, progress, sliderLive)
 import PUI.Web (text)
 import PUI.Web.HTML (p)
+import QualifiedDo.Semigroupoid as Semigroupoid
 import TimerViewModel (elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod)
 
 timerBootstrap :: Effect Unit
 timerBootstrap =
-  body $ Pipeline.do
-    progress elapsedFraction
-    p $ text progressLine
-    sliderLive @"Duration" {}
+  body $ Semigroupoid.do
+    prefixed ( RecordToRecord.do
+      progress elapsedFraction
+      p $ text progressLine ) $ sliderLive @"Duration" {}
     RecordToVariant.do
       blankStatus @"Clock ticked" # ticks tickPeriod
       button @"Reset" {}

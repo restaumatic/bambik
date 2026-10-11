@@ -2,31 +2,30 @@ module InboxMDC3 (inboxMDC3) where
 
 import Prelude ((#), ($), Unit)
 
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import InboxViewModel (deletionPane, composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageComposedLine, messageDeletedLine, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
-import PUI (blankStatus, fold, joined, looped, observed, with)
-import PUI.Pipeline as Pipeline
+import PUI (blankStatus, fold, joined, looped, observed, prefixed, with)
 import PUI.Web (provided, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, bodyLarge, bodyMedium, bodySmall, button, dialog, fab, headlineSmall, iconButton, listOfAt, menu, menuItem, snackbar)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 inboxMDC3 :: Effect Unit
 inboxMDC3 =
-  body $ Pipeline.do
-    bodySmall $ text unreadLine
-    RecordToVariant.do
+  body $ Semigroupoid.do
+    prefixed (bodySmall $ text unreadLine) $ RecordToVariant.do
       listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } ( span $ text messageLine ) # joined @"Message opened"
-      ( Pipeline.do
-        headlineSmall (text subjectLine)
-        bodyMedium (text fromLine)
-        bodyLarge (text bodyText)
-        iconButton @"Delete message" {} "delete" ) # provided @"reading"
+      ( prefixed ( RecordToRecord.do
+          headlineSmall (text subjectLine)
+          bodyMedium (text fromLine)
+          bodyLarge (text bodyText) ) $ iconButton @"Delete message" {} "delete" ) # provided @"reading"
           @( reading :: { sender :: String, subject :: String, body :: String }
            , browsing :: {}
            ) messageView # joined @"Delete message"
-      ( Pipeline.do
+      ( Semigroupoid.do
         ( dialog "Delete the last message?" $ RecordToVariant.do
           button @"Delete" {}
           button @"Keep" {} ) # provided @"confirming"

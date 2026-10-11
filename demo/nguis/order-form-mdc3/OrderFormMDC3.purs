@@ -9,32 +9,31 @@ import Data.Variant (match)
 import Effect (Effect)
 import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
 import PUI (action, armed, atCase, blankStatus, bracketed, debounced, fold, looped, prefixed, settled, suffixed, updated)
-import PUI.Pipeline as Pipeline
 import PUI.Web ((<+>), choice, inCaseAt, pane, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderFormMDC3 :: Effect Unit
 orderFormMDC3 =
-  body $ Pipeline.do
+  body $ Semigroupoid.do
     indeterminateLinearProgress # action loadOrder
     blankStatus @"Order loaded" # fold identity
-    ( Pipeline.do
-      headlineSmall $ text orderLine
-      group @"Identifier" $ Pipeline.do
+    ( Semigroupoid.do
+      prefixed (headlineSmall $ text orderLine) $ group @"Identifier" $ Semigroupoid.do
         filledTextField @"Short ID" {}
         filledTextField @"Unique ID" {}
-      group @"Customer" $ Pipeline.do
+      group @"Customer" $ Semigroupoid.do
         filledTextField @"First name" {}
         filledTextField @"Last name" {}
       group @"Fulfillment" $
-        ( Pipeline.do
+        ( Semigroupoid.do
           tabBar @"selected"
             (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
           filledTextField @"Table" {} # inCaseAt @"Dine in" @"selected"
           filledTextField @"Time" {} # inCaseAt @"Takeaway" @"selected"
-          ( Pipeline.do
+          ( Semigroupoid.do
             filledTextField @"Address" {} # settled staleDistanceForgotten
-            ( Pipeline.do
+            ( Semigroupoid.do
               button @"Estimate distance" { icon: "near_me" }
               indeterminateLinearProgress # action @( estimated :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance }) # suffixed (bodyLarge (text distanceLine) # pane @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf) ) # inCaseAt @"Delivery" @"selected" ) # bracketed @"Mode"
               @( "Dine in" :: { "Table" :: String }
@@ -47,7 +46,7 @@ orderFormMDC3 =
                , "Address" :: String
                , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
                ) fulfillmentState fulfillmentCase
-      group @"Payment" $ Pipeline.do
+      group @"Payment" $ Semigroupoid.do
         filledTextField @"Total" {}
         segmentedButton @"Method"
           (choice @"cash" <+> choice @"card")

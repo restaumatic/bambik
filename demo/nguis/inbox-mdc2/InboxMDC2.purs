@@ -2,31 +2,30 @@ module InboxMDC2 (inboxMDC2) where
 
 import Prelude ((#), ($), Unit)
 
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import InboxViewModel (deletionPane, composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageComposedLine, messageDeletedLine, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
-import PUI (blankStatus, fold, joined, looped, observed, with)
-import PUI.Pipeline as Pipeline
+import PUI (blankStatus, fold, joined, looped, observed, prefixed, with)
 import PUI.Web (provided, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, dialog, fab, headline6, iconButton, listOfAt, menu, menuItem, snackbar)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 inboxMDC2 :: Effect Unit
 inboxMDC2 =
-  body $ Pipeline.do
-    caption $ text unreadLine
-    RecordToVariant.do
+  body $ Semigroupoid.do
+    prefixed (caption $ text unreadLine) $ RecordToVariant.do
       listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } ( span $ text messageLine ) # joined @"Message opened"
-      ( Pipeline.do
-        headline6 (text subjectLine)
-        body2 (text fromLine)
-        body1 (text bodyText)
-        iconButton @"Delete message" {} "delete" ) # provided @"reading"
+      ( prefixed ( RecordToRecord.do
+          headline6 (text subjectLine)
+          body2 (text fromLine)
+          body1 (text bodyText) ) $ iconButton @"Delete message" {} "delete" ) # provided @"reading"
           @( reading :: { sender :: String, subject :: String, body :: String }
            , browsing :: {}
            ) messageView # joined @"Delete message"
-      ( Pipeline.do
+      ( Semigroupoid.do
         ( dialog "Delete the last message?" $ RecordToVariant.do
           button @"Delete" {}
           button @"Keep" {} ) # provided @"confirming"

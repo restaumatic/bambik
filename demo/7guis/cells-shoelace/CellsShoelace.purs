@@ -6,23 +6,18 @@ import CellsViewModel (columnHeaders, commit, orderSheet, rowLabel, selectCell, 
 import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
-import PUI (blankStatus, fold, foreach, foreachAt, joined, looped, settled, with)
-import PUI.Pipeline as Pipeline
+import PUI (blankStatus, fold, foreach, foreachAt, joined, looped, prefixed, settled, with)
 import PUI.Web (attrWith, clicked, text, textAt, (:=))
 import PUI.Web.HTML (div, p, table, td, tr)
 import PUI.Web.Shoelace (body, textField)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsShoelace :: Effect Unit
 cellsShoelace =
-  body $ Pipeline.do
-    p (text selectedLine)
-    textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
+  body $ Semigroupoid.do
+    prefixed (p (text selectedLine)) $ textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
-      ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Pipeline.do
-        tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) columnHeaders
-        ( tr $ Pipeline.do
-          td >>> "style" := headerFace $ text rowLabel
-          ( clicked @"Cell picked" @"key" ( td >>> attrWith "style" cellFace $ textAt @"text" ) ) # foreachAt @"key" @"cells" ) # foreach @"rowKey"
+      ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ prefixed (tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) columnHeaders) $ ( tr $ prefixed (td >>> "style" := headerFace $ text rowLabel) $ ( clicked @"Cell picked" @"key" ( td >>> attrWith "style" cellFace $ textAt @"text" ) ) # foreachAt @"key" @"cells" ) # foreach @"rowKey"
             @( rowKey :: String
              , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
              ) sheetRows ) ) # joined @"Cell picked"

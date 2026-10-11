@@ -56,18 +56,20 @@ whichever twin matches your design system.
 
 ## The pipeline
 
-The app is one pipeline composed with `Pipeline.do`
-(`import PUI.Pipeline as Pipeline`): code order is screen order. A
-**stage** (an editor, an event ensemble, a fold) feeds its output to the
-next line. A line that **shows data** — a display, a static, a pane, a
-list of displays: it outputs `{}` — changes no data, so the block applies
-it to what follows, fed what that part is fed; it needs no word of its
-own. Displays that end a block **after** a stage whose row the block must
-still release — tip-calculator's totals after the last slider,
-stopwatch's laps after the folds, order-form's paying line in its group —
-say so on that stage, `slider @"Split between" {} # suffixed ( Pipeline.do …
-)`; the compiler reports the place where it is missing (see
-[When it does not compile](#when-it-does-not-compile)). Four more qualified `do` blocks put several components over one
+The app is one pipeline composed with `Semigroupoid.do`
+(`import QualifiedDo.Semigroupoid as Semigroupoid`): each line's output
+is the next line's input, so code order is screen order *and* data
+order. A **stage** (an editor, an event ensemble, a fold) is a line as it
+stands. A line that **shows data** — a display, a static, a pane, a list
+of displays: it outputs `{}` — changes no data, so it is not a stage but a
+decorator over the stage it stands before, written `prefixed d $ stage`
+(counter's `prefixed (headline4 (text countLine)) $ button @"Count" {}`);
+several in a row are one `RecordToRecord.do` group under one `prefixed`
+(tip-calculator). Displays **after** a stage whose row must flow on —
+tip-calculator's totals after the last slider, stopwatch's laps after the
+folds — trail it: `slider @"Split between" {} # suffixed ( RecordToRecord.do
+… )`. A display that ends a block, or the whole content of a pane, is
+written plainly: nothing follows it, so there is nothing to decorate. Four more qualified `do` blocks put several components over one
 value, one per shape:
 
 - `RecordToRecord.do` (×→×) — chrome and displays reading one record
@@ -182,7 +184,9 @@ for:
 | an editor that exists in one case | `filledTextField @"Table" {} # inCaseAt @"Dine in" @"selected"` | order-form |
 | a button that exists in one case | `button @"Start" {…} # providedAt @"halted" @"phase"` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # foreach @"number" lapRows` | stopwatch |
-| displays ending a block after a stage | `slider @"Split between" {} # suffixed ( Pipeline.do … )` | tip-calculator, stopwatch |
+| a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count" {}` | counter |
+| several displays before a stage | `prefixed ( RecordToRecord.do … ) $ slider @"Split between" {}` | tip-calculator, weather |
+| displays after a stage whose row flows on | `slider @"Split between" {} # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch |
 | a list element echoing the row it shows | `prefixed (listItem $ text flightLine) identity # dispatched …` | departures, scoreboard |
 | content that waits for the user to confirm | `confirmed "Refund" "Refund the customer?" $ …` | cashbox |
 | an event folded into the model | `blankStatus @"Add" # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
@@ -218,15 +222,15 @@ address is edited" is not.
 An app is one loop through the four shapes, tied once by `# looped @( … ) # with seed`:
 
 ```purescript
-Pipeline.do
-  headline4 (text countLine)                  -- ×→× displays and editors, fed by the loop
-  RecordToVariant.do                          -- ×→+ the event ensemble: every emitter and pane
+Semigroupoid.do
+  prefixed (headline4 (text countLine)) $     -- ×→× a display, decorating the stage it stands before
+    RecordToVariant.do                        -- ×→+ the event ensemble: every emitter and pane
     button @"Add" {}
     listOf @"Todo toggled" … # joined @"Todo toggled"   --   an event with a payload of its own, joined with the model
   VariantToRecord.do                          -- +→× the folds, one per case, each opened by its status
     blankStatus @"Add" # fold addTodo
     blankStatus @"Todo toggled" # fold toggleTodo
-    ( Pipeline.do                             --   an effect on a case, folded by its own outcomes
+    ( Semigroupoid.do                         --   an effect on a case, folded by its own outcomes
       indeterminateLinearProgress # action createPerson
       VariantToRecord.do
         snackbar @"Person created" personCreatedLine # fold identity
@@ -513,7 +517,7 @@ text is computed, a chrome line nothing.
   line one field per line under its opening bracket (crud). Only the
   whitespace differs from the hint.
 - **Two-space indentation.** A block's lines sit two columns deeper
-  than its opener, `( Pipeline.do` included; a closer returns to its
+  than its opener, `( Semigroupoid.do` included; a closer returns to its
   opener's column. No four-space steps, no alignment to a token
   mid-line.
 - **The architecture reads off the pipeline**, in this order: load →
@@ -840,7 +844,7 @@ in the message, the one the line wants and the one it got, and look
 | The message | Reported at | The mistake | The fix |
 | --- | --- | --- | --- |
 | the model row against `()` | the whole app expression | the loop has no seed: the entry feeds only `{}` | close the loop with `# with seed` (counter) |
-| `()` against the model row, `while solving type class constraint PUI.Pipeline.LineRecord` | a display at the end of a block | displays end the block after a stage, so the block shows data (`{}`) where its row is needed — by `# looped`, a group, the block around it | put the trailing displays in `# suffixed ( Pipeline.do … )` on that stage (tip-calculator) |
+| the model row against `()`, `while matching label "Count"` | the status or fold of that case | a display stands as a line of its own before the emitter, so it passes on `{}` and the emitter replays it | make it `prefixed (…) $` over the line after it (counter) |
 | `()` against `( event :: …, model :: … )`, `while matching label "Start"` | the fold of that case | an emitter inside a pane lacks `# joined @"Start"`, so it replays the pane's payload instead of the model | add `# joined` to the emitter (stopwatch) |
 | `( "Cout" :: … )` against `( "Count" :: … )` | the fold | one case spelled two ways | spell the case the same on the emitter and its fold |
 | `( "Reset" :: … )` against `( … )` | the emitter | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `blankStatus @"Clock ticked" # fold tick`), or remove the emitter |

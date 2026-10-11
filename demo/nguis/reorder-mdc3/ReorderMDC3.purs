@@ -7,14 +7,14 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import PUI (action, atCase, blankStatus, edited, fold, looped, prefixed, static, with)
-import PUI.Pipeline as Pipeline
 import PUI.Web (el, (:=))
 import PUI.Web.MDC3 (body, button, filledTextField, group, indeterminateLinearProgress, list, listItem)
+import QualifiedDo.Semigroupoid as Semigroupoid
 import ReorderViewModel (openingSetlist, rotateAction, shuffleAction)
 
 reorderMDC3 :: Effect Unit
 reorderMDC3 =
-  body $ Pipeline.do
+  body $ Semigroupoid.do
     group @"Setlist" $ list $
       ( listItem $ prefixed (static (el "input" >>> "type" := "checkbox")) $ filledTextField @"Title" {} ) # edited @"id"
     RecordToVariant.do

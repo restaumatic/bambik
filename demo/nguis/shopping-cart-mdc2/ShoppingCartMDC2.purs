@@ -6,17 +6,16 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (blankStatus, fold, foreach, joined, looped, with)
-import PUI.Pipeline as Pipeline
+import PUI (blankStatus, fold, foreach, joined, looped, prefixed, with)
 import PUI.Web (clicked, text)
 import PUI.Web.MDC2 (body, body1, button, columnHeader, dataCell, dataRow, dataTable, listOf, snackbar)
+import QualifiedDo.Semigroupoid as Semigroupoid
 import ShoppingCartViewModel (addUnit, cartEmptiedLine, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine)
 
 shoppingCartMDC2 :: Effect Unit
 shoppingCartMDC2 =
-  body $ Pipeline.do
-    body1 (text totalLine)
-    RecordToVariant.do
+  body $ Semigroupoid.do
+    prefixed (body1 (text totalLine)) $ RecordToVariant.do
       listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) {} productCatalogue (text catalogueLine) # joined @"Unit added"
       dataTable "Cart"
         ( RecordToRecord.do

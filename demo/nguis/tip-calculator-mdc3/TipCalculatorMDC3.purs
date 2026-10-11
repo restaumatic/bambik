@@ -2,23 +2,24 @@ module TipCalculatorMDC3 (tipCalculatorMDC3) where
 
 import Prelude ((#), ($), Unit)
 
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (looped, suffixed, with)
-import PUI.Pipeline as Pipeline
+import PUI (looped, prefixed, suffixed, with)
 import PUI.Web (text)
 import PUI.Web.HTML (rangeInput)
 import PUI.Web.MDC3 (body, bodyMedium, filledTextField, slider)
+import QualifiedDo.Semigroupoid as Semigroupoid
 import TipCalculatorViewModel (dinnerBill, perPersonLine, splitLine, tipAmountLine, tipLine, totalLine)
 
 tipCalculatorMDC3 :: Effect Unit
 tipCalculatorMDC3 =
-  body $ Pipeline.do
+  body $ Semigroupoid.do
     filledTextField @"Bill amount" {}
     slider @"Tip percentage" {}
     rangeInput @"Tip percentage"
-    bodyMedium (text tipLine)
-    bodyMedium (text splitLine)
-    slider @"Split between" {} # suffixed ( Pipeline.do
+    prefixed ( RecordToRecord.do
+      bodyMedium (text tipLine)
+      bodyMedium (text splitLine) ) $ slider @"Split between" {} # suffixed ( RecordToRecord.do
       bodyMedium (text tipAmountLine)
       bodyMedium (text totalLine)
       bodyMedium (text perPersonLine) )

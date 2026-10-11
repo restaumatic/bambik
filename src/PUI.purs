@@ -1199,9 +1199,12 @@ static o = widenRecordInput (o identity :: p {} {})
 -- | Its `{}` answers are discarded lawfully (the type says they carry
 -- | nothing) and the content's channels pass untouched, so the data flow is
 -- | the content's alone. Written first because it is shown first:
--- | `label $ prefixed (staticText "°C ") $ input @"celsius" "text"`. A
--- | `Pipeline.do` block applies it to every line that shows data, so a view
--- | rarely names it.
+-- | `label $ prefixed (staticText "°C ") $ input @"celsius" "text"`,
+-- | `prefixed (headline4 (text countLine)) $ button @"Count" {}`; several
+-- | displays in a row are one `RecordToRecord.do` group under one
+-- | `prefixed`. In a `Semigroupoid.do` block this is how a line that shows
+-- | data (output `{}`) sits before a stage: it decorates the stage rather
+-- | than feeding it.
 prefixed :: forall m a b. MonadEffect m => PUI m a {} -> PUI m a b -> PUI m a b
 prefixed d w = wrap do
   d' <- unwrap d
@@ -1216,8 +1219,8 @@ prefixed d w = wrap do
 -- | sums, a lap list after the clock — as a decorator over that part of the
 -- | flow: the content is built first, then the display, which is fed each
 -- | row the content releases, before the row goes on. Like `prefixed`, it
--- | changes no data. A `Pipeline.do` block applies it to a last line that
--- | shows data after a stage.
+-- | changes no data: `slider @"Split between" {} # suffixed ( RecordToRecord.do
+-- | … )` keeps the slider's row flowing past the totals under it.
 suffixed :: forall m a b. MonadEffect m => PUI m b {} -> PUI m a b -> PUI m a b
 suffixed d w = wrap do
   w' <- unwrap w

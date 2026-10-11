@@ -2,25 +2,26 @@ module PasswordGeneratorMDC2 (passwordGeneratorMDC2) where
 
 import Prelude (identity, Unit, (#), ($), (>>>))
 
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI.Pipeline as Pipeline
 import PasswordGeneratorViewModel (passwordText, samplePassword, strengthLine, strongMixRecipe)
-import PUI (action, atCase, blankStatus, fold, looped, with)
+import PUI (action, atCase, blankStatus, fold, looped, prefixed, with)
 import PUI.Web (attr, text)
 import PUI.Web.HTML (code)
 import PUI.Web.MDC2 (body, body2, button, indeterminateLinearProgress, slider, toggleSwitch)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 passwordGeneratorMDC2 :: Effect Unit
 passwordGeneratorMDC2 =
-  body $ Pipeline.do
+  body $ Semigroupoid.do
     slider @"Length" {}
     toggleSwitch @"Uppercase letters" {}
     toggleSwitch @"Lowercase letters" {}
     toggleSwitch @"Digits" {}
     toggleSwitch @"Symbols" {}
-    body2 (text strengthLine)
-    code >>> attr "style" "word-break: break-all;" $ text passwordText
-    button @"Generate" {}
+    prefixed ( RecordToRecord.do
+      body2 (text strengthLine)
+      code >>> attr "style" "word-break: break-all;" $ text passwordText ) $ button @"Generate" {}
     indeterminateLinearProgress # action samplePassword # atCase @"Generate"
     blankStatus @"Password generated" # fold identity
   # looped

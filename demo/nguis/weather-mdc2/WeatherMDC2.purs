@@ -2,25 +2,26 @@ module WeatherMDC2 (weatherMDC2) where
 
 import Prelude (identity, Unit, (#), ($))
 
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (action, atCase, blankStatus, fold, joined, looped, with)
-import PUI.Pipeline as Pipeline
+import PUI (action, atCase, blankStatus, fold, joined, looped, prefixed, with)
 import PUI.Web (text)
 import PUI.Web.MDC2 (body, body1, caption, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
+import QualifiedDo.Semigroupoid as Semigroupoid
 import WeatherViewModel (aboutLine, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, servedLine, temperatureLine, warsawBulletin)
 
 weatherMDC2 :: Effect Unit
 weatherMDC2 =
-  body $ Pipeline.do
-    headline1 (text temperatureLine)
-    headline5 (text conditionLine)
-    body1 (text humidityWindLine)
-    caption (text servedLine)
-    ( Pipeline.do
-      iconButton @"About this dashboard" {} "info"
-      simpleDialog "Got it" "About this dashboard"
-        ( body1 (text aboutLine) ) # atCase @"About this dashboard" )
-    listOf @"Forecast requested" @"request"
+  body $ Semigroupoid.do
+    prefixed ( RecordToRecord.do
+      headline1 (text temperatureLine)
+      headline5 (text conditionLine)
+      body1 (text humidityWindLine)
+      caption (text servedLine)
+      ( Semigroupoid.do
+        iconButton @"About this dashboard" {} "info"
+        simpleDialog "Got it" "About this dashboard"
+          ( body1 (text aboutLine) ) # atCase @"About this dashboard" ) ) $ listOf @"Forecast requested" @"request"
       @( request :: { city :: String, sample :: Int }
        , focus :: [ current :: {}, other :: {} ]
        ) { selected: isCurrent } forecastRequests (text cityLine) # joined @"Forecast requested"

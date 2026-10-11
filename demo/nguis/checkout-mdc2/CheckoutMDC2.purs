@@ -3,25 +3,26 @@ module CheckoutMDC2 (checkoutMDC2) where
 import Prelude ((#), ($), Unit)
 
 import CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderPlacedLine, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blankStatus, fold, joined, looped, suffixed, with)
-import PUI.Pipeline as Pipeline
+import PUI (blankStatus, fold, joined, looped, prefixed, suffixed, with)
 import PUI.Web (pane, provided, text)
 import PUI.Web.MDC2 (body, body2, button, snackbar)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkoutMDC2 :: Effect Unit
 checkoutMDC2 =
-  body $ Pipeline.do
-    ( body2 $ text cartLine ) # pane @"cart"
-      @( cart :: { item :: String }
-       , shipping :: { address :: String }
-       , payment :: { card :: String }
-       ) checkoutStep
-    ( body2 $ text shippingLine ) # pane @"shipping" checkoutStep
-    ( body2 $ text paymentLine ) # pane @"payment" checkoutStep
-    RecordToVariant.do
+  body $ Semigroupoid.do
+    prefixed ( RecordToRecord.do
+      ( body2 $ text cartLine ) # pane @"cart"
+        @( cart :: { item :: String }
+         , shipping :: { address :: String }
+         , payment :: { card :: String }
+         ) checkoutStep
+      ( body2 $ text shippingLine ) # pane @"shipping" checkoutStep
+      ( body2 $ text paymentLine ) # pane @"payment" checkoutStep ) $ RecordToVariant.do
       button @"Next" {} # provided @"onward"
         @( onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
          , last :: {}

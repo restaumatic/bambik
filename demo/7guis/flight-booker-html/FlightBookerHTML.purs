@@ -2,18 +2,19 @@ module FlightBookerHTML (flightBookerHTML) where
 
 import Prelude (Unit, identity, (#), ($))
 
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
 import PUI (action, atCase, debounced, looped, prefixed, with)
-import PUI.Pipeline as Pipeline
 import PUI.Web ((<+>), choice, inCaseAt, pane, staticText, text)
 import PUI.Web.HTML (body, button, div, input, label, output, p, select)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerHTML :: Effect Unit
 flightBookerHTML =
-  body $ div $ Pipeline.do
-    ( Pipeline.do
+  body $ div $ Semigroupoid.do
+    ( Semigroupoid.do
       p ( label $ prefixed (staticText "Flight type ") $ select @"Flight type" (choice @"one-way" <+> choice @"return") )
       p ( label $ prefixed (staticText "Start date (DD.MM.YYYY) ") $ input @"Start date (DD.MM.YYYY)" "text" )
       p ( label $ prefixed (staticText "Return date (DD.MM.YYYY) ") $ input @"Return date (DD.MM.YYYY)" "text" ) # inCaseAt @"return" @"Flight type"
@@ -22,7 +23,7 @@ flightBookerHTML =
        , "Start date (DD.MM.YYYY)" :: String
        , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
-    prefixed ( Pipeline.do
+    prefixed ( RecordToRecord.do
       p (text problemLine) # pane @"problem"
         @( problem :: { problem :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] }
          , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }

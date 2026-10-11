@@ -20,7 +20,7 @@
 -- | - **panes** — `provided` (emitters), `pane` (displays) and `inCase`
 -- |   (editors); a pane over a variant the model stores names its field by
 -- |   label (`providedAt`, `paneAt`, `inCaseAt`). A line that shows data
--- |   joins the flow through `PUI.Pipeline`;
+-- |   sits in a pipeline as `prefixed`/`suffixed` over a stage (`PUI`);
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
 -- |   tag.
 -- |
@@ -483,8 +483,8 @@ selectedWith checkedOf stored w = focusField @l $ wrap do
 -- | case payload while the classifier yields case `l`, detached on any
 -- | other case. It shows data itself (output `{}`): attached, the
 -- | content's answer is the pane's; detached, the pane answers for it, so
--- | every feed is answered once. In a `Pipeline.do` block it decorates the
--- | flow like any line that shows data. Trails its content:
+-- | every feed is answered once. It shows data, so in a pipeline it is
+-- | `prefixed` over the stage after it, like any display. Trails its content:
 -- | `text faultLine # pane @"faulty" readout`. The classifier's variant is a
 -- | visible type argument after the case, so the view can declare every
 -- | state the pane chooses among

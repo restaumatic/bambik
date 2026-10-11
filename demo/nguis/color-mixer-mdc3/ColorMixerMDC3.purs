@@ -3,22 +3,23 @@ module ColorMixerMDC3 (colorMixerMDC3) where
 import Prelude ((#), ($), (<>), (>>>), Unit, const)
 
 import ColorMixerViewModel (applyPreset, duskViolet, hexLine, mixedColor, palette, rgb, rgbLine)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (blank, blankStatus, fold, foreach, joined, looped, with)
-import PUI.Pipeline as Pipeline
+import PUI (blank, blankStatus, fold, foreach, joined, looped, prefixed, with)
 import PUI.Web (attrAt, attrWith, clicked, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, sliderLive)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 colorMixerMDC3 :: Effect Unit
 colorMixerMDC3 =
-  body $ Pipeline.do
+  body $ Semigroupoid.do
     sliderLive @"Red" {}
     sliderLive @"Green" {}
     sliderLive @"Blue" {}
-    bodyMedium $ text hexLine
-    bodyMedium $ text rgbLine
-    ( div $ Pipeline.do
+    prefixed ( RecordToRecord.do
+      bodyMedium $ text hexLine
+      bodyMedium $ text rgbLine ) $ ( div $ Semigroupoid.do
       div >>> attrWith "style" swatchStyle $ blank
       div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
         clicked @"Preset applied" @"name" ( div >>> attrAt @"name" "title" >>> attrWith "style" chipFace $ blank ) # foreach @"name"

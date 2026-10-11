@@ -5,7 +5,6 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI.Pipeline as Pipeline
 import PhotoGalleryViewModel (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
 import PUI (foreach, looped, suffixed, updated, with)
 import PUI.Web (each, staticText, text, textAt)
@@ -17,7 +16,7 @@ photoGalleryMDC2 =
   body $
     topAppBar "Photo Gallery" $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
-        ( listOf @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices (span (textAt @"name")) # updated (match { opened: openAlbum }) # suffixed ( Pipeline.do
+        ( listOf @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices (span (textAt @"name")) # updated (match { opened: openAlbum }) # suffixed ( RecordToRecord.do
           divider
           ( list RecordToRecord.do
             listItem $ staticText "Every photo is an SVG"
@@ -25,7 +24,7 @@ photoGalleryMDC2 =
             listItem $ staticText "No network involved" )
           overline $ staticText "Favorites"
           imageList 2 $ each @{ src :: String, alt :: String } favoriteShots imageListItem ) )
-        ( Pipeline.do
+        ( RecordToRecord.do
           headline2 $ text albumTitle
           imageList 3 $ imagePane developedShot # foreach @"shot" @( shot :: String ) albumShots )
       ) # looped @( album :: String ) # with landscapesOpen

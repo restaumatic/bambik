@@ -8,16 +8,16 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import PUI (action, atCase, blankStatus, fold, foreach, joined, looped, subChoice)
-import PUI.Pipeline as Pipeline
 import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, listGroup, listGroupItem, textField, toast)
 import PUI.Web (cl, clicked, clWhen, text, (:=))
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudBootstrap :: Effect Unit
 crudBootstrap =
-  body $ Pipeline.do
+  body $ Semigroupoid.do
     indeterminateLinearProgress # action loadPeopleCatalogue
     blankStatus @"People loaded" # fold identity
-    ( Pipeline.do
+    ( Semigroupoid.do
       textField @"Filter prefix (surname)" {}
       textField @"Name" {}
       textField @"Surname" {}

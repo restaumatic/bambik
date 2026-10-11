@@ -5,16 +5,16 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import MeetingBookerViewModel (blankBooking, bookedLine, plan, planLine, ratedRoom, roomRatingCaption, roomStars, seatOccupancy, seatsInRoom, seatsTaken, seatsTakenCaption)
-import PUI (looped, settled, with)
-import PUI.Pipeline as Pipeline
+import PUI (looped, prefixed, settled, with)
 import PUI.Web ((<+>), choice, inCaseAt, pane, provided, text)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdownOptional, dropdownUnpicked, messageBar, progressBar, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (div)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 meetingBookerFluent :: Effect Unit
 meetingBookerFluent =
-  body $ Pipeline.do
-    ( Pipeline.do
+  body $ Semigroupoid.do
+    ( Semigroupoid.do
       textField @"Meeting title" {}
       dropdownUnpicked @"Room" @"chosen" {}
         (choice @"Focus pod (4 seats)" <+> choice @"Boardroom (12 seats)" <+> choice @"Auditorium (40 seats)") # settled seatsInRoom
@@ -23,8 +23,7 @@ meetingBookerFluent =
       dropdownOptional @"Catering" @"ordered" @"none" {}
         (choice @"coffee and pastries" <+> choice @"sandwich lunch")
       toggleSwitch @"Include a Teams link" {}
-      divider
-      slider @"Attendees" {} # inCaseAt @"chosen" @"Room"
+      prefixed (divider) $ slider @"Attendees" {} # inCaseAt @"chosen" @"Room"
     ) # looped
       @( "Meeting title" :: String
        , "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ]
@@ -33,15 +32,13 @@ meetingBookerFluent =
        , "Include a Teams link" :: Boolean
        , "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ]
        ) # with blankBooking
-    ( div $ RecordToRecord.do
-      caption1 $ text roomRatingCaption
-      ratingDisplay roomStars ) # pane @"rated" @( rated :: { rating :: Number }, unrated :: {} ) ratedRoom
-    ( div $ RecordToRecord.do
-      caption1 $ text seatsTakenCaption
-      progressBar seatOccupancy ) # pane @"seated" @( seated :: { occupancy :: Number }, unseated :: {} ) seatsTaken
-    ( card $ Pipeline.do
-      body1 (text planLine)
-      button @"Book the room" {} ) # provided @"complete"
+    prefixed ( RecordToRecord.do
+      ( div $ RecordToRecord.do
+        caption1 $ text roomRatingCaption
+        ratingDisplay roomStars ) # pane @"rated" @( rated :: { rating :: Number }, unrated :: {} ) ratedRoom
+      ( div $ RecordToRecord.do
+        caption1 $ text seatsTakenCaption
+        progressBar seatOccupancy ) # pane @"seated" @( seated :: { occupancy :: Number }, unseated :: {} ) seatsTaken ) $ ( card $ prefixed (body1 (text planLine)) $ button @"Book the room" {} ) # provided @"complete"
         @( complete :: { "Meeting title" :: String, room :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], duration :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean, catering :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ] }
          , incomplete :: {}
          ) plan

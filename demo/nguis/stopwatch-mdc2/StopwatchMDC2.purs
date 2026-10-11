@@ -5,18 +5,17 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blankStatus, fold, foreach, joined, looped, suffixed, ticks, with)
-import PUI.Pipeline as Pipeline
+import PUI (blankStatus, fold, foreach, joined, looped, prefixed, suffixed, ticks, with)
 import PUI.Web (providedAt, text)
 import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC2 (body, button, headline3)
+import QualifiedDo.Semigroupoid as Semigroupoid
 import StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch)
 
 stopwatchMDC2 :: Effect Unit
 stopwatchMDC2 =
-  body $ Pipeline.do
-    headline3 (text elapsedText)
-    RecordToVariant.do
+  body $ Semigroupoid.do
+    prefixed (headline3 (text elapsedText)) $ RecordToVariant.do
       blankStatus @"Clock ticked" # ticks tickPeriod
       button @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase" # joined @"Start"
       button @"Stop" { icon: "stop" } # providedAt @"timing" @"phase" # joined @"Stop"

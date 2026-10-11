@@ -25,8 +25,9 @@ and emitters of a catalogue — are in the design-system module header
 
 | You are writing | Word | Demo | Read |
 | --- | --- | --- | --- |
-| the screen's lines, top to bottom: stages one after another, displays applied to what follows | `Pipeline.do` (`import PUI.Pipeline as Pipeline`) | counter | writing.md *The pipeline*; `PUI.Pipeline` |
-| displays ending a block after a stage | `slider @"Split between" {} # suffixed ( Pipeline.do … )` | tip-calculator, stopwatch | writing.md *The pipeline* |
+| stages one after another | `Semigroupoid.do` (`import QualifiedDo.Semigroupoid as Semigroupoid`) | counter | writing.md *The pipeline* |
+| a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count" {}`; several, `prefixed ( RecordToRecord.do … ) $ …` | counter; tip-calculator | writing.md *The pipeline*; `PUI` |
+| displays after a stage whose row flows on | `slider @"Split between" {} # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch | writing.md *The pipeline* |
 | displays and chrome reading one record side by side | `RecordToRecord.do` — `div $ RecordToRecord.do` | espresso-bar, loan-calculator, meeting-booker, shopping-cart | `Data.Profunctor.Row.RecordToRecord` |
 | several emitters over one record | `RecordToVariant.do` | cashbox, stopwatch, crud | `Data.Profunctor.Row.RecordToVariant` |
 | one stage per event case | `VariantToVariant.do` | crud, cashbox, reorder | `Data.Profunctor.Row.VariantToVariant` |
@@ -83,7 +84,7 @@ and emitters of a catalogue — are in the design-system module header
 | a selection the user may leave unmade | `dropdownOptional @"Catering" @"ordered" @"none" {} […]` | meeting-booker | writing.md *Components* |
 | a bounded quantity | `sliderLive @"Duration" {}`; `slider @"Split between" {}` | timer; tip-calculator | writing.md *Code style* → *Types and values* |
 | two controls on one field | `slider @"Tip percentage" {}` then `rangeInput @"Tip percentage"` | tip-calculator | writing.md *Components* |
-| a labelled group over a sub-record | `group @"Customer" $ Pipeline.do …` | order-form, potluck, reorder | writing.md *Components* |
+| a labelled group over a sub-record | `group @"Customer" $ Semigroupoid.do …` | order-form, potluck, reorder | writing.md *Components* |
 | a reusable sub-form over a flat sub-row | `addressForm # subStrong` | parcel | `PUI` |
 | an editor that exists in one state | `# inCaseAt @"return" @"Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
 | an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |

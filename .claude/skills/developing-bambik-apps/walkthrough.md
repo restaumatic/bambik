@@ -18,18 +18,19 @@ module FlightBookerMDC2 (flightBookerMDC2) where
 
 import Prelude (Unit, identity, (#), ($))
 
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
 import PUI (action, atCase, debounced, looped, prefixed, with)
-import PUI.Pipeline as Pipeline
 import PUI.Web ((<+>), choice, inCaseAt, pane, text)
 import PUI.Web.MDC2 (body, body1, button, filledTextField, indeterminateLinearProgress, select, snackbar)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerMDC2 :: Effect Unit
 flightBookerMDC2 =
-  body $ Pipeline.do
-    ( Pipeline.do
+  body $ Semigroupoid.do
+    ( Semigroupoid.do
       select @"Flight type" {}
         (choice @"one-way" <+> choice @"return")
       filledTextField @"Start date (DD.MM.YYYY)" {}
@@ -39,7 +40,7 @@ flightBookerMDC2 =
        , "Start date (DD.MM.YYYY)" :: String
        , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
-    prefixed ( Pipeline.do
+    prefixed ( RecordToRecord.do
       body1 (text problemLine) # pane @"problem"
         @( problem :: { problem :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] }
          , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }
@@ -64,18 +65,18 @@ the `text` leaf); `VariantToRecord` for the block that sets the two statuses sid
 side; and `PUI.Web.MDC2` for the design system, its `body` included. The
 MDC3 twin differs in its module and entry name, that one vocabulary import,
 and the typography it pulls from it (`bodyLarge` for `body1`); the view model
-module is shared verbatim. `PUI.Pipeline as Pipeline` gives `Pipeline.do`:
-the screen's lines in order, not a monad.
+module is shared verbatim. `QualifiedDo.Semigroupoid as Semigroupoid` gives
+`Semigroupoid.do`: stages in sequence, not a monad.
 
-**`body $ Pipeline.do`.** Mount at the document body, dressed for
+**`body $ Semigroupoid.do`.** Mount at the document body, dressed for
 Material 2, applied with `$` (layout), never `#` (data flow). The outer
-`Pipeline.do` has five stages, and data flows top to bottom as the code
+`Semigroupoid.do` has five stages, and data flows top to bottom as the code
 reads: the form emits the model on every edit → the itinerary line shows it
 and passes it on once it has settled → the button turns it into an event →
 the action turns the event into an outcome → a snackbar shows the outcome.
 Code order is DOM order and data order (writing.md *The pipeline*).
 
-**Stage 1 — the form.** An inner `Pipeline.do` of three editors, closed
+**Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
 with `# looped @( … ) # with plannedTrip`, the model row declared there.
 
 - `select @"Flight type" {} (choice @"one-way" <+> choice @"return")` —
@@ -102,7 +103,7 @@ it also closes the app's input to `{}`, which `body` requires (writing.md
 *App shape*).
 
 **Stage 2 — the itinerary line.** Three panes over one classifier, in a
-block of their own over the wire, `prefixed ( Pipeline.do … ) identity #
+block of their own over the wire, `prefixed ( RecordToRecord.do … ) identity #
 debounced itinerarySettleTime`.
 
 - `body1 (text oneWayLine)` — the `text` leaf takes a **read function**:
@@ -125,7 +126,7 @@ debounced itinerarySettleTime`.
   view carries no literal): the line redraws live, but the Book button is
   handed the itinerary only after it has stood still on screen. A display
   that no later line depends on needs none of this — it is a plain line,
-  and the block applies it to what follows (writing.md *The pipeline*).
+  and is `prefixed` over the stage after it (writing.md *The pipeline*).
 
 **Stage 3 — `button @"Book" { icon: "flight_takeoff" }`.** The first shape
 change, `×→+`: fed the model, it emits case `"Book"` carrying the model on
@@ -329,13 +330,13 @@ since no view line types them; a function handing its argument on to a
 closed helper builds the smaller record
 (`returnLine r = summary (.returnBetween { out: r.out, back: r.back })`)
 (writing.md *Code style* → *Business functions*). And `parseDate` has a
-real `do` — `Maybe`'s monad: `Pipeline.do` in the view composes stages,
+real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 `do` in the view model module is the ordinary one.
 
 ## What to read next
 
 - **counter** — one display reading one function
-  (`headline4 (text countLine)`), one button, one fold opened by
+  (`prefixed (headline4 (text countLine)) $ button @"Count" {}`), one fold opened by
   its status (`snackbar @"Count" countedLine # fold increment`), over a
   model of `{ counted :: Int }`.
 - **timer** — two displays of different sorts,

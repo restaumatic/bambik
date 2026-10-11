@@ -13,9 +13,9 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 import Data.Array (foldl, length, mapWithIndex)
 import Data.Int (round, toNumber)
 import Data.Number (max)
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import PUI.Pipeline as Pipeline
 import Prim.Row (class Cons)
 import PUI (Ocular, PUI, blank, foreach, muted, prefixed)
 import PUI.Web (OptCaption(..), Web, attrWith, staticText, text, (:=))
@@ -33,7 +33,7 @@ statTile l f =
 
 gauge :: forall r. String -> ({ | r } -> Number) -> PUI Web { | r } {}
 gauge l f =
-  tile $ ( prefixed (labelMedium $ staticText l) $ Pipeline.do
+  tile $ ( prefixed (labelMedium $ staticText l) $ RecordToRecord.do
     linearProgress f
     ( labelLarge $ text (percentLine <<< f) ) ) # muted
 

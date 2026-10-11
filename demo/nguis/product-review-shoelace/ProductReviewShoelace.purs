@@ -3,17 +3,17 @@ module ProductReviewShoelace (productReviewShoelace) where
 import Prelude (Unit, ($), (#))
 
 import Effect (Effect)
-import PUI.Pipeline as Pipeline
 import ProductReviewViewModel (freshImpression, previewLine, submittedLine)
-import PUI (armed, looped, suffixed, with)
+import PUI (armed, looped, prefixed, suffixed, with)
 import PUI.Web ((<+>), choice, text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 productReviewShoelace :: Effect Unit
 productReviewShoelace =
-  body $ Pipeline.do
-    ( Pipeline.do
+  body $ Semigroupoid.do
+    ( Semigroupoid.do
       rating @"Overall rating" {}
       textField @"Headline" {}
       textArea @"Your review" { rows: 4 }
@@ -29,6 +29,5 @@ productReviewShoelace =
        , "I'd recommend it to a friend" :: Boolean
        , "Nickname" :: String
        ) # with freshImpression
-    card $ p (text previewLine)
-    button @"Submit review" {} # armed
+    prefixed (card $ p (text previewLine)) $ button @"Submit review" {} # armed
     toast @"Submit review" submittedLine

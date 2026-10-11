@@ -2,19 +2,20 @@ module FlightBookerShoelace (flightBookerShoelace) where
 
 import Prelude (Unit, identity, (#), ($))
 
+import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
 import PUI (action, atCase, debounced, looped, prefixed, with)
-import PUI.Pipeline as Pipeline
 import PUI.Web ((<+>), choice, inCaseAt, pane, text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, select, textField, toast)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerShoelace :: Effect Unit
 flightBookerShoelace =
-  body $ Pipeline.do
-    ( Pipeline.do
+  body $ Semigroupoid.do
+    ( Semigroupoid.do
       select @"Flight type" {}
         (choice @"one-way" <+> choice @"return")
       textField @"Start date (DD.MM.YYYY)" {}
@@ -24,7 +25,7 @@ flightBookerShoelace =
        , "Start date (DD.MM.YYYY)" :: String
        , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
-    prefixed ( Pipeline.do
+    prefixed ( RecordToRecord.do
       p (text problemLine) # pane @"problem"
         @( problem :: { problem :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] }
          , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }
