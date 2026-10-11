@@ -508,7 +508,7 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
 
 ## Demo Structure
 
-102 pages over **40 app families**, registered in **scripts/demos.mjs** (the
+103 pages over **41 app families**, registered in **scripts/demos.mjs** (the
 single source of truth: directory + module + entry, shared by the bundler and
 the dev server). Two suites: **demo/7guis/** (the
 [7GUIs](https://eugenkiss.github.io/7guis/) benchmark) and **demo/nguis/**
@@ -632,7 +632,7 @@ reports a concrete signature), movie-browser (`tabBar` + `filterChip` filters ov
 `visibleMovies` projection, a `foreach` of rows whose in-row `iconToggle`
 folds back `# joined @"favored"` through the fold; the MDC3 twin honestly drops the MDC2
 selected-row class, the favorite state riding the toggle),
-weather (Aff service with a canned per-city delay), helloworld
+weather (Aff service with a canned per-city delay), ticker (the **scope** showcase, branch experiment/scope: a `ticks` and a `button # action` inside a `providedAt @"watching" @"phase"` pane — parked, the clock skips its beats and a quote settling meanwhile is dropped; scripts/smoke/tests/scope.mjs walks it), helloworld
 (`body $ staticText "Hello, World!"` — the 5 kB bundle floor).
 
 **Vocabulary showcases.** restaurant-menu is the plain-HTML one (no design

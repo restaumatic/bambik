@@ -62,6 +62,7 @@ export const sets = {
     'helloworld': ['HelloWorld', 'helloWorld'],
     'calculator-mdc2': ['CalculatorMDC2', 'calculatorMDC2'],
     'stopwatch-mdc2': ['StopwatchMDC2', 'stopwatchMDC2'],
+    'ticker-mdc2': ['TickerMDC2', 'tickerMDC2'],
     'shopping-cart-mdc2': ['ShoppingCartMDC2', 'shoppingCartMDC2'],
     'password-generator-mdc2': ['PasswordGeneratorMDC2', 'passwordGeneratorMDC2'],
     'color-mixer-mdc2': ['ColorMixerMDC2', 'colorMixerMDC2'],
