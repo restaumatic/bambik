@@ -1410,9 +1410,12 @@ running run w = action'
           if on
             then do
               post o
-              -- the outcome widened to the slot's row: a variant is a tagged value,
-              -- so the widening is the identity (`expand` cannot solve `Union` at
-              -- an open tail)
+              -- the outcome widened to the slot's row: a variant is a tagged
+              -- value, so the widening is the identity. It stays a coercion
+              -- because the solver cannot discharge `expand`'s
+              -- `Union t ( started, ended ) ( started, ended | t )` — a
+              -- `Union` whose open tail is on the left (tried again
+              -- 2026-10-11)
               tell (unsafeCoerce o)
             else tr "action: outcome dropped, the scope is suspended or cancelled" o)
   w

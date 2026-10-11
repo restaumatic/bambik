@@ -326,6 +326,7 @@ module Data.Profunctor.Row
   , class NoDuplicateLabelsK
   , class RowLabels
   , exactRow
+  , splitRow
   , fieldNames
   , rowLabels
   , atAnyRow
@@ -338,6 +339,8 @@ import Prelude (const, identity, (<<<), (<>))
 import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Either (Either(..))
+import Data.Foldable (foldr)
+import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
 import Data.Variant (class Contractable, contract, expand)
 import Effect.Exception.Unsafe (unsafeThrow)
@@ -351,6 +354,8 @@ import Prim.TypeError (class Fail, Above, Beside, Text)
 import Record (get) as Record
 import Record.Builder (Builder)
 import Record.Builder (buildFromScratch, insert) as Builder
+import Record.Unsafe (unsafeDelete)
+import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 
 -- =====================================================================
@@ -409,15 +414,26 @@ instance
 
 -- | Rebuild a record field-by-field so its **runtime** shape is exactly its
 -- | row — no more, no less. A record's type never guarantees its runtime
--- | object carries only the declared labels: the widening reshapings above
--- | are coercions, so a UI component that echoes or lens-rebuilds its input emits
--- | an object runtime-carrying every field of the *merged* row while typed
--- | at its own narrow slice. The gated merge uses `exactRow` to trim each
+-- | object carries only the declared labels: a shared record input is one
+-- | row every operand is fed whole, so a UI component that echoes or
+-- | lens-rebuilds its input emits an object runtime-carrying every field of
+-- | the *merged* row while typed at its own slice. The gated merge uses `exactRow` to trim each
 -- | operand's emission to its declared output row before the left-biased
 -- | `Record.union`, so stale runtime copies of *sibling* fields can never
 -- | shadow the siblings' genuine contributions.
 exactRow :: forall r rl. RowToList r rl => FieldNames rl r r => { | r } -> { | r }
 exactRow r = Builder.buildFromScratch (fieldNames (Proxy @rl) r)
+
+-- | Split a fed record into a focus row `r1` and the rest: the focus is
+-- | built from exactly its labels, read off the fed record, and the rest is
+-- | a copy of the fed record with those labels removed — so neither half
+-- | runtime-carries a field of the other. The sub-record focusing words
+-- | (`subStrong`, `subResolving`) feed their focus and retain their
+-- | background through it; before (CHANGELOG, 2026-10-11) both halves were
+-- | the fed record itself under a coercion, the background carrying stale
+-- | copies of the focus's fields.
+splitRow :: forall r1 rl r b. RowToList r1 rl => FieldNames rl r r1 => RowLabels rl => { | r } -> Tuple { | r1 } { | b }
+splitRow s = Tuple (Builder.buildFromScratch (fieldNames (Proxy @rl) s)) (foldr unsafeDelete (unsafeUnion {} s) (rowLabels (Proxy @rl)))
 
 -- | Rows o1 and o2 carry runtime rebuild evidence for the gated merge's
 -- | exactness trim (`exactRow`). Witness lists: o1l = RowToList o1,

@@ -421,12 +421,12 @@ textFieldWiring comp inputNode mDebounce = editorWiring
   , read: \_ -> getValue inputNode
   }
 
--- | The **multi-line text field**, sized in `rows` and `columns` of text —
+-- | The **multi-line text field**, sized in `rows` and `columns` of text (4 by 40 unless given) —
 -- | a note, a description, a message. Otherwise `filledTextField`: the label
 -- | floats (`floatingLabel` overrides it for real copy), shows a string,
 -- | reports each edit, never interrupts typing.
-filledTextArea :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String } { | provided } { floatingLabel :: String, columns :: Int, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
-filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+filledTextArea :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String, columns :: Int, rows :: Int } { | provided } { floatingLabel :: String, columns :: Int, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
+filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), columns: 40, rows: 4 } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   labelId <- liftEffect uniqueId
   inputNode <- element "label" do
     _ <- unwrap (static (span >>> cl "mdc-text-field__ripple"))

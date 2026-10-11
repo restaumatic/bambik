@@ -233,10 +233,10 @@ outputFace = el "output" $ textOf eventText
 -- | the time, so the request arrives with its subject attached:
 -- | `button @"Count" {}`. An event source, `× → +`.
 -- |
--- | It is disabled until it has been shown something, and **disables itself
--- | on click** until the next value reaches it — so a double tap cannot
--- | send a request twice, and a button that stays dead is a screen whose
--- | model never came back.
+-- | It is disabled until it has been shown something: a click before any
+-- | value arrived has nothing to report. Like every vocabulary's button it
+-- | stays live after a click — a request a screen must not send twice is
+-- | its action's concern, not the button's.
 button :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | v ]
 button provided = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticText config.label)
@@ -250,9 +250,7 @@ button provided = wrap do
         pure status
     , fromUser: \prop -> listenNode node "click" do
         mA <- Ref.read mARef
-        for_ mA \fed -> do
-          setAttribute node "disabled" "true" -- TODO re-think
-          prop (inj (Proxy @l) fed)
+        for_ mA \fed -> prop (inj (Proxy @l) fed)
     }
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }

@@ -8,6 +8,18 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-11, later
 
+- **Review residue.** `splitRow` (`Data.Profunctor.Row`): `subStrong` and
+  `subResolving` feed their focus exactly its row and keep the background
+  apart, instead of passing the fed record twice under a coercion;
+  `replaying`'s input coercion, an identity, is gone. `action`'s outcome
+  widening stays a coercion: the solver cannot discharge a `Union` whose
+  open tail is on the left. `Hosting Web` places the **run of nodes** an
+  element's builder appended (`Array Node`), so a bare group of siblings
+  or a `blank` element detaches and restacks whole; before, the parent's
+  last child stood for the element. HTML's `button` no longer disables
+  itself on click (every other vocabulary's stays live). `filledTextArea`
+  defaults `columns`/`rows` (40 by 4) instead of demanding them through
+  an options record whose error named neither.
 - **Scopes.** `PUI` gains `Scope` (`Active`/`Suspended`/`Cancelled`,
   nesting, finalizers) and `class Scoped m` (`Web` keeps the scope in its
   builder state, `Effect` reads an ambient one under `inScope`). A pane

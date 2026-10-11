@@ -140,7 +140,7 @@ import Prelude
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Array (findIndex, (!!))
+import Data.Array (concat, findIndex, (!!))
 import Data.String (replaceAll, Pattern(..), Replacement(..))
 import Data.Variant (Variant, case_, expand, inj, on, prj)
 import Prim.Row as Row
@@ -321,6 +321,8 @@ foreign import removeClass :: Node -> String -> Effect Unit
 foreign import setTextNodeValue :: Node -> String -> Effect Unit
 foreign import randomElementId :: Effect String
 foreign import lastChild :: Node -> Effect Node
+foreign import childCount :: Node -> Effect Int
+foreign import childrenFrom :: Int -> Node -> Effect (Array Node)
 
 -- | Pointer-down emitter with coordinates mapped into the element's local
 -- | space (an SVG's viewBox units when present, CSS pixels otherwise) —
@@ -361,18 +363,21 @@ runDomInScope sc node (Web domBuilder) = fst <$> runStateT domBuilder { sibling:
 -- | moves an existing node, so identity — focus, local state — travels with
 -- | it). Each element is built in a scope of its own under the collection's,
 -- | cancelled when the element leaves.
-instance Hosting Web Node where
+instance Hosting Web (Array Node) where
   hosting w = do
     parent <- gets _.parent
     outer <- gets _.scope
     pure
       { instantiate: do
           child <- newScope (Just outer) Active
+          -- an element is the run of nodes its builder appended — one for a
+          -- wrapped item, several for a bare group of siblings, none for `blank`
+          before <- childCount parent
           inst <- runDomInScope child parent (unwrap w)
-          node <- lastChild parent
-          pure { feed: inst.toUser, subscribe: inst.fromUser, node, cancel: cancelScope child }
-      , detach: \node -> removeChild node parent
-      , restack: \nodes -> for_ nodes \node -> appendChild node parent
+          nodes <- childrenFrom before parent
+          pure { feed: inst.toUser, subscribe: inst.fromUser, node: nodes, cancel: cancelScope child }
+      , detach: \nodes -> for_ nodes \node -> removeChild node parent
+      , restack: \runs -> for_ (concat runs) \node -> appendChild node parent
       }
 
 -- | Fixed decoration given as a raw markup string — for chrome a design

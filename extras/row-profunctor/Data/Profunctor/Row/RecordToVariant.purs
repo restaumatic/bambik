@@ -100,15 +100,15 @@ import Data.Either (either)
 import Data.Lens.Shutter (shutterE)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
+import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class RowLabels, class SharedRecordInputs, class SharedVariantOutputs, splitRow)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Data.Variant (case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
+import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant
@@ -141,17 +141,20 @@ discard first cont = bind first (\_ -> cont unit)
 
 -- | Focus a sub-record of the input, wrapping the background into output case `w`.
 subResolving
-  :: forall @w p r1 b r v1 v2 v3
+  :: forall @w p r1 rl b r v1 v2 v3
    . Resolving p
   => IsSymbol w
   => ExclusiveRows r1 b r
+  => RowToList r1 rl
+  => FieldNames rl r r1
+  => RowLabels rl
   => Cons w { | b } v1 v2
   => Union v1 v3 v2
   => p { | r1 } [ | v1 ]
   -> p { | r } [ | v2 ]
 subResolving g =
   shutterE
-    (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
+    splitRow
     (either expand (inj (Proxy @w)))
     g
 
@@ -165,7 +168,7 @@ replaying
   => ({ | r } -> k)
   -> p { | r } [ | v1 ]
   -> p { | r } [ | v ]
-replaying f src = dimap (\r -> Tuple (unsafeCoerce r) r) (\(Tuple _ r) -> inj (Proxy @l) (f r)) (first src)
+replaying f src = dimap (\r -> Tuple r r) (\(Tuple _ r) -> inj (Proxy @l) (f r)) (first src)
 
 -- | An event joined with the row its emitter was fed: the `×→+` stage's
 -- | `Strong` retention, exposed. `first` around the source — the fed row

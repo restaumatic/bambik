@@ -382,6 +382,23 @@ export function lastChild(node) {
   };
 }
 
+// childCount :: Node -> Effect Int
+export function childCount(node) {
+  return function () {
+    return node.childNodes.length;
+  };
+}
+
+// childrenFrom :: Int -> Node -> Effect (Array Node) — the children from
+// the given index on, in document order
+export function childrenFrom(index) {
+  return function (node) {
+    return function () {
+      return Array.prototype.slice.call(node.childNodes, index);
+    };
+  };
+}
+
 // onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> Effect Unit
 export function onInputDebounced(node) {
   return function (millis) {

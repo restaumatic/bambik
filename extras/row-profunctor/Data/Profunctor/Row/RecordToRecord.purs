@@ -97,7 +97,7 @@ import Data.Function (const)
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Looping (class Looping, looped)
-import Data.Profunctor.Row (class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, fedFirst, fedSecond)
+import Data.Profunctor.Row (class FieldNames, class OwnedRecordOutputs, class RowLabels, class SharedRecordInputs, exactRow, fedFirst, fedSecond, splitRow)
 import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol)
@@ -108,7 +108,6 @@ import Prim.RowList (class RowToList)
 import Record (get, insert, union) as Record
 import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
   recordToRecord
@@ -146,18 +145,22 @@ discard first cont = bind first (\_ -> cont unit)
 -- | overlap the focus — and the fed row may be open, as it is while the
 -- | logic that closes it is still a hole (guardrails L18).
 subStrong
-  :: forall p r1 r2 rl b r r3
+  :: forall p r1 r2 rl1 rl2 b r r3
    . Strong p
   -- forward only: the focus is the view's (closed), the background is
   -- inferred, so it cannot overlap the focus — and `r` may be open (L18)
   => Union r1 b r
   => Union r2 b r3
-  => RowToList r2 rl
-  => FieldNames rl r2 r2
+  => RowToList r1 rl1
+  => FieldNames rl1 r r1
+  => RowLabels rl1
+  => RowToList r2 rl2
+  => FieldNames rl2 r2 r2
   => p { | r1 } { | r2 }
   -> p { | r } { | r3 }
 subStrong g =
-  dimap (\s -> Tuple (unsafeCoerce s) (unsafeCoerce s))
+  -- `splitRow` feeds `g` exactly its row and keeps the rest apart
+  dimap splitRow
         -- `exactRow` trims the emission to its declared row first: `g` may
         -- answer a feed *later* than the feed that stocked the retained
         -- background (a debounced inner stage), so a fat echo's runtime
