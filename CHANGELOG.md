@@ -8,6 +8,23 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-11, later
 
+- **Order-form's distance estimate is a reusable sub-form.**
+  `distanceEstimate`, over its own row `{ "Address", distance }` and placed
+  `# subStrong # inCaseAt @"Delivery" @"selected"`, holds the four shapes:
+  the address editor, the Estimate distance button, the `estimateDistance`
+  action (its `Aff` now returns the row under `"Distance estimated"`) and
+  `blankStatus @"Distance estimated" # fold identity`, closed by `updated
+  setDistance`; the view's `match { estimated: setDistance }` dispatcher is
+  gone, and the estimate's functions are typed at the sub-form's row instead
+  of the Fulfillment editor's. It is not closed by `looped`: a stage must
+  echo every feed, and a loop of the four shapes releases only on its
+  events, which would starve the Payment and Kitchen groups after it.
+  `setDistance` applies the returned estimate to the latest row, since the
+  memoryless fold releases the row the button replayed and would revert an
+  address typed while the estimate runs. `settled staleDistanceForgotten`
+  moved from the address editor to the end of the sub-form, so it also
+  covers the estimate's release. Before, an address edited during the
+  estimate kept a stale estimate until the next edit.
 - **The demos' view model tests are gone.** The six `<Demo>ViewModelTest`
   modules (counter, temperature-converter, flight-booker, todo-list,
   checkout, order-form; added 2026-10-07) and their run at the head of

@@ -260,7 +260,13 @@ events. Editors before the ensemble flow forward only; an editor whose
 edit must reach its siblings keeps its own normalizer (`# settled`,
 temperature-converter) or stands in a loop with no events at all. A
 component whose own wiring feeds one part from another, the drawer, folds
-its pick in place with `updated` (photo-gallery). `# with seed` closes a
+its pick in place with `updated` (photo-gallery). A sub-form with events
+of its own that stands inside the form closes its four shapes with
+`# updated f`, not `# looped`: a stage must pass every feed on to the
+stages after it, and a loop of the four shapes releases only when one of
+its events folds. `f` takes the row the fold released and the latest row
+the stage was fed, so an edit made while an effect ran is kept
+(order-form's `distanceEstimate`, `# updated setDistance`). `# with seed` closes a
 flow with no loop of its own. Both close the app to what `body` accepts; a forgotten seed is a
 compile error at `body` naming the missing fields.
 
@@ -280,6 +286,7 @@ compile error at `body` naming the missing fields.
 | an action that retries until it succeeds, narrated on its way in | payment (`chargeFlaky`, `# observed`) |
 | state that used to be a hidden loop, now a model field | auction (`settled raiseTop`), checkout (`stepTo`), ticket-dispenser (`issue`) |
 | a reusable sub-form; routing some events | parcel (`subStrong`), cashbox (`subChoice`) |
+| a reusable sub-form with its own button, action and fold | order-form (`distanceEstimate # subStrong`, closed by `updated setDistance`) |
 | keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
 
 ## Conditional visibility
@@ -497,7 +504,7 @@ text is computed, a chrome line nothing.
 - **Closing parens and `#` chains never start a line.** A trailing
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
-  it closes over: `… distanceOf) ) # inCaseAt @"Delivery" @"selected"`. The
+  it closes over: `… choice @"Pavlova") ) # acted @"name"` (potluck). The
   exception is a seed closer, `) # looped @( … ) # with seed` /
   `) # with @{ … } seed`, on its own
   line — or, when the model row is long, `) # looped` on its own line,

@@ -580,12 +580,21 @@ under `"Mode"`, `bracketed @"Mode"` doing that field's lift), Payment
 (Total beside Method and Paid) and Kitchen (the remarks), each label the
 field, the heading and the accessible group name at once, and the live
 summary on a blind `card`, the one surface that edits nothing; variant editors as `bracketed @l`
-pipelines of `tabBar`/`segmentedButton` + `inCase` editor panes; an **in-form Aff action** — the delivery distance is
-estimated on a button, `button @"Estimate distance" {}` →
-`action estimateDistance # atCase` → `updated`; the estimate records the
-address it was made for and `settled staleDistanceForgotten` keeps that
-invariant, so an address edit drops it — the effect runs on an occurrence,
-never on the loop's broadcast, and `settled` normalizes, never reacts) → gated live summary
+pipelines of `tabBar`/`segmentedButton` + `inCase` editor panes; an **in-form Aff action**, packaged as the reusable sub-form
+`distanceEstimate` over its own row (`{ "Address", distance }`, placed
+`# subStrong # inCaseAt @"Delivery" @"selected"`) — the four shapes in
+miniature: the address editor (`×→×`), `button @"Estimate distance" {}`
+(`×→+`), `action estimateDistance # atCase` (`+→+`, the `Aff` returning
+the row) and `blankStatus @"Distance estimated" # fold identity` (`+→×`),
+closed by `updated setDistance`, not `looped`, because a stage mid-pipeline
+must echo every feed and a loop body of the four shapes releases only on
+its events, and `setDistance` applies the returned estimate to the
+*latest* row, so an address typed while the estimate runs is kept; the
+estimate records the address it was made for and `settled
+staleDistanceForgotten`, at the end of the sub-form so it covers both
+writers, keeps that invariant, so an address edit drops it — the effect
+runs on an occurrence, never on the loop's broadcast, and `settled`
+normalizes, never reacts) → gated live summary
 → a `RecordToVariant.do` of event buttons → each backend action (`+→+`) followed by its
 own status snackbars (`+→×`), so each action's outcomes are named where it is.
 

@@ -10,61 +10,34 @@ import Effect.Console (log)
 import Effect.Random (randomInt)
 
 estimateDistance
-  :: { "Address" :: String
-     , "Table" :: String
-     , "Time" :: String
-     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
-     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
-     }
-  -> Aff [ estimated :: { km :: Int, to :: String } ]
-estimateDistance { "Address": address } = do
+  :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+  -> Aff [ "Distance estimated" :: { "Address" :: String
+                                   , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+                                   }
+         ]
+estimateDistance r@{ "Address": address } = do
   liftEffect $ log $ "estimating the distance to " <> address
   delay (Milliseconds 700.0)
   km <- liftEffect $ randomInt 1 6
   liftEffect $ log $ "estimated " <> show km <> " km"
-  pure $ .estimated { km, to: address }
+  pure $ ."Distance estimated" r { distance = .estimated { km, to: address } }
 
 setDistance
-  :: { km :: Int, to :: String }
-  -> { "Address" :: String
-     , "Table" :: String
-     , "Time" :: String
-     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
-     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
-     }
-  -> { "Address" :: String
-     , "Table" :: String
-     , "Time" :: String
-     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
-     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
-     }
-setDistance estimate order = order { distance = .estimated { km: estimate.km, to: estimate.to } }
+  :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+  -> { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+  -> { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+setDistance { distance } order = order { distance = distance }
 
 staleDistanceForgotten
-  :: { "Address" :: String
-     , "Table" :: String
-     , "Time" :: String
-     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
-     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
-     }
-  -> { "Address" :: String
-     , "Table" :: String
-     , "Time" :: String
-     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
-     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
-     }
+  :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+  -> { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
 staleDistanceForgotten r@{ "Address": address, distance } = match
   { estimated: \e -> if e.to /= address then r { distance = .unknown {} } else r
   , unknown: \_ -> r
   } distance
 
 distanceOf
-  :: { "Address" :: String
-     , "Table" :: String
-     , "Time" :: String
-     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
-     , selected :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
-     }
+  :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
   -> [ estimated :: { km :: Int }, unknown :: {} ]
 distanceOf { distance } = match { estimated: \e -> .estimated { km: e.km }, unknown: const (.unknown {}) } distance
 

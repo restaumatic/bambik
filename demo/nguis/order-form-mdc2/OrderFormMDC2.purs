@@ -5,11 +5,10 @@ import Prelude (identity, Unit, (#), ($))
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Data.Variant (match)
 import Effect (Effect)
 import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
-import PUI (action, atCase, blankStatus, bracketed, debounced, fold, looped, prefixed, settled, suffixed, updated)
-import PUI.Web ((<+>), choice, inCaseAt, pane, text)
+import PUI (PUI, action, atCase, blankStatus, bracketed, debounced, fold, looped, prefixed, settled, subStrong, suffixed, updated)
+import PUI.Web (Web, (<+>), choice, inCaseAt, pane, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -31,11 +30,7 @@ orderFormMDC2 =
             (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
           filledTextField @"Table" {} # inCaseAt @"Dine in" @"selected"
           filledTextField @"Time" {} # inCaseAt @"Takeaway" @"selected"
-          ( Semigroupoid.do
-            filledTextField @"Address" {} # settled staleDistanceForgotten
-            ( Semigroupoid.do
-              button @"Estimate distance" { icon: "near_me" }
-              indeterminateLinearProgress # action @( estimated :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance }) # suffixed (body1 (text distanceLine) # pane @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf) ) # inCaseAt @"Delivery" @"selected" ) # bracketed @"Mode"
+          distanceEstimate # subStrong # inCaseAt @"Delivery" @"selected" ) # bracketed @"Mode"
               @( "Dine in" :: { "Table" :: String }
                , "Takeaway" :: { "Time" :: String }
                , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
@@ -74,3 +69,16 @@ orderFormMDC2 =
       ( VariantToRecord.do
         indeterminateLinearProgress
         snackbar @"Receipt printed" receiptLine ) # action printReceipt # atCase @"Receipt"
+
+distanceEstimate
+  :: PUI Web
+    { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+    { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+distanceEstimate = Semigroupoid.do
+  filledTextField @"Address" {}
+  ( Semigroupoid.do
+    button @"Estimate distance" { icon: "near_me" }
+    indeterminateLinearProgress # action
+      @( "Distance estimated" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
+       ) estimateDistance # atCase @"Estimate distance"
+    blankStatus @"Distance estimated" # fold identity ) # updated setDistance # settled staleDistanceForgotten # suffixed (body1 (text distanceLine) # pane @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf)
