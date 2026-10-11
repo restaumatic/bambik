@@ -4,9 +4,9 @@
 -- | coined mixed optics, see `Data.Lens.Shutter` — the representation is
 -- | the standard co-optic result). The class is the ecosystem's; the optic is
 -- | this library's, because `profunctor-lenses` never built it. Its dual is
--- | `Data.Lens.Prism`, and nothing here mentions a row; its row form
--- | `cycled` (a variant knot) lasted a day, 2026-10-05, a second way of
--- | writing a loop whose model no line of the view could declare.
+-- | `Data.Lens.Prism`, and nothing here mentions a row; it has no row
+-- | form — a variant knot was a second way of writing a loop whose model
+-- | no line of the view could declare (CHANGELOG, 2026-10-06).
 -- |
 -- | This module is a **complement of the ecosystem's own**, not bambik's: it
 -- | claims a `Data.Lens.*` name because it belongs in that family beside

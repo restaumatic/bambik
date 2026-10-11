@@ -22,7 +22,19 @@
 -- |   label (`providedAt`, `paneAt`, `inCaseAt`). A line that shows data
 -- |   sits in a pipeline as `prefixed`/`suffixed` over a stage (`PUI`);
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
--- |   tag.
+-- |   tag;
+-- | - **the leaf protocol, as functions** — what every vocabulary's leaves
+-- |   are built from: `editorWiring` (write unless held, echo every feed,
+-- |   report the platform's change through a busy guard),
+-- |   `selectorWiring` (the same over an option list, in index terms),
+-- |   `displayWiring` (render, answer `{}`), `statusWiring` (render,
+-- |   release nothing), `eventLeaf` (the click emitter over chrome),
+-- |   `eventText` (a status's canonical payload), `escaped` (a runtime
+-- |   string made safe for `staticHTML`), `listenNode`/`listenNodeDeferred`,
+-- |   `ensureStyle`, `autoDismiss` and the option tags `OptCaption`,
+-- |   `OptLabelIcon`, `OptLabel`, `OptSelected`, `OptIcon`. A leaf that
+-- |   writes its own `toUser`/`fromUser` pair instead of one of the four
+-- |   wirings is a leaf that can forget the echo a gate depends on.
 -- |
 -- | There are two ways to draw a screen from data, and the choice is visible
 -- | to the user. When the **shape is fixed and only the values move** — a
@@ -39,6 +51,22 @@ module PUI.Web
   , Event
   , Node
   , OptCaption(..)
+  , OptLabelIcon(..)
+  , OptLabel(..)
+  , OptSelected(..)
+  , OptIcon(..)
+  , Wiring
+  , editorWiring
+  , selectorWiring
+  , displayWiring
+  , statusWiring
+  , eventLeaf
+  , eventText
+  , escaped
+  , listenNode
+  , listenNodeDeferred
+  , ensureStyle
+  , autoDismiss
   , choice
   , andChoice
   , (<+>)
@@ -112,7 +140,9 @@ import Prelude
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant (Variant, expand, inj, prj)
+import Data.Array (findIndex, (!!))
+import Data.String (replaceAll, Pattern(..), Replacement(..))
+import Data.Variant (Variant, case_, expand, inj, on, prj)
 import Prim.Row as Row
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
@@ -124,11 +154,11 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (class Hosting, Ocular, PUI, Logged, diagnosticsOn, replaying, setDiagnostics, setSink, setTracing)
+import Data.Profunctor.Row (atAnyRow)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Prim.Row (class Cons)
 import Data.Profunctor.Seeding (isHole)
 import Record as Record
-import Unsafe.Coerce (unsafeCoerce)
 
 -- | A value of any type standing for logic not written yet (guardrails L18):
 -- | any read of it, or call, throws and marks the page (`__bambikHoleReached`),
@@ -267,6 +297,9 @@ foreign import afterTask :: Effect Unit -> Effect Unit
 foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
 foreign import createCommentNode :: String -> Effect Node
 foreign import separatorRule :: Node -> Node -> Node -> Effect Unit
+foreign import listenNodeDeferred :: Node -> String -> Effect Unit -> Effect Unit
+foreign import ensureStyle :: String -> String -> Effect Unit
+foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
 foreign import setAttribute :: Node -> String -> String -> Effect Unit
 foreign import removeAttribute :: Node -> String -> Effect Unit
 foreign import removeAllChildren :: Node -> Effect Unit
@@ -341,7 +374,7 @@ staticHTMLExact html = wrap do
     }
 
 staticHTML :: forall r. String -> PUI Web { | r } {}
-staticHTML = unsafeCoerce (staticHTMLExact :: String -> PUI Web {} {})
+staticHTML = atAnyRow <<< staticHTMLExact
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
@@ -381,6 +414,183 @@ data OptCaption = OptCaption
 
 instance ConvertOption OptCaption sym a a where
   convertOption _ _ = identity
+
+-- Conversion tags scope which field names lift a bare value to `Just`:
+-- a field may be optional on some leaves and required on others (`label`
+-- is optional on `button`, required on `slider`), so the *tag*, not a
+-- global per-symbol instance, decides which fields are optional for a
+-- given leaf. One tag per distinct optional-field set, shared by the
+-- vocabularies that have the leaf.
+
+-- | Marks `label` and `icon` as optional on the buttons — write either,
+-- | both or neither, as a plain string.
+data OptLabelIcon = OptLabelIcon
+
+instance ConvertOption OptLabelIcon "label" String (Maybe String) where
+  convertOption _ _ = Just
+else instance ConvertOption OptLabelIcon "icon" String (Maybe String) where
+  convertOption _ _ = Just
+else instance ConvertOption OptLabelIcon sym a a where
+  convertOption _ _ = identity
+
+-- | Marks the `label` of a FAB as optional.
+data OptLabel = OptLabel
+
+instance ConvertOption OptLabel "label" String (Maybe String) where
+  convertOption _ _ = Just
+else instance ConvertOption OptLabel sym a a where
+  convertOption _ _ = identity
+
+-- | Marks a list's `selected` test as optional — `listOf {}` selects
+-- | nothing.
+data OptSelected = OptSelected
+
+instance ConvertOption OptSelected sym a a where
+  convertOption _ _ = identity
+
+-- | Marks the `icon` of a tab as optional — tabs may be labelled, iconed or
+-- | both.
+data OptIcon = OptIcon
+
+instance ConvertOption OptIcon "icon" String (Maybe String) where
+  convertOption _ _ = Just
+else instance ConvertOption OptIcon sym a a where
+  convertOption _ _ = identity
+
+-- The leaf protocol, as functions (see the module header): every leaf of
+-- every vocabulary is one of these four wirings over its own element, so
+-- the echo a gate depends on, the busy guard around a programmatic write
+-- and the one-registration listener are written once here and nowhere
+-- else.
+
+-- | What a `PUI Web a b` carries once built: the feed leg and the
+-- | registration leg (`PUI`'s wiring record, named for the vocabularies).
+type Wiring a b = { toUser :: a -> Effect Unit, fromUser :: (b -> Effect Unit) -> Effect Unit }
+
+-- | An **editor leaf**'s wiring: `show` writes each fed value to the
+-- | element unless `held` says the user is in it (the focus guard — a model
+-- | update never clobbers a field being typed in); every feed is **echoed**
+-- | whether written or not, so the lifted stage releases the row and an
+-- | enclosing gate opens; `reports` registers the platform event that
+-- | means the user changed the value, and `read` reads that value off the
+-- | element given the row last fed (a slider reads its position into the
+-- | quantity it was shown). A report while a write is in progress is the
+-- | write's own echo and is dropped, and a report before any feed has
+-- | nothing to complete and is dropped too.
+editorWiring
+  :: forall a
+   . { show :: a -> Effect Unit
+     , held :: Effect Boolean
+     , reports :: Effect Unit -> Effect Unit
+     , read :: a -> Effect a
+     }
+  -> Effect (Wiring a a)
+editorWiring leaf = do
+  propRef <- Ref.new Nothing
+  lastRef <- Ref.new Nothing
+  busyRef <- Ref.new false
+  pure
+    { toUser: \a -> do
+        Ref.write (Just a) lastRef
+        held <- leaf.held
+        unless held do
+          Ref.write true busyRef
+          leaf.show a
+          Ref.write false busyRef
+        Ref.read propRef >>= traverse_ (_ $ a)
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        leaf.reports do
+          busy <- Ref.read busyRef
+          unless busy do
+            last <- Ref.read lastRef
+            for_ last \a -> leaf.read a >>= prop
+    }
+
+-- | A **selector leaf**'s wiring over its option list, in index terms:
+-- | `show` checks the option at the index (none for `Nothing`), `reports`
+-- | registers the platform's pick event, `read` reads the picked index
+-- | (`Nothing` for a cleared control). The option's value travels through
+-- | `selectedAt` and its siblings, which lift this `Maybe a` leaf to the
+-- | field editor and answer the feed themselves — so, unlike
+-- | `editorWiring`, nothing is echoed here. A pick reported while a
+-- | programmatic selection is in progress is that selection's own event
+-- | and is dropped.
+selectorWiring
+  :: forall a
+   . Eq a
+  => Array { value :: a, label :: String }
+  -> { show :: Maybe Int -> Effect Unit
+     , reports :: Effect Unit -> Effect Unit
+     , read :: Effect (Maybe Int)
+     }
+  -> Effect (Wiring (Maybe a) (Maybe a))
+selectorWiring options leaf = do
+  propRef <- Ref.new Nothing
+  busyRef <- Ref.new false
+  pure
+    { toUser: \ma -> do
+        Ref.write true busyRef
+        leaf.show (ma >>= \a -> findIndex (\o -> o.value == a) options)
+        Ref.write false busyRef
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        leaf.reports do
+          busy <- Ref.read busyRef
+          unless busy do
+            mi <- leaf.read
+            Ref.read propRef >>= traverse_ (_ $ (mi >>= (options !! _) <#> _.value))
+    }
+
+-- | A **display leaf**'s wiring: `show` renders each fed value, and the
+-- | feed is answered with `{}` — the display's echo, inert to every gate
+-- | (a zero-field side is pre-satisfied) and real to sequencing. Nothing
+-- | at registration, since an answer needs a feed.
+displayWiring :: forall a. (a -> Effect Unit) -> Effect (Wiring a {})
+displayWiring show = do
+  propRef <- Ref.new Nothing
+  pure
+    { toUser: \a -> do
+        show a
+        Ref.read propRef >>= traverse_ (_ $ {})
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
+
+-- | A **status leaf**'s wiring: `show` renders each occurrence, and the
+-- | status releases nothing — the `+→×` merge forwards every release as
+-- | the whole shared row, so a status is typed at every row, as `silence`
+-- | is.
+statusWiring :: forall a b. (a -> Effect Unit) -> Wiring a b
+statusWiring show = { toUser: show, fromUser: \_ -> pure unit }
+
+-- | The click-emitter protocol over any `{}`-output element chrome: replay
+-- | the row last fed on click, as case `l` (a click before any value
+-- | arrived is withheld) — `clickedRow` over the chrome placed at the row,
+-- | the last-built element listening. Every vocabulary's `button` family
+-- | is this over its own chrome.
+eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
+eventLeaf chrome = clickedRow @l (atAnyRow chrome)
+
+-- | The canonical status payload, read into the text leaf as its
+-- | projection: every status face is `textOf eventText` under `forCase @l`.
+eventText :: [ event :: String ] -> String
+eventText = on (Proxy @"event") identity case_
+
+-- | A runtime string made safe to concatenate into `staticHTML` markup —
+-- | as text or as a double-quoted attribute value. Every caption, label,
+-- | title or URL a vocabulary interpolates into markup passes through it,
+-- | so no copy can close a tag or open an attribute.
+escaped :: String -> String
+escaped = replaceAll (Pattern "&") (Replacement "&amp;")
+  >>> replaceAll (Pattern "<") (Replacement "&lt;")
+  >>> replaceAll (Pattern ">") (Replacement "&gt;")
+  >>> replaceAll (Pattern "\"") (Replacement "&quot;")
+  >>> replaceAll (Pattern "'") (Replacement "&#39;")
+
+-- | Listen for an event on a node, the remover discarded: a leaf's node is
+-- | detached whole with its listeners, never unwired.
+listenNode :: Node -> String -> Effect Unit -> Effect Unit
+listenNode node event handler = void $ addEventListener event node (const handler)
 
 -- | One selector **option**, named by its case: `choice @"Boardroom"` both
 -- | injects that case and draws its label, so a choice states its copy once
@@ -631,7 +841,7 @@ textAt = text (Record.get (Proxy @l))
 -- | Unlike the display it renders with, a status **releases nothing**: the
 -- | `+→×` merge forwards every release as the whole shared row, so the
 -- | leaf's `{}` echo is swallowed here and the output is typed at every
--- | row, as `silence`'s is (2026-10-04).
+-- | row, as `silence`'s is.
 textOf :: forall v r. ([ | v ] -> String) -> PUI Web [ | v ] { | r }
 textOf f = wrap do
   leaf <- unwrap (textLeaf f)
@@ -652,21 +862,14 @@ textLeaf f = wrap do
     pure node
   modify_ _ { sibling = newNode}
   node <- gets (_.sibling)
-  propRef <- liftEffect $ Ref.new $ unsafeCoerce unit
-  pure
-    { toUser: \s -> do
-        setTextNodeValue node (f s)
-        -- the display's answer to the feed (record-echo totality: the whole
-        -- of a `{}` output row is `{}`). Inert to every gate — a zero-field
-        -- side is pre-satisfied, so a display never enters one — but real to
-        -- sequencing: a stage after the display is fed it (`simpleDialog`'s
-        -- confirm replays what its content last answered). Nothing at
-        -- registration, since an answer needs a feed. Every `{}`-output
-        -- display follows this protocol ("display echo, like `text`").
-        prop <- Ref.read propRef
-        prop {}
-    , fromUser: \prop -> Ref.write prop propRef
-    }
+  -- the display's answer to the feed (record-echo totality: the whole
+  -- of a `{}` output row is `{}`). Inert to every gate — a zero-field
+  -- side is pre-satisfied, so a display never enters one — but real to
+  -- sequencing: a stage after the display is fed it (`simpleDialog`'s
+  -- confirm replays what its content last answered). Nothing at
+  -- registration, since an answer needs a feed. Every `{}`-output
+  -- display follows this protocol (`displayWiring`).
+  liftEffect $ displayWiring \s -> setTextNodeValue node (f s)
 
 -- | **Static copy**: text that is part of the structure — on screen before,
 -- | and regardless of, any model value — written as a type, so it is known
@@ -697,7 +900,7 @@ staticTextExact content = wrap do
     }
 
 staticText :: forall r. String -> PUI Web { | r } {}
-staticText = unsafeCoerce (staticTextExact :: String -> PUI Web {} {})
+staticText = atAnyRow <<< staticTextExact
 
 -- | Set a fixed attribute on the element being decorated, written infix as
 -- | `:=`: `"placeholder" := "you@example.com" $ input "email" $ …`. For an
@@ -1001,7 +1204,7 @@ eachExact items0 build = let items = if isHole items0 then [] else items0 in wra
     }
 
 each :: forall @a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } {}
-each = unsafeCoerce (eachExact :: Array a -> (a -> PUI Web {} {}) -> PUI Web {} {})
+each items build = atAnyRow (eachExact items build)
 
 -- Entry point
 

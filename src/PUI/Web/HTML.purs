@@ -66,17 +66,16 @@ import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude
 
 import Control.Monad.State (gets, modify_)
-import Data.Array ((!!), findIndex)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (fromString) as Int
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant (case_, inj, match, on)
+import Data.Variant (inj, match)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -84,7 +83,7 @@ import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, separating, (:=), (:=>))
+import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, eventText, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, textOf, separating, (:=), (:=>))
 
 -- UIs
 
@@ -102,23 +101,13 @@ import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpicked
 -- | moment it loses focus.
 input :: forall @l r b. IsSymbol l => Cons l String b r => String -> PUI Web { | r } { | r }
 input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ wrap do
-  -- focus guard: skip the write while the user is in the field, but still
-  -- echo — an editor owes every feed its answer (record-echo totality), and
-  -- its field is one the gates wait for
   element "input" (pure unit)
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new $ Nothing
-  pure
-    { toUser: \newa -> do
-      focused <- isFocused node
-      unless focused $ setValue node newa
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop newa
-    , fromUser: \prop -> do
-      Ref.write (Just prop) mPropRef
-      void $ addEventListener "input" node $ const do
-        value <- getValue node
-        prop value
+  liftEffect $ editorWiring
+    { show: setValue node
+    , held: isFocused node
+    , reports: listenNode node "input"
+    , read: \_ -> getValue node
     }
 
 -- | The multi-line `input` — same citizenship (label-indexed, `name`
@@ -128,18 +117,11 @@ textArea :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { 
 textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "textArea" (pure unit)
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \newa -> do
-      focused <- isFocused node
-      unless focused $ setValue node newa
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop newa
-    , fromUser: \prop -> do
-      Ref.write (Just prop) mPropRef
-      void $ addEventListener "input" node $ const do
-        value <- getValue node
-        prop value
+  liftEffect $ editorWiring
+    { show: setValue node
+    , held: isFocused node
+    , reports: listenNode node "input"
+    , read: \_ -> getValue node
     }
 
 -- | One choice out of a fixed list — the native `<select>` of `<option>`s,
@@ -169,17 +151,10 @@ selectWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe 
 selectWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "select" (void $ unwrap optionLeaves)
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  liftEffect $ void $ addEventListener "change" node $ const do
-    picked <- getValue node
-    mProp <- Ref.read mPropRef
-    for_ mProp \prop -> prop (_.value <$> (Int.fromString picked >>= (options !! _)))
-  pure
-    { toUser: \ma -> do
-        case ma of
-          Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setValue node (show idx)
-          Nothing -> setValue node ""
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+  liftEffect $ selectorWiring options
+    { show: setValue node <<< maybe "" show
+    , reports: listenNode node "change"
+    , read: Int.fromString <$> getValue node
     }
   where
   optionLeaves :: PUI Web {} {}
@@ -207,34 +182,22 @@ rangeInput :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Nu
 rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ wrap do
   element "input" (pure unit)
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  qRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \q -> do
-        Ref.write (Just q) qRef
+  liftEffect $ editorWiring
+    { show: \q -> do
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
         setAttribute node "step" (match { discrete: show, continuous: \_ -> "any" } q.step)
         setValue node (show q.current)
-        -- leaf echo: announce what was received, so the lifted stage releases
-        -- the row and any enclosing merge gate opens
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop q
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        void $ addEventListener "input" node $ const do
-          value <- getValue node
-          mq <- Ref.read qRef
-          for_ mq \q -> for_ (Number.fromString value) \v -> prop (q { current = v })
+    , held: pure false
+    , reports: listenNode node "input"
+    , read: \q -> getValue node <#> \value -> q { current = fromMaybe q.current (Number.fromString value) }
     }
 
 -- | The native `<progress>` gauge, `value` running 0 to 1. As much a gauge
 -- | as a progress indicator — a quota, a share, a fraction elapsed —
--- | `progress @"Progress" progressFraction`: the value is a **read
+-- | `progress progressFraction`: the value is a **read
 -- | function** like every display's, since a fraction is derived (a ratio
--- | of source fields), not state. The label is the accessible name only —
--- | a bar showing 42% must announce *what* is 42% — so it is copy, never a
--- | field reference.
+-- | of source fields), not state.
 progress
   :: forall reads
    . ({ | reads } -> Number) -> PUI Web { | reads } {}
@@ -242,15 +205,7 @@ progress f = wrap do
   element "progress" (pure unit)
   attribute "max" "1"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \r -> do
-        setAttribute node "value" (show (f r))
-        -- display echo (like `text`): the feed's answer, inert to gates
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop {}
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
-    }
+  liftEffect $ displayWiring \r -> setAttribute node "value" (show (f r))
 
 -- | What just happened, told in place — the native `<output>`, HTML's
 -- | element for the result of a user action. It shows the latest event's
@@ -270,10 +225,6 @@ output copy = outputFace # forCase @l copy
 
 outputFace :: forall r. PUI Web [ event :: String ] { | r }
 outputFace = el "output" $ textOf eventText
-
--- the canonical status payload, read into the text leaf as its projection
-eventText :: [ event :: String ] -> String
-eventText = on (Proxy @"event") identity case_
 
 -- TODO disable button after click?
 -- | A bare `<button>`, captioned by its label verbatim (`label:` overrides
@@ -297,7 +248,7 @@ button provided = wrap do
         status <- w'.toUser {}
         Ref.write (Just occur) mARef
         pure status
-    , fromUser: \prop -> void $ addEventListener "click" node $ const do
+    , fromUser: \prop -> listenNode node "click" do
         mA <- Ref.read mARef
         for_ mA \fed -> do
           setAttribute node "disabled" "true" -- TODO re-think
@@ -511,18 +462,15 @@ runComponentInNode node initial callback ui = do
 -- | The **indeterminate progress bar**: a status fed a run's `started` and
 -- | `ended`, shown between them — what `PUI.action`'s slot dispatches
 -- | (`indeterminateLinearProgress # action submit`). No label: it names no
--- | field and no case (2026-10-07, with the Material twins).
+-- | field and no case.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateLinearProgress = wrap do
   element "progress" (pure unit)
   attribute "style" hiddenStyle
   node <- gets _.sibling
-  pure
-    { toUser: match
-        { started: \_ -> setAttribute node "style" visibleStyle
-        , ended: \_ -> setAttribute node "style" hiddenStyle }
-    , fromUser: \_ -> pure unit
-    }
+  pure $ statusWiring $ match
+    { started: \_ -> setAttribute node "style" visibleStyle
+    , ended: \_ -> setAttribute node "style" hiddenStyle }
   where
   visibleStyle = "width: 100%; min-width: 200px;"
   hiddenStyle = "width: 100%; min-width: 200px; visibility: hidden;"

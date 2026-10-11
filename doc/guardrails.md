@@ -73,7 +73,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   functions are arguments of leaves, never adopters — a display takes its
   read function, a status its business case and copy function
   (`snackbar @"booked" bookedLine`), and an emitter emits its own case
-  (the adopters `toCases`/`forCases` are deleted, 2026-09-27; `forCase`
+  (the adopters `toCases`/`forCases` are deleted; `forCase`
   survives as the status face's vocabulary plumbing, `focusField`'s
   variant twin, no longer re-exported; the view-side
   read adopters `projection`/`projected` went earlier,
@@ -81,7 +81,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   names: a leaf reading structured data MUST NOT make the application
   name its rows `src`/`label`/`event` — it takes a read function, and
   the view model module translates at the boundary (`imagePane developedShot`,
-  which replaced a canonical `{ src, label }` row, 2026-09-28). Two
+  which replaced a canonical `{ src, label }` row). Two
   vocabulary value types are sanctioned in application rows, as units
   rather than a leaf's private names: the bounded quantity
   `{ current, min, max, step }` and the duration `{ ms :: Number }`. Statuses keep their
@@ -101,12 +101,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   A closed row (`{}`, `[ event :: String ]`) is a row. A word that
   would need two shapes is two words, each lawful at its own: a pane is `provided` for emitters (a detached one's
   silence is `×→+`'s answer), `pane` for displays, `inCase` for
-  editors (2026-09-23 — each once an exception to Answer, none now).
+  editors (each once an exception to Answer, none now).
   A selector is one word because it is one shape: the widget stores
   the option it shows, so it is an editor (`×→×`, every feed answered
-  with the row) — the 2026-09-23 split into a `×→+` picker plus a
-  completing stage misread a stored value as an occurrence, and was
-  undone 2026-09-26 once the unmade state was a value. What the field
+  with the row) — a split into a `×→+` picker plus a completing stage
+  misread a stored value as an occurrence, and was undone once the
+  unmade state was a value (CHANGELOG, 2026-09-26). What the field
   holds is three words, all editors: the selector's field holds the
   option itself; its `…Unpicked` sibling's (`selectUnpicked @l @c`) a
   variant whose case `c` is the made choice, a choice owed and never
@@ -123,7 +123,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   just built and keep whatever shape they decorate, an emitter's or an
   editor's alike. A bare `i`/`a`/`Maybe a` side on an exported word is a
   violation, whether a scalar leaf left public (HTML's `radioButton`,
-  deleted 2026-09-23) or a combinator reading a bare value (`dynamic`,
+  deleted) or a combinator reading a bare value (`dynamic`,
   now fed the row). The type cannot enforce this — `forall i o` compiles —
   so it is a review rule: a new or changed signature MUST be read against
   this table before it is accepted.
@@ -155,7 +155,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   **named read function** as a display's positional argument (L17), or
   **nothing** (chrome — statics and oculars write nothing and so name
   nothing). **A visible symbol argument `@"…"` names a row label — a
-  model field or a business case — and nothing else** (2026-10-07): the
+  model field or a business case — and nothing else**: the
   copy a line carries that is no label — a static's text, a bar's title,
   a dialog's caption and question, a column heading, a tip — is a String
   value (`staticText "Hours"`, `topAppBar "Espresso Bar"`, `confirmed
@@ -169,14 +169,13 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   row where it is introduced: a classifier's cases on its first pane
   (`provided`/`pane`/`inCase @l @s`), an action's outcome, a
   projection's element row (`listOf`/`foreach @… @r`), a
-  payload, a bracketed editor's state (2026-10-01
-  on inbox, 2026-10-02 everywhere). It names no field and no case, and
+  payload, a bracketed editor's state. It names no field and no case, and
   with it every typed hole in a view reports a concrete type with nothing
   unknown (L18). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
-  swap. Precedents (2026-09-28): the statuses (`snackbar @"booked"
+  swap. Precedents: the statuses (`snackbar @"booked"
   bookedLine`, replacing a per-case copy record), `confirmed @"Refund"
   title` and `simpleDialog`, and the one-field ocular configs made
   positional (`tooltip`, `dialog`, `topAppBar`, `menu`, `imageList`,
@@ -190,12 +189,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   function when it is formatted or read from data (`tooltipWith f`); a display MUST NOT carry a label except as
   an accessible name (L17); and no mechanism may leave a line's meaning in
   an anonymous position. The stronger rule — *every line a field*, oculars
-  included — was considered and rejected (2026-09-03): a label on an
+  included — was considered and rejected: a label on an
   ocular is a parameter that does nothing (gate 4), line ↔ field is no
   bijection (one `settled` spans fields, two lines may read one field,
   `+`-side lines anchor at cases), and making display lines fields would
   move copy back into state, reversing L17.
-- The **labelled group** `group @l` (MDC2/MDC3, admitted 2026-09-04) is
+- The **labelled group** `group @l` (MDC2/MDC3) is
   the boundary confirmed, not breached: it is a component, not an
   ocular — its label is the sub-record field it nests (`focusField @l` fused
   with the card surface), doubling as the heading copy verbatim and the
@@ -206,15 +205,15 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   a label this way is *renamed into the component sort* — the blind
   `card` stays for surfaces that edit nothing (a summary, a preview, a
   readout), as `subStrong` stays for flat sub-row focus. Two uses of the
-  blind card are wrong (2026-09-28): around editors, which share a card
+  blind card are wrong: around editors, which share a card
   only by sharing a sub-record (`group @l`); and around the whole app,
-  whose surface is its page's (`body $ …`, never `body $ card $ …`). The criterion's closure (2026-09-05): the
+  whose surface is its page's (`body $ …`, never `body $ card $ …`). The criterion's closure: the
   plain-HTML floor's `input @l`/`textArea @l` fused too (the `name`
   stamp was always work the bracket could not do), and with every public
   editor lifted inside its vocabulary and sub-model nesting carried by
   `group @l`, **`focusField` left the application surface** — it is no longer
   re-exported from `PUI`, living as design-system plumbing beside
-  `widenRecordInput`; a nesting no mechanism fits is a
+  `atAnyRow`; a nesting no mechanism fits is a
   missing-vocabulary signal (L16), never a reason to reach for the
   lens. Checkable form: `grep "focusField @" demo/` is empty, always.
 
@@ -226,7 +225,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   variant output is the inclusive union of the operands' cases, so a
   handler missing for one of them is a type error — while a `+→+`
   merge's variant output is **one row** every handler is typed at (an
-  equality, 2026-10-07), since a handler's row comes from a function
+  equality), since a handler's row comes from a function
   and could not be split back out of a union under holes. Variant handling and
   record production MUST be disjoint (responsibility never splits). Runtime evidence appears exactly where responsibility
   does (`DispatchableVariants`, `MergeableRecords`) and nowhere else.
@@ -255,8 +254,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   avoid by releasing the row. It is NOT an operand `provided` is built
   from: copairing with silence routes the input but leaves the source's
   emission channel connected (verified on the probe carrier), so absence
-  is `Hosting`'s and `provided` stays a carrier primitive. Deleted and
-  restored 2026-09-11 on that argument. Pointing — one emission at registration — is `Seeding`'s
+  is `Hosting`'s and `provided` stays a carrier primitive (deleted and
+  restored on that argument; CHANGELOG, 2026-09-11). Pointing — one emission at registration — is `Seeding`'s
   `announce`, never a unit's: units carry no information and add none.
   No future combinator may invert this. Every starvation bug in the
   library's history was a `+`-behaviour where a `×`-behaviour was
@@ -280,16 +279,16 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the `×→×` merge and the container action's gather run the same pure
   machine (`PUI.Gate`), the merge enrolling its owned labels as its
   participants and `acted` the fed keys (the `+→×` merge has none — its
-  operands release the whole shared row, so it is the copairing,
-  2026-10-04) — so the zero-field clause above
+  operands release the whole shared row, so it is the copairing) — so
+  the zero-field clause above
   is a consequence of enrolling nothing, the collection's empty law the
   zero-participant release, and a gating rule proved on the step holds
-  for both (2026-09-15). A merge whose operands own **no field at all**
+  for both. A merge whose operands own **no field at all**
   enrols no participant, and its row — the empty one — is always known,
   so each step that broadcast a shared record input MUST release it once
   (`StepEnded Shared`): a `{}`-output merge answers every feed, whether
   or not its operands spoke, and a dispatched `+→×` step, owed nothing,
-  stays quiet (2026-09-23; before it, `imagePane`'s merge of two
+  stays quiet (before this clause, `imagePane`'s merge of two
   answering displays never answered — the leaf-law bench found it). A gate MUST NOT be
   papered over with invented data. Three designs are permanently
   rejected:
@@ -312,12 +311,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `PUI.Web.HTML.body`'s signature — and MUST feed it `{}` exactly once
   after registration (the terminal record's one value, so "closed" is
   literal; a point has answered already and by Repetition at `{}` answers
-  no further — 2026-09-15). The knot MUST be closed by its seed as an
+  no further). The knot MUST be closed by its seed as an
   argument the caller cannot omit (`with`, after `looped @( … )`): a
-  model into the record junction (2026-10-05 — the field-level seeded
-  forms are gone, a looped state being a model field; 2026-10-06 — the
-  knot is exactly one, `looped`: a variant knot `cycled` lasted a day, a
-  second way of writing the same loop whose model no line of the view
+  model into the record junction (the field-level seeded forms are gone,
+  a looped state being a model field, and the knot is exactly one,
+  `looped`: a variant knot was a second way of writing the same loop whose model no line of the view
   could declare, so a loop is cut at its record junction and an event
   re-enters through its fold). The point's *value* is row-forced (`announce a ≈
   lcmap (const a) identity`, `Data.Profunctor.Seeding`); what the class
@@ -382,8 +380,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - A vocabulary MUST NOT act on the page at import time: page-level setup
   (a theme, a stylesheet, an icon base path, a typography baseline) is the
   work of its `body`, run at mount, so a bundle that merely links a
-  vocabulary changes nothing until an app enters it (2026-09-06 — the
-  Fluent theme and Shoelace base path moved out of module load).
+  vocabulary changes nothing until an app enters it (the Fluent theme
+  and Shoelace base path once ran at module load).
 
 ### L12. The vocabulary never forces a nominal type.
 
@@ -525,7 +523,7 @@ code below the UI) are algebra-layer material and exempt by location.
   view model module; a field shown as it is stored is not copy and is
   named by its label (`textAt @l`, L3); a formatter bracket, a
   view-side lambda and a `staticText`-plus-leaf text run are all
-  forbidden. `projection` (2026-08-31) and `projected` (2026-09-02) are
+  forbidden. `projection` and `projected` are
   deleted; the vocabulary-internal `textOf` serves the statuses' own
   variant payload.
 - A display that renders a **number** — `progressBar`,
@@ -585,9 +583,9 @@ code below the UI) are algebra-layer material and exempt by location.
   stage is fed, and a shared record input is an **equality** (every
   operand is fed the merge's row, L4). A business function's signature
   is that row, **verbatim from the view's hole hint**
-  (`countLine :: { counted :: Int } -> String`, 2026-10-03): checked by
+  (`countLine :: { counted :: Int } -> String`): checked by
   unification, and never stuck on a hole, where a `Union small rest big`
-  is. Until 2026-10-03 the signature was an open-row footprint,
+  is. Before this rule (CHANGELOG, 2026-10-03) the signature was an open-row footprint,
   `forall r. { counted :: Int | r } -> String`, narrowed by hand from the
   hint; the hint never suggested the quantifier, so the view did not
   determine it, and it went. A name two lines call at different rows is
@@ -624,7 +622,7 @@ code below the UI) are algebra-layer material and exempt by location.
   folds as record updates, no editor or selector as a merge operand, each
   action's outcome cases named where the action is, the view handing its
   logic only arguments called on data.
-- **A field is named, never picked** (2026-10-10; application-side
+- **A field is named, never picked** (application-side
   statement: writing.md's *The anchor invariant*). A line that reads one
   field the model stores MUST name it by its label, in the reading word's
   own type-argument slot, and application code MUST NOT write an accessor
@@ -642,8 +640,7 @@ code below the UI) are algebra-layer material and exempt by location.
   `clickedRow @l`. A new reading word MUST come with its label sibling
   as soon as a demo reads a stored field through it, and not before
   (L14).
-- **The view determines the view model** (2026-10-01 on inbox, every
-  demo 2026-10-02). The rule's converse: a view compiled with a typed
+- **The view determines the view model**. The rule's converse: a view compiled with a typed
   hole in place of every value it imports MUST report each hole at a
   concrete type with **nothing unknown** — so the hole list *is* the view
   model module's signatures (writing.md, *Writing order*) and nothing in
@@ -675,7 +672,7 @@ code below the UI) are algebra-layer material and exempt by location.
   list back — one declaration per compile round, a first declaration
   copied to the function's later occurrences — failing on any unknown
   or on an error that is not a hole.
-- **Rejected (2026-09-30)**, each on a measured branch: shadow `.Holey`
+- **Rejected**, each on a measured branch (CHANGELOG, 2026-09-30): shadow `.Holey`
   modules a view imports instead (102 of 102, but a second vocabulary no
   real build checks); leaving read rows and variant outputs free (96 of
   102, but no footprint was checked anywhere, and it hid a real

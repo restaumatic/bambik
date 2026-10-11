@@ -55,8 +55,8 @@
 -- |     *input* side before any output exists. Contrast `Cochoice`, where
 -- |     `Left a` needs none: that asymmetry is why `looped` is a primitive
 -- |     and `debounced` seeds its loop branch (`PointedCostrong` starts the
--- |     state channel instead; the field-level row forms
--- |     `feedback`/`folding`/`unfolding` were retired 2026-10-05)
+-- |     state channel instead; the field-level row forms are gone, a
+-- |     looped state being a model field)
 -- |   * `Retaining` — must produce a `b` for a `Right c` input; a stateless
 -- |     carrier has none (same reason there is no `(->)` instance)
 -- |   * `VariantToRecord` — an input case reaches one operand only, so the
@@ -70,10 +70,9 @@
 -- |     equational trace triple (which is exactly why the class also states
 -- |     the behavioral re-entry law); what fails is re-entry itself — a CPS
 -- |     run is a single pass through one continuation, nothing to feed back
--- |     into. (`Seeding`, once listed here beside it, is inhabited since
--- |     2026-09-15: its law is the wire's answer at `{}`, which a CPS run
--- |     gives; only the *early* answer is carrier time, and nothing here
--- |     needs it — see the instance.)
+-- |     into. (`Seeding` is inhabited: its law is the wire's answer at
+-- |     `{}`, which a CPS run gives; only the *early* answer is carrier
+-- |     time, and nothing here needs it — see the instance.)
 module Data.Profunctor.Cont where
 
 import Prelude
@@ -81,11 +80,11 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Lens.Internal.Wander (class Wander)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor)
+import Data.Profunctor (class Profunctor, lcmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
-import Data.Profunctor.Row (exactRow, splitVariant, widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row (exactRow, fedFirst, fedSecond, splitVariant, widenVariantOutput)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
@@ -175,8 +174,8 @@ instance Cochoice (Cont r) where
 
 instance RecordToRecord (Cont r) where
   recordToRecord p1 p2 = wrap \k i ->
-    unwrap (widenRecordInput p1)
-      (\o1 -> unwrap (widenRecordInput p2)
+    unwrap (lcmap fedFirst p1)
+      (\o1 -> unwrap (lcmap fedSecond p2)
         (\o2 -> k (Record.union (exactRow o1) (exactRow o2))) i) i
 
 instance VariantToVariant (Cont r) where
@@ -187,8 +186,8 @@ instance VariantToVariant (Cont r) where
 instance Monoid r => RecordToVariant (Cont r) where
   silence = wrap \_ _ -> mempty
   recordToVariant p1 p2 = wrap \k i ->
-    unwrap (widenVariantOutput (widenRecordInput p1)) k i
-      <> unwrap (widenVariantOutput (widenRecordInput p2)) k i
+    unwrap (widenVariantOutput (lcmap fedFirst p1)) k i
+      <> unwrap (widenVariantOutput (lcmap fedSecond p2)) k i
 
 instance Resolving (Cont r) where
   resolve p = wrap \k (Tuple a _) -> unwrap p (k <<< Left) a

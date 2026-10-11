@@ -5,7 +5,7 @@ import Prelude (Unit, ($), (#))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import LoanCalculatorViewModel (appliedLine, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
-import PUI (armed, looped, prefixed, with)
+import PUI (looped, prefixed, with)
 import PUI.Web ((<+>), choice, staticText, text)
 import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (div)
@@ -35,5 +35,5 @@ loanCalculatorBootstrap =
         listGroupItem (text totalInterestLine) )
       ( div $ RecordToRecord.do
         staticText "Interest share of total repayment"
-        progress interestShare ) ) $ button @"Apply for this loan" {} # armed
+        progress interestShare ) ) $ button @"Apply for this loan" {}
     toast @"Apply for this loan" appliedLine

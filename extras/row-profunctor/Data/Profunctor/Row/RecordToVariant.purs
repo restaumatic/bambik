@@ -13,8 +13,7 @@
 -- |   * **free functions** — over the strength: `subResolving` (a
 -- |     sub-record, the background escaping as a case); over `Strong`:
 -- |     `replaying @l` (replay as `Strong`'s retention) and `joined @l` (an
--- |     event joined with the row its emitter was fed); over bare
--- |     `Profunctor`: the emit stage `armed`. The co-strength `Coresolving`
+-- |     event joined with the row its emitter was fed). The co-strength `Coresolving`
 -- |     has no row form here: a chain of this shape is closed by the knot
 -- |     at its record junction (`looped`), the shape change between them
 -- |     an explicit stage.
@@ -78,17 +77,16 @@
 -- | with the fed row. But absence is **not a copairing**: routing the input away
 -- | from `w` leaves `w`'s own emission channel connected, so
 -- | `lcmap f' (left w >>> right silence)` still emits when the source
--- | fires in the "absent" case (checked on the probe carrier, 2026-09-11:
--- | a Start button clicked while `timing` still emitted). Only removing
+-- | fires in the "absent" case (checked on the probe carrier: a Start
+-- | button clicked while `timing` still emitted). Only removing
 -- | the component silences it, and removal is `Hosting`'s — the DOM's —
 -- | not the algebra's. So `provided` stays a carrier primitive, and
 -- | `silence` is the *value* of what it removes, not an operand it is
--- | built from. (Deleted and restored 2026-09-11 on this argument.)
+-- | built from. (Deleted and restored on this argument; CHANGELOG, 2026-09-11.)
 module Data.Profunctor.Row.RecordToVariant
   ( class RecordToVariant
   , recordToVariant
   , silence
-  , armed
   , joined
   , bind
   , discard
@@ -102,7 +100,7 @@ import Data.Either (either)
 import Data.Lens.Shutter (shutterE)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs, widenRecordInput)
+import Data.Profunctor.Row (class ExclusiveRows, class SharedRecordInputs, class SharedVariantOutputs)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
@@ -114,8 +112,8 @@ import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant
-    :: forall i1 o1 i2 o2 i12 i1x i2x o12 o1x o2x i o
-     . SharedRecordInputs i1 i2 i i12 i1x i2x
+    :: forall i1 o1 i2 o2 o12 o1x o2x i o
+     . SharedRecordInputs i1 i2 i
     => SharedVariantOutputs o1 o2 o o12 o1x o2x
     => p { | i1 } [ | o1 ]
     -> p { | i2 } [ | o2 ]
@@ -175,10 +173,10 @@ replaying f src = dimap (\r -> Tuple (unsafeCoerce r) r) (\(Tuple _ r) -> inj (P
 -- | one record, `{ event, model }`, under the same case. So a list pick, a
 -- | canvas click or a tick reaches the fold with the model in hand, and its
 -- | handler is one function of one record (`listOf … # joined @"toggled"`,
--- | `fold (match { toggled: toggleTodo })` with `toggleTodo :: { event ::
--- | Int, model :: { … } } -> { … }`, todo-list). `replaying @l f` is the
--- | degenerate case where the occurrence carries nothing of its own
--- | (2026-10-04).
+-- | `blankStatus @"Todo toggled" # fold toggleTodo` with `toggleTodo ::
+-- | { event :: Int, model :: { … } } -> { … }`, todo-list). `replaying @l f`
+-- | is the degenerate case where the occurrence carries nothing of its
+-- | own.
 joined
   :: forall @l p r a v v1
    . Strong p
@@ -188,13 +186,3 @@ joined
   => p { | r } [ | v ]
   -> p { | r } [ | v1 ]
 joined src = dimap (\r -> Tuple r r) (\(Tuple e r) -> inj (Proxy @l) { event: on (Proxy @l) identity case_ e, model: r }) (first src)
-
--- | Mark an event ensemble as fed the row its emitters replay.
--- | The emitters replay the whole fed row; what a consumer reads of the
--- | payload is its own open-row footprint.
-armed
-  :: forall p r o
-   . Profunctor p
-  => p { | r } [ | o ]
-  -> p { | r } [ | o ]
-armed = widenRecordInput

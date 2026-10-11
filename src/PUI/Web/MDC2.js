@@ -159,17 +159,6 @@ export function listen(component) {
   };
 }
 
-// listenNode :: Node -> String -> Effect Unit -> Effect Unit
-export function listenNode(node) {
-  return function (eventType) {
-    return function (handler) {
-      return function () {
-        node.addEventListener(eventType, function () { handler(); });
-      };
-    };
-  };
-}
-
 // setClassIf :: Node -> String -> Boolean -> Effect Unit
 export function setClassIf(node) {
   return function (name) {

@@ -27,7 +27,7 @@ import Data.Profunctor.Row.VariantToVariant (focusCase, toCase, variantToVariant
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
-import Data.Profunctor.Row (widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row (widenVariantOutput)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
 import Data.Variant (Variant, case_, inj, match)
@@ -1467,9 +1467,9 @@ main = do
         hs <- Ref.read hIns
         os <- Ref.read outs
         pure { hMid, hs, os }
-    -- holey-weak-types: equal-input merges feed h and k the whole middle row, so the
-    -- synced side states the widening the merge used to perform
-    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord (widenRecordInput h) (widenRecordInput k)
+    -- equal-input merges feed h and k the whole middle row, so the synced
+    -- side states the projection of that row onto each
+    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord (lcmap (\r -> { a: r.a }) h) (lcmap (\r -> { b: r.b }) k)
     free <- run \f g h k -> recordToRecord (f >>> h) (g >>> k)
     assertEqual "interchange: the middle gate withholds h's feed until g spoke" [] synced.hMid
     assertEqual "interchange: the free side feeds h immediately" [ { a: 10 } ] free.hMid
@@ -1658,9 +1658,9 @@ main = do
         fire fProp { a: 7 }
         fire hProp { c: 99 }
         Ref.read outs
-    -- holey-weak-types: equal-input merges feed h and k the whole middle row, so the
-    -- synced side states the widening the merge used to perform
-    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord (widenRecordInput h) (widenRecordInput k)
+    -- equal-input merges feed h and k the whole middle row, so the synced
+    -- side states the projection of that row onto each
+    synced <- run \f g h k -> recordToRecord f g >>> recordToRecord (lcmap (\r -> { a: r.a }) h) (lcmap (\r -> { b: r.b }) k)
     free <- run \f g h k -> recordToRecord (f >>> h) (g >>> k)
     assertEqual "boundary interchange: the streams are equal on the nose" free synced
     assertEqual "boundary interchange: the common stream — one emission per feed, every field fresh"

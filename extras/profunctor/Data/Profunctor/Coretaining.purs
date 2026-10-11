@@ -1,9 +1,9 @@
 -- | The **co-strength** of `Data.Profunctor.Retaining` — the `+ → ×` analogue
 -- | of the ecosystem's `Data.Profunctor.Cochoice`, stated **positionally**
 -- | (`Either`/`Tuple`) with no row in sight, and living beside its strength
--- | exactly as `Cochoice` lives beside `Choice`. It has had no row form
--- | since 2026-10-05 (`unfolding` was retired: a counter is a model field);
--- | the optic it generates is `Data.Lens.Coreel`.
+-- | exactly as `Cochoice` lives beside `Choice`. It has no row form (a
+-- | counter is a model field); the optic it generates is
+-- | `Data.Lens.Coreel`.
 -- |
 -- | Like its strength, a **complement of the ecosystem's own** — hence the
 -- | `Data.Profunctor.*` name and the separate `extras/profunctor` source

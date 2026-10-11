@@ -14,8 +14,7 @@ examples, each from a demo you can open under
 `.spago/bambik/<tag>/demo/7guis/` or `demo/nguis/`. A demo directory's
 suffix names its design system (`counter-mdc2`, `counter-mdc3`, …,
 `counter-html`); the siblings share one view model module in the
-unsuffixed directory (`inbox/InboxViewModel.purs`; demos not yet swept
-still name theirs `<Demo>Logic`, as `counter/CounterLogic.purs`), so read
+unsuffixed directory (`counter/CounterViewModel.purs`), so read
 whichever twin matches your design system.
 
 ## Terms
@@ -144,9 +143,10 @@ How each kind takes its business meaning:
   See *Copy is a function* in [Types and values](#types-and-values).
 - **Emitters** emit their own case. Whatever the business decides about
   it is decided where the case is consumed — the fold's handler, the
-  status's copy function. When two buttons feed one loop case, keep two
-  business cases and introduce the loop case from each (checkout's
-  `button @"Next" {} # toCase @"next" goneOn`).
+  status's copy function. When two buttons would share one handler,
+  keep two business cases and apply the handler in each case's fold
+  (checkout's `blankStatus @"Next" # fold stepTo`,
+  `blankStatus @"Back" # fold stepTo`).
 - **Statuses** are labelled with the case they show and take its copy
   function: `snackbar @"booked" bookedLine`. Mutually exclusive outcomes
   are sibling statuses in one `VariantToRecord.do`, each owning its
@@ -193,7 +193,6 @@ for:
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
 | a periodic occurrence | `blankStatus @"Clock ticked" # ticks tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @celsius {} # settled fromCelsius` | temperature-converter |
-| buttons replaying the row they are fed | `(RecordToVariant.do …) # armed` | order-form |
 | effects on the buttons' cases, the other events passing | `( VariantToVariant.do { indeterminateLinearProgress # action createPerson # atCase @"Create"; … } ) # subChoice`, every action typed at the block's outcome row, every outcome folded once by its status | crud |
 | an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `blankStatus @"Forecast fetched" # fold identity` | weather |
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |

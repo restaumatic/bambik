@@ -97,7 +97,7 @@ import Data.Function (const)
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Looping (class Looping, looped)
-import Data.Profunctor.Row (class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow)
+import Data.Profunctor.Row (class FieldNames, class OwnedRecordOutputs, class SharedRecordInputs, exactRow, fedFirst, fedSecond)
 import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol)
@@ -112,15 +112,15 @@ import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
   recordToRecord
-    :: forall i1 o1 i2 o2 i12 i1x i2x i o o1l o2l
-     . SharedRecordInputs i1 i2 i i12 i1x i2x
+    :: forall i1 o1 i2 o2 i o o1l o2l
+     . SharedRecordInputs i1 i2 i
     => OwnedRecordOutputs o1 o2 o o1l o2l
     => p { | i1 } { | o1 }
     -> p { | i2 } { | o2 }
     -> p { | i } { | o }
 
 instance RecordToRecord (->) where
-  recordToRecord p1 p2 i = Record.union (exactRow (p1 (unsafeCoerce i))) (exactRow (p2 (unsafeCoerce i)))
+  recordToRecord p1 p2 i = Record.union (exactRow (p1 (fedFirst i))) (exactRow (p2 (fedSecond i)))
 
 bind
   :: forall p r2 r3 r1 r rl1 rl2

@@ -44,11 +44,7 @@
 -- | hand-roll (date and time pickers, sheets, badges, navigation bar and
 -- | rail, search, carousel) are absent.
 module PUI.Web.MDC3
-  ( OptLabelIcon(..)
-  , OptLabel(..)
-  , OptIcon(..)
-  , OptSelected(..)
-  , body
+  ( body
   , bodyLarge
   , bodyMedium
   , bodySmall
@@ -130,21 +126,20 @@ module PUI.Web.MDC3
 
 import Data.Profunctor.Row.Structural (withStructuralEq, withStructuralOrd)
 import Prelude hiding (div)
-import Unsafe.Coerce (unsafeCoerce)
 
 import Control.Monad.State (gets)
-import ConvertableOptions (class ConvertOption, class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
+import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Data.Array (findIndex, (!!))
 import Data.Foldable (foldMap, for_, traverse_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row (widenRecordInput)
+import Data.Profunctor.Row (atAnyRow)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Traversable (for)
-import Data.Variant (case_, inj, match, on, prj) as Variant
+import Data.Variant (inj, match, prj) as Variant
 import Data.Profunctor (lcmap, rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -153,7 +148,7 @@ import Data.Profunctor.Seeding (isHole)
 import PUI (Ocular, PUI, blank, foreach, prefixed, suffixed)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clickedRow, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textContent, textOf, uniqueId, separating, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptLabel(..), OptSelected(..), OptIcon(..), Web, attribute, attrWith, autoDismiss, cl, clicked, clickedRow, clWhen, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, eventText, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textContent, textOf, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -214,46 +209,6 @@ import Type.Proxy (Proxy(..))
 -- normalization on the whole-row stage), not in a leaf bracket.
 
 -- UIs
-
--- Conversion tags scope which field names lift a bare value to `Just`, as
--- in `PUI.Web.MDC2`: one tag per distinct optional-field set — `OptLabelIcon`
--- (buttons), `OptLabel` (fab), `OptSelected` (listOf),
--- `OptIcon` (tabBar options).
--- | Marks `label` and `icon` as optional on the buttons — write either,
--- | both or neither, as a plain string.
-data OptLabelIcon = OptLabelIcon
-
-instance ConvertOption OptLabelIcon "label" String (Maybe String) where
-  convertOption _ _ = Just
-else instance ConvertOption OptLabelIcon "icon" String (Maybe String) where
-  convertOption _ _ = Just
-else instance ConvertOption OptLabelIcon sym a a where
-  convertOption _ _ = identity
-
--- | Marks the `label` of a FAB as optional.
-data OptLabel = OptLabel
-
-instance ConvertOption OptLabel "label" String (Maybe String) where
-  convertOption _ _ = Just
-else instance ConvertOption OptLabel sym a a where
-  convertOption _ _ = identity
-
--- | Marks a list's `selected` test as optional — `listOf {}` selects
--- | nothing.
-data OptSelected = OptSelected
-
-instance ConvertOption OptSelected sym a a where
-  convertOption _ _ = identity
-
--- | Marks the `icon` of a tab as optional — tabs may be labelled, iconed or
--- | both.
-data OptIcon = OptIcon
-
-instance ConvertOption OptIcon "icon" String (Maybe String) where
-  convertOption _ _ = Just
-else instance ConvertOption OptIcon sym a a where
-  convertOption _ _ = identity
-
 
 -- | The **filled button** — Material 3's high-emphasis action and the
 -- | default choice; `elevatedButton`, `tonalButton`, `outlinedButton` and
@@ -339,12 +294,6 @@ buttonOf tag provided = eventLeaf @l $ el tag $ RecordToRecord.do
   where
   config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
 
--- the click-emitter protocol over any `{}`-output element chrome: replay the
--- last value fed on click (a click before any value arrived is withheld) —
--- `clickedRow` over the input-freed chrome, the last-built element listening
-eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
-eventLeaf chrome = clickedRow @l (widenRecordInput chrome)
-
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
 -- | showing, like `button`. The `icon` is required — a FAB is recognised by
@@ -423,20 +372,13 @@ textFieldLeaf tag mDebounce floatingLabel = wrap do
   element tag (pure unit)
   attribute "label" floatingLabel
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \newa -> do
-        focused <- isFocused node
-        unless focused $ setValue node newa
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop newa
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        case mDebounce of
-          Nothing -> void $ addEventListener "input" node $ const do
-            value <- getValue node
-            prop value
-          Just millis -> onInputDebounced node millis prop
+  liftEffect $ editorWiring
+    { show: setValue node
+    , held: isFocused node
+    , reports: case mDebounce of
+        Nothing -> listenNode node "input"
+        Just millis -> \report -> onInputDebounced node millis (const report)
+    , read: \_ -> getValue node
     }
 
 -- | The **multi-line text field**, sized in `rows` and `columns` of text —
@@ -453,18 +395,11 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
   -- narrow viewport — a leaf never escapes its surface
   attribute "style" ("width: " <> show config.columns <> "ch; max-width: 100%;")
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \newa -> do
-        focused <- isFocused node
-        unless focused $ setValue node newa
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop newa
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        void $ addEventListener "input" node $ const do
-          value <- getValue node
-          prop value
+  liftEffect $ editorWiring
+    { show: setValue node
+    , held: isFocused node
+    , reports: listenNode node "input"
+    , read: \_ -> getValue node
     }
 
 -- | The Material **checkbox**, with its label beside it: the label is
@@ -488,7 +423,6 @@ checkbox :: forall @l @c @n a r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol 
 checkbox ticked labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l) $
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ wrap do
     aRef <- liftEffect $ Ref.new ticked
-    mPropRef <- liftEffect $ Ref.new Nothing
     element "md-checkbox" (pure unit)
     node <- gets _.sibling
     lbl <- unwrap labelContent
@@ -497,8 +431,8 @@ checkbox ticked labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l
     caption <- gets _.parent
     let stampCaption = textContent caption >>= setAttribute node "aria-label"
     liftEffect stampCaption
-    pure
-      { toUser: \ma -> do
+    liftEffect $ editorWiring
+      { show: \ma -> do
           lbl.toUser {}
           stampCaption
           case Variant.prj (Proxy @c) ma of
@@ -506,16 +440,12 @@ checkbox ticked labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l
             Just newa -> do
               setChecked node true
               Ref.write newa aRef
-          -- leaf echo: announce what was received, so the lifted stage releases
-          -- the row and any enclosing merge gate opens
-          mProp <- Ref.read mPropRef
-          for_ mProp \prop -> prop ma
-      , fromUser: \prop -> do
-          Ref.write (Just prop) mPropRef
-          listenNode node "change" do
-            checked <- getChecked node
-            a <- Ref.read aRef
-            prop (if checked then Variant.inj (Proxy @c) a else Variant.inj (Proxy @n) {})
+      , held: pure false
+      , reports: listenNode node "change"
+      , read: \_ -> do
+          checked <- getChecked node
+          a <- Ref.read aRef
+          pure (if checked then Variant.inj (Proxy @c) a else Variant.inj (Proxy @n) {})
       }
 
 -- | The Material **radio group**: one choice among a handful, every option
@@ -596,19 +526,11 @@ switchLeaf lbl =
     node <- gets _.sibling
     liftEffect $ setAttribute node "aria-label" lbl
     _ <- unwrap (staticText lbl)
-    mPropRef <- liftEffect $ Ref.new Nothing
-    liftEffect $ listenNode node "change" do
-      selected <- getBoolProp "selected" node
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop selected
-    pure
-      { toUser: \b -> do
-          setBoolProp "selected" node b
-          -- leaf echo: announce what was received, so the lifted stage releases
-          -- the row and any enclosing merge gate opens
-          mProp <- Ref.read mPropRef
-          for_ mProp \prop -> prop b
-      , fromUser: \prop -> Ref.write (Just prop) mPropRef
+    liftEffect $ editorWiring
+      { show: setBoolProp "selected" node
+      , held: pure false
+      , reports: listenNode node "change"
+      , read: \_ -> getBoolProp "selected" node
       }
 
 -- | The **slider**: a quantity chosen by feel, where the range matters more
@@ -653,28 +575,17 @@ bareSliderLeaf live label = wrap do
   attribute "aria-label" label
   attribute "style" "min-width: 200px;"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  qRef <- liftEffect $ Ref.new Nothing
-  let emit = do
-        v <- getNumberProp "value" node
-        mq <- Ref.read qRef
-        for_ mq \q -> do
-          mProp <- Ref.read mPropRef
-          for_ mProp \prop -> prop (q { current = v })
-  when live $ liftEffect $ listenNode node "input" emit
-  liftEffect $ listenNode node "change" emit
-  pure
-    { toUser: \q -> do
-        Ref.write (Just q) qRef
+  liftEffect $ editorWiring
+    { show: \q -> do
         setNumberProp "min" node q.min
         setNumberProp "max" node q.max
         Variant.match { discrete: \s -> setNumberProp "step" node s, continuous: \_ -> removeAttribute node "step" } q.step
         setNumberProp "value" node q.current
-        -- leaf echo: announce what was received, so the lifted stage releases
-        -- the row and any enclosing merge gate opens
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop q
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+    , held: pure false
+    , reports: \report -> do
+        when live $ listenNode node "input" report
+        listenNode node "change" report
+    , read: \q -> getNumberProp "value" node <#> \v -> q { current = v }
     }
 
 -- | The Material **filled select** (exposed dropdown): one choice out of a
@@ -708,33 +619,22 @@ selectLeaf :: forall a. Eq a => Boolean -> { floatingLabel :: String } -> Array 
 selectLeaf clearable config options = wrap do
   _ <- unwrap (staticHTML markup)
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  -- programmatic selection can fire change too; guard the loop
-  busyRef <- liftEffect $ Ref.new false
-  liftEffect $ listenNode node "change" do
-    busy <- Ref.read busyRef
-    unless busy do
-      idx <- getIntProp "selectedIndex" node
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop (_.value <$> (options !! (idx - offset)))
-  pure
-    { toUser: \ma -> do
-        Ref.write true busyRef
-        case ma of
-          Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setIntProp "selectedIndex" node (idx + offset)
-          Nothing -> setIntProp "selectedIndex" node (-1)
-        Ref.write false busyRef
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+  -- programmatic selection can fire change too; the wiring's busy guard
+  -- drops it
+  liftEffect $ selectorWiring options
+    { show: setIntProp "selectedIndex" node <<< maybe (-1) (_ + offset)
+    , reports: listenNode node "change"
+    , read: getIntProp "selectedIndex" node <#> \idx -> Just (idx - offset)
     }
   where
   offset = if clearable then 1 else 0
   markup =
-    "<md-filled-select label=\"" <> config.floatingLabel <> "\" style=\"min-width: 200px;\">"
+    "<md-filled-select label=\"" <> escaped config.floatingLabel <> "\" style=\"min-width: 200px;\">"
       <> (if clearable then "<md-select-option value=\"\"></md-select-option>" else "")
       <> foldMapWithIndex optionMarkup options
       <> "</md-filled-select>"
   optionMarkup idx o =
-    "<md-select-option value=\"" <> show idx <> "\"><div slot=\"headline\">" <> o.label <> "</div></md-select-option>"
+    "<md-select-option value=\"" <> show idx <> "\"><div slot=\"headline\">" <> escaped o.label <> "</div></md-select-option>"
 
 -- | The Material **segmented button**: two to five options joined in one
 -- | control, all visible, one selected — a filter row, a view switch, a
@@ -763,7 +663,7 @@ segmentedLeaf clearable options =
   div >>> cl "md3-segmented-button" >>> "role" := "radiogroup" $ wrap do
     liftEffect $ ensureStyle "md3-segmented-button" segmentedButtonCss
     segments <- for options \o -> do
-      _ <- unwrap (staticHTML ("<button class=\"md3-segmented-button__segment\" role=\"radio\" aria-checked=\"false\"><span class=\"md3-segmented-button__check\" aria-hidden=\"true\"></span><span>" <> o.label <> "</span></button>"))
+      _ <- unwrap (staticHTML ("<button class=\"md3-segmented-button__segment\" role=\"radio\" aria-checked=\"false\"><span class=\"md3-segmented-button__check\" aria-hidden=\"true\"></span><span>" <> escaped o.label <> "</span></button>"))
       node <- gets _.sibling
       pure { node, value: o.value }
     mPropRef <- liftEffect $ Ref.new Nothing
@@ -806,21 +706,13 @@ chipLeaf lbl = wrap do
   element "md-filter-chip" (pure unit)
   attribute "label" lbl
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \b -> do
-        setBoolProp "selected" node b
-        -- leaf echo: announce what was received, so the lifted stage releases
-        -- the row and any enclosing merge gate opens
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop b
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        -- the chip toggles `selected` as the click's default action; read
-        -- it a microtask later, once the toggle has settled
-        listenNodeDeferred node "click" do
-          b <- getBoolProp "selected" node
-          prop b
+  -- the chip toggles `selected` as the click's default action; read it a
+  -- microtask later, once the toggle has settled
+  liftEffect $ editorWiring
+    { show: setBoolProp "selected" node
+    , held: pure false
+    , reports: listenNodeDeferred node "click"
+    , read: \_ -> getBoolProp "selected" node
     }
 
 -- | An **icon that stays pressed** — favourite, bookmark, mute, pin:
@@ -839,19 +731,11 @@ iconToggleLeaf config = wrap do
     el "md-icon" $ staticText config.offIcon
     el "md-icon" >>> "slot" := "selected" >>> "style" := "font-variation-settings: 'FILL' 1;" $ staticText config.onIcon
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  liftEffect $ listenNode node "change" do
-    on' <- getBoolProp "selected" node
-    mProp <- Ref.read mPropRef
-    for_ mProp \prop -> prop on'
-  pure
-    { toUser: \b -> do
-        setBoolProp "selected" node b
-        -- leaf echo: announce what was received, so the lifted stage releases
-        -- the row and any enclosing merge gate opens
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop b
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+  liftEffect $ editorWiring
+    { show: setBoolProp "selected" node
+    , held: pure false
+    , reports: listenNode node "change"
+    , read: \_ -> getBoolProp "selected" node
     }
 
 -- | The Material **tab bar**: the top-level sections of one screen, one
@@ -870,32 +754,18 @@ tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: May
 tabBarLeaf options = wrap do
   _ <- unwrap (staticHTML ("<md-tabs>" <> foldMap tabMarkup options <> "</md-tabs>"))
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  -- programmatic activation fires change too; guard the loop
-  busyRef <- liftEffect $ Ref.new false
-  liftEffect $ listenNode node "change" do
-    busy <- Ref.read busyRef
-    unless busy do
-      idx <- getIntProp "activeTabIndex" node
-      for_ (options !! idx) \o -> do
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop o.value
-  pure
-    { toUser: \a -> do
-        for_ (findIndex (\o -> o.value == a) options) \idx -> do
-          Ref.write true busyRef
-          setIntProp "activeTabIndex" node idx
-          Ref.write false busyRef
-        -- leaf echo: the selection is always known, so always announce
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop a
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+  -- programmatic activation fires change too; the wiring's busy guard drops it
+  liftEffect $ editorWiring
+    { show: \a -> for_ (findIndex (\o -> o.value == a) options) (setIntProp "activeTabIndex" node)
+    , held: pure false
+    , reports: listenNode node "change"
+    , read: \a -> getIntProp "activeTabIndex" node <#> \idx -> maybe a _.value (options !! idx)
     }
   where
   tabMarkup o =
     "<md-primary-tab>"
-      <> maybe "" (\icon' -> "<md-icon slot=\"icon\">" <> icon' <> "</md-icon>") o.icon
-      <> o.label
+      <> maybe "" (\icon' -> "<md-icon slot=\"icon\">" <> escaped icon' <> "</md-icon>") o.icon
+      <> escaped o.label
       <> "</md-primary-tab>"
 
 -- | The **indeterminate progress bar**: work is under way and there is no
@@ -905,22 +775,16 @@ tabBarLeaf options = wrap do
 -- | `PUI.action`'s slot dispatches (`indeterminateLinearProgress # action
 -- | submit`). No model owns a "busy" field, so nothing here is state, and
 -- | it carries no label: it names no field and no case, and a caption is
--- | copy, which is a function, not a label (2026-10-07; until then the
--- | label was its accessible name).
+-- | copy, which is a function, not a label.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateLinearProgress = wrap do
   element "md-linear-progress" (pure unit)
   attribute "indeterminate" ""
   attribute "style" hiddenStyle
   node <- gets _.sibling
-  pure
-    { toUser: Variant.match
-        { started: \_ -> setAttribute node "style" visibleStyle
-        , ended: \_ -> setAttribute node "style" hiddenStyle }
-    -- a `{}` status has nothing to say: each occurrence is rendered, and a
-    -- zero-field contribution is pre-known to every gate
-    , fromUser: const (pure unit)
-    }
+  pure $ statusWiring $ Variant.match
+    { started: \_ -> setAttribute node "style" visibleStyle
+    , ended: \_ -> setAttribute node "style" hiddenStyle }
   where
   visibleStyle = "min-width: 200px;"
   hiddenStyle = "min-width: 200px; visibility: hidden;"
@@ -928,10 +792,9 @@ indeterminateLinearProgress = wrap do
 -- | The **determinate progress bar**: how far along something is, `value`
 -- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
 -- | position, a budget's use, a quota — written as
--- | `linearProgress @"Progress" progressFraction`: the value is a **read
+-- | `linearProgress progressFraction`: the value is a **read
 -- | function** like every display's, since a fraction is derived (a ratio
--- | of source fields), not state. The label is the accessible name only,
--- | so it is copy, never a field reference.
+-- | of source fields), not state.
 linearProgress
   :: forall reads
    . ({ | reads } -> Number) -> PUI Web { | reads } {}
@@ -939,15 +802,7 @@ linearProgress f = wrap do
   element "md-linear-progress" (pure unit)
   attribute "style" "min-width: 200px;"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \r -> do
-        setNumberProp "value" node (f r)
-        -- display echo (like `text`): the feed's answer, inert to gates
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop {}
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
-    }
+  liftEffect $ displayWiring \r -> setNumberProp "value" node (f r)
 
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
@@ -958,12 +813,9 @@ indeterminateCircularProgress = wrap do
   attribute "indeterminate" ""
   attribute "style" hiddenStyle
   node <- gets _.sibling
-  pure
-    { toUser: Variant.match
-        { started: \_ -> setAttribute node "style" visibleStyle
-        , ended: \_ -> setAttribute node "style" hiddenStyle }
-    , fromUser: const (pure unit)
-    }
+  pure $ statusWiring $ Variant.match
+    { started: \_ -> setAttribute node "style" visibleStyle
+    , ended: \_ -> setAttribute node "style" hiddenStyle }
   where
   visibleStyle = "width: 48px; height: 48px;"
   hiddenStyle = "width: 48px; height: 48px; visibility: hidden;"
@@ -1215,7 +1067,7 @@ snackbarCss = """
 menu :: String -> Ocular (PUI Web)
 menu anchorCaption content =
   span >>> "style" := "position: relative; display: inline-block;" $ wrap do
-    _ <- unwrap (staticHTML ("<md-outlined-button trailing-icon>" <> anchorCaption <> "<md-icon slot=\"icon\">arrow_drop_down</md-icon></md-outlined-button>"))
+    _ <- unwrap (staticHTML ("<md-outlined-button trailing-icon>" <> escaped anchorCaption <> "<md-icon slot=\"icon\">arrow_drop_down</md-icon></md-outlined-button>"))
     anchorNode <- gets _.sibling
     w <- unwrap (el "md-menu" $ content)
     menuNode <- gets _.sibling
@@ -1290,10 +1142,6 @@ listOfAt
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
 listOfAt provided = listOf @l @k @r provided (Record.get (Proxy @t))
--- the canonical status payload, read into the text leaf as its projection
-eventText :: [ event :: String ] -> String
-eventText = Variant.on (Proxy @"event") identity Variant.case_
-
 
 listCss :: String
 listCss = """
@@ -1301,9 +1149,9 @@ md-list-item.md3-list-item--selected { --md-list-item-container-color: var(--md-
 """
 
 -- | A **data table**: values in rows and columns, where the column a value
--- | sits in is what says what it means. its header slot holds the
--- | fixed headings, one `columnHeader @"…"` each, and its type argument is
--- | what assistive technology announces the table as (`dataTable @"Cart"`); the
+-- | sits in is what says what it means. Its header slot holds the fixed
+-- | headings, one `columnHeader "…"` each, and its first argument is what
+-- | assistive technology announces the table as (`dataTable "Cart"`); the
 -- | body is `dataRow`s of `dataCell`s, usually one row per element of a
 -- | collection.
 dataTable :: String -> PUI Web {} {} -> Ocular (PUI Web)
@@ -1319,8 +1167,8 @@ dataTable tableName headerCells content = wrap do
 columnHeaderExact :: String -> PUI Web {} {}
 columnHeaderExact heading = th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText heading
 
-columnHeader :: forall in_. String -> PUI Web { | in_ } {}
-columnHeader heading = unsafeCoerce (columnHeaderExact heading :: PUI Web {} {})
+columnHeader :: forall r. String -> PUI Web { | r } {}
+columnHeader = atAnyRow <<< columnHeaderExact
 
 dataTableCss :: String
 dataTableCss = """
@@ -1369,7 +1217,7 @@ layoutCell cellSpan = div >>> "style" := ("grid-column: span " <> show cellSpan 
 topAppBar :: String -> Ocular (PUI Web)
 topAppBar title content = wrap do
   liftEffect $ ensureStyle "md3-top-app-bar" topAppBarCss
-  _ <- unwrap (staticHTML ("<header class=\"md3-top-app-bar\"><span class=\"md3-top-app-bar__title\">" <> title <> "</span></header>"))
+  _ <- unwrap (staticHTML ("<header class=\"md3-top-app-bar\"><span class=\"md3-top-app-bar__title\">" <> escaped title <> "</span></header>"))
   unwrap (div >>> cl "md3-top-app-bar-content" $ content)
 
 topAppBarCss :: String
@@ -1389,7 +1237,7 @@ drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
   unwrap $
     suffixed ( div >>> "style" := "flex: 1; padding: 16px;" $ content )
       ( aside >>> cl "md3-drawer" $ wrap do
-          _ <- unwrap (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> config.subtitle <> "</h6></div>"))
+          _ <- unwrap (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
           unwrap (div $ nav) )
 
 drawerCss :: String
@@ -1412,7 +1260,7 @@ tooltip tipText content =
     liftEffect $ ensureStyle "md3-tooltip" tooltipCss
     tipId <- liftEffect uniqueId
     w <- unwrap ("aria-describedby" := tipId $ content)
-    _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> tipText <> "</div>"))
+    _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> escaped tipText <> "</div>"))
     pure w
 
 -- | `tooltip`'s channel-fed sibling, as `attrWith` is `attr`'s: the tip's
@@ -1426,7 +1274,7 @@ tooltipWith f content =
     liftEffect $ ensureStyle "md3-tooltip" tooltipCss
     tipId <- liftEffect uniqueId
     w <- unwrap ("aria-describedby" := tipId $ content)
-    tip <- unwrap (div >>> "id" := tipId >>> cl "md3-tooltip" >>> "role" := "tooltip" $ widenRecordInput (text f))
+    tip <- unwrap (div >>> "id" := tipId >>> cl "md3-tooltip" >>> "role" := "tooltip" $ text f)
     pure
       { toUser: \row -> w.toUser row *> tip.toUser row
       , fromUser: \prop -> w.fromUser prop *> tip.fromUser (\_ -> pure unit)
@@ -1460,12 +1308,12 @@ imageListItemExact config = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ staticHTML $
     "<li class=\"md3-image-list__item\">"
-      <> "<img class=\"md3-image-list__image\" src=\"" <> config.src <> "\" alt=\"" <> config.alt <> "\">"
-      <> "<span class=\"md3-image-list__label\">" <> config.alt <> "</span>"
+      <> "<img class=\"md3-image-list__image\" src=\"" <> escaped config.src <> "\" alt=\"" <> escaped config.alt <> "\">"
+      <> "<span class=\"md3-image-list__label\">" <> escaped config.alt <> "</span>"
       <> "</li>"
 
-imageListItem :: forall in_. { src :: String, alt :: String } -> PUI Web { | in_ } {}
-imageListItem = unsafeCoerce (imageListItemExact :: { src :: String, alt :: String } -> PUI Web {} {})
+imageListItem :: forall r. { src :: String, alt :: String } -> PUI Web { | r } {}
+imageListItem = atAnyRow <<< imageListItemExact
 
 -- | One picture in an `imageList`, **fed through the channel**: like any
 -- | display it takes its read function — the business row in, the picture's
@@ -1500,14 +1348,10 @@ foreign import setIntProp :: String -> Node -> Int -> Effect Unit
 foreign import getIntProp :: String -> Node -> Effect Int
 foreign import setBoolProp :: String -> Node -> Boolean -> Effect Unit
 foreign import getBoolProp :: String -> Node -> Effect Boolean
-foreign import listenNode :: Node -> String -> Effect Unit -> Effect Unit
-foreign import listenNodeDeferred :: Node -> String -> Effect Unit -> Effect Unit
 foreign import setClassIf :: Node -> String -> Boolean -> Effect Unit
 foreign import showDialog :: Node -> Effect Unit
 foreign import closeDialog :: Node -> Effect Unit
 foreign import openMenuAnchoredTo :: Node -> Node -> Effect Unit
-foreign import ensureStyle :: String -> String -> Effect Unit
-foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
 
 -- Entry point
 

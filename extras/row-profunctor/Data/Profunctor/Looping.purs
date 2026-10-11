@@ -15,9 +15,9 @@
 -- | loop through the four shapes is cut at its record junction, and an
 -- | event re-enters through its fold. The variant side needs none —
 -- | `Cochoice`'s `unleft` holds raw on `PUI` (the carrier is traced over
--- | `+`, pointed-traced over `×`), and a variant knot (`cycled`, 2026-10-05
--- | to 2026-10-06) was retired as a second way of writing the same loop
--- | whose model no line of the view could declare.
+-- | `+`, pointed-traced over `×`), and a variant knot was retired as a
+-- | second way of writing the same loop whose model no line of the view
+-- | could declare (CHANGELOG, 2026-10-06).
 -- |
 -- | Laws — the trace axioms restricted to the diagonal (`identity` on
 -- | `Category` carriers), stated up to the observational equivalence of
@@ -57,8 +57,7 @@
 -- | knot hides nothing and takes no seed of its own: it exposes the whole
 -- | row and is primed by its first feed (`bracketed` loops the editor state
 -- | the fed variant supplies; `with seed` feeds an app its model) — a
--- | looped state is a model field, never a hidden channel (the field-level
--- | `feedback @l` was retired 2026-10-05).
+-- | looped state is a model field, never a hidden channel.
 -- |
 -- | What the carrier-agnostic layer builds on it: `with seed (looped w)` (the
 -- | app shape) and `bracketed` (the variant-editor bracket),

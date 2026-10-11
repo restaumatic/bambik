@@ -6,7 +6,7 @@
 -- | this library's, because `profunctor-lenses` never built it. Its dual is
 -- | `Data.Lens.Lens`, and nothing here mentions a row: at row granularity
 -- | the knot is `Data.Profunctor.Looping.looped`, the whole row re-entering
--- | (the field-level row form `feedback` was retired 2026-10-05).
+-- | (there is no field-level row form).
 -- |
 -- | This module is a **complement of the ecosystem's own**, not bambik's: it
 -- | claims a `Data.Lens.*` name because it belongs in that family beside
@@ -34,7 +34,7 @@ import Data.Tuple (Tuple(..))
 -- | first emission). `feedback @l` was this optic at row granularity, with
 -- | the state channel started at a given value
 -- | (`Data.Profunctor.PointedCostrong`) instead of primed by an emission,
--- | until 2026-10-05: a looped state is a model field now.
+-- | until a looped state became a model field (CHANGELOG, 2026-10-05).
 type Colens s t a b = forall p. Costrong p => p a b -> p s t
 
 colens :: forall s t a b. (s -> b -> a) -> (b -> t) -> Colens s t a b

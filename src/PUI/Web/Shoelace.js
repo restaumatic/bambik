@@ -42,19 +42,6 @@ export function getNumberProp(name) {
   };
 }
 
-// listenNode :: Node -> String -> Effect Unit -> Effect Unit
-export function listenNode(node) {
-  return function (eventName) {
-    return function (callback) {
-      return function () {
-        node.addEventListener(eventName, function () {
-          callback();
-        });
-      };
-    };
-  };
-}
-
 // showAlert :: Node -> Effect Unit — (re)open an <sl-alert>; its own
 // `duration` closes it again, and reopening restarts that timer
 export function showAlert(node) {

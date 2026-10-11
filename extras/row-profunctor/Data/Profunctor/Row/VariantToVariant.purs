@@ -44,9 +44,9 @@
 -- | the merge is `m = variantToVariant w1 w2`, inputs owned
 -- | (`OwnedVariantInputs`: exactly one handler per case), outputs **one
 -- | row** every operand is typed at — an equality, as the `×→×` merge's
--- | inputs are (2026-10-07; until then the inclusive union, which no
--- | operand's row could be split back out of under holes, so two actions
--- | sharing an outcome had to name it on each line).
+-- | inputs are (an inclusive union could not be split back out into an
+-- | operand's row under holes, so two actions sharing an outcome had to
+-- | name it on each line; CHANGELOG, 2026-10-07).
 -- |
 -- |   1–2. **Repetition, Answer** — not owed. A variant input is
 -- |      dispatched to one owner and `≈` counts every occurrence: a
@@ -84,10 +84,10 @@
 -- | `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
 -- | subsumption step: it is already vocabulary-expressible as
 -- | `w # atCase @l # toCase @l' f`, two adopters applications already have.
--- | It was admitted for one day (2026-10-02, as `handler @l f`, the wire at
--- | the wrap) when counter's four-shape loop wanted a `+→+` stage that was
--- | a pure function of the occurrence, and deleted 2026-10-03 when that
--- | function moved onto the fold (`VariantToRecord.fold @l f`): a pure
+-- | It was admitted briefly (as `handler @l f`, the wire at the wrap)
+-- | when counter's four-shape loop wanted a `+→+` stage that was a pure
+-- | function of the occurrence, and deleted when that function moved onto
+-- | the fold (CHANGELOG, 2026-10-03): a pure
 -- | handling of an occurrence is applied where the occurrence is consumed,
 -- | so the `+→+` shape keeps no pure leaf, and its handlers remain the
 -- | `action`s. `RecordToRecord.subStrong`'s transpose, `subChoice`, once sat

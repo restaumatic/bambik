@@ -96,36 +96,6 @@ export function getBoolProp(name) {
   };
 }
 
-// listenNode :: Node -> String -> Effect Unit -> Effect Unit
-export function listenNode(node) {
-  return function (eventName) {
-    return function (callback) {
-      return function () {
-        node.addEventListener(eventName, function () {
-          callback();
-        });
-      };
-    };
-  };
-}
-
-// like listenNode, but the callback is deferred a microtask — for components
-// whose default action (a filter chip toggling `selected`) settles after the
-// click event finishes dispatching
-export function listenNodeDeferred(node) {
-  return function (eventName) {
-    return function (callback) {
-      return function () {
-        node.addEventListener(eventName, function () {
-          queueMicrotask(function () {
-            callback();
-          });
-        });
-      };
-    };
-  };
-}
-
 export function setClassIf(node) {
   return function (className) {
     return function (on) {
@@ -157,32 +127,3 @@ export function openMenuAnchoredTo(menu) {
   };
 }
 
-// inject a stylesheet once per id — the hand-rolled M3 chrome (segmented
-// button, snackbar, card, ...) carries its CSS here instead of a page link
-export function ensureStyle(id) {
-  return function (css) {
-    return function () {
-      if (!document.getElementById(id)) {
-        const style = document.createElement('style');
-        style.id = id;
-        style.textContent = css;
-        document.head.appendChild(style);
-      }
-    };
-  };
-}
-
-// add the class now, remove it after millis; re-feeding resets the timer
-export function autoDismiss(node) {
-  return function (className) {
-    return function (millis) {
-      return function () {
-        node.classList.add(className);
-        clearTimeout(node.__md3DismissTimer);
-        node.__md3DismissTimer = setTimeout(function () {
-          node.classList.remove(className);
-        }, millis);
-      };
-    };
-  };
-}

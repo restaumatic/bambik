@@ -110,7 +110,7 @@ must show the partial result) — whose product reaches the model as an
 occurrence. The library encodes the commit in three forms:
 
 - **explicit** — the replay-last-value protocol: content prepares, the
-  click delivers (`clicked`, `armed`, the form-then-buttons compass walk);
+  click delivers (`clicked`, the form-then-buttons compass walk);
 - **temporal** — quiescence: `Resolving` derives the branch from time
   (emissions loop while the component is still moving, the last resolves
   at quiescence — `coresolve (resolve g) = debounced g`);

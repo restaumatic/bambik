@@ -101,11 +101,11 @@ and emitters of a catalogue — are in the design-system module header
 | a clicked element naming itself | `clicked @"Cell claimed" @"key" (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
 | an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"finished" quizPhase` | stopwatch; quiz, inbox | writing.md *Conditional visibility* |
-| two buttons feeding one loop case | `button @"Next" {} # toCase @"next" goneOn` | checkout | `PUI` |
+| two buttons sharing one handler | `blankStatus @"Next" # fold stepTo`, `blankStatus @"Back" # fold stepTo` — two cases, one handler applied in each fold | checkout | `PUI` |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
 | some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
 | an event carrying something of its own | `listOf @"toggled" … # joined @"toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, stopwatch | writing.md *Stages* |
-| a button group fed the record it replays | `( RecordToVariant.do … ) # armed` | order-form, espresso-bar, signup-form | writing.md *Stages* |
+| a button group fed the record it replays | `RecordToVariant.do` of emitters as a stage, each button replaying the row the block is fed | order-form, espresso-bar, signup-form | writing.md *Stages* |
 | a menu of presets | `menu "Presets" ( RecordToVariant.do menuItem @"The usual" {} … )` | espresso-bar, inbox | the design-system module |
 
 ## Effects, time, statuses

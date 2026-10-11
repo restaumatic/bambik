@@ -34,7 +34,7 @@
 -- | the record, or a **status**, which releases nothing and so is typed at
 -- | every row like `silence`; the merge is `m = variantToRecord w1 w2`,
 -- | inputs owned (`OwnedVariantInputs`), the output row **shared** — the
--- | copairing `[f, g] : A + B -> R` of the coproduct (2026-10-04). Each
+-- | copairing `[f, g] : A + B -> R` of the coproduct. Each
 -- | operand releases the whole row, so the merge forwards releases as they
 -- | come and keeps no gate; the `×→×` merge, whose operands own fields, is
 -- | the gated one.
@@ -69,10 +69,10 @@
 -- |
 -- | On `PUI`: dispatch in, passage out — each operand's release exits as
 -- | it occurs, nothing retained, no gate, no step (`Applicative m`
--- | suffices, as at `+→+`). Until 2026-10-04 the outputs were owned and
--- | the merge gated like `×→×`; with a loop's folds one per case, each
--- | releasing the whole next model, the shared row is the honest type and
--- | the copairing the honest mechanism. Releasing on every occurrence is
+-- | suffices, as at `+→+`). The outputs were once owned and the merge
+-- | gated like `×→×` (CHANGELOG, 2026-10-04); with a loop's folds one per
+-- | case, each releasing the whole next model, the shared row is the
+-- | honest type and the copairing the honest mechanism. Releasing on every occurrence is
 -- | the fold's choice (no row needs `Eq`), not a law. A merge silent on an
 -- | occurrence has an operand that chose not to release — a status. Probes carry law and shape
 -- | in test/Main.purs; 3, 4 and 6 run over every script to a bound in

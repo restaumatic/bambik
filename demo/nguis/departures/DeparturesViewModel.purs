@@ -3,7 +3,7 @@ module DeparturesViewModel (arrival, boardOpening, flightLine, tick, tickPeriod,
 import Prelude ((+), (<>), div, mod)
 
 import Data.Array (index, length)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (fromMaybe)
 
 boardOpening :: { beat :: Int }
 boardOpening = { beat: 0 }

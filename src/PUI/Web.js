@@ -99,6 +99,56 @@ export function separatorRule(start) {
   };
 }
 
+// listenNodeDeferred :: Node -> String -> Effect Unit -> Effect Unit — the
+// handler runs a microtask after the event, for components whose default
+// action (a filter chip toggling `selected`) settles after the event
+// finishes dispatching
+export function listenNodeDeferred(node) {
+  return function (eventName) {
+    return function (callback) {
+      return function () {
+        node.addEventListener(eventName, function () {
+          queueMicrotask(function () {
+            callback();
+          });
+        });
+      };
+    };
+  };
+}
+
+// ensureStyle :: String -> String -> Effect Unit — inject a stylesheet once
+// under its id, for the chrome a vocabulary hand-rolls
+export function ensureStyle(id) {
+  return function (css) {
+    return function () {
+      if (!document.getElementById(id)) {
+        const style = document.createElement("style");
+        style.id = id;
+        style.textContent = css;
+        document.head.appendChild(style);
+      }
+    };
+  };
+}
+
+// autoDismiss :: Node -> String -> Int -> Effect Unit — show a transient
+// status by class and take the class off after the period, a newer show
+// restarting the timer
+export function autoDismiss(node) {
+  return function (className) {
+    return function (millis) {
+      return function () {
+        node.classList.add(className);
+        clearTimeout(node.__bambikDismissTimer);
+        node.__bambikDismissTimer = setTimeout(function () {
+          node.classList.remove(className);
+        }, millis);
+      };
+    };
+  };
+}
+
 // createDocumentFragment :: IOSync Node
 export function createDocumentFragment() {
   return document.createDocumentFragment();

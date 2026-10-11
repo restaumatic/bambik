@@ -85,7 +85,7 @@
 -- | -----------  ------------------------------  ---------------------------  --------------------
 -- | p {|a} {|b}  asField, muted, settled         subStrong, focusField       looped (Looping)
 -- | p [|a] [|b]  atCase, toCase, forCase         subChoice, focusCase         —
--- | p {|a} [|b]  armed, replaying, joined        subResolving                 —
+-- | p {|a} [|b]  replaying, joined               subResolving                 —
 -- | p [|a] {|b}  fold                            subRetaining                 —
 -- | ```
 -- |
@@ -150,7 +150,7 @@
 -- | business functions are typed at that row (guardrails L18); a shared variant output is **inclusive**
 -- | (`InclusiveRows`) at `×→+`, where each emitter's row is fixed by its
 -- | label, and **one row** at `+→+`, where a handler's row comes from a
--- | function (an equality, no class — 2026-10-07); ownership is exclusive
+-- | function (an equality, no class); ownership is exclusive
 -- | (`ExclusiveRows`) — so a merge signature is two words, one per side.
 -- |
 -- | `Data.Profunctor.Acting` extends the family one step past rows: rows are
@@ -170,9 +170,10 @@
 -- |     producer. `MergeableRecords` adds the **runtime-exactness** evidence the
 -- |     gated merge uses to trim operand emissions to their declared
 -- |     output rows (`exactRow`).
--- |   * **reshapings** — `dimap`-only structural adapters that grow or
--- |     shrink one row-typed side, with nothing flowing through the added
--- |     or dropped labels.
+-- |   * **reshapings** — `dimap`-only structural adapters: `atAnyRow`
+-- |     places a component that reads nothing at any record input, and
+-- |     `widenVariantOutput` lets a variant output leave into a wider row,
+-- |     nothing flowing through the added labels.
 -- |
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.
@@ -268,7 +269,7 @@
 -- | every owned side has spoken, once per step; before that withhold, and
 -- | **drop** rather than delay (the primed equivalence, doc §4); at `+→×`,
 -- | where each operand releases the whole shared row, the copairing —
--- | forward each release as it occurs (2026-10-04; gated before); at `+`
+-- | forward each release as it occurs; at `+`
 -- | passage — each emission exits as it occurs, nothing retained. The
 -- | gate is the one canonical way to pair two streams into a stream of
 -- | pairs, so it appears exactly where a row is assembled from several
@@ -282,8 +283,8 @@
 -- | boundary interchange holds on the nose because a feed is one step
 -- | (doc §4). Since operands share one input row, interchange is stated
 -- | with the projections explicit: `merge (f >>> h) (g >>> k)` against
--- | `merge f g >>> merge (π₁ h) (π₂ k)`, `π` the widening
--- | (`widenRecordInput`) of each second stage to the middle row. Starvation reads off the laws: a gated merge silent after
+-- | `merge f g >>> merge (π₁ h) (π₂ k)`, `π` the projection
+-- | (`lcmap`) of the middle row onto each second stage's input. Starvation reads off the laws: a gated merge silent after
 -- | every owned side has been fed has an operand breaking 2; one silent
 -- | before that has an unprimed owned field (`with`, `seeded`).
 -- |
@@ -312,6 +313,8 @@ module Data.Profunctor.Row
   , class MergeableRecords
   , class FieldNames
   , class SharedRecordInputs
+  , fedFirst
+  , fedSecond
   , class SharedVariantOutputs
   , class OwnedVariantInputs
   , class OwnedRecordOutputs
@@ -325,12 +328,12 @@ module Data.Profunctor.Row
   , exactRow
   , fieldNames
   , rowLabels
-  , widenRecordInput
+  , atAnyRow
   , widenVariantOutput
   )
   where
 
-import Prelude (identity, (<<<), (<>))
+import Prelude (const, identity, (<<<), (<>))
 
 import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -348,9 +351,7 @@ import Prim.TypeError (class Fail, Above, Beside, Text)
 import Record (get) as Record
 import Record.Builder (Builder)
 import Record.Builder (buildFromScratch, insert) as Builder
-import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 
 -- =====================================================================
 -- Row-constraint vocabulary
@@ -521,7 +522,7 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- through, so it only means "do not manufacture a second").
 -- `variantToRecord` is the case that separates them: dispatched input, so
 -- no broadcast to batch, and a record output each operand releases whole,
--- so nothing to assemble — it neither gates nor retains (2026-10-04).
+-- so nothing to assemble — it neither gates nor retains.
 
 -- | A merge's **record-input side**: every operand is fed the merge's whole
 -- | row — the operands' input rows *are* the merge's (an equality, no
@@ -530,11 +531,21 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- | (`countLine :: { count :: Int } -> String`, the view's hint verbatim)
 -- | and checked by unification, which a bare hole never leaves stuck
 -- | (guardrails L18); the
--- | equality carries the context's row down into the operands.
-class SharedRecordInputs :: Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Constraint
-class SharedRecordInputs i1 i2 i i12 i1x i2x
+-- | equality carries the context's row down into the operands. The class
+-- | is that three-way equality itself — `Type.Equality.TypeEquals` at
+-- | three rows, with the same functional dependencies and the one
+-- | reflexive instance — and its two methods are the equality's witnesses,
+-- | what each operand is fed of the merge's row, so a merge instance feeds
+-- | its operands through them: a coercion the type checker has
+-- | established, never an unchecked one.
+class SharedRecordInputs :: Row Type -> Row Type -> Row Type -> Constraint
+class SharedRecordInputs i1 i2 i | i1 -> i2 i, i2 -> i1 i, i -> i1 i2 where
+  fedFirst :: Record i -> Record i1
+  fedSecond :: Record i -> Record i2
 
-instance (TypeEquals (Record i1) (Record i), TypeEquals (Record i2) (Record i)) => SharedRecordInputs i1 i2 i i12 i1x i2x
+instance SharedRecordInputs i i i where
+  fedFirst = identity
+  fedSecond = identity
 
 -- | A merge's **variant-output side**: anyone may emit a case, so operand
 -- | rows may overlap. The merge action is a label-blind `expand` — no
@@ -680,10 +691,13 @@ instance
 -- Whole-row reshapings
 -- =====================================================================
 
-widenRecordInput :: forall p r1 r a.
-  Profunctor p =>
-  p { | r1 } a -> p { | r } a
-widenRecordInput = lcmap unsafeCoerce
+-- | Place a component that reads nothing at any record input: the
+-- | `{}`-input chrome — a static, a rule, an element with nothing in it —
+-- | at the row of whatever it sits beside. `lcmap (const {})`: the terminal
+-- | record is the one row every row maps onto, so the placement is total
+-- | and needs no evidence.
+atAnyRow :: forall p r a. Profunctor p => p {} a -> p { | r } a
+atAnyRow = lcmap (const {})
 
 widenVariantOutput :: forall p a v1 v2 v.
   Profunctor p =>

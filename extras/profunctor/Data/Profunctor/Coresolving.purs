@@ -2,7 +2,7 @@
 -- | of the ecosystem's `Data.Profunctor.Costrong`, stated **positionally**
 -- | (`Tuple`/`Either`) with no row in sight, and living beside its strength
 -- | exactly as `Costrong` lives beside `Strong`. Its one library use is
--- | `PUI.debounced` (the row form `folding` was retired 2026-10-05); the
+-- | `PUI.debounced` (it has no row form); the
 -- | optic it generates is `Data.Lens.Coshutter`.
 -- |
 -- | Like its strength, a **complement of the ecosystem's own** — hence the

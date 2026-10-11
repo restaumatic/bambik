@@ -360,7 +360,7 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
   `blankStatus @"New game" # fold (const openingPosition)` the reset.
 - **order-form** — all four shapes on one screen: a `looped` form in
   labelled groups, a variant editor under `bracketed @"Mode"`, the debounced
-  summary, `armed` buttons, and each action followed by its statuses.
+  summary, a `RecordToVariant.do` of buttons, and each action followed by its statuses.
 
 When the word for something is missing, [vocabulary.md](vocabulary.md)
 goes from the need to a word, a demo using it, and where to read more.

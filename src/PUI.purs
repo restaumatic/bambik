@@ -99,14 +99,13 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- `focusField` is deliberately absent: the leaf lift is design-system plumbing —
 -- every vocabulary editor is `focusField @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
--- focus itself (the `widenRecordInput` precedent, one adopter later).
+-- focus itself. `atAnyRow` is absent for the same reason: a stage is typed
+-- at one row (the gated displays, `updated`, `applied`, `every`, `settled`,
+-- `edited`, `acted`), so a UI component's own row is always stated by a
+-- business function, never placed at another row at the call site; the
+-- placement is the vocabularies' plumbing for their statics.
 import Data.Profunctor.Row.RecordToRecord (asField, blank, bracketed, subStrong, muted, settled, with) as Adopters
-import Data.Profunctor.Row.RecordToVariant (armed, joined, replaying, silence) as Adopters
--- `widenRecordInput` is deliberately NOT re-exported: a stage is typed at
--- one row (the gated displays, `updated`, `applied`, `every`, `settled`,
--- `armed`, `edited`, `acted`), so a UI component's own row is always stated
--- by a business function, never coerced at the call site. It stays exported
--- from `Data.Profunctor.Row` as the merge instances' plumbing.
+import Data.Profunctor.Row.RecordToVariant (joined, replaying, silence) as Adopters
 import Data.Profunctor.Row.VariantToVariant (atCase, subChoice, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (blankStatus) as Adopters
 import Data.Profunctor.Acting (acted, optioned) as Adopters
@@ -117,7 +116,7 @@ import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant, silence)
-import Data.Profunctor.Row (class RowLabels, exactRow, rowLabels, widenRecordInput, widenVariantOutput)
+import Data.Profunctor.Row (class RowLabels, atAnyRow, exactRow, fedFirst, fedSecond, rowLabels, widenVariantOutput)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
@@ -143,7 +142,6 @@ import Effect.Unsafe (unsafePerformEffect)
 import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
 import Record (get, set) as Record
 import Record.Unsafe (unsafeGet, unsafeSet)
-import Record.Unsafe.Union (unsafeUnion)
 
 --------------------------------------------------------------------------------
 -- The carrier
@@ -309,9 +307,9 @@ instance MonadEffect m => Costrong (PUI m) where
 
 -- | The **pointed** `×`-trace: `unfirst` with its state `Ref` starting at
 -- | `c0`, so the first input joins the starting state instead of waiting on
--- | an emission. The pointed trace at the value level; its row form
--- | (`feedback`, until 2026-10-05) gave way to looping the state through
--- | the model, so no library word stands on it now.
+-- | an emission. The pointed trace at the value level; a row form gave
+-- | way to looping the state through the model, so no library word stands
+-- | on it now.
 instance MonadEffect m => PointedCostrong (PUI m) where
   -- a hole start (guardrails L18) is absent: the state channel is unprimed
   -- and every input is withheld, as under the gated `unfirst` — so a chain
@@ -528,12 +526,12 @@ instance MonadEffect m => Looping (PUI m) where
 -- The four row merges, one instance per shape, in the order of the grid in
 -- Data.Profunctor.Row ("The laws"): ×→×, ×→+, +→+, +→×. Only the first
 -- gates — the machinery that follows the block, shared with the container
--- action; the other three are routing (+→× the copairing since 2026-10-04).
+-- action; the other three are routing (+→× the copairing).
 
 instance MonadEffect m => RecordToRecord (PUI m) where
   recordToRecord p1 p2 = wrap do
-    p1' <- unwrap (widenRecordInput p1)
-    p2' <- unwrap (widenRecordInput p2)
+    p1' <- unwrap (lcmap fedFirst p1)
+    p2' <- unwrap (lcmap fedSecond p2)
     gate <- liftEffect $ newRecordGate "×→×" labels1 labels2
     pure
       -- broadcast in, gate out, one feed one step — the shape's projection
@@ -559,8 +557,8 @@ instance Applicative m => RecordToVariant (PUI m) where
   -- the one-thing-per-feed obligation falls on the operands (the answer
   -- law at ×→+, arming); hence `Applicative m`: no state here.
   recordToVariant p1 p2 = wrap ado
-    p1' <- unwrap (widenVariantOutput (widenRecordInput p1))
-    p2' <- unwrap (widenVariantOutput (widenRecordInput p2))
+    p1' <- unwrap (widenVariantOutput (lcmap fedFirst p1))
+    p2' <- unwrap (widenVariantOutput (lcmap fedSecond p2))
     in
       { toUser: \new -> do
           p1'.toUser new
@@ -589,8 +587,7 @@ instance Applicative m => VariantToVariant (PUI m) where
 instance MonadEffect m => VariantToRecord (PUI m) where
   -- the copairing: an occurrence is dispatched to the one operand owning
   -- its case, and whatever either operand releases is the whole row, so it
-  -- is forwarded as it comes — no gate, nothing retained (2026-10-04; until
-  -- then the operands owned output fields and shared the ×→× gate)
+  -- is forwarded as it comes — no gate, nothing retained
   variantToRecord p1 p2 = wrap do
     p1' <- unwrap p1
     p2' <- unwrap p2
@@ -979,7 +976,7 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | unification, so a hole in its place
 -- | leaves nothing to solve and a real one is checked by unification.
 -- |
--- | **Derived** (2026-09-27), not a carrier primitive: the wire and the
+-- | **Derived**, not a carrier primitive: the wire and the
 -- | fold, merged by the `× → +` merge and collapsed back to the row —
 -- |
 -- | ```
@@ -995,8 +992,8 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | merge with the wire — two owners of one row are a type error — but the
 -- | `× → +` merge has no owners on its output side, so the wire's answer
 -- | and the fold's result leave as two cases of one variant. (The same
--- | derivation without `looped`, rejected 2026-09-15, folded both events
--- | into the same base.) The nesting under `s` gives the merge's row
+-- | derivation without `looped` folded both events into the same base.)
+-- | The nesting under `s` gives the merge's row
 -- | constraints closed rows to solve.
 updated
   :: forall m r e
@@ -1006,7 +1003,7 @@ updated
   -> PUI m { | r } { | r }
 updated handler w = dimap (\s -> { s }) (match { fed: identity, folded: identity }) $ recordToVariant
   (dimap _.s (inj (Proxy @"fed")) identity :: PUI m { s :: { | r } } [ fed :: { | r } ])
-  (dimap _.s (inj (Proxy @"folded")) (looped (dimap (\s -> Tuple (s :: { | r }) s) (\(Tuple e s) -> unsafeUnion (handler e (unsafeCoerce s)) s :: { | r }) (first w))) :: PUI m { s :: { | r } } [ folded :: { | r } ])
+  (dimap _.s (inj (Proxy @"folded")) (looped (dimap (\s -> Tuple (s :: { | r }) s) (\(Tuple e s) -> handler e s) (first w))) :: PUI m { s :: { | r } } [ folded :: { | r } ])
 
 -- | The **occurrence stage** — `updated` for an emitter that carries no
 -- | payload of its own. A `× → +` leaf fed the row it acts on (a button,
@@ -1063,7 +1060,7 @@ applied f = updated (const f)
 -- | and the drop is lossless by type: like the gated displays, `observed` accepts
 -- | only a status whose output is `{}`.
 -- |
--- | **Derived** (2026-09-27): the wire and the status, merged by the
+-- | **Derived**: the wire and the status, merged by the
 -- | `× → +` merge over the event nested as a record field — the status
 -- | behind `left` so it sees only its contracted cases, `>>> silence` so its
 -- | emissions leave as nothing.
@@ -1150,9 +1147,6 @@ ticks interval status = wrap do
 
 -- Optics
 
--- Optimized implementation. Not optimized would be an `lcmap` writing the
--- constant over the field per feed.
-
 type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 
 -- | The transpose of an optic. `Optic p s t a b = p a b -> p s t`, and the
@@ -1190,7 +1184,7 @@ type Ocular p = forall a b. Optic p a b a b
 -- | sits in any `RecordToRecord.do` beside `staticText` and `staticHTML`,
 -- | the other two statics. `static (span >>> cl "mdc-button__ripple")`.
 static :: forall p r. Category p => Profunctor p => Ocular p -> p { | r } {}
-static o = widenRecordInput (o identity :: p {} {})
+static o = atAnyRow (o identity :: p {} {})
 
 -- | A display **before** what it introduces — a heading before its section,
 -- | a caption before its field, a readout before the control it reads —
@@ -1311,9 +1305,10 @@ running run w = action'
 -- | **Derived**: the wire and the status under the `×→×` merge, both fed
 -- | the outcome (as the row and as the case) in one two-field record — the
 -- | status contributes no field and is inert to the gate, the wire answers
--- | every feed with the row, released once per feed. Experiment of 2026-10-07: until then
--- | `fold @l f` was carrier-free in `Data.Profunctor.Row.VariantToRecord`
--- | and a status stood beside the folds as a sibling operand.
+-- | every feed with the row, released once per feed. (A carrier-free
+-- | `fold @l f` once lived in `Data.Profunctor.Row.VariantToRecord`, the
+-- | statuses standing beside the folds as sibling operands; CHANGELOG,
+-- | 2026-10-07.)
 fold
   :: forall m l a v vs r
    . MonadEffect m
@@ -1503,7 +1498,7 @@ foreachAt = foreach @l @r1 (Record.get (Proxy @t))
 -- | types must not demand an `Ord` the view cannot close; identity
 -- | semantics remain equality, and keys must be unique.
 -- |
--- | **Derived** (2026-09-27): `updated` folding a `foreach` whose elements
+-- | **Derived**: `updated` folding a `foreach` whose elements
 -- | tag their emissions with the key `first` retains from their fed row —
 -- | the keyed reconciliation is `foreach`'s, the input-primed fold
 -- | `updated`'s.

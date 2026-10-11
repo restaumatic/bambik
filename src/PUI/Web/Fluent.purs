@@ -42,25 +42,24 @@ import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
-import Data.Array ((!!), findIndex)
+import Data.Array (findIndex)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Foldable (for_, traverse_)
 import Data.Int (fromString)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (forCase)
 import Data.TraversableWithIndex (forWithIndex)
-import Data.Variant (case_, match, on) as Variant
+import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clickedRow, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, separating, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, eventText, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, separating, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -99,7 +98,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --       `+→×` statuses — `messageBar` (`<fluent-message-bar
 --         intent="success">` shown on feed, auto-dismissing) — each taking
 --         its business case and copy function (`messageBar @"booked" bookedLine`).
---   * **oculars** — shape-preserving decorators: `card { caption }`
+--   * **oculars** — shape-preserving decorators: `card`
 --     (hand-rolled over the `--colorNeutral*`/`--shadow*` tokens — the
 --     Fluent card is a React-only catalog entry) and the type-ramp
 --     typography over `<fluent-text>`: `title3`, `body1`, `caption1`.
@@ -121,11 +120,6 @@ button :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => ConvertOp
 button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in eventLeaf @l $
   el "fluent-button" >>> "appearance" := "primary" $ staticText config.label
 
--- the click-emitter protocol over any `{}`-output element chrome: replay the
--- last value fed on click (a click before any value arrived is withheld)
-eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
-eventLeaf chrome = clickedRow @l (widenRecordInput chrome)
-
 -- a `<fluent-field>` associating a label with the editor its builder
 -- appends (Fluent's label protocol: both are slotted children of the field)
 fieldWith :: forall i o. String -> String -> Web { toUser :: i -> Effect Unit, fromUser :: (o -> Effect Unit) -> Effect Unit } -> PUI Web i o
@@ -135,28 +129,20 @@ fieldWith position lbl editor = el "fluent-field" >>> "label-position" := positi
 
 -- | The **text field**: a labelled single-line input. Shows the string it
 -- | is given and reports each edit; typing is never interrupted by values
--- | arriving from elsewhere. Attach it to a field of the model with
--- | `# asField @l`.
+-- | arriving from elsewhere. A whole-row citizen: fed the wide row, it
+-- | edits field `l` and carries the rest.
 textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
-  -- focus-guarded like `Web.input`: model updates never clobber the field
-  -- being typed in (Fluent keeps the real `<input>` in the light DOM, so
-  -- the guard checks containment), but still echo so the channel stays live
+  -- Fluent keeps the real `<input>` in the light DOM, so the focus guard
+  -- checks containment
   element "fluent-text-input" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \newa -> do
-        focused <- containsFocus node
-        unless focused $ setValue node newa
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop newa
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        void $ addEventListener "input" node $ const do
-          value <- getValue node
-          prop value
+  liftEffect $ editorWiring
+    { show: setValue node
+    , held: containsFocus node
+    , reports: listenNode node "input"
+    , read: \_ -> getValue node
     }
 
 -- | The **switch**: a setting that takes effect the moment it is flipped.
@@ -166,19 +152,11 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
   element "fluent-switch" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  liftEffect $ listenNode node "change" do
-    b <- getChecked node
-    mProp <- Ref.read mPropRef
-    for_ mProp \prop -> prop b
-  pure
-    { toUser: \b -> do
-        setChecked node b
-        -- leaf echo: announce what was received, so the lifted stage releases
-        -- the row and any enclosing merge gate opens
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop b
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+  liftEffect $ editorWiring
+    { show: setChecked node
+    , held: pure false
+    , reports: listenNode node "change"
+    , read: \_ -> getChecked node
     }
 
 -- | The **slider**: a quantity chosen by feel, where the range matters more
@@ -205,33 +183,16 @@ slider provided = let config = convertOptionsWithDefaults OptCaption { label: re
   element "fluent-slider" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  qRef <- liftEffect $ Ref.new Nothing
-  -- the value setter fires change too; guard the loop
-  busyRef <- liftEffect $ Ref.new false
-  liftEffect $ listenNode node "change" do
-    busy <- Ref.read busyRef
-    unless busy do
-      v <- getNumberProp "valueAsNumber" node
-      mq <- Ref.read qRef
-      for_ mq \q -> do
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop (q { current = v })
-  pure
-    { toUser: \q -> do
-        Ref.write (Just q) qRef
-        Ref.write true busyRef
+  liftEffect $ editorWiring
+    { show: \q -> do
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
         Variant.match { discrete: \s -> setAttribute node "step" (show s), continuous: \_ -> removeAttribute node "step" } q.step
         setNumberProp "valueAsNumber" node q.current
-        Ref.write false busyRef
         readout.toUser { readout: toString q.current }
-        -- leaf echo: announce what was received, so the lifted stage releases
-        -- the row and any enclosing merge gate opens
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop q
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+    , held: pure false
+    , reports: listenNode node "change"
+    , read: \q -> getNumberProp "valueAsNumber" node <#> \v -> q { current = v }
     }
 
 -- | The **dropdown**: one choice out of a list too long to lay out in the
@@ -262,27 +223,14 @@ dropdownWith clearable lift provided options = let config = convertOptionsWithDe
   element "fluent-dropdown" (void $ unwrap (staticHTML optionsMarkup))
   attribute "slot" "input"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  -- programmatic selection could fire change too; guard the loop
-  busyRef <- liftEffect $ Ref.new false
-  liftEffect $ listenNode node "change" do
-    busy <- Ref.read busyRef
-    unless busy do
-      picked <- getStringProp "value" node
-      mProp <- Ref.read mPropRef
-      for_ mProp \prop -> prop (_.value <$> (fromString picked >>= (options !! _)))
-  pure
-    { toUser: \ma -> do
-        Ref.write true busyRef
-        case ma of
-          Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> selectDropdownOption node (show idx)
-          Nothing -> selectDropdownOption node ""
-        Ref.write false busyRef
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+  liftEffect $ selectorWiring options
+    { show: selectDropdownOption node <<< maybe "" show
+    , reports: listenNode node "change"
+    , read: fromString <$> getStringProp "value" node
     }
   where
   optionsMarkup = "<fluent-listbox>" <> (if clearable then "<fluent-option value=\"\"></fluent-option>" else "") <> foldMapWithIndex optionMarkup options <> "</fluent-listbox>"
-  optionMarkup idx o = "<fluent-option value=\"" <> show idx <> "\">" <> o.label <> "</fluent-option>"
+  optionMarkup idx o = "<fluent-option value=\"" <> show idx <> "\">" <> escaped o.label <> "</fluent-option>"
 
 -- | The **radio group**: one choice among a handful, every option visible
 -- | and comparable at a glance. Beyond about five options use `dropdown`.
@@ -348,10 +296,9 @@ radioGroupWith clearable lift provided options = let config = convertOptionsWith
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
--- | rating out of five — `progressBar @"Progress" progressFraction`: the
+-- | rating out of five — `progressBar progressFraction`: the
 -- | value is a **read function** like every display's, since a fraction is
--- | derived (a ratio of source fields), not state. The label is the
--- | accessible name only, so it is copy, never a field reference.
+-- | derived (a ratio of source fields), not state.
 progressBar
   :: forall reads
    . ({ | reads } -> Number) -> PUI Web { | reads } {}
@@ -360,15 +307,7 @@ progressBar f = wrap do
   attribute "max" "1"
   attribute "style" "min-width: 200px;"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \r -> do
-        setNumberProp "value" node (f r)
-        -- display echo (like `text`): the feed's answer, inert to gates
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop {}
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
-    }
+  liftEffect $ displayWiring \r -> setNumberProp "value" node (f r)
 
 -- | A **read-only star rating**: someone else's score, shown but not
 -- | editable — Fluent's catalog has the display and not the editor, so
@@ -380,15 +319,7 @@ ratingDisplay
 ratingDisplay f = wrap do
   element "fluent-rating-display" (pure unit)
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \r -> do
-        setNumberProp "value" node (f r)
-        -- display echo (like `text`): the feed's answer, inert to gates
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop {}
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
-    }
+  liftEffect $ displayWiring \r -> setNumberProp "value" node (f r)
 
 -- | The **message bar**: a brief success message at the bottom of the
 -- | screen that dismisses itself after a few seconds, for something that
@@ -469,10 +400,6 @@ dividerExact = staticHTML "<fluent-divider style=\"width: 100%;\"></fluent-divid
 divider :: Ocular (PUI Web)
 divider = separating dividerExact
 
--- the canonical status payload, read into the text leaf as its projection
-eventText :: [ event :: String ] -> String
-eventText = Variant.on (Proxy @"event") identity Variant.case_
-
 -- Private
 
 foreign import setNumberProp :: String -> Node -> Number -> Effect Unit
@@ -480,10 +407,7 @@ foreign import getNumberProp :: String -> Node -> Effect Number
 foreign import getStringProp :: String -> Node -> Effect String
 foreign import selectDropdownOption :: Node -> String -> Effect Unit
 foreign import selectGroupValue :: Node -> String -> Effect Unit
-foreign import listenNode :: Node -> String -> Effect Unit -> Effect Unit
 foreign import containsFocus :: Node -> Effect Boolean
-foreign import ensureStyle :: String -> String -> Effect Unit
-foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
 
 -- Entry point
 
@@ -504,18 +428,15 @@ foreign import adoptTheme :: Effect Unit
 -- | The **indeterminate progress bar**: a status fed a run's `started` and
 -- | `ended`, shown between them — what `PUI.action`'s slot dispatches
 -- | (`indeterminateLinearProgress # action submit`). No label: it names no
--- | field and no case (2026-10-07, with the Material twins).
+-- | field and no case.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateLinearProgress = wrap do
   element "fluent-progress-bar" (pure unit)
   attribute "style" hiddenStyle
   node <- gets _.sibling
-  pure
-    { toUser: Variant.match
-        { started: \_ -> setAttribute node "style" visibleStyle
-        , ended: \_ -> setAttribute node "style" hiddenStyle }
-    , fromUser: \_ -> pure unit
-    }
+  pure $ statusWiring $ Variant.match
+    { started: \_ -> setAttribute node "style" visibleStyle
+    , ended: \_ -> setAttribute node "style" hiddenStyle }
   where
   visibleStyle = "width: 100%; min-width: 200px;"
   hiddenStyle = "width: 100%; min-width: 200px; visibility: hidden;"

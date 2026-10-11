@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (armed, looped, prefixed, with)
+import PUI (looped, prefixed, with)
 import PUI.Web ((<+>), choice, pane, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, checkbox, debouncedTextField, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -40,5 +40,5 @@ signupFormMDC3 =
         @( invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }
          , ready :: { "Username" :: String }
          ) validation
-      ( titleSmall $ text readyLine ) # pane @"ready" validation ) $ button @"Sign up" { icon: "person_add" } # armed
+      ( titleSmall $ text readyLine ) # pane @"ready" validation ) $ button @"Sign up" { icon: "person_add" }
     snackbar @"Sign up" signupLine

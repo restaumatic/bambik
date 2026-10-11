@@ -175,7 +175,7 @@ over retained state):
 | shape | on input | modality | what stays obligatory | unit |
 | --- | --- | --- | --- | --- |
 | `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | the `{}` wire at the merge's row (`blank` = `lcmap (const {}) identity`); `identity` only at `{}` |
-| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `replaying`, `first` around a payload-less source, so the replay is `Strong`'s retention and the protocol its primed law; `armed`, `# with payload`) or at quiescence (`resolve`) (law 3) | `silence` |
+| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `replaying`, `first` around a payload-less source, so the replay is `Strong`'s retention and the protocol its primed law; `# with payload`) or at quiescence (`resolve`) (law 3) | `silence` |
 | `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is the well-foundedness of any `unleft` re-entry | `identity`, the forward wire |
 | `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is the whole row, one operand's own — a fold's next model — so a change can never stay private; a status releases nothing and is typed at every row | `lcmap case_ identity`, the never-fed wire |
 
@@ -306,7 +306,7 @@ guarantee*.
   `(f ⊗ g) >>> (π₁h ⊗ π₂k) = (f >>> h) ⊗ (g >>> k)` — the operands of a
   record merge share one input row (`SharedRecordInputs` is an equality,
   guardrails L4/L18), so the second merge's stages are fed the whole middle
-  row and `π` is the widening (`widenRecordInput`) that states it:
+  row and `π` is the projection (an `lcmap`) of the middle row onto each stage's input:
   - at the **inner surfaces** it fails on the nose — the merged-first side
     synchronizes at the middle gate, so `h` sees nothing until *every*
     operand of the first merge has spoken — and holds one-directionally as

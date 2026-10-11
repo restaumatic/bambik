@@ -112,19 +112,6 @@ export function selectGroupValue(node) {
   };
 }
 
-// listenNode :: Node -> String -> Effect Unit -> Effect Unit
-export function listenNode(node) {
-  return function (eventName) {
-    return function (callback) {
-      return function () {
-        node.addEventListener(eventName, function () {
-          callback();
-        });
-      };
-    };
-  };
-}
-
 // containsFocus :: Node -> Effect Boolean — Fluent's text input keeps the
 // real <input> in the light DOM (for ARIA), so the focused element is a
 // child of the host, not the host itself
@@ -134,32 +121,3 @@ export function containsFocus(node) {
   };
 }
 
-// inject a stylesheet once per id — the hand-rolled chrome (card, toast
-// placement) carries its CSS here instead of a page link
-export function ensureStyle(id) {
-  return function (css) {
-    return function () {
-      if (!document.getElementById(id)) {
-        const style = document.createElement('style');
-        style.id = id;
-        style.textContent = css;
-        document.head.appendChild(style);
-      }
-    };
-  };
-}
-
-// add the class now, remove it after millis; re-feeding resets the timer
-export function autoDismiss(node) {
-  return function (className) {
-    return function (millis) {
-      return function () {
-        node.classList.add(className);
-        clearTimeout(node.__fluentDismissTimer);
-        node.__fluentDismissTimer = setTimeout(function () {
-          node.classList.remove(className);
-        }, millis);
-      };
-    };
-  };
-}

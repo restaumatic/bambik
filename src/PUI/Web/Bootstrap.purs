@@ -39,26 +39,22 @@ import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
-import Data.Array ((!!), findIndex)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.Foldable (for_)
 import Data.Int (fromString) as Int
 import Data.Int (round)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe, fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (forCase)
-import Data.Variant (case_, match, on) as Variant
+import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Ref as Ref
-import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clickedRow, el, element, getChecked, getValue, isFocused, setAttribute, setChecked, setValue, staticText, text, textOf, uniqueId, (:=))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, OptCaption(..), Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, eventLeaf, eventText, getChecked, getValue, isFocused, listenNode, selectorWiring, setAttribute, setChecked, setValue, staticText, statusWiring, text, textOf, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -96,8 +92,8 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --       `+→×` statuses — `toast` (`.toast` fixed at the bottom, shown
 --         on feed and dismissed by the hand-wired timer) — each taking
 --         its business case and copy function (`toast @"booked" bookedLine`).
---   * **oculars** — shape-preserving decorators: `card { caption }`
---     (`.card` with a `.card-title`), `listGroup`/`listGroupItem`
+--   * **oculars** — shape-preserving decorators: `card`
+--     (`.card`, a plain surface), `listGroup`/`listGroupItem`
 --     (`.list-group`), `badge variant` (`.badge.text-bg-*`).
 --     Typography is deliberately absent: Bootstrap styles plain HTML, so
 --     the `PUI.Web.HTML` element oculars are the typography.
@@ -117,36 +113,22 @@ button :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => ConvertOp
 button provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String } in eventLeaf @l $
   (el "button" >>> "type" := "button" $ staticText config.label) # cl "btn" # cl "btn-primary"
 
--- the click-emitter protocol over any `{}`-output element chrome: replay the
--- last value fed on click (a click before any value arrived is withheld)
-eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
-eventLeaf chrome = clickedRow @l (widenRecordInput chrome)
-
 -- | The **text field**: a single-line input under its label. Shows the
 -- | string it is given and reports each edit; typing is never interrupted
--- | by values arriving from elsewhere. Attach it to a field of the model
--- | with `# asField @l`.
+-- | by values arriving from elsewhere. A whole-row citizen: fed the wide
+-- | row, it edits field `l` and carries the rest.
 textField :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } { | r }
 textField provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
-  -- focus-guarded like `Web.input`: model updates never clobber the field
-  -- being typed in, but still echo so the channel stays live
   _ <- unwrap ((label $ staticText config.label) # cl "form-label")
   element "input" (pure unit)
   attribute "type" "text"
   attribute "class" "form-control"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \newa -> do
-        focused <- isFocused node
-        unless focused $ setValue node newa
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop newa
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        void $ addEventListener "input" node $ const do
-          value <- getValue node
-          prop value
+  liftEffect $ editorWiring
+    { show: setValue node
+    , held: isFocused node
+    , reports: listenNode node "input"
+    , read: \_ -> getValue node
     }
 
 -- | The **slider**: a quantity chosen by feel, where the range matters more
@@ -176,26 +158,16 @@ sliderLive provided = let config = convertOptionsWithDefaults OptCaption { label
   attribute "type" "range"
   attribute "class" "form-range"
   node <- gets _.sibling
-  mPropRef <- liftEffect $ Ref.new Nothing
-  qRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \q -> do
-        Ref.write (Just q) qRef
+  liftEffect $ editorWiring
+    { show: \q -> do
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
         setAttribute node "step" (Variant.match { discrete: show, continuous: \_ -> "any" } q.step)
         setValue node (show q.current)
         readout.toUser { readout: toString q.current }
-        -- leaf echo: announce what was received, so the lifted stage releases
-        -- the row and any enclosing merge gate opens
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop q
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        void $ addEventListener "input" node $ const do
-          value <- getValue node
-          mq <- Ref.read qRef
-          for_ mq \q -> for_ (Number.fromString value) \v -> prop (q { current = v })
+    , held: pure false
+    , reports: listenNode node "input"
+    , read: \q -> getValue node <#> \value -> q { current = fromMaybe q.current (Number.fromString value) }
     }
 
 -- | The **select**: one choice out of a list, under its label.
@@ -226,17 +198,10 @@ selectWith clearable lift provided options = let config = convertOptionsWithDefa
   element "select" (void $ unwrap (optionLeaves))
   node <- gets _.sibling
   liftEffect $ setAttribute node "class" "form-select"
-  mPropRef <- liftEffect $ Ref.new Nothing
-  liftEffect $ void $ addEventListener "change" node $ const do
-    picked <- getValue node
-    mProp <- Ref.read mPropRef
-    for_ mProp \prop -> prop (_.value <$> (Int.fromString picked >>= (options !! _)))
-  pure
-    { toUser: \ma -> do
-        case ma of
-          Just a' -> for_ (findIndex (\o -> o.value == a') options) \idx -> setValue node (show idx)
-          Nothing -> setValue node ""
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+  liftEffect $ selectorWiring options
+    { show: setValue node <<< maybe "" show
+    , reports: listenNode node "change"
+    , read: Int.fromString <$> getValue node
     }
   where
   optionLeaves :: PUI Web {} {}
@@ -264,27 +229,18 @@ toggleSwitch provided = let config = convertOptionsWithDefaults OptCaption { lab
     setAttribute node "role" "switch"
     setAttribute node "id" inputId
   _ <- unwrap ((label >>> "for" := inputId $ staticText config.label) # cl "form-check-label")
-  mPropRef <- liftEffect $ Ref.new Nothing
-  liftEffect $ void $ addEventListener "change" node $ const do
-    b <- getChecked node
-    mProp <- Ref.read mPropRef
-    for_ mProp \prop -> prop b
-  pure
-    { toUser: \b -> do
-        setChecked node b
-        -- leaf echo: announce what was received, so the lifted stage releases
-        -- the row and any enclosing merge gate opens
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop b
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+  liftEffect $ editorWiring
+    { show: setChecked node
+    , held: pure false
+    , reports: listenNode node "change"
+    , read: \_ -> getChecked node
     }) # cl "form-check" # cl "form-switch"
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a share, a quota, a
--- | ratio — `progress @"Progress" progressFraction`: the value is a **read
+-- | ratio — `progress progressFraction`: the value is a **read
 -- | function** like every display's, since a fraction is derived (a ratio
--- | of source fields), not state. The label is the accessible name only,
--- | so it is copy, never a field reference.
+-- | of source fields), not state.
 progress
   :: forall reads
    . ({ | reads } -> Number) -> PUI Web { | reads } {}
@@ -299,15 +255,7 @@ progress f = wrap do
     setAttribute node "class" "progress"
     setAttribute node "role" "progressbar"
     setAttribute node "style" "width: 100%; min-width: 200px;"
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \r -> do
-        setAttribute barNode "style" ("width: " <> show (round (f r * 100.0)) <> "%;")
-        -- display echo (like `text`): the feed's answer, inert to gates
-        mProp <- Ref.read mPropRef
-        for_ mProp \prop -> prop {}
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
-    }
+  liftEffect $ displayWiring \r -> setAttribute barNode "style" ("width: " <> show (round (f r * 100.0)) <> "%;")
 
 -- | The **toast**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just
@@ -369,14 +317,6 @@ listGroupItem w = (el "li" $ w) # cl "list-group-item"
 badge :: String -> Ocular (PUI Web)
 badge variant w = span w # cl "badge" # cl ("text-bg-" <> variant)
 
--- the canonical status payload, read into the text leaf as its projection
-eventText :: [ event :: String ] -> String
-eventText = Variant.on (Proxy @"event") identity Variant.case_
-
--- Private
-
-foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
-
 -- Entry point
 
 -- | Mount the app in the page's `<body>` — `PUI.Web.HTML.body` unchanged,
@@ -390,25 +330,21 @@ body = HTML.body
 -- | The **indeterminate progress bar**: a status fed a run's `started` and
 -- | `ended`, shown between them — what `PUI.action`'s slot dispatches
 -- | (`indeterminateLinearProgress # action submit`). No label: it names no
--- | field and no case (2026-10-07, with the Material twins).
+-- | field and no case.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateLinearProgress = wrap do
   _ <- element "div" do
     element "div" (pure unit)
     bar <- gets _.sibling
     liftEffect $ setAttribute bar "class" "progress-bar progress-bar-striped progress-bar-animated w-100"
-  node0 <- gets _.sibling
-  liftEffect do
-    setAttribute node0 "class" "progress"
-    setAttribute node0 "role" "progressbar"
-    setAttribute node0 "style" hiddenStyle
   node <- gets _.sibling
-  pure
-    { toUser: Variant.match
-        { started: \_ -> setAttribute node "style" visibleStyle
-        , ended: \_ -> setAttribute node "style" hiddenStyle }
-    , fromUser: \_ -> pure unit
-    }
+  liftEffect do
+    setAttribute node "class" "progress"
+    setAttribute node "role" "progressbar"
+    setAttribute node "style" hiddenStyle
+  pure $ statusWiring $ Variant.match
+    { started: \_ -> setAttribute node "style" visibleStyle
+    , ended: \_ -> setAttribute node "style" hiddenStyle }
   where
   visibleStyle = "width: 100%; min-width: 200px;"
   hiddenStyle = "width: 100%; min-width: 200px; visibility: hidden;"
