@@ -631,7 +631,7 @@ code below the UI) are algebra-layer material and exempt by location.
   an application feeds a stored field has a **label sibling**, `…At`,
   whose label slot is that read: `textAt @l`, `attrAt @l name`,
   `providedAt`/`paneAt`/`inCaseAt @case @field`, `foreachAt @key
-  @field`, `listOfAt @l @key @field`. The function form stays for what
+  @field`, `editedAt @key @field`, `listOfAt @l @key @field`. The function form stays for what
   is *derived* — a copy function, a classifier, a projection, a read
   deeper than one field (weather's `cityLine`) — named in the view model
   module. A word whose every reach reads one field takes only the label:

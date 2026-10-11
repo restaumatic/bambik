@@ -22,7 +22,10 @@ module PUI.Web.HTML
   , button
   , blockquote
   , code
+  , dd
   , div
+  , dl
+  , dt
   , em
   , footer
   , h1
@@ -362,6 +365,21 @@ ol = el "ol"
 -- | One item of a `ul` or `ol`.
 li :: Ocular (PUI Web)
 li = el "li"
+
+-- | A description list: terms, each followed by its description, as bare
+-- | `dt`/`dd` siblings — the one HTML list whose item is two elements
+-- | and nothing wrapping them (a keyed `foreach` or `edited` over such an
+-- | item moves and detaches both nodes with the key; reorder-html).
+dl :: Ocular (PUI Web)
+dl = el "dl"
+
+-- | A term of a `dl`.
+dt :: Ocular (PUI Web)
+dt = el "dt"
+
+-- | The description of the `dt` before it.
+dd :: Ocular (PUI Web)
+dd = el "dd"
 
 -- table elements get real oculars (not `staticHTML`): the raw-HTML parser
 -- drops `tr`/`td`/`thead` fragments outside a table context

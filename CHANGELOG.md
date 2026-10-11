@@ -16,7 +16,11 @@ Before 2026-07 the history is the git log.
   open tail is on the left. `Hosting Web` places the **run of nodes** an
   element's builder appended (`Array Node`), so a bare group of siblings
   or a `blank` element detaches and restacks whole; before, the parent's
-  last child stood for the element. HTML's `button` no longer disables
+  last child stood for the element. Covered by reorder-html, the
+  reorder demo's plain-HTML twin — a `dl` of bare `dt`/`dd` pairs, with
+  `dl`/`dt`/`dd` added to `PUI.Web.HTML` and `editedAt @l @t` to `PUI`
+  (`edited` over a stored array field, `foreachAt`'s sibling) — walked
+  by scripts/smoke/tests/node-runs.mjs. HTML's `button` no longer disables
   itself on click (every other vocabulary's stays live). `filledTextArea`
   defaults `columns`/`rows` (40 by 4) instead of demanding them through
   an options record whose error named neither.

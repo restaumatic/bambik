@@ -334,7 +334,7 @@ the pick reaches the content directly (photo-gallery).
 - **Keyed and kept.** `foreach @"key" rowsOf` and `listOf @l @k` render
   one element per row, identified by a key field of the row; an array
   the model stores is named instead of projected (`foreachAt @"key"
-  @"cells"`, `listOfAt @l @k @"messages"`). An element
+  @"cells"`, `editedAt @"id" @"Setlist"`, `listOfAt @l @k @"messages"`). An element
   whose key survives a change is updated in place and keeps its focus
   and local state; a reordered list moves elements with their keys. Rows
   therefore need an id field — an array of bare strings cannot be

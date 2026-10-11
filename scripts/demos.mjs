@@ -81,6 +81,7 @@ export const sets = {
     'departures-mdc2': ['DeparturesMDC2', 'departuresMDC2'],
     'scoreboard-mdc2': ['ScoreboardMDC2', 'scoreboardMDC2'],
     'reorder-mdc2': ['ReorderMDC2', 'reorderMDC2'],
+    'reorder-html': ['ReorderHTML', 'reorderHTML'],
     'restaurant-menu': ['RestaurantMenu', 'restaurantMenu'],
     'espresso-bar-mdc2': ['EspressoBarMDC2', 'espressoBarMDC2'],
     'espresso-bar-mdc3': ['EspressoBarMDC3', 'espressoBarMDC3'],

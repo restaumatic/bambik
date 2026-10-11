@@ -130,7 +130,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- | --- |
 | the array → each element's event | `# foreachAt @"key" @"cells"`; `# foreach @"key" (const keyPad)` | cells; calculator, tic-tac-toe, shopping-cart | writing.md *Collections* |
 | the array → the array, decided jointly | `# acted @"name"` | potluck | writing.md *Collections* |
-| the array → the array, edited in place | `# edited @"id"` | reorder | writing.md *Collections* |
+| the array → the array, edited in place | `# edited @"id"`; a stored array `# editedAt @"id" @"Setlist"` | reorder; reorder-html | writing.md *Collections* |
 | one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
 | one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
 | a selectable list (MDC2, MDC3) | `listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |

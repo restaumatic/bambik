@@ -481,7 +481,7 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
 
     | Form | Shape | Behaviour |
     | --- | --- | --- |
-    | `foreach @l` | `(i -> Array { \| a }) -> PUI m { \| a } o -> PUI m i o` | the collapsed/sum-flavored form: **keyed and retaining** reconciliation, matched elements re-fed in place, nodes moved with their keys; forwards each element emission onto the shared channel, ungated, silent on empty. Written trailing in a container ocular, `ul $ item # foreach @"id" rowsOf`; an array the model stores is named, `# foreachAt @"key" @"cells"` |
+    | `foreach @l` | `(i -> Array { \| a }) -> PUI m { \| a } o -> PUI m i o` | the collapsed/sum-flavored form: **keyed and retaining** reconciliation, matched elements re-fed in place, nodes moved with their keys; forwards each element emission onto the shared channel, ungated, silent on empty. Written trailing in a container ocular, `ul $ item # foreach @"id" rowsOf`; an array the model stores is named, `# foreachAt @"key" @"cells"` (and `# editedAt @"id" @"Setlist"` for the editor, reorder-html) |
     | `acted @l` | `p { \| a } { \| b } -> p (Array { \| a }) (Array { \| b })` | the **container action** (Tambara for `Array`): the element is typed at its whole row, key included, and the carrier **re-sets** the key on every emission from the input row via the `Strong` state channel, so identity is unforgeable — whatever an element emits in the key field is replaced. Output is the **gather gate** — withheld until every element has spoken, then whole on any re-choice |
     | `edited @l` | `PUI m { \| a } { \| a } -> PUI m (Array { \| a }) (Array { \| a })` | the **collection editor** (derived 2026-09-27: `updated` folding a `foreach` of `first`-keyed elements): element emissions folded back in by key, whole array emitted **immediately**, input-primed (the retained fed array supplies unedited slots). The element is a whole-row stage over its element row and the carrier re-sets its key on each emission — an element cannot change its own identity |
     | `dispatched` | `(i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }` | `+→+`: an unknown key instantiates a new case, a known key re-feeds exactly its instance, emissions leave tagged — the targeted-update/stream direction, no whole-array re-feed |
@@ -508,7 +508,7 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
 
 ## Demo Structure
 
-103 pages over **41 app families**, registered in **scripts/demos.mjs** (the
+104 pages over **41 app families**, registered in **scripts/demos.mjs** (the
 single source of truth: directory + module + entry, shared by the bundler and
 the dev server). Two suites: **demo/7guis/** (the
 [7GUIs](https://eugenkiss.github.io/7guis/) benchmark) and **demo/nguis/**
@@ -603,7 +603,7 @@ focused demo apiece):
 | potluck | `acted` (the container action) — per-guest dish selectors under one model, each `segmentedButtonUnpicked @"Dish" @"chosen"`; the table's state is the business classifier `menuState` (`complete` with the dishes, `waiting` with the guests still choosing), each case a `pane` — the waiting pane names who is left, the menu prints once the table is complete |
 | departures | `dispatched` (+→+ keyed input) — rows appear on first mention, re-feed in place, tagged output drives a last-update line |
 | scoreboard | `accumulated` (+→× keyed input) — board grows to its key set, points update in place, whole array drives the standings |
-| reorder | keyed reconciliation + the `edited` collection editor — a playlist keyed by track id, element output row excluding the key (the carrier re-attaches it); Rotate and effectful Shuffle move each row's DOM node with its track, so tick, title and focus follow |
+| reorder | keyed reconciliation + the `edited` collection editor — a playlist keyed by track id, element output row excluding the key (the carrier re-attaches it); Rotate and effectful Shuffle move each row's DOM node with its track, so tick, title and focus follow; its plain-HTML twin lays the setlist out as a `dl`, each track a bare `dt`/`dd` pair, so the **run of nodes** an element appended moves with the key (scripts/smoke/tests/node-runs.mjs) |
 | order-dashboard | **custom components** (MDC3-only): the demo ships its own `DashboardControlsMDC3` module — five label-indexed display controls + a `board` ocular, each taking its read function like the library's own displays (`statTile "Orders placed" ordersCount`, the label stamped as the tile's accessible name), including the packaged-collection-display protocol (`leaderboard`, its `foreach` written off with `# muted`); the model holds only the order stream, every tile a function of it |
 
 **The rest**, grouped by what they exercise: todo-list (`listOf` toggle, `clWhen`,

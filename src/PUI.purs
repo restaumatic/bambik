@@ -76,6 +76,7 @@ module PUI
   , debounced
   , dispatched
   , edited
+  , editedAt
   , every
   , foreach
   , foreachAt
@@ -105,7 +106,7 @@ import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, focusField, recordToRecord)
 -- the adopter family and its companions, re-exported so demos need the row
 -- modules only for the `.do` merges and the knot
 -- `focusField` is deliberately absent: the leaf lift is design-system plumbing —
@@ -1651,6 +1652,15 @@ edited item0 = withStructuralOrd @k (dimap (\xs -> { xs }) _.xs $ updated folded
   keyed = dimap (\x -> Tuple x (keyOf x)) (\(Tuple row key) -> { key, row }) (first item0)
   folded :: { key :: k, row :: { | r } } -> { xs :: Array { | r } } -> { xs :: Array { | r } }
   folded e s = withStructuralEq @k { xs: map (\x -> if keyOf x == e.key then Record.set (Proxy @l) e.key e.row else x) s.xs }
+
+-- | `edited` over an array the model stores: keyed by field `l` of each
+-- | element, the array field `t` of the fed row, both named by label
+-- | (`item # editedAt @"id" @"Setlist"`) — the stage edits that field of
+-- | the row, the rest carried. The MDC vocabularies' `group @t` does the
+-- | same lift with its card and heading; the plain-HTML floor names the
+-- | field here (reorder-html).
+editedAt :: forall @l @t m node k b1 b2 r1 r. Hosting m node => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => PUI m { | r1 } { | r1 } -> PUI m { | r } { | r }
+editedAt = focusField @t <<< edited @l @r1
 
 -- | The **keyed dispatch** — the +→+ member: one runtime case at a time.
 -- | A fed `{ key, value }` reaches exactly the instance whose key matches —
