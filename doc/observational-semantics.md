@@ -210,7 +210,7 @@ each occurrence rendered to the user, nothing to the channel, and so typed
 at every row like `silence`. The `{}`-output displays' per-feed `{}`
 emission, by contrast, is a contribution of zero fields — pre-satisfied and
 inert at a gate — and so is never
-awaited by any **gate**: the rung (`shown`) releases the row, not the leaf.
+awaited by any **gate**: the stage a display is `prefixed` over releases the row, not the leaf (until 2026-10-11 a `shown` rung did).
 It is still the display's lawful answer under law 2 (the whole of a `{}`
 output row is `{}`), and *sequencing* may depend on it — `simpleDialog`'s
 confirm replays what its content last answered, so a bare `text` content

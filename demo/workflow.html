@@ -75,20 +75,18 @@
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import PUI (with)
-import PUI.Web (shown, text)
+import PUI (prefixed, with)
+import PUI.Web (text)
 import PUI.Web.MDC3 (body, button, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderApp :: Effect Unit
 orderApp =
-  body $
-    ( Semigroupoid.do
-      filledTextField @"Pizza" {}
-      headlineSmall (text ?orderLine) # shown
-      button @"Order" {}
-      snackbar @"Order" ?confirmedLine
-    ) # with @{ "Pizza" :: String } ?start
+  body $ Semigroupoid.do
+    filledTextField @"Pizza" {}
+    prefixed (headlineSmall (text ?orderLine)) $ button @"Order" {}
+    snackbar @"Order" ?confirmedLine
+  # with @{ "Pizza" :: String } ?start
 </code></pre>
 
     <p>The compiler answers with a message per hole and a last one listing
@@ -102,7 +100,7 @@ orderApp =
 <pre class="compiler">Error 1 of 4:
 
   in module Order
-  at src/Order.purs:16:27 - 16:37 (line 16, column 27 - line 16, column 37)
+  at src/Order.purs:15:35 - 15:45 (line 15, column 35 - line 15, column 45)
 
     Hole 'orderLine' has the inferred type
 
@@ -117,7 +115,7 @@ orderApp =
 
 Error 2 of 4:
 
-  at src/Order.purs:18:25 - 18:39 (line 18, column 25 - line 18, column 39)
+  at src/Order.purs:16:23 - 16:37 (line 16, column 23 - line 16, column 37)
 
     Hole 'confirmedLine' has the inferred type
 
@@ -128,7 +126,7 @@ Error 2 of 4:
 
 Error 3 of 4:
 
-  at src/Order.purs:19:37 - 19:43 (line 19, column 37 - line 19, column 43)
+  at src/Order.purs:17:33 - 17:39 (line 17, column 33 - line 17, column 39)
 
     Hole 'start' has the inferred type
 
@@ -178,7 +176,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
     <h3>src/Order.purs — the display line takes its name</h3>
 <pre><code class="language-haskell">import OrderViewModel (orderLine)
   ⋮
-  headlineSmall (text orderLine) # shown
+  prefixed (headlineSmall (text orderLine)) $ button @"Order" {}
 </code></pre>
 
     <p>One signature in, verbatim from its hint: its hole is gone, the
@@ -188,7 +186,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 <pre class="compiler">Error 1 of 3:
 
   in module Order
-  at src/Order.purs:19:25 - 19:39 (line 19, column 25 - line 19, column 39)
+  at src/Order.purs:17:23 - 17:37 (line 17, column 23 - line 17, column 37)
 
     Hole 'confirmedLine' has the inferred type
 
@@ -206,7 +204,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
 Error 2 of 3:
 
-  at src/Order.purs:20:37 - 20:43 (line 20, column 37 - line 20, column 43)
+  at src/Order.purs:18:33 - 18:39 (line 18, column 33 - line 18, column 39)
 
     Hole 'start' has the inferred type
 
@@ -242,7 +240,7 @@ confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 
 <pre class="compiler">Error found:
 in module Order
-at src/Order.purs:20:37 - 20:43 (line 20, column 37 - line 20, column 43)
+at src/Order.purs:18:33 - 18:39 (line 18, column 33 - line 18, column 39)
 
   Hole 'start' has the inferred type
 
@@ -263,14 +261,14 @@ at src/Order.purs:20:37 - 20:43 (line 20, column 37 - line 20, column 43)
 
 import Prelude ((&lt;&gt;))
 
-plainMargherita :: { "Pizza" :: String }
-plainMargherita = { "Pizza": "Margherita" }
-
 orderLine :: { "Pizza" :: String } -&gt; String
 orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
 confirmedLine :: { "Pizza" :: String } -&gt; String
 confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
+
+plainMargherita :: { "Pizza" :: String }
+plainMargherita = { "Pizza": "Margherita" }
 </code></pre>
 
     <h3>src/Order.purs</h3>
@@ -280,20 +278,18 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import OrderViewModel (confirmedLine, orderLine, plainMargherita)
-import PUI (with)
-import PUI.Web (shown, text)
+import PUI (prefixed, with)
+import PUI.Web (text)
 import PUI.Web.MDC3 (body, button, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderApp :: Effect Unit
 orderApp =
-  body $
-    ( Semigroupoid.do
-      filledTextField @"Pizza" {}
-      headlineSmall (text orderLine) # shown
-      button @"Order" {}
-      snackbar @"Order" confirmedLine
-    ) # with @{ "Pizza" :: String } plainMargherita
+  body $ Semigroupoid.do
+    filledTextField @"Pizza" {}
+    prefixed (headlineSmall (text orderLine)) $ button @"Order" {}
+    snackbar @"Order" confirmedLine
+  # with @{ "Pizza" :: String } plainMargherita
 </code></pre>
 
 <pre class="compiler">[1 of 2] Compiling OrderViewModel
@@ -308,12 +304,14 @@ orderApp =
 
     <h2>5 · A slip, and where the compiler points</h2>
 
-    <p>Now make the most common first slip: delete <code># shown</code>
-    from the display line. The compiler does not point at that line.</p>
+    <p>Now make the most common first slip: write the display as a line of
+    its own, <code>headlineSmall (text orderLine)</code>, instead of
+    <code>prefixed (…) $</code> over the button. The compiler does not point
+    at that line.</p>
 
 <pre class="compiler">Error found:
 in module Order
-<mark>at src/Order.purs:19:7 - 19:38 (line 19, column 7 - line 19, column 38)</mark>
+<mark>at src/Order.purs:18:5 - 18:36 (line 18, column 5 - line 18, column 36)</mark>
 
   Could not match type
 
@@ -324,7 +322,6 @@ in module Order
 
     ()
 
-
 while trying to match type { "Pizza" :: String
                            }
   with type Record (() @Type)
@@ -334,16 +331,17 @@ while checking that expression (snackbar) confirmedLine
   has type PUI Web (Variant t0) t1
   ⋯</pre>
 
-    <p>It points two lines below, at the snackbar. Without
-    <code># shown</code> the display passes on the empty record instead of
-    the model. The button replays what it was fed, so the
+    <p>It points two lines below, at the snackbar. A display reads the row
+    and outputs the empty record; written as a stage of its own it passes
+    that on instead of the model. The button replays what it was fed, so the
     <code>"Order"</code> case arrives carrying <code>{}</code>, and the first
     line that needs the model is where the rows fail to match. So read the
     two rows in the message, the model the line wants against the
     <code>()</code> it got, and look <em>upstream</em> for the stage that
-    dropped the row: a display without <code># shown</code>, or an emitter
-    inside a pane without <code># joined</code>. The skill's writing.md lists
-    the other common messages under <em>When it does not compile</em>.</p>
+    dropped the row: a display standing on its own instead of
+    <code>prefixed</code> over the line after it, or an emitter inside a pane
+    without <code># joined</code>. The skill's writing.md lists the other
+    common messages under <em>When it does not compile</em>.</p>
 
     <h2>6 · Compile-green is not done — run it</h2>
 
