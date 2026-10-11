@@ -4,22 +4,22 @@ import Prelude (identity, Unit, (#), ($))
 
 import Effect (Effect)
 import PUI (action, atCase, blankStatus, fold, joined, looped, with)
-import PUI.Web (shown, text)
+import PUI.Pipeline as Pipeline
+import PUI.Web (text)
 import PUI.Web.MDC2 (body, body1, caption, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
-import QualifiedDo.Semigroupoid as Semigroupoid
 import WeatherViewModel (aboutLine, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, servedLine, temperatureLine, warsawBulletin)
 
 weatherMDC2 :: Effect Unit
 weatherMDC2 =
-  body $ Semigroupoid.do
-    headline1 (text temperatureLine) # shown
-    headline5 (text conditionLine) # shown
-    body1 (text humidityWindLine) # shown
-    caption (text servedLine) # shown
-    ( Semigroupoid.do
+  body $ Pipeline.do
+    headline1 (text temperatureLine)
+    headline5 (text conditionLine)
+    body1 (text humidityWindLine)
+    caption (text servedLine)
+    ( Pipeline.do
       iconButton @"About this dashboard" {} "info"
       simpleDialog "Got it" "About this dashboard"
-        ( body1 (text aboutLine) ) # atCase @"About this dashboard" ) # shown
+        ( body1 (text aboutLine) ) # atCase @"About this dashboard" )
     listOf @"Forecast requested" @"request"
       @( request :: { city :: String, sample :: Int }
        , focus :: [ current :: {}, other :: {} ]

@@ -17,10 +17,10 @@
 -- |   field shown as stored), `textOf` (a status's payload), `staticText`,
 -- |   and `staticHTML`, kept off the public vocabularies (L10);
 -- | - **occurrence sources** — `clicked @l @k`, `onClickedXY @l`;
--- | - **visibility and the gated displays** — `provided`, and the rungs
--- |   `shown`, `shownWhen`, `inCase`, `shownEach`; a pane over a variant
--- |   the model stores names its field by label (`providedAt`,
--- |   `shownWhenAt`, `inCaseAt`);
+-- | - **panes** — `provided` (emitters), `pane` (displays) and `inCase`
+-- |   (editors); a pane over a variant the model stores names its field by
+-- |   label (`providedAt`, `paneAt`, `inCaseAt`). A line that shows data
+-- |   joins the flow through `PUI.Pipeline`;
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
 -- |   tag.
 -- |
@@ -77,12 +77,10 @@ module PUI.Web
   , textContent
   , uniqueId
   , hole
-  , shown
-  , shownWhen
-  , shownWhenAt
+  , pane
+  , paneAt
   , inCase
   , inCaseAt
-  , shownEach
   , text
   , textAt
   , textOf
@@ -124,7 +122,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import PUI (class Hosting, Ocular, PUI, Logged, diagnosticsOn, foreach, muted, replaying, setDiagnostics, setSink, setTracing)
+import PUI (class Hosting, Ocular, PUI, Logged, diagnosticsOn, replaying, setDiagnostics, setSink, setTracing)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Prim.Row (class Cons)
 import Data.Profunctor.Seeding (isHole)
@@ -481,66 +479,52 @@ selectedWith checkedOf stored w = focusField @l $ wrap do
 
 -- The element-neutral vocabulary (see the module header).
 
--- | The **ambient rung** — content that is
--- | always there: registered at build (its chrome exists before any
--- | feed), fed the row on every feed, the fed row released always. The
--- | content is fed the whole row; its read functions are typed at that
--- | row (guardrails L18).
--- | The sibling of `shownWhen`/`shownEach` whose policy is
--- | no policy; the rung trails its content like every data concern:
--- | `(headline6 $ …) # shown`.
-shown
-  :: forall r
-   . PUI Web { | r } {} -> PUI Web { | r } { | r }
-shown content = wrap do
-  content' <- unwrap content
-  -- complete the content's wiring: its only possible emission is the
-  -- informationless {}, discarded lawfully (the content type says so)
-  liftEffect $ content'.fromUser \_ -> pure unit
-  propRef <- liftEffect $ Ref.new Nothing
-  -- the content registers at build (its chrome exists before any feed, like
-  -- every component's); feeding renders its reading of the fed row, then the
-  -- fed row is released — the ambient rung's gate opens instantly
-  pure
-    { toUser: \row -> do
-        content'.toUser (unsafeCoerce row)
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> prop row
-    , fromUser: \prop -> Ref.write (Just prop) propRef
-    }
-
--- | The **case-pane rung** — `provided` merged with the wire: content
--- | attached and fed on case `l` of the classified variant, detached on
--- | any other case, the fed row released always. A hidden pane must never
--- | block the pipe, so this rung's fulfillment is best-effort by
--- | construction. Trails its content: `(…) # shownWhen @l classifier`.
--- | The classifier's variant is a visible type argument after the case, so
--- | the view can declare every state the pane chooses among
--- | (`# shownWhen @"serving" @( serving :: { number :: Int }, idle :: {} ) displayOf`).
-shownWhen
+-- | The **display pane**: content that shows data, attached and fed the
+-- | case payload while the classifier yields case `l`, detached on any
+-- | other case. It shows data itself (output `{}`): attached, the
+-- | content's answer is the pane's; detached, the pane answers for it, so
+-- | every feed is answered once. In a `Pipeline.do` block it decorates the
+-- | flow like any line that shows data. Trails its content:
+-- | `text faultLine # pane @"faulty" readout`. The classifier's variant is a
+-- | visible type argument after the case, so the view can declare every
+-- | state the pane chooses among
+-- | (`# pane @"serving" @( serving :: { number :: Int }, idle :: {} ) displayOf`).
+pane
   :: forall @l @v r r1 b
    . IsSymbol l => Cons l { | r1 } b v
-  => ({ | r } -> [ | v ]) -> PUI Web { | r1 } {} -> PUI Web { | r } { | r }
-shownWhen f content = shown (attachedOn @l f content)
+  => ({ | r } -> [ | v ]) -> PUI Web { | r1 } {} -> PUI Web { | r } {}
+pane f content = wrap do
+  { result: shownPane, ensureAttached, ensureDetached } <- attachable $ unwrap content
+  propRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \row -> case prj (Proxy @l) (f row) of
+        Nothing -> do
+          ensureDetached
+          Ref.read propRef >>= traverse_ (_ $ {})
+        -- attach before feeding, as `provided` does
+        Just y -> ensureAttached *> shownPane.toUser y
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        shownPane.fromUser prop
+    }
 
--- | `shownWhen` over a variant the model stores: the pane names case `c` of
--- | field `l`, both by label (`# shownWhenAt @"serving" @"display"`). A
--- | state derived from several fields is a classifier, `shownWhen`.
-shownWhenAt
+-- | `pane` over a variant the model stores: the pane names case `c` of
+-- | field `l`, both by label (`# paneAt @"serving" @"display"`). A state
+-- | derived from several fields is a classifier, `pane`.
+paneAt
   :: forall @c @l r r1 v b1 b2
    . IsSymbol c => IsSymbol l => Cons c { | r1 } b1 v => Cons l [ | v ] b2 r
-  => PUI Web { | r1 } {} -> PUI Web { | r } { | r }
-shownWhenAt = shownWhen @c @v (Record.get (Proxy @l))
+  => PUI Web { | r1 } {} -> PUI Web { | r } {}
+paneAt = pane @c @v (Record.get (Proxy @l))
 
--- | The **editor pane** — `shownWhen`'s
+-- | The **editor pane** — `pane`'s
 -- | editor sibling. A whole-row citizen (an editor, or a pipeline of them)
 -- | that *exists* only while the classifier yields case `l`: attached and
 -- | fed the whole row on that case, detached on any other, the fed row
--- | released always. Where `shownWhen` is the pane owned-merged with the
--- | wire (its content emits `{}`), this pane's content emits the **row**,
--- | which the owned merge's disjointness rejects — so the rung is a
--- | carrier primitive: the pane's channel and the wire's, side by side
--- | over one input and one output.
+-- | released always. Where `pane`'s content shows data (it emits `{}`),
+-- | this pane's content emits the **row**, so the pane is a stage — the
+-- | pane's channel and the wire's, side by side over one input and one
+-- | output.
 -- |
 -- | It dissolves the identity fold: a field that exists only in one mode
 -- | is *not* a payload to fold back into the row by hand
@@ -548,7 +532,7 @@ shownWhenAt = shownWhen @c @v (Record.get (Proxy @l))
 -- | the identity) — it is a whole-row editor whose existence is gated, and
 -- | its `focusField @l` lift already re-attaches the rest of the row. The
 -- | classifier is a business function typed at the stage's row, exactly as
--- | `shownWhen`'s is; a variant the model stores is named by its label
+-- | `pane`'s is; a variant the model stores is named by its label
 -- | instead, `inCaseAt` (`# inCaseAt @"Delivery" @"selected"`, order-form). One release per feed either way: attached, the
 -- | editor's own echo is the release; detached, the wire speaks for the
 -- | absent editor. What the edit does to the rest of the row is a `settled`
@@ -561,7 +545,7 @@ inCase
    . IsSymbol l => Cons l a b v
   => ({ | r } -> [ | v ]) -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
 inCase f w = wrap do
-  { result: pane, ensureAttached, ensureDetached } <- attachable $ unwrap w
+  { result: editor, ensureAttached, ensureDetached } <- attachable $ unwrap w
   propRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \row -> do
@@ -573,10 +557,10 @@ inCase f w = wrap do
             mProp <- Ref.read propRef
             for_ mProp \prop -> prop row
           -- attach before feeding, as `provided` does
-          Just _ -> ensureAttached *> pane.toUser row
+          Just _ -> ensureAttached *> editor.toUser row
     , fromUser: \prop -> do
         Ref.write (Just prop) propRef
-        pane.fromUser prop
+        editor.fromUser prop
     }
 
 -- | `inCase` over a variant the model stores: the editor exists in case `c`
@@ -587,14 +571,6 @@ inCaseAt
   => PUI Web { | r } { | r } -> PUI Web { | r } { | r }
 inCaseAt = inCase @c @v (Record.get (Proxy @l))
 
--- | The **collection rung** — render the keyed,
--- | retained list from the projection, release the fed row per feed.
--- | Derived: the collection, muted, merged with the wire. Trails its
--- | item: `(li $ …) # shownEach @l proj`. The element row is a visible type
--- | argument after the key, so the view can declare what each item is fed.
-shownEach :: forall @l @r1 r k b a . IsSymbol l => Cons l k b r1 => ({ | r } -> Array { | r1 }) -> PUI Web { | r1 } a -> PUI Web { | r } { | r }
-shownEach proj item = shown (muted (foreach @l proj item))
-
 -- | Show a string that changes — a readout, a total, a sentence, a name in
 -- | a list row. (Wording that doesn't change is `staticText`.)
 -- |
@@ -602,7 +578,7 @@ shownEach proj item = shown (muted (foreach @l proj item))
 -- | function from the fields it needs to the words on the screen, living in
 -- | the logic module where it is one pure function and one unit test
 -- | (`text progressLineOf`). The read function is typed at
--- | the row the hosting stage (`shown`/`shownWhen`/`shownEach`) feeds it,
+-- | the row its line is fed (a pane's payload, a list's element),
 -- | so no call site coerces. This is why `text` takes no label:
 -- | its content *is* the copy, so there is no field to name and nothing to
 -- | caption — a caption is surrounding chrome (`staticText`, a `label`, a
@@ -778,8 +754,8 @@ infixr 10 attrDyn as :=>
 -- | lawful: a feed arms an emitter and fires nothing, so a detached one
 -- | firing nothing is the same answer — an emitter removed by `provided`
 -- | *is* `silence`. The pane family is indexed by what the pane holds, each
--- | member lawful at its shape: `provided` for emitters, `shownWhen` for
--- | displays (releases the fed row whether attached or not), `inCase` for
+-- | member lawful at its shape: `provided` for emitters, `pane` for
+-- | displays (answers `{}` whether attached or not), `inCase` for
 -- | editors (the wire while detached).
 -- |
 -- | A `Maybe`-gated pane is the same
@@ -814,8 +790,8 @@ providedAt = provided @c @v (Record.get (Proxy @l))
 -- The pane mechanism every pane shares, at any content output: attach and
 -- feed the payload on case `l`, detach on every other case. Public only
 -- through its lawful restrictions — `provided` at emitter content, where a
--- detached pane's silence is `×→+`'s Answer; `shownWhen`, which merges it
--- with the wire so a display pane answers every feed with the row.
+-- detached pane's silence is `×→+`'s Answer (`pane` and `inCase` answer for
+-- a detached content themselves).
 attachedOn :: forall @l @v r r1 b a. IsSymbol l => Cons l { | r1 } b v => ({ | r } -> [ | v ]) -> PUI Web { | r1 } a -> PUI Web { | r } a
 attachedOn f w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w

@@ -150,10 +150,10 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Data.Profunctor.Seeding (isHole)
-import PUI (Ocular, PUI, blank, foreach)
+import PUI (Ocular, PUI, blank, foreach, prefixed, suffixed)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clickedRow, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, shown, staticHTML, staticText, text, textContent, textOf, uniqueId, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, attrWith, cl, clicked, clickedRow, clWhen, el, element, getChecked, getValue, init, isFocused, onInputDebounced, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textContent, textOf, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1135,7 +1135,7 @@ group
 group w = wrap do
   headingId <- liftEffect uniqueId
   unwrap $ "role" := "group" $ "aria-labelledby" := headingId $ card $
-    shown ("id" := headingId $ titleMedium $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
+    prefixed ("id" := headingId $ titleMedium $ staticText (reflectSymbol (Proxy @l))) (focusField @l w)
 
 -- | A **modal dialog** — dimmed backdrop, trapped focus, Esc to leave — for
 -- | the decision that must be made before anything else continues.
@@ -1154,13 +1154,13 @@ dialog title content =
 
 -- | The witness rung — see `PUI.Web.MDC2.confirmed`.
 confirmed :: forall row. String -> String -> PUI Web { | row } {} -> PUI Web { | row } { | row }
-confirmed confirmCaption title content = simpleDialog confirmCaption title (shown content)
+confirmed confirmCaption title content = simpleDialog confirmCaption title (prefixed content identity)
 
 -- | `dialog` with a **confirm button** built in — the confirmation step:
 -- | show what is about to happen, and the button reports it. The content
--- | needs no button of its own; a content that only displays needs a
--- | gated display (`shown`) so there is something to confirm — `confirmed`
--- | is exactly that specialization.
+-- | needs no button of its own; a content that only displays needs to be
+-- | applied to the wire (`prefixed content identity`) so there is something
+-- | to confirm — `confirmed` is exactly that specialization.
 -- | Not a full `Ocular`, deliberately: the confirm **replays** the
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the
@@ -1379,20 +1379,18 @@ topAppBarCss = """
 """
 
 -- | The permanent **navigation drawer**: a titled nav panel pinned beside
--- | the content. The nav is live, not a static menu — it is the **first
--- | stage**, the content the second: what the nav releases feeds the
--- | content, so a selectable nav (a `listOf` of sections) drives what is
--- | shown next to it, and a feed is released once, by the content. (Two
--- | sibling stages fed the same row would each echo it — two releases
--- | per feed, the parallel shape `recordToRecord`'s type forbids.)
-drawer :: forall i x o. { title :: String, subtitle :: String } -> PUI Web { | i } { | x } -> PUI Web { | x } { | o } -> PUI Web { | i } { | o }
+-- | the content. The nav is live, not a static menu — it is the stage, and
+-- | the content shows data after it (`suffixed`): what the nav releases
+-- | feeds the content, so a selectable nav (a `listOf` of sections) drives
+-- | what is shown next to it, and a feed is released once, by the nav.
+drawer :: forall i o. { title :: String, subtitle :: String } -> PUI Web { | i } { | o } -> PUI Web { | o } {} -> PUI Web { | i } { | o }
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
   liftEffect $ ensureStyle "md3-drawer" drawerCss
   unwrap $
-    ( aside >>> cl "md3-drawer" $ wrap do
-        _ <- unwrap (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> config.subtitle <> "</h6></div>"))
-        unwrap (div $ nav) )
-    >>> ( div >>> "style" := "flex: 1; padding: 16px;" $ content )
+    suffixed ( div >>> "style" := "flex: 1; padding: 16px;" $ content )
+      ( aside >>> cl "md3-drawer" $ wrap do
+          _ <- unwrap (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> config.subtitle <> "</h6></div>"))
+          unwrap (div $ nav) )
 
 drawerCss :: String
 drawerCss = """
@@ -1473,7 +1471,7 @@ imageListItem = unsafeCoerce (imageListItemExact :: { src :: String, alt :: Stri
 -- | display it takes its read function — the business row in, the picture's
 -- | `{ src, alt }` out — so a gallery is the retaining `foreach` over the
 -- | pictures rather than a wholesale rebuild —
--- | `imagePane developedShot # shownEach @"shot" albumShots`, each item built once and its
+-- | `imagePane developedShot # foreach @"shot" albumShots`, each item built once and its
 -- | source and caption updated in place. `imageListItem`'s sibling, for the
 -- | collection case; `imageListItem` stays the closure-known static.
 imagePane :: forall reads. ({ | reads } -> { src :: String, alt :: String }) -> PUI Web { | reads } {}

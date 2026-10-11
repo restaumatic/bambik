@@ -60,7 +60,7 @@ const holed = chosen.flatMap(d => {
   const declared = new Map()
   for (const d of out.matchAll(/@\(((?:[^()]|\([^()]*\))*)\) ([A-Za-z_][\w']*)\b/g)) if (!declared.has(d[2])) declared.set(d[2], d[1].replace(/\s+/g, ' '))
   for (const [n, row] of declared)
-    out = out.replace(new RegExp(`((?:shownWhen|inCase|provided|foreach|shownEach|listOf) @"[^"]+"(?: @"[^"]+")?(?: \\{[^}]*\\})?) ${n}\\b`, 'g'), `$1 @(${row}) ${n}`)
+    out = out.replace(new RegExp(`((?:pane|inCase|provided|foreach|listOf) @"[^"]+"(?: @"[^"]+")?(?: \\{[^}]*\\})?) ${n}\\b`, 'g'), `$1 @(${row}) ${n}`)
   // a record label (`tick:` in a `match`) or a field accessor is not the value
   for (const n of names) out = out.replace(new RegExp(`(?<![\\w."])${n}\\b(?!\\s*:(?!:))`, 'g'), `?${n}`)
   writeFileSync(`.determined/src/${d.mod}.purs`, out)

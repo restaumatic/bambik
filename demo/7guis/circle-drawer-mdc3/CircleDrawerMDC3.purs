@@ -8,14 +8,14 @@ import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (blank, blankStatus, fold, foreach, joined, looped, settled, with)
+import PUI.Pipeline as Pipeline
 import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, (:=))
 import PUI.Web.MDC3 (body, button, cardActions, sliderLive)
 import PUI.Web.SVG (circle, svg)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 circleDrawerMDC3 :: Effect Unit
 circleDrawerMDC3 =
-  body $ Semigroupoid.do
+  body $ Pipeline.do
     sliderLive @"Diameter" {} # inCaseAt @"chosen" @"selected" # settled resizeSelected
     RecordToVariant.do
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $

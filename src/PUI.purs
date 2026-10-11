@@ -57,6 +57,7 @@ module PUI
   , fold
   , static
   , prefixed
+  , suffixed
   , ticks
   , accumulated
   , applied
@@ -1191,24 +1192,40 @@ type Ocular p = forall a b. Optic p a b a b
 static :: forall p r. Category p => Profunctor p => Ocular p -> p { | r } {}
 static o = widenRecordInput (o identity :: p {} {})
 
--- | A static **before** what it introduces, as an ocular — `static`'s
--- | converse: a caption before its field, a heading before its section,
--- | written first because it is shown first:
--- | `label $ prefixed (staticText "°C ") $ input @"celsius" "text"`,
--- | `prefixed (headline4 $ staticText "Create account") $ Semigroupoid.do …`.
--- | The static is built first, then the content; it is fed `{}` whenever the
--- | content is fed, and its `{}` answer is discarded lawfully (the type says
--- | it carries nothing). The content's channels pass untouched, so the
--- | ocular admission law holds, and a static that introduces a part of the
--- | flow sits in it without `# shown`.
-prefixed :: forall m. MonadEffect m => PUI m {} {} -> Ocular (PUI m)
-prefixed s w = wrap do
-  s' <- unwrap s
-  liftEffect $ s'.fromUser \_ -> pure unit
+-- | A display **before** what it introduces — a heading before its section,
+-- | a caption before its field, a readout before the control it reads —
+-- | as a decorator over that part of the flow: the display is built first,
+-- | then the content, and is fed whatever the content is fed, before it.
+-- | Its `{}` answers are discarded lawfully (the type says they carry
+-- | nothing) and the content's channels pass untouched, so the data flow is
+-- | the content's alone. Written first because it is shown first:
+-- | `label $ prefixed (staticText "°C ") $ input @"celsius" "text"`. A
+-- | `Pipeline.do` block applies it to every line that shows data, so a view
+-- | rarely names it.
+prefixed :: forall m a b. MonadEffect m => PUI m a {} -> PUI m a b -> PUI m a b
+prefixed d w = wrap do
+  d' <- unwrap d
+  liftEffect $ d'.fromUser \_ -> pure unit
   w' <- unwrap w
   pure
-    { toUser: \a -> s'.toUser {} *> w'.toUser a
+    { toUser: \a -> d'.toUser a *> w'.toUser a
     , fromUser: w'.fromUser
+    }
+
+-- | A display **after** what it reports on — a total after the sliders it
+-- | sums, a lap list after the clock — as a decorator over that part of the
+-- | flow: the content is built first, then the display, which is fed each
+-- | row the content releases, before the row goes on. Like `prefixed`, it
+-- | changes no data. A `Pipeline.do` block applies it to a last line that
+-- | shows data after a stage.
+suffixed :: forall m a b. MonadEffect m => PUI m b {} -> PUI m a b -> PUI m a b
+suffixed d w = wrap do
+  w' <- unwrap w
+  d' <- unwrap d
+  liftEffect $ d'.fromUser \_ -> pure unit
+  pure
+    { toUser: w'.toUser
+    , fromUser: \prop -> w'.fromUser \b -> d'.toUser b *> prop b
     }
 
 -- | An action is **opened by its statuses**: the slot is a `+→×` citizen

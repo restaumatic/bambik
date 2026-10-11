@@ -45,7 +45,8 @@ import FlightBookerViewModelTest (flightBookerClaims)
 import OrderFormViewModelTest (orderFormClaims)
 import TemperatureConverterViewModelTest (temperatureConverterClaims)
 import TodoListViewModelTest (todoListClaims)
-import PUI (PUI(..), accumulated, acted, announce, applied, blankStatus, dispatched, edited, fold, foreach, looped, observed, optioned, prefixed, replaying, resolveFor, seeded, silence, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, blankStatus, dispatched, edited, fold, foreach, looped, observed, optioned, prefixed, replaying, resolveFor, seeded, silence, suffixed, updated, with)
+import PUI.Pipeline as Pipeline
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -71,6 +72,14 @@ fire propRef o = do
 probeIO :: forall i o. Ref.Ref (Array i) -> Ref.Ref (Maybe (o -> Effect Unit)) -> PUI Effect i o
 probeIO insRef propRef = PUI $ pure
   { toUser: \i -> Ref.modify_ (_ <> [ i ]) insRef
+  , fromUser: \prop -> Ref.write (Just prop) propRef
+  }
+
+-- A probe that logs each feed under a tag into a shared log (so the order of
+-- feeds across operands is observable) and can be fired by hand.
+logged :: forall i o. Show i => String -> Ref.Ref (Array String) -> Ref.Ref (Maybe (o -> Effect Unit)) -> PUI Effect i o
+logged tag logRef propRef = PUI $ pure
+  { toUser: \i -> Ref.modify_ (_ <> [ tag <> show i ]) logRef
   , fromUser: \prop -> Ref.write (Just prop) propRef
   }
 
@@ -2138,38 +2147,88 @@ main = do
     assertEqual "capturing decorator: inside the gate it sees the dropped emission too" 2 inside
     assertEqual "capturing decorator: outside the gate it does not — the admission law fails, so it is not an ocular" 1 outside
 
-  -- == prefixed is an ocular: the admission law holds, the content's stream ==
-  -- == is untouched, and the static is fed {} once per feed of the content. ==
+  -- == prefixed / suffixed: a display decorates a part of the flow and ==
+  -- == changes no data — fed what the part is fed, before it (prefixed), ==
+  -- == or each row the part releases, before it goes on (suffixed). ==
   do
     let
-      script m gProp = do
-        fire gProp "early"
-        m.toUser (Tuple 1 true)
-        fire gProp "x"
-      staticProbe :: Ref.Ref Int -> PUI Effect {} {}
-      staticProbe fed = PUI (pure { toUser: \_ -> Ref.modify_ (_ + 1) fed, fromUser: \_ -> pure unit })
-    inside <- do
-      fed <- Ref.new 0
-      gProp <- Ref.new Nothing
-      outs <- Ref.new ([] :: Array (Tuple String Boolean))
-      m <- unwrap (first (prefixed (staticProbe fed) (probe gProp :: PUI Effect Int String)) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean))
-      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-      script m gProp
-      os <- Ref.read outs
-      n <- Ref.read fed
-      pure { os, n }
-    outside <- do
-      fed <- Ref.new 0
-      gProp <- Ref.new Nothing
-      outs <- Ref.new ([] :: Array (Tuple String Boolean))
-      m <- unwrap (prefixed (staticProbe fed) (first (probe gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
-      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-      script m gProp
-      os <- Ref.read outs
-      n <- Ref.read fed
-      pure { os, n }
-    assertEqual "prefixed: ocular (first w) = first (ocular w) — streams and static feeds agree" inside outside
-    assertEqual "prefixed: the content's stream untouched, the static fed once per feed" { os: [ Tuple "x" true ], n: 1 } inside
+      run build = do
+        log <- Ref.new ([] :: Array String)
+        wProp <- Ref.new Nothing
+        dProp <- Ref.new Nothing
+        m <- unwrap (build (logged "d" log dProp :: PUI Effect { n :: Int } {}) (logged "w" log wProp :: PUI Effect { n :: Int } { n :: Int }))
+        m.fromUser \o -> Ref.modify_ (_ <> [ "out" <> show o ]) log
+        m.toUser { n: 1 }
+        fire wProp { n: 2 }
+        fire dProp {}
+        Ref.read log
+    before <- run prefixed
+    assertEqual "prefixed: the display is fed what the part is fed, before it; the part's stream is the block's; the display's answers go nowhere"
+      [ "d{ n: 1 }", "w{ n: 1 }", "out{ n: 2 }" ] before
+    after <- run suffixed
+    assertEqual "suffixed: the display is fed each row the part releases, before it goes on; the display's answers go nowhere"
+      [ "w{ n: 1 }", "d{ n: 2 }", "out{ n: 2 }" ] after
+
+  -- == Pipeline.do: a line that shows data (output {}) decorates the rest of ==
+  -- == the block (prefixed), stages compose with >>>, a last line is composed, ==
+  -- == and a block of displays shows data. ==
+  do
+    let
+      run build = do
+        log <- Ref.new ([] :: Array String)
+        props <- Ref.new Nothing
+        quiet <- Ref.new Nothing
+        m <- unwrap (build log props quiet)
+        m.fromUser \o -> Ref.modify_ (_ <> [ "out" <> show o ]) log
+        m.toUser { n: 1 }
+        fire props { n: 2 }
+        Ref.read log
+      display tag log quiet = logged tag log quiet :: PUI Effect { n :: Int } {}
+      stage tag log props = logged tag log props :: PUI Effect { n :: Int } { n :: Int }
+    prefix <- run \log props quiet -> Pipeline.do
+      display "d" log quiet
+      stage "w" log props
+    assertEqual "Pipeline.do: a display line before a stage is prefixed over it"
+      [ "d{ n: 1 }", "w{ n: 1 }", "out{ n: 2 }" ] prefix
+    ended <- do
+      log <- Ref.new ([] :: Array String)
+      wProp <- Ref.new Nothing
+      dProp <- Ref.new Nothing
+      m <- unwrap (Pipeline.do
+        stage "w" log wProp
+        display "d" log dProp)
+      m.fromUser \o -> Ref.modify_ (_ <> [ "out" <> show o ]) log
+      m.toUser { n: 1 }
+      fire wProp { n: 2 }
+      fire dProp {}
+      Ref.read log
+    assertEqual "Pipeline.do: a last display line is composed — fed the stage's rows, the block showing data (its answers released, the rows not)"
+      [ "w{ n: 1 }", "d{ n: 2 }", "out{}" ] ended
+    stages <- do
+      log <- Ref.new ([] :: Array String)
+      vProp <- Ref.new Nothing
+      wProp <- Ref.new Nothing
+      m <- unwrap (Pipeline.do
+        stage "v" log vProp
+        stage "w" log wProp)
+      m.fromUser \o -> Ref.modify_ (_ <> [ "out" <> show o ]) log
+      m.toUser { n: 1 }
+      fire vProp { n: 2 }
+      fire wProp { n: 3 }
+      Ref.read log
+    assertEqual "Pipeline.do: stages compose with >>> (the second is fed the first's rows)"
+      [ "v{ n: 1 }", "w{ n: 2 }", "out{ n: 3 }" ] stages
+    displays <- do
+      log <- Ref.new ([] :: Array String)
+      quiet <- Ref.new Nothing
+      m <- unwrap (Pipeline.do
+        display "d1" log quiet
+        display "d2" log quiet)
+      m.fromUser \_ -> Ref.modify_ (_ <> [ "out" ]) log
+      m.toUser { n: 1 }
+      Ref.read log
+    assertEqual "Pipeline.do: a block of displays shows data — every line fed, nothing released but their answers"
+      [ "d1{ n: 1 }", "d2{ n: 1 }" ] displays
 
   -- announce's naturality: rmap f (announce a) = announce (f a).
   do

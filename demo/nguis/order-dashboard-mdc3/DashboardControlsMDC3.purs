@@ -15,13 +15,13 @@ import Data.Int (round, toNumber)
 import Data.Number (max)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
+import PUI.Pipeline as Pipeline
 import Prim.Row (class Cons)
 import PUI (Ocular, PUI, blank, foreach, muted, prefixed)
-import PUI.Web (OptCaption(..), Web, attrWith, shown, staticText, text, (:=))
+import PUI.Web (OptCaption(..), Web, attrWith, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
-import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
 board :: Ocular (PUI Web)
@@ -33,9 +33,9 @@ statTile l f =
 
 gauge :: forall r. String -> ({ | r } -> Number) -> PUI Web { | r } {}
 gauge l f =
-  tile $ ( prefixed (labelMedium $ staticText l) $ Semigroupoid.do
-    linearProgress f # shown
-    ( labelLarge $ text (percentLine <<< f) ) # shown ) # muted
+  tile $ ( prefixed (labelMedium $ staticText l) $ Pipeline.do
+    linearProgress f
+    ( labelLarge $ text (percentLine <<< f) ) ) # muted
 
 trendChart :: forall r. String -> ({ | r } -> Array Number) -> PUI Web { | r } {}
 trendChart l f =

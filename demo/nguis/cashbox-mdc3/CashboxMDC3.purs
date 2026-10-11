@@ -8,14 +8,14 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (atCase, fold, looped, subChoice, toCase, with)
-import PUI.Web (shown, text)
+import PUI.Pipeline as Pipeline
+import PUI.Web (text)
 import PUI.Web.MDC3 (body, bodyLarge, button, headlineSmall, confirmed, snackbar)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 cashboxMDC3 :: Effect Unit
 cashboxMDC3 =
-  body $ Semigroupoid.do
-    ( headlineSmall $ text balanceLine ) # shown
+  body $ Pipeline.do
+    headlineSmall $ text balanceLine
     RecordToVariant.do
       button @"Refund a customer" { icon: "undo" }
       button @"Pay the courier" { icon: "local_shipping" }

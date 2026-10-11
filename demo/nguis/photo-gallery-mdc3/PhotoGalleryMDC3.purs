@@ -5,27 +5,27 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
+import PUI.Pipeline as Pipeline
 import PhotoGalleryViewModel (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
-import PUI (looped, prefixed, updated, with)
-import PUI.Web (each, shown, shownEach, staticText, text, textAt)
+import PUI (foreach, looped, suffixed, updated, with)
+import PUI.Web (each, staticText, text, textAt)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, displayMedium, divider, drawer, imageList, imageListItem, imagePane, labelSmall, list, listItem, listOf, topAppBar)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 photoGalleryMDC3 :: Effect Unit
 photoGalleryMDC3 =
   body $
     topAppBar "Photo Gallery" $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
-        ( Semigroupoid.do
-          listOf @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices (span (textAt @"name")) # updated (match { opened: openAlbum })
-          divider # shown
+        ( listOf @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices (span (textAt @"name")) # updated (match { opened: openAlbum }) # suffixed ( Pipeline.do
+          divider
           ( list RecordToRecord.do
             listItem $ staticText "Every photo is an SVG"
             listItem $ staticText "developed from its caption"
-            listItem $ staticText "No network involved" ) # shown
-          ( prefixed (labelSmall $ staticText "Favorites") $ imageList 2 $ each @{ src :: String, alt :: String } favoriteShots imageListItem ) # shown )
-        ( Semigroupoid.do
-          ( displayMedium $ text albumTitle ) # shown
-          imageList 3 $ imagePane developedShot # shownEach @"shot" @( shot :: String ) albumShots )
+            listItem $ staticText "No network involved" )
+          labelSmall $ staticText "Favorites"
+          imageList 2 $ each @{ src :: String, alt :: String } favoriteShots imageListItem ) )
+        ( Pipeline.do
+          displayMedium $ text albumTitle
+          imageList 3 $ imagePane developedShot # foreach @"shot" @( shot :: String ) albumShots )
       ) # looped @( album :: String ) # with landscapesOpen

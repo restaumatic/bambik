@@ -6,21 +6,21 @@ import CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderP
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blankStatus, fold, joined, looped, with)
-import PUI.Web (provided, shownWhen, text)
+import PUI (blankStatus, fold, joined, looped, suffixed, with)
+import PUI.Pipeline as Pipeline
+import PUI.Web (pane, provided, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, snackbar)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkoutMDC3 :: Effect Unit
 checkoutMDC3 =
-  body $ Semigroupoid.do
-    ( bodyMedium $ text cartLine ) # shownWhen @"cart"
+  body $ Pipeline.do
+    ( bodyMedium $ text cartLine ) # pane @"cart"
       @( cart :: { item :: String }
        , shipping :: { address :: String }
        , payment :: { card :: String }
        ) checkoutStep
-    ( bodyMedium $ text shippingLine ) # shownWhen @"shipping" checkoutStep
-    ( bodyMedium $ text paymentLine ) # shownWhen @"payment" checkoutStep
+    ( bodyMedium $ text shippingLine ) # pane @"shipping" checkoutStep
+    ( bodyMedium $ text paymentLine ) # pane @"payment" checkoutStep
     RecordToVariant.do
       button @"Next" {} # provided @"onward"
         @( onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
@@ -31,14 +31,13 @@ checkoutMDC3 =
          , first :: {}
          ) previousOf # joined @"Back"
       button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep # joined @"Place order"
-    VariantToRecord.do
+    ( VariantToRecord.do
       blankStatus @"Next" # fold stepTo
       blankStatus @"Back" # fold stepTo
-      snackbar @"Place order" orderPlacedLine # fold orderPlaced
-    ( bodyMedium $ text placedLine ) # shownWhen @"placed"
-      @( pending :: {}
-       , placed :: { item :: String, address :: String, card :: String }
-       ) orderStatus
+      snackbar @"Place order" orderPlacedLine # fold orderPlaced ) # suffixed ( bodyMedium (text placedLine) # pane @"placed"
+        @( pending :: {}
+         , placed :: { item :: String, address :: String, card :: String }
+         ) orderStatus )
   # looped
     @( item :: String
      , address :: String

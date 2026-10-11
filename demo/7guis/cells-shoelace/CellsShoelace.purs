@@ -7,21 +7,21 @@ import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
 import PUI (blankStatus, fold, foreach, foreachAt, joined, looped, settled, with)
-import PUI.Web (attrWith, clicked, shown, text, textAt, (:=))
+import PUI.Pipeline as Pipeline
+import PUI.Web (attrWith, clicked, text, textAt, (:=))
 import PUI.Web.HTML (div, p, table, td, tr)
 import PUI.Web.Shoelace (body, textField)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsShoelace :: Effect Unit
 cellsShoelace =
-  body $ Semigroupoid.do
-    p (text selectedLine) # shown
+  body $ Pipeline.do
+    p (text selectedLine)
     textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
-      ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
-        ( tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
-        ( tr $ Semigroupoid.do
-          ( td >>> "style" := headerFace $ text rowLabel ) # shown
+      ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Pipeline.do
+        tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) columnHeaders
+        ( tr $ Pipeline.do
+          td >>> "style" := headerFace $ text rowLabel
           ( clicked @"Cell picked" @"key" ( td >>> attrWith "style" cellFace $ textAt @"text" ) ) # foreachAt @"key" @"cells" ) # foreach @"rowKey"
             @( rowKey :: String
              , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }

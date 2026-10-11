@@ -6,21 +6,21 @@ import CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operato
 import Data.Array (elem)
 import Effect (Effect)
 import PUI (blankStatus, fold, foreach, joined, looped, with)
-import PUI.Web (attrWith, clicked, shownWhen, text, textAt, (:=))
+import PUI.Pipeline as Pipeline
+import PUI.Web (attrWith, clicked, pane, text, textAt, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 calculatorMDC2 :: Effect Unit
 calculatorMDC2 =
   body $
-    ( div >>> "style" := "display: inline-block; width: 296px;" $ Semigroupoid.do
+    ( div >>> "style" := "display: inline-block; width: 296px;" $ Pipeline.do
       div >>> "style"
         := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
           <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
-          <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
-          text faultLine # shownWhen @"faulty" @( sound :: { entry :: String }, faulty :: {} ) readout
-          textAt @"entry" # shownWhen @"sound" readout
+          <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Pipeline.do
+          text faultLine # pane @"faulty" @( sound :: { entry :: String }, faulty :: {} ) readout
+          textAt @"entry" # pane @"sound" readout
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
         clicked @"Key entered" @"key" ( div >>> attrWith "style" keyFace $ textAt @"key" ) # foreach @"key" @( key :: String ) (const keyPad) ) # joined @"Key entered"
       blankStatus @"Key entered" # fold pressKey

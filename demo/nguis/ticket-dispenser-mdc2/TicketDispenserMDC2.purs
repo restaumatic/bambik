@@ -4,20 +4,20 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import PUI (fold, looped, with)
-import PUI.Web (shownWhenAt, text)
+import PUI.Pipeline as Pipeline
+import PUI.Web (paneAt, text)
 import PUI.Web.MDC2 (body, body2, button, headline3, snackbar)
-import QualifiedDo.Semigroupoid as Semigroupoid
 import TicketDispenserViewModel (emptyQueue, firstTicketHint, issue, noTicketLine, servingLine, ticketLine, ticketTakenLine)
 
 ticketDispenserMDC2 :: Effect Unit
 ticketDispenserMDC2 =
-  body $ Semigroupoid.do
-    headline3 ( Semigroupoid.do
-      (text noTicketLine) # shownWhenAt @"waiting" @"display"
-      (text ticketLine) # shownWhenAt @"serving" @"display" )
-    body2 ( Semigroupoid.do
-      (text firstTicketHint) # shownWhenAt @"waiting" @"display"
-      (text servingLine) # shownWhenAt @"serving" @"display" )
+  body $ Pipeline.do
+    headline3 ( Pipeline.do
+      (text noTicketLine) # paneAt @"waiting" @"display"
+      (text ticketLine) # paneAt @"serving" @"display" )
+    body2 ( Pipeline.do
+      (text firstTicketHint) # paneAt @"waiting" @"display"
+      (text servingLine) # paneAt @"serving" @"display" )
     button @"Take a number" {}
     snackbar @"Take a number" ticketTakenLine # fold issue
   # looped

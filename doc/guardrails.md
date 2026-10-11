@@ -93,14 +93,14 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
   | Type | Shape | Sort |
   | --- | --- | --- |
-  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes that answer (`shownWhen`, `inCase`), stages |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes that answer (`pane`, `inCase`), stages |
   | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided` |
   | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`) and the folds they open, `snackbar @l line # fold f` |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
 
   A closed row (`{}`, `[ event :: String ]`) is a row. A word that
   would need two shapes is two words, each lawful at its own: a pane is `provided` for emitters (a detached one's
-  silence is `×→+`'s answer), `shownWhen` for displays, `inCase` for
+  silence is `×→+`'s answer), `pane` for displays, `inCase` for
   editors (2026-09-23 — each once an exception to Answer, none now).
   A selector is one word because it is one shape: the widget stores
   the option it shows, so it is an editor (`×→×`, every feed answered
@@ -167,8 +167,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the model row where the model first appears (`looped @( … )`, or `with @{ … }` for a flow with no loop,
   or a load action's outcome `action @{ … }` standing before the knot), and a derived
   row where it is introduced: a classifier's cases on its first pane
-  (`provided`/`shownWhen`/`inCase @l @s`), an action's outcome, a
-  projection's element row (`listOf`/`foreach`/`shownEach @… @r`), a
+  (`provided`/`pane`/`inCase @l @s`), an action's outcome, a
+  projection's element row (`listOf`/`foreach @… @r`), a
   payload, a bracketed editor's state (2026-10-01
   on inbox, 2026-10-02 everywhere). It names no field and no case, and
   with it every typed hole in a view reports a concrete type with nothing
@@ -632,7 +632,7 @@ code below the UI) are algebra-layer material and exempt by location.
   view, law benches included. So every word taking a read function that
   an application feeds a stored field has a **label sibling**, `…At`,
   whose label slot is that read: `textAt @l`, `attrAt @l name`,
-  `providedAt`/`shownWhenAt`/`inCaseAt @case @field`, `foreachAt @key
+  `providedAt`/`paneAt`/`inCaseAt @case @field`, `foreachAt @key
   @field`, `listOfAt @l @key @field`. The function form stays for what
   is *derived* — a copy function, a classifier, a projection, a read
   deeper than one field (weather's `cityLine`) — named in the view model
@@ -650,16 +650,16 @@ code below the UI) are algebra-layer material and exempt by location.
   that module is designed. What it demands of the library: every word
   that introduces a row through a function or value argument MUST take
   that row as a **visible type argument after its anchor** — `looped @model` (`with
-  @model` for a flow with no loop), `action @outcome`, `listOf`/`foreach`/`shownEach`/`acted`/
+  @model` for a flow with no loop), `action @outcome`, `listOf`/`foreach`/`acted`/
   `edited @row`, `dispatched`/`accumulated @key @value`, the panes
-  `provided`/`shownWhen`/`inCase @l @s`, `bracketed @variant @state`,
+  `provided`/`pane`/`inCase @l @s`, `bracketed @variant @state`,
   `toCase @payload`, `each @element`; a new word of that kind
   MUST do the
   same — and an option list MUST close its row (`choice @"a" <+> choice
   @"b"`). What it demands of the application: the model row is declared
   once, where the model first appears (the seed line, or the load
   action's outcome when a load stands before the knot); a stored variant field is named by label on
-  its pane line (`providedAt`/`shownWhenAt`/`inCaseAt @case @field`); a derived row is declared once, where its function
+  its pane line (`providedAt`/`paneAt`/`inCaseAt @case @field`); a derived row is declared once, where its function
   first appears (each `?name` is its own hole, so the function's later
   uses are typed once it is written); a view helper applies one view
   model function per value. An unknown anywhere names a missing

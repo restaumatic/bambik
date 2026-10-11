@@ -166,7 +166,7 @@ const wordsOf = (src) => {
   const words = []
   for (const m of src.matchAll(/^import PUI(?:\.[\w.]+)? \((.*)\)[ \t]*$/gm))
     words.push(...m[1].split(",").map((w) => w.trim().replace(/^\((.*)\)$/, "$1")).filter(Boolean))
-  for (const m of src.matchAll(/^import (?:Data\.Profunctor\.Row\.\w+|QualifiedDo\.\w+) as (\w+)/gm))
+  for (const m of src.matchAll(/^import (?:Data\.Profunctor\.Row\.\w+|PUI\.Pipeline|QualifiedDo\.\w+) as (\w+)/gm))
     words.push(m[1] + ".do")
   return words
 }

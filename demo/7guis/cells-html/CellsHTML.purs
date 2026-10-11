@@ -7,20 +7,20 @@ import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
 import PUI (blankStatus, fold, foreach, foreachAt, joined, looped, prefixed, settled, with)
-import PUI.Web (attrWith, clicked, shown, staticText, text, textAt, (:=))
+import PUI.Pipeline as Pipeline
+import PUI.Web (attrWith, clicked, staticText, text, textAt, (:=))
 import PUI.Web.HTML (body, div, input, label, p, table, td, tr)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 cellsHTML :: Effect Unit
 cellsHTML =
-  body $ div $ Semigroupoid.do
-    p (text selectedLine) # shown
+  body $ div $ Pipeline.do
+    p (text selectedLine)
     p ( label $ prefixed (staticText "Formula (e.g. =SUM(A0:A5)*2) ") $ input @"Formula (e.g. =SUM(A0:A5)*2)" "text" # "size" := "32" ) # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
-      ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
-        ( tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) columnHeaders ) # shown
-        ( tr $ Semigroupoid.do
-          ( td >>> "style" := headerFace $ text rowLabel ) # shown
+      ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Pipeline.do
+        tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) columnHeaders
+        ( tr $ Pipeline.do
+          td >>> "style" := headerFace $ text rowLabel
           ( clicked @"Cell picked" @"key" ( td >>> attrWith "style" cellFace $ textAt @"text" ) ) # foreachAt @"key" @"cells" ) # foreach @"rowKey"
             @( rowKey :: String
              , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }

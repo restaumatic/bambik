@@ -8,36 +8,35 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Variant (match)
 import Effect (Effect)
 import OrderFormViewModel (distanceLine, distanceOf, estimateDistance, fulfillmentCase, fulfillmentState, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine, summarySettleTime)
-import PUI (action, armed, atCase, blankStatus, bracketed, debounced, fold, looped, settled, updated)
-import PUI.Web ((<+>), choice, inCaseAt, shown, shownWhen, text)
+import PUI (action, armed, atCase, blankStatus, bracketed, debounced, fold, looped, prefixed, settled, suffixed, updated)
+import PUI.Pipeline as Pipeline
+import PUI.Web ((<+>), choice, inCaseAt, pane, text)
 import PUI.Web.MDC2 (body, body1, button, card, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderFormMDC2 :: Effect Unit
 orderFormMDC2 =
-  body $ Semigroupoid.do
+  body $ Pipeline.do
     indeterminateLinearProgress # action loadOrder
     blankStatus @"Order loaded" # fold identity
-    ( Semigroupoid.do
-      ( headline6 $ text orderLine ) # shown
-      group @"Identifier" $ Semigroupoid.do
+    ( Pipeline.do
+      headline6 $ text orderLine
+      group @"Identifier" $ Pipeline.do
         filledTextField @"Short ID" {}
         filledTextField @"Unique ID" {}
-      group @"Customer" $ Semigroupoid.do
+      group @"Customer" $ Pipeline.do
         filledTextField @"First name" {}
         filledTextField @"Last name" {}
       group @"Fulfillment" $
-        ( Semigroupoid.do
+        ( Pipeline.do
           tabBar @"selected"
             (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
           filledTextField @"Table" {} # inCaseAt @"Dine in" @"selected"
           filledTextField @"Time" {} # inCaseAt @"Takeaway" @"selected"
-          ( Semigroupoid.do
+          ( Pipeline.do
             filledTextField @"Address" {} # settled staleDistanceForgotten
-            ( Semigroupoid.do
+            ( Pipeline.do
               button @"Estimate distance" { icon: "near_me" }
-              indeterminateLinearProgress # action @( estimated :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance })
-            ( body1 $ text distanceLine ) # shownWhen @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf ) # inCaseAt @"Delivery" @"selected" ) # bracketed @"Mode"
+              indeterminateLinearProgress # action @( estimated :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # updated (match { estimated: setDistance }) # suffixed (body1 (text distanceLine) # pane @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf) ) # inCaseAt @"Delivery" @"selected" ) # bracketed @"Mode"
               @( "Dine in" :: { "Table" :: String }
                , "Takeaway" :: { "Time" :: String }
                , "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
@@ -48,12 +47,11 @@ orderFormMDC2 =
                , "Address" :: String
                , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
                ) fulfillmentState fulfillmentCase
-      group @"Payment" $ Semigroupoid.do
+      group @"Payment" $ Pipeline.do
         filledTextField @"Total" {}
         segmentedButton @"Method"
           (choice @"cash" <+> choice @"card")
-        filledTextField @"Paid" {}
-        ( body1 $ text payingLine ) # shown
+        filledTextField @"Paid" {} # suffixed (body1 $ text payingLine)
       group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
         @( "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
          , "Customer" :: { "First name" :: String, "Last name" :: String }
@@ -61,7 +59,7 @@ orderFormMDC2 =
          , "Payment" :: { "Total" :: String, "Method" :: [ "cash" :: {}, "card" :: {} ], "Paid" :: String }
          , "Kitchen" :: { "Remarks" :: String }
          )
-    card $ body1 (text summaryLine) # shown # debounced summarySettleTime
+    prefixed (card $ body1 (text summaryLine)) identity # debounced summarySettleTime
     ( RecordToVariant.do
       button @"Submit order" { icon: "save" }
       button @"Receipt" { icon: "file" } ) # armed

@@ -7,22 +7,22 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (blankStatus, fold, foreach, joined, looped, with)
-import PUI.Web (attrWith, clicked, shownWhen, text, (:=))
+import PUI.Pipeline as Pipeline
+import PUI.Web (attrWith, clicked, pane, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, button, headlineSmall)
-import QualifiedDo.Semigroupoid as Semigroupoid
 import TicTacToeViewModel (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine)
 
 ticTacToeMDC3 :: Effect Unit
 ticTacToeMDC3 =
-  body $ Semigroupoid.do
-    headlineSmall (text wonLine) # shownWhen @"won"
+  body $ Pipeline.do
+    headlineSmall (text wonLine) # pane @"won"
       @( won :: { mark :: [ x :: {}, o :: {}, free :: {} ] }
        , drawn :: {}
        , toMove :: { mark :: [ x :: {}, o :: {}, free :: {} ] }
        ) gameOutcome
-    headlineSmall (text drawnLine) # shownWhen @"drawn" gameOutcome
-    headlineSmall (text toMoveLine) # shownWhen @"toMove" gameOutcome
+    headlineSmall (text drawnLine) # pane @"drawn" gameOutcome
+    headlineSmall (text toMoveLine) # pane @"toMove" gameOutcome
     RecordToVariant.do
       ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
         clicked @"Cell claimed" @"key" ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key"

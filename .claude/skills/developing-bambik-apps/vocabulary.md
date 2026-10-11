@@ -25,7 +25,8 @@ and emitters of a catalogue — are in the design-system module header
 
 | You are writing | Word | Demo | Read |
 | --- | --- | --- | --- |
-| stages one after another | `Semigroupoid.do` (`import QualifiedDo.Semigroupoid as Semigroupoid`) | counter | writing.md *The pipeline* |
+| the screen's lines, top to bottom: stages one after another, displays applied to what follows | `Pipeline.do` (`import PUI.Pipeline as Pipeline`) | counter | writing.md *The pipeline*; `PUI.Pipeline` |
+| displays ending a block after a stage | `slider @"Split between" {} # suffixed ( Pipeline.do … )` | tip-calculator, stopwatch | writing.md *The pipeline* |
 | displays and chrome reading one record side by side | `RecordToRecord.do` — `div $ RecordToRecord.do` | espresso-bar, loan-calculator, meeting-booker, shopping-cart | `Data.Profunctor.Row.RecordToRecord` |
 | several emitters over one record | `RecordToVariant.do` | cashbox, stopwatch, crud | `Data.Profunctor.Row.RecordToVariant` |
 | one stage per event case | `VariantToVariant.do` | crud, cashbox, reorder | `Data.Profunctor.Row.VariantToVariant` |
@@ -49,17 +50,16 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| a value, formatted | `headline4 (text countLine) # shown` | counter | writing.md *Components*; `PUI.Web` |
+| a value, formatted | `headline4 (text countLine)` | counter | writing.md *Components*; `PUI.Web` |
 | a field as it is stored | `textAt @"title"`; `textAt @"entry"` | todo-list; calculator | writing.md *Code style* |
-| a sentence composed from several fields | `( headline6 $ text balanceLine ) # shown` | cashbox | writing.md *Code style* → *Types and values* |
+| a sentence composed from several fields | `headline6 $ text balanceLine` | cashbox | writing.md *Code style* → *Types and values* |
 | a case label read as copy | `caseText` (`Data.Variant.Case`), in the view model module | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
 | a number as a bar, gauge or stars | `linearProgress elapsedFraction`; `progressBar seatOccupancy` | timer; meeting-booker | the design-system module |
-| fixed copy introducing what follows — a heading, a caption | `prefixed (headline4 $ staticText "Create account") $ …`; `label $ prefixed (staticText "°C ") $ input @"celsius" "text"` | signup-form; temperature-converter-html | writing.md *Code style* → *Types and values*; `PUI` |
-| fixed copy on its own — a note, a divider | `divider # shown` | photo-gallery | writing.md *Components* |
-| a record-reading group of displays | `# shown` | loan-calculator | writing.md *Stages* |
-| a pane for one state of the model | `# shownWhen @"faulty" readout`; `# shownWhenAt @"serving" @"display"` | calculator, flight-booker, checkout; ticket-dispenser | writing.md *Conditional visibility* |
-| a list, displayed | `ul $ ( li $ text lapLine ) # shownEach @"number" lapRows` | stopwatch | writing.md *Collections* |
-| a card that edits nothing | `card $ body1 (text summaryLine) # shown` | order-form, product-review | writing.md *Components* |
+| fixed copy introducing what follows — a heading, a caption | `headline4 $ staticText "Create account"` as a block line; inside one element, `label $ prefixed (staticText "°C ") $ input @"celsius" "text"` | signup-form; temperature-converter-html | writing.md *Code style* → *Types and values*; `PUI` |
+| fixed copy on its own — a note, a divider | `divider` | photo-gallery | writing.md *Components* |
+| a pane for one state of the model | `# pane @"faulty" readout`; `# paneAt @"serving" @"display"` | calculator, flight-booker, checkout; ticket-dispenser | writing.md *Conditional visibility* |
+| a list, displayed | `ul $ ( li $ text lapLine ) # foreach @"number" lapRows` | stopwatch | writing.md *Collections* |
+| a card that edits nothing | `card $ body1 (text summaryLine)` | order-form, product-review | writing.md *Components* |
 | a readout that settles before it redraws | `# debounced summarySettleTime` | order-form, flight-booker | `PUI` |
 | a hint on hover | `# tooltip "You must accept the terms of service to sign up"`; `# tooltipWith loyaltyNote` | signup-form; espresso-bar | the design-system module |
 | a value-computed attribute | `attrWith "style" keyFace` | calculator, cells, circle-drawer | `PUI.Web` |
@@ -83,7 +83,7 @@ and emitters of a catalogue — are in the design-system module header
 | a selection the user may leave unmade | `dropdownOptional @"Catering" @"ordered" @"none" {} […]` | meeting-booker | writing.md *Components* |
 | a bounded quantity | `sliderLive @"Duration" {}`; `slider @"Split between" {}` | timer; tip-calculator | writing.md *Code style* → *Types and values* |
 | two controls on one field | `slider @"Tip percentage" {}` then `rangeInput @"Tip percentage"` | tip-calculator | writing.md *Components* |
-| a labelled group over a sub-record | `group @"Customer" $ Semigroupoid.do …` | order-form, potluck, reorder | writing.md *Components* |
+| a labelled group over a sub-record | `group @"Customer" $ Pipeline.do …` | order-form, potluck, reorder | writing.md *Components* |
 | a reusable sub-form over a flat sub-row | `addressForm # subStrong` | parcel | `PUI` |
 | an editor that exists in one state | `# inCaseAt @"return" @"Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
 | an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |
@@ -141,6 +141,6 @@ and emitters of a catalogue — are in the design-system module header
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
 | the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, nothing unknown | writing.md *Writing order* |
 | the model row | `# looped @( … ) # with seed` (counter, inbox); `# looped @( … )` after a load action folded in (crud, order-form) | writing.md *Types and values* |
-| a derived row, where it is introduced | a classifier's first pane `# shownWhen @l @( … ) f` (checkout), `# action @( … ) f` (flight-booker), `# foreach @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
+| a derived row, where it is introduced | a classifier's first pane `# pane @l @( … ) f` (checkout), `# action @( … ) f` (flight-booker), `# foreach @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

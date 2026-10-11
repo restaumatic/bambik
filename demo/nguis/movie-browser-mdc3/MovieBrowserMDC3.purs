@@ -5,26 +5,26 @@ import Prelude ((#), ($), Unit)
 import Effect (Effect)
 import MovieBrowserViewModel (favoriteMark, favoritesLine, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
 import PUI (blankStatus, fold, foreach, joined, looped, toCase, with)
-import PUI.Web ((<+>), choice, shown, text)
+import PUI.Pipeline as Pipeline
+import PUI.Web ((<+>), choice, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 movieBrowserMDC3 :: Effect Unit
 movieBrowserMDC3 =
-  body $ Semigroupoid.do
+  body $ Pipeline.do
     tabBar @"category"
       (choice @"All" <+> choice @"Action" <+> choice @"Drama" <+> choice @"Comedy")
-    chipSet ( Semigroupoid.do
+    chipSet ( Pipeline.do
       filterChip @"Classic" {}
       filterChip @"Cult" {}
       filterChip @"Oscar" {} )
-    ( elevation1 $ titleMedium $ text favoritesLine ) # shown
+    elevation1 $ titleMedium $ text favoritesLine
     list $
-      ( listItem $ Semigroupoid.do
-        span (text titleLine) # shown
-        span (text yearLine) # shown
-        span (text ratingLine) # shown
+      ( listItem $ Pipeline.do
+        span (text titleLine)
+        span (text yearLine)
+        span (text ratingLine)
         iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # foreach @"title"
           @( title :: String
            , year :: Int

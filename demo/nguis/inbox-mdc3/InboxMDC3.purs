@@ -7,26 +7,26 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import InboxViewModel (deletionPane, composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageComposedLine, messageDeletedLine, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
 import PUI (blankStatus, fold, joined, looped, observed, with)
-import PUI.Web (provided, shown, text)
+import PUI.Pipeline as Pipeline
+import PUI.Web (provided, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, bodyLarge, bodyMedium, bodySmall, button, dialog, fab, headlineSmall, iconButton, listOfAt, menu, menuItem, snackbar)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 inboxMDC3 :: Effect Unit
 inboxMDC3 =
-  body $ Semigroupoid.do
-    ( bodySmall $ text unreadLine ) # shown
+  body $ Pipeline.do
+    bodySmall $ text unreadLine
     RecordToVariant.do
-      listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } ( span $ text messageLine # shown ) # joined @"Message opened"
-      ( Semigroupoid.do
-        headlineSmall (text subjectLine) # shown
-        bodyMedium (text fromLine) # shown
-        bodyLarge (text bodyText) # shown
+      listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } ( span $ text messageLine ) # joined @"Message opened"
+      ( Pipeline.do
+        headlineSmall (text subjectLine)
+        bodyMedium (text fromLine)
+        bodyLarge (text bodyText)
         iconButton @"Delete message" {} "delete" ) # provided @"reading"
           @( reading :: { sender :: String, subject :: String, body :: String }
            , browsing :: {}
            ) messageView # joined @"Delete message"
-      ( Semigroupoid.do
+      ( Pipeline.do
         ( dialog "Delete the last message?" $ RecordToVariant.do
           button @"Delete" {}
           button @"Keep" {} ) # provided @"confirming"

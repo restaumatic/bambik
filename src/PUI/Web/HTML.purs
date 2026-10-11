@@ -10,8 +10,8 @@
 -- |
 -- | Everything that names no element — the decorators (`attr`/`:=`, `cl`,
 -- | `attrWith`, `clWhen`), the text leaves (`text`, `staticText`), the
--- | occurrence sources (`clicked`, `onClickedXY`), visibility (`provided`)
--- | and the gated displays (`shown`, `shownWhen`, `inCase`, `shownEach`),
+-- | occurrence sources (`clicked`, `onClickedXY`),
+-- | and the panes (`provided`, `pane`, `inCase`),
 -- | and the structure builders (`dynamic`, `each`, `el`) — lives in the
 -- | parent module, `PUI.Web`, shared with SVG and the design systems.
 module PUI.Web.HTML

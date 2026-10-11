@@ -9,23 +9,23 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import PUI (action, atCase, blankStatus, fold, foreach, joined, looped, subChoice)
-import PUI.Web (attrWith, clicked, shown, text, (:=))
+import PUI.Pipeline as Pipeline
+import PUI.Web (attrWith, clicked, text, (:=))
 import PUI.Web.HTML (li, ul)
 import PUI.Web.Shoelace (body, button, indeterminateLinearProgress, textField, toast)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudShoelace :: Effect Unit
 crudShoelace =
-  body $ Semigroupoid.do
+  body $ Pipeline.do
     indeterminateLinearProgress # action loadPeopleCatalogue
     blankStatus @"People loaded" # fold identity
-    ( Semigroupoid.do
+    ( Pipeline.do
       textField @"Filter prefix (surname)" {}
       textField @"Name" {}
       textField @"Surname" {}
       RecordToVariant.do
         ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--sl-color-neutral-300, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $
-          ( clicked @"Person picked" @"key" ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key"
+          ( clicked @"Person picked" @"key" ( li >>> attrWith "style" entryFace $ text personLine ) ) # foreach @"key"
             @( key :: Int
              , "Name" :: String
              , "Surname" :: String

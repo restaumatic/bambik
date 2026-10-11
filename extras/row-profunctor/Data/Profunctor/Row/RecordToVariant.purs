@@ -74,8 +74,8 @@
 -- | nothing. That is why the type is variant-output only — silent at
 -- | *variant* output is a source with nothing to say, while silent at an
 -- | inhabited *record* output would be a starved gate, which is why the
--- | record-side panes (`shownWhen`/`inCase`) release the fed row always
--- | instead. But absence is **not a copairing**: routing the input away
+-- | record-side panes answer every feed instead — `pane` with `{}`, `inCase`
+-- | with the fed row. But absence is **not a copairing**: routing the input away
 -- | from `w` leaves `w`'s own emission channel connected, so
 -- | `lcmap f' (left w >>> right silence)` still emits when the source
 -- | fires in the "absent" case (checked on the probe carrier, 2026-09-11:
