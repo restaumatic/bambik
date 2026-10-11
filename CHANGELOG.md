@@ -6,7 +6,7 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## Unreleased (branch experiment/scope)
+## 2026-10-11, later
 
 - **Scopes.** `PUI` gains `Scope` (`Active`/`Suspended`/`Cancelled`,
   nesting, finalizers) and `class Scoped m` (`Web` keeps the scope in its
