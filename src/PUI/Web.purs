@@ -79,6 +79,7 @@ module PUI.Web
   , hole
   , pane
   , paneAt
+  , separating
   , inCase
   , inCaseAt
   , text
@@ -265,6 +266,7 @@ foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Uni
 foreign import afterTask :: Effect Unit -> Effect Unit
 foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
 foreign import createCommentNode :: String -> Effect Node
+foreign import separatorRule :: Node -> Node -> Node -> Effect Unit
 foreign import setAttribute :: Node -> String -> String -> Effect Unit
 foreign import removeAttribute :: Node -> String -> Effect Unit
 foreign import removeAllChildren :: Node -> Effect Unit
@@ -478,6 +480,32 @@ selectedWith checkedOf stored w = focusField @l $ wrap do
     }
 
 -- The element-neutral vocabulary (see the module header).
+
+-- | A **separator**: a static rule shown only *between* things. The rule
+-- | is built before the content, and an observer on their parent keeps it
+-- | visible exactly while something rendered precedes it and the content
+-- | renders something — a detached pane, an empty collection or a blank
+-- | leaf on either side hides it, a feed that fills them shows it again.
+-- | "Something" is decided on the DOM, not the data: a non-blank text node,
+-- | a replaced or custom element, or an element containing one; comments,
+-- | hidden nodes and other rules count for nothing. So the separator is an
+-- | ocular — `forall a b`, it reads no row and touches no channel, it only
+-- | watches the UI it decorates — and is written leading like every
+-- | static: `divider $ slider @"Attendees" {} # inCaseAt @"chosen" @"Room"`
+-- | (meeting-booker: no rule above an absent slider). Every vocabulary's
+-- | `divider`, and HTML's `hr`, is `separating` over its own rule.
+separating :: forall a b. PUI Web {} {} -> PUI Web a b -> PUI Web a b
+separating rule w = wrap do
+  parentNode <- gets _.parent
+  start <- liftEffect $ createCommentNode "separator"
+  liftEffect $ appendChild start parentNode
+  _ <- unwrap rule
+  ruleEnd <- liftEffect $ lastChild parentNode
+  w' <- unwrap w
+  end <- liftEffect $ createCommentNode "/separator"
+  liftEffect $ appendChild end parentNode
+  liftEffect $ separatorRule start ruleEnd end
+  pure w'
 
 -- | The **display pane**: content that shows data, attached and fed the
 -- | case payload while the classifier yields case `l`, detached on any

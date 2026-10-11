@@ -4,7 +4,7 @@ import Prelude (Unit, ($), (#))
 
 import Effect (Effect)
 import ProductReviewViewModel (freshImpression, previewLine, submittedLine)
-import PUI (armed, looped, prefixed, suffixed, with)
+import PUI (armed, looped, prefixed, with)
 import PUI.Web ((<+>), choice, text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
@@ -20,7 +20,7 @@ productReviewShoelace =
       select @"How long have you owned it?" {}
         (choice @"less than a month" <+> choice @"1–12 months" <+> choice @"more than a year")
       toggleSwitch @"I'd recommend it to a friend" {}
-      textField @"Nickname" {} # suffixed divider
+      textField @"Nickname" {}
     ) # looped
       @( "Overall rating" :: { current :: Number, max :: Int }
        , "Headline" :: String
@@ -29,5 +29,5 @@ productReviewShoelace =
        , "I'd recommend it to a friend" :: Boolean
        , "Nickname" :: String
        ) # with freshImpression
-    prefixed (card $ p (text previewLine)) $ button @"Submit review" {} # armed
+    divider $ prefixed (card $ p (text previewLine)) $ button @"Submit review" {} # armed
     toast @"Submit review" submittedLine

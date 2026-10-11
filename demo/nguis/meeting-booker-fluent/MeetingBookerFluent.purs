@@ -23,7 +23,7 @@ meetingBookerFluent =
       dropdownOptional @"Catering" @"ordered" @"none" {}
         (choice @"coffee and pastries" <+> choice @"sandwich lunch")
       toggleSwitch @"Include a Teams link" {}
-      prefixed (divider) $ slider @"Attendees" {} # inCaseAt @"chosen" @"Room"
+      divider $ slider @"Attendees" {} # inCaseAt @"chosen" @"Room"
     ) # looped
       @( "Meeting title" :: String
        , "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ]

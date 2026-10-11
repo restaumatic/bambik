@@ -142,7 +142,7 @@ import Data.Profunctor.Seeding (isHole)
 import PUI (Ocular, PUI, blank, foreach, prefixed, static, suffixed)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clickedRow, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, textOf, uniqueId, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addClass, addEventListener, attribute, attrWith, cl, clazz, clicked, clickedRow, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, textOf, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1640,8 +1640,8 @@ tooltipWith f content = wrap do
 dividerExact :: PUI Web {} {}
 dividerExact = staticHTML "<hr class=\"mdc-deprecated-list-divider\" style=\"width: 100%;\">"
 
-divider :: forall in_. PUI Web { | in_ } {}
-divider = unsafeCoerce (dividerExact :: PUI Web {} {})
+divider :: Ocular (PUI Web)
+divider = separating dividerExact
 
 -- | One picture in an `imageList`, with `label` shown as its caption and
 -- | used as its alternative text.

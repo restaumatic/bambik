@@ -60,6 +60,45 @@ export function createCommentNode(text) {
   }
 };
 
+// separatorRule :: Node -> Node -> Node -> Effect Unit — the rule's nodes
+// follow `start` up to `ruleEnd`; the content they introduce follows up to
+// `end`. The rule shows while something rendered precedes it and the content
+// renders something, re-decided on every change under their parent.
+export function separatorRule(start) {
+  return function (ruleEnd) {
+    return function (end) {
+      return function () {
+        const parent = start.parentNode;
+        const replaced = /^(input|img|svg|canvas|video|audio|select|textarea|button|iframe|progress|meter|object|embed)$/i;
+        const rule = /^(hr|md-divider|sl-divider|fluent-divider)$/i;
+        const something = (n) => {
+          if (n.nodeType === 3) return n.textContent.trim() !== "";
+          if (n.nodeType !== 1) return false;
+          if (n.hidden || (n.style && n.style.display === "none")) return false;
+          const tag = n.tagName;
+          if (rule.test(tag)) return false;
+          if (replaced.test(tag) || tag.includes("-")) return true;
+          for (let c = n.firstChild; c; c = c.nextSibling) if (something(c)) return true;
+          return false;
+        };
+        const evaluate = () => {
+          let before = false;
+          for (let n = start.previousSibling; n && !before; n = n.previousSibling) before = something(n);
+          let after = false;
+          for (let n = ruleEnd.nextSibling; n && n !== end && !after; n = n.nextSibling) after = something(n);
+          const show = before && after;
+          for (let n = start.nextSibling; n; n = n.nextSibling) {
+            if (n.nodeType === 1) n.style.display = show ? "" : "none";
+            if (n === ruleEnd) break;
+          }
+        };
+        evaluate();
+        new MutationObserver(evaluate).observe(parent, { childList: true, subtree: true, characterData: true });
+      };
+    };
+  };
+}
+
 // createDocumentFragment :: IOSync Node
 export function createDocumentFragment() {
   return document.createDocumentFragment();

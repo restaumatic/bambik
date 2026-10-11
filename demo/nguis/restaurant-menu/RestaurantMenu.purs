@@ -20,8 +20,7 @@ restaurantMenu =
           >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText "Y"
       h1 >>> cl "restaurant-name" $ staticText "Osteria Yoneda"
       p >>> cl "tagline" $ staticText "Cucina componibile — a tasting menu, composed"
-      hr
-    div >>> cl "courses" $
+    hr $ div >>> cl "courses" $
       ( section >>> cl "course" $ RecordToRecord.do
         h2 (text courseName)
         ul >>> cl "dishes" $

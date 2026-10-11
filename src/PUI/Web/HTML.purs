@@ -64,7 +64,6 @@ module PUI.Web.HTML
 
 import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude
-import Unsafe.Coerce (unsafeCoerce)
 
 import Control.Monad.State (gets, modify_)
 import Data.Array ((!!), findIndex)
@@ -85,7 +84,7 @@ import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, (:=), (:=>))
+import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, addEventListener, adoptHostDiagnostics, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, runDomInNode, setAttribute, setValue, staticText, textOf, separating, (:=), (:=>))
 
 -- UIs
 
@@ -323,8 +322,8 @@ hrExact = wrap do
     , fromUser: \prop -> prop {}
     }
 
-hr :: forall in_. PUI Web { | in_ } {}
-hr = unsafeCoerce (hrExact :: PUI Web {} {})
+hr :: Ocular (PUI Web)
+hr = separating hrExact
 
 -- UIOculars
 

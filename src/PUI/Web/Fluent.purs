@@ -40,7 +40,6 @@ module PUI.Web.Fluent
 
 import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude hiding (div)
-import Unsafe.Coerce (unsafeCoerce)
 
 import Control.Monad.State (gets)
 import Data.Array ((!!), findIndex)
@@ -61,7 +60,7 @@ import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clickedRow, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, cl, clickedRow, el, element, getChecked, getValue, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, textOf, separating, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -467,8 +466,8 @@ cardCss = """
 dividerExact :: PUI Web {} {}
 dividerExact = staticHTML "<fluent-divider style=\"width: 100%;\"></fluent-divider>"
 
-divider :: forall in_. PUI Web { | in_ } {}
-divider = unsafeCoerce (dividerExact :: PUI Web {} {})
+divider :: Ocular (PUI Web)
+divider = separating dividerExact
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

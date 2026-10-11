@@ -57,7 +57,8 @@ and emitters of a catalogue — are in the design-system module header
 | a case label read as copy | `caseText` (`Data.Variant.Case`), in the view model module | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
 | a number as a bar, gauge or stars | `linearProgress elapsedFraction`; `progressBar seatOccupancy` | timer; meeting-booker | the design-system module |
 | fixed copy introducing what follows — a heading, a caption | `headline4 $ staticText "Create account"` as a block line; inside one element, `label $ prefixed (staticText "°C ") $ input @"celsius" "text"` | signup-form; temperature-converter-html | writing.md *Code style* → *Types and values*; `PUI` |
-| fixed copy on its own — a note, a divider | `divider` | photo-gallery | writing.md *Components* |
+| fixed copy on its own — a note | `listItem $ staticText "…"` | photo-gallery | writing.md *Components* |
+| a rule between things | `divider $ …`, `hr $ …` — shown only while both sides render something | meeting-booker, photo-gallery, restaurant-menu | writing.md *Code style* → *Types and values*; `PUI.Web` |
 | a pane for one state of the model | `# pane @"faulty" readout`; `# paneAt @"serving" @"display"` | calculator, flight-booker, checkout; ticket-dispenser | writing.md *Conditional visibility* |
 | a list, displayed | `ul $ ( li $ text lapLine ) # foreach @"number" lapRows` | stopwatch | writing.md *Collections* |
 | a card that edits nothing | `card $ body1 (text summaryLine)` | order-form, product-review | writing.md *Components* |

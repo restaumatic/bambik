@@ -608,7 +608,12 @@ text is computed, a chrome line nothing.
   `headline4 $ staticText "Create account"`); inside one element, where
   there is no block, it is `prefixed` over what it introduces
   (`label $ prefixed (staticText "°C ") $ input @"celsius" "text"`,
-  temperature-converter-html). A **constant** shows only through data — a sentence's glue,
+  temperature-converter-html). A **separator** is written the same way,
+  leading over what it introduces (`divider $ slider @"Attendees" {} #
+  inCaseAt @"chosen" @"Room"`, meeting-booker), and shows itself only
+  between things: while something is rendered before it and what it
+  introduces renders something — never above an absent pane or an empty
+  list. A **constant** shows only through data — a sentence's glue,
   a pane's message — and lives in a copy function: `text faultLine #
   pane @"faulty" readout` (calculator), `# tooltipWith loyaltyNote`
   (espresso-bar). Text that *is* data (a parsed markdown run) is

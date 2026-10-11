@@ -37,7 +37,6 @@ module PUI.Web.Shoelace
 
 import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude hiding (div)
-import Unsafe.Coerce (unsafeCoerce)
 
 import Control.Monad.State (gets)
 import Data.Array ((!!), findIndex)
@@ -56,7 +55,7 @@ import Data.Profunctor.Row (widenRecordInput)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, clickedRow, el, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, textOf, (:=))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, addEventListener, attribute, clickedRow, el, element, getChecked, getValue, isFocused, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, textOf, separating, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -400,8 +399,8 @@ card content = el "sl-card" $
 dividerExact :: PUI Web {} {}
 dividerExact = staticHTML "<sl-divider style=\"width: 100%;\"></sl-divider>"
 
-divider :: forall in_. PUI Web { | in_ } {}
-divider = unsafeCoerce (dividerExact :: PUI Web {} {})
+divider :: Ocular (PUI Web)
+divider = separating dividerExact
 
 -- the canonical status payload, read into the text leaf as its projection
 eventText :: [ event :: String ] -> String

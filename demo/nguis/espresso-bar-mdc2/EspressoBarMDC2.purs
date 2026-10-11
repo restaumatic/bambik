@@ -33,8 +33,7 @@ espressoBarMDC2 =
         toggleSwitch @"Takeaway cup" {}
         iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "favorite_border" }
         checkbox @"Loyalty" @"member" @"guest" {} (staticText "Loyalty member") # tooltipWith loyaltyNote
-        prefixed ( RecordToRecord.do
-          divider
+        divider $ prefixed ( RecordToRecord.do
           body2 (text cupLine)
           ( div $ RecordToRecord.do
             caption $ staticText "Caffeine"
