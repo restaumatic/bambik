@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (blankStatus, fold, looped, ticks, with)
+import PUI (blankStatus, fold, looped, prefixed, ticks, with)
 import PUI.Web (shown, staticText, text)
 import PUI.Web.HTML (body, button, div, label, p, progress, rangeInput)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,9 +16,7 @@ timerHTML =
   body $ div $ Semigroupoid.do
     progress elapsedFraction # shown
     (p $ text progressLine) # shown
-    p ( label $ Semigroupoid.do
-      (staticText "Duration ") # shown
-      rangeInput @"Duration" )
+    p ( label $ prefixed (staticText "Duration ") $ rangeInput @"Duration" )
     RecordToVariant.do
       blankStatus @"Clock ticked" # ticks tickPeriod
       button @"Reset" {}

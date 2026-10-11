@@ -587,7 +587,12 @@ text is computed, a chrome line nothing.
 - **Fixed copy is static or constant.** A **static** is on screen before
   and regardless of any data — a heading, a note, a checkbox's caption —
   and is a value, never a label, since it names no field and no case:
-  `staticText "Hours"`. A **constant** shows only through data — a sentence's glue,
+  `staticText "Hours"`. A static that introduces what follows — a
+  heading over its section, a caption before its field — is written
+  first, as an ocular over what it introduces, and needs no `# shown`:
+  `prefixed (headline4 $ staticText "Create account") $ …` (signup-form),
+  `label $ prefixed (staticText "°C ") $ input @"celsius" "text"`
+  (temperature-converter-html). A **constant** shows only through data — a sentence's glue,
   a pane's message — and lives in a copy function: `text faultLine #
   shownWhen @"faulty" readout` (calculator), `# tooltipWith loyaltyNote`
   (espresso-bar). Text that *is* data (a parsed markdown run) is

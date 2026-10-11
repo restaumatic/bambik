@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Effect (Effect)
 import PhotoGalleryViewModel (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
-import PUI (looped, updated, with)
+import PUI (looped, prefixed, updated, with)
 import PUI.Web (each, shown, shownEach, staticText, text, textAt)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (body, divider, drawer, headline2, imageList, imageListItem, imagePane, list, listItem, listOf, overline, topAppBar)
@@ -24,8 +24,7 @@ photoGalleryMDC2 =
             listItem $ staticText "Every photo is an SVG"
             listItem $ staticText "developed from its caption"
             listItem $ staticText "No network involved" ) # shown
-          ( overline $ staticText "Favorites" ) # shown
-          ( imageList 2 $ each @{ src :: String, alt :: String } favoriteShots imageListItem ) # shown )
+          ( prefixed (overline $ staticText "Favorites") $ imageList 2 $ each @{ src :: String, alt :: String } favoriteShots imageListItem ) # shown )
         ( Semigroupoid.do
           ( headline2 $ text albumTitle ) # shown
           imageList 3 $ imagePane developedShot # shownEach @"shot" @( shot :: String ) albumShots )

@@ -45,7 +45,7 @@ import FlightBookerViewModelTest (flightBookerClaims)
 import OrderFormViewModelTest (orderFormClaims)
 import TemperatureConverterViewModelTest (temperatureConverterClaims)
 import TodoListViewModelTest (todoListClaims)
-import PUI (PUI(..), accumulated, acted, announce, applied, blankStatus, dispatched, edited, fold, foreach, looped, observed, optioned, replaying, resolveFor, seeded, silence, updated, with)
+import PUI (PUI(..), accumulated, acted, announce, applied, blankStatus, dispatched, edited, fold, foreach, looped, observed, optioned, prefixed, replaying, resolveFor, seeded, silence, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -2137,6 +2137,39 @@ main = do
       Ref.read seen
     assertEqual "capturing decorator: inside the gate it sees the dropped emission too" 2 inside
     assertEqual "capturing decorator: outside the gate it does not — the admission law fails, so it is not an ocular" 1 outside
+
+  -- == prefixed is an ocular: the admission law holds, the content's stream ==
+  -- == is untouched, and the static is fed {} once per feed of the content. ==
+  do
+    let
+      script m gProp = do
+        fire gProp "early"
+        m.toUser (Tuple 1 true)
+        fire gProp "x"
+      staticProbe :: Ref.Ref Int -> PUI Effect {} {}
+      staticProbe fed = PUI (pure { toUser: \_ -> Ref.modify_ (_ + 1) fed, fromUser: \_ -> pure unit })
+    inside <- do
+      fed <- Ref.new 0
+      gProp <- Ref.new Nothing
+      outs <- Ref.new ([] :: Array (Tuple String Boolean))
+      m <- unwrap (first (prefixed (staticProbe fed) (probe gProp :: PUI Effect Int String)) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean))
+      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+      script m gProp
+      os <- Ref.read outs
+      n <- Ref.read fed
+      pure { os, n }
+    outside <- do
+      fed <- Ref.new 0
+      gProp <- Ref.new Nothing
+      outs <- Ref.new ([] :: Array (Tuple String Boolean))
+      m <- unwrap (prefixed (staticProbe fed) (first (probe gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+      m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+      script m gProp
+      os <- Ref.read outs
+      n <- Ref.read fed
+      pure { os, n }
+    assertEqual "prefixed: ocular (first w) = first (ocular w) — streams and static feeds agree" inside outside
+    assertEqual "prefixed: the content's stream untouched, the static fed once per feed" { os: [ Tuple "x" true ], n: 1 } inside
 
   -- announce's naturality: rmap f (announce a) = announce (f a).
   do

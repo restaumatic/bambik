@@ -7,8 +7,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blank, blankStatus, fold, foreach, joined, looped, settled, with)
-import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, shown, staticText, (:=))
+import PUI (blank, blankStatus, fold, foreach, joined, looped, prefixed, settled, with)
+import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, staticText, (:=))
 import PUI.Web.HTML (body, button, div, label, p, rangeInput)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,9 +16,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 circleDrawerHTML :: Effect Unit
 circleDrawerHTML =
   body $ div $ Semigroupoid.do
-    p ( label $ Semigroupoid.do
-      (staticText "Diameter ") # shown
-      rangeInput @"Diameter" ) # inCaseAt @"chosen" @"selected" # settled resizeSelected
+    p ( label $ prefixed (staticText "Diameter ") $ rangeInput @"Diameter" ) # inCaseAt @"chosen" @"selected" # settled resizeSelected
     RecordToVariant.do
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
         ( onClickedXY @"Canvas clicked"

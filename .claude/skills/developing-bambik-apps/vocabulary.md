@@ -54,7 +54,8 @@ and emitters of a catalogue — are in the design-system module header
 | a sentence composed from several fields | `( headline6 $ text balanceLine ) # shown` | cashbox | writing.md *Code style* → *Types and values* |
 | a case label read as copy | `caseText` (`Data.Variant.Case`), in the view model module | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
 | a number as a bar, gauge or stars | `linearProgress elapsedFraction`; `progressBar seatOccupancy` | timer; meeting-booker | the design-system module |
-| fixed copy | `(headline4 $ staticText "Create account") # shown` | signup-form | writing.md *Components* |
+| fixed copy introducing what follows — a heading, a caption | `prefixed (headline4 $ staticText "Create account") $ …`; `label $ prefixed (staticText "°C ") $ input @"celsius" "text"` | signup-form; temperature-converter-html | writing.md *Code style* → *Types and values*; `PUI` |
+| fixed copy on its own — a note, a divider | `divider # shown` | photo-gallery | writing.md *Components* |
 | a record-reading group of displays | `# shown` | loan-calculator | writing.md *Stages* |
 | a pane for one state of the model | `# shownWhen @"faulty" readout`; `# shownWhenAt @"serving" @"display"` | calculator, flight-booker, checkout; ticket-dispenser | writing.md *Conditional visibility* |
 | a list, displayed | `ul $ ( li $ text lapLine ) # shownEach @"number" lapRows` | stopwatch | writing.md *Collections* |

@@ -16,7 +16,7 @@ import Data.Number (max)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons)
-import PUI (Ocular, PUI, blank, foreach, muted)
+import PUI (Ocular, PUI, blank, foreach, muted, prefixed)
 import PUI.Web (OptCaption(..), Web, attrWith, shown, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
@@ -29,21 +29,17 @@ board = div >>> "style" := "display: flex; flex-wrap: wrap; gap: 16px; align-ite
 
 statTile :: forall r. String -> ({ | r } -> String) -> PUI Web { | r } {}
 statTile l f =
-  tile >>> "aria-label" := l $ Semigroupoid.do
-    ( labelMedium $ staticText l ) # shown
-    displaySmall (text f)
+  tile >>> "aria-label" := l $ prefixed (labelMedium $ staticText l) $ displaySmall (text f)
 
 gauge :: forall r. String -> ({ | r } -> Number) -> PUI Web { | r } {}
 gauge l f =
-  tile $ ( Semigroupoid.do
-    ( labelMedium $ staticText l ) # shown
+  tile $ ( prefixed (labelMedium $ staticText l) $ Semigroupoid.do
     linearProgress f # shown
     ( labelLarge $ text (percentLine <<< f) ) # shown ) # muted
 
 trendChart :: forall r. String -> ({ | r } -> Array Number) -> PUI Web { | r } {}
 trendChart l f =
-  tile >>> "aria-label" := l $ Semigroupoid.do
-    ( labelMedium $ staticText l ) # shown
+  tile >>> "aria-label" := l $ prefixed (labelMedium $ staticText l) $
     SVG.svg >>> "viewBox" := "0 0 120 40" >>> "preserveAspectRatio" := "none" >>> "style" := "width: 100%; height: 40px;" $
       SVG.path >>> "fill" := "none" >>> "stroke" := "var(--md-sys-color-primary, #6750a4)" >>> "stroke-width" := "2"
         >>> "stroke-linejoin" := "round" >>> "vector-effect" := "non-scaling-stroke"
@@ -51,15 +47,11 @@ trendChart l f =
 
 leaderboard :: forall r. String -> ({ | r } -> Array { name :: String, score :: String }) -> PUI Web { | r } {}
 leaderboard l f =
-  tile >>> "aria-label" := l $ Semigroupoid.do
-    ( labelMedium $ staticText l ) # shown
-    list ( ( listItem $ text entryLine ) # foreach @"name" f ) # muted
+  tile >>> "aria-label" := l $ prefixed (labelMedium $ staticText l) $ list ( ( listItem $ text entryLine ) # foreach @"name" f ) # muted
 
 rangePicker :: forall @l provided a rest r. IsSymbol l => Cons l a rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
 rangePicker provided options =
-  div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Semigroupoid.do
-    ( labelMedium $ staticText config.label ) # shown
-    segmentedButton @l options
+  div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ prefixed (labelMedium $ staticText config.label) $ segmentedButton @l options
   where
   config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
 

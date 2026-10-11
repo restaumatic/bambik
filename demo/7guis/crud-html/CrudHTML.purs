@@ -8,7 +8,7 @@ import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action, atCase, blankStatus, fold, foreach, joined, looped, subChoice)
+import PUI (action, atCase, blankStatus, fold, foreach, joined, looped, prefixed, subChoice)
 import PUI.Web (attrWith, clicked, shown, staticText, text, (:=))
 import PUI.Web.HTML (body, button, div, indeterminateLinearProgress, input, label, li, output, p, ul)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,15 +19,9 @@ crudHTML =
     indeterminateLinearProgress # action loadPeopleCatalogue
     blankStatus @"People loaded" # fold identity
     ( Semigroupoid.do
-      p ( label $ Semigroupoid.do
-        (staticText "Filter prefix (surname) ") # shown
-        input @"Filter prefix (surname)" "text" )
-      p ( label $ Semigroupoid.do
-        (staticText "Name ") # shown
-        input @"Name" "text" )
-      p ( label $ Semigroupoid.do
-        (staticText "Surname ") # shown
-        input @"Surname" "text" )
+      p ( label $ prefixed (staticText "Filter prefix (surname) ") $ input @"Filter prefix (surname)" "text" )
+      p ( label $ prefixed (staticText "Name ") $ input @"Name" "text" )
+      p ( label $ prefixed (staticText "Surname ") $ input @"Surname" "text" )
       RecordToVariant.do
         ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
           ( clicked @"Person picked" @"key" ( li >>> attrWith "style" entryFace $ text personLine # shown ) ) # foreach @"key"

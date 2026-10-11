@@ -56,6 +56,7 @@ module PUI
   , action
   , fold
   , static
+  , prefixed
   , ticks
   , accumulated
   , applied
@@ -1189,6 +1190,26 @@ type Ocular p = forall a b. Optic p a b a b
 -- | the other two statics. `static (span >>> cl "mdc-button__ripple")`.
 static :: forall p r. Category p => Profunctor p => Ocular p -> p { | r } {}
 static o = widenRecordInput (o identity :: p {} {})
+
+-- | A static **before** what it introduces, as an ocular — `static`'s
+-- | converse: a caption before its field, a heading before its section,
+-- | written first because it is shown first:
+-- | `label $ prefixed (staticText "°C ") $ input @"celsius" "text"`,
+-- | `prefixed (headline4 $ staticText "Create account") $ Semigroupoid.do …`.
+-- | The static is built first, then the content; it is fed `{}` whenever the
+-- | content is fed, and its `{}` answer is discarded lawfully (the type says
+-- | it carries nothing). The content's channels pass untouched, so the
+-- | ocular admission law holds, and a static that introduces a part of the
+-- | flow sits in it without `# shown`.
+prefixed :: forall m. MonadEffect m => PUI m {} {} -> Ocular (PUI m)
+prefixed s w = wrap do
+  s' <- unwrap s
+  liftEffect $ s'.fromUser \_ -> pure unit
+  w' <- unwrap w
+  pure
+    { toUser: \a -> s'.toUser {} *> w'.toUser a
+    , fromUser: w'.fromUser
+    }
 
 -- | An action is **opened by its statuses**: the slot is a `+→×` citizen
 -- | owning any of the run's cases — the two lifecycle occurrences `started`

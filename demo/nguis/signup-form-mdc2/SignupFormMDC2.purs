@@ -3,8 +3,8 @@ module SignupFormMDC2 (signupFormMDC2) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import PUI (armed, looped, with)
-import PUI.Web ((<+>), choice, shown, shownWhen, staticText, text)
+import PUI (armed, looped, prefixed, with)
+import PUI.Web ((<+>), choice, shownWhen, staticText, text)
 import PUI.Web.MDC2 (body, body2, button, checkbox, debouncedTextField, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import SignupFormViewModel (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, unnamedLine, usernameSettleTime, usernameStatus, validation)
@@ -12,8 +12,7 @@ import SignupFormViewModel (availableLine, invalidLine, newApplicant, readyLine,
 signupFormMDC2 :: Effect Unit
 signupFormMDC2 =
   body $ Semigroupoid.do
-    ( Semigroupoid.do
-      (headline4 $ staticText "Create account") # shown
+    ( prefixed (headline4 $ staticText "Create account") $ Semigroupoid.do
       debouncedTextField @"Username" {} usernameSettleTime
       radioButton @"Plan"
         (choice @"Free" <+> choice @"Pro" <+> choice @"Team")
