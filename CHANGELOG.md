@@ -8,6 +8,13 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-11, later
 
+- **The demos' view model tests are gone.** The six `<Demo>ViewModelTest`
+  modules (counter, temperature-converter, flight-booker, todo-list,
+  checkout, order-form; added 2026-10-07) and their run at the head of
+  `spago test` are deleted, and the pages no longer list them: testing
+  an app's business functions demonstrates nothing about the library.
+  writing.md keeps the one sentence that the laws leave business
+  functions to the view model's own unit tests.
 - **Review residue.** `splitRow` (`Data.Profunctor.Row`): `subStrong` and
   `subResolving` feed their focus exactly its row and keep the background
   apart, instead of passing the fed record twice under a coercion;

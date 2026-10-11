@@ -84,7 +84,7 @@ if (lambdas.length) {
 const accessorRe = /(?<![\w)\]])_\.(?:"[^"]+"|[A-Za-z][\w']*)/;
 const accessors = [];
 for (const file of walk("demo")) {
-  if (isViewModel(file) || file.endsWith("ViewModelTest.purs")) continue;
+  if (isViewModel(file)) continue;
   const src = readFileSync(file, "utf8");
   src.split("\n").forEach((line, i) => {
     if (accessorRe.test(line)) accessors.push(`${file}:${i + 1}: ${line.trim()}`);
