@@ -2,7 +2,10 @@
 -- | a starting point for its state channel, stated **positionally**
 -- | (`Tuple`) with no row in sight. It has no row form (a looped state is
 -- | a model field; the knot at a record junction is `Looping`'s
--- | `looped`), so the class states the value-level law only.
+-- | `looped`), so the class states the value-level law only. Its one reach
+-- | in the row layer is `bracketed`, whose editor state outlives a feed:
+-- | the payloads of the cases a variant does not hold are the editor's,
+-- | not the model's.
 -- |
 -- | Why a class of its own: on a gated carrier the raw composite
 -- | `unfirst (first g)` is dead — `unfirst` withholds every input until the

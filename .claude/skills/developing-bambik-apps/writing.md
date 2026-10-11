@@ -321,7 +321,9 @@ edits you fold back by hand. Order-form's fulfillment fields,
 flight-booker's return date (`# inCaseAt @"return" @"Flight type"`) and
 meeting-booker's attendees slider (`# inCaseAt @"chosen" @"Room"`) are the
 examples; a variant field edited through several such panes is wrapped
-in `# bracketed @"Mode" …` (order-form).
+in `# bracketed @"Mode" …` (order-form). The model holds only the chosen
+case; the bracket keeps every case's payload, so switching away and back
+restores what was typed.
 
 `clWhen` toggles a class for styling, not existence.
 

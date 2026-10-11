@@ -14,7 +14,8 @@
 -- |   * **free functions** — over the strength: `subStrong` (a sub-record,
 -- |     the background carried), `focusField` (the field lens — the leaf lift,
 -- |     making every label-indexed editor a whole-row citizen) and, with
--- |     `Looping`, `bracketed @l` (the sum-typed field editor); over the
+-- |     `Looping` and `PointedCostrong`, `bracketed @l` (the sum-typed
+-- |     field editor, keeping every case's payload); over the
 -- |     wire and the point: `blank` (the faceless leaf), `with`
 -- |     (`announce a >>> w` — discharge the initial-state obligation, so
 -- |     `with seed (looped w)` is the app shape, the knot closed);
@@ -93,11 +94,15 @@ module Data.Profunctor.Row.RecordToRecord
 
 import Control.Category (class Category, identity)
 import Control.Semigroupoid ((>>>))
+import Data.Eq ((==))
 import Data.Function (const)
+import Data.Maybe (Maybe(..))
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Looping (class Looping, looped)
+import Data.Profunctor.PointedCostrong (class PointedCostrong, unfirstFrom)
 import Data.Profunctor.Row (class FieldNames, class OwnedRecordOutputs, class RowLabels, class SharedRecordInputs, exactRow, fedFirst, fedSecond, splitRow)
+import Data.Profunctor.Row.Structural (withStructuralEq)
 import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol)
@@ -180,18 +185,30 @@ focusField
   -> p { | r } { | r1 }
 focusField = prop (Proxy @l)
 
--- | Edit the variant-valued field `l` through a record-shaped, self-looped editor state.
+-- | Edit the variant-valued field `l` through a record-shaped, self-looped
+-- | editor state that keeps every case's payload. The state is retained
+-- | across feeds: a feed whose variant is the one the retained state
+-- | projects to (the editor's own echo, or an edit elsewhere in the row)
+-- | resumes it, and only another variant enters through `f`, which seeds
+-- | the payloads that variant lacks. So a payload edited in one case
+-- | survives a trip through the others (order-form's takeaway time).
 bracketed
   :: forall @l @v @r1 p b r
    . IsSymbol l
   => Cons l [ | v ] b r
   => Looping p
   => Strong p
+  => PointedCostrong p
   => ([ | v ] -> { | r1 })
   -> ({ | r1 } -> [ | v ])
   -> p { | r1 } { | r1 }
   -> p { | r } { | r }
-bracketed f g w = focusField @l (dimap f g (looped w))
+bracketed f g w = focusField @l (unfirstFrom Nothing (dimap resumed retained (looped w)))
+  where
+  resumed (Tuple fed kept) = case kept of
+    Just state | withStructuralEq @[ | v ] (g state == fed) -> state
+    _ -> f fed
+  retained state = Tuple (g state) (Just state)
 
 -- | The faceless leaf that reads nothing and contributes nothing, at any input.
 blank :: forall p a. Category p => Profunctor p => p a {}

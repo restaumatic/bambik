@@ -20,7 +20,7 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (focusField, muted, subStrong, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (bracketed, focusField, muted, subStrong, recordToRecord)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (recordToVariant)
 import Data.Profunctor.Row.VariantToVariant (focusCase, toCase, variantToVariant)
@@ -2076,6 +2076,30 @@ main = do
       ] :: Array [ "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String }, "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ]
     ) \v ->
     assertEqual "bracketed: caseOf ∘ stateOf = id on order-form's fulfillment pair" v (fulfillmentCase (fulfillmentState v))
+
+  -- == bracketed keeps every case's payload: the editor state is retained ==
+  -- == across feeds, so the model's echo of a case switch resumes it rather ==
+  -- == than re-seeding the other cases' payloads through stateOf. ==
+  do
+    ins <- Ref.new []
+    editor <- Ref.new Nothing
+    models <- Ref.new []
+    m <- unwrap (looped (bracketed @"Mode" fulfillmentState fulfillmentCase (echoProbe identity ins editor)))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) models
+    m.toUser { "Mode": ."Takeaway" { "Time": "8:30" } }
+    let
+      edit change = do
+        fed <- Ref.read ins
+        for_ (last fed) \state -> fire editor (change state)
+      lastTime = map _."Time" <<< last <$> Ref.read ins
+    edit _ { "Time" = "13:45" }
+    edit _ { selected = ."Dine in" {} }
+    lastTime >>= assertEqual "bracketed: the model's echo of a switch away keeps the takeaway time" (Just "13:45")
+    edit _ { selected = ."Takeaway" {} }
+    (last <$> Ref.read models) >>= assertEqual "bracketed: switching back restores the takeaway time"
+      (Just { "Mode": ."Takeaway" { "Time": "13:45" } })
+    m.toUser { "Mode": ."Delivery" { "Address": "Main St 1", distance: .unknown {} } }
+    lastTime >>= assertEqual "bracketed: another variant from outside re-enters through stateOf" (Just "12:00")
 
   -- == The Ocular admission law (PUI's header): ocular (first w) = first ==
   -- == (ocular w) for a node-wrapping ocular; a capturing decorator breaks ==

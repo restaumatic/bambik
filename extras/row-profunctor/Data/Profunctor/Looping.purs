@@ -56,8 +56,9 @@
 -- | the cycle itself: an emission becoming a feed. That is the class. The
 -- | knot hides nothing and takes no seed of its own: it exposes the whole
 -- | row and is primed by its first feed (`bracketed` loops the editor state
--- | the fed variant supplies; `with seed` feeds an app its model) — a
--- | looped state is a model field, never a hidden channel.
+-- | the fed variant supplies, keeping it across feeds with the pointed
+-- | trace; `with seed` feeds an app its model) — a looped state is a model
+-- | field, never a hidden channel.
 -- |
 -- | What the carrier-agnostic layer builds on it: `with seed (looped w)` (the
 -- | app shape) and `bracketed` (the variant-editor bracket),
