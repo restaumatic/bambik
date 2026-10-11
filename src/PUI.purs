@@ -47,6 +47,18 @@ module PUI
   , Hooks
   , Logged
   , Sink
+  , Scope
+  , ScopeState(..)
+  , class Scoped
+  , scope
+  , newScope
+  , suspendScope
+  , resumeScope
+  , cancelScope
+  , onCancel
+  , scopeActive
+  , scopeCancelled
+  , inScope
   , class Hosting
   , hosting
   , setSink
@@ -124,7 +136,7 @@ import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, blankStatus)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, variantToVariant)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Time.Duration (Milliseconds(..))
-import Data.Traversable (for, sequence)
+import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (class Contractable, case_, contract, inj, match, on)
@@ -827,6 +839,113 @@ instance MonadEffect m => Retaining (PUI m) where
 -- Combinators, machinery, diagnostics
 --------------------------------------------------------------------------------
 
+-- ## Scope: a subtree that is out
+--
+-- Every word whose emissions have no cause on the channel — a tick, an
+-- effect settling — runs in a **scope**, the carrier's record of whether the
+-- subtree it was built in is on the screen. A pane parks its content and
+-- **suspends** its scope, so a `ticks` inside skips its beats and an
+-- `action` that settles inside posts nothing: the pane law — a detached
+-- emitter *is* `silence` — holds for emitters that originate occurrences
+-- themselves, not only for those whose occurrences come from a node the
+-- document no longer holds. A collection's leaver and a `dynamic` rebuild
+-- **cancel** their scope: a cancelled `ticks` ends its loop and the
+-- finalizers registered on the scope run (an observer disconnects). Scopes
+-- nest, a child active only while every ancestor is. Retention is untouched:
+-- suspension stops a subtree from speaking, not from remembering, and a
+-- re-attached pane resumes where it was.
+
+-- | Whether the subtree a scope governs is on the screen (`Active`), parked
+-- | by its pane (`Suspended`) or gone for good (`Cancelled`).
+data ScopeState = Active | Suspended | Cancelled
+
+derive instance Eq ScopeState
+
+-- | The scope of a subtree: its own state, its parent (a child is active only
+-- | while every ancestor is), its children (cancelled with it) and the
+-- | finalizers to run once when it is cancelled.
+newtype Scope = Scope
+  { id :: Int
+  , state :: Ref.Ref ScopeState
+  , parent :: Maybe Scope
+  , children :: Ref.Ref (Array Scope)
+  , finalizers :: Ref.Ref (Array (Effect Unit))
+  }
+
+scopeCounter :: Ref.Ref Int
+scopeCounter = unsafePerformEffect (Ref.new 0)
+
+-- | A scope under its parent (`Nothing`: a root), starting in the given state.
+newScope :: Maybe Scope -> ScopeState -> Effect Scope
+newScope parent st = do
+  id <- Ref.modify (_ + 1) scopeCounter
+  s <- Scope <$> ({ id, state: _, parent, children: _, finalizers: _ } <$> Ref.new st <*> Ref.new [] <*> Ref.new [])
+  for_ parent \(Scope p) -> Ref.modify_ (_ <> [ s ]) p.children
+  pure s
+
+-- | On the screen: this scope and every ancestor is `Active`.
+scopeActive :: Scope -> Effect Boolean
+scopeActive (Scope s) = do
+  st <- Ref.read s.state
+  if st /= Active then pure false else maybe (pure true) scopeActive s.parent
+
+-- | Gone for good: this scope or an ancestor is `Cancelled`.
+scopeCancelled :: Scope -> Effect Boolean
+scopeCancelled (Scope s) = do
+  st <- Ref.read s.state
+  if st == Cancelled then pure true else maybe (pure false) scopeCancelled s.parent
+
+-- | Park the subtree (a pane detaching its content); a cancelled scope stays cancelled.
+suspendScope :: Scope -> Effect Unit
+suspendScope (Scope s) = Ref.modify_ (\st -> if st == Cancelled then st else Suspended) s.state
+
+-- | Put the subtree back (a pane attaching its content); a cancelled scope stays cancelled.
+resumeScope :: Scope -> Effect Unit
+resumeScope (Scope s) = Ref.modify_ (\st -> if st == Cancelled then st else Active) s.state
+
+-- | End the subtree: its children are cancelled first, then its finalizers
+-- | run once, and it leaves its parent's children.
+cancelScope :: Scope -> Effect Unit
+cancelScope (Scope s) = do
+  st <- Ref.read s.state
+  unless (st == Cancelled) do
+    Ref.write Cancelled s.state
+    Ref.read s.children >>= traverse_ cancelScope
+    Ref.write [] s.children
+    fins <- Ref.read s.finalizers
+    Ref.write [] s.finalizers
+    sequence_ fins
+    for_ s.parent \(Scope p) -> Ref.modify_ (Array.filter (\(Scope c) -> c.id /= s.id)) p.children
+
+-- | Register what to undo when the scope is cancelled (an observer to
+-- | disconnect, a timer to clear); on a scope already cancelled it runs now.
+onCancel :: Scope -> Effect Unit -> Effect Unit
+onCancel sc@(Scope s) fin = do
+  cancelled <- scopeCancelled sc
+  if cancelled then fin else Ref.modify_ (_ <> [ fin ]) s.finalizers
+
+-- | A construction monad that knows the scope of the subtree being built:
+-- | `Web` keeps it in its state, opened by the panes and the collections;
+-- | `Effect`, the probe carrier, reads an ambient one (`inScope`), the root
+-- | by default, so the law tests run in an always-active scope.
+class MonadEffect m <= Scoped m where
+  scope :: m Scope
+
+ambientScopeRef :: Ref.Ref Scope
+ambientScopeRef = unsafePerformEffect (newScope Nothing Active >>= Ref.new)
+
+instance Scoped Effect where
+  scope = Ref.read ambientScopeRef
+
+-- | Build on the `Effect` carrier under a scope of the test's choosing.
+inScope :: forall a. Scope -> Effect a -> Effect a
+inScope sc act = do
+  prev <- Ref.read ambientScopeRef
+  Ref.write sc ambientScopeRef
+  r <- act
+  Ref.write prev ambientScopeRef
+  pure r
+
 -- ## Development diagnostics
 --
 -- The emission trace and the knowledge-gate starvation watchdog: an instrument
@@ -1095,7 +1214,7 @@ observed status = dimap (\v -> { event: v }) (match { forwarded: identity }) $ r
 -- | stated once in its own signature.
 every
   :: forall m r
-   . MonadEffect m
+   . Scoped m
   => { ms :: Number }
   -> ({ | r } -> Maybe { | r })
   -> PUI m { | r } { | r }
@@ -1114,10 +1233,11 @@ every interval step = looped (updated (\e _ -> match { stepped: identity } e) (c
 -- | status first — replay is `Strong`'s retention, the fed row riding the
 -- | state channel as under `clicked`. Feeds are retained, never answered;
 -- | nothing ticks before the first feed or while the period is a hole
--- | (guardrails L18).
+-- | (guardrails L18). A beat in a suspended scope (a detached pane) is
+-- | skipped, and a cancelled scope ends the loop.
 ticks
   :: forall m l r v
-   . MonadEffect m
+   . Scoped m
   => RowToList v (RL.Cons l { | r } RL.Nil)
   => IsSymbol l
   => Cons l { | r } () v
@@ -1126,6 +1246,7 @@ ticks
   -> PUI m { | r } [ | v ]
 ticks interval status = wrap do
   status' <- unwrap status
+  sc <- scope
   lastRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> Ref.write (Just r) lastRef
@@ -1134,13 +1255,16 @@ ticks interval status = wrap do
         let
           loop = do
             delay (Milliseconds interval.ms)
-            liftEffect do
-              fed <- Ref.read lastRef
-              for_ fed \r -> do
-                let occurrence = inj (Proxy @l) r
-                status'.toUser occurrence
-                prop occurrence
-            loop
+            cancelled <- liftEffect $ scopeCancelled sc
+            unless cancelled do
+              liftEffect do
+                active <- scopeActive sc
+                fed <- Ref.read lastRef
+                when active $ for_ fed \r -> do
+                  let occurrence = inj (Proxy @l) r
+                  status'.toUser occurrence
+                  prop occurrence
+              loop
         launchAff_ loop
     }
 
@@ -1247,10 +1371,14 @@ suffixed d w = wrap do
 -- | and the error reaches the diagnostics sink by name. Nothing is posted
 -- | onward, since there is no output to post. An action whose function is a
 -- | hole never runs (guardrails L18): a view's own literal seed may reach
--- | it before its logic exists.
+-- | it before its logic exists. An outcome that settles in a suspended or
+-- | cancelled scope — the pane that held the action detached meanwhile — is
+-- | dropped: the case the model left gets no occurrence from it, so a
+-- | detached action is `silence` like a detached button; the slot is still
+-- | told `ended`, so a re-attached indicator is not left running.
 action
   :: forall @t a v1 m
-   . MonadEffect m
+   . Scoped m
   => Contractable ( started :: {}, ended :: {} | t ) v1
   => (a -> Aff [ | t ])
   -> PUI m [ | v1 ] {}
@@ -1262,13 +1390,13 @@ action arr = running \i -> if isHole arr then Nothing else Just (arr i)
 -- the slot around the `Aff`, and its outcome is posted onward and told too.
 running
   :: forall t a v1 m
-   . MonadEffect m
+   . Scoped m
   => Contractable ( started :: {}, ended :: {} | t ) v1
   => (a -> Maybe (Aff [ | t ]))
   -> PUI m [ | v1 ] {}
   -> PUI m a [ | t ]
 running run w = action'
-  (\i pro post -> case run i of
+  (\i pro post active -> case run i of
     Nothing -> pure unit
     Just aff -> do
       let tell v = for_ (contract (v :: [ started :: {}, ended :: {} | t ]) :: Maybe _) pro
@@ -1278,11 +1406,15 @@ running run w = action'
       case result of
         Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
         Right o -> liftEffect do
-          post o
-          -- the outcome widened to the slot's row: a variant is a tagged value,
-          -- so the widening is the identity (`expand` cannot solve `Union` at
-          -- an open tail)
-          tell (unsafeCoerce o))
+          on <- active
+          if on
+            then do
+              post o
+              -- the outcome widened to the slot's row: a variant is a tagged value,
+              -- so the widening is the identity (`expand` cannot solve `Union` at
+              -- an open tail)
+              tell (unsafeCoerce o)
+            else tr "action: outcome dropped, the scope is suspended or cancelled" o)
   w
 
 -- | One case **folded into the record** (`+→×`), opened by its status —
@@ -1323,12 +1455,13 @@ fold f status = dimap (\v -> let o = on (Proxy @l) f case_ v in { outcome: inj (
   (dimap _.model { model: _ } identity :: PUI m { outcome :: [ | vs ], model :: { | r } } { model :: { | r } })
   (lcmap _.outcome status :: PUI m { outcome :: [ | vs ], model :: { | r } } {})
 
-action' :: forall a b s t m. MonadEffect m => (s -> (a -> Effect Unit) -> (t -> Effect Unit) -> Aff Unit) -> Optic (PUI m) s t a b
+action' :: forall a b s t m. Scoped m => (s -> (a -> Effect Unit) -> (t -> Effect Unit) -> Effect Boolean -> Aff Unit) -> Optic (PUI m) s t a b
 action' arr w = wrap do
   w' <- unwrap w
+  sc <- scope
   oVar <- liftEffect AVar.empty
   pure
-    { toUser: \i -> launchAff_ $ arr i (\a -> void $ w'.toUser a) (\o -> void $ AVar.put o oVar mempty)
+    { toUser: \i -> launchAff_ $ arr i (\a -> void $ w'.toUser a) (\o -> void $ AVar.put o oVar mempty) (scopeActive sc)
     , fromUser: \prop ->
       let waitAndPropagate = void $ AVar.take oVar case _ of
             -- the take failed (the var was killed): the chain stops here, so
@@ -1417,17 +1550,20 @@ class MonadEffect m <= Hosting m node | m -> node where
   hosting :: forall a b. PUI m a b -> m (Hooks a b node)
 
 type Hooks a b node =
-  { instantiate :: Effect { feed :: a -> Effect Unit, subscribe :: (b -> Effect Unit) -> Effect Unit, node :: node }
+  { instantiate :: Effect { feed :: a -> Effect Unit, subscribe :: (b -> Effect Unit) -> Effect Unit, node :: node, cancel :: Effect Unit }
   , detach :: node -> Effect Unit
   , restack :: Array node -> Effect Unit
   }
 
--- | Placement-free: an element instance is just its channel legs.
+-- | Placement-free: an element instance is just its channel legs, built in
+-- | a scope of its own under the ambient one, cancelled when it leaves.
 instance Hosting Effect Unit where
   hosting w = pure
     { instantiate: do
-        inst <- unwrap w
-        pure { feed: inst.toUser, subscribe: inst.fromUser, node: unit }
+        outer <- scope
+        child <- newScope (Just outer) Active
+        inst <- inScope child (unwrap w)
+        pure { feed: inst.toUser, subscribe: inst.fromUser, node: unit, cancel: cancelScope child }
     , detach: \_ -> pure unit
     , restack: \_ -> pure unit
     }
@@ -1599,7 +1735,7 @@ ensureInstance hooks onEmit indexRef orderRef k = do
       slot <- Ref.new Nothing
       inst <- hooks.instantiate
       inst.subscribe \b -> onEmit k slot b
-      let e = { key: k, feed: inst.feed, slot, node: inst.node }
+      let e = { key: k, feed: inst.feed, slot, node: inst.node, cancel: inst.cancel }
       Ref.write (Map.insert k e index) indexRef
       Ref.modify_ (_ <> [ e ]) orderRef
       pure e
@@ -1615,12 +1751,13 @@ type ActingEntry k a b node =
   , feed :: a -> Effect Unit
   , slot :: Ref.Ref (Maybe b)
   , node :: node
+  , cancel :: Effect Unit
   }
 
 -- Reconcile the entry vector against a fed array: survivors re-fed in place,
 -- entrants instantiated (their emissions wired to `onEmit` over their own
--- slot), leavers detached, nodes restacked only when the key sequence
--- changed. The busy guard stops an element echo from double-building
+-- slot), leavers detached and their scopes cancelled, nodes restacked only
+-- when the key sequence changed. The busy guard stops an element echo from double-building
 -- mid-reconcile.
 reconcileKeyed
   :: forall k a b node
@@ -1649,9 +1786,9 @@ reconcileKeyed key hooks onEmit busyRef entriesRef items = do
           inst <- hooks.instantiate
           inst.subscribe \b -> onEmit k slot b
           inst.feed a
-          pure { key: k, feed: inst.feed, slot, node: inst.node }
+          pure { key: k, feed: inst.feed, slot, node: inst.node, cancel: inst.cancel }
     let keep = Set.fromFoldable (map _.key entries)
-    for_ old \e -> unless (Set.member e.key keep) (hooks.detach e.node)
+    for_ old \e -> unless (Set.member e.key keep) (hooks.detach e.node *> e.cancel)
     when (map _.key old /= map _.key entries) $ hooks.restack (map _.node entries)
     Ref.write entries entriesRef
     Ref.write false busyRef

@@ -45,7 +45,7 @@ import FlightBookerViewModelTest (flightBookerClaims)
 import OrderFormViewModelTest (orderFormClaims)
 import TemperatureConverterViewModelTest (temperatureConverterClaims)
 import TodoListViewModelTest (todoListClaims)
-import PUI (PUI(..), accumulated, acted, announce, applied, blankStatus, dispatched, edited, fold, foreach, looped, observed, optioned, prefixed, replaying, resolveFor, seeded, silence, suffixed, updated, with)
+import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, applied, blankStatus, cancelScope, dispatched, edited, fold, foreach, inScope, looped, newScope, observed, optioned, prefixed, replaying, resolveFor, resumeScope, seeded, silence, suffixed, suspendScope, ticks, updated, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -2198,6 +2198,62 @@ main = do
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { s: 5 }
     Ref.read outs >>= assertEqual "disjoint operands are the merge's reachable shape, and release once" [ { a: 5, b: 105 } ]
+
+  -- == Scope: a subtree that is out is silent — the pane law for the ==
+  -- == emitters that originate occurrences themselves (`ticks`, `action`). ==
+  -- A tick source built in a scope beats while the scope is active, skips
+  -- its beats while it is suspended (a detached pane), beats again once
+  -- resumed, and ends its loop once cancelled (a leaver, a rebuild).
+  do
+    sc <- newScope Nothing Active
+    beats <- Ref.new 0
+    t <- inScope sc (unwrap (ticks { ms: 10.0 } (blankStatus @"tick") :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
+    t.fromUser \_ -> Ref.modify_ (_ + 1) beats
+    t.toUser { n: 1 }
+    launchAff_ do
+      delay (Milliseconds 80.0)
+      active <- liftEffect $ Ref.read beats
+      liftEffect $ assertEqual "scope: an active scope's ticks beat" true (active > 0)
+      liftEffect $ suspendScope sc
+      delay (Milliseconds 20.0)
+      atSuspend <- liftEffect $ Ref.read beats
+      delay (Milliseconds 80.0)
+      suspended <- liftEffect $ Ref.read beats
+      liftEffect $ assertEqual "scope: a suspended scope's ticks skip their beats" atSuspend suspended
+      liftEffect $ resumeScope sc
+      delay (Milliseconds 80.0)
+      resumed <- liftEffect $ Ref.read beats
+      liftEffect $ assertEqual "scope: a resumed scope's ticks beat again" true (resumed > suspended)
+      liftEffect $ cancelScope sc
+      delay (Milliseconds 20.0)
+      atCancel <- liftEffect $ Ref.read beats
+      delay (Milliseconds 80.0)
+      cancelled <- liftEffect $ Ref.read beats
+      liftEffect $ assertEqual "scope: a cancelled scope's ticks end" atCancel cancelled
+
+  -- A child scope is active only while every ancestor is: suspending the
+  -- parent silences the child, and cancelling the parent cancels it.
+  do
+    parent <- newScope Nothing Active
+    child <- newScope (Just parent) Active
+    beats <- Ref.new 0
+    t <- inScope child (unwrap (ticks { ms: 10.0 } (blankStatus @"tick") :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
+    t.fromUser \_ -> Ref.modify_ (_ + 1) beats
+    t.toUser { n: 1 }
+    launchAff_ do
+      delay (Milliseconds 60.0)
+      liftEffect $ suspendScope parent
+      delay (Milliseconds 20.0)
+      atSuspend <- liftEffect $ Ref.read beats
+      delay (Milliseconds 60.0)
+      suspended <- liftEffect $ Ref.read beats
+      liftEffect $ assertEqual "scope: a suspended parent silences the child" atSuspend suspended
+      liftEffect $ cancelScope parent
+      delay (Milliseconds 20.0)
+      atCancel <- liftEffect $ Ref.read beats
+      delay (Milliseconds 60.0)
+      cancelled <- liftEffect $ Ref.read beats
+      liftEffect $ assertEqual "scope: a cancelled parent ends the child's ticks" atCancel cancelled
 
   -- == Every script to a bound, exhaustively — test/Exhaustive.purs. ==
   Exhaustive.run

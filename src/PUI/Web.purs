@@ -153,7 +153,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import PUI (class Hosting, Ocular, PUI, Logged, diagnosticsOn, replaying, setDiagnostics, setSink, setTracing)
+import PUI (class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, replaying, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
 import Data.Profunctor.Row (atAnyRow)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Prim.Row (class Cons)
@@ -176,6 +176,7 @@ newtype Web a = Web (StateT DOM Effect a) -- TODO rename to DocumentBuilder?
 type DOM =
   { parent :: Node
   , sibling :: Node -- last sibling
+  , scope :: Scope -- the subtree being built (`PUI`'s scope: suspended by a pane, cancelled by a leaver)
   }
 
 derive newtype instance Functor Web
@@ -186,6 +187,11 @@ derive newtype instance Monad Web
 derive newtype instance MonadEffect Web
 derive newtype instance MonadState DOM Web
 
+-- | The scope of the subtree being built is in the builder's state: a pane
+-- | opens a child for its content, a collection one per element.
+instance Scoped Web where
+  scope = gets _.scope
+
 uniqueId :: Effect String
 uniqueId = randomElementId
 
@@ -194,6 +200,10 @@ uniqueId = randomElementId
 attachable :: forall r. Web r -> Web { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
 attachable dom = do
   parent <- gets _.parent
+  outer <- gets _.scope
+  -- the content is built parked, so its scope starts suspended: a tick or
+  -- an action inside speaks only while the pane is attached
+  child <- liftEffect $ newScope (Just outer) Suspended
   slotNo <- liftEffect $ Ref.modify (_ + 1) slotCounter
   { ensureAttached, ensureDetached, initialDocumentFragment } <- liftEffect do
     placeholderBefore <- placeholderBeforeSlot slotNo
@@ -212,6 +222,7 @@ attachable dom = do
         for_ detachedDocumentFragment \documentFragment -> do
           removeAllNodesBetweenSiblings placeholderBefore placeholderAfter
           documentFragment `insertBefore` placeholderAfter
+        resumeScope child
 
       ensureDetached :: Effect Unit
       ensureDetached = do
@@ -220,12 +231,13 @@ attachable dom = do
           documentFragment <- createDocumentFragment
           moveAllNodesBetweenSiblings placeholderBefore placeholderAfter documentFragment
           Ref.write (Just documentFragment) detachedDocumentFragmentRef
+        suspendScope child
 
     pure $ { ensureAttached, ensureDetached, initialDocumentFragment }
-  modify_ _ { parent = initialDocumentFragment }
+  modify_ _ { parent = initialDocumentFragment, scope = child }
   result <- dom
   newSibling <- liftEffect $ lastChild initialDocumentFragment
-  modify_ _ { parent = parent, sibling = newSibling}
+  modify_ _ { parent = parent, sibling = newSibling, scope = outer }
   pure { ensureAttached, ensureDetached, result }
 placeholderBeforeSlot :: Int -> Effect Node
 placeholderBeforeSlot slotNo = createCommentNode $ "begin slot " <> show slotNo
@@ -296,7 +308,7 @@ foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Uni
 foreign import afterTask :: Effect Unit -> Effect Unit
 foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
 foreign import createCommentNode :: String -> Effect Node
-foreign import separatorRule :: Node -> Node -> Node -> Effect Unit
+foreign import separatorRule :: Node -> Node -> Node -> Effect (Effect Unit)
 foreign import listenNodeDeferred :: Node -> String -> Effect Unit -> Effect Unit
 foreign import ensureStyle :: String -> String -> Effect Unit
 foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
@@ -335,21 +347,30 @@ adoptHostDiagnostics = do
   hostDiagnostics >>= setDiagnostics
 
 runDomInNode :: forall a. Node -> Web a -> Effect a
-runDomInNode node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node }
+runDomInNode node builder = do
+  root <- newScope Nothing Active
+  runDomInScope root node builder
+
+-- a build under a given scope — a collection's element, a `dynamic` rebuild
+runDomInScope :: forall a. Scope -> Node -> Web a -> Effect a
+runDomInScope sc node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node, scope: sc }
 
 -- | The DOM carrier hosts collection children under the enclosing parent
 -- | (`PUI`'s container action): the freshly appended child is the instance's
 -- | node, detach removes it, restack re-appends in key order (`appendChild`
 -- | moves an existing node, so identity — focus, local state — travels with
--- | it).
+-- | it). Each element is built in a scope of its own under the collection's,
+-- | cancelled when the element leaves.
 instance Hosting Web Node where
   hosting w = do
     parent <- gets _.parent
+    outer <- gets _.scope
     pure
       { instantiate: do
-          inst <- runDomInNode parent (unwrap w)
+          child <- newScope (Just outer) Active
+          inst <- runDomInScope child parent (unwrap w)
           node <- lastChild parent
-          pure { feed: inst.toUser, subscribe: inst.fromUser, node }
+          pure { feed: inst.toUser, subscribe: inst.fromUser, node, cancel: cancelScope child }
       , detach: \node -> removeChild node parent
       , restack: \nodes -> for_ nodes \node -> appendChild node parent
       }
@@ -707,6 +728,7 @@ selectedWith checkedOf stored w = focusField @l $ wrap do
 separating :: forall a b. PUI Web {} {} -> PUI Web a b -> PUI Web a b
 separating rule w = wrap do
   parentNode <- gets _.parent
+  sc <- gets _.scope
   start <- liftEffect $ createCommentNode "separator"
   liftEffect $ appendChild start parentNode
   _ <- unwrap rule
@@ -714,7 +736,8 @@ separating rule w = wrap do
   w' <- unwrap w
   end <- liftEffect $ createCommentNode "/separator"
   liftEffect $ appendChild end parentNode
-  liftEffect $ separatorRule start ruleEnd end
+  disconnect <- liftEffect $ separatorRule start ruleEnd end
+  liftEffect $ onCancel sc disconnect
   pure w'
 
 -- | The **display pane**: content that shows data, attached and fed the
@@ -984,7 +1007,12 @@ infixr 10 attrDyn as :=>
 -- | The content is an emitter (`×→+`), and that is what makes the pane
 -- | lawful: a feed arms an emitter and fires nothing, so a detached one
 -- | firing nothing is the same answer — an emitter removed by `provided`
--- | *is* `silence`. The pane family is indexed by what the pane holds, each
+-- | *is* `silence`. For a button that is the document's doing (a parked
+-- | node gets no clicks); for a `ticks` or an `action` inside, whose
+-- | occurrences have no cause on the channel, it is the pane's **scope**:
+-- | the content is built in a scope the pane suspends while detached, so a
+-- | tick skips its beat and an outcome that settles meanwhile is dropped
+-- | (`PUI`, "Scope"). The pane family is indexed by what the pane holds, each
 -- | member lawful at its shape: `provided` for emitters, `pane` for
 -- | displays (answers `{}` whether attached or not), `inCase` for
 -- | editors (the wire while detached).
@@ -1163,12 +1191,19 @@ onClickedXY content = wrap do
 foreachWith :: forall a b. (a -> PUI Web {} b) -> PUI Web (Array a) b
 foreachWith build = wrap do
   parent <- gets _.parent
+  outer <- gets _.scope
   propRef <- liftEffect $ Ref.new Nothing
+  -- each feed's build has a scope of its own, cancelled by the next feed
+  -- with the elements it rebuilt
+  builtRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \items -> do
+        Ref.read builtRef >>= traverse_ cancelScope
+        child <- newScope (Just outer) Active
+        Ref.write (Just child) builtRef
         removeAllChildren parent
         for_ items \item -> do
-          w' <- runDomInNode parent (unwrap (build item))
+          w' <- runDomInScope child parent (unwrap (build item))
           mProp <- Ref.read propRef
           for_ mProp \prop -> w'.fromUser prop
           void $ w'.toUser {}

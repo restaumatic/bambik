@@ -6,6 +6,22 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
+## Unreleased (branch experiment/scope)
+
+- **Scopes.** `PUI` gains `Scope` (`Active`/`Suspended`/`Cancelled`,
+  nesting, finalizers) and `class Scoped m` (`Web` keeps the scope in its
+  builder state, `Effect` reads an ambient one under `inScope`). A pane
+  builds its content in a scope it suspends while detached and resumes
+  on attach; a collection's leaver and a `dynamic`/`each` rebuild cancel
+  theirs. `ticks` skips its beats while suspended and ends its loop once
+  cancelled; an `action` whose outcome settles in a suspended or
+  cancelled scope drops it (the slot is still told `ended`); `separating`
+  disconnects its observer on cancel. So the pane law — a detached
+  emitter is `silence` — holds for the emitters that originate
+  occurrences themselves, and a removed subtree stops acting. `Hooks`'s
+  `instantiate` returns a `cancel`; `ticks`, `every` and `action` need
+  `Scoped m` in place of `MonadEffect m`.
+
 ## 2026-10-11
 
 - **Shared leaf layer.** `PUI.Web` gains the leaf protocol as functions:

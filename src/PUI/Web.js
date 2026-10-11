@@ -60,10 +60,12 @@ export function createCommentNode(text) {
   }
 };
 
-// separatorRule :: Node -> Node -> Node -> Effect Unit — the rule's nodes
-// follow `start` up to `ruleEnd`; the content they introduce follows up to
-// `end`. The rule shows while something rendered precedes it and the content
-// renders something, re-decided on every change under their parent.
+// separatorRule :: Node -> Node -> Node -> Effect (Effect Unit) — the rule's
+// nodes follow `start` up to `ruleEnd`; the content they introduce follows up
+// to `end`. The rule shows while something rendered precedes it and the
+// content renders something, re-decided on every change under their parent;
+// the returned effect disconnects the observer (run when the scope is
+// cancelled).
 export function separatorRule(start) {
   return function (ruleEnd) {
     return function (end) {
@@ -93,7 +95,11 @@ export function separatorRule(start) {
           }
         };
         evaluate();
-        new MutationObserver(evaluate).observe(parent, { childList: true, subtree: true, characterData: true });
+        const observer = new MutationObserver(evaluate);
+        observer.observe(parent, { childList: true, subtree: true, characterData: true });
+        return function () {
+          observer.disconnect();
+        };
       };
     };
   };
