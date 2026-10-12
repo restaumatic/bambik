@@ -793,9 +793,8 @@ paneAt = pane @c @v (Record.get (Proxy @l))
 -- | output.
 -- |
 -- | It dissolves the identity fold: a field that exists only in one mode
--- | is *not* a payload to fold back into the row by hand
--- | (`# provided @l paneOf # updated setField` with `setField`
--- | the identity) — it is a whole-row editor whose existence is gated, and
+-- | is *not* a payload to fold back into the row by hand — it is a
+-- | whole-row editor whose existence is gated, and
 -- | its `focusField @l` lift already re-attaches the rest of the row. The
 -- | classifier is a business function typed at the stage's row, exactly as
 -- | `pane`'s is; a variant the model stores is named by its label
@@ -1226,21 +1225,22 @@ dynamic build = wrap $ unwrap (foreachWith build) <#> \w ->
 -- | Lay out a list that is known up front and never changes — the courses
 -- | on a menu, the keys of a keypad, a row of preset swatches:
 -- | `ul $ each courses renderCourse`, `tr $ each keys keyComponent`. Nothing
--- | about it comes from the model, so it sits among fixed decoration.
+-- | about it comes from the model, so it sits among fixed decoration and,
+-- | like every static, is built once, at registration: it is on screen
+-- | before any feed and whether or not one arrives.
 -- | It answers each feed once, with `{}`, for the whole list: the elements'
 -- | own `{}` answers are absorbed, so a list of n elements is one answer,
 -- | not n (Answer at `×→×`).
 eachExact :: forall a. Array a -> (a -> PUI Web {} {}) -> PUI Web {} {}
 eachExact items0 build = let items = if isHole items0 then [] else items0 in wrap do
   w <- unwrap (foreachWith build)
+  liftEffect do
+    w.fromUser \_ -> pure unit
+    w.toUser items
   propRef <- liftEffect $ Ref.new Nothing
   pure
-    { toUser: \_ -> do
-        w.toUser items
-        Ref.read propRef >>= traverse_ (_ $ {})
-    , fromUser: \prop -> do
-        w.fromUser \_ -> pure unit
-        Ref.write (Just prop) propRef
+    { toUser: \_ -> Ref.read propRef >>= traverse_ (_ $ {})
+    , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
 each :: forall @a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } {}

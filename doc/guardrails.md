@@ -169,7 +169,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   row where it is introduced: a classifier's cases on its first pane
   (`provided`/`pane`/`inCase @l @s`), an action's outcome, a
   projection's element row (`listOf`/`foreach @… @r`), a
-  payload, a bracketed editor's state. It names no field and no case, and
+  payload. It names no field and no case, and
   with it every typed hole in a view reports a concrete type with nothing
   unknown (L18). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
@@ -204,7 +204,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the label does work a trailing `# focusField @l` cannot. Chrome that gains
   a label this way is *renamed into the component sort* — the blind
   `card` stays for surfaces that edit nothing (a summary, a preview, a
-  readout), as `subStrong` stays for flat sub-row focus. Two uses of the
+  readout). Two uses of the
   blind card are wrong: around editors, which share a card
   only by sharing a sub-record (`group @l`); and around the whole app,
   whose surface is its page's (`body $ …`, never `body $ card $ …`). The criterion's closure: the
@@ -347,7 +347,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `+`-members) — never a DOM annotation (`data-*`), never a render
   index, never carrier-private guesswork.
 - Identity MUST be unforgeable where the carrier owns it: in
-  `acted`/`edited` the element is typed at its whole row, key included,
+  `acted` the element is typed at its whole row, key included,
   and the carrier **re-sets** the key on every emission, so whatever an
   element emits in the key field is replaced. Stateful carriers MUST make identity follow
   the key (nodes move with their keys; matched elements re-feed in
@@ -431,10 +431,24 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - **Subsumption:** when a new form makes an old one derivable, the old
   one is deleted, not deprecated alongside (`synced`/`latch`,
   `Sequencing`, `labeled`, `constantly`, `forField`/`asCase`,
-  `humanizeLabel` — all gone). Convergence is the health metric:
-  a design is right when the algebra starts subsuming its own features.
-  `humanizeLabel` is the sharpest case: once a label *is* the copy it
-  draws, deriving copy from an identifier has nothing left to do.
+  `humanizeLabel`, and on 2026-10-11 `bracketed`, `updated`/`applied`/
+  `every`, `edited`/`editedAt` and `subStrong` — all gone). Convergence
+  is the health metric: a design is right when the algebra starts
+  subsuming its own features. `humanizeLabel` is the sharpest case: once
+  a label *is* the copy it draws, deriving copy from an identifier has
+  nothing left to do.
+- **State the app needs is a model field; an event folds in the app's
+  loop.** A word MUST NOT keep application state the model does not
+  declare, nor fold events into a row beside the loop's `fold`
+  (2026-10-11). So a choice whose cases carry fields is a selector field
+  with those fields beside it, each edited in its case (order-form's
+  Fulfillment, once `bracketed`, which kept the other cases' payloads
+  out of the model and lost them on every re-broadcast); an event folds
+  through `fold` in the app's loop, `joined` with the model its outcome
+  lands on when its effect takes time (order-form's estimate, once
+  `updated` in place); a keyed collection of editors is `acted`, the
+  container action (reorder, once `edited`); and a reusable sub-form
+  edits a sub-record under `group @l` (parcel, once `subStrong`).
 - **Scope:** bambik owns model↔UI wiring and its algebra. It MUST NOT
   grow a router, an animation system, a theme engine, a CSS-in-PS
   layer, a state-management add-on, or an HTTP client. Styling is
@@ -505,8 +519,8 @@ The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf @l @k opts
 rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, a status's copy function
-(`snackbar @"booked" bookedLine`), `settled normalize`,
-`bracketed stateOf caseOf` (`identity` says verbatim). A shape none of
+(`snackbar @"booked" bookedLine`), `settled normalize` (`identity` says
+verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next word waiting to be coined — never a reason to import the
 module one floor down. Business optics (`Shutter`/`Reel` in business
@@ -600,10 +614,8 @@ code below the UI) are algebra-layer material and exempt by location.
   `Foreign`), so an option or key type only a logic function names
   leaves nothing to solve.
 - **Splits at labels the view names.** The knot splits nothing: `looped`
-  re-feeds the whole row. `subStrong` keeps only its
-  forward `Union`s — the focus is the component's closed row, the
-  background is inferred and cannot overlap it — so the fed row may be
-  open.
+  re-feeds the whole row, and a sub-record is focused by the field that
+  holds it (`group @l`).
 - **A hole consumed when built is absent.** A word that consumes a logic
   value at build — a seed it announces, a period it schedules, a settle
   time — or calls a business function on the `{}` `body` feeds once (a
@@ -631,7 +643,7 @@ code below the UI) are algebra-layer material and exempt by location.
   an application feeds a stored field has a **label sibling**, `…At`,
   whose label slot is that read: `textAt @l`, `attrAt @l name`,
   `providedAt`/`paneAt`/`inCaseAt @case @field`, `foreachAt @key
-  @field`, `editedAt @key @field`, `listOfAt @l @key @field`. The function form stays for what
+  @field`, `actedAt @key @field`, `listOfAt @l @key @field`. The function form stays for what
   is *derived* — a copy function, a classifier, a projection, a read
   deeper than one field (weather's `cityLine`) — named in the view model
   module. A word whose every reach reads one field takes only the label:
@@ -647,10 +659,10 @@ code below the UI) are algebra-layer material and exempt by location.
   that module is designed. What it demands of the library: every word
   that introduces a row through a function or value argument MUST take
   that row as a **visible type argument after its anchor** — `looped @model` (`with
-  @model` for a flow with no loop), `action @outcome`, `listOf`/`foreach`/`acted`/
-  `edited @row`, `dispatched`/`accumulated @key @value`, the panes
-  `provided`/`pane`/`inCase @l @s`, `bracketed @variant @state`,
-  `toCase @payload`, `each @element`; a new word of that kind
+  @model` for a flow with no loop), `action @outcome`, `listOf`/`foreach`/`acted
+  @row`, `dispatched`/`accumulated @key @value`, the panes
+  `provided`/`pane`/`inCase @l @s`, `toCase @payload`, `each @element`;
+  a new word of that kind
   MUST do the
   same — and an option list MUST close its row (`choice @"a" <+> choice
   @"b"`). What it demands of the application: the model row is declared

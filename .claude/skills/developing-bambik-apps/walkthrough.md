@@ -359,8 +359,10 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
   `blankStatus @"New game" # fold (const openingPosition)` the reset.
 - **order-form** — all four shapes on one screen: a `looped` form in
-  labelled groups, a variant editor under `bracketed @"Mode"`, the debounced
-  summary, a `RecordToVariant.do` of buttons, and each action followed by its statuses.
+  labelled groups inside the app's loop, a choice with a field per case
+  (`tabBar @"Mode"` and its `inCaseAt` panes), the live summary, a
+  `RecordToVariant.do` of buttons, an estimate joined with the model it
+  lands on, and the folds and statuses.
 
 When the word for something is missing, [vocabulary.md](vocabulary.md)
 goes from the need to a word, a demo using it, and where to read more.

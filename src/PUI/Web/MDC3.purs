@@ -145,7 +145,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Data.Profunctor.Seeding (isHole)
-import PUI (Ocular, PUI, blank, foreach, prefixed, suffixed)
+import PUI (Ocular, PUI, blank, foreach, prefixed)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptLabel(..), OptSelected(..), OptIcon(..), Web, attribute, attrWith, autoDismiss, cl, clicked, clickedRow, clWhen, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, eventText, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textContent, textOf, uniqueId, separating, (:=))
@@ -969,14 +969,13 @@ cardActions = div >>> "style" := "display: flex; gap: 8px; align-items: center;"
 -- | well-defined because chrome commutes with the strengths (`Ocular`'s
 -- | admission law): `card w # focusField @l = card (w # focusField @l)`, so fusing
 -- | surface and lens loses nothing. The focus is any type `focusField @l`
--- | accepts — an editor ensemble (`group @"Customer" $ …`), a `bracketed`
--- | variant editor (`group @"Fulfillment" $ …`), a collection's array
+-- | accepts — an editor ensemble (`group @"Customer" $ …`, order-form's
+-- | `group @"Fulfillment"` with its case panes), a collection's array
 -- | (potluck's `group @"Guests"` over `acted`, reorder's
--- | `group @"Setlist"` over `edited`). Fusion is earned by the
+-- | `group @"Setlist"` over `acted`). Fusion is earned by the
 -- | leaf criterion — the label does work a trailing `# focusField @l` cannot
 -- | (heading copy, accessible name) — so a card grouping no model (a
--- | display card, a button row) stays the blind `card`, and a flat
--- | sub-row focus stays `subStrong` under caller-chosen chrome.
+-- | display card, a button row) stays the blind `card`.
 group
   :: forall @l f f' b s t
    . IsSymbol l
@@ -1227,18 +1226,22 @@ topAppBarCss = """
 """
 
 -- | The permanent **navigation drawer**: a titled nav panel pinned beside
--- | the content. The nav is live, not a static menu — it is the stage, and
--- | the content shows data after it (`suffixed`): what the nav releases
--- | feeds the content, so a selectable nav (a `listOf` of sections) drives
--- | what is shown next to it, and a feed is released once, by the nav.
-drawer :: forall i o. { title :: String, subtitle :: String } -> PUI Web { | i } { | o } -> PUI Web { | o } {} -> PUI Web { | i } { | o }
+-- | the content, both fed what the drawer is fed. The nav is live, not a
+-- | static menu — it is the stage, so what it emits is the drawer's
+-- | output: a selectable nav (a `listOf` of sections, `# joined`) reports
+-- | its pick to the app's loop, which folds it into the model and feeds
+-- | the drawer again, and the content shows that model beside it
+-- | (photo-gallery).
+drawer :: forall r o. { title :: String, subtitle :: String } -> PUI Web { | r } o -> PUI Web { | r } {} -> PUI Web { | r } o
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
   liftEffect $ ensureStyle "md3-drawer" drawerCss
-  unwrap $
-    suffixed ( div >>> "style" := "flex: 1; padding: 16px;" $ content )
-      ( aside >>> cl "md3-drawer" $ wrap do
-          _ <- unwrap (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
-          unwrap (div $ nav) )
+  nav' <- unwrap $ aside >>> cl "md3-drawer" $ wrap do
+    _ <- unwrap (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
+    unwrap (div $ nav)
+  content' <- unwrap (div >>> "style" := "flex: 1; padding: 16px;" $ content)
+  -- the content is a display: its `{}` answers carry nothing
+  liftEffect $ content'.fromUser \_ -> pure unit
+  pure { toUser: \r -> nav'.toUser r *> content'.toUser r, fromUser: nav'.fromUser }
 
 drawerCss :: String
 drawerCss = """

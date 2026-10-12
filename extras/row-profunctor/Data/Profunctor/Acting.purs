@@ -46,16 +46,16 @@
 -- |
 -- | This module is the **pure algebra** — the class (whose primitive
 -- | `actedBy` takes the key as a function, the minimal carrier obligation),
--- | the label form `acted @l`, the `(->)` face, and the derived `Maybe`
--- | action. The carrier machinery lives with the carriers, exactly as the
+-- | the label forms `acted @l` and `actedAt @l @t`, the `(->)` face, and
+-- | the derived `Maybe` action. The carrier machinery lives with the carriers, exactly as the
 -- | merge classes' instances do: `PUI` holds the shared keyed reconciler,
 -- | the generic `Hosting m node => Acting (PUI m)` instance and the sibling
--- | collection combinators (`foreach`, `edited`, `dispatched`,
--- | `accumulated`); each display carrier holds its own `Hosting` instance.
+-- | collection combinators (`foreach`, `dispatched`, `accumulated`); each display carrier holds its own `Hosting` instance.
 module Data.Profunctor.Acting
   ( class Acting
   , actedBy
   , acted
+  , actedAt
   , optioned
   ) where
 
@@ -65,6 +65,7 @@ import Prelude
 import Data.Array (head) as Array
 import Data.Maybe (Maybe, maybe)
 import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Strong (class Strong, second)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
@@ -86,7 +87,7 @@ instance Acting (->) where
 -- | for the laws), keyed by the row's materialized identity field `@l`.
 -- | Written trailing, like the merges' operands: `row # acted @"id"`.
 -- |
--- | As in `edited`, the element is typed at its **whole row, key
+-- | The element is typed at its **whole row, key
 -- | included**, on both sides — an item that reads its key beside a
 -- | whole-row editor that echoes it needs exactly that — and the carrier
 -- | **re-sets** the key on every emission from the element's *input* row,
@@ -101,6 +102,14 @@ acted w = withStructuralOrd @k (actedBy (Record.get prox)
   (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.set prox k out) (second w)))
   where
   prox = Proxy @l
+
+-- | `acted` over an array the model stores: keyed by field `l` of each
+-- | element, the array field `t` of the fed row, both named by label
+-- | (`item # actedAt @"id" @"Setlist"`), the rest of the row carried. The
+-- | MDC vocabularies' `group @t` does the same lift with its card and
+-- | heading; the plain-HTML floor names the field here (reorder-html).
+actedAt :: forall @l @t p k b1 b2 r1 r. Acting p => Strong p => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => p { | r1 } { | r1 } -> p { | r } { | r }
+actedAt w = focusField @t (acted @l @r1 w)
 
 -- | The `Maybe = 1 + a` container action, derived: `Maybe` embeds in `Array`
 -- | as the at-most-one-element arrays (identity is trivial at one element, so

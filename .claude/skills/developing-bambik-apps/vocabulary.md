@@ -62,7 +62,7 @@ and emitters of a catalogue — are in the design-system module header
 | a pane for one state of the model | `# pane @"faulty" readout`; `# paneAt @"serving" @"display"` | calculator, flight-booker, checkout; ticket-dispenser | writing.md *Conditional visibility* |
 | a list, displayed | `ul $ ( li $ text lapLine ) # foreach @"number" lapRows` | stopwatch | writing.md *Collections* |
 | a card that edits nothing | `card $ body1 (text summaryLine)` | order-form, product-review | writing.md *Components* |
-| a readout that settles before it redraws | `# debounced summarySettleTime` | order-form, flight-booker | `PUI` |
+| a readout that settles before it redraws | `# debounced itinerarySettleTime` | flight-booker | `PUI` |
 | a hint on hover | `# tooltip "You must accept the terms of service to sign up"`; `# tooltipWith loyaltyNote` | signup-form; espresso-bar | the design-system module |
 | a value-computed attribute | `attrWith "style" keyFace` | calculator, cells, circle-drawer | `PUI.Web` |
 | a field as an attribute | `attrAt @"x" "cx"` | circle-drawer | writing.md *Code style* |
@@ -86,10 +86,11 @@ and emitters of a catalogue — are in the design-system module header
 | a bounded quantity | `sliderLive @"Duration" {}`; `slider @"Split between" {}` | timer; tip-calculator | writing.md *Code style* → *Types and values* |
 | two controls on one field | `slider @"Tip percentage" {}` then `rangeInput @"Tip percentage"` | tip-calculator | writing.md *Components* |
 | a labelled group over a sub-record | `group @"Customer" $ Semigroupoid.do …` | order-form, potluck, reorder | writing.md *Components* |
-| a reusable sub-form over a flat sub-row | `addressForm # subStrong` | parcel | `PUI` |
+| a reusable sub-form over a sub-record | `group @"Address" addressForm` | parcel | writing.md *Components* |
 | an editor that exists in one state | `# inCaseAt @"return" @"Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
 | an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |
-| a variant field with an editor per case | `# bracketed @"Mode" fulfillmentState fulfillmentCase` | order-form | writing.md *Stages* |
+| a choice whose cases carry their own fields | `tabBar @"Mode" (…)`, each case's field `# inCaseAt @"Dine in" @"Mode"` | order-form | writing.md *Conditional visibility* |
+| an effect's outcome folded into the model it lands on | `( Semigroupoid.do { button …; … # action estimateDistance # atCase … } ) # joined @"Distance estimated"` | order-form | writing.md *App shape* |
 
 ## Events into state
 
@@ -129,8 +130,7 @@ and emitters of a catalogue — are in the design-system module header
 | What comes in → what goes out | Word | Demo | Read |
 | --- | --- | --- | --- |
 | the array → each element's event | `# foreachAt @"key" @"cells"`; `# foreach @"key" (const keyPad)` | cells; calculator, tic-tac-toe, shopping-cart | writing.md *Collections* |
-| the array → the array, decided jointly | `# acted @"name"` | potluck | writing.md *Collections* |
-| the array → the array, edited in place | `# edited @"id"`; a stored array `# editedAt @"id" @"Setlist"` | reorder; reorder-html | writing.md *Collections* |
+| the array → the array, decided jointly or edited in place | `# acted @"name"`; `# acted @"id"`; a stored array `# actedAt @"id" @"Setlist"` | potluck; reorder; reorder-html | writing.md *Collections* |
 | one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
 | one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
 | a selectable list (MDC2, MDC3) | `listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |

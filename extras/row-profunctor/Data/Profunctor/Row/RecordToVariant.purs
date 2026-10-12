@@ -38,7 +38,7 @@
 -- |   2. **Answer** — nothing: a feed is answered by no emission. It
 -- |      **arms** — every emission has a cause outside the channel (a
 -- |      click, an `Aff` settling, quiescence) — which is what lets
--- |      `updated`/`applied` feed an emitter without firing it. What an
+-- |      a loop re-feed an emitter without firing it. What an
 -- |      emission carries is the source's contract, not the shape's:
 -- |      `clicked` replays the row last fed.
 -- |   3. **Monoid** — unit `silence`, the class's own member, exact:

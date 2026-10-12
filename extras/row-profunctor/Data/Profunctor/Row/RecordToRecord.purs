@@ -11,11 +11,9 @@
 -- |   * **shape class** — `RecordToRecord`, the binary **merge**: the
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`).
--- |   * **free functions** — over the strength: `subStrong` (a sub-record,
--- |     the background carried), `focusField` (the field lens — the leaf lift,
--- |     making every label-indexed editor a whole-row citizen) and, with
--- |     `Looping` and `PointedCostrong`, `bracketed @l` (the sum-typed
--- |     field editor, keeping every case's payload); over the
+-- |   * **free functions** — over the strength: `focusField` (the field
+-- |     lens — the leaf lift, making every label-indexed editor a whole-row
+-- |     citizen); over the
 -- |     wire and the point: `blank` (the faceless leaf), `with`
 -- |     (`announce a >>> w` — discharge the initial-state obligation, so
 -- |     `with seed (looped w)` is the app shape, the knot closed);
@@ -30,7 +28,7 @@
 -- | There is no output-side adopter here — no `toField` beside
 -- | `VariantToVariant.toCase`. Turning a value into an occurrence is a
 -- | `dimap`, but turning an occurrence into a field value needs the rest of
--- | the row, and that is `focusField @l`'s retained background (or `updated`'s),
+-- | the row, and that is `focusField @l`'s retained background,
 -- | never a reshaping; and since every component already emits a row
 -- | (guardrails L3), there is no bare value to adopt.
 -- |
@@ -81,9 +79,7 @@ module Data.Profunctor.Row.RecordToRecord
   , recordToRecord
   , bind
   , discard
-  , subStrong
   , focusField
-  , bracketed
   , blank
   , with
   , asField
@@ -94,24 +90,16 @@ module Data.Profunctor.Row.RecordToRecord
 
 import Control.Category (class Category, identity)
 import Control.Semigroupoid ((>>>))
-import Data.Eq ((==))
 import Data.Function (const)
-import Data.Maybe (Maybe(..))
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
-import Data.Profunctor.Looping (class Looping, looped)
-import Data.Profunctor.PointedCostrong (class PointedCostrong, unfirstFrom)
-import Data.Profunctor.Row (class FieldNames, class OwnedRecordOutputs, class RowLabels, class SharedRecordInputs, exactRow, fedFirst, fedSecond, splitRow)
-import Data.Profunctor.Row.Structural (withStructuralEq)
+import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, exactRow, fedFirst, fedSecond)
 import Data.Profunctor.Seeding (class Seeding, announce)
-import Data.Profunctor.Strong (class Strong, first)
+import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
+import Prim.Row (class Cons)
 import Record (get, insert, union) as Record
-import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= RecordToRecord p where
@@ -144,36 +132,6 @@ discard
   -> p { | r1 } { | r }
 discard first cont = bind first (\_ -> cont unit)
 
--- | Focus a sub-record of the row, carrying the rest of the row unchanged.
--- | The focus is the component's own (closed) row and the background is
--- | inferred from the fed row by the forward `Union`s alone, so it cannot
--- | overlap the focus — and the fed row may be open, as it is while the
--- | logic that closes it is still a hole (guardrails L18).
-subStrong
-  :: forall p r1 r2 rl1 rl2 b r r3
-   . Strong p
-  -- forward only: the focus is the view's (closed), the background is
-  -- inferred, so it cannot overlap the focus — and `r` may be open (L18)
-  => Union r1 b r
-  => Union r2 b r3
-  => RowToList r1 rl1
-  => FieldNames rl1 r r1
-  => RowLabels rl1
-  => RowToList r2 rl2
-  => FieldNames rl2 r2 r2
-  => p { | r1 } { | r2 }
-  -> p { | r } { | r3 }
-subStrong g =
-  -- `splitRow` feeds `g` exactly its row and keeps the rest apart
-  dimap splitRow
-        -- `exactRow` trims the emission to its declared row first: `g` may
-        -- answer a feed *later* than the feed that stocked the retained
-        -- background (a debounced inner stage), so a fat echo's runtime
-        -- copies of background fields can be genuinely stale — the same
-        -- hazard the gated merges trim (runtime-exactness).
-        (\(Tuple f' b) -> unsafeUnion (exactRow f') b :: { | r3 })
-        (first g)
-
 -- | The field lens: lift a component editing field `l` into a whole-row citizen that retains the rest of the row.
 focusField
   :: forall @l p f f' b r r1
@@ -184,31 +142,6 @@ focusField
   => p f f'
   -> p { | r } { | r1 }
 focusField = prop (Proxy @l)
-
--- | Edit the variant-valued field `l` through a record-shaped, self-looped
--- | editor state that keeps every case's payload. The state is retained
--- | across feeds: a feed whose variant is the one the retained state
--- | projects to (the editor's own echo, or an edit elsewhere in the row)
--- | resumes it, and only another variant enters through `f`, which seeds
--- | the payloads that variant lacks. So a payload edited in one case
--- | survives a trip through the others (order-form's takeaway time).
-bracketed
-  :: forall @l @v @r1 p b r
-   . IsSymbol l
-  => Cons l [ | v ] b r
-  => Looping p
-  => Strong p
-  => PointedCostrong p
-  => ([ | v ] -> { | r1 })
-  -> ({ | r1 } -> [ | v ])
-  -> p { | r1 } { | r1 }
-  -> p { | r } { | r }
-bracketed f g w = focusField @l (unfirstFrom Nothing (dimap resumed retained (looped w)))
-  where
-  resumed (Tuple fed kept) = case kept of
-    Just state | withStructuralEq @[ | v ] (g state == fed) -> state
-    _ -> f fed
-  retained state = Tuple (g state) (Just state)
 
 -- | The faceless leaf that reads nothing and contributes nothing, at any input.
 blank :: forall p a. Category p => Profunctor p => p a {}

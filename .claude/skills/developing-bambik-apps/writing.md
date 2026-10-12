@@ -126,10 +126,10 @@ How each kind takes its business meaning:
   pipeline stage: fed the whole row, it edits its field and passes the
   rest on. A form is editors written as successive lines, never merge
   operands. Two controls writing one field are two lines in a row
-  (tip-calculator's slider and range input). Editors live inside a loop
-  — `looped` or `bracketed` — so every editor sees its siblings'
-  latest values; a flow without a loop of its own wraps its form in
-  `# looped` (order-form).
+  (tip-calculator's slider and range input). Editors live inside a loop,
+  `# looped`, so every editor sees its siblings' latest values; a form
+  inside an app's loop of events keeps a `# looped` of its own
+  (order-form).
 - **Selectors** are editors, and the word depends on what the model
   holds. The plain word when the field always holds an option; the
   `…Unpicked` word when a choice is owed but not yet made; the
@@ -181,7 +181,7 @@ for:
 | --- | --- | --- |
 | a display or chrome, always there | `headlineSmall $ text orderLine` | order-form |
 | a display shown in one case | `text distanceLine # pane @"estimated" distanceOf` | order-form |
-| an editor that exists in one case | `filledTextField @"Table" {} # inCaseAt @"Dine in" @"selected"` | order-form |
+| an editor that exists in one case | `filledTextField @"Table" {} # inCaseAt @"Dine in" @"Mode"` | order-form |
 | a button that exists in one case | `button @"Start" {…} # providedAt @"halted" @"phase"` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # foreach @"number" lapRows` | stopwatch |
 | a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count" {}` | counter |
@@ -258,15 +258,16 @@ must be on screen at mount — displays, editors, the list a pick comes
 from — stands before the ensemble; a stage after the fold is fed only by
 events. Editors before the ensemble flow forward only; an editor whose
 edit must reach its siblings keeps its own normalizer (`# settled`,
-temperature-converter) or stands in a loop with no events at all. A
-component whose own wiring feeds one part from another, the drawer, folds
-its pick in place with `updated` (photo-gallery). A sub-form with events
-of its own that stands inside the form closes its four shapes with
-`# updated f`, not `# looped`: a stage must pass every feed on to the
-stages after it, and a loop of the four shapes releases only when one of
-its events folds. `f` takes the row the fold released and the latest row
-the stage was fed, so an edit made while an effect ran is kept
-(order-form's `distanceEstimate`, `# updated setDistance`). `# with seed` closes a
+temperature-converter) or stands in a loop of its own: a form of several
+editors is `( … ) # looped` inside the app's loop (order-form). An event
+whose effect takes time is joined with the model when its outcome lands,
+not when it fired: `joined` wraps the emitter and its action together
+(`( Semigroupoid.do { button …; … # action estimateDistance # atCase … } )
+# joined @"Distance estimated"`), and the fold sets only what the effect
+produced on that model (`setDistance`), so an edit made while it ran is
+kept (order-form). A drawer feeds its nav and its content the same row;
+its nav is the list, `joined`, and its fold, a record stage of its own
+(photo-gallery). `# with seed` closes a
 flow with no loop of its own. Both close the app to what `body` accepts; a forgotten seed is a
 compile error at `body` naming the missing fields.
 
@@ -282,11 +283,11 @@ compile error at `body` naming the missing fields.
 | effects and time | password-generator, stopwatch, timer, weather |
 | structure that varies with the data | markdown-previewer |
 | no design system at all | restaurant-menu, helloworld |
-| a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, which `body`'s one feed of `{}` runs); `bracketed` |
+| a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, which `body`'s one feed of `{}` runs) |
 | an action that retries until it succeeds, narrated on its way in | payment (`chargeFlaky`, `# observed`) |
 | state that used to be a hidden loop, now a model field | auction (`settled raiseTop`), checkout (`stepTo`), ticket-dispenser (`issue`) |
-| a reusable sub-form; routing some events | parcel (`subStrong`), cashbox (`subChoice`) |
-| a reusable sub-form with its own button, action and fold | order-form (`distanceEstimate # subStrong`, closed by `updated setDistance`) |
+| a reusable sub-form over a sub-record; routing some events | parcel (`group @"Address" addressForm`), cashbox (`subChoice`) |
+| an effect's outcome folded into the model it lands on | order-form (`… # joined @"Distance estimated"`, `fold setDistance`) |
 | keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
 
 ## Conditional visibility
@@ -320,10 +321,13 @@ An editor that exists only in one mode is `# inCase`, not a pane whose
 edits you fold back by hand. Order-form's fulfillment fields,
 flight-booker's return date (`# inCaseAt @"return" @"Flight type"`) and
 meeting-booker's attendees slider (`# inCaseAt @"chosen" @"Room"`) are the
-examples; a variant field edited through several such panes is wrapped
-in `# bracketed @"Mode" …` (order-form). The model holds only the chosen
-case; the bracket keeps every case's payload, so switching away and back
-restores what was typed.
+examples. A choice whose cases each carry their own fields is a
+selector field and those fields side by side in the model, each field's
+editor existing in its case (order-form's Fulfillment: `tabBar @"Mode"`,
+then `# inCaseAt @"Dine in" @"Mode"` on the table): what was typed in
+one case is still there after switching away and back, because it is a
+model field. Where the business needs only the chosen case, a view model
+function reads it from that record.
 
 `clWhen` toggles a class for styling, not existence.
 
@@ -343,7 +347,7 @@ the pick reaches the content directly (photo-gallery).
 - **Keyed and kept.** `foreach @"key" rowsOf` and `listOf @l @k` render
   one element per row, identified by a key field of the row; an array
   the model stores is named instead of projected (`foreachAt @"key"
-  @"cells"`, `editedAt @"id" @"Setlist"`, `listOfAt @l @k @"messages"`). An element
+  @"cells"`, `actedAt @"id" @"Setlist"`, `listOfAt @l @k @"messages"`). An element
   whose key survives a change is updated in place and keeps its focus
   and local state; a reordered list moves elements with their keys. Rows
   therefore need an id field — an array of bare strings cannot be
@@ -351,14 +355,14 @@ the pick reaches the content directly (photo-gallery).
 - **Fixed structure** (grids, canvases): feed the structure as data
   through `foreach` and compute each element's attributes with
   `attrWith` (cells, circle-drawer). **Structure that varies with the
-  data** (markdown blocks): `dynamic`/`each`, which rebuild per value
-  (markdown-previewer).
-- **Editing in place**: `edited @"id"` folds each element's edit back
-  into the array (reorder). An element cannot change its own key. Add,
-  remove and reorder are sibling stages over the enclosing model, not
-  part of the element.
-- **Joint choice**: `acted @"name"` gathers every element's choice
-  before emitting (potluck).
+  data** (markdown blocks): `dynamic`, which rebuilds per value, with
+  `each` for a constant list, built once (markdown-previewer).
+- **Editing in place and joint choice** are one word, `acted @"id"`: the
+  whole array comes back once every element has answered — at once for
+  editors, which answer every feed (reorder), and after every choice for
+  selectors still unpicked (potluck). An element cannot change its own
+  key. Add, remove and reorder are sibling stages over the enclosing
+  model, not part of the element.
 - A fixed catalogue is given through the word's own projection
   argument, `# foreach @"key" (const keyPad)` (calculator).
 - An element whose content reads several things names that reading
@@ -416,9 +420,10 @@ deleted" :: model, … ]`, the six cases of crud's three actions, each
 `Aff` returning its own). The block's outputs are one row (an equality,
 like the `×→×` merge's inputs), so the fold block after it fixes the row
 and nothing names an outcome on an action line; events the actions do
-not handle pass `# subChoice`. Where only statuses follow (flight-booker,
-order-form's submit and receipt), `@( … )` on one line declares the
-payloads nothing downstream fixes, and the block ends the pipeline.
+not handle pass `# subChoice`. Where only statuses follow (flight-booker;
+order-form's submit and receipt, whose snackbars sit in the fold block
+beside the folds), `@( … )` declares the payloads nothing downstream
+fixes.
 
 Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app
@@ -553,7 +558,6 @@ text is computed, a chrome line nothing.
     (`# foreach @"name" @( name :: String, mix :: … ) (const palette)`,
     `# foreach @"number" @( number :: Int, tenths :: Int ) lapRows`);
   - a seed with no loop of its own (`# with @{ "Guests" :: Array { … } } invitation`);
-  - a bracketed editor's state;
   - an option list, closed by `<+>` (`choice @"one-way" <+> choice @"return"`).
 
   What no line declares is not in the model. State only the business
@@ -708,7 +712,7 @@ text is computed, a chrome line nothing.
   `Data.Profunctor.Row.*` are vocabulary; raw `lcmap`/`rmap`/`dimap`
   are not. Every reshaping an app needs has a home in a word's own
   argument — `foreach @l rowsOf`, `toCase @l payloadOf`,
-  `settled normalize`, `bracketed @l stateOf caseOf`, with `identity`
+  `settled normalize`, with `identity`
   meaning "the value as it is". A shape none fits is a gap to report,
   not a reason to reach below the vocabulary.
 - **State lives in the model.** No FFI stashes, no module-level mutable

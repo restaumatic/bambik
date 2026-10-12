@@ -190,9 +190,9 @@ are the unary operators that embed the small into the large — and this is
 where optics re-enter, now as UI combinators:
 
 - `Strong` (the `×` strength) gives `focusField @l` — the field lens, and the
-  lift that makes every label-indexed editor a whole-row citizen;
-  `subStrong` focuses a whole sub-record while the background row rides
-  along.
+  lift that makes every label-indexed editor a whole-row citizen, and that
+  `group @l` uses to edit a whole sub-record while the rest of the row
+  rides along.
 - `Choice` (the `+` strength) gives `focusCase @l` — the case prism: handle one
   case, pass the others through.
 
@@ -273,7 +273,7 @@ falling out of the merge gates. For whole-row editor stages the same
 re-broadcast is what keeps their retained backgrounds current — every
 stage is re-fed on every emission, so no editor can emit a stale sibling
 for longer than the turn in flight, which is why editor ensembles live
-inside `looped`/`bracketed`. The library once had bespoke `synced`
+inside `looped`. The library once had bespoke `synced`
 and
 `latch` combinators for this; they dissolved into `looped` — the algebra
 subsumed them, which is how you know a design is converging.

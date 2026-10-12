@@ -6,6 +6,48 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
+## 2026-10-11, last
+
+- **`bracketed`, `updated`, `applied`, `every`, `edited`/`editedAt` and
+  `subStrong` are deleted.** Each kept application state the model did
+  not declare or folded events beside the app's loop, and each now has an
+  idiomatic replacement (guardrails L14, *State the app needs is a model
+  field*):
+  - `bracketed` kept the other cases' payloads of a variant field inside
+    the editor, so every re-broadcast re-seeded them from defaults —
+    order-form's takeaway time was lost on a trip through another tab (a
+    retaining fix, earlier today, is withdrawn with the word). A choice
+    whose cases carry fields is now a selector field and every case's
+    fields side by side in the model (order-form's `Fulfillment`: `Mode`,
+    `Table`, `Time`, `Address`, `distance`), each edited
+    `# inCaseAt @c @"Mode"`; `fulfillmentState`/`fulfillmentCase` and the
+    law test of their round trip are gone.
+  - `updated`/`applied` folded events in place. Order-form is now one
+    loop of the four shapes around its form's own `# looped`: Estimate
+    distance stands with Submit and Receipt (shown only for Delivery, `#
+    provided @"Delivery" … deliveryAddress`), its button and action
+    `joined` together so the outcome is paired with the model it lands
+    on, and `blankStatus @"Distance estimated" # fold setDistance` sets
+    only the distance — an edit made while the estimate ran is kept (the
+    `distanceEstimate` sub-form of the entry below is gone). The summary's
+    `# debounced` went with it: it delayed only the row the buttons
+    replay, so a click within the window estimated a stale address.
+    Photo-gallery's drawer nav is the list, `joined`, and
+    `blankStatus @"opened" # fold openAlbum`; `openAlbum` takes `{ event,
+    model }`. `every`, derived from `updated`, was unreached.
+  - `edited` duplicated the container action for editors: `acted @"id"`
+    gives back the whole array on every feed and every edit (reorder), and
+    `actedAt @key @field` (`Data.Profunctor.Acting`) replaces `editedAt`
+    for the plain-HTML twin.
+  - `subStrong` lifted a closed-row sub-form into a flat row: parcel's
+    address is now a sub-record, edited by `group @"Address" addressForm`.
+- **`drawer` (MDC2, MDC3) feeds its nav and its content the same row**,
+  and its output is the nav's: before, the content was fed only what the
+  nav released, which is why a nav had to fold its pick in place.
+- **`each` is built at registration**, like every static: its list is
+  known up front, so it is on screen before any feed (photo-gallery's
+  favorites trail the nav's fold, which releases only on a pick).
+
 ## 2026-10-11, later
 
 - **Order-form's distance estimate is a reusable sub-form.**

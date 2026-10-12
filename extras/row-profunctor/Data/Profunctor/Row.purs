@@ -93,7 +93,7 @@
 -- | nothing threaded and no state. The **middle** column carries a
 -- | **background** the strength threads. The sub-row family is named for the
 -- | strength it stands on, so each name is the first constraint in its own
--- | signature (`subStrong`/`subChoice`/`subResolving`/`subRetaining`) — a
+-- | signature (`subChoice`/`subResolving`/`subRetaining`) — a
 -- | strength names the carrier *pair*, so no side is privileged, where a
 -- | carrier word would be honest on the pure shapes and half-true on the
 -- | mixed ones. The pure shapes add their ecosystem single-label optic
@@ -428,7 +428,7 @@ exactRow r = Builder.buildFromScratch (fieldNames (Proxy @rl) r)
 -- | built from exactly its labels, read off the fed record, and the rest is
 -- | a copy of the fed record with those labels removed — so neither half
 -- | runtime-carries a field of the other. The sub-record focusing words
--- | (`subStrong`, `subResolving`) feed their focus and retain their
+-- | (`subResolving`) feed their focus and retain their
 -- | background through it; before (CHANGELOG, 2026-10-11) both halves were
 -- | the fed record itself under a coercion, the background carrying stale
 -- | copies of the focus's fields.

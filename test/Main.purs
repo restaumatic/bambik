@@ -20,7 +20,7 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (bracketed, focusField, muted, subStrong, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (focusField, muted, recordToRecord)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (recordToVariant)
 import Data.Profunctor.Row.VariantToVariant (focusCase, toCase, variantToVariant)
@@ -38,8 +38,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import OrderFormViewModel (fulfillmentCase, fulfillmentState)
-import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, applied, blankStatus, cancelScope, dispatched, edited, fold, foreach, inScope, looped, newScope, observed, optioned, prefixed, replaying, resolveFor, resumeScope, seeded, silence, suffixed, suspendScope, ticks, updated, with)
+import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, blankStatus, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, prefixed, replaying, resolveFor, resumeScope, seeded, silence, suffixed, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -172,19 +171,6 @@ fireElem roster n o = do
 
 main :: Effect Unit
 main = do
-  -- == subStrong: row-typed Strong, focus a sub-record carrying the rest. On `(->)`. ==
-
-  -- subStrong: rows on both sides. Here a one-field sub-record { a } is transformed
-  -- (Int -> String) while the complement { b } is carried unchanged.
-  assertEqual "subStrong"
-    { a: "5", b: true }
-    (subStrong (\(r :: { a :: Int }) -> { a: show r.a }) { a: 5, b: true })
-
-  -- multi-field sub-record { a, c } transformed, complement { b } carried.
-  assertEqual "subStrong/multi-field"
-    { a: 50, c: 2, b: "x" }
-    (subStrong (\(r :: { a :: Int, c :: Int }) -> { a: r.a * 10, c: r.c + 1 }) { a: 5, c: 1, b: "x" })
-
   -- field = the value-level single-field lens — get / set / over.
   assertEqual "focusField/view" 7 (view (focusField @"foo") { foo: 7, bar: "x" })
   assertEqual "focusField/set" { foo: 9, bar: "x" } (set (focusField @"foo") 9 { foo: 7, bar: "x" })
@@ -546,42 +532,6 @@ main = do
     Ref.read outs >>= assertEqual "coreel: emission leaves" [ "7" ]
     Ref.read ins >>= assertEqual "coreel: emission resumes as next input" [ 5, 8 ]
 
-  -- updates (the Mealy update stage): each event emission is paired with
-  -- the retained model and folded; gated before a first model arrives.
-  do
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { n :: Int })
-    m <- unwrap (updated (\e s -> { n: s.n + e }) (probe gProp :: PUI Effect { n :: Int } Int))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire gProp 3
-    Ref.read outs >>= assertEqual "updated: gated before a model" []
-    m.toUser { n: 10 }
-    Ref.read outs >>= assertEqual "updated: value passes through" [ { n: 10 } ]
-    fire gProp 3
-    Ref.read outs >>= assertEqual "updated: event folded into retained model" [ { n: 10 }, { n: 13 } ]
-    fire gProp 3
-    Ref.read outs >>= assertEqual "updated: a second event with no re-feed folds into the first's result" [ { n: 10 }, { n: 13 }, { n: 16 } ]
-
-  -- applied (the occurrence stage): a state transformer over the retained
-  -- row, stepped on every emission — law: applied f ≡ updated (const f).
-  -- The emitter is fed the row it acts on; whatever it emits is discarded
-  -- for the retained row (fired here with a foreign payload to prove it).
-  do
-    gProp <- Ref.new Nothing
-    ins <- Ref.new ([] :: Array { n :: Int })
-    outs <- Ref.new ([] :: Array { n :: Int })
-    m <- unwrap (applied (\s -> { n: s.n + 1 }) (probeIO ins gProp :: PUI Effect { n :: Int } [ count :: { n :: Int } ]))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire gProp (.count { n: 99 })
-    Ref.read outs >>= assertEqual "applied: gated before a model" []
-    m.toUser { n: 10 }
-    Ref.read ins >>= assertEqual "applied: the emitter is fed the row it acts on" [ { n: 10 } ]
-    Ref.read outs >>= assertEqual "applied: value passes through" [ { n: 10 } ]
-    fire gProp (.count { n: 99 })
-    Ref.read outs >>= assertEqual "applied: the occurrence steps the retained row, the replay payload discarded" [ { n: 10 }, { n: 11 } ]
-    fire gProp (.count { n: 99 })
-    Ref.read outs >>= assertEqual "applied: each occurrence steps once more" [ { n: 10 }, { n: 11 }, { n: 12 } ]
-
   -- observed (the +-diagonal pass-through): every event forwards once at
   -- feed time; the status is fed exactly the cases it consumes, and its
   -- own emissions are dropped.
@@ -807,7 +757,7 @@ main = do
         "coresolve∘resolve = debounced: only the last of the burst passes, after quiescence" [ "burst2" ]
 
   -- == focusCase (the value-level case prism) on (->): the Choice strength at ==
-  -- == row granularity, checked like subStrong/field above. ==
+  -- == row granularity, checked like focusField above. ==
 
   assertEqual "focusCase/match"
     (.ok "5" :: [ ok :: String, err :: String ])
@@ -1231,22 +1181,6 @@ main = do
     Ref.read builds >>= assertEqual "accumulated: two keys, two instances" 2
     fireElem roster 1 20
     Ref.read outs >>= \os -> assertEqual "accumulated: an element emission folds into its slot" (Just [ 10, 20 ]) (os !! (length os - 1))
-
-  -- edited @l: the key is data and the element's output row EXCLUDES it — the
-  -- carrier re-attaches each emission's key (the return address), so an
-  -- element structurally cannot change it; feeds re-emit (input-primed).
-  do
-    builds <- Ref.new 0
-    roster <- Ref.new ([] :: Array (ElemHandle { id :: String, title :: String } { title :: String }))
-    outs <- Ref.new ([] :: Array (Array { id :: String, title :: String }))
-    -- holey-weak-types: the element is typed at its whole row, key included; the carrier re-sets the key
-    m <- unwrap (edited @"id" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { id :: String, title :: String } { id :: String, title :: String }))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser [ { id: "a", title: "x" }, { id: "b", title: "y" } ]
-    Ref.read outs >>= assertEqual "edited: input-primed — every feed re-emits the array" [ [ { id: "a", title: "x" }, { id: "b", title: "y" } ] ]
-    fireElem roster 0 { title: "X" }
-    Ref.read outs >>= \os -> assertEqual "edited: an edit folds immediately, its key re-attached by the carrier" (Just [ { id: "a", title: "X" }, { id: "b", title: "y" } ]) (os !! (length os - 1))
-    Ref.read builds >>= assertEqual "edited: survivors were re-fed, never rebuilt" 2
 
   -- == The seeded retraction laws (doc/observational-semantics.md): the ==
   -- == raw ×-side composites deadlock — each gate waits on the other — so ==
@@ -2065,41 +1999,6 @@ main = do
     assertEqual "actedBy laxity: the one-stage form feeds only the element that spoke"
       [ { k: "b", v: 20 } ] oneStage.q1Ins
     assertEqual "actedBy laxity: the boundary agrees" oneStage.os twoStage.os
-
-  -- == bracketed's argument law (Data.Profunctor.Row.VariantToVariant): ==
-  -- == caseOf ∘ stateOf = id, on the one pair the demos use. ==
-  for_
-    ( [ ."Dine in" { "Table": "4" }
-      , ."Takeaway" { "Time": "18:30" }
-      , ."Delivery" { "Address": "Main St 1", distance: .estimated { km: 3, to: "Main St 1" } }
-      , ."Delivery" { "Address": "Side St 2", distance: .unknown {} }
-      ] :: Array [ "Dine in" :: { "Table" :: String }, "Takeaway" :: { "Time" :: String }, "Delivery" :: { "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } ]
-    ) \v ->
-    assertEqual "bracketed: caseOf ∘ stateOf = id on order-form's fulfillment pair" v (fulfillmentCase (fulfillmentState v))
-
-  -- == bracketed keeps every case's payload: the editor state is retained ==
-  -- == across feeds, so the model's echo of a case switch resumes it rather ==
-  -- == than re-seeding the other cases' payloads through stateOf. ==
-  do
-    ins <- Ref.new []
-    editor <- Ref.new Nothing
-    models <- Ref.new []
-    m <- unwrap (looped (bracketed @"Mode" fulfillmentState fulfillmentCase (echoProbe identity ins editor)))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) models
-    m.toUser { "Mode": ."Takeaway" { "Time": "8:30" } }
-    let
-      edit change = do
-        fed <- Ref.read ins
-        for_ (last fed) \state -> fire editor (change state)
-      lastTime = map _."Time" <<< last <$> Ref.read ins
-    edit _ { "Time" = "13:45" }
-    edit _ { selected = ."Dine in" {} }
-    lastTime >>= assertEqual "bracketed: the model's echo of a switch away keeps the takeaway time" (Just "13:45")
-    edit _ { selected = ."Takeaway" {} }
-    (last <$> Ref.read models) >>= assertEqual "bracketed: switching back restores the takeaway time"
-      (Just { "Mode": ."Takeaway" { "Time": "13:45" } })
-    m.toUser { "Mode": ."Delivery" { "Address": "Main St 1", distance: .unknown {} } }
-    lastTime >>= assertEqual "bracketed: another variant from outside re-enters through stateOf" (Just "12:00")
 
   -- == The Ocular admission law (PUI's header): ocular (first w) = first ==
   -- == (ocular w) for a node-wrapping ocular; a capturing decorator breaks ==

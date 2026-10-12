@@ -15,8 +15,8 @@ channels, reached in three phases:
 0. **Construction** (`unwrap`, in the carrier's `m`): the process and its
    state come into being. Every `Ref` a stateful instance owns is allocated
    *here, in `m`* — which is why the stateful instances (`Strong`, `Choice`,
-   the trace quartet, `Category`'s wire, the gated merges, `updated`,
-   `every`, `action`…) require `MonadEffect m`: state is a construction-time
+   the trace quartet, `Category`'s wire, the gated merges, `action`…)
+   require `MonadEffect m`: state is a construction-time
    effect and is typed as one, never smuggled in through laziness. The
    constraint is informative in the other direction too — `Profunctor`,
    `Semigroupoid`, `Cochoice`, the ungated merges keep `Functor`/`Apply`,
@@ -119,19 +119,19 @@ combinator laws below fail without them.
    emits from inside its own `toUser`. Events are occurrences, not
    responses; this is the termination argument for `Cochoice`'s re-entry
    (an event loop, not a busy loop), and what lets
-   `updated`/`applied` *arm* an emitter by feeding it without firing it.
+   a loop's re-feed *arm* an emitter by feeding it without firing it.
    Forwarding an occurrence that *arrived* — `identity`, `observed` and
    `subChoice`'s background cases at `+→+` all emit inside `toUser` — is a
    response to an input event, not an echo of a feed, and is not what this
    law forbids; the law is about sources (§3.1).
 
    The law is about **shape**, and every published component has the
-   shape of its behaviour (2026-09-15). Two used not to. `bracketed`
-   returned a variant *channel* that carried sum-typed *state* — its
-   looped record ensemble echoed every feed, projected into a variant
-   emission — and `clicked` returned a record channel that carried
-   clicks. Both are fixed at the type: `bracketed @l` lifts its editor
-   into the record field it edits, so a variant stands at channel position
+   shape of its behaviour (2026-09-15). Two used not to. The variant-field
+   editor bracket (deleted 2026-10-11, §7) returned a variant *channel*
+   that carried sum-typed *state* — its looped record ensemble echoed
+   every feed, projected into a variant emission — and `clicked` returned
+   a record channel that carried clicks. Both were fixed at the type: the
+   bracket lifted its editor into the record field it edits, so a variant stands at channel position
    only as an event and inside a field only as a value; and every
    occurrence source — `clicked @l f`, `listOf @l f`, `onClickedXY @l`,
    the HTML floor's `button @l` — emits as case `l`, so no record-shaped
@@ -422,23 +422,21 @@ principle* (input residuals compose as `c × d`, output residuals as
   shutter carries an escape `s → t` (`Data.Lens.Shutter`). The ∃-to-∃
   dualities (`Coshutter s t a b ≅ Reel b a t s`, pair swaps) do hold.
 
-## 7. Sums into products: `bracketed`'s law
+## 7. Sums into products — retired
 
-The sum-typed field editor `bracketed @l stateOf caseOf` embeds a sum into
-the product of its summands, projects back, and lifts the result into field
-`l`. Its arguments owe one law, stated in
-`Data.Profunctor.Row.RecordToRecord` and tested on the demos' pair:
-
-```
-caseOf (stateOf v) = v
-```
-
-— a section–retraction. The embedding `Σᵢ Aᵢ → Πᵢ Aᵢ` is not canonical in
-general; it exists here because every summand is **pointed** (a default
-payload for each absent case — the "seeding absent payloads" of the doc is
-exactly that pointing, the same ⊥ as §5's seeds). The other composite,
-`stateOf ∘ caseOf`, is deliberately *not* the identity: its kernel — the
-other cases' payloads — is what the editor retains across a selection change.
+The sum-typed field editor `bracketed @l stateOf caseOf` (deleted
+2026-10-11) embedded a sum into the product of its summands, projected
+back, and lifted the result into field `l`, its arguments owing the
+section–retraction `caseOf (stateOf v) = v`. The embedding `Σᵢ Aᵢ → Πᵢ Aᵢ`
+existed because every summand was pointed (a default payload for each
+absent case), and the other composite, `stateOf ∘ caseOf`, was
+deliberately not the identity: its kernel — the other cases' payloads —
+was what the editor retained across a selection change. That kernel was
+application state the model did not declare, which is why the word went
+(guardrails L14): a choice whose cases carry fields is now the product
+itself, a selector field beside every case's fields in the model, each
+edited while its case is selected, and the sum, where the business needs
+it, is a view model function of that record.
 
 ## 8. Glitch-freedom is a style theorem
 
@@ -652,6 +650,5 @@ probes pinning the leaf contracts (replay, nothing at registration) — the
 `×→+` and `+→+` symmetries, the identity `exact` at `×→+`, and
 `projection` at all four with `looped` as the cross-feed contrast), the
 bounded exhaustive check of §9 (test/Exhaustive.purs), the
-container action's laxity at the inner surface, `bracketed`'s retraction on the
-order-form pair, the Ocular admission law for a node-wrapping ocular and its
+container action's laxity at the inner surface, the Ocular admission law for a node-wrapping ocular and its
 failure for a capturing decorator, and `announce`'s naturality.
