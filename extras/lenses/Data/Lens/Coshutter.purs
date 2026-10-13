@@ -2,8 +2,7 @@
 -- | `Data.Profunctor.Coresolving`'s `coresolve`, for the coined `× → +`
 -- | shape. Both the class and the optic are this library's. Its
 -- | strength-side sibling is `Data.Lens.Shutter`, and nothing here mentions
--- | a row; it has no row form — a chain of this shape closes at its
--- | record junction, with `looped`.
+-- | a row: the row form is `Data.Profunctor.Row.RecordToVariant.folding`.
 -- |
 -- | Like the other coined optics: the existential constructor `coshutterE`
 -- | is **sound**, and completeness is **not claimed** — see
@@ -36,7 +35,7 @@ import Data.Tuple (Tuple(..))
 -- | each emission either exits with `t` or yields a **new way to read
 -- | inputs** — the fold state is a reader. The collapsed form has no initial
 -- | reader, which is exactly why the `PUI` carrier gates inputs until primed.
--- | A row form of this optic (`folding @w`) once existed (CHANGELOG, 2026-10-05).
+-- | `folding @w @l` is this optic at row granularity.
 type Coshutter s t a b = forall p. Coresolving p => p a b -> p s t
 
 coshutter :: forall s t a b. (b -> Either t (s -> a)) -> Coshutter s t a b

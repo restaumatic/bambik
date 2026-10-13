@@ -47,14 +47,14 @@ import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCase)
+import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, eventLeaf, eventText, getChecked, getValue, isFocused, listenNode, selectorWiring, setAttribute, setChecked, setValue, staticText, statusWiring, text, textOf, uniqueId, (:=))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, selectorWiring, setAttribute, setChecked, setValue, staticText, statusWiring, text, textOf, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -269,13 +269,13 @@ toast
   => Cons l a () v
   => (a -> String)
   -> PUI Web [ | v ] { | r }
-toast copy = toastFace # forCase @l copy
+toast copy = toastFace copy # atCase @l
 
-toastFace :: forall r. PUI Web [ event :: String ] { | r }
-toastFace = wrap do
+toastFace :: forall a r. (a -> String) -> PUI Web a { | r }
+toastFace copy = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
-      (div $ textOf eventText) # cl "toast-body")
+      (div $ textOf copy) # cl "toast-body")
     # cl "toast" # cl "text-bg-primary" # cl "border-0"
   node <- gets _.sibling
   pure

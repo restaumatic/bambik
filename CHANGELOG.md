@@ -6,6 +6,55 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
+## 2026-10-13, latest
+
+- **The single-label grid.** The two pure shapes carry the same four
+  words: `focusField`/`focusCase` (one label, the rest threaded),
+  `asField`/`asCase` (a closed singleton renamed), `atField`/`atCase`
+  (the input half of the iso between a closed singleton and its
+  payload) and `toField`/`toCase` (the output half); at the closed
+  singleton `focus = to <<< at`, the halves and the rename being
+  generators. New: `asCase`
+  (back, as `asField`'s mirror), `atField` (back at the closed
+  singleton), `toField`; all re-exported by `PUI`. None takes a
+  function: `toCase` loses its projection (`toCase @l @a`; cashbox's
+  `identity` dropped, movie-browser's `favoriteMark` deleted, its fold
+  taking the whole element row), and `forCase` is deleted — a status
+  face takes its copy function (`textOf copy`, now at a bare input)
+  and is adopted `# atCase @l`; `eventText` goes with it. `replaying`
+  and `joined` are written through `toCase @l` over `first`, the case
+  introduced rather than injected by hand.
+- **`silence` is `Data.Profunctor.Silencing`'s.** The `×→+` unit leaves
+  the `RecordToVariant` class for a one-method class beside `Seeding`
+  and `Looping` — *nothing* as carrier structure, as they are a
+  beginning and feedback — so that no merge class carries a unit: every
+  shape borrows its own from the class that can supply it, three from
+  `Category`, this one from `Silencing`. Instances `PUI m` and
+  `Cont r` (under `Monoid r`) move with it; `PUI` re-exports it as
+  before. The shape table in `Data.Profunctor.Row` lists only shape
+  modules' functions, so `silence` leaves it beside `looped`.
+- **One-sided words live on the floor.** `atField`/`toField`, `atCase`/
+  `toCase`, `with` and `settled` moved from their diagonal modules to
+  `Data.Profunctor.Row`, beside `atAnyRow`/`widenVariantOutput`: a word
+  constraining one side is a side's, not a shape's, and filing it in a
+  diagonal module made `RecordToVariant` import `VariantToVariant` for
+  `toCase`. The rule is now: both sides constrained → the shape's
+  module; one side → the floor; no shape module imports another. `PUI`
+  re-exports are unchanged; vocabularies import `atCase` from the floor.
+
+- **Every shape has its strength's and its co-strength's row form
+  again.** Restored for completeness and symmetry of the placement table
+  in `Data.Profunctor.Row`: `subResolving @w` (`Shutter`) and
+  `subRetaining @w` (`Reel`), with `splitRow`; `feedback @l`
+  (`Colens`, over `PointedCostrong`), `cycled` (`Coprism`, with
+  `LoopCases`), `folding @w @l` (`Coshutter`) and `unfolding @w @l`
+  (`Coreel`) — as they stood before their deletions (2026-10-13,
+  2026-10-06, 2026-10-05). They are law-tested (test/Main.purs probes,
+  test/BusinessOptics.purs) and reached by no demo: an app's knot stays
+  `looped` and a looped state a model field. The table now marks each
+  empty cell as placement (`·`, the words filed elsewhere) or a genuine
+  limit (`—`, a word that cannot exist).
+
 ## 2026-10-13, later
 
 - **A demo app is its module; its views are named by their design

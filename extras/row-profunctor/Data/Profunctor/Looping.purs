@@ -11,13 +11,14 @@
 -- | self-feed (no `c` before the first emission, no emission before the
 -- | first input — the gate deadlocks), so the self-feeding special case is
 -- | carrier structure, not a derivation. Row-shaped in the method itself:
--- | the looped value is an entity (a model row). It is the one knot: a
--- | loop through the four shapes is cut at its record junction, and an
--- | event re-enters through its fold. The variant side needs none —
--- | `Cochoice`'s `unleft` holds raw on `PUI` (the carrier is traced over
--- | `+`, pointed-traced over `×`), and a variant knot was retired as a
--- | second way of writing the same loop whose model no line of the view
--- | could declare (CHANGELOG, 2026-10-06).
+-- | the looped value is an entity (a model row). It is the app's knot: a
+-- | loop through the four shapes is cut at its record junction, where the
+-- | model can be declared, and an event re-enters through its fold. The
+-- | variant side needs no class — `Cochoice`'s `unleft` holds raw on
+-- | `PUI` (the carrier is traced over `+`, pointed-traced over `×`), so
+-- | the variant knot `cycled` is a derivation
+-- | (`Data.Profunctor.Row.VariantToVariant`); the one-field `×`-knot
+-- | `feedback` is seeded through `PointedCostrong` instead.
 -- |
 -- | Laws — the trace axioms restricted to the diagonal (`identity` on
 -- | `Category` carriers), stated up to the observational equivalence of

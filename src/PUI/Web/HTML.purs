@@ -77,7 +77,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCase)
+import Data.Profunctor.Row (atCase)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (inj, match)
 import Effect (Effect)
@@ -86,7 +86,7 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, eventText, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, textOf, separating, (:=), (:=>))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, textOf, separating, (:=), (:=>))
 
 -- UIs
 
@@ -238,10 +238,10 @@ output
   => Cons l a () v
   => (a -> String)
   -> PUI Web [ | v ] { | r }
-output copy = outputFace # forCase @l copy
+output copy = outputFace copy # atCase @l
 
-outputFace :: forall r. PUI Web [ event :: String ] { | r }
-outputFace = el "output" $ textOf eventText
+outputFace :: forall a r. (a -> String) -> PUI Web a { | r }
+outputFace copy = el "output" $ textOf copy
 
 -- TODO disable button after click?
 -- | A bare `<button>`, captioned by its label verbatim (`label:` overrides

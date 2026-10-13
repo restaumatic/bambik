@@ -73,9 +73,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   functions are arguments of leaves, never adopters — a display takes its
   read function, a status its business case and copy function
   (`snackbar @"booked" bookedLine`), and an emitter emits its own case
-  (the adopters `toCases`/`forCases` are deleted; `forCase`
-  survives as the status face's vocabulary plumbing, `focusField`'s
-  variant twin, no longer re-exported; the view-side
+  (the adopters `toCases`/`forCases`/`forCase` are deleted — a status
+  is its face over the copy function, adopted `# atCase @l`; the
+  structural adopters `asField`/`asCase`, `atField`/`atCase`,
+  `toField`/`toCase` take no function; the view-side
   read adopters `projection`/`projected` went earlier,
   doc/research-presentation-model.md). Nor do the vocabulary's own row **field**
   names: a leaf reading structured data MUST NOT make the application
@@ -251,8 +252,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   exactly, not up to an echo, because a record gate MUST treat
   a contribution of zero fields as no contribution (L6). The one unit no
   wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
-  maps terminal→initial), and it is the one class-member unit, `silence`
-  (parametricity, not policy) — a class member, not a carrier function,
+  maps terminal→initial), and it is `Silencing`'s `silence`
+  (parametricity, not policy) — the method of a class beside `Seeding`
+  and `Looping`, not of the merge and not a carrier function, so that
+  no merge class carries a unit,
   and what an event source removed by `provided` observationally *is*;
   its variant-only output type is the honesty boundary: silent at an
   inhabited record output is a starved gate, which the record-side panes
@@ -440,7 +443,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   in the design notes, where the algebra needs their names).
 - **Subsumption:** when a new form makes an old one derivable, the old
   one is deleted, not deprecated alongside (`synced`/`latch`,
-  `Sequencing`, `labeled`, `constantly`, `forField`/`asCase`,
+  `Sequencing`, `labeled`, `constantly`, `forField`, `forCase`,
   `humanizeLabel`, and on 2026-10-11 `bracketed`, `updated`/`applied`/
   `every`, `edited`/`editedAt` and `subStrong` — all gone). Convergence
   is the health metric: a design is right when the algebra starts
@@ -528,7 +531,7 @@ The codebase is three floors, each greppable:
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf @l @k opts
-rowsOf`, `dispatched envelopeOf`, `toCase @l payloadOf`, a status's copy function
+rowsOf`, `dispatched envelopeOf`, a status's copy function
 (`snackbar @"booked" bookedLine`), `settled normalize` (`identity` says
 verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
@@ -576,9 +579,9 @@ code below the UI) are algebra-layer material and exempt by location.
 - A status is label-indexed at its business case and takes that case's
   copy function (`snackbar @"booked" bookedLine`) — the status's
   counterpart of a display's read function. Mutually exclusive outcomes
-  are sibling statuses, each owning its case. Its canonical
-  `[ event :: String ]` face stays private to the vocabulary, lifted by
-  `forCase @l` as an editor's face is by `focusField @l`.
+  are sibling statuses, each owning its case. Its face is private to the
+  vocabulary — the copy function over a bare payload — adopted as its
+  case by `atCase @l`, as an editor's face is lifted by `focusField @l`.
 - Rationale, census and laws: doc/research-copy-is-a-function.md, which
   partially reverses doc/research-presentation-model.md (keeping its
   testability motivation and its `settled` half); the application-side

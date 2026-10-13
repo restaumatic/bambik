@@ -113,9 +113,11 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- component's own row is always stated by a
 -- business function, never placed at another row at the call site; the
 -- placement is the vocabularies' plumbing for their statics.
-import Data.Profunctor.Row.RecordToRecord (asField, settled, with) as Adopters
-import Data.Profunctor.Row.RecordToVariant (joined, replaying, silence) as Adopters
-import Data.Profunctor.Row.VariantToVariant (atCase, toCase) as Adopters
+import Data.Profunctor.Row (atCase, atField, settled, toCase, toField, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField) as Adopters
+import Data.Profunctor.Row.RecordToVariant (joined, replaying) as Adopters
+import Data.Profunctor.Silencing (silence) as Adopters
+import Data.Profunctor.Row.VariantToVariant (asCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping)
@@ -124,7 +126,8 @@ import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
 import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant, silence)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant)
+import Data.Profunctor.Silencing (class Silencing, silence)
 import Data.Profunctor.Row (class RowLabels, exactRow, fedFirst, fedSecond, rowLabels, widenVariantOutput)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
@@ -555,12 +558,14 @@ instance MonadEffect m => RecordToRecord (PUI m) where
     labels1 = labelsOf p1
     labels2 = labelsOf p2
 
-instance Applicative m => RecordToVariant (PUI m) where
-  -- the one unit no wire reaches (terminal → initial): silent at any rows
+-- the one unit no wire reaches (terminal → initial): silent at any rows
+instance Applicative m => Silencing (PUI m) where
   silence = wrap $ pure
     { toUser: mempty
     , fromUser: mempty
     }
+
+instance Applicative m => RecordToVariant (PUI m) where
   -- broadcast in, passage out — the shape's projection law. A variant
   -- output has nothing to gate, so the merge is a bare pass-through and
   -- the one-thing-per-feed obligation falls on the operands (the answer
@@ -1147,7 +1152,8 @@ type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 -- |
 -- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, carrier
 -- | nesting). Naturality is free, so every ocular commutes with the
--- | `dimap`-only adopters (`asField`, `focusField`, `toCase`, `atCase`).
+-- | `dimap`-only adopters (`asField`/`asCase`, `atField`/`atCase`,
+-- | `toField`/`toCase`) and the focus `focusField`.
 -- | Commuting with the *strengths* is the extra law, and the admission test
 -- | for anything called an ocular:
 -- |

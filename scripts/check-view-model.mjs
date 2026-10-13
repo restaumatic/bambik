@@ -44,7 +44,7 @@ if (hits.length) {
 // Copy is a function, not a field (doc/research-copy-is-a-function.md): a
 // display's copy is a named logic function read at the leaf, so the old
 // view-side read adopters `projection`/`projected` must not appear anywhere in
-// demo code (`forCase @l`/`forCases` are status adoption, not reads, and stay).
+// demo code.
 const bannedRe = /\b(projection|projected)\b/;
 const banned = [];
 for (const file of walk("demo")) {

@@ -50,7 +50,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCase)
+import Data.Profunctor.Row (atCase)
 import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (match) as Variant
 import Effect (Effect)
@@ -59,7 +59,7 @@ import Effect.Ref as Ref
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, eventText, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, separating, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, separating, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -333,13 +333,13 @@ messageBar
   => Cons l a () v
   => (a -> String)
   -> PUI Web [ | v ] { | r }
-messageBar copy = messageBarFace # forCase @l copy
+messageBar copy = messageBarFace copy # atCase @l
 
-messageBarFace :: forall r. PUI Web [ event :: String ] { | r }
-messageBarFace = wrap do
+messageBarFace :: forall a r. (a -> String) -> PUI Web a { | r }
+messageBarFace copy = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
-    textOf eventText) # cl "fluent-toast"
+    textOf copy) # cl "fluent-toast"
   node <- gets _.sibling
   pure
     { toUser: \i -> do

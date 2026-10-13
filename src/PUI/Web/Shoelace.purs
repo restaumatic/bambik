@@ -44,14 +44,14 @@ import Data.Int (fromString)
 import Data.Maybe (Maybe, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCase)
+import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import PUI (Ocular, PUI)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, attribute, displayWiring, editorWiring, el, element, escaped, eventLeaf, eventText, getChecked, getValue, isFocused, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, textOf, separating, (:=))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, attribute, displayWiring, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, isFocused, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, textOf, separating, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -280,14 +280,14 @@ toast
   => Cons l a () v
   => (a -> String)
   -> PUI Web [ | v ] { | r }
-toast copy = toastFace # forCase @l copy
+toast copy = toastFace copy # atCase @l
 
-toastFace :: forall r. PUI Web [ event :: String ] { | r }
-toastFace = wrap do
+toastFace :: forall a r. (a -> String) -> PUI Web a { | r }
+toastFace copy = wrap do
   w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ wrap do
     _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
-    unwrap (textOf eventText)
+    unwrap (textOf copy)
   node <- gets _.sibling
   pure
     { toUser: \i -> do

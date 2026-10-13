@@ -19,12 +19,13 @@
 -- |     opens a fold whose occurrence nothing needs to tell). The fold
 -- |     itself is `PUI`'s, an optic over its status.
 -- |
--- | A word lives in the module of the sides it constrains: one polymorphic
--- | on one side sits in the diagonal module of the side it constrains, so
--- | the mixed modules hold only their strength, their trace and the words
--- | that genuinely span both sides.
--- | The variant-input words `atCase` and `forCase` are therefore
--- | `VariantToVariant`'s. A label `@w` appears exactly where a row is
+-- | A word lives where the sides it constrains do: one constraining both
+-- | sides in its shape's module, one constraining a single side on the
+-- | floor (`Data.Profunctor.Row`, beside `atAnyRow`/`widenVariantOutput`)
+-- | — so no shape module imports another, and every module holds only
+-- | its merge, its strength and trace forms, and the words that genuinely
+-- | span both of its sides.
+-- | A label `@w` appears exactly where a row is
 -- | wrapped as one field to cross the shape change (`subRetaining`,
 -- | `unfolding`).
 -- |

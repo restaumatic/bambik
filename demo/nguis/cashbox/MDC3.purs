@@ -1,6 +1,6 @@
 module Cashbox.MDC3 (cashbox) where
 
-import Prelude ((#), ($), Unit, identity)
+import Prelude ((#), ($), Unit)
 
 import Cashbox (balanceLine, openedTill, payCourier, payoutLine, refundLine, refundStandard, takeDeposit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
@@ -21,10 +21,10 @@ cashbox =
       button' @"Take a deposit" { icon: "savings" }
     VariantToRecord.do
       ( Semigroupoid.do
-        ( confirmed "Refund" "Refund the customer?" $ bodyLarge $ text refundLine ) # toCase @"Customer refunded" identity
+        ( confirmed "Refund" "Refund the customer?" $ bodyLarge $ text refundLine ) # toCase @"Customer refunded"
         unshown @"Customer refunded" # fold refundStandard ) # atCase @"Refund a customer"
       ( Semigroupoid.do
-        ( confirmed "Pay" "Pay the courier?" $ bodyLarge $ text payoutLine ) # toCase @"Courier paid out" identity
+        ( confirmed "Pay" "Pay the courier?" $ bodyLarge $ text payoutLine ) # toCase @"Courier paid out"
         unshown @"Courier paid out" # fold payCourier ) # atCase @"Pay the courier"
       unshown @"Take a deposit" # fold takeDeposit
   # looped @( balance :: Number ) # with openedTill

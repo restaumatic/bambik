@@ -32,7 +32,8 @@
 -- |   * `VariantToVariant` — one input case reaches exactly one operand, so
 -- |     no combining is needed
 -- |   * `RecordToVariant` — needs `Monoid r`: both operands are fed and both
--- |     may emit, so two answers must combine, and the unit must be silent
+-- |     may emit, so two answers must combine; its unit, `Silencing`'s
+-- |     `silence`, is `mempty` under the same constraint
 -- |
 -- | `Resolving`/`Coretaining`/`PointedCostrong` typecheck but are degenerate
 -- | and stated here only to record that: `resolve` can only ever take `Left`
@@ -55,8 +56,7 @@
 -- |     *input* side before any output exists. Contrast `Cochoice`, where
 -- |     `Left a` needs none: that asymmetry is why `looped` is a primitive
 -- |     and `debounced` seeds its loop branch (`PointedCostrong` starts the
--- |     state channel instead; the field-level row forms are gone, a
--- |     looped state being a model field)
+-- |     state channel instead, and `feedback`/`folding` take a seed)
 -- |   * `Retaining` — must produce a `b` for a `Right c` input; a stateless
 -- |     carrier has none (same reason there is no `(->)` instance)
 -- |   * `VariantToRecord` — an input case reaches one operand only, so the
@@ -90,6 +90,7 @@ import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.Silencing (class Silencing)
 import Data.Profunctor.Seeding (class Seeding)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
@@ -183,8 +184,10 @@ instance VariantToVariant (Cont r) where
     Left v1 -> unwrap p1 k v1
     Right v2 -> unwrap p2 k v2
 
-instance Monoid r => RecordToVariant (Cont r) where
+instance Monoid r => Silencing (Cont r) where
   silence = wrap \_ _ -> mempty
+
+instance Monoid r => RecordToVariant (Cont r) where
   recordToVariant p1 p2 = wrap \k i ->
     unwrap (widenVariantOutput (lcmap fedFirst p1)) k i
       <> unwrap (widenVariantOutput (lcmap fedSecond p2)) k i

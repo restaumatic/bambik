@@ -1,9 +1,9 @@
 -- | The **co-strength** of `Data.Profunctor.Resolving` — the `× → +` analogue
 -- | of the ecosystem's `Data.Profunctor.Costrong`, stated **positionally**
 -- | (`Tuple`/`Either`) with no row in sight, and living beside its strength
--- | exactly as `Costrong` lives beside `Strong`. Its one library use is
--- | `PUI.debounced` (it has no row form); the
--- | optic it generates is `Data.Lens.Coshutter`.
+-- | exactly as `Costrong` lives beside `Strong`. Its row form is
+-- | `Data.Profunctor.Row.RecordToVariant.folding`, and `PUI.debounced`
+-- | stands on it; the optic it generates is `Data.Lens.Coshutter`.
 -- |
 -- | Like its strength, a **complement of the ecosystem's own** — hence the
 -- | `Data.Profunctor.*` name and the separate `extras/profunctor` source

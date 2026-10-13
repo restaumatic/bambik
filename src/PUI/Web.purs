@@ -30,7 +30,7 @@
 -- |   `selectorWiring` (the same over an option list, in index terms),
 -- |   `displayWiring` (render, release the row shown), `statusWiring` (render,
 -- |   release nothing), `eventLeaf` (the click emitter over chrome),
--- |   `eventText` (a status's canonical payload), `escaped` (a runtime
+-- |   `escaped` (a runtime
 -- |   string made safe for `staticHTML`), `listenNode`/`listenNodeDeferred`,
 -- |   `ensureStyle`, `autoDismiss` and the option tags `OptCaption`,
 -- |   `OptLabelIcon`, `OptSelected`, `OptIcon`. A leaf that
@@ -61,7 +61,6 @@ module PUI.Web
   , displayWiring
   , statusWiring
   , eventLeaf
-  , eventText
   , escaped
   , listenNode
   , listenNodeDeferred
@@ -146,7 +145,7 @@ import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Array (concat, findIndex, (!!))
 import Data.String (replaceAll, Pattern(..), Replacement(..))
-import Data.Variant (Variant, case_, expand, inj, on, prj)
+import Data.Variant (Variant, expand, inj, prj)
 import Prim.Row as Row
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
@@ -602,11 +601,6 @@ statusWiring show = { toUser: show, fromUser: \_ -> pure unit }
 eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
 eventLeaf chrome = clickedRow @l (atAnyRow chrome)
 
--- | The canonical status payload, read into the text leaf as its
--- | projection: every status face is `textOf eventText` under `forCase @l`.
-eventText :: [ event :: String ] -> String
-eventText = on (Proxy @"event") identity case_
-
 -- | A runtime string made safe to concatenate into `staticHTML` markup —
 -- | as text or as a double-quoted attribute value. Every caption, label,
 -- | title or URL a vocabulary interpolates into markup passes through it,
@@ -834,14 +828,15 @@ text = textLeaf
 textAt :: forall @l b r. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textAt = text (Record.get (Proxy @l))
 
--- | `text`'s variant-input sibling: a status renders its own payload
--- | (`textOf eventText`), a `+→×` leaf. Vocabulary-internal — application
+-- | `text`'s status sibling: a status face renders its payload through
+-- | its copy function (`textOf copy`), adopted as its case by
+-- | `atCase @l` — a `+→×` leaf. Vocabulary-internal — application
 -- | code shows copy with `text`, whose row-shaped read states its footprint.
 -- | Unlike the display it renders with, a status **releases nothing**: the
 -- | `+→×` merge forwards every release as the whole shared row, so the
 -- | leaf's echo is swallowed here and the output is typed at every
 -- | row, as `silence`'s is.
-textOf :: forall v r. ([ | v ] -> String) -> PUI Web [ | v ] { | r }
+textOf :: forall a r. (a -> String) -> PUI Web a { | r }
 textOf f = wrap do
   leaf <- unwrap (textLeaf f)
   pure { toUser: leaf.toUser, fromUser: \_ -> leaf.fromUser \_ -> pure unit }

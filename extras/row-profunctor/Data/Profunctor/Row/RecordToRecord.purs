@@ -15,24 +15,32 @@
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusField` (the field
 -- |     lens — the leaf lift, making every label-indexed editor a whole-row
--- |     citizen); over the point: `with` (`announce a >>> w` — discharge
--- |     the initial-state obligation, so `w # looped @( … ) # with seed` is
--- |     the app shape, the knot closed); over the pointed co-strength:
--- |     `feedback @l` (the `×`-trace at one hidden field, seeded — the
--- |     `Colens` at row granularity); over bare `Profunctor`: the rename
--- |     `asField` and the normalization `settled`.
+-- |     citizen); over the pointed co-strength: `feedback @l` (the
+-- |     `×`-trace at one hidden field, seeded — the `Colens` at row
+-- |     granularity); over bare `Profunctor`: the rename `asField`. The
+-- |     one-sided words of this shape — `atField`/`toField` (the halves of
+-- |     the closed-singleton iso), `with` (the knot's closure, over the
+-- |     point) and `settled` (the normalization) — live on the floor.
 -- |
--- | A word lives in the module of the sides it constrains: one polymorphic
--- | on one side sits in the diagonal module of the side it constrains, so
--- | the mixed modules hold only their strength, their trace and the words
--- | that genuinely span both sides.
+-- | A word lives where the sides it constrains do: one constraining both
+-- | sides in its shape's module, one constraining a single side on the
+-- | floor (`Data.Profunctor.Row`, beside `atAnyRow`/`widenVariantOutput`)
+-- | — so no shape module imports another, and every module holds only
+-- | its merge, its strength and trace forms, and the words that genuinely
+-- | span both of its sides.
 -- |
--- | There is no output-side adopter here — no `toField` beside
--- | `VariantToVariant.toCase`. Turning a value into an occurrence is a
--- | `dimap`, but turning an occurrence into a field value needs the rest of
--- | the row, and that is `focusField @l`'s retained background,
--- | never a reshaping; and since every component already emits a row
--- | (guardrails L3), there is no bare value to adopt.
+-- | The four single-label words mirror `VariantToVariant`'s one for one:
+-- | `focusField`/`focusCase`, `asField`/`asCase`, `atField`/`atCase`,
+-- | `toField`/`toCase`. Where they differ is reach, not form: a record
+-- | leaf already emits its labelled row (guardrails L3) and reads its
+-- | input through its own read function, so applications meet no bare
+-- | record side to adopt — `atField`/`toField` are law-tested
+-- | (test/Main.purs, with `focusField @l = toField @l <<< atField @l` at
+-- | the closed singleton: the focus is derived from its halves there,
+-- | never the halves from it) — while the mixed shapes' words hand bare values
+-- | to and from cases all the time. `toField` closes its row where
+-- | `toCase` leaves it open: a variant output may be widened, a record
+-- | output is owned and exact.
 -- |
 -- | ## Laws at `×→×`
 -- |
@@ -87,20 +95,15 @@ module Data.Profunctor.Row.RecordToRecord
   , bind
   , discard
   , focusField
-  , with
   , asField
-  , settled
   , feedback
   )
   where
 
-import Control.Semigroupoid ((>>>))
-import Data.Function (const)
 import Data.Lens.Record (prop)
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
+import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, exactRow, fedFirst, fedSecond)
 import Data.Profunctor.PointedCostrong (class PointedCostrong, unfirstFrom)
-import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
@@ -152,17 +155,6 @@ focusField
   -> p { | r } { | r1 }
 focusField = prop (Proxy @l)
 
--- | Discharge a chain's initial obligation by announcing its t=0 value.
--- | The seed is whatever the chain's first stage takes: a model row into
--- | the knot (`w # looped @( … ) # with seed`, the app shape) or into a
--- | knotless flow (`# with @{ … } invitation`, potluck). Never `{}`: `body`
--- | feeds the terminal record once itself, so a load action standing
--- | before the knot runs on that feed with no seed written. Its own input
--- | is ignored, so it sits at any row; a seed that is a hole is never
--- | announced (`announce`, guardrails L18).
-with :: forall @a p b r. Seeding p => a -> p a b -> p { | r } b
-with a w = lcmap (const {}) (announce a >>> w)
-
 -- | Rename a component's singleton field `c` to business field `l` on both sides.
 asField
   :: forall @c @l p a b r r1 r2 r3
@@ -176,17 +168,6 @@ asField
   => p { | r2 } { | r3 }
   -> p { | r } { | r1 }
 asField = dimap (\r -> Record.insert (Proxy @c) (Record.get (Proxy @l) r) {}) (\r -> Record.insert (Proxy @l) (Record.get (Proxy @c) r) {})
-
--- | Normalize a stage's emissions with an idempotent function over the row.
--- | The normalizer is typed at the stage's row, its signature the view's
--- | hole hint verbatim (`{ "°C" :: String, "°F" :: String } -> { … }`).
-settled
-  :: forall p r a
-   . Profunctor p
-  => ({ | r } -> { | r })
-  -> p a { | r }
-  -> p a { | r }
-settled f = rmap f
 
 -- | Loop state field `l` of the output back into the input, starting it at
 -- | the given value: the `×`-trace at one field, the `Colens` optic's row

@@ -1,4 +1,4 @@
-module MovieBrowser (favoriteMark, favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine) where
+module MovieBrowser (favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine) where
 
 import Prelude ((&&), (||), (==), (<>), const, map, not, show)
 
@@ -61,13 +61,8 @@ visibleMovies { category, "Classic": classic, "Cult": cult, "Oscar": oscar, movi
   chosenTag = match { "Classic": const classic, "Cult": const cult, "Oscar": const oscar }
   listing { title, year, rating, "Favorite": favorite } = { title, year, rating, "Favorite": favorite }
 
-favoriteMark
-  :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int }
-  -> { "Favorite" :: Boolean, title :: String }
-favoriteMark { title, "Favorite": favorite } = { title, "Favorite": favorite }
-
 markFavorite
-  :: { event :: { "Favorite" :: Boolean, title :: String }
+  :: { event :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int }
      , model :: { "Classic" :: Boolean
                 , "Cult" :: Boolean
                 , "Oscar" :: Boolean

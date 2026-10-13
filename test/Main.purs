@@ -20,14 +20,14 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (feedback, focusField, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (asField, feedback, focusField, recordToRecord)
 import Data.Profunctor.Row.VariantToRecord (unfolding, variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (folding, recordToVariant)
-import Data.Profunctor.Row.VariantToVariant (cycled, focusCase, toCase, variantToVariant)
+import Data.Profunctor.Row.VariantToVariant (asCase, cycled, focusCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
-import Data.Profunctor.Row (widenVariantOutput)
+import Data.Profunctor.Row (atCase, atField, toCase, toField, widenVariantOutput)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
 import Data.Variant (Variant, case_, inj, match)
@@ -180,10 +180,34 @@ main = do
   -- over a record-reading component it is the ×→+ merge pinned at its unit.
   assertEqual "toCase over a record-reading component"
     (.total 8 :: [ total :: Int ])
-    (toCase @"total" identity (\r -> r.a + r.b) { a: 3, b: 5 })
+    (toCase @"total" (\r -> r.a + r.b) { a: 3, b: 5 })
   assertEqual "toCase"
     (.picked 7 :: [ picked :: Int ])
-    (toCase @"picked" _.key identity { key: 7, label: "x" })
+    (toCase @"picked" _.key { key: 7, label: "x" })
+
+  -- The pure shapes' single-label grid on (->): focus (above, and
+  -- focusCase below), rename (`as`), and the two halves of the
+  -- closed-singleton iso (`at` on the input, `to` on the output), each
+  -- word mirrored across records and variants.
+  assertEqual "asField" { total: 8 } (asField @"n" @"total" (\r -> { n: r.n * 2 }) { total: 4 })
+  assertEqual "asField @c @c = identity" { n: 4 } (asField @"n" @"n" identity { n: 4 })
+  assertEqual "asCase"
+    (.total 8 :: [ total :: Int ])
+    (asCase @"n" @"total" (\v -> .n (match { n: (_ * 2) } v)) (.total 4))
+  assertEqual "asCase @c @c = identity" (.n 4 :: [ n :: Int ]) (asCase @"n" @"n" identity (.n 4))
+  assertEqual "atField" 8 (atField @"n" (_ * 2) { n: 4 })
+  assertEqual "atCase" 8 (atCase @"n" (_ * 2) (.n 4))
+  assertEqual "toField" { n: 8 } (toField @"n" (_ * 2) 4)
+  assertEqual "atField >>> toField = identity at the closed singleton" { n: 4 } ((atField @"n" >>> toField @"n") identity { n: 4 })
+  assertEqual "atCase >>> toCase = identity at the closed singleton" (.n 4 :: [ n :: Int ]) ((atCase @"n" >>> toCase @"n") identity (.n 4))
+  -- at the closed singleton a focus is its two halves: focusField @l =
+  -- toField @l <<< atField @l, focusCase @l = toCase @l <<< atCase @l
+  assertEqual "focusField at the closed singleton = toField <<< atField"
+    (focusField @"n" (_ * 2) { n: 4 })
+    ((toField @"n" <<< atField @"n") (_ * 2) { n: 4 })
+  assertEqual "focusCase at the closed singleton = toCase <<< atCase"
+    (focusCase @"n" (_ * 2) (.n 4) :: [ n :: Int ])
+    ((toCase @"n" <<< atCase @"n") (_ * 2) (.n 4))
 
   -- fold f status: one case folding into the record, f of its payload,
   -- opened by its status (here the faceless `blank`) — on the carrier,
@@ -211,13 +235,13 @@ main = do
     Ref.read outs >>= assertEqual "fold/identity: the closed singleton unwrapped to its row" [ { count: 5 } ]
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (toCase @"Count" identity identity >>> fold identity (unshown @"Count") :: PUI Effect { count :: Int } { count :: Int })
+    m <- unwrap (toCase @"Count" identity >>> fold identity (unshown @"Count") :: PUI Effect { count :: Int } { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { count: 5 }
     Ref.read outs >>= assertEqual "fold/section" [ { count: 5 } ]
   do
     outs <- Ref.new ([] :: Array [ "Count" :: { count :: Int } ])
-    m <- unwrap (fold identity (unshown @"Count") >>> toCase @"Count" identity identity :: PUI Effect [ "Count" :: { count :: Int } ] [ "Count" :: { count :: Int } ])
+    m <- unwrap (fold identity (unshown @"Count") >>> toCase @"Count" identity :: PUI Effect [ "Count" :: { count :: Int } ] [ "Count" :: { count :: Int } ])
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 5 })
     Ref.read outs >>= assertEqual "fold/retraction" [ ."Count" { count: 5 } ]

@@ -7,9 +7,11 @@
 -- |     and their optics are `Data.Lens.Shutter` and `Data.Lens.Coshutter`
 -- |     — neither the classes nor the optics mention a row, so none of them
 -- |     lives here.
--- |   * **shape class** — `RecordToVariant`, the binary **merge** and
--- |     its unit `silence`: the one genuine per-carrier primitive, with its
--- |     qualified-do sugar (`bind`/`discard`).
+-- |   * **shape class** — `RecordToVariant`, the binary **merge**: the
+-- |     one genuine per-carrier primitive, with its qualified-do sugar
+-- |     (`bind`/`discard`). Its unit `silence` is not its own but
+-- |     `Data.Profunctor.Silencing`'s, as the other shapes' units are
+-- |     `Category`'s — no merge class carries a unit.
 -- |   * **free functions** — over the strength: `subResolving @w` (a
 -- |     sub-record focused, the background escaping as case `w` — the
 -- |     `Shutter` at row granularity); over the co-strength `Coresolving`:
@@ -18,12 +20,13 @@
 -- |     `Strong`: `replaying @l` (replay as `Strong`'s retention) and
 -- |     `joined @l` (an event joined with the row its emitter was fed).
 -- |
--- | A word lives in the module of the sides it constrains: one polymorphic
--- | on one side sits in the diagonal module of the side it constrains, so
--- | the mixed modules hold only their strength, their trace and the words
--- | that genuinely span both sides.
--- | The variant-output adopter `toCase` is therefore `VariantToVariant`'s.
--- | A label `@w` appears exactly where a row is wrapped as one case to
+-- | A word lives where the sides it constrains do: one constraining both
+-- | sides in its shape's module, one constraining a single side on the
+-- | floor (`Data.Profunctor.Row`, beside `atAnyRow`/`widenVariantOutput`)
+-- | — so no shape module imports another, and every module holds only
+-- | its merge, its strength and trace forms, and the words that genuinely
+-- | span both of its sides.
+-- | `replaying`/`joined` take `toCase` from the floor. A label `@w` appears exactly where a row is wrapped as one case to
 -- | cross the shape change (`subResolving`, `folding`).
 -- |
 -- | ## Laws at `×→+`
@@ -42,12 +45,14 @@
 -- |      a loop re-feed an emitter without firing it. What an
 -- |      emission carries is the source's contract, not the shape's:
 -- |      `clicked` replays the row last fed.
--- |   3. **Monoid** — unit `silence`, the class's own member, exact:
+-- |   3. **Monoid** — unit `silence` (`Data.Profunctor.Silencing`'s; the
+-- |      law conditional on that class, as the others' are on `Category`),
+-- |      exact:
 -- |      `recordToVariant silence g = g = recordToVariant g silence`;
 -- |      symmetric and associative up to `≈`. No wire reaches this unit
 -- |      (`{}` is terminal, `Variant ()` initial), and parametricity
 -- |      extends the silent element to any rows. The merge pinned at it is
--- |      a real word: `toCase @l identity g = rmap (inj (Proxy @l)) g`, which
+-- |      a real word: `toCase @l g = rmap (inj (Proxy @l)) g`, which
 -- |      is why `toCase` needs only `Profunctor`.
 -- |   4. **Projection** — `π_k` is the whole row: every feed of `m`
 -- |      reaches each operand whole, arming it, and nothing else does.
@@ -87,7 +92,6 @@
 module Data.Profunctor.Row.RecordToVariant
   ( class RecordToVariant
   , recordToVariant
-  , silence
   , joined
   , bind
   , discard
@@ -104,7 +108,7 @@ import Data.Lens.Shutter (shutterE)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class RowLabels, class SharedRecordInputs, class SharedVariantOutputs, splitRow)
+import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class RowLabels, class SharedRecordInputs, class SharedVariantOutputs, splitRow, toCase)
 import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -125,8 +129,6 @@ class Profunctor p <= RecordToVariant p where
     => p { | i1 } [ | o1 ]
     -> p { | i2 } [ | o2 ]
     -> p { | i } [ | o ]
-  -- | The silent component, emitting no case at any rows: the merge's unit.
-  silence :: forall i o. p { | i } [ | o ]
 
 bind
   :: forall p v1 v2 v3 v4 v5 r v
@@ -147,7 +149,10 @@ discard
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Replay the last fed row, mapped by `f`, as case `l` on each occurrence of the source.
--- | The source is fed the row it replays, whole.
+-- | The source is fed the row it replays, whole. `Strong` retains the row,
+-- | `toCase @l` introduces the case over what came back: the source's own
+-- | case is consumed, never renamed, since the payload that leaves is the
+-- | retained row and not the occurrence.
 replaying
   :: forall @l p r v1 k v
    . Strong p
@@ -156,7 +161,7 @@ replaying
   => ({ | r } -> k)
   -> p { | r } [ | v1 ]
   -> p { | r } [ | v ]
-replaying f src = dimap (\r -> Tuple r r) (\(Tuple _ r) -> inj (Proxy @l) (f r)) (first src)
+replaying f src = toCase @l (dimap (\r -> Tuple r r) (\(Tuple _ r) -> f r) (first src))
 
 -- | An event joined with the row its emitter was fed: the `×→+` stage's
 -- | `Strong` retention, exposed. `first` around the source — the fed row
@@ -176,7 +181,7 @@ joined
   => Cons l { event :: a, model :: { | r } } () v1
   => p { | r } [ | v ]
   -> p { | r } [ | v1 ]
-joined src = dimap (\r -> Tuple r r) (\(Tuple e r) -> inj (Proxy @l) { event: on (Proxy @l) identity case_ e, model: r }) (first src)
+joined src = toCase @l (dimap (\r -> Tuple r r) (\(Tuple e r) -> { event: on (Proxy @l) identity case_ e, model: r }) (first src))
 
 -- | Focus a sub-record of the input, wrapping the background into output
 -- | case `w`: the `Shutter` optic's row form over the strength `Resolving`.

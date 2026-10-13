@@ -12,28 +12,39 @@
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusCase` (one case, the
--- |     value-level prism); over bare `Profunctor`, the structural
--- |     adopters `atCase` (the closed-singleton unwrap of an input case)
--- |     and `toCase` (a bare output introduced as a case), plus
--- |     `forCase @l` (business case `l` rendered into a single-case
--- |     status's own case); over the co-strength `Cochoice`: `cycled`
+-- |     value-level prism); over bare `Profunctor`, the rename `asCase`
+-- |     (the one-sided halves `atCase`/`toCase` live on the floor); over
+-- |     the co-strength `Cochoice`: `cycled`
 -- |     (the variant knot, the loop cases re-entering — the `Coprism` at
 -- |     row granularity).
 -- |
--- | A word lives in the module of the sides it constrains: one polymorphic
--- | on one side sits in the diagonal module of the side it constrains, so
--- | the mixed modules hold only their strength, their trace and the words
--- | that genuinely span both sides.
+-- | A word lives where the sides it constrains do: one constraining both
+-- | sides in its shape's module, one constraining a single side on the
+-- | floor (`Data.Profunctor.Row`, beside `atAnyRow`/`widenVariantOutput`)
+-- | — so no shape module imports another, and every module holds only
+-- | its merge, its strength and trace forms, and the words that genuinely
+-- | span both of its sides.
 -- |
 -- | Business functions are arguments of leaves, never adopters: a display
 -- | takes its read function, a status its business case and copy function
 -- | (`snackbar @"booked" bookedLine`), and an emitter emits its own case,
--- | which the fold consumes. So the adopters left are structural — `atCase`
--- | and `toCase` take their case as a type argument, since there the case
--- | is the caller's to name — and `forCase @l` is **vocabulary plumbing**,
--- | the variant-input twin of `RecordToRecord.focusField`: every status is
--- | its canonical `[ event :: String ]` face under `forCase @l f`, so it is
--- | exported for the vocabularies and not re-exported by `PUI`.
+-- | which the fold consumes. So the adopters are structural and take no
+-- | function: `atCase`, `toCase` and `asCase` take only their cases, since
+-- | there the case is the caller's to name. A status is its face over the
+-- | copy function, adopted as its case: `snackbar copy = snackbarFace copy
+-- | # atCase @l`.
+-- |
+-- | The four single-label words mirror `RecordToRecord`'s one for one —
+-- | `focusCase`/`focusField` (the background threaded), `asCase`/`asField`
+-- | (a closed singleton renamed, nothing to thread), `atCase`/`atField`
+-- | and `toCase`/`toField` (the input and output halves of the iso between
+-- | a closed singleton and its payload). Laws: `asCase @c @c = identity`,
+-- | renames compose, `atCase @l >>> toCase @l` is `identity` at the
+-- | closed singleton, and there the focus is its two halves,
+-- | `focusCase @l = toCase @l <<< atCase @l` (test/Main.purs). The
+-- | derivation runs that way only: a two-sided wrap cannot be split into
+-- | one side's, and a rename is neither, so the three `Profunctor` words
+-- | are generators, not `focusCase` specialised.
 -- |
 -- | ## Laws at `+→+`
 -- |
@@ -81,7 +92,7 @@
 -- | here: `focusField`'s `+ → +` transpose — the closed-singleton case wrap
 -- | `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
 -- | subsumption step: it is already vocabulary-expressible as
--- | `w # atCase @l # toCase @l' f`, two adopters applications already have.
+-- | `lcmap`/`rmap` around `w # atCase @l # toCase @l'`.
 -- | It was admitted briefly (as `handler @l f`, the wire at the wrap)
 -- | when counter's four-shape loop wanted a `+→+` stage that was a pure
 -- | function of the occurrence, and deleted when that function moved onto
@@ -98,16 +109,14 @@ module Data.Profunctor.Row.VariantToVariant
   , bind
   , discard
   , focusCase
-  , atCase
-  , toCase
-  , forCase
+  , asCase
   , cycled
   )
   where
 import Control.Category (identity)
 import Data.Either (Either(..), either)
 import Data.Lens.Prism.Existential (prismE)
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
+import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice, unleft)
 import Data.Profunctor.Row (class ExclusiveRows, class LoopCases, class OwnedVariantInputs, splitVariant)
@@ -116,7 +125,6 @@ import Data.Unit (Unit, unit)
 import Data.Variant (class Contractable, case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
-import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= VariantToVariant p where
@@ -165,34 +173,19 @@ focusCase =
     (on (Proxy @l) Left Right)
     (either (inj (Proxy @l)) expand)
 
--- | Adopt a bare-input component as the owner of input case `l`.
-atCase :: forall @l p a b v. IsSymbol l => Cons l a () v => Profunctor p => p a b -> p [ | v ] b
-atCase = lcmap (on (Proxy @l) identity case_)
-
--- | Emit a component's bare output, mapped by the projection, as case `l`.
-toCase
-  :: forall @l @b p c a b' v
-   . IsSymbol l
-  => Cons l b b' v
-  => Profunctor p
-  => (a -> b)
-  -> p c a
-  -> p c [ | v ]
-toCase f = rmap (\a -> inj (Proxy @l) (f a))
-
--- | Render business case `l` into a single-case status's own case with `f`.
-forCase
-  :: forall @l c p a b d v v1
-   . RowToList v1 (RL.Cons c a RL.Nil)
-  => IsSymbol c
+-- | Rename a component's singleton case `c` to business case `l` on both sides.
+asCase
+  :: forall @c @l p a b v v1 v2 v3
+   . IsSymbol c
   => IsSymbol l
-  => Cons c a () v1
-  => Cons l b () v
   => Profunctor p
-  => (b -> a)
-  -> p [ | v1 ] d
-  -> p [ | v ] d
-forCase f = lcmap (on (Proxy @l) (\b -> inj (Proxy @c) (f b)) case_)
+  => Cons c a () v2
+  => Cons c b () v3
+  => Cons l a () v
+  => Cons l b () v1
+  => p [ | v2 ] [ | v3 ]
+  -> p [ | v ] [ | v1 ]
+asCase = dimap (on (Proxy @l) (inj (Proxy @c)) case_) (on (Proxy @c) (inj (Proxy @l)) case_)
 
 -- | The variant knot: tie a chain's emitted cases back into its input —
 -- | the `Coprism` optic's row form over `Cochoice`'s `unleft`. The cases

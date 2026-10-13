@@ -126,7 +126,7 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCase)
+import Data.Profunctor.Row (atCase)
 import Data.Traversable (for)
 import Data.Variant (inj, match, prj) as Variant
 import Data.Profunctor (rmap) as Profunctor
@@ -137,7 +137,7 @@ import Data.Profunctor.Seeding (isHole)
 import PUI (Ocular, PUI, anyOf, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, addClass, attribute, attrWith, cl, clazz, clicked, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, eventText, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, addClass, attribute, attrWith, cl, clazz, clicked, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1232,10 +1232,10 @@ snackbar
   => Cons l a () v
   => (a -> String)
   -> PUI Web [ | v ] { | r }
-snackbar copy = snackbarFace # forCase @l copy
+snackbar copy = snackbarFace copy # atCase @l
 
-snackbarFace :: forall r. PUI Web [ event :: String ] { | r }
-snackbarFace = snackbarContainer $ textOf eventText
+snackbarFace :: forall a r. (a -> String) -> PUI Web a { | r }
+snackbarFace copy = snackbarContainer $ textOf copy
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
 -- closing on emission instead would race the open (the `text` leaf echoes
@@ -1261,10 +1261,10 @@ banner
   => Cons l a () v
   => (a -> String)
   -> PUI Web [ | v ] { | r }
-banner copy = bannerFace # forCase @l copy
+banner copy = bannerFace copy # atCase @l
 
-bannerFace :: forall r. PUI Web [ event :: String ] { | r }
-bannerFace = bannerContainer $ textOf eventText
+bannerFace :: forall a r. (a -> String) -> PUI Web a { | r }
+bannerFace copy = bannerContainer $ textOf copy
 
 bannerContainer :: Ocular (PUI Web)
 bannerContainer content = wrap do

@@ -21,16 +21,16 @@
 -- | p [|a] {|b}  Retaining *  Reel *          Coretaining *  Coreel *           VariantToRecord *
 -- | ```
 -- |
--- | `*` marks what this library introduces; the rest is the ecosystem's.
--- | `**`: the raw `unfirst` composite is dead on a gated carrier, so the
--- | knots at this shape need a starting point: the whole-row `looped`
--- | (`Data.Profunctor.Looping`, primed by its first feed) and the
--- | one-field `feedback` over the pointed trace `PointedCostrong` *
--- | (`Data.Profunctor.PointedCostrong`, seeded); the `+` side needs no
--- | class of its own, `unleft` holding raw
+-- | `*` marks what this library introduces; the rest is the ecosystem's
 -- | (`Strong`/`Choice` with their `Lens`/`Prism`, and the duals
 -- | `Costrong`/`Cochoice` — whose optics `Colens`/`Coprism`, however, the
--- | ecosystem never built). For the ecosystem pairs the optics follow by
+-- | ecosystem never built). `**`: the raw `unfirst` composite is dead on
+-- | a gated carrier, so the knots at this shape need a starting point —
+-- | the whole-row `looped` (`Data.Profunctor.Looping`, primed by its
+-- | first feed) and the one-field `feedback` over the pointed trace
+-- | `PointedCostrong` * (`Data.Profunctor.PointedCostrong`, seeded) —
+-- | while the `+` side needs no class of its own, `unleft` holding raw
+-- | (`cycled`). For the ecosystem pairs the optics follow by
 -- | Pastro–Street (`Strong`/`Choice` are lawful Tambara modules, so
 -- | `Lens`/`Prism` — and, dually, `Colens`/`Coprism` — are representation
 -- | theorems). The four **coined** optics are profunctor-encoded classes
@@ -38,9 +38,11 @@
 -- | mixed strengths carry no unit or composition coherence
 -- | (`Data.Profunctor.Resolving`), so Pastro–Street does not apply — and
 -- | indeed `identity` inhabits `Shutter a b a b` while no existential
--- | shutter produces it (every existential carries an escape `s → t`).
--- | Neither the classes nor the optics
--- | mention a row, so neither lives in `Data.Profunctor.Row.*`. Both follow
+-- | shutter produces it (every existential carries an escape `s → t`) —
+-- | which is what the row forms `subResolving`/`subRetaining`/`folding`/
+-- | `unfolding` inherit: each is its optic at row granularity, an encoding
+-- | rather than a representation theorem. Neither the classes nor the
+-- | optics mention a row, so neither lives in `Data.Profunctor.Row.*`. Both follow
 -- | the ecosystem's own layout: one class per module beside `Strong`/`Costrong`
 -- | (`Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`),
 -- | and one optic per module beside `Data.Lens.Lens`/`.Prism`
@@ -76,96 +78,126 @@
 -- | the labels the operands own.
 -- |
 -- | Around each merge sit the functions that place a profunctor **into** a
--- | row. They divide by what each needs — the strength and co-strength
--- | columns are the table above at row granularity, so a function's
--- | column is its power — and a function lives in the module of the sides
--- | it constrains: one polymorphic on one side sits in the diagonal module
--- | of the side it constrains.
+-- | row. A function lives where the sides it constrains do: one
+-- | constraining both sides in its shape's module, one constraining a
+-- | single side here on the floor, so that no shape module imports
+-- | another. The four shape modules' functions, by role:
 -- |
 -- | ```
--- | shape        Profunctor only          over the strength           over the co-strength        over the wire
--- | -----------  -----------------------  --------------------------  --------------------------  -------------------
--- | p {|a} {|b}  asField, settled         focusField (Strong)         looped (Looping)            with (Seeding)
--- |                                                                   feedback (PointedCostrong)
--- | p [|a] [|b]  atCase, toCase, forCase  focusCase (Choice)          cycled (Cochoice)           · identity
--- |                                                                                               — no point
--- | p {|a} [|b]  · diagonal               subResolving (Resolving)    folding (Coresolving)       silence (member) —
--- |                                       replaying, joined (Strong)
--- | p [|a] {|b}  · diagonal               subRetaining (Retaining)    unfolding (Coretaining)     unshown (Category)
--- |                                       — no Choice
+-- | shape        rename   strength optic  co-strength optic  unit     retention
+-- | -----------  -------  --------------  -----------------  -------  -----------------
+-- | p {|a} {|b}  asField  focusField      feedback
+-- | p [|a] [|b]  asCase   focusCase       cycled
+-- | p {|a} [|b]           subResolving    folding                     replaying, joined
+-- | p [|a] {|b}           subRetaining    unfolding          unshown
 -- | ```
 -- |
--- | `·` is **placement**: the words exist, filed elsewhere — the mixed
--- | rows' `dimap`-only words constrain one side and live in that side's
--- | diagonal module (`atCase`, `toCase` are `+→+`'s, `settled` `×→×`'s),
--- | and the `+→+` unit is `identity` itself, needing no word. `—` is a
--- | **genuine limit**, a word that cannot exist: no `with` at a variant
--- | input, because the empty variant has no value to announce (a point is
--- | the terminal record's); the `×→+` unit `silence` must be a class
--- | member, because no wire can fabricate a case; and no `Choice` form at
--- | `+→×`, because `left` would release an `Either`, never a record — the
--- | `×→+` `Strong` forms have no mirror there, an event riding beside a
--- | record output needing `Retaining`'s memory.
+-- | This is **every function the four shape modules export** beside their
+-- | merge and its `do` sugar, and nothing else — each constrains both of
+-- | its shape's sides. Two columns are full and are the first table at
+-- | row granularity: the **strength optic** (`Lens`, `Prism`, `Shutter`,
+-- | `Reel`) and the **co-strength optic** (`Colens` seeded through
+-- | `PointedCostrong`, `Coprism`, `Coshutter`, `Coreel`), one word per
+-- | shape, each over its shape's own class. The other three columns are
+-- | half-full in complementary ways, and each empty cell is a fact:
 -- |
--- | The **first** column is `dimap` alone: renaming and rewrapping labels,
--- | with nothing threaded and no state. The **strength** column threads a
--- | **background** past a stage — each word the shape's optic at row
--- | granularity: at the pure shapes the single-label `Lens`/`Prism`
--- | (`focusField`, also the leaf lift making every label-indexed editor a
--- | whole-row citizen; `focusCase`), at the mixed shapes the sub-row
--- | `Shutter`/`Reel` (`subResolving @w`: a sub-record focused, the rest of
--- | the row escaping as case `w`; `subRetaining @w`: a sub-variant
--- | focused, the other cases retained as field `w`). At `×→+` the
--- | ecosystem `Strong` threads too, its state channel around an
--- | occurrence source carrying the fed row out with each occurrence
--- | (`replaying @l f`, of which `clicked` is one; `joined @l`,
--- | `{ event, model }`). The **co-strength** column ties the knot the
--- | strength opens — one trace per shape, the co-optic at row
--- | granularity: `looped` (the model re-enters whole, primed by its first
--- | feed) and `feedback @l` (one hidden field, seeded) at `×→×`, `cycled`
--- | (the loop cases re-enter, computed by `LoopCases`) at `+→+`,
--- | `folding @w @l` (a terminating fold, its state one field carried by
--- | case `w`) at `×→+`, `unfolding @w @l` (a productive unfold, its state
--- | resumed as case `w`) at `+→×`; every `×`-side knot is seeded or
--- | primed, the `+`-side one raw. An app's loop is cut at its record
--- | junction, where the model can be declared (`w # looped @( … ) # with
--- | seed`, guardrails L18); the other knots are the same algebra at the
--- | other junctions, a state the rows do not show. The **wire** column
--- | is built from the wire or the point: `with` discharges a chain's
--- | initial obligation (`announce a >>> w`), `silence` is the `×→+` unit,
--- | and `unshown @l` is the faceless leaf owning case `l` and showing
--- | nothing of it — what opens a fold whose occurrence nothing needs to
--- | tell. The fold itself is not here: it is an optic over its status in
--- | `PUI` (`unshown @l # fold f`), derived through the `×→×` merge.
+-- |   * **rename** (over `Profunctor`) — the pure shapes only: a closed
+-- |     singleton relabelled on both sides. A mixed shape has no
+-- |     `dimap`-only word, because a two-sided record↔variant conversion
+-- |     is a classifier, a business function.
+-- |   * **unit** — one shape only: no merge class carries a unit, each
+-- |     shape borrowing its own from the class that can supply it. Three
+-- |     borrow from `Category` — `identity` at `+→+`, the `{}` wire at the
+-- |     merge's row (`atAnyRow identity`) at `×→×`, `lcmap case_ identity`
+-- |     at `+→×`, where `unshown @l` is that unit named at one case, the
+-- |     one unit word a shape module has. `×→+`'s cannot be a wire, since
+-- |     no wire fabricates a case, so it borrows from
+-- |     `Data.Profunctor.Silencing` — `silence`, a class of its own beside
+-- |     `Seeding` and `Looping`, and so not a shape module's word.
+-- |   * **retention** (over `Strong`, `×→×`'s strength used at `×→+`) —
+-- |     one shape only: the fed row carried out with each occurrence.
+-- |     `+→×` has no `Choice` mirror, because `left` would release an
+-- |     `Either`, never a record — an event riding beside a record output
+-- |     needs `Retaining`'s memory.
 -- |
--- | The **left** column is generated by two choices: which side is
--- | reshaped (`lcmap` or `rmap`) and that side's carrier.
+-- | What is deliberately *not* here: the one-sided words
+-- | (`atField`/`toField`, `atCase`/`toCase`, `with`, `settled`,
+-- | `atAnyRow`, `widenVariantOutput`), which are the floor's and appear
+-- | under *The shared floor* below — among them `with`, which no
+-- | variant-input shape could mirror, there being no point at a variant
+-- | input; the `×→+` unit `silence`, which is `Data.Profunctor.Silencing`'s;
+-- | and the whole-row knot `looped`, which is `Data.Profunctor.Looping`'s
+-- | — each a class of its own beside `Seeding`, carrier structure rather
+-- | than a row form, for the reason the first table's `**` gives.
+-- |
+-- | Column by column. **Rename** is `dimap` alone: `asField`/`asCase`
+-- | relabel a closed singleton on both sides, nothing threaded, no state
+-- | (the single-label grid, below). The **strength optic** threads a
+-- | **background** past a stage: at the pure shapes the single-label
+-- | `Lens`/`Prism` (`focusField`, also the leaf lift making every
+-- | label-indexed editor a whole-row citizen; `focusCase`), at the mixed
+-- | shapes the sub-row `Shutter`/`Reel` (`subResolving @w`: a sub-record
+-- | focused, the rest of the row escaping as case `w`; `subRetaining @w`:
+-- | a sub-variant focused, the other cases retained as field `w`). The
+-- | **co-strength optic** ties the knot the strength opens — one trace per
+-- | shape: `feedback @l` (one hidden field, seeded) at `×→×`, where
+-- | `Looping`'s `looped` (the model re-enters whole, primed by its first
+-- | feed) is the whole-row knot beside it; `cycled` (the loop cases
+-- | re-enter, computed by `LoopCases`) at `+→+`; `folding @w @l` (a
+-- | terminating fold, its state one field carried by case `w`) at `×→+`;
+-- | `unfolding @w @l` (a productive unfold, its state resumed as case `w`)
+-- | at `+→×` — every `×`-side knot seeded or primed, the `+`-side one raw.
+-- | An app's loop is cut at its record junction, where the model can be
+-- | declared (`w # looped @( … ) # with seed`, guardrails L18); the other
+-- | knots are the same algebra at the other junctions, a state the rows
+-- | do not show. The one **unit** word, `unshown @l` (`lcmap (const {})
+-- | identity`), is the faceless leaf owning case `l` and showing nothing
+-- | of it — what opens a fold whose occurrence nothing needs to tell; the
+-- | fold itself is not here but an optic over its status in `PUI`
+-- | (`unshown @l # fold f`), derived through the `×→×` merge.
+-- | **Retention** is `×→×`'s `Strong` at `×→+`: `first` around an
+-- | occurrence source, its state channel carrying the fed row out with
+-- | each occurrence (`replaying @l f`, of which `clicked` is one;
+-- | `joined @l`, `{ event, model }`), each followed by the grid's output
+-- | half, `toCase @l` — the case introduced over the retained row, never
+-- | renamed from the source's.
+-- |
+-- | The pure shapes' two-sided words above and the floor's one-sided
+-- | halves together form one **single-label grid**, the same four words
+-- | over records and variants. A closed singleton is its payload
+-- | (`{ l :: a } ≅ a ≅ [ l :: a ]`), and the four are the four ways to use
+-- | that: on both sides with the rest of the row threaded
+-- | (`focusField`/`focusCase`, the shape's), on both sides with no rest
+-- | (`asField`/`asCase`, a rename, the shape's), on the input side alone
+-- | (`atField`/`atCase`, the floor's) and on the output side alone
+-- | (`toField`/`toCase`, the floor's).
 -- |
 -- | ```
--- |                          input ×      input +    output ×   output +
--- | -----------------------  -----------  ---------  ---------  ------------
--- | bare, closed singleton   —            atCase     —          toCase
--- |                                       forCase
+-- |                 both sides,     both sides,   input side   output side
+-- |                 rest threaded   no rest
+-- | --------------  --------------  ------------  -----------  -----------
+-- | records  ×→×    focusField      asField       atField      toField
+-- | variants +→+    focusCase       asCase        atCase       toCase
 -- | ```
 -- |
--- | Business functions are arguments of leaves, never adopters: a display
--- | takes its **read function** (`text lineOf`), a status its business case
--- | and copy function (`snackbar @"booked" bookedLine`), and an emitter emits its own
--- | case, which the fold consumes (doc/research-copy-is-a-function.md). So
--- | the grid holds only the structural `atCase`/`toCase`, and `forCase @l` —
--- | the status face's plumbing, reading the face's own case back out of its
--- | closed singleton row via `RowToList`'s fundep, as `focusField` is the
--- | editor face's. The rename `asField` survives
--- | only where a packaged control fuses a canonical core to a surface
--- | label.
+-- | At the closed singleton the focus is its two halves, `focusField @l =
+-- | toField @l <<< atField @l` and likewise over cases; the halves and the
+-- | rename are not derivable from the focus (a two-sided wrap does not
+-- | split), so the three `Profunctor` words per shape are generators.
 -- |
--- | The record columns are empty. Output `×` is owned, so a bare value could
--- | become a field only as the whole row, and a label-indexed leaf already
--- | emits its labelled row (`focusField @l` lifts an editor into it); turning an
--- | occurrence into a field value needs the rest of the row, which only
--- | `focusField @l`'s retained background can supply over `Strong`. Input `×`
--- | is read by the leaf's own read function or through `focusField @l`, so the
--- | record-input readers were pruned (L14). The entries outside the grid
+-- | None takes a function: business functions are arguments of leaves,
+-- | never adopters — a display takes its **read function** (`text
+-- | lineOf`), a status its business case and copy function (`snackbar
+-- | @"booked" bookedLine`, its face over the copy, adopted `# atCase @l`),
+-- | and an emitter emits its own case, which the fold consumes
+-- | (doc/research-copy-is-a-function.md). The grid is symmetric in form
+-- | and asymmetric in reach: a label-indexed leaf already emits its
+-- | labelled row (`focusField @l` lifts an editor into it) and reads its
+-- | input through its own read function, so applications meet no bare
+-- | record side to adopt and the record words other than `focusField`
+-- | are law-tested only, while the mixed shapes hand bare values to and
+-- | from cases all the time (`atCase` opening an action's fold block,
+-- | `toCase` naming a dialog's outcome). The entries outside the grid
 -- | are `splitVariant` and `splitRow`, plain functions rather than
 -- | placements: the dispatch the `+`-side words split with and the focus
 -- | the `×`-side ones feed.
@@ -200,11 +232,20 @@
 -- |     must have exactly one handler and each record field exactly one
 -- |     producer. `MergeableRecords` adds the **runtime-exactness** evidence the
 -- |     gated merge uses to trim operand emissions to their declared
--- |     output rows (`exactRow`).
--- |   * **reshapings** — `dimap`-only structural adapters: `atAnyRow`
--- |     places a component that reads nothing at any record input, and
--- |     `widenVariantOutput` lets a variant output leave into a wider row,
--- |     nothing flowing through the added labels.
+-- |     output rows (`exactRow`); `LoopCases` computes a variant knot's
+-- |     re-entering row from the two label lists (`cycled`).
+-- |   * **splits** — the plain row functions the strength forms stand on:
+-- |     `splitRow` (a record into a focus built from exactly its labels and
+-- |     the rest, `subResolving`), `splitVariant` (a case into the focus or
+-- |     the background, the `+→+` merge's dispatch and `subRetaining`'s).
+-- |   * **one-sided placements** — every word constraining a single side,
+-- |     so that no shape module needs another's: the closed-singleton
+-- |     halves `atField`/`toField` and `atCase`/`toCase`, the knot's
+-- |     closure `with` (over the point), the normalization `settled`, and
+-- |     the two reshapings `atAnyRow` (a component that reads nothing,
+-- |     placed at any record input) and `widenVariantOutput` (a variant
+-- |     output let into a wider row, nothing flowing through the added
+-- |     labels).
 -- |
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.
@@ -369,18 +410,25 @@ module Data.Profunctor.Row
   , rowLabels
   , atAnyRow
   , widenVariantOutput
+  , atField
+  , toField
+  , atCase
+  , toCase
+  , with
+  , settled
   )
   where
 
-import Prelude (const, identity, (<<<), (<>))
+import Prelude (const, identity, (<<<), (<>), (>>>))
 
 import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Either (Either(..))
 import Data.Foldable (foldr)
 import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
-import Data.Variant (class Contractable, contract, expand)
+import Data.Variant (class Contractable, case_, contract, expand, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Data.Variant.Internal (class VariantTags)
 import Prim.Ordering (Ordering, LT, EQ, GT)
@@ -389,7 +437,7 @@ import Prim.RowList (class RowToList, RowList)
 import Prim.RowList (Cons, Nil) as RL
 import Prim.Symbol (class Append, class Compare) as Symbol
 import Prim.TypeError (class Fail, Above, Beside, Text)
-import Record (get) as Record
+import Record (get, insert) as Record
 import Record.Builder (Builder)
 import Record.Builder (buildFromScratch, insert) as Builder
 import Record.Unsafe (unsafeDelete)
@@ -672,7 +720,7 @@ instance
             (Beside (Beside (Beside (Beside (Text "One operand owns { ") (Text ownDoc)) (Text " }, the other { ")) (Text otherDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `asField`/`focusField`/`atCase` label in this `do` block.")))
+              (Text "Look for the duplicated `focusField`/`asField`/`toField` or `focusCase`/`asCase`/`atCase` label in this `do` block.")))
       )
   ) => LabelAbsentK EQ l rest own other
 instance LabelAbsent l rest own other => LabelAbsentK LT l rest own other
@@ -704,7 +752,7 @@ instance
             (Beside (Beside (Text "The row is { ") (Text origDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `asField`/`focusField`/`atCase` label in this `do` block.")))
+              (Text "Look for the duplicated `focusField`/`asField`/`toField` or `focusCase`/`asCase`/`atCase` label in this `do` block.")))
       )
   ) => NoDuplicateLabelsK EQ l rest orig
 instance NoDuplicateLabels rest orig => NoDuplicateLabelsK LT l rest orig
@@ -756,7 +804,7 @@ instance
   ) => OwnedRecordOutputs o1 o2 o o1l o2l
 
 -- =====================================================================
--- Whole-row reshapings
+-- One-sided placements: a word constraining one side lives here
 -- =====================================================================
 
 -- | Place a component that reads nothing at any record input: the
@@ -788,3 +836,53 @@ splitVariant v = case contract v of
   Nothing -> case contract v of
     Just b -> Right b
     Nothing -> unsafeThrow "splitVariant: case in neither focus nor background"
+
+-- | Adopt a bare-input component as the reader of input field `l`.
+atField :: forall @l p a b r. IsSymbol l => Row.Cons l a () r => Profunctor p => p a b -> p { | r } b
+atField = lcmap (Record.get (Proxy @l))
+
+-- | Emit a component's bare output as field `l`.
+toField
+  :: forall @l @a p c r
+   . IsSymbol l
+  => Row.Cons l a () r
+  => Profunctor p
+  => p c a
+  -> p c { | r }
+toField = rmap (\a -> Record.insert (Proxy @l) a {})
+
+-- | Adopt a bare-input component as the owner of input case `l`.
+atCase :: forall @l p a b v. IsSymbol l => Row.Cons l a () v => Profunctor p => p a b -> p [ | v ] b
+atCase = lcmap (on (Proxy @l) identity case_)
+
+-- | Emit a component's bare output as case `l`.
+toCase
+  :: forall @l @a p c b v
+   . IsSymbol l
+  => Row.Cons l a b v
+  => Profunctor p
+  => p c a
+  -> p c [ | v ]
+toCase = rmap (inj (Proxy @l))
+
+-- | Discharge a chain's initial obligation by announcing its t=0 value.
+-- | The seed is whatever the chain's first stage takes: a model row into
+-- | the knot (`w # looped @( … ) # with seed`, the app shape) or into a
+-- | knotless flow (`# with @{ … } invitation`, potluck). Never `{}`: `body`
+-- | feeds the terminal record once itself, so a load action standing
+-- | before the knot runs on that feed with no seed written. Its own input
+-- | is ignored, so it sits at any row; a seed that is a hole is never
+-- | announced (`announce`, guardrails L18).
+with :: forall @a p b r. Seeding p => a -> p a b -> p { | r } b
+with a w = lcmap (const {}) (announce a >>> w)
+
+-- | Normalize a stage's emissions with an idempotent function over the row.
+-- | The normalizer is typed at the stage's row, its signature the view's
+-- | hole hint verbatim (`{ "°C" :: String, "°F" :: String } -> { … }`).
+settled
+  :: forall p r a
+   . Profunctor p
+  => ({ | r } -> { | r })
+  -> p a { | r }
+  -> p a { | r }
+settled f = rmap f

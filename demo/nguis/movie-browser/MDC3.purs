@@ -3,7 +3,7 @@ module MovieBrowser.MDC3 (movieBrowser) where
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import MovieBrowser (favoriteMark, favoritesLine, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
+import MovieBrowser (favoritesLine, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
 import PUI (anyOf, fold, joined, looped, toCase, unshown, with)
 import PUI.Web ((<+>), choice, text)
 import PUI.Web.HTML (span)
@@ -25,7 +25,7 @@ movieBrowser =
         span (text titleLine)
         span (text yearLine)
         span (text ratingLine)
-        iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # toCase @"Favorite changed" @{ title :: String, "Favorite" :: Boolean } favoriteMark # anyOf @"title"
+        iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # toCase @"Favorite changed" @{ title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean } # anyOf @"title"
         @( title :: String
          , year :: Int
          , rating :: Number

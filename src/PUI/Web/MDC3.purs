@@ -137,7 +137,7 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row.VariantToVariant (forCase)
+import Data.Profunctor.Row (atCase)
 import Data.Traversable (for)
 import Data.Variant (inj, match, prj) as Variant
 import Data.Profunctor (rmap) as Profunctor
@@ -148,7 +148,7 @@ import Data.Profunctor.Seeding (isHole)
 import PUI (Ocular, PUI, anyOf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, attribute, attrWith, autoDismiss, cl, clicked, clickedRow, clWhen, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, eventText, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, attribute, attrWith, autoDismiss, cl, clicked, clickedRow, clWhen, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1030,13 +1030,13 @@ snackbar
   => Cons l a () v
   => (a -> String)
   -> PUI Web [ | v ] { | r }
-snackbar copy = snackbarFace # forCase @l copy
+snackbar copy = snackbarFace copy # atCase @l
 
-snackbarFace :: forall r. PUI Web [ event :: String ] { | r }
-snackbarFace = wrap do
+snackbarFace :: forall a r. (a -> String) -> PUI Web a { | r }
+snackbarFace copy = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $
-    textOf eventText
+    textOf copy
   node <- gets _.sibling
   pure
     { toUser: \i -> do

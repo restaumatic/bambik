@@ -737,7 +737,7 @@ text is computed, a chrome line nothing.
   `Data.Profunctor`.** The merges and the knot you import from
   `Data.Profunctor.Row.*` are vocabulary; raw `lcmap`/`rmap`/`dimap`
   are not. Every reshaping an app needs has a home in a word's own
-  argument — `foreach @l rowsOf`, `toCase @l payloadOf`,
+  argument — `foreach @l rowsOf`, `dispatched envelopeOf`,
   `settled normalize`, with `identity`
   meaning "the value as it is". A shape none fits is a gap to report,
   not a reason to reach below the vocabulary.
