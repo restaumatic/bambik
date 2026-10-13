@@ -4,7 +4,7 @@ import Prelude (identity, Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (action, atCase, blankStatus, fold, joined, looped, prefixed, with)
+import PUI (action, atCase, fold, joined, looped, prefixed, unshown, with)
 import PUI.Web (text)
 import PUI.Web.MDC2 (body, body1, caption, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -26,7 +26,7 @@ weatherMDC2 =
        , focus :: [ current :: {}, other :: {} ]
        ) { selected: isCurrent } forecastRequests (text cityLine) # joined @"Forecast requested"
     indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"
-    blankStatus @"Forecast fetched" # fold identity
+    unshown @"Forecast fetched" # fold identity
   # looped
     @( report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
      , servedReports :: Int

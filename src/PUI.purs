@@ -67,6 +67,7 @@ module PUI
   , diagnosticsOn
   , action
   , fold
+  , reset
   , static
   , prefixed
   , suffixed
@@ -115,7 +116,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 import Data.Profunctor.Row.RecordToRecord (asField, blank, muted, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, replaying, silence) as Adopters
 import Data.Profunctor.Row.VariantToVariant (atCase, subChoice, toCase) as Adopters
-import Data.Profunctor.Row.VariantToRecord (blankStatus) as Adopters
+import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
@@ -1092,7 +1093,7 @@ observed status = dimap (\v -> { event: v }) (match { forwarded: identity }) $ r
   (lcmap (\r -> maybe (Right unit) Left (contract r.event)) (left (status >>> silence)) >>> lcmap (const {}) silence :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
 
 -- | The **tick source**, opened by its status like a fold or an action
--- | (`blankStatus @"Clock ticked" # ticks tickPeriod`, timer): every
+-- | (`unshown @"Clock ticked" # ticks tickPeriod`, timer): every
 -- | `interval`, the row it was last fed leaves as case `l`, told to the
 -- | status first — replay is `Strong`'s retention, the fed row riding the
 -- | state channel as under `clicked`. Feeds are retained, never answered;
@@ -1227,7 +1228,7 @@ suffixed d w = wrap do
 -- | follow (flight-booker). No application owns a
 -- | "busy": the indicator shows between `started` and `ended` and, like
 -- | every status, owes the channel nothing. A stage with nothing to show
--- | opens with `blankStatus @l` naming its outcome case; `blank` alone
+-- | opens with `unshown @l` naming its outcome case; `blank` alone
 -- | names no case and so leaves the slot's row undetermined.
 -- |
 -- | A failing action is **reported, not swallowed**: `ended` is dispatched
@@ -1285,42 +1286,55 @@ running run w = action'
   w
 
 -- | One case **folded into the record** (`+→×`), opened by its status —
--- | `snackbar @"Person created" personCreatedLine # fold identity`, as a
--- | run is opened by its progress indicator (`indeterminateLinearProgress #
--- | action createPerson`). The status names the case
--- | (its label is the fold's input case) and shows the **outcome**: the
--- | fold happens first, `f` of the occurrence's payload is the row
--- | released, and the status is fed that row under the same case, so its
--- | copy function is typed at the model (`personCreatedLine :: model ->
--- | String`) and narrates what the handler decided. A heartbeat nobody
--- | needs told about opens with `blankStatus @l`. A loop's folds are one
--- | per event case, merged by `VariantToRecord.do`, each releasing the
--- | whole next model. Memoryless: a replaying emitter's
--- | payload is the row it was fed, an event with something of its own
--- | arrives `joined @l` with that row as `{ event, model }`, and an effect
--- | returns the model (`… # fold identity`), so every handler has the model
--- | in hand and the loop's memory stays at the emitters and in the knot.
+-- | `snackbar @"Count" countedLine # fold increment`, as a run is opened by
+-- | its progress indicator (`indeterminateLinearProgress # action
+-- | createPerson`). The status names the case (its closed singleton row is
+-- | the fold's input) and shows the **event**, never the fold's result: it
+-- | is fed the occurrence as it arrives, so its copy function is typed at
+-- | the payload, and whatever a status says must be in the event. `f` of
+-- | the payload is the row released. A heartbeat nobody needs told about
+-- | opens with `unshown @l`. A loop's folds are one per event case,
+-- | merged by `VariantToRecord.do`, each releasing the whole next model.
+-- | Memoryless: a replaying emitter's payload is the row it was fed, an
+-- | event with something of its own arrives `joined @l` with that row as
+-- | `{ event, model }`, and an effect returns the model (`… # fold
+-- | identity`), so every handler has the model in hand and the loop's
+-- | memory stays at the emitters and in the knot.
 -- |
--- | **Derived**: the wire and the status under the `×→×` merge, both fed
--- | the outcome (as the row and as the case) in one two-field record — the
+-- | **Derived**: the wire and the status under the `×→×` merge, fed the
+-- | occurrence's outcome and the occurrence in one two-field record — the
 -- | status contributes no field and is inert to the gate, the wire answers
 -- | every feed with the row, released once per feed. (A carrier-free
 -- | `fold @l f` once lived in `Data.Profunctor.Row.VariantToRecord`, the
 -- | statuses standing beside the folds as sibling operands; CHANGELOG,
 -- | 2026-10-07.)
 fold
-  :: forall m l a v vs r
+  :: forall m l a v r
    . MonadEffect m
-  => RowToList vs (RL.Cons l { | r } RL.Nil)
+  => RowToList v (RL.Cons l a RL.Nil)
   => IsSymbol l
   => Cons l a () v
-  => Cons l { | r } () vs
   => (a -> { | r })
-  -> PUI m [ | vs ] {}
+  -> PUI m [ | v ] {}
   -> PUI m [ | v ] { | r }
-fold f status = dimap (\v -> let o = on (Proxy @l) f case_ v in { outcome: inj (Proxy @l) o, model: o }) _.model $ recordToRecord
-  (dimap _.model { model: _ } identity :: PUI m { outcome :: [ | vs ], model :: { | r } } { model :: { | r } })
-  (lcmap _.outcome status :: PUI m { outcome :: [ | vs ], model :: { | r } } {})
+fold f status = dimap (\v -> { event: v, model: on (Proxy @l) f case_ v }) _.model $ recordToRecord
+  (dimap _.model { model: _ } identity :: PUI m { event :: [ | v ], model :: { | r } } { model :: { | r } })
+  (lcmap _.event status :: PUI m { event :: [ | v ], model :: { | r } } {})
+
+-- | One case folded into the record by **resetting** it to `x`, opened by
+-- | its status like `fold` (`unshown @"New game" # reset openingPosition`):
+-- | the payload is the status's alone, the row released is `x` whole.
+-- | `reset x = fold (const x)`.
+reset
+  :: forall m l a v r
+   . MonadEffect m
+  => RowToList v (RL.Cons l a RL.Nil)
+  => IsSymbol l
+  => Cons l a () v
+  => { | r }
+  -> PUI m [ | v ] {}
+  -> PUI m [ | v ] { | r }
+reset x = fold (const x)
 
 action' :: forall a b s t m. Scoped m => (s -> (a -> Effect Unit) -> (t -> Effect Unit) -> Effect Boolean -> Aff Unit) -> Optic (PUI m) s t a b
 action' arr w = wrap do

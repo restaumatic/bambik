@@ -1,13 +1,13 @@
 module TicTacToeMDC3 (ticTacToeMDC3) where
 
-import Prelude ((#), ($), (<>), (>>>), Unit, const)
+import Prelude ((#), ($), (<>), (>>>), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (blankStatus, fold, foreach, joined, looped, prefixed, with)
+import PUI (fold, foreach, joined, looped, prefixed, reset, unshown, with)
 import PUI.Web (attrWith, clicked, pane, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, button, headlineSmall)
@@ -33,8 +33,8 @@ ticTacToeMDC3 =
            ) cells ) ) # joined @"Cell claimed"
       button @"New game" { icon: "replay" }
     VariantToRecord.do
-      blankStatus @"Cell claimed" # fold claimCell
-      blankStatus @"New game" # fold (const openingPosition)
+      unshown @"Cell claimed" # fold claimCell
+      unshown @"New game" # reset openingPosition
   # looped @( board :: Array [ x :: {}, o :: {}, free :: {} ] ) # with openingPosition
 
 cellFace :: { key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String

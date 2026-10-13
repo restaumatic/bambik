@@ -4,11 +4,11 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (fold, looped, prefixed, with)
+import PUI (fold, looped, prefixed, unshown, with)
 import PUI.Web (paneAt, text)
-import PUI.Web.MDC2 (body, body2, button, headline3, snackbar)
+import PUI.Web.MDC2 (body, body2, button, headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TicketDispenserViewModel (emptyQueue, firstTicketHint, issue, noTicketLine, servingLine, ticketLine, ticketTakenLine)
+import TicketDispenserViewModel (emptyQueue, firstTicketHint, issue, noTicketLine, servingLine, ticketLine)
 
 ticketDispenserMDC2 :: Effect Unit
 ticketDispenserMDC2 =
@@ -20,7 +20,7 @@ ticketDispenserMDC2 =
       body2 ( RecordToRecord.do
         (text firstTicketHint) # paneAt @"waiting" @"display"
         (text servingLine) # paneAt @"serving" @"display" ) ) $ button @"Take a number" {}
-    snackbar @"Take a number" ticketTakenLine # fold issue
+    unshown @"Take a number" # fold issue
   # looped
     @( display :: [ waiting :: {}, serving :: { number :: Int } ]
      , next :: Int

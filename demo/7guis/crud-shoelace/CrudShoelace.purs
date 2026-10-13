@@ -8,7 +8,7 @@ import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action, atCase, blankStatus, fold, foreach, joined, looped, subChoice)
+import PUI (action, atCase, fold, foreach, joined, looped, subChoice, unshown)
 import PUI.Web (attrWith, clicked, text, (:=))
 import PUI.Web.HTML (li, ul)
 import PUI.Web.Shoelace (body, button, indeterminateLinearProgress, textField, toast)
@@ -18,7 +18,7 @@ crudShoelace :: Effect Unit
 crudShoelace =
   body $ Semigroupoid.do
     indeterminateLinearProgress # action loadPeopleCatalogue
-    blankStatus @"People loaded" # fold identity
+    unshown @"People loaded" # fold identity
     ( Semigroupoid.do
       textField @"Filter prefix (surname)" {}
       textField @"Name" {}
@@ -39,7 +39,7 @@ crudShoelace =
         indeterminateLinearProgress # action updatePerson # atCase @"Update"
         indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
       VariantToRecord.do
-        blankStatus @"Person picked" # fold pick
+        unshown @"Person picked" # fold pick
         toast @"Person created" personCreatedLine # fold identity
         toast @"Person not created" personNotCreatedLine # fold identity
         toast @"Person updated" personUpdatedLine # fold identity

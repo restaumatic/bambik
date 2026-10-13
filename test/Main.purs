@@ -38,7 +38,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, blankStatus, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, prefixed, replaying, resolveFor, resumeScope, seeded, silence, suffixed, suspendScope, ticks, with)
+import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, unshown, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, prefixed, replaying, reset, resolveFor, resumeScope, seeded, silence, suffixed, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -191,25 +191,33 @@ main = do
   -- row, an iso with toCase @l identity both ways
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (fold (\r -> r { count = r.count + 1 }) (blankStatus @"Count") :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m <- unwrap (fold (\r -> r { count = r.count + 1 }) (unshown @"Count") :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 3 })
     Ref.read outs >>= assertEqual "fold: f of the payload is the released row" [ { count: 4 } ]
+  -- the status is fed the event, never the fold's result
+  do
+    ins <- Ref.new ([] :: Array [ "Count" :: { count :: Int } ])
+    propRef <- Ref.new Nothing
+    m <- unwrap (fold (\r -> r { count = r.count + 1 }) (probeIO ins propRef) :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m.fromUser \_ -> pure unit
+    m.toUser (."Count" { count: 3 })
+    Ref.read ins >>= assertEqual "fold: the status is fed the event" [ ."Count" { count: 3 } ]
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (fold identity (blankStatus @"Count") :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m <- unwrap (fold identity (unshown @"Count") :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 5 })
     Ref.read outs >>= assertEqual "fold/identity: the closed singleton unwrapped to its row" [ { count: 5 } ]
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (toCase @"Count" identity identity >>> fold identity (blankStatus @"Count") :: PUI Effect { count :: Int } { count :: Int })
+    m <- unwrap (toCase @"Count" identity identity >>> fold identity (unshown @"Count") :: PUI Effect { count :: Int } { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { count: 5 }
     Ref.read outs >>= assertEqual "fold/section" [ { count: 5 } ]
   do
     outs <- Ref.new ([] :: Array [ "Count" :: { count :: Int } ])
-    m <- unwrap (fold identity (blankStatus @"Count") >>> toCase @"Count" identity identity :: PUI Effect [ "Count" :: { count :: Int } ] [ "Count" :: { count :: Int } ])
+    m <- unwrap (fold identity (unshown @"Count") >>> toCase @"Count" identity identity :: PUI Effect [ "Count" :: { count :: Int } ] [ "Count" :: { count :: Int } ])
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 5 })
     Ref.read outs >>= assertEqual "fold/retraction" [ ."Count" { count: 5 } ]
@@ -218,12 +226,23 @@ main = do
   do
     outs <- Ref.new ([] :: Array { n :: Int })
     m <- unwrap (variantToRecord
-      (fold (\r -> r { n = r.n + 1 }) (blankStatus @"A") :: PUI Effect [ "A" :: { n :: Int } ] { n :: Int })
-      (fold (\r -> r { n = r.n * 2 }) (blankStatus @"B") :: PUI Effect [ "B" :: { n :: Int } ] { n :: Int }))
+      (fold (\r -> r { n = r.n + 1 }) (unshown @"A") :: PUI Effect [ "A" :: { n :: Int } ] { n :: Int })
+      (fold (\r -> r { n = r.n * 2 }) (unshown @"B") :: PUI Effect [ "B" :: { n :: Int } ] { n :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."A" { n: 1 })
     m.toUser (."B" { n: 5 })
     Ref.read outs >>= assertEqual "fold/merge: each fold releases the whole row" [ { n: 2 }, { n: 10 } ]
+  -- reset x = fold (const x): the row released is x whatever the payload,
+  -- and the status is still fed the event
+  do
+    outs <- Ref.new ([] :: Array { count :: Int })
+    ins <- Ref.new ([] :: Array [ "New game" :: { count :: Int } ])
+    propRef <- Ref.new Nothing
+    m <- unwrap (reset { count: 0 } (probeIO ins propRef) :: PUI Effect [ "New game" :: { count :: Int } ] { count :: Int })
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (."New game" { count: 7 })
+    Ref.read outs >>= assertEqual "reset: x is the released row" [ { count: 0 } ]
+    Ref.read ins >>= assertEqual "reset: the status is fed the event" [ ."New game" { count: 7 } ]
 
   -- caseText (label-is-copy): caseText (inj @l a) = reflectSymbol (Proxy @l) —
   -- the case label of a variant value, verbatim, whichever case is inhabited.
@@ -2119,7 +2138,7 @@ main = do
   do
     sc <- newScope Nothing Active
     beats <- Ref.new 0
-    t <- inScope sc (unwrap (ticks { ms: 10.0 } (blankStatus @"tick") :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
+    t <- inScope sc (unwrap (ticks { ms: 10.0 } (unshown @"tick") :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
     t.fromUser \_ -> Ref.modify_ (_ + 1) beats
     t.toUser { n: 1 }
     launchAff_ do
@@ -2149,7 +2168,7 @@ main = do
     parent <- newScope Nothing Active
     child <- newScope (Just parent) Active
     beats <- Ref.new 0
-    t <- inScope child (unwrap (ticks { ms: 10.0 } (blankStatus @"tick") :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
+    t <- inScope child (unwrap (ticks { ms: 10.0 } (unshown @"tick") :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
     t.fromUser \_ -> Ref.modify_ (_ + 1) beats
     t.toUser { n: 1 }
     launchAff_ do

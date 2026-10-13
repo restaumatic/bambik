@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PhotoGalleryViewModel (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
-import PUI (blankStatus, fold, foreach, joined, looped, suffixed, with)
+import PUI (fold, foreach, joined, looped, suffixed, unshown, with)
 import PUI.Web (each, staticText, text, textAt)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (body, divider, drawer, headline2, imageList, imageListItem, imagePane, list, listItem, listOf, overline, topAppBar)
@@ -18,7 +18,7 @@ photoGalleryMDC2 =
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
         ( Semigroupoid.do
           listOf @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices (span (textAt @"name")) # joined @"opened"
-          blankStatus @"opened" # fold openAlbum # suffixed ( divider $ RecordToRecord.do
+          unshown @"opened" # fold openAlbum # suffixed ( divider $ RecordToRecord.do
             ( list RecordToRecord.do
               listItem $ staticText "Every photo is an SVG"
               listItem $ staticText "developed from its caption"

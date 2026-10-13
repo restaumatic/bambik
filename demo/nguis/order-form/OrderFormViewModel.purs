@@ -1,4 +1,4 @@
-module OrderFormViewModel (deliveryAddress, distanceLine, distanceOf, estimateDistance, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine) where
+module OrderFormViewModel (deliveryAddress, distanceLine, distanceOf, estimateDistance, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine) where
 
 import Prelude ((<>), ($), (==), (/=), bind, const, discard, pure, show)
 
@@ -118,6 +118,21 @@ orderLine
      }
   -> String
 orderLine r = "Order " <> r."Identifier"."Short ID"
+
+orderLoadedLine
+  :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+     , "Fulfillment" :: { "Address" :: String
+                        , "Mode" :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+                        , "Table" :: String
+                        , "Time" :: String
+                        , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+                        }
+     , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+     , "Kitchen" :: { "Remarks" :: String }
+     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     }
+  -> String
+orderLoadedLine r = "Loaded order " <> r."Identifier"."Short ID" <> " for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name"
 
 summaryLine
   :: { "Customer" :: { "First name" :: String, "Last name" :: String }

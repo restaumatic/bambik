@@ -8,7 +8,7 @@ import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action, atCase, blankStatus, fold, foreach, joined, looped, subChoice)
+import PUI (action, atCase, fold, foreach, joined, looped, subChoice, unshown)
 import PUI.Web.Fluent (body, button, indeterminateLinearProgress, messageBar, textField)
 import PUI.Web (attrWith, clicked, text, (:=))
 import PUI.Web.HTML (li, ul)
@@ -18,7 +18,7 @@ crudFluent :: Effect Unit
 crudFluent =
   body $ Semigroupoid.do
     indeterminateLinearProgress # action loadPeopleCatalogue
-    blankStatus @"People loaded" # fold identity
+    unshown @"People loaded" # fold identity
     ( Semigroupoid.do
       textField @"Filter prefix (surname)" {}
       textField @"Name" {}
@@ -39,7 +39,7 @@ crudFluent =
         indeterminateLinearProgress # action updatePerson # atCase @"Update"
         indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
       VariantToRecord.do
-        blankStatus @"Person picked" # fold pick
+        unshown @"Person picked" # fold pick
         messageBar @"Person created" personCreatedLine # fold identity
         messageBar @"Person not created" personNotCreatedLine # fold identity
         messageBar @"Person updated" personUpdatedLine # fold identity

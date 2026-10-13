@@ -1,4 +1,4 @@
-module InboxViewModel (deletionPane, mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, inboxZeroLine, openMessage, requestDelete, deleteOpened, keepMessages, composeMessage, sortBySender, sortBySubject, sortUnreadFirst, messageDeletedLine, messageComposedLine) where
+module InboxViewModel (deletionPane, mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, inboxZeroLine, openMessage, requestDelete, deleteOpened, keepMessages, composeMessage, sortBySender, sortBySubject, sortUnreadFirst) where
 
 import Prelude ((<<<), (<>), (+), (==), comparing, const, map, max, not, show)
 
@@ -278,27 +278,3 @@ deletionPane
      , silent :: {}
      ]
 deletionPane m = match { confirming: \_ -> .confirming m, silent: \_ -> .silent {} } m.deletion
-
-messageDeletedLine
-  :: { deletion :: [ confirming :: {}, silent :: {} ]
-     , messages :: Array { body :: String
-                         , id :: Int
-                         , sender :: String
-                         , status :: [ open :: {}, read :: {}, unread :: {} ]
-                         , subject :: String
-                         }
-     }
-  -> String
-messageDeletedLine { messages } = if length messages == 0 then "Deleted the last message" else "Deleted, " <> show (length messages) <> " messages left"
-
-messageComposedLine
-  :: { deletion :: [ confirming :: {}, silent :: {} ]
-     , messages :: Array { body :: String
-                         , id :: Int
-                         , sender :: String
-                         , status :: [ open :: {}, read :: {}, unread :: {} ]
-                         , subject :: String
-                         }
-     }
-  -> String
-messageComposedLine { messages } = "Composed Draft " <> show (foldl max 0 (map _.id messages))

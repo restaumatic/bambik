@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (blankStatus, fold, joined, looped, prefixed, with)
+import PUI (fold, joined, looped, prefixed, unshown, with)
 import PUI.Web ((<+>), choice, clWhen, pane, text, textAt)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (body, button, caption, filledTextField, listOf, segmentedButton)
@@ -30,9 +30,9 @@ todoListMDC2 =
          ) {} visibleEntries (span (textAt @"title") # clWhen isCompleted "todo-done") # joined @"Todo toggled"
       button @"Clear completed" {}
     VariantToRecord.do
-      blankStatus @"Add" # fold addTodo
-      blankStatus @"Todo toggled" # fold toggleTodo
-      blankStatus @"Clear completed" # fold clearCompleted
+      unshown @"Add" # fold addTodo
+      unshown @"Todo toggled" # fold toggleTodo
+      unshown @"Clear completed" # fold clearCompleted
   # looped
     @( "What needs to be done?" :: String
      , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }

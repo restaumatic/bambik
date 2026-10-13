@@ -145,8 +145,8 @@ How each kind takes its business meaning:
   it is decided where the case is consumed — the fold's handler, the
   status's copy function. When two buttons would share one handler,
   keep two business cases and apply the handler in each case's fold
-  (checkout's `blankStatus @"Next" # fold stepTo`,
-  `blankStatus @"Back" # fold stepTo`).
+  (checkout's `unshown @"Next" # fold stepTo`,
+  `unshown @"Back" # fold stepTo`).
 - **Statuses** are labelled with the case they show and take its copy
   function: `snackbar @"booked" bookedLine`. Mutually exclusive outcomes
   are sibling statuses in one `VariantToRecord.do`, each owning its
@@ -189,14 +189,14 @@ for:
 | displays after a stage whose row flows on | `slider @"Split between" {} # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch |
 | a list element echoing the row it shows | `prefixed (listItem $ text flightLine) identity # dispatched …` | departures, scoreboard |
 | content that waits for the user to confirm | `confirmed "Refund" "Refund the customer?" $ …` | cashbox |
-| an event folded into the model | `blankStatus @"Add" # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
+| an event folded into the model | `unshown @"Add" # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
-| a periodic occurrence | `blankStatus @"Clock ticked" # ticks tickPeriod` | stopwatch, timer |
+| a periodic occurrence | `unshown @"Clock ticked" # ticks tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @celsius {} # settled fromCelsius` | temperature-converter |
 | effects on the buttons' cases, the other events passing | `( VariantToVariant.do { indeterminateLinearProgress # action createPerson # atCase @"Create"; … } ) # subChoice`, every action typed at the block's outcome row, every outcome folded once by its status | crud |
-| an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `blankStatus @"Forecast fetched" # fold identity` | weather |
+| an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `unshown @"Forecast fetched" # fold identity` | weather |
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
-| a fold nothing needs telling about | `blankStatus @"Todo toggled" # fold toggleTodo`, `blankStatus @"Clock ticked" # fold tick` | todo-list, timer, stopwatch |
+| a fold nothing needs telling about | `unshown @"Todo toggled" # fold toggleTodo`, `unshown @"Clock ticked" # fold tick` | todo-list, timer, stopwatch |
 
 Content of the panes and of `confirmed` must output `{}`. An
 assembly that emits something you mean to drop is dropped **in
@@ -227,8 +227,8 @@ Semigroupoid.do
     button @"Add" {}
     listOf @"Todo toggled" … # joined @"Todo toggled"   --   an event with a payload of its own, joined with the model
   VariantToRecord.do                          -- +→× the folds, one per case, each opened by its status
-    blankStatus @"Add" # fold addTodo
-    blankStatus @"Todo toggled" # fold toggleTodo
+    unshown @"Add" # fold addTodo
+    unshown @"Todo toggled" # fold toggleTodo
     ( Semigroupoid.do                         --   an effect on a case, folded by its own outcomes
       indeterminateLinearProgress # action createPerson
       VariantToRecord.do
@@ -241,11 +241,15 @@ A fold opens with its status, `snackbar @l line # fold f`, as an effect
 opens with its progress indicator (`indeterminateLinearProgress # action
 f`): every line, whatever its shape, starts with a UI component.
 The status names the case — its label is the event's, human copy like
-`"Person created"` — and shows the **outcome**: the fold happens first,
-and the status is fed the row it released, so its copy function is typed
-at the model (`personCreatedLine :: model -> String`) and narrates what
-the handler decided. A heartbeat nobody needs told about opens with
-`blankStatus @"Clock ticked"`, the faceless status. A fold is memoryless: a replaying emitter's payload is the row it was fed, an event
+`"Person created"` — and shows the **event**, never the fold's result:
+it is fed the occurrence as it arrives, so its copy function is typed at
+the payload and everything it says must be in the event. A status with
+copy therefore stands after a `+→+` block that returned what it tells
+(crud's action returns the model, so `personCreatedLine :: model ->
+String`). A command straight from an emitter has nothing to tell that
+the displays do not already show, and a heartbeat nobody needs told
+about has nothing at all: both open with the case unshown, `unshown @l`
+(`unshown @"Count" # fold increment`). A fold is memoryless: a replaying emitter's payload is the row it was fed, an event
 with something of its own arrives `# joined @l` with that row as
 `{ event, model }`, and an effect returns the model. So every handler has
 the model in hand and the loop's memory stays at the emitters and in
@@ -544,7 +548,7 @@ text is computed, a chrome line nothing.
   row where it is introduced.** For a loop closed with a model that is
   the seed line (`# looped @( counted :: Int ) # with freshCount`; inbox's two
   fields, one per line). A load action before the knot
-  emits its outcome as an event folded into the loop (`blankStatus @"People
+  emits its outcome as an event folded into the loop (`unshown @"People
   loaded" # fold identity`, crud and order-form), so the
   knot declares the model like any other. Every editor, selector, list and field label is checked
   against it — so a stored field is read by its label
@@ -662,16 +666,16 @@ text is computed, a chrome line nothing.
   literal.
 - **A preset is a field update**, even one that reads nothing:
   `beginTiming { model: sw } = sw { phase = .timing {} }` (stopwatch),
-  `blankStatus @"Reset" # fold restarted` (timer). A constant
-  replaces the model only as a whole, and in a fold: `blankStatus @"New
-  game" # fold (const openingPosition)` (tic-tac-toe).
+  `unshown @"Reset" # fold restarted` (timer). A constant
+  replaces the model only as a whole, by a reset: `unshown @"New
+  game" # reset openingPosition` (tic-tac-toe).
 - **One record per business function.** Records that travel together
   are one row; let field names carry the roles positional arguments
   lose. A fold handler is no exception: a joined event arrives as one
   record, the payload under `event` and the model under `model`:
 
   ```purescript
-  blankStatus @"Todo toggled" # fold toggleTodo
+  unshown @"Todo toggled" # fold toggleTodo
   toggleTodo :: { event :: Int, model :: { todos :: …, … } } -> { todos :: …, … }
   toggleTodo { event: i, model: m@{ todos } } = m { todos = … }
   ```
@@ -685,14 +689,15 @@ text is computed, a chrome line nothing.
   (`createPerson :: model -> Aff [ "Person created" :: model, "Person not
   created" :: model ]`), so each outcome's fold is `snackbar @"Person
   created" personCreatedLine # fold identity`; a constant replacing the
-  model is `blankStatus @"New game" # fold (const
-  openingPosition)`. A status's copy function takes the handler's
-  result, the model.
-- **A status only where a real app would tell.** A fold opens with a
-  visible status for a backend outcome, money moved or a destructive
-  action (crud's `snackbar @"Person created" personCreatedLine # fold
-  identity`, cashbox's refunds). Direct manipulation the screen already
-  shows folds silently: `blankStatus @"Todo toggled" # fold toggleTodo`.
+  model is `unshown @"New game" # reset openingPosition`. A status's copy function takes the event's
+  payload, never the handler's result.
+- **A status only after a `+→+` block.** A fold opens with a visible
+  status where a `+→+` block returned what the status tells, an
+  action's outcome (crud's `snackbar @"Person created"
+  personCreatedLine # fold identity`). A command straight from an
+  emitter folds silently, whatever it does, since the screen already
+  shows its result (counter's count, cashbox's till, inbox's list):
+  `unshown @"Todo toggled" # fold toggleTodo`.
 - **A handler carries no field it does not touch.** Group buttons into
   stages by the fields their handlers touch (circle-drawer keeps undo and
   redo apart from the canvas click). An identity handler means the
@@ -861,7 +866,7 @@ in the message, the one the line wants and the one it got, and look
 | the model row against `()`, `while matching label "Count"` | the status or fold of that case | a display stands as a line of its own before the emitter, so it passes on `{}` and the emitter replays it | make it `prefixed (…) $` over the line after it (counter) |
 | `()` against `( event :: …, model :: … )`, `while matching label "Start"` | the fold of that case | an emitter inside a pane lacks `# joined @"Start"`, so it replays the pane's payload instead of the model | add `# joined` to the emitter (stopwatch) |
 | `( "Cout" :: … )` against `( "Count" :: … )` | the fold | one case spelled two ways | spell the case the same on the emitter and its fold |
-| `( "Reset" :: … )` against `( … )` | the emitter | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `blankStatus @"Clock ticked" # fold tick`), or remove the emitter |
+| `( "Reset" :: … )` against `( … )` | the emitter | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `unshown @"Clock ticked" # fold tick`), or remove the emitter |
 | `( size :: Int … )` against `( … )` | the seed line | a business function names a field the model does not have | copy the signature from the hole its line reports ([Writing order](#writing-order)) |
 
 ## When it does not propagate

@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blank, blankStatus, fold, foreach, joined, looped, settled, with)
+import PUI (blank, fold, foreach, joined, looped, settled, unshown, with)
 import PUI.Web.Bootstrap (body, button, sliderLive)
 import PUI.Web (attrAt, attrWith, cl, inCaseAt, onClickedXY, (:=))
 import PUI.Web.HTML (div)
@@ -33,9 +33,9 @@ circleDrawerBootstrap =
         button @"Undo" {}
         button @"Redo" {} ) # cl "d-flex" # cl "gap-2" )
     VariantToRecord.do
-      blankStatus @"Canvas clicked" # fold selectOrAddCircle
-      blankStatus @"Undo" # fold undo
-      blankStatus @"Redo" # fold redo
+      unshown @"Canvas clicked" # fold selectOrAddCircle
+      unshown @"Undo" # fold undo
+      unshown @"Redo" # fold redo
   # looped
     @( circles :: Array { x :: Number, y :: Number, r :: Number }
      , selected :: [ chosen :: { index :: Int }, none :: {} ]

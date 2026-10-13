@@ -5,7 +5,7 @@ import Prelude ((#), ($), (<>), (>>>), Unit, const)
 import ColorMixerViewModel (applyPreset, duskViolet, hexLine, mixedColor, palette, rgb, rgbLine)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (blank, blankStatus, fold, foreach, joined, looped, prefixed, with)
+import PUI (blank, fold, foreach, joined, looped, prefixed, unshown, with)
 import PUI.Web (attrAt, attrWith, clicked, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, sliderLive)
@@ -26,7 +26,7 @@ colorMixerMDC3 =
           @( name :: String
            , mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
            ) (const palette) ) # joined @"Preset applied"
-    blankStatus @"Preset applied" # fold applyPreset
+    unshown @"Preset applied" # fold applyPreset
   # looped
     @( "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
      , "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

@@ -2,14 +2,14 @@ module CashboxMDC3 (cashboxMDC3) where
 
 import Prelude ((#), ($), Unit, identity)
 
-import CashboxViewModel (balanceLine, courierPaidOutLine, customerRefundedLine, depositTakenLine, openedTill, payCourier, payoutLine, refundLine, refundStandard, takeDeposit)
+import CashboxViewModel (balanceLine, openedTill, payCourier, payoutLine, refundLine, refundStandard, takeDeposit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (atCase, fold, looped, prefixed, subChoice, toCase, with)
+import PUI (atCase, fold, looped, prefixed, subChoice, toCase, unshown, with)
 import PUI.Web (text)
-import PUI.Web.MDC3 (body, bodyLarge, button, headlineSmall, confirmed, snackbar)
+import PUI.Web.MDC3 (body, bodyLarge, button, headlineSmall, confirmed)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cashboxMDC3 :: Effect Unit
@@ -23,7 +23,7 @@ cashboxMDC3 =
       ( confirmed "Refund" "Refund the customer?" $ bodyLarge $ text refundLine ) # atCase @"Refund a customer" # toCase @"Customer refunded" identity
       ( confirmed "Pay" "Pay the courier?" $ bodyLarge $ text payoutLine ) # atCase @"Pay the courier" # toCase @"Courier paid out" identity ) # subChoice
     VariantToRecord.do
-      snackbar @"Customer refunded" customerRefundedLine # fold refundStandard
-      snackbar @"Courier paid out" courierPaidOutLine # fold payCourier
-      snackbar @"Take a deposit" depositTakenLine # fold takeDeposit
+      unshown @"Customer refunded" # fold refundStandard
+      unshown @"Courier paid out" # fold payCourier
+      unshown @"Take a deposit" # fold takeDeposit
   # looped @( balance :: Number ) # with openedTill

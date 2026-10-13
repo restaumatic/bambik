@@ -6,6 +6,37 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
+## 2026-10-13
+
+- **A fold's status shows the event, never the fold's result.** `fold f
+  status` feeds the status the occurrence as it arrives, so its copy
+  function is typed at the payload; since 2026-10-07 it had been fed
+  `f` of the payload under the same case, which put a second row
+  variable and a second `Cons` in the signature. Whatever a status says
+  must therefore be in the event: a status with copy stands after a
+  `+→+` block that returned what it tells (crud's actions, payment,
+  ticker reading the fetched price), and a command straight from an
+  emitter folds under `blankStatus`, since its result is already on
+  screen. Counter, ticket-dispenser, cashbox, checkout, inbox and
+  shopping-cart drop their snackbars (and their copy functions);
+  writing.md's *A status only where a real app would tell* (backend
+  outcome, money moved, destructive action) becomes *A status only after
+  a `+→+` block*.
+- `blankStatus @l` is renamed `unshown @l`: it owns a case and shows
+  nothing, whether the case comes from an emitter or a `+→+` block, so
+  "status" claimed an origin it does not have.
+- Demos: order-form's load is told by a snackbar (`orderLoadedLine`,
+  read from the loaded order); espresso-bar's Place order runs a `+→+`
+  action, `placeOrder`, returning `"Order placed"` with a ticket
+  (`{ number, "Your name" }`) its snackbar reads, in place of a snackbar
+  that restated the model; the order resets the form,
+  `# reset usualOrder`. Demo views use 2-space indentation steps
+  throughout.
+- **`reset x`** is `fold (const x)`, opened by its status like `fold`
+  (`unshown @"New game" # reset openingPosition`); every `fold (const …)`
+  in the demos (tic-tac-toe, quiz, shopping-cart, espresso-bar) becomes
+  a reset.
+
 ## 2026-10-11, last
 
 - **`bracketed`, `updated`, `applied`, `every`, `edited`/`editedAt` and

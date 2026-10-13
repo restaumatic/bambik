@@ -14,7 +14,7 @@ potluckMDC3 =
   body $ Semigroupoid.do
     prefixed (bodyMedium (text guestCountLine)) $ group @"Guests" $ list $
       ( listItem $ prefixed (titleMedium (text guestName)) $ segmentedButtonUnpicked @"Dish" @"chosen"
-          (choice @"Salad" <+> choice @"Lasagna" <+> choice @"Pavlova") ) # acted @"name"
+        (choice @"Salad" <+> choice @"Lasagna" <+> choice @"Pavlova") ) # acted @"name"
     prefixed (headlineSmall (text menuLine) # pane @"complete"
       @( complete :: { dishes :: Array { name :: String, dish :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ] } }
        , waiting :: { remaining :: Array String }

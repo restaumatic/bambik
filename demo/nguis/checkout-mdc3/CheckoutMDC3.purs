@@ -2,14 +2,14 @@ module CheckoutMDC3 (checkoutMDC3) where
 
 import Prelude ((#), ($), Unit)
 
-import CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderPlacedLine, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo)
+import CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blankStatus, fold, joined, looped, prefixed, suffixed, with)
+import PUI (fold, joined, looped, prefixed, suffixed, unshown, with)
 import PUI.Web (pane, provided, text)
-import PUI.Web.MDC3 (body, bodyMedium, button, snackbar)
+import PUI.Web.MDC3 (body, bodyMedium, button)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkoutMDC3 :: Effect Unit
@@ -33,9 +33,9 @@ checkoutMDC3 =
          ) previousOf # joined @"Back"
       button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep # joined @"Place order"
     ( VariantToRecord.do
-      blankStatus @"Next" # fold stepTo
-      blankStatus @"Back" # fold stepTo
-      snackbar @"Place order" orderPlacedLine # fold orderPlaced ) # suffixed ( bodyMedium (text placedLine) # pane @"placed"
+      unshown @"Next" # fold stepTo
+      unshown @"Back" # fold stepTo
+      unshown @"Place order" # fold orderPlaced ) # suffixed ( bodyMedium (text placedLine) # pane @"placed"
         @( pending :: {}
          , placed :: { item :: String, address :: String, card :: String }
          ) orderStatus )

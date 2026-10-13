@@ -176,7 +176,7 @@ replaying f src = dimap (\r -> Tuple r r) (\(Tuple _ r) -> inj (Proxy @l) (f r))
 -- | one record, `{ event, model }`, under the same case. So a list pick, a
 -- | canvas click or a tick reaches the fold with the model in hand, and its
 -- | handler is one function of one record (`listOf … # joined @"toggled"`,
--- | `blankStatus @"Todo toggled" # fold toggleTodo` with `toggleTodo ::
+-- | `unshown @"Todo toggled" # fold toggleTodo` with `toggleTodo ::
 -- | { event :: Int, model :: { … } } -> { … }`, todo-list). `replaying @l f`
 -- | is the degenerate case where the occurrence carries nothing of its
 -- | own.

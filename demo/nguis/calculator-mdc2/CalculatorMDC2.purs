@@ -6,7 +6,7 @@ import CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operato
 import Data.Array (elem)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (blankStatus, fold, foreach, joined, looped, prefixed, with)
+import PUI (fold, foreach, joined, looped, prefixed, unshown, with)
 import PUI.Web (attrWith, clicked, pane, text, textAt, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body)
@@ -23,7 +23,7 @@ calculatorMDC2 =
           text faultLine # pane @"faulty" @( sound :: { entry :: String }, faulty :: {} ) readout
           textAt @"entry" # pane @"sound" readout ) $ ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
         clicked @"Key entered" @"key" ( div >>> attrWith "style" keyFace $ textAt @"key" ) # foreach @"key" @( key :: String ) (const keyPad) ) # joined @"Key entered"
-      blankStatus @"Key entered" # fold pressKey
+      unshown @"Key entered" # fold pressKey
     ) # looped
       @( total :: Number
        , operation :: [ pending :: { key :: String }, none :: {} ]

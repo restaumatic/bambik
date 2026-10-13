@@ -83,7 +83,7 @@ module Data.Profunctor.Row.VariantToRecord
   , bind
   , discard
   , subRetaining
-  , blankStatus
+  , unshown
   )
   where
 
@@ -146,11 +146,13 @@ subRetaining g =
     (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
     g
 
--- | The **blank status**: the faceless `+→×` leaf owning case `l` and
--- | showing nothing of it — `blank` with a name, so it can open a fold
--- | (`blankStatus @"Clock ticked" # fold tick`, a heartbeat nobody needs
--- | told about), or declare an outcome case of an action that is only
--- | merged, never folded, where the merge needs the case named and there
--- | is no face to name it. `lcmap (const {}) identity`, like `blank`.
-blankStatus :: forall @l p a v. Cons l a () v => Profunctor p => Category p => p [ | v ] {}
-blankStatus = lcmap (const {}) identity
+-- | Case `l`, **unshown**: the faceless `+→×` leaf owning case `l` and
+-- | showing nothing of it — `blank` with a name — wherever the case came
+-- | from, an emitter (`unshown @"Count" # fold increment`) or a `+→+`
+-- | block. It opens a fold or a tick source whose occurrence nothing needs
+-- | to tell (`unshown @"Clock ticked" # ticks tickPeriod`), or declares an
+-- | outcome case of an action that is only merged, never folded, where
+-- | the merge needs the case named and there is no face to name it.
+-- | `lcmap (const {}) identity`, like `blank`.
+unshown :: forall @l p a v. Cons l a () v => Profunctor p => Category p => p [ | v ] {}
+unshown = lcmap (const {}) identity

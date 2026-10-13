@@ -337,12 +337,12 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 
 - **counter** — one display reading one function
   (`prefixed (headline4 (text countLine)) $ button @"Count" {}`), one fold opened by
-  its status (`snackbar @"Count" countedLine # fold increment`), over a
+  its status (`unshown @"Count" # fold increment`), over a
   model of `{ counted :: Int }`.
 - **timer** — two displays of different sorts,
   `linearProgress elapsedFraction` and `text progressLine`,
-  both computed from the model, neither stored; `blankStatus @"Clock
-  ticked" # ticks tickPeriod` drives it through `blankStatus @"Clock
+  both computed from the model, neither stored; `unshown @"Clock
+  ticked" # ticks tickPeriod` drives it through `unshown @"Clock
   ticked" # fold tick`.
 - **temperature-converter** — two editors kept consistent with
   `# settled fromCelsius` / `# settled fromFahrenheit`.
@@ -351,13 +351,13 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 - **checkout** — a wizard: the step is a model field, Next/Back each emit
   their own case `# joined` with the model, and one `stepTo` folds both.
 - **crud** — a load action before the knot, `indeterminateLinearProgress #
-  action loadPeopleCatalogue`, its outcome folded in by `blankStatus @"People
+  action loadPeopleCatalogue`, its outcome folded in by `unshown @"People
   loaded" # fold identity`, run by `body`'s one feed of
   `{}`; create/update/delete are chains in the fold block, each an action
   followed by the folds of its two outcomes, adopted `# atCase` under its
   button's case.
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
-  `blankStatus @"New game" # fold (const openingPosition)` the reset.
+  `unshown @"New game" # reset openingPosition` the reset.
 - **order-form** — all four shapes on one screen: a `looped` form in
   labelled groups inside the app's loop, a choice with a field per case
   (`tabBar @"Mode"` and its `inCaseAt` panes), the live summary, a

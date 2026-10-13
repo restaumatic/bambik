@@ -57,5 +57,7 @@ recordQuote
   -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
 recordQuote { event: { price }, model } = model { quotes = snoc model.quotes price }
 
-quoteFetchedLine :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } -> String
-quoteFetchedLine { quotes } = "Quote received" <> maybe "" (\p -> ": " <> show p) (last quotes)
+quoteFetchedLine
+  :: { event :: { price :: Number }, model :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } }
+  -> String
+quoteFetchedLine { event: { price } } = "Quote received: " <> show price

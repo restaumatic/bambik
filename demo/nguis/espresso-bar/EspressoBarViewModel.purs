@@ -1,11 +1,14 @@
-module EspressoBarViewModel (brewedLine, caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, theUsual, usualOrder) where
+module EspressoBarViewModel (caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, orderPlacedLine, placeOrder, theUsual, usualOrder) where
 
-import Prelude (min, otherwise, (*), (+), (-), (<>), (==))
+import Prelude (bind, discard, min, otherwise, pure, show, ($), (*), (+), (-), (<>), (==))
 
 import Data.Number.Format (fixed, toStringWith)
 import Data.String (trim)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
+import Effect.Aff (Aff, Milliseconds(..), delay)
+import Effect.Class (liftEffect)
+import Effect.Random (randomInt)
 
 usualOrder
   :: { "Decaf" :: Boolean
@@ -152,33 +155,6 @@ cupLine
   -> String
 cupLine order = "Your cup: " <> summaryText order
 
-brewedLine
-  :: { "Decaf" :: Boolean
-     , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
-     , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
-     , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
-                 ]
-     , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
-     , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
-     , "Sugar" :: { current :: Number
-                  , max :: Number
-                  , min :: Number
-                  , step :: [ continuous :: {}, discrete :: Number ]
-                  }
-     , "Takeaway cup" :: Boolean
-     , "Your name" :: String
-     }
-  -> String
-brewedLine order =
-  "Coming right up" <> forCustomer { "Your name": order."Your name" }
-    <> ": " <> summaryText { "Drink": order."Drink", "Size": order."Size", "Milk": order."Milk", "Roast": order."Roast", "Sugar": order."Sugar", "Extra shot": order."Extra shot", "Decaf": order."Decaf", "Takeaway cup": order."Takeaway cup", "Loyalty": order."Loyalty" }
-    <> (if order."Mark as favorite" then " ★" else "")
-
 forCustomer :: forall r1. { "Your name" :: String | r1 } -> String
 forCustomer { "Your name": customer } = case trim customer of
   "" -> ""
@@ -279,3 +255,33 @@ noSugar = 0.0
 
 maxSugar :: Number
 maxSugar = 4.0
+
+orderPlacedLine :: { "Your name" :: String, number :: Int } -> String
+orderPlacedLine order = "Order #" <> show order.number <> " placed, coming right up" <> forCustomer order
+
+placeOrder
+  :: { "Decaf" :: Boolean
+     , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
+     , "Extra shot" :: Boolean
+     , "Loyalty" :: [ guest :: {}, member :: {} ]
+     , "Mark as favorite" :: Boolean
+     , "Milk" :: [ "no milk" :: {}
+                 , "with almond milk" :: {}
+                 , "with oat milk" :: {}
+                 , "with whole milk" :: {}
+                 ]
+     , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
+     , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
+     , "Sugar" :: { current :: Number
+                  , max :: Number
+                  , min :: Number
+                  , step :: [ continuous :: {}, discrete :: Number ]
+                  }
+     , "Takeaway cup" :: Boolean
+     , "Your name" :: String
+     }
+  -> Aff [ "Order placed" :: { "Your name" :: String, number :: Int } ]
+placeOrder order = do
+  delay (Milliseconds 800.0)
+  number <- liftEffect $ randomInt 1 99
+  pure $ ."Order placed" { number, "Your name": order."Your name" }

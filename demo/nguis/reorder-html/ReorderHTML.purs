@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action, actedAt, atCase, blankStatus, fold, looped, prefixed, static, with)
+import PUI (action, actedAt, atCase, unshown, fold, looped, prefixed, static, with)
 import PUI.Web (el, staticText, textAt, (:=))
 import PUI.Web.HTML (body, button, dd, div, dl, dt, h3, indeterminateLinearProgress, input, label)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -25,6 +25,6 @@ reorderHTML =
       indeterminateLinearProgress # action rotateAction # atCase @"Rotate"
       indeterminateLinearProgress # action shuffleAction # atCase @"Shuffle"
     VariantToRecord.do
-      blankStatus @"Setlist rotated" # fold identity
-      blankStatus @"Setlist shuffled" # fold identity
+      unshown @"Setlist rotated" # fold identity
+      unshown @"Setlist shuffled" # fold identity
   # looped @( "Setlist" :: Array { id :: String, "Title" :: String } ) # with openingSetlist

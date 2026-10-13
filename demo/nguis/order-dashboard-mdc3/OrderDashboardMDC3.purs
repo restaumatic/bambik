@@ -6,7 +6,7 @@ import DashboardControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import OrderDashboardViewModel (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
-import PUI (blankStatus, fold, looped, prefixed, ticks, with)
+import PUI (fold, looped, prefixed, ticks, unshown, with)
 import PUI.Web ((<+>), choice)
 import PUI.Web.MDC3 (body, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,8 +22,8 @@ orderDashboardMDC3 =
         statTile "Revenue (EUR)" revenue
         gauge "Kitchen load" kitchenLoad
         trendChart "Order flow" orderFlow
-        leaderboard "Top dishes" topDishes ) $ blankStatus @"Orders arrived" # ticks tickPeriod
-      blankStatus @"Orders arrived" # fold ordersArrive
+        leaderboard "Top dishes" topDishes ) $ unshown @"Orders arrived" # ticks tickPeriod
+      unshown @"Orders arrived" # fold ordersArrive
     ) # looped
       @( tick :: Int
        , orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }

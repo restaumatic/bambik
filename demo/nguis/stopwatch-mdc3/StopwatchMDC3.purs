@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blankStatus, fold, foreach, joined, looped, prefixed, suffixed, ticks, with)
+import PUI (fold, foreach, joined, looped, prefixed, suffixed, ticks, unshown, with)
 import PUI.Web (providedAt, text)
 import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC3 (body, button, displaySmall)
@@ -16,17 +16,17 @@ stopwatchMDC3 :: Effect Unit
 stopwatchMDC3 =
   body $ Semigroupoid.do
     prefixed (displaySmall (text elapsedText)) $ RecordToVariant.do
-      blankStatus @"Clock ticked" # ticks tickPeriod
+      unshown @"Clock ticked" # ticks tickPeriod
       button @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase" # joined @"Start"
       button @"Stop" { icon: "stop" } # providedAt @"timing" @"phase" # joined @"Stop"
       button @"Lap" { icon: "flag" } # providedAt @"timing" @"phase" # joined @"Lap"
       button @"Reset" { icon: "replay" } # providedAt @"halted" @"phase" # joined @"Reset"
     ( VariantToRecord.do
-      blankStatus @"Clock ticked" # fold tick
-      blankStatus @"Start" # fold beginTiming
-      blankStatus @"Stop" # fold haltTiming
-      blankStatus @"Lap" # fold recordLap
-      blankStatus @"Reset" # fold clearStopwatch ) # suffixed (ul $ ( li $ text lapLine ) # foreach @"number" @( number :: Int, tenths :: Int ) lapRows)
+      unshown @"Clock ticked" # fold tick
+      unshown @"Start" # fold beginTiming
+      unshown @"Stop" # fold haltTiming
+      unshown @"Lap" # fold recordLap
+      unshown @"Reset" # fold clearStopwatch ) # suffixed (ul $ ( li $ text lapLine ) # foreach @"number" @( number :: Int, tenths :: Int ) lapRows)
   # looped
     @( phase :: [ halted :: {}, timing :: {} ]
      , elapsedTenths :: Int

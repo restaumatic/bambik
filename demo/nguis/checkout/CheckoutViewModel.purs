@@ -1,4 +1,4 @@
-module CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderPlacedLine, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo) where
+module CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo) where
 
 import Prelude ((<>))
 
@@ -119,13 +119,3 @@ orderStatus { item, address, card, status } = match { pending: \_ -> .pending {}
 
 placedLine :: { address :: String, card :: String, item :: String } -> String
 placedLine { item, address, card } = "Order placed: " <> item <> " → " <> address <> " (card " <> card <> ")"
-
-orderPlacedLine
-  :: { address :: String
-     , card :: String
-     , item :: String
-     , status :: [ pending :: {}, placed :: {} ]
-     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
-     }
-  -> String
-orderPlacedLine { item, card } = "Placed the order for " <> item <> ", paid with card " <> card

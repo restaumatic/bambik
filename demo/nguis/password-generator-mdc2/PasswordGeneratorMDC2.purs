@@ -5,7 +5,7 @@ import Prelude (identity, Unit, (#), ($), (>>>))
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PasswordGeneratorViewModel (passwordText, samplePassword, strengthLine, strongMixRecipe)
-import PUI (action, atCase, blankStatus, fold, looped, prefixed, with)
+import PUI (action, atCase, fold, looped, prefixed, unshown, with)
 import PUI.Web (attr, text)
 import PUI.Web.HTML (code)
 import PUI.Web.MDC2 (body, body2, button, indeterminateLinearProgress, slider, toggleSwitch)
@@ -23,7 +23,7 @@ passwordGeneratorMDC2 =
       body2 (text strengthLine)
       code >>> attr "style" "word-break: break-all;" $ text passwordText ) $ button @"Generate" {}
     indeterminateLinearProgress # action samplePassword # atCase @"Generate"
-    blankStatus @"Password generated" # fold identity
+    unshown @"Password generated" # fold identity
   # looped
     @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
      , "Uppercase letters" :: Boolean

@@ -45,7 +45,7 @@ and emitters of a catalogue — are in the design-system module header
 | seeded, with no loop of its own | `# with @{ … } invitation` | potluck | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form | writing.md *App shape* |
 | an action that retries until it succeeds | the retry inside the action's `Aff` (`chargeFlaky`), the outcome one case | payment | writing.md *Business functions* |
-| a wizard's step, a running maximum, a counter | a model field, folded or normalized (`blankStatus @"Next" # fold stepTo`, `# settled raiseTop`, `snackbar @"Take a number" ticketTakenLine # fold issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |
+| a wizard's step, a running maximum, a counter | a model field, folded or normalized (`unshown @"Next" # fold stepTo`, `# settled raiseTop`, `unshown @"Take a number" # fold issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |
 
 ## Showing data
 
@@ -96,13 +96,14 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| a button stepping the model | `button @"Count" {}` and `snackbar @"Count" countedLine # fold increment` | counter, todo-list | writing.md *Stages* |
+| a button stepping the model | `button @"Count" {}` and `unshown @"Count" # fold increment` | counter, todo-list | writing.md *Stages* |
 | a button with a fixed payload | `button @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
-| an event folded into the model | `snackbar @"Customer refunded" customerRefundedLine # fold refundStandard`, each fold opened by its status, silent where nothing needs telling (`blankStatus @"Cell claimed" # fold claimCell`), the loop's folds merged in `VariantToRecord.do` | cashbox, tic-tac-toe | writing.md *Code style* → *Business functions* |
+| an event folded into the model | `unshown @"Customer refunded" # fold refundStandard`, each fold opened by its status, which tells only what a `+→+` block returned (`snackbar @"Person created" personCreatedLine # fold identity`), the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
 | a clicked element naming itself | `clicked @"Cell claimed" @"key" (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
 | an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"finished" quizPhase` | stopwatch; quiz, inbox | writing.md *Conditional visibility* |
-| two buttons sharing one handler | `blankStatus @"Next" # fold stepTo`, `blankStatus @"Back" # fold stepTo` — two cases, one handler applied in each fold | checkout | `PUI` |
+| an event replacing the model whole | `unshown @"New game" # reset openingPosition` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
+| two buttons sharing one handler | `unshown @"Next" # fold stepTo`, `unshown @"Back" # fold stepTo` — two cases, one handler applied in each fold | checkout | `PUI` |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
 | some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
 | an event carrying something of its own | `listOf @"toggled" … # joined @"toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, stopwatch | writing.md *Stages* |
@@ -115,9 +116,9 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- | --- |
 | an `Aff` action on an event | `indeterminateLinearProgress # action createPerson # atCase @"Create"`, in the `VariantToVariant.do` of the loop's actions, typed at the block's outcome row | crud, reorder | writing.md *Business functions* |
 | … opened by its outcome statuses | `( VariantToRecord.do { snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker | writing.md *Business functions* |
-| an action at load | `indeterminateLinearProgress # action loadOrder` then `blankStatus @"Order loaded" # fold identity` | order-form, crud | writing.md *App shape* |
+| an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine # fold identity` (or `unshown @"People loaded" # fold identity` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
-| a periodic occurrence | `blankStatus @"Clock ticked" # ticks tickPeriod` and `blankStatus @"Clock ticked" # fold tick` | timer, stopwatch, scoreboard | `PUI` |
+| a periodic occurrence | `unshown @"Clock ticked" # ticks tickPeriod` and `unshown @"Clock ticked" # fold tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
 | narrate an event while passing it on | `snackbar @"Charge card" chargingLine # observed` | payment, inbox | `PUI` |
 | confirm before the flow continues | `confirmed "Refund" "Refund the customer?" $ …` | cashbox | writing.md *Modals* |

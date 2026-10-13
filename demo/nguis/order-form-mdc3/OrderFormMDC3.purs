@@ -6,8 +6,8 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import OrderFormViewModel (deliveryAddress, distanceLine, distanceOf, estimateDistance, loadOrder, orderLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine)
-import PUI (action, atCase, blankStatus, fold, joined, looped, prefixed, settled, subChoice, suffixed)
+import OrderFormViewModel (deliveryAddress, distanceLine, distanceOf, estimateDistance, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine)
+import PUI (action, atCase, fold, joined, looped, prefixed, settled, subChoice, suffixed, unshown)
 import PUI.Web ((<+>), choice, inCaseAt, pane, provided, text)
 import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,7 +16,7 @@ orderFormMDC3 :: Effect Unit
 orderFormMDC3 =
   body $ Semigroupoid.do
     indeterminateLinearProgress # action loadOrder
-    blankStatus @"Order loaded" # fold identity
+    snackbar @"Order loaded" orderLoadedLine # fold identity
     ( Semigroupoid.do
       ( Semigroupoid.do
         prefixed (headlineSmall $ text orderLine) $ group @"Identifier" $ Semigroupoid.do
@@ -52,7 +52,7 @@ orderFormMDC3 =
            ) submitOrder # atCase @"Submit order"
         indeterminateLinearProgress # action printReceipt # atCase @"Receipt" ) # subChoice
       VariantToRecord.do
-        blankStatus @"Distance estimated" # fold setDistance
+        unshown @"Distance estimated" # fold setDistance
         snackbar @"Order submitted" submittedLine
         snackbar @"Submission failed" rejectionLine
         snackbar @"Receipt printed" receiptLine ) # looped
