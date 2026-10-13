@@ -6,7 +6,19 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-10-13, latest
+## 2026-10-14, latest
+
+- **`replaying` is `joined` at the empty payload.** Its source is pinned
+  to an **occurrence source** — one case carrying `{}`, the row read by
+  `RowToList v1 (Cons c {} Nil)` so the label `c` is determined at the
+  call site — where before any `×→+` component was accepted and its
+  output dropped unread (`\(Tuple _ r) -> f r`), a silent discard the
+  type did not admit to. The body is now `joined @c src` with the
+  `{}` event dropped and the case renamed to `l`, so there is one
+  `first` behind both words and replay is `Strong`'s retention and
+  nothing else; `clicked`/`clickedRow` and the law test are unchanged.
+
+## 2026-10-13
 
 - **The single-label grid.** The two pure shapes carry the same four
   words: `focusField`/`focusCase` (one label, the rest threaded),

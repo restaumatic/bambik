@@ -102,10 +102,11 @@ module Data.Profunctor.Row.RecordToVariant
   where
 
 import Control.Category (identity)
-import Control.Semigroupoid ((>>>))
+import Control.Semigroupoid ((>>>), (<<<))
 import Data.Either (Either(..), either)
+import Data.Function ((#))
 import Data.Lens.Shutter (shutterE)
-import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor (class Profunctor, dimap, rmap)
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class RowLabels, class SharedRecordInputs, class SharedVariantOutputs, splitRow, toCase)
@@ -117,6 +118,7 @@ import Data.Unit (Unit, unit)
 import Data.Variant (case_, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
+import Prim.RowList as RowList
 import Record.Unsafe (unsafeSet)
 import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
@@ -149,19 +151,25 @@ discard
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Replay the last fed row, mapped by `f`, as case `l` on each occurrence of the source.
--- | The source is fed the row it replays, whole. `Strong` retains the row,
--- | `toCase @l` introduces the case over what came back: the source's own
--- | case is consumed, never renamed, since the payload that leaves is the
--- | retained row and not the occurrence.
+-- | The source is fed the row it replays, whole. An **occurrence source**:
+-- | one case carrying `{}`, the row pinned by `RowToList` so the one label is
+-- | read off it — a source with a payload, or with several cases, is a type
+-- | error rather than a silent discard. Derived: `joined` at the empty
+-- | payload, the event dropped and the case renamed to `l`, so replay is
+-- | `Strong`'s retention and nothing else.
 replaying
-  :: forall @l p r v1 k v
+  :: forall @l p r c v1 v2 k v
    . Strong p
   => IsSymbol l
+  => IsSymbol c
+  => RowToList v1 (RowList.Cons c {} RowList.Nil)
+  => Cons c {} () v1
+  => Cons c { event :: {}, model :: { | r } } () v2
   => Cons l k () v
   => ({ | r } -> k)
   -> p { | r } [ | v1 ]
   -> p { | r } [ | v ]
-replaying f src = toCase @l (dimap (\r -> Tuple r r) (\(Tuple _ r) -> f r) (first src))
+replaying f src = joined @c src # rmap (on (Proxy @c) (inj (Proxy @l) <<< f <<< _.model) case_)
 
 -- | An event joined with the row its emitter was fed: the `×→+` stage's
 -- | `Strong` retention, exposed. `first` around the source — the fed row
