@@ -14,9 +14,9 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 colorMixerMDC2 :: Effect Unit
 colorMixerMDC2 =
   body $ Semigroupoid.do
-    sliderLive @"Red" {}
-    sliderLive @"Green" {}
-    sliderLive @"Blue" {}
+    sliderLive @"Red"
+    sliderLive @"Green"
+    sliderLive @"Blue"
     prefixed ( RecordToRecord.do
       body2 $ text hexLine
       body2 $ text rgbLine ) $ ( div $ Semigroupoid.do

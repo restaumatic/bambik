@@ -15,10 +15,10 @@ flightBookerFluent :: Effect Unit
 flightBookerFluent =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      dropdown @"Flight type" {}
+      dropdown @"Flight type"
         (choice @"one-way" <+> choice @"return")
-      textField @"Start date (DD.MM.YYYY)" {}
-      textField @"Return date (DD.MM.YYYY)" {} # inCaseAt @"return" @"Flight type"
+      textField @"Start date (DD.MM.YYYY)"
+      textField @"Return date (DD.MM.YYYY)" # inCaseAt @"return" @"Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
        , "Start date (DD.MM.YYYY)" :: String
@@ -32,7 +32,7 @@ flightBookerFluent =
          ) bookingState
       body1 (text oneWayLine) # pane @"one-way" bookingState
       body1 (text returnLine) # pane @"return" bookingState ) identity # debounced itinerarySettleTime
-    button @"Book" {}
+    button @"Book"
     ( VariantToRecord.do
       messageBar @"Flight booked" bookedLine
       messageBar @"Booking rejected" rejectedLine ) # action

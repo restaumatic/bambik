@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import PUI (acted, action, atCase, fold, looped, prefixed, static, unshown, with)
 import PUI.Web (el, (:=))
-import PUI.Web.MDC3 (body, button, filledTextField, group, indeterminateLinearProgress, list, listItem)
+import PUI.Web.MDC3 (body, buttonWith, filledTextField, group, indeterminateLinearProgress, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import ReorderViewModel (openingSetlist, rotateAction, shuffleAction)
 
@@ -16,10 +16,10 @@ reorderMDC3 :: Effect Unit
 reorderMDC3 =
   body $ Semigroupoid.do
     group @"Setlist" $ list $
-      ( listItem $ prefixed (static (el "input" >>> "type" := "checkbox")) $ filledTextField @"Title" {} ) # acted @"id"
+      ( listItem $ prefixed (static (el "input" >>> "type" := "checkbox")) $ filledTextField @"Title" ) # acted @"id"
     RecordToVariant.do
-      button @"Rotate" { icon: "sync" }
-      button @"Shuffle" { icon: "shuffle" }
+      buttonWith @"Rotate" { icon: "sync" }
+      buttonWith @"Shuffle" { icon: "shuffle" }
     VariantToVariant.do
       indeterminateLinearProgress # action rotateAction # atCase @"Rotate"
       indeterminateLinearProgress # action shuffleAction # atCase @"Shuffle"

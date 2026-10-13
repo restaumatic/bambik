@@ -83,8 +83,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderApp :: Effect Unit
 orderApp =
   body $ Semigroupoid.do
-    filledTextField @"Pizza" {}
-    prefixed (headlineSmall (text ?orderLine)) $ button @"Order" {}
+    filledTextField @"Pizza"
+    prefixed (headlineSmall (text ?orderLine)) $ button @"Order"
     snackbar @"Order" ?confirmedLine
   # with @{ "Pizza" :: String } ?start
 </code></pre>
@@ -176,7 +176,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
     <h3>src/Order.purs — the display line takes its name</h3>
 <pre><code class="language-haskell">import OrderViewModel (orderLine)
   ⋮
-  prefixed (headlineSmall (text orderLine)) $ button @"Order" {}
+  prefixed (headlineSmall (text orderLine)) $ button @"Order"
 </code></pre>
 
     <p>One signature in, verbatim from its hint: its hole is gone, the
@@ -286,8 +286,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderApp :: Effect Unit
 orderApp =
   body $ Semigroupoid.do
-    filledTextField @"Pizza" {}
-    prefixed (headlineSmall (text orderLine)) $ button @"Order" {}
+    filledTextField @"Pizza"
+    prefixed (headlineSmall (text orderLine)) $ button @"Order"
     snackbar @"Order" confirmedLine
   # with @{ "Pizza" :: String } plainMargherita
 </code></pre>

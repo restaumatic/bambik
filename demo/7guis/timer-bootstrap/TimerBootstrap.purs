@@ -18,10 +18,10 @@ timerBootstrap =
   body $ Semigroupoid.do
     prefixed ( RecordToRecord.do
       progress elapsedFraction
-      p $ text progressLine ) $ sliderLive @"Duration" {}
+      p $ text progressLine ) $ sliderLive @"Duration"
     RecordToVariant.do
       unshown @"Clock ticked" # ticks tickPeriod
-      button @"Reset" {}
+      button @"Reset"
     VariantToRecord.do
       unshown @"Clock ticked" # fold tick
       unshown @"Reset" # fold restarted

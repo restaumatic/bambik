@@ -18,9 +18,9 @@ crudBootstrap =
     indeterminateLinearProgress # action loadPeopleCatalogue
     unshown @"People loaded" # fold identity
     ( Semigroupoid.do
-      textField @"Filter prefix (surname)" {}
-      textField @"Name" {}
-      textField @"Surname" {}
+      textField @"Filter prefix (surname)"
+      textField @"Name"
+      textField @"Surname"
       RecordToVariant.do
         ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
           ( clicked @"Person picked" @"key" ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key"
@@ -29,9 +29,9 @@ crudBootstrap =
              , "Surname" :: String
              , status :: [ selected :: {}, unselected :: {} ]
              ) entries ) # joined @"Person picked"
-        button @"Create" {}
-        button @"Update" {}
-        button @"Delete" {}
+        button @"Create"
+        button @"Update"
+        button @"Delete"
       ( VariantToVariant.do
         indeterminateLinearProgress # action createPerson # atCase @"Create"
         indeterminateLinearProgress # action updatePerson # atCase @"Update"

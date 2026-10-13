@@ -27,8 +27,8 @@ whichever twin matches your design system.
 
   | Shape | Kind | Examples |
   | --- | --- | --- |
-  | ×→× | **editor**, **display**, **stage** | `filledTextField @"Email" {}`, `headline4 (text countLine)` |
-  | ×→+ | **emitter** | `button @"Count" {}` |
+  | ×→× | **editor**, **display**, **stage** | `filledTextField @"Email"`, `headline4 (text countLine)` |
+  | ×→+ | **emitter** | `button @"Count"` |
   | +→× | **status** | `snackbar @"booked" bookedLine` |
   | +→+ | **handler** | a backend action |
 
@@ -62,11 +62,11 @@ order. A **stage** (an editor, an event ensemble, a fold) is a line as it
 stands. A line that **shows data** — a display, a static, a pane, a list
 of displays: it outputs `{}` — changes no data, so it is not a stage but a
 decorator over the stage it stands before, written `prefixed d $ stage`
-(counter's `prefixed (headline4 (text countLine)) $ button @"Count" {}`);
+(counter's `prefixed (headline4 (text countLine)) $ button @"Count"`);
 several in a row are one `RecordToRecord.do` group under one `prefixed`
 (tip-calculator). Displays **after** a stage whose row must flow on —
 tip-calculator's totals after the last slider, stopwatch's laps after the
-folds — trail it: `slider @"Split between" {} # suffixed ( RecordToRecord.do
+folds — trail it: `slider @"Split between" # suffixed ( RecordToRecord.do
 … )`. A display that ends a block, or the whole content of a pane, is
 written plainly: nothing follows it, so there is nothing to decorate. Four more qualified `do` blocks put several components over one
 value, one per shape:
@@ -95,9 +95,9 @@ find which field is missing.
 ## Components
 
 **A component states its label once, as its type argument, and the
-label is the copy it draws.** `filledTextField @"First name" {}`
+label is the copy it draws.** `filledTextField @"First name"`
 captions itself "First name" and edits the field `"First name"`;
-`button @"Submit order" {}` draws "Submit order" and emits the case
+`button @"Submit order"` draws "Submit order" and emits the case
 `"Submit order"`. This keeps the code as close to the running UI as
 possible: the words on the screen are the words in the code, so a line
 is found from the screen and the screen from a line. Labels are human
@@ -113,12 +113,12 @@ In the view model module, field access (`r."Name"`), accessor sections
 (`_."Name"`) and update syntax (`r { "Name" = … }`) work as usual; a
 view names a field only by its label (see
 [The anchor invariant](#code-style)). Put punctuation and units on
-the label (`filledTextField @"Start date (DD.MM.YYYY)" {}`,
-`sliderLive @"Amount (€)" {}`); where a symbol is the conventional
-caption, write the symbol (`@celsius`). A caption config (`floatingLabel:`,
-`label:`) is only for copy the label cannot be — localized wording,
-passed from the app's copy table — and, on a button, hiding the caption
-of a glyph-only face (see the component's header).
+the label (`filledTextField @"Start date (DD.MM.YYYY)"`,
+`sliderLive @"Amount (€)"`); where a symbol is the conventional
+caption, write the symbol (`@celsius`). A leaf takes no options record:
+the label is its caption. The few words with optional presentation have
+a `…With` sibling taking it (`buttonWith @"Place order" { icon:
+"local_cafe" }`, `listOfWith … { selected: isSelected } …`).
 
 How each kind takes its business meaning:
 
@@ -135,7 +135,7 @@ How each kind takes its business meaning:
   `…Unpicked` word when a choice is owed but not yet made; the
   `…Optional` word when the user may leave it unmade. Options are
   `choice @"…"` values in the order written (meeting-booker:
-  `dropdownUnpicked @"Room" @"chosen" {} (choice @"Focus pod (4 seats)" <+> …)`).
+  `dropdownUnpicked @"Room" @"chosen" (choice @"Focus pod (4 seats)" <+> …)`).
 - **Displays** take a copy function, not a label:
   `headline4 (text countLine)` (counter). A number shown as a
   bar or gauge takes a function too, and keeps its label only as the
@@ -166,10 +166,10 @@ ordersCount`). A signature with a bare `String`, `Maybe a` or `a` on
 either side is a smell: that value belongs in a field of the row, read
 by a business function.
 
-Component configs are records whose field names belong to each
-component (`filledTextField`'s `floatingLabel`, `button`'s `icon`), so
-copy a demo's call or read the header instead of guessing — a guessed
-field fails as `TypesDoNotUnify` on the config record.
+A `…With` word's options are a record whose field names belong to the
+component (`buttonWith`'s `icon`, `listOfWith`'s `selected`), so copy a
+demo's call or read the header instead of guessing — a guessed field
+fails as `TypesDoNotUnify` on the options record.
 
 ## Stages
 
@@ -181,18 +181,18 @@ for:
 | --- | --- | --- |
 | a display or chrome, always there | `headlineSmall $ text orderLine` | order-form |
 | a display shown in one case | `text distanceLine # pane @"estimated" distanceOf` | order-form |
-| an editor that exists in one case | `filledTextField @"Table" {} # inCaseAt @"Dine in" @"Mode"` | order-form |
-| a button that exists in one case | `button @"Start" {…} # providedAt @"halted" @"phase"` | stopwatch |
+| an editor that exists in one case | `filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"` | order-form |
+| a button that exists in one case | `buttonWith @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # foreach @"number" lapRows` | stopwatch |
-| a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count" {}` | counter |
-| several displays before a stage | `prefixed ( RecordToRecord.do … ) $ slider @"Split between" {}` | tip-calculator, weather |
-| displays after a stage whose row flows on | `slider @"Split between" {} # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch |
+| a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count"` | counter |
+| several displays before a stage | `prefixed ( RecordToRecord.do … ) $ slider @"Split between"` | tip-calculator, weather |
+| displays after a stage whose row flows on | `slider @"Split between" # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch |
 | a list element echoing the row it shows | `prefixed (listItem $ text flightLine) identity # dispatched …` | departures, scoreboard |
 | content that waits for the user to confirm | `confirmed "Refund" "Refund the customer?" $ …` | cashbox |
 | an event folded into the model | `unshown @"Add" # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
 | a periodic occurrence | `unshown @"Clock ticked" # ticks tickPeriod` | stopwatch, timer |
-| an invariant between edited fields | `filledTextField @celsius {} # settled fromCelsius` | temperature-converter |
+| an invariant between edited fields | `filledTextField @celsius # settled fromCelsius` | temperature-converter |
 | effects on the buttons' cases, the other events passing | `( VariantToVariant.do { indeterminateLinearProgress # action createPerson # atCase @"Create"; … } ) # subChoice`, every action typed at the block's outcome row, every outcome folded once by its status | crud |
 | an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `unshown @"Forecast fetched" # fold identity` | weather |
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
@@ -224,7 +224,7 @@ An app is one loop through the four shapes, tied once by `# looped @( … ) # wi
 Semigroupoid.do
   prefixed (headline4 (text countLine)) $     -- ×→× a display, decorating the stage it stands before
     RecordToVariant.do                        -- ×→+ the event ensemble: every emitter and pane
-    button @"Add" {}
+    button @"Add"
     listOf @"Todo toggled" … # joined @"Todo toggled"   --   an event with a payload of its own, joined with the model
   VariantToRecord.do                          -- +→× the folds, one per case, each opened by its status
     unshown @"Add" # fold addTodo
@@ -443,9 +443,9 @@ the anchor's own position, and the anchor says what the line is:
 
 - a **field** — the type argument of an editor, selector or group: the
   label is the model field the line edits (`filledTextField @"First
-  name" {}`, `group @"Customer" $ …`);
+  name"`, `group @"Customer" $ …`);
 - a **case** — the type argument of an emitter, pane or status
-  (`button @"Submit order" {}`, `# pane @"estimated" distanceOf`,
+  (`button @"Submit order"`, `# pane @"estimated" distanceOf`,
   `snackbar @"booked" bookedLine`);
 - a **copy function** — the positional argument of a display
   (`text balanceLine`, `imagePane developedShot`);
@@ -478,11 +478,11 @@ arguments:
 ```purescript
 snackbar  @"booked"  bookedLine              -- the booked snackbar, saying bookedLine
 confirmed "Refund"   "Refund the customer?"   -- the title is static: a value
-button    @"Sign up" { icon: "person_add" }  -- the record: optional presentation
+buttonWith    @"Sign up" { icon: "person_add" }  -- the record: optional presentation
 ```
 
 **A record never holds an anchor or a required value.** A record stays
-only for optional presentation (`{ icon }`, `{ floatingLabel }`) or for
+only for optional presentation (`{ icon }`, `{ selected }`, on a `…With` word) or for
 two same-typed values a positional pair could swap
 (`drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }`).
 If you must open a record to learn what the line is about, the line
@@ -625,7 +625,7 @@ text is computed, a chrome line nothing.
   there is no block, it is `prefixed` over what it introduces
   (`label $ prefixed (staticText "°C ") $ input @"celsius" "text"`,
   temperature-converter-html). A **separator** is written the same way,
-  leading over what it introduces (`divider $ slider @"Attendees" {} #
+  leading over what it introduces (`divider $ slider @"Attendees" #
   inCaseAt @"chosen" @"Room"`, meeting-booker), and shows itself only
   between things: while something is rendered before it and what it
   introduces renders something — never above an absent pane or an empty

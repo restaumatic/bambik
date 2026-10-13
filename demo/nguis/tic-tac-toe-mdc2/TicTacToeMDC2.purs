@@ -10,7 +10,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (fold, foreach, joined, looped, prefixed, reset, unshown, with)
 import PUI.Web (attrWith, clicked, pane, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC2 (body, button, headline6)
+import PUI.Web.MDC2 (body, buttonWith, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TicTacToeViewModel (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine)
 
@@ -31,7 +31,7 @@ ticTacToeMDC2 =
            , mark :: [ x :: {}, o :: {}, free :: {} ]
            , line :: [ winning :: {}, plain :: {} ]
            ) cells ) ) # joined @"Cell claimed"
-      button @"New game" { icon: "replay" }
+      buttonWith @"New game" { icon: "replay" }
     VariantToRecord.do
       unshown @"Cell claimed" # fold claimCell
       unshown @"New game" # reset openingPosition

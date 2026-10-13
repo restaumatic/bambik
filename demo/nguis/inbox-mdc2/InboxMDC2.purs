@@ -10,34 +10,34 @@ import InboxViewModel (deletionPane, composeMessage, deleteOpened, bodyText, fro
 import PUI (fold, joined, looped, observed, prefixed, unshown, with)
 import PUI.Web (provided, text)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, dialog, fab, headline6, iconButton, listOfAt, menu, menuItem)
+import PUI.Web.MDC2 (banner, body, body1, body2, button, caption, dialog, fab, headline6, iconButton, listOfAtWith, menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 inboxMDC2 :: Effect Unit
 inboxMDC2 =
   body $ Semigroupoid.do
     prefixed (caption $ text unreadLine) $ RecordToVariant.do
-      listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } ( span $ text messageLine ) # joined @"Message opened"
+      listOfAtWith @"Message opened" @"id" @"messages" { selected: highlighted } ( span $ text messageLine ) # joined @"Message opened"
       ( prefixed ( RecordToRecord.do
         headline6 (text subjectLine)
         body2 (text fromLine)
-        body1 (text bodyText) ) $ iconButton @"Delete message" {} "delete" ) # provided @"reading"
+        body1 (text bodyText) ) $ iconButton @"Delete message" "delete" ) # provided @"reading"
         @( reading :: { sender :: String, subject :: String, body :: String }
          , browsing :: {}
          ) messageView # joined @"Delete message"
       ( Semigroupoid.do
         ( dialog "Delete the last message?" $ RecordToVariant.do
-          button @"Delete" {}
-          button @"Keep" {} ) # provided @"confirming"
+          button @"Delete"
+          button @"Keep" ) # provided @"confirming"
             @( confirming :: { messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] }, deletion :: [ silent :: {}, confirming :: {} ] }
              , silent :: {}
              ) deletionPane
         banner @"Delete" inboxZeroLine # observed )
-      fab @"Compose" {} "edit"
+      fab @"Compose" "edit"
       ( menu "Sort" $ RecordToVariant.do
-        menuItem @"By sender" {}
-        menuItem @"By subject" {}
-        menuItem @"Unread first" {} )
+        menuItem @"By sender"
+        menuItem @"By subject"
+        menuItem @"Unread first" )
     VariantToRecord.do
       unshown @"Message opened" # fold openMessage
       unshown @"Delete message" # fold requestDelete

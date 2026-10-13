@@ -11,15 +11,15 @@ lawBenchBootstrap :: Effect Unit
 lawBenchBootstrap = do
   body (staticText "Leaf-law bench · Bootstrap")
   runBench
-    [ bench "textField" "×→×" texts (textField @"Name" {})
-    , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
-    , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
+    [ bench "textField" "×→×" texts (textField @"Name")
+    , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On")
+    , bench "sliderLive" "×→×" quantities (sliderLive @"Amount")
     , bench "progress" "×→×" fractions (progress fractionOf)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
-    , bench "select" "×→×" chosen (select @"Pick" {} options)
-    , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)
-    , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" {} options)
-    , bench "button" "×→+" rows (button @"Go" {})
+    , bench "select" "×→×" chosen (select @"Pick" options)
+    , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" options)
+    , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
+    , bench "button" "×→+" rows (button @"Go")
     , bench "toast" "+→×" events (toast @"event" identity)
     ]
   where

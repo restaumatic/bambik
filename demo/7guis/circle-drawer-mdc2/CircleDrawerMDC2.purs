@@ -9,14 +9,14 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (blank, fold, foreach, joined, looped, settled, unshown, with)
 import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, (:=))
-import PUI.Web.MDC2 (body, button, cardActions, sliderLive)
+import PUI.Web.MDC2 (body, buttonWith, cardActions, sliderLive)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 circleDrawerMDC2 :: Effect Unit
 circleDrawerMDC2 =
   body $ Semigroupoid.do
-    sliderLive @"Diameter" {} # inCaseAt @"chosen" @"selected" # settled resizeSelected
+    sliderLive @"Diameter" # inCaseAt @"chosen" @"selected" # settled resizeSelected
     RecordToVariant.do
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
         ( onClickedXY @"Canvas clicked"
@@ -29,8 +29,8 @@ circleDrawerMDC2 =
                , status :: [ selected :: {}, unselected :: {} ]
                ) canvasCircles ) ) ) # joined @"Canvas clicked"
       ( cardActions $ RecordToVariant.do
-        button @"Undo" { icon: "undo" }
-        button @"Redo" { icon: "redo" } )
+        buttonWith @"Undo" { icon: "undo" }
+        buttonWith @"Redo" { icon: "redo" } )
     VariantToRecord.do
       unshown @"Canvas clicked" # fold selectOrAddCircle
       unshown @"Undo" # fold undo

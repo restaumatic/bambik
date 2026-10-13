@@ -11,7 +11,7 @@ import PUI.Web.MDC2 (body, body2, headline6, sliderLive)
 auctionMDC2 :: Effect Unit
 auctionMDC2 =
   body $
-    ( prefixed (body2 $ text bidLine) $ sliderLive @"Your bid ($)" {} # settled raiseTop # suffixed (headline6 $ text topLine)
+    ( prefixed (body2 $ text bidLine) $ sliderLive @"Your bid ($)" # settled raiseTop # suffixed (headline6 $ text topLine)
     ) # looped
       @( "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
        , top :: Number

@@ -20,7 +20,7 @@ timerHTML =
       p $ text progressLine ) $ p ( label $ prefixed (staticText "Duration ") $ rangeInput @"Duration" )
     RecordToVariant.do
       unshown @"Clock ticked" # ticks tickPeriod
-      button @"Reset" {}
+      button @"Reset"
     VariantToRecord.do
       unshown @"Clock ticked" # fold tick
       unshown @"Reset" # fold restarted

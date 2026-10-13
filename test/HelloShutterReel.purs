@@ -35,7 +35,7 @@ greet :: PUI Web String String
 greet =
   reel
     (\prefix -> Right \typed -> prefix <> typed.name)
-    (MDC.filledTextField @"name" { floatingLabel: "Your name" })
+    (MDC.filledTextField @"name")
 
 -- | The **Shutter** (× → +): open on the greeting, then snap shut on one value.
 -- | The button click is a `Done` (`cont=false`), so the **build** leg fires and
@@ -50,7 +50,7 @@ confirm =
   shutter identity (_ <> "!") identity
     -- the button is an event source over a row, so the scalar rides in a
     -- one-field row and comes back out of the button's case
-    (dimap { greeting: _ } (match { "Greet": _.greeting }) (button @"Greet" {}))
+    (dimap { greeting: _ } (match { "Greet": _.greeting }) (button @"Greet"))
 
 -- | seed prefix (Reel state) → type name → click Greet (Shutter) → `text`
 -- | shows the greeting.

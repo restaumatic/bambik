@@ -19,7 +19,7 @@ ticketDispenserMDC2 =
         (text ticketLine) # paneAt @"serving" @"display" )
       body2 ( RecordToRecord.do
         (text firstTicketHint) # paneAt @"waiting" @"display"
-        (text servingLine) # paneAt @"serving" @"display" ) ) $ button @"Take a number" {}
+        (text servingLine) # paneAt @"serving" @"display" ) ) $ button @"Take a number"
     unshown @"Take a number" # fold issue
   # looped
     @( display :: [ waiting :: {}, serving :: { number :: Int } ]

@@ -12,7 +12,7 @@ a model, the counter (MDC2):
 counterMDC2 :: Effect Unit
 counterMDC2 =
   body $ Semigroupoid.do
-    prefixed (headline4 (text countLine)) $ button @"Count" {}
+    prefixed (headline4 (text countLine)) $ button @"Count"
     unshown @"Count" # fold increment
   # looped @( counted :: Int ) # with freshCount
 ```

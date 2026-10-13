@@ -17,9 +17,9 @@ movieBrowserMDC2 =
     tabBar @"category"
       (choice @"All" <+> choice @"Action" <+> choice @"Drama" <+> choice @"Comedy")
     chipSet ( Semigroupoid.do
-      filterChip @"Classic" {}
-      filterChip @"Cult" {}
-      filterChip @"Oscar" {} )
+      filterChip @"Classic"
+      filterChip @"Cult"
+      filterChip @"Oscar" )
     prefixed (elevation1 $ subtitle1 $ text favoritesLine) $ list $
       ( listItem $ prefixed ( RecordToRecord.do
         span (text titleLine)

@@ -19,8 +19,8 @@ reorderHTML =
       ( prefixed ( dt $ prefixed (static (el "input" >>> "type" := "checkbox")) $ textAt @"Title" ) $
         dd $ label $ prefixed (staticText "Rename ") $ input @"Title" "text" ) # actedAt @"id" @"Setlist"
     RecordToVariant.do
-      button @"Rotate" {}
-      button @"Shuffle" {}
+      button @"Rotate"
+      button @"Shuffle"
     VariantToVariant.do
       indeterminateLinearProgress # action rotateAction # atCase @"Rotate"
       indeterminateLinearProgress # action shuffleAction # atCase @"Shuffle"

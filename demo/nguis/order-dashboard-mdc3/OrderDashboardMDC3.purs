@@ -15,7 +15,7 @@ orderDashboardMDC3 :: Effect Unit
 orderDashboardMDC3 =
   body $
     topAppBar "Order Dashboard" $ ( Semigroupoid.do
-      rangePicker @"Showing" {}
+      rangePicker @"Showing"
         (choice @"Last minute" <+> choice @"Last 15 min" <+> choice @"Since open")
       prefixed (board $ RecordToRecord.do
         statTile "Orders placed" ordersCount

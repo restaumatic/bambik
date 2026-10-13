@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (action, atCase, fold, joined, looped, prefixed, ticks, unshown, with)
 import PUI.Web (providedAt, text)
-import PUI.Web.MDC2 (body, body1, button, headline6, indeterminateLinearProgress, snackbar)
+import PUI.Web.MDC2 (body, body1, buttonWith, headline6, indeterminateLinearProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TickerViewModel (closedTicker, fetchQuote, phaseLine, quoteFetchedLine, quoteLine, recordQuote, stepAway, tick, tickLine, tickPeriod, watch)
 
@@ -19,11 +19,11 @@ tickerMDC2 =
       headline6 (text phaseLine)
       body1 (text tickLine)
       body1 (text quoteLine) ) $ RecordToVariant.do
-      button @"Watch" { icon: "visibility" } # providedAt @"away" @"phase" # joined @"Watch"
-      button @"Step away" { icon: "visibility_off" } # providedAt @"watching" @"phase" # joined @"Step away"
+      buttonWith @"Watch" { icon: "visibility" } # providedAt @"away" @"phase" # joined @"Watch"
+      buttonWith @"Step away" { icon: "visibility_off" } # providedAt @"watching" @"phase" # joined @"Step away"
       unshown @"Ticked" # ticks tickPeriod # providedAt @"watching" @"phase" # joined @"Ticked"
       ( Semigroupoid.do
-        button @"Fetch quote" { icon: "download" }
+        buttonWith @"Fetch quote" { icon: "download" }
         indeterminateLinearProgress # action @( "Quote fetched" :: { price :: Number } ) fetchQuote # atCase @"Fetch quote" ) # providedAt @"watching" @"phase" # joined @"Quote fetched"
     VariantToRecord.do
       unshown @"Watch" # fold watch

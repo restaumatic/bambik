@@ -9,7 +9,6 @@ module DashboardControlsMDC3
 
 import Prelude (otherwise, show, (#), ($), (*), (-), (/), (<), (<<<), (<>), (==), (>>>))
 
-import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 import Data.Array (foldl, length, mapWithIndex)
 import Data.Int (round, toNumber)
 import Data.Number (max)
@@ -18,7 +17,7 @@ import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons)
 import PUI (Ocular, PUI, blank, foreach, muted, prefixed)
-import PUI.Web (OptCaption(..), Web, attrWith, staticText, text, (:=))
+import PUI.Web (Web, attrWith, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
@@ -49,11 +48,11 @@ leaderboard :: forall r. String -> ({ | r } -> Array { name :: String, score :: 
 leaderboard l f =
   tile >>> "aria-label" := l $ prefixed (labelMedium $ staticText l) $ list ( ( listItem $ text entryLine ) # foreach @"name" f ) # muted
 
-rangePicker :: forall @l provided a rest r. IsSymbol l => Cons l a rest r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-rangePicker provided options =
+rangePicker :: forall @l a rest r. IsSymbol l => Cons l a rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+rangePicker options =
   div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ prefixed (labelMedium $ staticText config.label) $ segmentedButton @l options
   where
-  config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
+  config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 
 percentLine :: Number -> String
 percentLine fraction = show (round (fraction * 100.0)) <> "%"

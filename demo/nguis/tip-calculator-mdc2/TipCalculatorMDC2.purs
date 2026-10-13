@@ -14,12 +14,12 @@ import TipCalculatorViewModel (dinnerBill, perPersonLine, splitLine, tipAmountLi
 tipCalculatorMDC2 :: Effect Unit
 tipCalculatorMDC2 =
   body $ Semigroupoid.do
-    filledTextField @"Bill amount" {}
-    slider @"Tip percentage" {}
+    filledTextField @"Bill amount"
+    slider @"Tip percentage"
     rangeInput @"Tip percentage"
     prefixed ( RecordToRecord.do
       body2 (text tipLine)
-      body2 (text splitLine) ) $ slider @"Split between" {} # suffixed ( RecordToRecord.do
+      body2 (text splitLine) ) $ slider @"Split between" # suffixed ( RecordToRecord.do
       body2 (text tipAmountLine)
       body2 (text totalLine)
       body2 (text perPersonLine) )

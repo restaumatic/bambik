@@ -20,9 +20,9 @@ crudFluent =
     indeterminateLinearProgress # action loadPeopleCatalogue
     unshown @"People loaded" # fold identity
     ( Semigroupoid.do
-      textField @"Filter prefix (surname)" {}
-      textField @"Name" {}
-      textField @"Surname" {}
+      textField @"Filter prefix (surname)"
+      textField @"Name"
+      textField @"Surname"
       RecordToVariant.do
         ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--colorNeutralStroke1, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $
           ( clicked @"Person picked" @"key" ( li >>> attrWith "style" entryFace $ text personLine ) ) # foreach @"key"
@@ -31,9 +31,9 @@ crudFluent =
              , "Surname" :: String
              , status :: [ selected :: {}, unselected :: {} ]
              ) entries ) # joined @"Person picked"
-        button @"Create" {}
-        button @"Update" {}
-        button @"Delete" {}
+        button @"Create"
+        button @"Update"
+        button @"Delete"
       ( VariantToVariant.do
         indeterminateLinearProgress # action createPerson # atCase @"Create"
         indeterminateLinearProgress # action updatePerson # atCase @"Update"

@@ -68,7 +68,7 @@
 -- |
 -- | `silence` is also what an **absent event source is**. A `×→+` component that
 -- | exists in one state and not in another
--- | (`button @"Start" {} # provided @"halted" phaseOf`) is, in the state
+-- | (`button @"Start" # provided @"halted" phaseOf`) is, in the state
 -- | where it is absent, observationally `silence`: fed nothing, emitting
 -- | nothing. That is why the type is variant-output only — silent at
 -- | *variant* output is a source with nothing to say, while silent at an

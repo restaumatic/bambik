@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (looped, prefixed, with)
 import PUI.Web ((<+>), choice, pane, staticText, text)
-import PUI.Web.MDC2 (body, body2, button, checkbox, debouncedTextField, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
+import PUI.Web.MDC2 (body, body2, buttonWith, checkbox, debouncedTextField, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import SignupFormViewModel (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, unnamedLine, usernameSettleTime, usernameStatus, validation)
 
@@ -14,13 +14,13 @@ signupFormMDC2 :: Effect Unit
 signupFormMDC2 =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      prefixed (headline4 $ staticText "Create account") $ debouncedTextField @"Username" {} usernameSettleTime
+      prefixed (headline4 $ staticText "Create account") $ debouncedTextField @"Username" usernameSettleTime
       radioButton @"Plan"
         (choice @"Free" <+> choice @"Pro" <+> choice @"Team")
-      select @"Country" {}
+      select @"Country"
         (choice @"Poland" <+> choice @"Germany" <+> choice @"France" <+> choice @"Spain")
-      filledTextField @"Email" {}
-      checkbox @"Terms" @"accepted" @"declined" {} (staticText "I accept the terms of service") # tooltip "You must accept the terms of service to sign up"
+      filledTextField @"Email"
+      checkbox @"Terms" @"accepted" @"declined" (staticText "I accept the terms of service") # tooltip "You must accept the terms of service to sign up"
     ) # looped
       @( "Username" :: String
        , "Email" :: String
@@ -40,5 +40,5 @@ signupFormMDC2 =
         @( invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }
          , ready :: { "Username" :: String }
          ) validation
-      ( subtitle2 $ text readyLine ) # pane @"ready" validation ) $ button @"Sign up" { icon: "person_add" }
+      ( subtitle2 $ text readyLine ) # pane @"ready" validation ) $ buttonWith @"Sign up" { icon: "person_add" }
     snackbar @"Sign up" signupLine

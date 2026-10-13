@@ -11,6 +11,6 @@ import TemperatureConverterViewModel (fromCelsius, fromFahrenheit, roomTemperatu
 temperatureConverterMDC2 :: Effect Unit
 temperatureConverterMDC2 =
   body $ Semigroupoid.do
-    filledTextField @"celsius" {} # settled fromCelsius
-    filledTextField @"fahrenheit" {} # settled fromFahrenheit
+    filledTextField @"celsius" # settled fromCelsius
+    filledTextField @"fahrenheit" # settled fromFahrenheit
   # looped @( celsius :: String, fahrenheit :: String ) # with roomTemperature

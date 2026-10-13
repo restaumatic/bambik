@@ -26,8 +26,8 @@ and emitters of a catalogue — are in the design-system module header
 | You are writing | Word | Demo | Read |
 | --- | --- | --- | --- |
 | stages one after another | `Semigroupoid.do` (`import QualifiedDo.Semigroupoid as Semigroupoid`) | counter | writing.md *The pipeline* |
-| a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count" {}`; several, `prefixed ( RecordToRecord.do … ) $ …` | counter; tip-calculator | writing.md *The pipeline*; `PUI` |
-| displays after a stage whose row flows on | `slider @"Split between" {} # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch | writing.md *The pipeline* |
+| a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count"`; several, `prefixed ( RecordToRecord.do … ) $ …` | counter; tip-calculator | writing.md *The pipeline*; `PUI` |
+| displays after a stage whose row flows on | `slider @"Split between" # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch | writing.md *The pipeline* |
 | displays and chrome reading one record side by side | `RecordToRecord.do` — `div $ RecordToRecord.do` | espresso-bar, loan-calculator, meeting-booker, shopping-cart | `Data.Profunctor.Row.RecordToRecord` |
 | several emitters over one record | `RecordToVariant.do` | cashbox, stopwatch, crud | `Data.Profunctor.Row.RecordToVariant` |
 | one stage per event case | `VariantToVariant.do` | crud, cashbox, reorder | `Data.Profunctor.Row.VariantToVariant` |
@@ -76,15 +76,15 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| a text field | `filledTextField @"First name" {}` | order-form | writing.md *Components* |
-| a text field checked as the user pauses | `debouncedTextField @"Username" {} usernameSettleTime` | signup-form | the design-system module |
-| a yes/no over a two-case field | `checkbox @"Terms" @"accepted" @"declined" {} (…)` | signup-form, espresso-bar | the design-system module |
-| a switch | `toggleSwitch @"Takeaway cup" {}` | espresso-bar | the design-system module |
-| a selection that always has a value | `select @"Flight type" {} (choice @"one-way" <+> choice @"return")` | flight-booker | writing.md *Components* |
-| a selection owed but not yet made | `dropdownUnpicked @"Room" @"chosen" {} […]`; `segmentedButtonUnpicked @"Dish" @"chosen"` | meeting-booker; potluck | writing.md *Components* |
-| a selection the user may leave unmade | `dropdownOptional @"Catering" @"ordered" @"none" {} […]` | meeting-booker | writing.md *Components* |
-| a bounded quantity | `sliderLive @"Duration" {}`; `slider @"Split between" {}` | timer; tip-calculator | writing.md *Code style* → *Types and values* |
-| two controls on one field | `slider @"Tip percentage" {}` then `rangeInput @"Tip percentage"` | tip-calculator | writing.md *Components* |
+| a text field | `filledTextField @"First name"` | order-form | writing.md *Components* |
+| a text field checked as the user pauses | `debouncedTextField @"Username" usernameSettleTime` | signup-form | the design-system module |
+| a yes/no over a two-case field | `checkbox @"Terms" @"accepted" @"declined" (…)` | signup-form, espresso-bar | the design-system module |
+| a switch | `toggleSwitch @"Takeaway cup"` | espresso-bar | the design-system module |
+| a selection that always has a value | `select @"Flight type" (choice @"one-way" <+> choice @"return")` | flight-booker | writing.md *Components* |
+| a selection owed but not yet made | `dropdownUnpicked @"Room" @"chosen" […]`; `segmentedButtonUnpicked @"Dish" @"chosen"` | meeting-booker; potluck | writing.md *Components* |
+| a selection the user may leave unmade | `dropdownOptional @"Catering" @"ordered" @"none" […]` | meeting-booker | writing.md *Components* |
+| a bounded quantity | `sliderLive @"Duration"`; `slider @"Split between"` | timer; tip-calculator | writing.md *Code style* → *Types and values* |
+| two controls on one field | `slider @"Tip percentage"` then `rangeInput @"Tip percentage"` | tip-calculator | writing.md *Components* |
 | a labelled group over a sub-record | `group @"Customer" $ Semigroupoid.do …` | order-form, potluck, reorder | writing.md *Components* |
 | a reusable sub-form over a sub-record | `group @"Address" addressForm` | parcel | writing.md *Components* |
 | an editor that exists in one state | `# inCaseAt @"return" @"Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
@@ -96,8 +96,8 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| a button stepping the model | `button @"Count" {}` and `unshown @"Count" # fold increment` | counter, todo-list | writing.md *Stages* |
-| a button with a fixed payload | `button @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
+| a button stepping the model | `button @"Count"` and `unshown @"Count" # fold increment` | counter, todo-list | writing.md *Stages* |
+| a button with a fixed payload | `buttonWith @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
 | an event folded into the model | `unshown @"Customer refunded" # fold refundStandard`, each fold opened by its status, which tells only what a `+→+` block returned (`snackbar @"Person created" personCreatedLine # fold identity`), the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
 | a clicked element naming itself | `clicked @"Cell claimed" @"key" (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
@@ -108,7 +108,7 @@ and emitters of a catalogue — are in the design-system module header
 | some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
 | an event carrying something of its own | `listOf @"toggled" … # joined @"toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, stopwatch | writing.md *Stages* |
 | a button group fed the record it replays | `RecordToVariant.do` of emitters as a stage, each button replaying the row the block is fed | order-form, espresso-bar, signup-form | writing.md *Stages* |
-| a menu of presets | `menu "Presets" ( RecordToVariant.do menuItem @"The usual" {} … )` | espresso-bar, inbox | the design-system module |
+| a menu of presets | `menu "Presets" ( RecordToVariant.do menuItem @"The usual" … )` | espresso-bar, inbox | the design-system module |
 
 ## Effects, time, statuses
 
@@ -134,7 +134,7 @@ and emitters of a catalogue — are in the design-system module header
 | the array → the array, decided jointly or edited in place | `# acted @"name"`; `# acted @"id"`; a stored array `# actedAt @"id" @"Setlist"` | potluck; reorder; reorder-html | writing.md *Collections* |
 | one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
 | one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
-| a selectable list (MDC2, MDC3) | `listOfAt @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |
+| a selectable list (MDC2, MDC3) | `listOfAtWith @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |
 | a selectable list elsewhere | `clicked @"Person picked" @"key" (…) # foreach @"key" …` | crud (html) | writing.md *Collections* |
 
 ## View model not written yet

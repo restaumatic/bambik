@@ -30,9 +30,9 @@ crudHTML =
              , "Surname" :: String
              , status :: [ selected :: {}, unselected :: {} ]
              ) entries ) # joined @"Person picked"
-        button @"Create" {}
-        button @"Update" {}
-        button @"Delete" {}
+        button @"Create"
+        button @"Update"
+        button @"Delete"
       ( VariantToVariant.do
         indeterminateLinearProgress # action createPerson # atCase @"Create"
         indeterminateLinearProgress # action updatePerson # atCase @"Update"

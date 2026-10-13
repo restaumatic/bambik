@@ -15,12 +15,12 @@ loanCalculatorBootstrap :: Effect Unit
 loanCalculatorBootstrap =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      textField @"Applicant" {}
-      sliderLive @"Amount (€)" {}
-      sliderLive @"Term (years)" {}
-      select @"Purpose" {}
+      textField @"Applicant"
+      sliderLive @"Amount (€)"
+      sliderLive @"Term (years)"
+      select @"Purpose"
         (choice @"Car" <+> choice @"Home improvement" <+> choice @"Holiday")
-      toggleSwitch @"Payment protection insurance" {}
+      toggleSwitch @"Payment protection insurance"
     ) # looped
       @( "Applicant" :: String
        , "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
@@ -35,5 +35,5 @@ loanCalculatorBootstrap =
         listGroupItem (text totalInterestLine) )
       ( div $ RecordToRecord.do
         staticText "Interest share of total repayment"
-        progress interestShare ) ) $ button @"Apply for this loan" {}
+        progress interestShare ) ) $ button @"Apply for this loan"
     toast @"Apply for this loan" appliedLine

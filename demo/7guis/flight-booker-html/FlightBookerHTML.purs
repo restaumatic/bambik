@@ -31,7 +31,7 @@ flightBookerHTML =
          ) bookingState
       p (text oneWayLine) # pane @"one-way" bookingState
       p (text returnLine) # pane @"return" bookingState ) identity # debounced itinerarySettleTime
-    button @"Book" {}
+    button @"Book"
     ( VariantToRecord.do
       output @"Flight booked" bookedLine
       output @"Booking rejected" rejectedLine ) # action

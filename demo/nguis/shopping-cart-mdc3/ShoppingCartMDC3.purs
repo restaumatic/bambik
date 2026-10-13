@@ -16,7 +16,7 @@ shoppingCartMDC3 :: Effect Unit
 shoppingCartMDC3 =
   body $ Semigroupoid.do
     prefixed (bodyLarge (text totalLine)) $ RecordToVariant.do
-      listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) {} productCatalogue (text catalogueLine) # joined @"Unit added"
+      listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) productCatalogue (text catalogueLine) # joined @"Unit added"
       dataTable "Cart"
         ( RecordToRecord.do
           columnHeader "Product"
@@ -26,7 +26,7 @@ shoppingCartMDC3 =
           dataCell (text productLine)
           dataCell (text quantityLine)
           dataCell (text lineTotalLine) ) # foreach @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"Unit removed"
-      button @"Empty cart" {}
+      button @"Empty cart"
     VariantToRecord.do
       unshown @"Unit added" # fold addUnit
       unshown @"Unit removed" # fold removeUnit

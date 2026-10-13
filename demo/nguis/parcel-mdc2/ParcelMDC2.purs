@@ -12,11 +12,11 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 parcelMDC2 :: Effect Unit
 parcelMDC2 =
   body $ Semigroupoid.do
-    filledTextField @"Recipient" {}
+    filledTextField @"Recipient"
     group @"Address" addressForm # suffixed (body1 $ text parcelLine)
   # looped @( "Recipient" :: String, "Address" :: { "Street" :: String, "City" :: String } ) # with draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
 addressForm = Semigroupoid.do
-  filledTextField @"Street" {}
-  filledTextField @"City" {}
+  filledTextField @"Street"
+  filledTextField @"City"

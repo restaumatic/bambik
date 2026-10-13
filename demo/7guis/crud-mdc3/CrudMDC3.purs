@@ -9,7 +9,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import PUI (action, atCase, fold, joined, looped, subChoice, unshown)
 import PUI.Web (text)
-import PUI.Web.MDC3 (body, button, filledTextField, indeterminateLinearProgress, listOf, snackbar)
+import PUI.Web.MDC3 (body, button, filledTextField, indeterminateLinearProgress, listOfWith, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crudMDC3 :: Effect Unit
@@ -18,19 +18,19 @@ crudMDC3 =
     indeterminateLinearProgress # action loadPeopleCatalogue
     unshown @"People loaded" # fold identity
     ( Semigroupoid.do
-      filledTextField @"Filter prefix (surname)" {}
-      filledTextField @"Name" {}
-      filledTextField @"Surname" {}
+      filledTextField @"Filter prefix (surname)"
+      filledTextField @"Name"
+      filledTextField @"Surname"
       RecordToVariant.do
-        listOf @"Person picked" @"key"
+        listOfWith @"Person picked" @"key"
           @( key :: Int
            , "Name" :: String
            , "Surname" :: String
            , status :: [ selected :: {}, unselected :: {} ]
            ) { selected: isSelected } entries (text personLine) # joined @"Person picked"
-        button @"Create" {}
-        button @"Update" {}
-        button @"Delete" {}
+        button @"Create"
+        button @"Update"
+        button @"Delete"
       ( VariantToVariant.do
         indeterminateLinearProgress # action createPerson # atCase @"Create"
         indeterminateLinearProgress # action updatePerson # atCase @"Update"

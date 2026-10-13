@@ -32,7 +32,7 @@
 -- |   `eventText` (a status's canonical payload), `escaped` (a runtime
 -- |   string made safe for `staticHTML`), `listenNode`/`listenNodeDeferred`,
 -- |   `ensureStyle`, `autoDismiss` and the option tags `OptCaption`,
--- |   `OptLabelIcon`, `OptLabel`, `OptSelected`, `OptIcon`. A leaf that
+-- |   `OptLabelIcon`, `OptSelected`, `OptIcon`. A leaf that
 -- |   writes its own `toUser`/`fromUser` pair instead of one of the four
 -- |   wirings is a leaf that can forget the echo a gate depends on.
 -- |
@@ -52,7 +52,6 @@ module PUI.Web
   , Node
   , OptCaption(..)
   , OptLabelIcon(..)
-  , OptLabel(..)
   , OptSelected(..)
   , OptIcon(..)
   , Wiring
@@ -459,15 +458,7 @@ else instance ConvertOption OptLabelIcon "icon" String (Maybe String) where
 else instance ConvertOption OptLabelIcon sym a a where
   convertOption _ _ = identity
 
--- | Marks the `label` of a FAB as optional.
-data OptLabel = OptLabel
-
-instance ConvertOption OptLabel "label" String (Maybe String) where
-  convertOption _ _ = Just
-else instance ConvertOption OptLabel sym a a where
-  convertOption _ _ = identity
-
--- | Marks a list's `selected` test as optional — `listOf {}` selects
+-- | Marks a list's `selected` test as optional — `listOfAt` selects
 -- | nothing.
 data OptSelected = OptSelected
 
@@ -623,7 +614,7 @@ listenNode node event handler = void $ addEventListener event node (const handle
 -- | — exactly as a captioned leaf does:
 -- |
 -- | ```
--- | dropdown @"Room" {} (choice @"Focus pod (4 seats)" <+> choice @"Boardroom (12 seats)")
+-- | dropdown @"Room" (choice @"Focus pod (4 seats)" <+> choice @"Boardroom (12 seats)")
 -- | ```
 -- |
 -- | A choice is a one-option array over the **closed** singleton row of its
@@ -727,7 +718,7 @@ selectedWith checkedOf stored w = focusField @l $ wrap do
 -- | hidden nodes and other rules count for nothing. So the separator is an
 -- | ocular — `forall a b`, it reads no row and touches no channel, it only
 -- | watches the UI it decorates — and is written leading like every
--- | static: `divider $ slider @"Attendees" {} # inCaseAt @"chosen" @"Room"`
+-- | static: `divider $ slider @"Attendees" # inCaseAt @"chosen" @"Room"`
 -- | (meeting-booker: no rule above an absent slider). Every vocabulary's
 -- | `divider`, and HTML's `hr`, is `separating` over its own rule.
 separating :: forall a b. PUI Web {} {} -> PUI Web a b -> PUI Web a b

@@ -14,14 +14,14 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 passwordGeneratorMDC2 :: Effect Unit
 passwordGeneratorMDC2 =
   body $ Semigroupoid.do
-    slider @"Length" {}
-    toggleSwitch @"Uppercase letters" {}
-    toggleSwitch @"Lowercase letters" {}
-    toggleSwitch @"Digits" {}
-    toggleSwitch @"Symbols" {}
+    slider @"Length"
+    toggleSwitch @"Uppercase letters"
+    toggleSwitch @"Lowercase letters"
+    toggleSwitch @"Digits"
+    toggleSwitch @"Symbols"
     prefixed ( RecordToRecord.do
       body2 (text strengthLine)
-      code >>> attr "style" "word-break: break-all;" $ text passwordText ) $ button @"Generate" {}
+      code >>> attr "style" "word-break: break-all;" $ text passwordText ) $ button @"Generate"
     indeterminateLinearProgress # action samplePassword # atCase @"Generate"
     unshown @"Password generated" # fold identity
   # looped

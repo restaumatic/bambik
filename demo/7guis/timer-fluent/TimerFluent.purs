@@ -17,10 +17,10 @@ timerFluent =
   body $ Semigroupoid.do
     prefixed ( RecordToRecord.do
       progressBar elapsedFraction
-      body1 $ text progressLine ) $ slider @"Duration" {}
+      body1 $ text progressLine ) $ slider @"Duration"
     RecordToVariant.do
       unshown @"Clock ticked" # ticks tickPeriod
-      button @"Reset" {}
+      button @"Reset"
     VariantToRecord.do
       unshown @"Clock ticked" # fold tick
       unshown @"Reset" # fold restarted

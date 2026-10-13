@@ -36,6 +36,16 @@ Before 2026-07 the history is the git log.
   (`unshown @"New game" # reset openingPosition`); every `fold (const …)`
   in the demos (tic-tac-toe, quiz, shopping-cart, espresso-bar) becomes
   a reset.
+- **No call site writes `{}`.** A leaf takes no options record unless one
+  is genuinely needed: the text fields, sliders, switches, chips,
+  selectors, `fab`, `iconButton`, `menuItem`, the button emphasis
+  siblings and `rating` lose theirs (and with them the unused caption
+  overrides `floatingLabel:`/`label:`); `checkbox` loses its ticked
+  payload, now always `{}`. The words with optional presentation
+  reached by a demo get a `…With` sibling: MDC2/MDC3 `buttonWith`
+  (`icon`), `listOfWith` and `listOfAtWith` (`selected`). The textareas,
+  `iconToggle` and `drawer`, whose every call needs its record, keep it.
+  `OptLabel` (the fab's optional label) is deleted.
 
 ## 2026-10-11, last
 

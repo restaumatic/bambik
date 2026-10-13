@@ -67,8 +67,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `μ`) or wrongly conceived.
 - Every component MUST be a citizen of exactly one shape, and its
   row MUST speak the **business label**, stated once as the leaf's own
-  type argument (`text @"Total"`, `filledTextField @"First name" {}`,
-  `button @"Submit order" {}`, `select @"Milk" cfg opts`). No canonical
+  type argument (`text @"Total"`, `filledTextField @"First name"`,
+  `button @"Submit order"`, `select @"Milk" cfg opts`). No canonical
   label (`value`/`clicked`/`event`) appears in application code: business
   functions are arguments of leaves, never adopters — a display takes its
   read function, a status its business case and copy function
@@ -138,12 +138,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   emitter MUST NOT be given a `label:` config: where two buttons would
   share one handler under different words, they are two business actions
   — each emits its own case and the fold block applies the one handler to
-  both (checkout's `stepTo`). An editor's caption config is held to the
-  same rule: the label carries the copy whole — punctuation, format hints
-  and units included (`@"Start date (DD.MM.YYYY)"`, `@"Amount (€)"`) — and
-  a caption that merely repeats what the label already says MUST move onto
-  the label. Only copy a label genuinely cannot be (localized wording)
-  stays in config. A selector's **options** are its ordered case labels
+  both (checkout's `stepTo`). An editor takes no caption config at all:
+  the label carries the copy whole — punctuation, format hints and units
+  included (`@"Start date (DD.MM.YYYY)"`, `@"Amount (€)"`). A leaf takes
+  no options record unless one is genuinely needed; a word with optional
+  presentation has a `…With` sibling (`buttonWith`, `listOfWith`,
+  2026-10-13), so no call site writes `{}`. A selector's **options** are its ordered case labels
   (`choice @l` per option), never a hand-written `{ value, label }` array;
   the order MUST be the order written, never the variant row's, which the
   compiler sorts alphabetically.
@@ -385,8 +385,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 ### L12. The vocabulary never forces a nominal type.
 
-- Canonical rows adopted by label; anonymous-record configs
-  (`{ floatingLabel }`); durations as `{ ms :: Number }` (never
+- Canonical rows adopted by label; anonymous-record options
+  (`buttonWith @l { icon }`); durations as `{ ms :: Number }` (never
   `Milliseconds` in a UI component signature); unit payloads as `{}` (no
   `Default Unit` instance, deliberately); selector options carry
   variant-row values, never strings-as-enums (the `labeled` helper was

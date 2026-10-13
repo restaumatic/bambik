@@ -59,8 +59,8 @@
       <ul>
         <li><b>Every line names exactly one anchor:</b>
           <ul>
-            <li>a model field, as the type argument of an editor, selector or group: <code>filledTextField @"First name" {}</code>, <code>group @"Customer" $ …</code>;</li>
-            <li>a business case, as the type argument of an emitter, pane or status: <code>button @"Submit order" {}</code>, <code>snackbar @"booked" bookedLine</code>;</li>
+            <li>a model field, as the type argument of an editor, selector or group: <code>filledTextField @"First name"</code>, <code>group @"Customer" $ …</code>;</li>
+            <li>a business case, as the type argument of an emitter, pane or status: <code>button @"Submit order"</code>, <code>snackbar @"booked" bookedLine</code>;</li>
             <li>a copy function, as a display's positional argument: <code>text balanceLine</code>;</li>
             <li>nothing, for chrome: <code>card</code>, <code>staticText "Hours"</code>.</li>
           </ul>
@@ -71,9 +71,9 @@
 
       <h3>Labels and copy</h3>
       <ul>
-        <li>A label is its caption verbatim, punctuation, format hints and units included: <code>filledTextField @"Start date (DD.MM.YYYY)" {}</code>, <code>sliderLive @"Amount (€)" {}</code>.</li>
+        <li>A label is its caption verbatim, punctuation, format hints and units included: <code>filledTextField @"Start date (DD.MM.YYYY)"</code>, <code>sliderLive @"Amount (€)"</code>.</li>
         <li>Why: the code stays as close to the running UI as possible. The words on the screen are the words in the code, so a line is found from the screen and the screen from a line.</li>
-        <li>No demo passes a caption config: a leaf states its copy once, as its label.</li>
+        <li>A leaf takes no options record: it states its copy once, as its label. A word with optional presentation has a <code>…With</code> sibling: <code>buttonWith @"Place order" { icon: "local_cafe" }</code>.</li>
         <li>Options are one <code>choice</code> per case, joined by <code>&lt;+&gt;</code> in display order: <code>choice @"one-way" &lt;+&gt; choice @"return"</code>.</li>
         <li>A case label is read back with <code>caseText</code>, never restated in a <code>match</code>.</li>
         <li>A display's text is a named copy function in the view model, whole line including glue: <code>balanceLine :: { balance :: Number } -&gt; String</code>.</li>

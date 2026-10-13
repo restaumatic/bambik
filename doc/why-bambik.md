@@ -149,8 +149,8 @@ meanwhile, is editors as successive pipeline stages:
 
 ```purescript
 Semigroupoid.do
-  filledTextField @"Name" {}
-  filledTextField @"Email" {}
+  filledTextField @"Name"
+  filledTextField @"Email"
 ```
 
 each line one more whole-row stage — and code order is DOM order. Note

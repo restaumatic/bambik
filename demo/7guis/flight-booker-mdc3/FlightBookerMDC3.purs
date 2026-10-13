@@ -8,17 +8,17 @@ import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
 import PUI (action, atCase, debounced, looped, prefixed, with)
 import PUI.Web ((<+>), choice, inCaseAt, pane, text)
-import PUI.Web.MDC3 (body, bodyLarge, button, filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI.Web.MDC3 (body, bodyLarge, buttonWith, filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerMDC3 :: Effect Unit
 flightBookerMDC3 =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      select @"Flight type" {}
+      select @"Flight type"
         (choice @"one-way" <+> choice @"return")
-      filledTextField @"Start date (DD.MM.YYYY)" {}
-      filledTextField @"Return date (DD.MM.YYYY)" {} # inCaseAt @"return" @"Flight type"
+      filledTextField @"Start date (DD.MM.YYYY)"
+      filledTextField @"Return date (DD.MM.YYYY)" # inCaseAt @"return" @"Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
        , "Start date (DD.MM.YYYY)" :: String
@@ -32,7 +32,7 @@ flightBookerMDC3 =
          ) bookingState
       bodyLarge (text oneWayLine) # pane @"one-way" bookingState
       bodyLarge (text returnLine) # pane @"return" bookingState ) identity # debounced itinerarySettleTime
-    button @"Book" { icon: "flight_takeoff" }
+    buttonWith @"Book" { icon: "flight_takeoff" }
     ( VariantToRecord.do
       indeterminateLinearProgress
       snackbar @"Flight booked" bookedLine

@@ -1183,7 +1183,7 @@ static o = atAnyRow (o identity :: p {} {})
 -- | nothing) and the content's channels pass untouched, so the data flow is
 -- | the content's alone. Written first because it is shown first:
 -- | `label $ prefixed (staticText "°C ") $ input @"celsius" "text"`,
--- | `prefixed (headline4 (text countLine)) $ button @"Count" {}`; several
+-- | `prefixed (headline4 (text countLine)) $ button @"Count"`; several
 -- | displays in a row are one `RecordToRecord.do` group under one
 -- | `prefixed`. In a `Semigroupoid.do` block this is how a line that shows
 -- | data (output `{}`) sits before a stage: it decorates the stage rather
@@ -1202,7 +1202,7 @@ prefixed d w = wrap do
 -- | sums, a lap list after the clock — as a decorator over that part of the
 -- | flow: the content is built first, then the display, which is fed each
 -- | row the content releases, before the row goes on. Like `prefixed`, it
--- | changes no data: `slider @"Split between" {} # suffixed ( RecordToRecord.do
+-- | changes no data: `slider @"Split between" # suffixed ( RecordToRecord.do
 -- | … )` keeps the slider's row flowing past the totals under it.
 suffixed :: forall m a b. MonadEffect m => PUI m b {} -> PUI m a b -> PUI m a b
 suffixed d w = wrap do

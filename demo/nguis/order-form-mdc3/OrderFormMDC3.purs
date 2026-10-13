@@ -9,7 +9,7 @@ import Effect (Effect)
 import OrderFormViewModel (deliveryAddress, distanceLine, distanceOf, estimateDistance, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine)
 import PUI (action, atCase, fold, joined, looped, prefixed, settled, subChoice, suffixed, unshown)
 import PUI.Web ((<+>), choice, inCaseAt, pane, provided, text)
-import PUI.Web.MDC3 (body, bodyLarge, button, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
+import PUI.Web.MDC3 (body, bodyLarge, buttonWith, card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderFormMDC3 :: Effect Unit
@@ -20,30 +20,30 @@ orderFormMDC3 =
     ( Semigroupoid.do
       ( Semigroupoid.do
         prefixed (headlineSmall $ text orderLine) $ group @"Identifier" $ Semigroupoid.do
-          filledTextField @"Short ID" {}
-          filledTextField @"Unique ID" {}
+          filledTextField @"Short ID"
+          filledTextField @"Unique ID"
         group @"Customer" $ Semigroupoid.do
-          filledTextField @"First name" {}
-          filledTextField @"Last name" {}
+          filledTextField @"First name"
+          filledTextField @"Last name"
         group @"Fulfillment" $ Semigroupoid.do
           tabBar @"Mode"
             (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
-          filledTextField @"Table" {} # inCaseAt @"Dine in" @"Mode"
-          filledTextField @"Time" {} # inCaseAt @"Takeaway" @"Mode"
-          filledTextField @"Address" {} # settled staleDistanceForgotten # suffixed (bodyLarge (text distanceLine) # pane @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf) # inCaseAt @"Delivery" @"Mode"
+          filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"
+          filledTextField @"Time" # inCaseAt @"Takeaway" @"Mode"
+          filledTextField @"Address" # settled staleDistanceForgotten # suffixed (bodyLarge (text distanceLine) # pane @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf) # inCaseAt @"Delivery" @"Mode"
         group @"Payment" $ Semigroupoid.do
-          filledTextField @"Total" {}
+          filledTextField @"Total"
           segmentedButton @"Method"
             (choice @"cash" <+> choice @"card")
-          filledTextField @"Paid" {} # suffixed (bodyLarge $ text payingLine)
+          filledTextField @"Paid" # suffixed (bodyLarge $ text payingLine)
         group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
       prefixed (card $ bodyLarge (text summaryLine)) identity
       RecordToVariant.do
         ( Semigroupoid.do
-          button @"Estimate distance" { icon: "near_me" } # provided @"Delivery" @( "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: { "Address" :: String } ) deliveryAddress
+          buttonWith @"Estimate distance" { icon: "near_me" } # provided @"Delivery" @( "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: { "Address" :: String } ) deliveryAddress
           indeterminateLinearProgress # action @( "Distance estimated" :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # joined @"Distance estimated"
-        button @"Submit order" { icon: "save" }
-        button @"Receipt" { icon: "file" }
+        buttonWith @"Submit order" { icon: "save" }
+        buttonWith @"Receipt" { icon: "file" }
       ( VariantToVariant.do
         indeterminateLinearProgress # action
           @( "Order submitted" :: { "Short ID" :: String }

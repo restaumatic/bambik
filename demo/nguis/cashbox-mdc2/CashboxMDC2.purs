@@ -9,16 +9,16 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (atCase, fold, looped, prefixed, subChoice, toCase, unshown, with)
 import PUI.Web (text)
-import PUI.Web.MDC2 (body, body1, button, headline6, confirmed)
+import PUI.Web.MDC2 (body, body1, buttonWith, headline6, confirmed)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cashboxMDC2 :: Effect Unit
 cashboxMDC2 =
   body $ Semigroupoid.do
     prefixed (headline6 $ text balanceLine) $ RecordToVariant.do
-      button @"Refund a customer" { icon: "undo" }
-      button @"Pay the courier" { icon: "local_shipping" }
-      button @"Take a deposit" { icon: "savings" }
+      buttonWith @"Refund a customer" { icon: "undo" }
+      buttonWith @"Pay the courier" { icon: "local_shipping" }
+      buttonWith @"Take a deposit" { icon: "savings" }
     ( VariantToVariant.do
       ( confirmed "Refund" "Refund the customer?" $ body1 $ text refundLine ) # atCase @"Refund a customer" # toCase @"Customer refunded" identity
       ( confirmed "Pay" "Pay the courier?" $ body1 $ text payoutLine ) # atCase @"Pay the courier" # toCase @"Courier paid out" identity ) # subChoice

@@ -17,7 +17,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 circleDrawerFluent :: Effect Unit
 circleDrawerFluent =
   body $ Semigroupoid.do
-    slider @"Diameter" {} # inCaseAt @"chosen" @"selected" # settled resizeSelected
+    slider @"Diameter" # inCaseAt @"chosen" @"selected" # settled resizeSelected
     RecordToVariant.do
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
         ( onClickedXY @"Canvas clicked"
@@ -30,8 +30,8 @@ circleDrawerFluent =
                , status :: [ selected :: {}, unselected :: {} ]
                ) canvasCircles ) ) ) # joined @"Canvas clicked"
       ( div $ RecordToVariant.do
-        button @"Undo" {}
-        button @"Redo" {} )
+        button @"Undo"
+        button @"Redo" )
     VariantToRecord.do
       unshown @"Canvas clicked" # fold selectOrAddCircle
       unshown @"Undo" # fold undo

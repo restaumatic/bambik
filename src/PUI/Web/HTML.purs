@@ -85,8 +85,7 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
-import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import PUI.Web (OptCaption(..), selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, eventText, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, textOf, separating, (:=), (:=>))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, eventText, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, textOf, separating, (:=), (:=>))
 
 -- UIs
 
@@ -136,22 +135,22 @@ textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
 select :: forall @l a b r. IsSymbol l => Cons l a b r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-select options = withStructuralEq @a (selectWith @l false (selectedAt @l) options)
+select options = withStructuralEq @a (selectOf @l false (selectedAt @l) options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
 selectUnpicked :: forall @l @c a b1 v b2 r. IsSymbol l => IsSymbol c => Cons c a b1 v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectUnpicked options = withStructuralEq @a (selectWith @l false (selectedUnpickedAt @l @c) options)
+selectUnpicked options = withStructuralEq @a (selectOf @l false (selectedUnpickedAt @l @c) options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
 selectOptional :: forall @l @c @n a b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectOptional options = withStructuralEq @a (selectWith @l true (selectedOptionalAt @l @c @n) options)
+selectOptional options = withStructuralEq @a (selectOf @l true (selectedOptionalAt @l @c @n) options)
 
-selectWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
-selectWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wrap do
+selectOf :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
+selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wrap do
   element "select" (void $ unwrap optionLeaves)
   node <- gets _.sibling
   liftEffect $ selectorWiring options
@@ -234,14 +233,14 @@ outputFace = el "output" $ textOf eventText
 -- | with real copy the label cannot be). It reports, as case `l`, that the
 -- | user asked for something, carrying whatever row it was being shown at
 -- | the time, so the request arrives with its subject attached:
--- | `button @"Count" {}`. An event source, `× → +`.
+-- | `button @"Count"`. An event source, `× → +`.
 -- |
 -- | It is disabled until it has been shown something: a click before any
 -- | value arrived has nothing to report. Like every vocabulary's button it
 -- | stays live after a click — a request a screen must not send twice is
 -- | its action's concern, not the button's.
-button :: forall @l provided r v. IsSymbol l => Cons l { | r } () v => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String } => { | provided } -> PUI Web { | r } [ | v ]
-button provided = wrap do
+button :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
+button = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticText config.label)
   -- a click before any value arrived has nothing valid to emit — withheld
   mARef <- liftEffect $ Ref.new Nothing
@@ -256,7 +255,7 @@ button provided = wrap do
         for_ mA \fed -> prop (inj (Proxy @l) fed)
     }
   where
-  config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided :: { label :: String }
+  config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 
 -- | A horizontal rule separating sections — fixed decoration, and the one
 -- | element with nothing inside it, so it is written as a leaf rather than

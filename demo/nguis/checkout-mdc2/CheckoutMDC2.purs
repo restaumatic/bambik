@@ -9,7 +9,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (fold, joined, looped, prefixed, suffixed, unshown, with)
 import PUI.Web (pane, provided, text)
-import PUI.Web.MDC2 (body, body2, button)
+import PUI.Web.MDC2 (body, body2, button, buttonWith)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkoutMDC2 :: Effect Unit
@@ -23,15 +23,15 @@ checkoutMDC2 =
          ) checkoutStep
       ( body2 $ text shippingLine ) # pane @"shipping" checkoutStep
       ( body2 $ text paymentLine ) # pane @"payment" checkoutStep ) $ RecordToVariant.do
-      button @"Next" {} # provided @"onward"
+      button @"Next" # provided @"onward"
         @( onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
          , last :: {}
          ) onwardFrom # joined @"Next"
-      button @"Back" {} # provided @"back"
+      button @"Back" # provided @"back"
         @( back :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
          , first :: {}
          ) previousOf # joined @"Back"
-      button @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep # joined @"Place order"
+      buttonWith @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep # joined @"Place order"
     ( VariantToRecord.do
       unshown @"Next" # fold stepTo
       unshown @"Back" # fold stepTo

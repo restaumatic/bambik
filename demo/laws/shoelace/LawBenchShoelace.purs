@@ -11,17 +11,17 @@ lawBenchShoelace :: Effect Unit
 lawBenchShoelace = do
   body (staticText "Leaf-law bench · Shoelace")
   runBench
-    [ bench "textField" "×→×" texts (textField @"Name" {})
+    [ bench "textField" "×→×" texts (textField @"Name")
     , bench "textArea" "×→×" texts (textArea @"Name" { rows: 2 })
-    , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
-    , bench "sliderLive" "×→×" quantities (sliderLive @"Amount" {})
-    , bench "rating" "×→×" ratings (rating @"Stars" {})
+    , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On")
+    , bench "sliderLive" "×→×" quantities (sliderLive @"Amount")
+    , bench "rating" "×→×" ratings (rating @"Stars")
     , bench "progressBar" "×→×" fractions (progressBar fractionOf)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
-    , bench "select" "×→×" chosen (select @"Pick" {} options)
-    , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" {} options)
-    , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" {} options)
-    , bench "button" "×→+" rows (button @"Go" {})
+    , bench "select" "×→×" chosen (select @"Pick" options)
+    , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" options)
+    , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
+    , bench "button" "×→+" rows (button @"Go")
     , bench "toast" "+→×" events (toast @"event" identity)
     ]
   where

@@ -7,7 +7,7 @@ import Effect (Effect)
 import PaymentViewModel (amountLine, cardChargedLine, chargeFlaky, chargingLine, statusLine, unpaidOrder)
 import PUI (action, atCase, fold, looped, observed, prefixed, with)
 import PUI.Web (text)
-import PUI.Web.MDC2 (body, body2, button, headline6, indeterminateCircularProgress, snackbar)
+import PUI.Web.MDC2 (body, body2, buttonWith, headline6, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 paymentMDC2 :: Effect Unit
@@ -15,7 +15,7 @@ paymentMDC2 =
   body $ Semigroupoid.do
     prefixed ( RecordToRecord.do
       headline6 $ text amountLine
-      body2 $ text statusLine ) $ button @"Charge card" { icon: "credit_card" }
+      body2 $ text statusLine ) $ buttonWith @"Charge card" { icon: "credit_card" }
     ( Semigroupoid.do
       snackbar @"Charge card" chargingLine # observed
       indeterminateCircularProgress # action chargeFlaky # atCase @"Charge card" )

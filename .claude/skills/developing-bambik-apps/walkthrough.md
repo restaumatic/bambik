@@ -31,10 +31,10 @@ flightBookerMDC2 :: Effect Unit
 flightBookerMDC2 =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      select @"Flight type" {}
+      select @"Flight type"
         (choice @"one-way" <+> choice @"return")
-      filledTextField @"Start date (DD.MM.YYYY)" {}
-      filledTextField @"Return date (DD.MM.YYYY)" {} # inCaseAt @"return" @"Flight type"
+      filledTextField @"Start date (DD.MM.YYYY)"
+      filledTextField @"Return date (DD.MM.YYYY)" # inCaseAt @"return" @"Flight type"
     ) # looped
       @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
        , "Start date (DD.MM.YYYY)" :: String
@@ -48,7 +48,7 @@ flightBookerMDC2 =
          ) bookingState
       body1 (text oneWayLine) # pane @"one-way" bookingState
       body1 (text returnLine) # pane @"return" bookingState ) identity # debounced itinerarySettleTime
-    button @"Book" { icon: "flight_takeoff" }
+    buttonWith @"Book" { icon: "flight_takeoff" }
     ( VariantToRecord.do
       indeterminateLinearProgress
       snackbar @"Flight booked" bookedLine
@@ -79,16 +79,16 @@ Code order is DOM order and data order (writing.md *The pipeline*).
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
 with `# looped @( … ) # with plannedTrip`, the model row declared there.
 
-- `select @"Flight type" {} (choice @"one-way" <+> choice @"return")` —
+- `select @"Flight type" (choice @"one-way" <+> choice @"return")` —
   the type argument is both the caption and the model field, so this
   edits `{ "Flight type" :: [ "one-way" :: {}, "return" :: {} ] }`. Each
   `choice @l` states an option's copy once, as its case, and `<+>` joins
   the options in writing order while closing their row. A trip always
   has a type, so the plain `select` fits: the field holds the variant
   itself.
-- `filledTextField @"Start date (DD.MM.YYYY)" {}` — the label carries the
+- `filledTextField @"Start date (DD.MM.YYYY)"` — the label carries the
   whole copy, format hint included; `{}` is empty presentation config.
-- `filledTextField @"Return date (DD.MM.YYYY)" {} # inCaseAt @"return" @"Flight type"`
+- `filledTextField @"Return date (DD.MM.YYYY)" # inCaseAt @"return" @"Flight type"`
   — the editor pane: this field exists only while the stored
   `"Flight type"` is at case `return`, and the model passes straight
   through otherwise. The pane names the case and then the field, both
@@ -128,7 +128,7 @@ debounced itinerarySettleTime`.
   that no later line depends on needs none of this — it is a plain line,
   and is `prefixed` over the stage after it (writing.md *The pipeline*).
 
-**Stage 3 — `button @"Book" { icon: "flight_takeoff" }`.** The first shape
+**Stage 3 — `buttonWith @"Book" { icon: "flight_takeoff" }`.** The first shape
 change, `×→+`: fed the model, it emits case `"Book"` carrying the model on
 click. Its case is its caption; `icon` is presentation config.
 
@@ -336,7 +336,7 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 ## What to read next
 
 - **counter** — one display reading one function
-  (`prefixed (headline4 (text countLine)) $ button @"Count" {}`), one fold opened by
+  (`prefixed (headline4 (text countLine)) $ button @"Count"`), one fold opened by
   its status (`unshown @"Count" # fold increment`), over a
   model of `{ counted :: Int }`.
 - **timer** — two displays of different sorts,

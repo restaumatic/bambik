@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (action, atCase, fold, joined, looped, prefixed, unshown, with)
 import PUI.Web (text)
-import PUI.Web.MDC2 (body, body1, caption, headline1, headline5, iconButton, indeterminateCircularProgress, listOf, simpleDialog)
+import PUI.Web.MDC2 (body, body1, caption, headline1, headline5, iconButton, indeterminateCircularProgress, listOfWith, simpleDialog)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import WeatherViewModel (aboutLine, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, servedLine, temperatureLine, warsawBulletin)
 
@@ -19,9 +19,9 @@ weatherMDC2 =
       body1 (text humidityWindLine)
       caption (text servedLine)
       ( Semigroupoid.do
-        iconButton @"About this dashboard" {} "info"
+        iconButton @"About this dashboard" "info"
         simpleDialog "Got it" "About this dashboard"
-          ( body1 (text aboutLine) ) # atCase @"About this dashboard" ) ) $ listOf @"Forecast requested" @"request"
+          ( body1 (text aboutLine) ) # atCase @"About this dashboard" ) ) $ listOfWith @"Forecast requested" @"request"
       @( request :: { city :: String, sample :: Int }
        , focus :: [ current :: {}, other :: {} ]
        ) { selected: isCurrent } forecastRequests (text cityLine) # joined @"Forecast requested"

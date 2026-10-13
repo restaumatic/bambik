@@ -16,19 +16,19 @@ import TodoListViewModel (addTodo, clearCompleted, emptyTodoList, isCompleted, r
 todoListMDC3 :: Effect Unit
 todoListMDC3 =
   body $ Semigroupoid.do
-    filledTextField @"What needs to be done?" {}
+    filledTextField @"What needs to be done?"
     segmentedButton @"Visibility"
       (choice @"All" <+> choice @"Active" <+> choice @"Completed")
     prefixed ( RecordToRecord.do
       bodySmall (text soleLine) # pane @"sole" @( sole :: { count :: Int }, several :: { count :: Int } ) remainingItems
       bodySmall (text severalLine) # pane @"several" remainingItems ) $ RecordToVariant.do
-      button @"Add" {}
+      button @"Add"
       listOf @"Todo toggled" @"key"
         @( key :: Int
          , title :: String
          , status :: [ active :: {}, completed :: {} ]
-         ) {} visibleEntries (span (textAt @"title") # clWhen isCompleted "todo-done") # joined @"Todo toggled"
-      button @"Clear completed" {}
+         ) visibleEntries (span (textAt @"title") # clWhen isCompleted "todo-done") # joined @"Todo toggled"
+      button @"Clear completed"
     VariantToRecord.do
       unshown @"Add" # fold addTodo
       unshown @"Todo toggled" # fold toggleTodo

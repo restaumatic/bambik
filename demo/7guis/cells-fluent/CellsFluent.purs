@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 cellsFluent :: Effect Unit
 cellsFluent =
   body $ Semigroupoid.do
-    prefixed (body1 (text selectedLine)) $ textField @"Formula (e.g. =SUM(A0:A5)*2)" {} # settled commit
+    prefixed (body1 (text selectedLine)) $ textField @"Formula (e.g. =SUM(A0:A5)*2)" # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
       ( table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ prefixed (tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) columnHeaders) $ ( tr $ prefixed (td >>> "style" := headerFace $ text rowLabel) $ ( clicked @"Cell picked" @"key" ( td >>> attrWith "style" cellFace $ textAt @"text" ) ) # foreachAt @"key" @"cells" ) # foreach @"rowKey"
         @( rowKey :: String

@@ -29,8 +29,8 @@ circleDrawerHTML =
                , status :: [ selected :: {}, unselected :: {} ]
                ) canvasCircles ) ) ) # joined @"Canvas clicked"
       ( div $ RecordToVariant.do
-        button @"Undo" {}
-        button @"Redo" {} )
+        button @"Undo"
+        button @"Redo" )
     VariantToRecord.do
       unshown @"Canvas clicked" # fold selectOrAddCircle
       unshown @"Undo" # fold undo

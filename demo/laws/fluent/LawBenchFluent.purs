@@ -11,19 +11,19 @@ lawBenchFluent :: Effect Unit
 lawBenchFluent = do
   body (staticText "Leaf-law bench · Fluent")
   runBench
-    [ bench "textField" "×→×" texts (textField @"Name" {})
-    , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On" {})
-    , bench "slider" "×→×" quantities (slider @"Amount" {})
+    [ bench "textField" "×→×" texts (textField @"Name")
+    , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On")
+    , bench "slider" "×→×" quantities (slider @"Amount")
     , bench "ratingDisplay" "×→×" fractions (ratingDisplay fractionOf)
     , bench "progressBar" "×→×" fractions (progressBar fractionOf)
     , bench "indeterminateLinearProgress" "+→×" runs indeterminateLinearProgress
-    , bench "dropdown" "×→×" chosen (dropdown @"Pick" {} options)
-    , bench "dropdownUnpicked" "×→×" picks (dropdownUnpicked @"Pick" @"chosen" {} options)
-    , bench "dropdownOptional" "×→×" picks (dropdownOptional @"Pick" @"chosen" @"unchosen" {} options)
-    , bench "radioGroup" "×→×" chosen (radioGroup @"Pick" {} options)
-    , bench "radioGroupUnpicked" "×→×" picks (radioGroupUnpicked @"Pick" @"chosen" {} options)
-    , bench "radioGroupOptional" "×→×" picks (radioGroupOptional @"Pick" @"chosen" @"unchosen" {} options)
-    , bench "button" "×→+" rows (button @"Go" {})
+    , bench "dropdown" "×→×" chosen (dropdown @"Pick" options)
+    , bench "dropdownUnpicked" "×→×" picks (dropdownUnpicked @"Pick" @"chosen" options)
+    , bench "dropdownOptional" "×→×" picks (dropdownOptional @"Pick" @"chosen" @"unchosen" options)
+    , bench "radioGroup" "×→×" chosen (radioGroup @"Pick" options)
+    , bench "radioGroupUnpicked" "×→×" picks (radioGroupUnpicked @"Pick" @"chosen" options)
+    , bench "radioGroupOptional" "×→×" picks (radioGroupOptional @"Pick" @"chosen" @"unchosen" options)
+    , bench "button" "×→+" rows (button @"Go")
     , bench "messageBar" "+→×" events (messageBar @"event" identity)
     ]
   where

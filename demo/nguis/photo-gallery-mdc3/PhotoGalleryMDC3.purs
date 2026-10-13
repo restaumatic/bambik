@@ -8,7 +8,7 @@ import PhotoGalleryViewModel (albumChoices, albumShots, albumTitle, developedSho
 import PUI (fold, foreach, joined, looped, suffixed, unshown, with)
 import PUI.Web (each, staticText, text, textAt)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC3 (body, displayMedium, divider, drawer, imageList, imageListItem, imagePane, labelSmall, list, listItem, listOf, topAppBar)
+import PUI.Web.MDC3 (body, displayMedium, divider, drawer, imageList, imageListItem, imagePane, labelSmall, list, listItem, listOfWith, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 photoGalleryMDC3 :: Effect Unit
@@ -17,7 +17,7 @@ photoGalleryMDC3 =
     topAppBar "Photo Gallery" $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
         ( Semigroupoid.do
-          listOf @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices (span (textAt @"name")) # joined @"opened"
+          listOfWith @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices (span (textAt @"name")) # joined @"opened"
           unshown @"opened" # fold openAlbum # suffixed ( divider $ RecordToRecord.do
             ( list RecordToRecord.do
               listItem $ staticText "Every photo is an SVG"
