@@ -30,7 +30,7 @@ and emitters of a catalogue — are in the design-system module header
 | displays after a stage whose row flows on | `slider @"Split between" # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch | writing.md *The pipeline* |
 | displays and chrome reading one record side by side | `RecordToRecord.do` — `div $ RecordToRecord.do` | espresso-bar, loan-calculator, meeting-booker, shopping-cart | `Data.Profunctor.Row.RecordToRecord` |
 | several emitters over one record | `RecordToVariant.do` | cashbox, stopwatch, crud | `Data.Profunctor.Row.RecordToVariant` |
-| one stage per event case | `VariantToVariant.do` | crud, cashbox, reorder | `Data.Profunctor.Row.VariantToVariant` |
+| a stage on one event case | `( … ) # atCase @"Create"`, the stage owning the case in the fold block | crud, cashbox, reorder | writing.md *Stages* |
 | one status per outcome case | `VariantToRecord.do` | flight-booker, order-form | `Data.Profunctor.Row.VariantToRecord` |
 | what a composition guarantees | — | — | writing.md *What the laws guarantee* |
 | a compile error between two rows | — | — | writing.md *When it does not compile* |
@@ -98,14 +98,14 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- | --- |
 | a button stepping the model | `button @"Count"` and `unshown @"Count" # fold increment` | counter, todo-list | writing.md *Stages* |
 | a button with a fixed payload | `buttonWith @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
-| an event folded into the model | `unshown @"Customer refunded" # fold refundStandard`, each fold opened by its status, which tells only what a `+→+` block returned (`snackbar @"Person created" personCreatedLine # fold identity`), the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
+| an event folded into the model | `unshown @"Customer refunded" # fold refundStandard`, each fold opened by its status, which tells only what an action returned (`snackbar @"Person created" personCreatedLine # fold identity`), the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
 | a clicked element naming itself | `clicked @"Cell claimed" @"key" (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
 | an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"finished" quizPhase` | stopwatch; quiz, inbox | writing.md *Conditional visibility* |
 | an event replacing the model whole | `unshown @"New game" # reset openingPosition` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
 | two buttons sharing one handler | `unshown @"Next" # fold stepTo`, `unshown @"Back" # fold stepTo` — two cases, one handler applied in each fold | checkout | `PUI` |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
-| some cases intercepted, the rest passing | `( VariantToVariant.do … ) # subChoice` | cashbox | `PUI` |
+| an event intercepted by a dialog | `( Semigroupoid.do { confirmed "Refund" "Refund the customer?" $ …; unshown @"Customer refunded" # fold refundStandard } ) # atCase @"Refund a customer"` — the dialog owns the button's case in the fold block | cashbox | writing.md *Stages* |
 | an event carrying something of its own | `listOf @"toggled" … # joined @"toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, stopwatch | writing.md *Stages* |
 | a button group fed the record it replays | `RecordToVariant.do` of emitters as a stage, each button replaying the row the block is fed | order-form, espresso-bar, signup-form | writing.md *Stages* |
 | a menu of presets | `menu "Presets" ( RecordToVariant.do menuItem @"The usual" … )` | espresso-bar, inbox | the design-system module |
@@ -114,7 +114,7 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| an `Aff` action on an event | `indeterminateLinearProgress # action createPerson # atCase @"Create"`, in the `VariantToVariant.do` of the loop's actions, typed at the block's outcome row | crud, reorder | writing.md *Business functions* |
+| an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { … its outcome statuses, each # fold … } } ) # atCase @"Create"` in the fold block, the action typed at exactly its outcomes | crud, reorder | writing.md *Business functions* |
 | … opened by its outcome statuses | `( VariantToRecord.do { snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker | writing.md *Business functions* |
 | an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine # fold identity` (or `unshown @"People loaded" # fold identity` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |

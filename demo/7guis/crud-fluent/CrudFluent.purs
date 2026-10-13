@@ -6,9 +6,8 @@ import CrudViewModel (createPerson, deletePerson, entries, loadPeopleCatalogue, 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action, atCase, fold, foreach, joined, looped, subChoice, unshown)
+import PUI (action, atCase, fold, foreach, joined, looped, unshown)
 import PUI.Web.Fluent (body, button, indeterminateLinearProgress, messageBar, textField)
 import PUI.Web (attrWith, clicked, text, (:=))
 import PUI.Web.HTML (li, ul)
@@ -34,18 +33,23 @@ crudFluent =
         button @"Create"
         button @"Update"
         button @"Delete"
-      ( VariantToVariant.do
-        indeterminateLinearProgress # action createPerson # atCase @"Create"
-        indeterminateLinearProgress # action updatePerson # atCase @"Update"
-        indeterminateLinearProgress # action deletePerson # atCase @"Delete" ) # subChoice
       VariantToRecord.do
         unshown @"Person picked" # fold pick
-        messageBar @"Person created" personCreatedLine # fold identity
-        messageBar @"Person not created" personNotCreatedLine # fold identity
-        messageBar @"Person updated" personUpdatedLine # fold identity
-        messageBar @"Person not updated" personNotUpdatedLine # fold identity
-        messageBar @"Person deleted" personDeletedLine # fold identity
-        messageBar @"Person not deleted" personNotDeletedLine # fold identity
+        ( Semigroupoid.do
+          indeterminateLinearProgress # action createPerson
+          VariantToRecord.do
+            messageBar @"Person created" personCreatedLine # fold identity
+            messageBar @"Person not created" personNotCreatedLine # fold identity ) # atCase @"Create"
+        ( Semigroupoid.do
+          indeterminateLinearProgress # action updatePerson
+          VariantToRecord.do
+            messageBar @"Person updated" personUpdatedLine # fold identity
+            messageBar @"Person not updated" personNotUpdatedLine # fold identity ) # atCase @"Update"
+        ( Semigroupoid.do
+          indeterminateLinearProgress # action deletePerson
+          VariantToRecord.do
+            messageBar @"Person deleted" personDeletedLine # fold identity
+            messageBar @"Person not deleted" personNotDeletedLine # fold identity ) # atCase @"Delete"
     ) # looped
       @( "Filter prefix (surname)" :: String
        , "Name" :: String

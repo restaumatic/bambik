@@ -76,10 +76,11 @@ value, one per shape:
   Never an editor: editors are pipeline stages ([Components](#components)).
 - `RecordToVariant.do` (×→+) — a row of buttons over the model
   (cashbox, stopwatch).
-- `VariantToVariant.do` (+→+) — one handler per event case: backend
-  actions (crud).
-- `VariantToRecord.do` (+→×) — one status per outcome (flight-booker's
-  two snackbars).
+- `VariantToVariant.do` (+→+) — one handler per event case. No demo
+  needs the block: an action handles its button's case inside the fold
+  block ([Business functions](#business-functions)).
+- `VariantToRecord.do` (+→×) — one fold or status per case (crud's
+  folds; flight-booker's two snackbars).
 
 Import the four from `Data.Profunctor.Row.RecordToRecord` and its
 siblings (`import Data.Profunctor.Row.RecordToRecord as
@@ -193,7 +194,7 @@ for:
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
 | a periodic occurrence | `unshown @"Clock ticked" # ticks tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @celsius # settled fromCelsius` | temperature-converter |
-| effects on the buttons' cases, the other events passing | `( VariantToVariant.do { indeterminateLinearProgress # action createPerson # atCase @"Create"; … } ) # subChoice`, every action typed at the block's outcome row, every outcome folded once by its status | crud |
+| an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" personCreatedLine # fold identity; … } } ) # atCase @"Create"`, the pair owning the case in the fold block, the action typed at exactly its outcomes | crud |
 | an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `unshown @"Forecast fetched" # fold identity` | weather |
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
 | a fold nothing needs telling about | `unshown @"Todo toggled" # fold toggleTodo`, `unshown @"Clock ticked" # fold tick` | todo-list, timer, stopwatch |
@@ -244,7 +245,7 @@ The status names the case — its label is the event's, human copy like
 `"Person created"` — and shows the **event**, never the fold's result:
 it is fed the occurrence as it arrives, so its copy function is typed at
 the payload and everything it says must be in the event. A status with
-copy therefore stands after a `+→+` block that returned what it tells
+copy therefore stands after an action that returned what it tells
 (crud's action returns the model, so `personCreatedLine :: model ->
 String`). A command straight from an emitter has nothing to tell that
 the displays do not already show, and a heartbeat nobody needs told
@@ -290,7 +291,7 @@ compile error at `body` naming the missing fields.
 | a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, which `body`'s one feed of `{}` runs) |
 | an action that retries until it succeeds, narrated on its way in | payment (`chargeFlaky`, `# observed`) |
 | state that used to be a hidden loop, now a model field | auction (`settled raiseTop`), checkout (`stepTo`), ticket-dispenser (`issue`) |
-| a reusable sub-form over a sub-record; routing some events | parcel (`group @"Address" addressForm`), cashbox (`subChoice`) |
+| a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed … # atCase`) |
 | an effect's outcome folded into the model it lands on | order-form (`… # joined @"Distance estimated"`, `fold setDistance`) |
 | keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
 
@@ -414,20 +415,24 @@ is the one fake in the app, named as such.
 **An action's outcome cases are named by its `Aff`** (`createPerson ::
 model -> Aff [ "Person created" :: model, "Person not created" :: model ]`,
 crud) and **opened by its statuses**: a progress indicator for
-`started`/`ended`, a status per outcome case it shows, or both in one
-`VariantToRecord.do`. The actions of a loop stand in one
-`VariantToVariant.do`, one line per button's case, and **every action is
-typed at the block's outcome row** — the union of all their outcomes,
-as a display's function is typed at the whole model though it reads one
-field (`createPerson :: model -> Aff [ "Person created" :: model, "Person
-deleted" :: model, … ]`, the six cases of crud's three actions, each
-`Aff` returning its own). The block's outputs are one row (an equality,
-like the `×→×` merge's inputs), so the fold block after it fixes the row
-and nothing names an outcome on an action line; events the actions do
-not handle pass `# subChoice`. Where only statuses follow (flight-booker;
-order-form's submit and receipt, whose snackbars sit in the fold block
-beside the folds), `@( … )` declares the payloads nothing downstream
-fixes.
+`started`/`ended`, a status per outcome case it shows, or both. An
+action lives in the fold block, **folded by its own outcome statuses**,
+and that pair owns the button's case there:
+
+```purescript
+( Semigroupoid.do
+  indeterminateLinearProgress # action createPerson
+  VariantToRecord.do
+    snackbar @"Person created" personCreatedLine # fold identity
+    snackbar @"Person not created" personNotCreatedLine # fold identity ) # atCase @"Create"
+```
+
+So **every action is typed at exactly its own outcomes**, the cases its
+folds consume fixing the row, and nothing names an outcome on an action
+line. Where only statuses follow (flight-booker; order-form's submit and
+receipt), `@( … )` declares the payloads nothing downstream fixes. No
+word passes an event *around* a stage: every event reaches the fold
+block on its own.
 
 Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app
@@ -691,8 +696,8 @@ text is computed, a chrome line nothing.
   created" personCreatedLine # fold identity`; a constant replacing the
   model is `unshown @"New game" # reset openingPosition`. A status's copy function takes the event's
   payload, never the handler's result.
-- **A status only after a `+→+` block.** A fold opens with a visible
-  status where a `+→+` block returned what the status tells, an
+- **A status only after an action.** A fold opens with a visible
+  status where an action returned what the status tells, an
   action's outcome (crud's `snackbar @"Person created"
   personCreatedLine # fold identity`). A command straight from an
   emitter folds silently, whatever it does, since the screen already

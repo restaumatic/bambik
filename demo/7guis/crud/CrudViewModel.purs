@@ -54,36 +54,12 @@ createPerson
                                , people :: Array { "Name" :: String, "Surname" :: String }
                                , selected :: [ none :: {}, picked :: { index :: Int } ]
                                }
-         , "Person deleted" :: { "Filter prefix (surname)" :: String
-                               , "Name" :: String
-                               , "Surname" :: String
-                               , people :: Array { "Name" :: String, "Surname" :: String }
-                               , selected :: [ none :: {}, picked :: { index :: Int } ]
-                               }
          , "Person not created" :: { "Filter prefix (surname)" :: String
                                    , "Name" :: String
                                    , "Surname" :: String
                                    , people :: Array { "Name" :: String, "Surname" :: String }
                                    , selected :: [ none :: {}, picked :: { index :: Int } ]
                                    }
-         , "Person not deleted" :: { "Filter prefix (surname)" :: String
-                                   , "Name" :: String
-                                   , "Surname" :: String
-                                   , people :: Array { "Name" :: String, "Surname" :: String }
-                                   , selected :: [ none :: {}, picked :: { index :: Int } ]
-                                   }
-         , "Person not updated" :: { "Filter prefix (surname)" :: String
-                                   , "Name" :: String
-                                   , "Surname" :: String
-                                   , people :: Array { "Name" :: String, "Surname" :: String }
-                                   , selected :: [ none :: {}, picked :: { index :: Int } ]
-                                   }
-         , "Person updated" :: { "Filter prefix (surname)" :: String
-                               , "Name" :: String
-                               , "Surname" :: String
-                               , people :: Array { "Name" :: String, "Surname" :: String }
-                               , selected :: [ none :: {}, picked :: { index :: Int } ]
-                               }
          ]
 createPerson m@{ "Name": name, "Surname": surname, people }
   | name == "" || surname == "" = pure (."Person not created" m)
@@ -96,31 +72,7 @@ updatePerson
      , people :: Array { "Name" :: String, "Surname" :: String }
      , selected :: [ none :: {}, picked :: { index :: Int } ]
      }
-  -> Aff [ "Person created" :: { "Filter prefix (surname)" :: String
-                               , "Name" :: String
-                               , "Surname" :: String
-                               , people :: Array { "Name" :: String, "Surname" :: String }
-                               , selected :: [ none :: {}, picked :: { index :: Int } ]
-                               }
-         , "Person deleted" :: { "Filter prefix (surname)" :: String
-                               , "Name" :: String
-                               , "Surname" :: String
-                               , people :: Array { "Name" :: String, "Surname" :: String }
-                               , selected :: [ none :: {}, picked :: { index :: Int } ]
-                               }
-         , "Person not created" :: { "Filter prefix (surname)" :: String
-                                   , "Name" :: String
-                                   , "Surname" :: String
-                                   , people :: Array { "Name" :: String, "Surname" :: String }
-                                   , selected :: [ none :: {}, picked :: { index :: Int } ]
-                                   }
-         , "Person not deleted" :: { "Filter prefix (surname)" :: String
-                                   , "Name" :: String
-                                   , "Surname" :: String
-                                   , people :: Array { "Name" :: String, "Surname" :: String }
-                                   , selected :: [ none :: {}, picked :: { index :: Int } ]
-                                   }
-         , "Person not updated" :: { "Filter prefix (surname)" :: String
+  -> Aff [ "Person not updated" :: { "Filter prefix (surname)" :: String
                                    , "Name" :: String
                                    , "Surname" :: String
                                    , people :: Array { "Name" :: String, "Surname" :: String }
@@ -145,42 +97,18 @@ deletePerson
      , people :: Array { "Name" :: String, "Surname" :: String }
      , selected :: [ none :: {}, picked :: { index :: Int } ]
      }
-  -> Aff [ "Person created" :: { "Filter prefix (surname)" :: String
+  -> Aff [ "Person deleted" :: { "Filter prefix (surname)" :: String
                                , "Name" :: String
                                , "Surname" :: String
                                , people :: Array { "Name" :: String, "Surname" :: String }
                                , selected :: [ none :: {}, picked :: { index :: Int } ]
                                }
-         , "Person deleted" :: { "Filter prefix (surname)" :: String
-                               , "Name" :: String
-                               , "Surname" :: String
-                               , people :: Array { "Name" :: String, "Surname" :: String }
-                               , selected :: [ none :: {}, picked :: { index :: Int } ]
-                               }
-         , "Person not created" :: { "Filter prefix (surname)" :: String
-                                   , "Name" :: String
-                                   , "Surname" :: String
-                                   , people :: Array { "Name" :: String, "Surname" :: String }
-                                   , selected :: [ none :: {}, picked :: { index :: Int } ]
-                                   }
          , "Person not deleted" :: { "Filter prefix (surname)" :: String
                                    , "Name" :: String
                                    , "Surname" :: String
                                    , people :: Array { "Name" :: String, "Surname" :: String }
                                    , selected :: [ none :: {}, picked :: { index :: Int } ]
                                    }
-         , "Person not updated" :: { "Filter prefix (surname)" :: String
-                                   , "Name" :: String
-                                   , "Surname" :: String
-                                   , people :: Array { "Name" :: String, "Surname" :: String }
-                                   , selected :: [ none :: {}, picked :: { index :: Int } ]
-                                   }
-         , "Person updated" :: { "Filter prefix (surname)" :: String
-                               , "Name" :: String
-                               , "Surname" :: String
-                               , people :: Array { "Name" :: String, "Surname" :: String }
-                               , selected :: [ none :: {}, picked :: { index :: Int } ]
-                               }
          ]
 deletePerson m@{ people, selected } = match
   { picked: \p -> (\ps -> ."Person deleted" (peopleDeleted ps m)) <$> storePeople (fromMaybe people (deleteAt p.index people))

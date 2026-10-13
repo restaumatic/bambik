@@ -84,7 +84,7 @@
 -- | shape        Profunctor only                 over the strength            knot
 -- | -----------  ------------------------------  ---------------------------  --------------------
 -- | p {|a} {|b}  asField, muted, settled         subStrong, focusField       looped (Looping)
--- | p [|a] [|b]  atCase, toCase, forCase         subChoice, focusCase         —
+-- | p [|a] [|b]  atCase, toCase, forCase         focusCase                    —
 -- | p {|a} [|b]  replaying, joined               subResolving                 —
 -- | p [|a] {|b}  fold                            subRetaining                 —
 -- | ```
@@ -93,7 +93,7 @@
 -- | nothing threaded and no state. The **middle** column carries a
 -- | **background** the strength threads. The sub-row family is named for the
 -- | strength it stands on, so each name is the first constraint in its own
--- | signature (`subChoice`/`subResolving`/`subRetaining`) — a
+-- | signature (`subResolving`/`subRetaining`) — a
 -- | strength names the carrier *pair*, so no side is privileged, where a
 -- | carrier word would be honest on the pure shapes and half-true on the
 -- | mixed ones. The pure shapes add their ecosystem single-label optic
@@ -723,8 +723,7 @@ widenVariantOutput = rmap expand
 
 -- | Dispatch a shot into the focused sub-variant or the background — a
 -- | plain row function, no profunctor in sight, which is why it sits on the
--- | floor rather than in a shape module. `subChoice` and `subRetaining`
--- | both split with it.
+-- | floor rather than in a shape module. `subRetaining` splits with it.
 splitVariant
   :: forall v1 b v
    . ExclusiveRows v1 b v

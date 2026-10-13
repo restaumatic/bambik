@@ -100,7 +100,7 @@
         <li>A handler updates the row it is given: <code>increment m = m { counted = m.counted + 1 }</code>.</li>
         <li>A constant replaces the model only whole, by a reset: <code>unshown @"New game" # reset openingPosition</code>.</li>
         <li>Each event case has its own fold, opened by its status: <code>unshown @"Count" # fold increment</code>.</li>
-        <li>A status shows the event, never the fold's result, so a fold shows one only after a <code>+→+</code> block that returned what it tells, an action's outcome. A command straight from an emitter folds silently: <code>unshown @"Todo toggled" # fold toggleTodo</code>.</li>
+        <li>A status shows the event, never the fold's result, so a fold shows one only after an action that returned what it tells. A command straight from an emitter folds silently: <code>unshown @"Todo toggled" # fold toggleTodo</code>.</li>
         <li>An event with a payload of its own is <code># joined @l</code> and handled by one record: <code>toggleTodo :: { event :: Int, model :: … } -&gt; …</code>.</li>
         <li>An action returns the model under its outcome case, folded by <code>identity</code>.</li>
         <li>A business function takes one record; field names carry the roles: <code>returnBetween { out, back }</code>.</li>

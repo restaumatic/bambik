@@ -13,17 +13,17 @@ Before 2026-07 the history is the git log.
   function is typed at the payload; since 2026-10-07 it had been fed
   `f` of the payload under the same case, which put a second row
   variable and a second `Cons` in the signature. Whatever a status says
-  must therefore be in the event: a status with copy stands after a
-  `+→+` block that returned what it tells (crud's actions, payment,
+  must therefore be in the event: a status with copy stands after an
+  action that returned what it tells (crud's actions, payment,
   ticker reading the fetched price), and a command straight from an
   emitter folds under `blankStatus`, since its result is already on
   screen. Counter, ticket-dispenser, cashbox, checkout, inbox and
   shopping-cart drop their snackbars (and their copy functions);
   writing.md's *A status only where a real app would tell* (backend
   outcome, money moved, destructive action) becomes *A status only after
-  a `+→+` block*.
+  an action*.
 - `blankStatus @l` is renamed `unshown @l`: it owns a case and shows
-  nothing, whether the case comes from an emitter or a `+→+` block, so
+  nothing, whether the case comes from an emitter or an action, so
   "status" claimed an origin it does not have.
 - Demos: order-form's load is told by a snackbar (`orderLoadedLine`,
   read from the loaded order); espresso-bar's Place order runs a `+→+`
@@ -46,6 +46,16 @@ Before 2026-07 the history is the git log.
   (`icon`), `listOfWith` and `listOfAtWith` (`selected`). The textareas,
   `iconToggle` and `drawer`, whose every call needs its record, keep it.
   `OptLabel` (the fab's optional label) is deleted.
+- **`subChoice` is deleted.** An action is folded by its own outcome
+  statuses, and that pair owns the button's case in the fold block
+  (`( progress # action createPerson >>> VariantToRecord.do { … } ) #
+  atCase @"Create"`), so no event needs passing around a `+→+` stage and
+  every action is typed at exactly its own outcomes (crud's at two cases
+  each, where the shared `+→+` row typed each at all six; order-form's
+  `printReceipt` names its one). Its shape — a `+→+` block between the
+  emitters and the folds with the untouched cases passed through — is
+  gone from the demos (crud, order-form, espresso-bar, cashbox, whose
+  dialogs now own their cases in the fold block).
 
 ## 2026-10-11, last
 

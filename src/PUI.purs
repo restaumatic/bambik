@@ -115,7 +115,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- placement is the vocabularies' plumbing for their statics.
 import Data.Profunctor.Row.RecordToRecord (asField, blank, muted, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, replaying, silence) as Adopters
-import Data.Profunctor.Row.VariantToVariant (atCase, subChoice, toCase) as Adopters
+import Data.Profunctor.Row.VariantToVariant (atCase, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping)
@@ -1071,7 +1071,7 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | # observed` narrates a charge on its way to the action without
 -- | interrupting it (payment). The status
 -- | owns its cases within the stage's row (`Contractable s f`, the
--- | shot/focus relation `subChoice` dispatches by): the focus
+-- | shot/focus relation `splitVariant` dispatches by): the focus
 -- | cases are contracted out and shown, the background cases pass
 -- | untouched. The status's own emissions are dropped, deliberately —
 -- | events are one-shot, so re-emitting the last event would duplicate it —

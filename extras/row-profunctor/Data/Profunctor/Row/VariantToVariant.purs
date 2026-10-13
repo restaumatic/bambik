@@ -11,8 +11,7 @@
 -- |   * **shape class** — `VariantToVariant`, the binary **merge**: the
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`).
--- |   * **free functions** — over the strength: `subChoice` (a sub-variant,
--- |     the background cases passing) and `focusCase` (one case, the
+-- |   * **free functions** — over the strength: `focusCase` (one case, the
 -- |     value-level prism); over bare `Profunctor`, the structural
 -- |     adopters `atCase` (the closed-singleton unwrap of an input case)
 -- |     and `toCase` (a bare output introduced as a case), plus
@@ -90,16 +89,15 @@
 -- | the fold (CHANGELOG, 2026-10-03): a pure
 -- | handling of an occurrence is applied where the occurrence is consumed,
 -- | so the `+→+` shape keeps no pure leaf, and its handlers remain the
--- | `action`s. `RecordToRecord.subStrong`'s transpose, `subChoice`, once sat
--- | in this note as failing reachability; an application reached for it —
--- | some cases detouring through an interception stage while the rest pass
--- | straight through — and it is admitted below.
+-- | `action`s. Nor does any word pass background cases through a `+→+`
+-- | stage: an action is folded by its own outcome statuses, and that pair
+-- | owns the button's case in the fold block, so every event reaches the
+-- | fold block on its own (CHANGELOG, 2026-10-13).
 module Data.Profunctor.Row.VariantToVariant
   ( class VariantToVariant
   , variantToVariant
   , bind
   , discard
-  , subChoice
   , focusCase
   , atCase
   , toCase
@@ -150,21 +148,6 @@ discard
   -> (Unit -> p [ | v2 ] [ | o ])
   -> p [ | v3 ] [ | o ]
 discard first cont = bind first (\_ -> cont unit)
-
--- | Focus a sub-variant, passing the background cases through untouched.
--- | Routing needs only the focus's labels, which the view names; the
--- | background is whatever else arrives (guardrails L18: the whole row is
--- | the logic's, so it is left free).
-subChoice
-  :: forall p v1 v2 b v v3
-   . Choice p
-  => ExclusiveRows v1 b v
-  => ExclusiveRows v2 b v3
-  => Contractable v v1
-  => Contractable v b
-  => p [ | v1 ] [ | v2 ]
-  -> p [ | v ] [ | v3 ]
-subChoice g = dimap splitVariant (either expand expand) (left g)
 
 -- | The case prism: transform the payload of case `l`, passing the other cases through.
 focusCase

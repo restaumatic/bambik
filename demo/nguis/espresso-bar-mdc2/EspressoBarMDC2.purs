@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import EspressoBarViewModel (caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, orderPlacedLine, placeOrder, theUsual, usualOrder)
-import PUI (action, atCase, fold, looped, prefixed, reset, subChoice, unshown, with)
+import PUI (action, atCase, fold, looped, prefixed, reset, unshown, with)
 import PUI.Web ((<+>), choice, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body, body2, buttonWith, caption, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, indeterminateLinearProgress, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltipWith, topAppBar)
@@ -42,13 +42,12 @@ espressoBarMDC2 =
           menuItem @"The usual"
           menuItem @"Espresso, no frills" )
         buttonWith @"Place order" { icon: "local_cafe" }
-      ( indeterminateLinearProgress
-        # action @( "Order placed" :: { number :: Int, "Your name" :: String } ) placeOrder
-        # atCase @"Place order" ) # subChoice
       VariantToRecord.do
         unshown @"The usual" # fold theUsual
         unshown @"Espresso, no frills" # fold espressoNoFrills
-        snackbar @"Order placed" orderPlacedLine # reset usualOrder
+        ( Semigroupoid.do
+          indeterminateLinearProgress # action @( "Order placed" :: { number :: Int, "Your name" :: String } ) placeOrder
+          snackbar @"Order placed" orderPlacedLine # reset usualOrder ) # atCase @"Place order"
     # looped
       @( "Your name" :: String
        , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]
