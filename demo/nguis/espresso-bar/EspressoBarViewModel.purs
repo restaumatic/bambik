@@ -1,4 +1,4 @@
-module EspressoBarViewModel (caffeineFraction, cupLine, espressoNoFrills, loyaltyNote, orderPlacedLine, placeOrder, theUsual, usualOrder) where
+module EspressoBarViewModel (caffeineFraction, cupLine, espressoNoFrills, orderPlacedLine, placeOrder, theUsual, usualOrder) where
 
 import Prelude (bind, discard, min, otherwise, pure, show, ($), (*), (+), (-), (<>), (==))
 
@@ -14,7 +14,7 @@ usualOrder
   :: { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
+     , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
      , "Milk" :: [ "no milk" :: {}
                  , "with almond milk" :: {}
@@ -42,14 +42,14 @@ usualOrder =
   , "Decaf": false
   , "Takeaway cup": false
   , "Mark as favorite": false
-  , "Loyalty": .guest {}
+  , "Loyalty member": .guest {}
   }
 
 theUsual
   :: { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
+     , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
      , "Milk" :: [ "no milk" :: {}
                  , "with almond milk" :: {}
@@ -69,7 +69,7 @@ theUsual
   -> { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
+     , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
      , "Milk" :: [ "no milk" :: {}
                  , "with almond milk" :: {}
@@ -92,7 +92,7 @@ espressoNoFrills
   :: { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
+     , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
      , "Milk" :: [ "no milk" :: {}
                  , "with almond milk" :: {}
@@ -112,7 +112,7 @@ espressoNoFrills
   -> { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
+     , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
      , "Milk" :: [ "no milk" :: {}
                  , "with almond milk" :: {}
@@ -135,7 +135,7 @@ cupLine
   :: { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
+     , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
      , "Milk" :: [ "no milk" :: {}
                  , "with almond milk" :: {}
@@ -160,8 +160,8 @@ forCustomer { "Your name": customer } = case trim customer of
   "" -> ""
   name -> ", " <> name
 
-summaryText :: forall r1. { "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Loyalty" :: [ member :: {}, guest :: {} ] | r1 } -> String
-summaryText { "Drink": drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty": loyalty } =
+summaryText :: forall r1. { "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Loyalty member" :: [ member :: {}, guest :: {} ] | r1 } -> String
+summaryText { "Drink": drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty member": loyalty } =
   caseText size <> " " <> caseText drink
     <> " " <> caseText milk
     <> ", " <> caseText roast <> " roast"
@@ -169,7 +169,7 @@ summaryText { "Drink": drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar
     <> (if decaf then ", decaf" else "")
     <> sugarsText sugar.current
     <> (if takeaway then ", to go" else "")
-    <> " — " <> money (price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty": loyalty })
+    <> " — " <> money (price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty member": loyalty })
 
 sugarsText :: Number -> String
 sugarsText n
@@ -177,37 +177,14 @@ sugarsText n
   | n == 1.0 = ", 1 sugar"
   | otherwise = ", " <> toStringWith (fixed 0) n <> " sugars"
 
-price :: forall r1. { "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Extra shot" :: Boolean, "Loyalty" :: [ member :: {}, guest :: {} ] | r1 } -> Number
-price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty": loyalty } = discounted (sizePrice size + milkPrice milk + (if extraShot then 0.5 else 0.0))
+price :: forall r1. { "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Extra shot" :: Boolean, "Loyalty member" :: [ member :: {}, guest :: {} ] | r1 } -> Number
+price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty member": loyalty } = discounted (sizePrice size + milkPrice milk + (if extraShot then 0.5 else 0.0))
   where
   discounted p = match { member: \_ -> p * (1.0 - memberDiscount), guest: \_ -> p } loyalty
 
 memberDiscount :: Number
 memberDiscount = 0.1
 
-loyaltyNote
-  :: { "Decaf" :: Boolean
-     , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
-     , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
-     , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
-                 ]
-     , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
-     , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
-     , "Sugar" :: { current :: Number
-                  , max :: Number
-                  , min :: Number
-                  , step :: [ continuous :: {}, discrete :: Number ]
-                  }
-     , "Takeaway cup" :: Boolean
-     , "Your name" :: String
-     }
-  -> String
-loyaltyNote _ = "Members get " <> toStringWith (fixed 0) (memberDiscount * 100.0) <> "% off"
 
 sizePrice :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ] -> Number
 sizePrice = match { "Small": \_ -> 3.0, "Medium": \_ -> 3.5, "Large": \_ -> 4.0 }
@@ -222,7 +199,7 @@ caffeineFraction
   :: { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
+     , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
      , "Milk" :: [ "no milk" :: {}
                  , "with almond milk" :: {}
@@ -263,7 +240,7 @@ placeOrder
   :: { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
-     , "Loyalty" :: [ guest :: {}, member :: {} ]
+     , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
      , "Milk" :: [ "no milk" :: {}
                  , "with almond milk" :: {}

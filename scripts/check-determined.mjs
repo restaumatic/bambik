@@ -25,32 +25,27 @@
 // appended as a signature over a runtime `hole`, ready to be filled.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { sets } from './demos.mjs'
+import { all } from './demos.mjs'
 import { layoutSignature } from './signature-layout.mjs'
 
 const importRe = /^import (\w+ViewModel) \(([^)]*)\)[ \t]*\n/m
-const demos = Object.entries(sets).flatMap(([set, byDir]) =>
-  Object.entries(byDir).map(([dir, [mod]]) => ({ dir, set, mod, file: `demo/${set}/${dir}/${mod}.purs` })))
+const demos = all.map(d => ({ ...d, file: `${d.dir}/${d.mod}.purs` }))
 const write = process.argv.includes('--write')
 const wanted = process.argv.slice(2).filter(a => a !== '--write')
-const chosen = wanted.length ? demos.filter(d => wanted.includes(d.dir)) : demos
+const chosen = wanted.length ? demos.filter(d => wanted.includes(d.name)) : demos
 if (chosen.length === 0) { console.error('check-determined: no demo selected'); process.exit(2) }
 
 rmSync('.determined', { recursive: true, force: true })
 mkdirSync('.determined/src', { recursive: true })
 cpSync('output', '.determined/output', { recursive: true })
 
-// twins share the view model module from the unsuffixed sibling directory;
-// a single-variant demo keeps it beside the view
-const viewModelFile = (d, mod) => {
-  const base = d.dir.replace(/-(mdc2|mdc3|shoelace|fluent|bootstrap|html)$/, '')
-  return [`demo/${d.set}/${base}/${mod}.purs`, `demo/${d.set}/${d.dir}/${mod}.purs`].find(existsSync)
-}
+// the view model module sits beside the views it serves
+const viewModelFile = (d, mod) => [`${d.dir}/${mod}.purs`].find(existsSync)
 
 const holed = chosen.flatMap(d => {
   const src = readFileSync(d.file, 'utf8')
   const m = importRe.exec(src)
-  if (!m) { console.log(`– ${d.dir}: no view model module, all view`); return [] }
+  if (!m) { console.log(`– ${d.name}: no view model module, all view`); return [] }
   const names = m[2].split(',').map(s => s.trim()).filter(Boolean)
   let out = src.replace(m[0], '').replace(/^module (\w+)/m, 'module Determined.$1')
   // A derived row is declared once, where its function first appears; the
@@ -102,7 +97,7 @@ const check = (block, problems) => {
 // whose helper functions also hold holes is read in rounds: each round's
 // reported holes become `hole` (the same fresh unknown to the checker) and
 // the next declaration surfaces, until no hole is left.
-const results = new Map(holed.map(d => [d.dir, { listed: [], tails: [], problems: [], seen: false, hints: new Map(), shown: [], written: [] }]))
+const results = new Map(holed.map(d => [d.name, { listed: [], tails: [], problems: [], seen: false, hints: new Map(), shown: [], written: [] }]))
 const hint = (r, decl, name, type) => {
   const t = oneLine(type)
   if (!r.hints.has(name)) r.hints.set(name, new Set())
@@ -113,7 +108,7 @@ for (let round = 0; round < 12; round++) {
   const blocks = compile()
   let progressed = false
   for (const d of holed) {
-    const r = results.get(d.dir)
+    const r = results.get(d.name)
     const mine = blocks.filter(b => b.includes(`.determined/src/${d.mod}.purs`))
     const summaries = mine.filter(b => b.includes('holes in this declaration'))
     const singles = mine.filter(b => b.includes("Hole '") && !summaries.some(s => declOf(s) === declOf(b)))
@@ -174,10 +169,10 @@ const writeSignature = (file, name, h) => {
 }
 let failed = false
 for (const d of holed) {
-  const r = results.get(d.dir)
+  const r = results.get(d.name)
   if (!r.seen) r.problems.push('no hole list: the view uses nothing it imports, or did not compile down to holes')
   if (r.seen && r.problems.length === 0) {
-    if (!d.viewModel) r.problems.push('view model module file not found beside the view or in the unsuffixed sibling directory')
+    if (!d.viewModel) r.problems.push('view model module file not found beside the view')
     else {
       const src = readFileSync(d.viewModel, 'utf8')
       for (const name of exportsOf(src)) if (!importedBy.get(d.module).has(name))
@@ -194,10 +189,10 @@ for (const d of holed) {
     }
   }
   if (r.problems.length === 0 && write)
-    console.log(`✎ ${d.dir}: ${r.listed.length} holes determined, ${r.written.length ? `wrote ${r.written.join(', ')}` : 'every signature already written'}`)
+    console.log(`✎ ${d.name}: ${r.listed.length} holes determined, ${r.written.length ? `wrote ${r.written.join(', ')}` : 'every signature already written'}`)
   else if (r.problems.length === 0)
-    console.log(`✓ ${d.dir}: ${r.listed.length} holes determined, nothing unknown, signatures verbatim`)
-  else { failed = true; console.error(`✗ ${d.dir}\n  ${r.problems.join('\n  ')}`) }
+    console.log(`✓ ${d.name}: ${r.listed.length} holes determined, nothing unknown, signatures verbatim`)
+  else { failed = true; console.error(`✗ ${d.name}\n  ${r.problems.join('\n  ')}`) }
   if (process.env.SHOW && (r.problems.length || process.env.SHOW === 'all')) for (const l of r.shown) console.log(`    ${l}`)
 }
 process.exit(failed ? 1 : 0)

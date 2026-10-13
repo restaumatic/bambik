@@ -8,7 +8,8 @@
 // the page at mount where the dressing leaves a DOM footprint (guardrails L11).
 import { all } from '../../demos.mjs'
 
-export const demos = all.filter(d => d.set !== 'laws').map(d => d.dir)
+const pages = all.filter(d => d.set !== 'laws')
+export const demos = pages.map(d => d.name)
 export const url = '/demo/'
 
 // past the 3s starvation watchdog
@@ -27,16 +28,16 @@ const mounted = `(() => {
 })()`
 
 export const run = async ({ open, assertEq, sleep }) => {
-  for (let i = 0; i < demos.length; i += batch) {
-    const dirs = demos.slice(i, i + batch)
-    const sessions = await Promise.all(dirs.map(dir => open(`/${dir}/`)))
+  for (let i = 0; i < pages.length; i += batch) {
+    const chunk = pages.slice(i, i + batch)
+    const sessions = await Promise.all(chunk.map(d => open(`/${d.page}`)))
     await sleep(watch)
-    for (const [k, dir] of dirs.entries()) {
+    for (const [k, d] of chunk.entries()) {
       const s = sessions[k]
-      assertEq(await s.ev(mounted), true, `${dir} mounts into the demo column`)
-      assertEq(s.events, [], `${dir} runs clean: no exception, warning or error`)
-      const vocabulary = Object.keys(dressed).find(v => dir.endsWith('-' + v))
-      if (vocabulary) assertEq(await s.ev(dressed[vocabulary]), true, `${dir} is dressed by its vocabulary's body`)
+      const at = d.page
+      assertEq(await s.ev(mounted), true, `${at} mounts into the demo column`)
+      assertEq(s.events, [], `${at} runs clean: no exception, warning or error`)
+      if (dressed[d.variant]) assertEq(await s.ev(dressed[d.variant]), true, `${at} is dressed by its vocabulary's body`)
       await s.close()
     }
   }

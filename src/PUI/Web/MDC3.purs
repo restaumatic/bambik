@@ -49,7 +49,7 @@ module PUI.Web.MDC3
   , bodyMedium
   , bodySmall
   , button
-  , buttonWith
+  , button'
   , card
   , cardActions
   , checkbox
@@ -93,9 +93,9 @@ module PUI.Web.MDC3
   , list
   , listItem
   , listOf
-  , listOfWith
+  , listOf'
   , listOfAt
-  , listOfAtWith
+  , listOfAt'
   , menu
   , menuItem
   , outlinedButton
@@ -122,7 +122,6 @@ module PUI.Web.MDC3
   , toggleSwitch
   , tonalButton
   , tooltip
-  , tooltipWith
   , topAppBar
   )
   where
@@ -151,7 +150,7 @@ import Data.Profunctor.Seeding (isHole)
 import PUI (Ocular, PUI, blank, foreach, prefixed)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, attribute, attrWith, autoDismiss, cl, clicked, clickedRow, clWhen, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, eventText, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textContent, textOf, uniqueId, separating, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, attribute, attrWith, autoDismiss, cl, clicked, clickedRow, clWhen, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, eventText, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -220,7 +219,7 @@ import Type.Proxy (Proxy(..))
 -- |
 -- | It reports on click, carrying the data it was showing, under the name
 -- | the app gives the action: `button @"Book the flight"`, the case label
--- | verbatim as its caption, so the case *is* the copy. `buttonWith`
+-- | verbatim as its caption, so the case *is* the copy. `button'`
 -- | takes the face's options.
 button
   :: forall @l r v
@@ -230,17 +229,17 @@ button
 button = buttonOf @l "md-filled-button" {}
 
 -- | `button` with options for its face: `icon: "add"` puts a Material
--- | Symbols glyph before the label (`buttonWith @"Place order" { icon:
+-- | Symbols glyph before the label (`button' @"Place order" { icon:
 -- | "local_cafe" }`), `label:` overrides the caption with copy the case
 -- | cannot be.
-buttonWith
+button'
   :: forall @l provided r v
    . IsSymbol l
   => Cons l { | r } () v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
   -> PUI Web { | r } [ | v ]
-buttonWith = buttonOf @l "md-filled-button"
+button' = buttonOf @l "md-filled-button"
 
 -- | `button` **elevated**: a shadow lifts it off the surface — for an
 -- | important action over a busy or patterned background, where a flat fill
@@ -404,35 +403,31 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
     , read: \_ -> getValue node
     }
 
--- | The Material **checkbox**, with its label beside it: the label is
--- | ordinary content (usually a `staticText`), properly associated, so
--- | clicking the words toggles the box and the whole line is a comfortable
--- | target.
+-- | The Material **checkbox**, captioned beside it by its label verbatim,
+-- | properly associated, so clicking the words toggles the box and the
+-- | whole line is a comfortable target.
 -- |
 -- | The field is a **named two-case variant** the application spells:
--- | `checkbox @"Terms" @"accepted" @"declined" (staticText …)`
+-- | `checkbox @"Terms" @"accepted" @"declined"
 -- | is ticked exactly while `"Terms"` sits at `accepted`; ticking reports
 -- | `.accepted {}`, clearing reports `.declined {}` — so an optional part
 -- | of the model *is* the box's state under its own names, with no second
 -- | flag to keep in step and no `Maybe`. Use a checkbox for a fact the user
 -- | states as part of a form; use `toggleSwitch` for a setting that takes
 -- | effect at once.
-checkbox :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => PUI Web {} {} -> PUI Web { | r } { | r }
-checkbox labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l) $
+checkbox :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => PUI Web { | r } { | r }
+checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ wrap do
     aRef <- liftEffect $ Ref.new {}
     element "md-checkbox" (pure unit)
     node <- gets _.sibling
-    lbl <- unwrap labelContent
+    lbl <- unwrap (staticText (reflectSymbol (Proxy @l)))
     -- the wrapping <label> names the host but not the input inside its shadow
-    -- root, so the rendered caption is stamped as the box's accessible name
-    caption <- gets _.parent
-    let stampCaption = textContent caption >>= setAttribute node "aria-label"
-    liftEffect stampCaption
+    -- root, so the caption is stamped as the box's accessible name
+    liftEffect $ setAttribute node "aria-label" (reflectSymbol (Proxy @l))
     liftEffect $ editorWiring
       { show: \ma -> do
           lbl.toUser {}
-          stampCaption
           case Variant.prj (Proxy @c) ma of
             Nothing -> setChecked node false
             Just newa -> do
@@ -1111,13 +1106,13 @@ listOf
   => ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOf = listOfWith @l @k @r {}
+listOf = listOf' @l @k @r {}
 
 
 -- | `listOf` with options: `selected` takes a predicate on a row, and the
--- | rows it holds take the catalogue's selected styling (`listOfWith
+-- | rows it holds take the catalogue's selected styling (`listOf'
 -- | @"Person picked" @"key" @( … ) { selected: isSelected } entries item`).
-listOfWith
+listOf'
   :: forall @l @k @r provided i b o key v
    . IsSymbol l
   => IsSymbol k
@@ -1128,7 +1123,7 @@ listOfWith
   -> ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOfWith provided f item = withStructuralOrd @key $ wrap do
+listOf' provided f item = withStructuralOrd @key $ wrap do
   liftEffect $ ensureStyle "md3-list" listCss
   unwrap $ el "md-list" >>> "style" := "overflow-y: auto;" $
     ( clicked @l @k $ clWhen config.selected "md3-list-item--selected"
@@ -1151,13 +1146,13 @@ listOfAt
   => Cons t (Array { | r }) b2 i
   => PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOfAt = listOfAtWith @l @k @t {}
+listOfAt = listOfAt' @l @k @t {}
 
 -- | `listOfAt` with options: `selected` takes a predicate on a row, and the
 -- | rows it holds take the catalogue's selected styling
--- | (`listOfAtWith @"Message opened" @"id" @"messages" { selected:
+-- | (`listOfAt' @"Message opened" @"id" @"messages" { selected:
 -- | highlighted } item`).
-listOfAtWith
+listOfAt'
   :: forall @l @k @t provided i r b1 b2 o key v
    . IsSymbol l
   => IsSymbol k
@@ -1169,7 +1164,7 @@ listOfAtWith
   => { | provided }
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOfAtWith provided = listOfWith @l @k @r provided (Record.get (Proxy @t))
+listOfAt' provided = listOf' @l @k @r provided (Record.get (Proxy @t))
 
 listCss :: String
 listCss = """
@@ -1283,9 +1278,10 @@ drawerCss = """
 -- | Attach a **tooltip** to a control: the short explanation that appears
 -- | on hover or keyboard focus. For clarification only — never for
 -- | information the user needs to complete the task, which belongs on the
--- | screen. Wrap a single control, and write it trailing so the control
--- | still reads first:
--- | `checkbox @"Loyalty" @"member" @"guest" (staticText "Loyalty member") # tooltip @"Members get 10% off"`.
+-- | screen. The tip is static: its text is fixed when the control is
+-- | built, never read from data. Wrap a single control, and write it
+-- | trailing so the control still reads first:
+-- | `checkbox @"Loyalty member" @"member" @"guest" # tooltip "Members get 10% off"`.
 tooltip :: String -> Ocular (PUI Web)
 tooltip tipText content =
   span >>> cl "md3-tooltip-anchor" $ wrap do
@@ -1295,22 +1291,6 @@ tooltip tipText content =
     _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> escaped tipText <> "</div>"))
     pure w
 
--- | `tooltip`'s channel-fed sibling, as `attrWith` is `attr`'s: the tip's
--- | text is a copy function of the row the decorated element is fed,
--- | re-read on every feed — for a note formatted from a business value
--- | (`# tooltipWith loyaltyNote`) or from the model itself. It is typed at the
--- | row, like a display's copy function.
-tooltipWith :: forall i o. ({ | i } -> String) -> PUI Web { | i } o -> PUI Web { | i } o
-tooltipWith f content =
-  span >>> cl "md3-tooltip-anchor" $ wrap do
-    liftEffect $ ensureStyle "md3-tooltip" tooltipCss
-    tipId <- liftEffect uniqueId
-    w <- unwrap ("aria-describedby" := tipId $ content)
-    tip <- unwrap (div >>> "id" := tipId >>> cl "md3-tooltip" >>> "role" := "tooltip" $ text f)
-    pure
-      { toUser: \row -> w.toUser row *> tip.toUser row
-      , fromUser: \prop -> w.fromUser prop *> tip.fromUser (\_ -> pure unit)
-      }
 
 -- a plain tooltip is transient: it shows while the pointer rests on the anchor
 -- or the anchor has KEYBOARD focus (`:focus-visible`), never for the focus a

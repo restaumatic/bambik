@@ -4,8 +4,9 @@
 // with the track id, in order, and keep each term beside its own
 // description. Before (CHANGELOG, 2026-10-11) the parent's last child stood
 // for the element, and a rotation would have carried the `dd` alone.
-export const demos = ['demo/nguis/reorder-html']
-export const url = '/demo/nguis/reorder-html/'
+import { byName } from '../../demos.mjs'
+export const demos = ['reorder-html']
+export const url = `/${byName('reorder-html').page}`
 
 const tags = `[...document.querySelector('dl').children].map(n => n.tagName)`
 const pairs = `(() => {

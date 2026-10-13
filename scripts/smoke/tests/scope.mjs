@@ -2,8 +2,9 @@
 // action sit inside the `watching` pane, and stepping away suspends the
 // pane's scope — the clock skips its beats, and a quote that settles
 // meanwhile is dropped — while coming back resumes both.
-export const demos = ['demo/nguis/ticker-mdc2']
-export const pages = [{ url: '/demo/nguis/ticker-mdc2/', label: 'ticker' }]
+import { byName } from '../../demos.mjs'
+export const demos = ['ticker-mdc2']
+export const pages = [{ url: `/${byName('ticker-mdc2').page}`, label: 'ticker' }]
 
 const press = (name) => `(() => {
   const b = [...document.querySelectorAll('button')].find(b => b.getAttribute('aria-label') === ${JSON.stringify(name)})

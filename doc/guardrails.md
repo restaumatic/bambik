@@ -142,7 +142,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the label carries the copy whole — punctuation, format hints and units
   included (`@"Start date (DD.MM.YYYY)"`, `@"Amount (€)"`). A leaf takes
   no options record unless one is genuinely needed; a word with optional
-  presentation has a `…With` sibling (`buttonWith`, `listOfWith`,
+  presentation has a primed sibling (`button'`, `listOf'`,
   2026-10-13), so no call site writes `{}`. A selector's **options** are its ordered case labels
   (`choice @l` per option), never a hand-written `{ value, label }` array;
   the order MUST be the order written, never the variant row's, which the
@@ -184,9 +184,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   take a label (no model interface, nothing to anchor) nor copy that has a
   place in its content (a card's heading is typography in its content) —
   copy with no content position, a tooltip's text or a dialog's title, is
-  a type argument when it is static (`tooltip "…"`, `dialog "…"`,
+  a String value when it is static (`tooltip "…"`, `dialog "…"`,
   `topAppBar "…"` — the static's own text, not an anchor) and a copy
-  function when it is formatted or read from data (`tooltipWith f`); a display MUST NOT carry a label except as
+  function when it is formatted or read from data; a tooltip's text is
+  always static (2026-10-13); a display MUST NOT carry a label except as
   an accessible name (L17); and no mechanism may leave a line's meaning in
   an anonymous position. The stronger rule — *every line a field*, oculars
   included — was considered and rejected: a label on an
@@ -386,7 +387,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 ### L12. The vocabulary never forces a nominal type.
 
 - Canonical rows adopted by label; anonymous-record options
-  (`buttonWith @l { icon }`); durations as `{ ms :: Number }` (never
+  (`button' @l { icon }`); durations as `{ ms :: Number }` (never
   `Milliseconds` in a UI component signature); unit payloads as `{}` (no
   `Default Unit` instance, deliberately); selector options carry
   variant-row values, never strings-as-enums (the `labeled` helper was

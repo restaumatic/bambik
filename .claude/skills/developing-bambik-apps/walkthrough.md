@@ -5,7 +5,7 @@ a live line describing the itinerary (or what is wrong with it), a Book
 button, and a confirmation. It is a small demo that uses all four shapes —
 editors (`×→×`), an emitter (`×→+`), an action (`+→+`) and statuses
 (`+→×`) — so once it reads plainly, the larger demos are the same moves
-repeated. The view is `demo/7guis/flight-booker-mdc2/FlightBookerMDC2.purs`,
+repeated. The view is `demo/7guis/flight-booker/FlightBookerMDC2.purs`,
 the view model module `demo/7guis/flight-booker/FlightBookerViewModel.purs`; in an app both
 are under `.spago/bambik/v0.1.6/`. The rules the lines follow are in
 [writing.md](writing.md); what each component does is in its module header
@@ -48,7 +48,7 @@ flightBookerMDC2 =
          ) bookingState
       body1 (text oneWayLine) # pane @"one-way" bookingState
       body1 (text returnLine) # pane @"return" bookingState ) identity # debounced itinerarySettleTime
-    buttonWith @"Book" { icon: "flight_takeoff" }
+    button' @"Book" { icon: "flight_takeoff" }
     ( VariantToRecord.do
       indeterminateLinearProgress
       snackbar @"Flight booked" bookedLine
@@ -128,7 +128,7 @@ debounced itinerarySettleTime`.
   that no later line depends on needs none of this — it is a plain line,
   and is `prefixed` over the stage after it (writing.md *The pipeline*).
 
-**Stage 3 — `buttonWith @"Book" { icon: "flight_takeoff" }`.** The first shape
+**Stage 3 — `button' @"Book" { icon: "flight_takeoff" }`.** The first shape
 change, `×→+`: fed the model, it emits case `"Book"` carrying the model on
 click. Its case is its caption; `icon` is presentation config.
 
@@ -352,7 +352,7 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
   their own case `# joined` with the model, and one `stepTo` folds both.
 - **crud** — a load action before the knot, `indeterminateLinearProgress #
   action loadPeopleCatalogue`, its outcome folded in by `unshown @"People
-  loaded" # fold identity`, run by `body`'s one feed of
+  loaded" # captured`, run by `body`'s one feed of
   `{}`; create/update/delete are chains in the fold block, each an action
   followed by the folds of its two outcomes, adopted `# atCase` under its
   button's case.

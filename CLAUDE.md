@@ -18,7 +18,7 @@ Note the repo builds with the forked PureScript compiler pinned in `package.json
 
 When introducing code changes, keep `spago build -w` running in the background and read its output after each edit (~0.7s incremental) instead of one-shot `spago build`s per change — plain `spago build -w` covers library, tests, and the demos. Caveats: spago -w reads stdin and dies on EOF, so keep stdin open (never `</dev/null`); run only one watcher over the shared `output/` at a time. Parallel subagents sharing the repo must serialize compiles (`flock <lockfile> spago build`) — and when a serialized build fails, check the per-module `Compiling` lines for *whose* module failed before assuming it's yours. It's recommended to use git workspaces in such cases.
 
-`npm run dev` serves **every** demo from one server at `http://127.0.0.1:1234/`, rooted at `demo/` in the same folder layout the deploy scps to the remote host — local `/7guis/counter-mdc2/` is `/bambik/demo/7guis/counter-mdc2/` there, so every relative link and asset path resolves identically in both places (the server hosts nothing but the demos, so it carries no `/bambik/demo` prefix of its own). The root landing page (demo/index.html) links the two suites. Narrow the bundling to what you're working on by name or set: `npm run dev counter-mdc2 cells-mdc2`, `npm run dev nguis`.
+`npm run dev` serves **every** demo from one server at `http://127.0.0.1:1234/`, rooted at `demo/` in the same folder layout the deploy scps to the remote host — local `/nguis/inbox/?mdc3` is `/bambik/demo/nguis/inbox/?mdc3` there, so every relative link and asset path resolves identically in both places (the server hosts nothing but the demos, so it carries no `/bambik/demo` prefix of its own). The root landing page (demo/index.html) links the two suites. Narrow the bundling to what you're working on by name, app or set: `npm run dev counter-mdc2 cells-mdc2`, `npm run dev inbox` (every design system of the app), `npm run dev nguis`.
 
   Auto-rebuild and browser auto-reload throughout (~2s per edit; scripts/dev.mjs — one mtime-polling watcher over src/ and demo/ driving two paths by file type: a `.purs`/`.js` edit runs an incremental `spago build` and esbuild's own watch over `output/` rebundles the affected demos and reloads once the new bundle lands, while a page's `.html` has nothing to compile and reloads immediately — both are handled independently, so an edit to each in the same tick gets a reload *and* a rebuild; reloads reach the browser over an SSE endpoint at `/esbuild` using esbuild's own protocol, injected via the bundle banner so demo pages need no dev-only markup).
 
@@ -33,9 +33,9 @@ Verification stack: `spago test` (value-level law tests over probes — merge un
 1. Verify the forked compiler: `node_modules/.bin/purs --version` must report `0.15.16 [development build ...]`; if it shows stock `0.15.15`, run `npm install` (stock purs fails with "Module Prim.Variant was not found").
 2. Bundle for deploy: `npm run bundle-demos` (minified, all demos; `node scripts/bundle.mjs <name|set>` for a subset) — use `npm run dev` for watch mode, not for deploys. **Every** demo is a named module (`OrderForm`, `Counter`, `Cells`, `TodoList`, ...) entered at its own function (`orderForm`, `counter`, `cells`, `todoList`, ...) — no module is `Main`, so they all compile together under one plain `spago build` — and each bundles from the shared registry in **scripts/demos.mjs** (the single source of truth for directory + module + entry, shared with the dev server), which synthesizes the esbuild entry per demo because `spago bundle-app` can only call `Main.main`.
 3. Deploy: `npm run deploy-demos` — scps demo/index.html, demo/workflow.html and both suite directories to host `xyz` (root@erykciepiela.xyz, see `~/.ssh/config`) at `/var/www/html/bambik/demo/`.
-4. Verify: `http://erykciepiela.xyz/bambik/demo/<d>/` returns 200 (plain HTTP only).
+4. Verify: `http://erykciepiela.xyz/bambik/demo/<d>/` returns 200 (plain HTTP only). The deploy copies over the remote tree and deletes nothing, so a directory removed or renamed here lingers there until removed by hand.
 
-Every demo page is pure structure over **shared chrome**: `demo/page.js` (loaded as `../../page.js`) fetches the listing named by `<body data-source="CounterMDC2.purs">` (space-separated filenames render several listings — the first fills the existing box, each further file gets a filename heading + listing, the header readout sums the sizes; order-dashboard-mdc3 shows its app and its packaged controls module this way), fills the header's source/bundle size readouts, shows every listing verbatim, notes the vocabulary words the view imports beyond the earlier demos of README's reading order (each linked into vocabulary.md), and groups the running demo with its tracing note into one `#demo-column` — on a page marked `<body data-surface>`, inside the vocabulary's card surface built by page.js (the app's surface is the page's, so no app wraps itself in a card) — the demo mounts into `<body>` at runtime with no marker class of its own, so it cannot be wrapped in static markup and is collected once, then the observer disconnects. The two notes that used to be pasted into all 34 pages now live once in **demo/index.html** as `#code-style` and `#tracing` sections, linked from beneath the source box and beneath the running demo respectively; the source-box note also links **demo/workflow.html**, the writing-session showcase.
+Every demo page is pure structure over **shared chrome**: `demo/page.js` (loaded as `../../page.js`) runs the page's design system and fetches the listing it names. A page with no design system (helloworld, restaurant-menu) names it on `<body data-source="HelloWorld.purs">` and loads its own `bundle.js`; every other page carries one `<template data-variant="mdc3" data-source="InboxMDC3.purs InboxViewModel.purs">` per design system, holding that system's stylesheets (and any style of its own), and page.js installs the one the query names (`inbox/?mdc3`, the first template when it names none), drops the page's elements marked `data-variant` for the others (reorder's per-twin notes, espresso-bar's subtitle), and loads `bundle-<variant>.js` once the stylesheets have loaded, so a catalogue never initializes on an unstyled page. Space-separated filenames render several listings — the first fills the existing box, each further file gets a filename heading + listing, the header readout sums the sizes; order-dashboard shows its app and its packaged controls module this way. page.js fills the header's source/bundle size readouts, shows every listing verbatim, notes the vocabulary words the view imports beyond the earlier demos of README's reading order (each linked into vocabulary.md), and groups the running demo with its tracing note into one `#demo-column` — on a page marked `<body data-surface>`, inside the vocabulary's card surface built by page.js (the app's surface is the page's, so no app wraps itself in a card) — the demo mounts into `<body>` at runtime with no marker class of its own, so it cannot be wrapped in static markup and is collected once, then the observer disconnects. The two notes that used to be pasted into all 34 pages now live once in **demo/index.html** as `#code-style` and `#tracing` sections, linked from beneath the source box and beneath the running demo respectively; the source-box note also links **demo/workflow.html**, the writing-session showcase.
 
 ## Cutting a release
 
@@ -246,8 +246,9 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   | scope | (2026-10-11) `Scope`/`Scoped` in `PUI`: the carrier's record of whether the subtree a word was built in is on the screen — a pane suspends its content's scope while detached (`attachable`), a collection's leaver and a `dynamic` rebuild cancel theirs (`Hooks.instantiate` returns `cancel`); `ticks` skips beats while suspended and ends on cancel, `action` drops an outcome that settles in a suspended or cancelled scope, `separating` disconnects its observer on cancel — the pane law (a detached emitter is `silence`) made true for the emitters that originate occurrences; retention untouched. `Web` keeps the scope in its builder state, `Effect` reads an ambient one under `inScope` (the law tests) |
   | `ticks` | the tick source **opened by its status** (`unshown @"Clock ticked" # ticks tickPeriod`, 2026-10-07): every period the row it was last fed leaves as the status's case, told to the status first — replay built in, as under `clicked`; feeds retained, nothing emitted inside a feed. Before, `ticks @l period :: p {} [ l :: {} ]` under `# replaying @l identity` |
   | `replaying @l f` | **replay is `Strong`'s retention**: `first` around an occurrence source (a source emitting `[ l :: {} ]` with no payload), the fed row riding the state channel and joining each occurrence as `f` of it, leaving as case `l`; the `×→+` leaf's replay-last-value protocol as the primed `Strong` law — `clicked @l f w` *is* `replaying @l f` of a private click source (2026-09-15) |
-  | `fold f` | **one case folded into the record** (`+→×`), **opened by its status** (experiment 2026-10-07, branch experiment/fold-status): `snackbar @"Person created" personCreatedLine # fold identity`, as a run is opened by its progress indicator (`indeterminateLinearProgress @l # action f`) — an optic over the status slot in `PUI`, derived as the status and the wire under the `×→×` merge; the status names the case (its closed singleton row is the fold's input) and shows each occurrence, `f` of the payload is the row released, so a loop's folds are one per event case, merged in `VariantToRecord.do`, each releasing the whole next model (the merge's output row is **shared**, 2026-10-04: the copairing of the coproduct, each release forwarded whole as it comes, where the `×→×` merge owns its fields exclusively; a status beside the folds releases nothing and is typed at every row, like `silence`). Memoryless: a replaying emitter's payload is the row it was fed, a payload event arrives `joined @l` with it, an effect returns the model (`fold @"created" identity`). History: exported 2026-10-02; a seeded retaining fold (2026-10-03) and a whole-variant `fold (match …)` (2026-10-04) both gave way to this form. A second visible row argument and a hole-absent handler (both 2026-10-05, for a loop seeded by an event into the fold) went with the variant knot on 2026-10-06 |
+  | `fold f` | **one case folded into the record** (`+→×`), **opened by its status** (experiment 2026-10-07, branch experiment/fold-status): `snackbar @"Person created" personCreatedLine # captured`, as a run is opened by its progress indicator (`indeterminateLinearProgress @l # action f`) — an optic over the status slot in `PUI`, derived as the status and the wire under the `×→×` merge; the status names the case (its closed singleton row is the fold's input) and shows each occurrence, `f` of the payload is the row released, so a loop's folds are one per event case, merged in `VariantToRecord.do`, each releasing the whole next model (the merge's output row is **shared**, 2026-10-04: the copairing of the coproduct, each release forwarded whole as it comes, where the `×→×` merge owns its fields exclusively; a status beside the folds releases nothing and is typed at every row, like `silence`). Memoryless: a replaying emitter's payload is the row it was fed, a payload event arrives `joined @l` with it, an effect returns the model (`fold @"created" identity`). History: exported 2026-10-02; a seeded retaining fold (2026-10-03) and a whole-variant `fold (match …)` (2026-10-04) both gave way to this form. A second visible row argument and a hole-absent handler (both 2026-10-05, for a loop seeded by an event into the fold) went with the variant knot on 2026-10-06 |
   | `reset x` | `fold (const x)`: one case folded by replacing the model whole with `x`, opened by its status (`unshown @"New game" # reset openingPosition`, tic-tac-toe; espresso-bar's placed order resets the form), the payload the status's alone |
+  | `captured` | `fold identity`: one case folded by taking its payload as the model whole, opened by its status (`snackbar @"Order loaded" orderLoadedLine # captured`) — the fold of an effect that returns the model (crud, order-form, payment, weather, password-generator, reorder) |
   | `joined @l` | **an event joined with the row its emitter was fed** (`×→+`, 2026-10-04): `first` around the source, the row riding the state channel and leaving beside the payload as `{ event, model }` under the same case — a list pick, a canvas click, a pane's button; `replaying @l f` is the payload-less case |
   | adopter family | `asField`/`toCase`/`atCase`, plus `acted`/`actedAt`/`optioned` — `focusField` is deliberately **not** re-exported (2026-09-05): the leaf lift is design-system plumbing (every vocabulary editor is `focusField @l`-lifted inside, `group @l` carries sub-model nesting), living beside `atAnyRow`; `grep "focusField @" demo/` is empty — the view-side read adopters `projection` (2026-08-31) and `projected` (2026-09-02) are both DELETED: copy is a read function at the leaf (`text lineOf`), never an adopter bracket — doc/research-copy-is-a-function.md. **business functions are arguments of leaves, never adopters** (2026-09-27): a status is label-indexed at its business case and takes its copy function (`snackbar @"booked" bookedLine`, read "the booked snackbar"; mutually exclusive outcomes are sibling statuses, each owning its case) and an emitter emits its own case — `toCases`/`forCases` are DELETED and `forCase` is no longer re-exported, surviving in `VariantToVariant` as the status face's plumbing, `focusField`'s variant twin |
 
@@ -387,8 +388,8 @@ design-system **umbrella**. What they share, stated once:
 - **Every leaf is label-indexed** (L3) and captions itself from that label
   verbatim; editors also stamp it as the host `name`. A leaf takes no options
   record (2026-10-13): no call site writes `{}`; the few words with optional
-  presentation have a `…With` sibling (MDC2/MDC3 `buttonWith { icon }`,
-  `listOfWith`/`listOfAtWith { selected }`), and the textareas, `iconToggle`
+  presentation have a primed sibling (MDC2/MDC3 `button' { icon }`,
+  `listOf'`/`listOfAt' { selected }`), and the textareas, `iconToggle`
   and `drawer`, whose every call needs its record, keep it.
 - **Leaf-echo protocols** are identical across all five: focus-guarded text
   fields (model updates never clobber the field being typed in, and the channel
@@ -499,15 +500,16 @@ concrete rows and stay literal `RecordToRecord.do` merges of announcing chrome
 
 ### Separation of Concerns
 
-- **Business Logic** - Row-shaped models, structural throughout, per the application code-style contract in **`.claude/skills/developing-bambik-apps/writing.md`** (see the note at the top of this file — it is the single normative statement, and demos are its executable form): no nominal types in UI, signatures verbatim from the view's hints, folds as record updates, fold handlers in the Mealy step's own shape `payload -> state -> state`, no business literals in UI code, no pass-through fields, emissions carrying bare data. Below the UI sit plain functions and Aff actions (demo/nguis/order-form-mdc2/OrderFormMDC2.purs), nominal types only where recursion (cells' `Expr` AST — rows can't express μ) or an ecosystem API (`Aff`, `Either`, `Milliseconds`) demands them, and business optics (Shutter/Reel) where state/loop semantics are needed (test/BusinessOptics.purs)
+- **Business Logic** - Row-shaped models, structural throughout, per the application code-style contract in **`.claude/skills/developing-bambik-apps/writing.md`** (see the note at the top of this file — it is the single normative statement, and demos are its executable form): no nominal types in UI, signatures verbatim from the view's hints, folds as record updates, fold handlers in the Mealy step's own shape `payload -> state -> state`, no business literals in UI code, no pass-through fields, emissions carrying bare data. Below the UI sit plain functions and Aff actions (demo/nguis/order-form/OrderFormMDC2.purs), nominal types only where recursion (cells' `Expr` AST — rows can't express μ) or an ecosystem API (`Aff`, `Either`, `Milliseconds`) demands them, and business optics (Shutter/Reel) where state/loop semantics are needed (test/BusinessOptics.purs)
 - **Design System** - Oculars in the vocabulary modules (`PUI.Web.HTML`/`SVG`, MDC2, MDC3, Shoelace, Fluent, Bootstrap); the type `Ocular p = forall a b. Optic p a b a b` is declared in **src/PUI.purs** beside its sibling `Action` — the optic transpose (fix the carrier, quantify the data), with its admission law in the header
 - **Composition** - UI elements compose orthogonally to the row combinators
 
 ## Demo Structure
 
-104 pages over **41 app families**, registered in **scripts/demos.mjs** (the
-single source of truth: directory + module + entry, shared by the bundler and
-the dev server). Two suites: **demo/7guis/** (the
+104 demos on 41 pages, one per app, registered in **scripts/demos.mjs** (the
+single source of truth: directory + module + entry per design system, plus
+the bundle file and page URL it derives, shared by the bundler, the dev
+server, the holey twins, check-determined and the smoke tests). Two suites: **demo/7guis/** (the
 [7GUIs](https://eugenkiss.github.io/7guis/) benchmark) and **demo/nguis/**
 (popular showcase apps, mostly one combinator each).
 
@@ -521,17 +523,17 @@ the dev server). Two suites: **demo/7guis/** (the
   compiler's hole list is the module's signatures, verbatim, with
   nothing unknown (`npm run check-determined` checks both, every demo). Renamed from `<Demo>Logic`
   (inbox 2026-10-01, the rest 2026-10-02). Twins share that module
-  *verbatim* from the unsuffixed sibling directory
-  (`demo/nguis/inbox/InboxViewModel.purs`, fetched by pages as
-  `../inbox/InboxViewModel.purs`), so **a twin diff is view-only by
-  construction**. Single-variant demos keep it beside the app; helloworld
-  (all view) has none.
+  *verbatim*, so **a twin diff is view-only by construction**: it sits
+  beside its views in the app's one directory
+  (`demo/nguis/inbox/InboxViewModel.purs` beside `InboxMDC2.purs` and
+  `InboxMDC3.purs`); helloworld (all view) has none.
 - **Named module + entry, never `Main`** (`CounterMDC2`/`counterMDC2`), so
   every demo compiles under one `spago build`.
-- **Vocabulary suffix = the design-system switch**: `-mdc2`/`-mdc3`/
-  `-shoelace`/`-fluent`/`-bootstrap`/`-html` sibling directories over the same
-  logic. demo/page.js probes the siblings and injects a switcher listing the
-  ones that exist; unsuffixed pages get none. The per-variant diff is the
+- **One app, every design system**: an app is one flat directory
+  (2026-10-13) holding a view module per design system, the module suffix
+  naming it (`CounterMDC2.purs`, …, `CounterHTML.purs`), the shared view
+  model and one page whose header switches between them
+  (`counter/?mdc3`); pages with no design system get no switcher. The per-variant diff is the
   honest catalog mapping (typography renames per the Material migration guide;
   vocabularies lacking `listOf` build selectable lists as a keyed `foreach` of
   `clicked @l` rows; every vocabulary has `indeterminateLinearProgress` since 2026-10-07).
@@ -563,7 +565,7 @@ the dev server). Two suites: **demo/7guis/** (the
 | temperature-converter | both fields in the model; non-numeric input leaves the other untouched |
 | flight-booker | type-changing `select @"Flight type"` over an anonymous variant row; both outcomes carry bare payloads into two sibling statuses, `snackbar @"booked" bookedLine` and `snackbar @"rejected" rejectedLine` |
 | timer | `ticks @"tick"` replayed and folded by a total `tick`; `sliderLive` duration re-scoped at runtime |
-| crud | **a load action before the knot**: `( indeterminateLinearProgress # action loadPeopleCatalogue; unshown @"People loaded" # fold identity; ( editors; list and buttons; folds ) # looped @( … ) )` — the load's outcome folded in, the knot declaring the model; `MDC2.listOf @l` (keyed `foreach` of `clicked @l` rows elsewhere), its pick `# joined @"Person picked"`; Aff catalogue actions over a stand-in server in its own module (`PeopleServer`), each typed at the actions block's six-case outcome row and returning its own two, every outcome folded once by its status (experiment 2026-10-07) |
+| crud | **a load action before the knot**: `( indeterminateLinearProgress # action loadPeopleCatalogue; unshown @"People loaded" # captured; ( editors; list and buttons; folds ) # looped @( … ) )` — the load's outcome folded in, the knot declaring the model; `MDC2.listOf @l` (keyed `foreach` of `clicked @l` rows elsewhere), its pick `# joined @"Person picked"`; Aff catalogue actions over a stand-in server in its own module (`PeopleServer`), each typed at the actions block's six-case outcome row and returning its own two, every outcome folded once by its status (experiment 2026-10-07) |
 | circle-drawer | **channel-fed SVG canvas** — built once, updated via `attrWith`; container-level `onClickedXY @l`; the diameter a bounded quantity in the model, its slider `# inCaseAt @"chosen" @"selected" # settled resizeSelected` — live-preview resize as a state invariant — and the canvas click `# joined @"picked"`, an `adjusting` flag coalescing a drag into one undo transaction |
 | cells | **channel-fed 31×27 grid** — ~800 cells built once, `attrWith` + `text` in place, clicked key via `clicked @l @"key"`; hand-rolled formula evaluator over an `Expr` AST (nominal, since rows can't express μ) |
 
@@ -643,11 +645,9 @@ weather (Aff service with a canned per-city delay), ticker (the **scope** showca
 **Vocabulary showcases.** restaurant-menu is the plain-HTML one (no design
 system: element oculars, `cl`/`:=` decorators, `each` from data, no seed
 at all; the fine-dining look is ordinary CSS). espresso-bar is the MDC3 one
-(with an MDC2 twin generated in reverse). One per non-Material vocabulary,
-suffix naming the vocabulary rather than a twin (so a suffix means
-"this vocabulary", not "has a twin" — order-dashboard-mdc3 is single-variant
-too, while only helloworld and restaurant-menu, which use no design system at
-all, carry no suffix): product-review (Shoelace's
+(with an MDC2 twin generated in reverse, so its page opens on MDC3). One
+per non-Material vocabulary, each a page of one design system, as
+order-dashboard (MDC3) is too: product-review (Shoelace's
 exclusive star `rating`), meeting-booker (Fluent; also the **no-defaults
 showcase** — nothing pre-picked, `…Unpicked @"chosen"` selectors
 over named two-case fields seeded `.unchosen {}` beside an optional catering

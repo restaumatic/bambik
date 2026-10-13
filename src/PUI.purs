@@ -68,6 +68,7 @@ module PUI
   , action
   , fold
   , reset
+  , captured
   , static
   , prefixed
   , suffixed
@@ -1297,8 +1298,8 @@ running run w = action'
 -- | merged by `VariantToRecord.do`, each releasing the whole next model.
 -- | Memoryless: a replaying emitter's payload is the row it was fed, an
 -- | event with something of its own arrives `joined @l` with that row as
--- | `{ event, model }`, and an effect returns the model (`… # fold
--- | identity`), so every handler has the model in hand and the loop's
+-- | `{ event, model }`, and an effect returns the model (`… # captured`,
+-- | which is `fold identity`), so every handler has the model in hand and the loop's
 -- | memory stays at the emitters and in the knot.
 -- |
 -- | **Derived**: the wire and the status under the `×→×` merge, fed the
@@ -1335,6 +1336,21 @@ reset
   -> PUI m [ | v ] {}
   -> PUI m [ | v ] { | r }
 reset x = fold (const x)
+
+-- | One case folded into the record by **capturing** its payload as the
+-- | model whole, opened by its status like `fold`
+-- | (`snackbar @"Order loaded" orderLoadedLine # captured`): the case an
+-- | effect returns the model under — a load, a fetch, a server's answer.
+-- | `captured = fold identity`.
+captured
+  :: forall m l v r
+   . MonadEffect m
+  => RowToList v (RL.Cons l { | r } RL.Nil)
+  => IsSymbol l
+  => Cons l { | r } () v
+  => PUI m [ | v ] {}
+  -> PUI m [ | v ] { | r }
+captured = fold identity
 
 action' :: forall a b s t m. Scoped m => (s -> (a -> Effect Unit) -> (t -> Effect Unit) -> Effect Boolean -> Aff Unit) -> Optic (PUI m) s t a b
 action' arr w = wrap do

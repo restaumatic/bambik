@@ -2,12 +2,13 @@
 // whose rule hides while nothing rendered precedes it or its content
 // renders nothing — decided on the DOM, so a detached pane on its far side
 // takes the rule away and the feed that attaches the pane brings it back.
-export const demos = ['demo/nguis/meeting-booker-fluent', 'demo/nguis/product-review-shoelace', 'demo/nguis/photo-gallery-mdc2', 'demo/nguis/restaurant-menu']
+import { byName } from '../../demos.mjs'
+export const demos = ['meeting-booker-fluent', 'product-review-shoelace', 'photo-gallery-mdc2', 'restaurant-menu']
 export const pages = [
-  { url: '/demo/nguis/meeting-booker-fluent/', label: 'meeting-booker' },
-  { url: '/demo/nguis/product-review-shoelace/', label: 'product-review' },
-  { url: '/demo/nguis/photo-gallery-mdc2/', label: 'photo-gallery' },
-  { url: '/demo/nguis/restaurant-menu/', label: 'restaurant-menu' },
+  { url: `/${byName('meeting-booker-fluent').page}`, label: 'meeting-booker' },
+  { url: `/${byName('product-review-shoelace').page}`, label: 'product-review' },
+  { url: `/${byName('photo-gallery-mdc2').page}`, label: 'photo-gallery' },
+  { url: `/${byName('restaurant-menu').page}`, label: 'restaurant-menu' },
 ]
 
 const rules = `[...document.querySelectorAll('hr, md-divider, sl-divider, fluent-divider')].map(r => r.style.display !== 'none')`

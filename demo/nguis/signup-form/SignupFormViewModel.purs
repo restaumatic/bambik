@@ -10,8 +10,8 @@ import Data.Variant (match)
 newApplicant
   :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
      , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
      , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Terms" :: [ accepted :: {}, declined :: {} ]
      , "Username" :: String
      }
 newApplicant =
@@ -19,7 +19,7 @@ newApplicant =
   , "Email": ""
   , "Plan": ."Free" {}
   , "Country": ."Poland" {}
-  , "Terms": .declined {}
+  , "I accept the terms of service": .declined {}
   }
 
 usernameSettleTime :: { ms :: Number }
@@ -28,8 +28,8 @@ usernameSettleTime = { ms: 300.0 }
 signupLine
   :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
      , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
      , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Terms" :: [ accepted :: {}, declined :: {} ]
      , "Username" :: String
      }
   -> String
@@ -49,8 +49,8 @@ refusalText = match
   , termsUnaccepted: const "accept the terms of service"
   }
 
-validate :: forall r1. { "Username" :: String, "Email" :: String, "Terms" :: [ accepted :: {}, declined :: {} ] | r1 } -> Either [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] String
-validate applicant@{ "Email": email, "Terms": terms } =
+validate :: forall r1. { "Username" :: String, "Email" :: String, "I accept the terms of service" :: [ accepted :: {}, declined :: {} ] | r1 } -> Either [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] String
+validate applicant@{ "Email": email, "I accept the terms of service": terms } =
   let username = trim applicant."Username"
   in
     if username == "" then Left (.unnamed {})
@@ -62,8 +62,8 @@ validate applicant@{ "Email": email, "Terms": terms } =
 validation
   :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
      , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
      , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Terms" :: [ accepted :: {}, declined :: {} ]
      , "Username" :: String
      }
   -> [ invalid :: { reason :: [ badEmail :: {}
@@ -92,8 +92,8 @@ readyLine { "Username": username } = "Ready to sign up as " <> username
 usernameStatus
   :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
      , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
      , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Terms" :: [ accepted :: {}, declined :: {} ]
      , "Username" :: String
      }
   -> [ available :: { "Username" :: String }, taken :: { "Username" :: String }, unnamed :: {} ]

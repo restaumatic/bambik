@@ -13,6 +13,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { byName } from '../../demos.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const axeSource = readFileSync(path.join(here, '../../../node_modules/axe-core/axe.min.js'), 'utf8')
@@ -23,13 +24,8 @@ const axeSource = readFileSync(path.join(here, '../../../node_modules/axe-core/a
 const rules = ['label', 'button-name', 'select-name', 'input-button-name', 'aria-valid-attr', 'aria-valid-attr-value', 'label-content-name-mismatch']
 
 const twins = ['mdc2', 'mdc3', 'shoelace', 'fluent', 'bootstrap', 'html']
-export const demos = [...twins.map((t) => `demo/7guis/counter-${t}`), 'demo/nguis/order-form-mdc2', 'demo/nguis/espresso-bar-mdc2', 'demo/nguis/espresso-bar-mdc3']
-export const pages = [
-  ...twins.map((t) => ({ url: `/demo/7guis/counter-${t}/`, label: `counter-${t}` })),
-  { url: '/demo/nguis/order-form-mdc2/', label: 'order-form-mdc2' },
-  { url: '/demo/nguis/espresso-bar-mdc2/', label: 'espresso-bar-mdc2' },
-  { url: '/demo/nguis/espresso-bar-mdc3/', label: 'espresso-bar-mdc3' },
-]
+export const demos = [...twins.map((t) => `counter-${t}`), 'order-form-mdc2', 'espresso-bar-mdc2', 'espresso-bar-mdc3']
+export const pages = demos.map((name) => ({ url: `/${byName(name).page}`, label: name }))
 
 export const run = async ({ ev, assertEq, sleep, page }) => {
   await sleep(1500) // custom elements, order-form's load action

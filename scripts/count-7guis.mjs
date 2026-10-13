@@ -1,6 +1,6 @@
 // Measures the 7GUIs corpus for doc/7guis-comparison.md.
 //
-//   node scripts/count-7guis.mjs demo/7guis/*-mdc2/*.purs
+//   node scripts/count-7guis.mjs demo/7guis/*/*MDC2.purs
 //
 // Counting rules, identical to every corpus in that document: blank and
 // comment lines stripped, every per-task source file counted (business
@@ -10,7 +10,7 @@
 // measurement). Install it anywhere and point GPT_TOKENIZER at that
 // directory, or `npm i gpt-tokenizer` here and it resolves by itself:
 //
-//   npm i --no-save gpt-tokenizer && node scripts/count-7guis.mjs demo/7guis/*-mdc2/*.purs
+//   npm i --no-save gpt-tokenizer && node scripts/count-7guis.mjs demo/7guis/*/*MDC2.purs
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 

@@ -8,6 +8,37 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-13
 
+- **`captured`**, beside `reset`: one case folded by taking its payload
+  as the model whole, `captured = fold identity`, as `reset x = fold
+  (const x)`. It names the commonest fold, an effect's outcome carrying
+  the model (crud's six outcomes and its load, order-form's load,
+  payment, weather, password-generator, reorder); every demo's `# fold
+  identity` now reads `# captured`.
+- **`checkbox @l @c @n` captions itself from its label**, as every other
+  editor does: the trailing content argument is gone (MDC2, MDC3, the only
+  vocabularies with a checkbox). The demos' fields take the copy they
+  drew as their label: espresso-bar's `"Loyalty member"`, signup-form's
+  `"I accept the terms of service"`. A sweep of every vocabulary found no
+  other label-indexed leaf taking its caption as an argument.
+- **A design system's `…With` sibling is primed**: `buttonWith`,
+  `listOfWith` and `listOfAtWith` (MDC2, MDC3) are now `button'`,
+  `listOf'` and `listOfAt'`. `attrWith` in `PUI.Web` keeps its name: it
+  names no design system's leaf.
+- **A tooltip is static.** `tooltipWith` (briefly `tooltip'`), whose tip
+  was a copy function re-read on every feed, is DELETED from MDC2 and
+  MDC3: `tooltip "…"` is the one form. espresso-bar's loyalty tip was its
+  one use; it reads `# tooltip "Members get 10% off"` and
+  `loyaltyNote` left the view model.
+- **A demo app is one directory and one page.** `demo/<suite>/<app>/`
+  holds every design system's view (`InboxMDC2.purs`, `InboxMDC3.purs`),
+  the shared view model and one page whose query picks the design system
+  (`inbox/?mdc3`), demo/page.js installing its stylesheets from a
+  `<template data-variant>` and loading `bundle-<variant>.js`; the
+  `<app>-<ds>/` sibling directories are gone. scripts/demos.mjs groups an
+  app's design systems under one entry and derives each one's bundle and
+  page, which the bundler, dev server, holey twins, check-determined and
+  smoke tests now read instead of building paths themselves. Both
+  suites, each 7GUIs task with its six design systems included.
 - **A fold's status shows the event, never the fold's result.** `fold f
   status` feeds the status the occurrence as it arrives, so its copy
   function is typed at the payload; since 2026-10-07 it had been fed

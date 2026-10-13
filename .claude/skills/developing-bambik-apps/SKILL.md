@@ -66,8 +66,8 @@ missing value is invisible to the compiler and obvious on screen.
 
 Spago fetches the library whole, so after the first build
 `.spago/bambik/<tag>/` holds its module headers under `src/` (the API
-reference) and its demos under `demo/7guis/` and `demo/nguis/`. A demo
-directory's suffix names its design system (`counter-mdc2`,
-`counter-html`, …); twins share the view model module in the unsuffixed
-directory. Switching an app's design system is its vocabulary import
+reference) and its demos under `demo/7guis/` and `demo/nguis/`. A view
+module's suffix names its design system (`CounterMDC2.purs`,
+`CounterHTML.purs`, …) and twins share one view model module, all in
+the app's one directory (`demo/7guis/counter/`). Switching an app's design system is its vocabulary import
 plus the page's links ([bootstrap.md](bootstrap.md), step 1).

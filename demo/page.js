@@ -1,8 +1,49 @@
-// Shared chrome for every demo page: the source listings, the header size
-// readouts, and the column that groups the running demo with its tracing note.
-// Pages declare only what differs — their .purs filenames, via
-// <body data-source="CounterMDC2.purs ../counter/CounterLogic.purs"> — and
-// load this with a relative src.
+// Shared chrome for every demo page: the design system a page runs, the
+// source listings, the header size readouts, and the column that groups the
+// running demo with its tracing note. Pages declare only what differs and
+// load this with a relative src: an app's page carries one
+// <template data-variant="mdc3" data-source="CounterMDC3.purs CounterViewModel.purs">
+// per design system, holding that system's stylesheets and style, and this
+// loads the chosen one's bundle-<variant>.js; a page with no design system
+// names its .purs files on <body data-source="HelloWorld.purs"> and loads its
+// bundle.js itself.
+
+const labels = { mdc2: "MDC2", mdc3: "MDC3", shoelace: "Shoelace", fluent: "Fluent", bootstrap: "Bootstrap", html: "HTML" }
+
+// The implementations a page carries, in the order it lists them; the query
+// names the one shown (`inbox/?mdc3`), the first when it names none.
+const variantTemplates = [...document.querySelectorAll("template[data-variant]")]
+const chosenTemplate = variantTemplates.find(t => t.dataset.variant === location.search.slice(1)) || variantTemplates[0]
+
+const currentVariant = chosenTemplate && chosenTemplate.dataset.variant
+
+const bundleFile = chosenTemplate ? "bundle-" + currentVariant + ".js" : "bundle.js"
+
+// Install the chosen implementation: its stylesheets into the head, its
+// sources onto the body, its own notes kept and the others' dropped. Its
+// bundle loads once the stylesheets have: a catalogue measures itself when it
+// initializes (an MDC2 outlined field sizes its notch to its label), so it
+// must not mount on an unstyled page.
+const installVariant = () => {
+  if (!chosenTemplate) return
+  const v = currentVariant
+  document.body.dataset.source = chosenTemplate.dataset.source
+  for (const n of document.body.querySelectorAll("[data-variant]"))
+    if (!n.dataset.variant.split(" ").includes(v)) n.remove()
+  document.title += " (" + labels[v] + ")"
+  const title = document.getElementById("page-title")
+  if (title) title.textContent += " (" + labels[v] + ")"
+  const content = chosenTemplate.content.cloneNode(true)
+  const loaded = [...content.querySelectorAll('link[rel="stylesheet"]')].map(link =>
+    new Promise(done => { link.onload = link.onerror = done }))
+  document.head.append(content)
+  Promise.all(loaded).then(() => {
+    const script = document.createElement("script")
+    script.type = "module"
+    script.src = bundleFile
+    document.head.append(script)
+  })
+}
 
 const fmt = (n) => n < 1024 ? n + "B"
   : n < 1048576 ? (n / 1024).toFixed(1).replace(/\.0$/, "") + "kB"
@@ -67,7 +108,7 @@ const surfaceStyles = {
 }
 
 const demoSurface = () => {
-  const suffix = (location.pathname.match(/-(mdc2|mdc3|shoelace|fluent|bootstrap)\/(index\.html)?$/) || [])[1]
+  const suffix = currentVariant
   const div = (className, style) => {
     const d = document.createElement("div")
     if (className) d.className = className
@@ -106,33 +147,16 @@ const demoSurface = () => {
   }
 }
 
-// Design-system switcher: vocabulary siblings live beside each other by path
-// convention (…/counter-mdc2/ ↔ …/counter-mdc3/ ↔ …/counter-shoelace/ ↔ …),
-// so every sibling URL is derived from the location and the switcher lists
-// exactly the siblings that actually exist (each probed with a HEAD request)
-// — no per-page markup; single-variant demos carry no suffix and get no
-// switcher.
+// Design-system switcher: every template of the page, each a link to the
+// page with that one chosen.
 const offerDesignSystemSwitch = () => {
   const header = document.getElementById("page-header")
-  if (!header) return
-  const labels = { mdc2: "MDC2", mdc3: "MDC3", shoelace: "Shoelace", fluent: "Fluent", bootstrap: "Bootstrap", html: "HTML" }
-  const suffixes = Object.keys(labels)
-  const current = suffixes.find(s => location.pathname.endsWith("-" + s + "/"))
-  if (!current) return
-  const base = location.pathname.slice(0, -(current.length + 2)) + "-"
-  Promise.all(suffixes.map(s =>
-    s === current ? Promise.resolve(true)
-      : fetch(base + s + "/index.html", { method: "HEAD", cache: "no-cache" })
-          .then(r => r.ok).catch(() => false)
-  )).then(exists => {
-    const present = suffixes.filter((_, i) => exists[i])
-    if (present.length < 2) return
-    const toggle = document.createElement("span")
-    toggle.innerHTML = '<span class="sep">·</span> ' + present.map(s =>
-      s === current ? "<strong>" + labels[s] + "</strong>"
-        : '<a href="' + base + s + '/">' + labels[s] + "</a>").join(" | ")
-    header.append(toggle)
-  })
+  if (!header || variantTemplates.length < 2) return
+  const toggle = document.createElement("span")
+  toggle.innerHTML = '<span class="sep">·</span> ' + variantTemplates.map(t => t.dataset.variant).map(s =>
+    s === currentVariant ? "<strong>" + labels[s] + "</strong>"
+      : '<a href="?' + s + '">' + labels[s] + "</a>").join(" | ")
+  header.append(toggle)
 }
 
 // Every listing shows its file verbatim, highlighted and nothing else.
@@ -159,7 +183,6 @@ const wordsStyle = () => {
 // its place in the skill's vocabulary.md index.
 const readingOrder = [["7guis", "counter"], ["7guis", "temperature-converter"], ["7guis", "flight-booker"],
   ["nguis", "todo-list"], ["nguis", "checkout"], ["nguis", "order-form"]]
-const viewFileSuffix = { mdc2: "MDC2", mdc3: "MDC3", shoelace: "Shoelace", fluent: "Fluent", bootstrap: "Bootstrap", html: "HTML" }
 const vocabularyIndex = "https://github.com/restaumatic/bambik/blob/main/.claude/skills/developing-bambik-apps/vocabulary.md"
 
 const wordsOf = (src) => {
@@ -171,17 +194,22 @@ const wordsOf = (src) => {
   return words
 }
 
+const viewPath = (suite, family, suffix) => {
+  const pascal = family.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join("")
+  return "../../" + suite + "/" + family + "/" + pascal + labels[suffix] + ".purs"
+}
+
 const showNewWords = (viewSource) => {
-  const m = location.pathname.match(/\/(7guis|nguis)\/([a-z0-9-]+)-(mdc2|mdc3|shoelace|fluent|bootstrap|html)\/(index\.html)?$/)
+  const m = location.pathname.match(/\/(7guis|nguis)\/([a-z0-9-]+)\/(index\.html)?$/)
   const panel = document.getElementById("source-panel")
-  if (!m || !panel) return
-  const [, , family, suffix] = m
+  if (!m || !panel || !currentVariant) return
+  const family = m[2]
+  const suffix = currentVariant
   const at = readingOrder.findIndex(([, f]) => f === family)
   const earlier = (at >= 0 ? readingOrder.slice(0, at) : readingOrder)
     .filter(([suite]) => suite === "7guis" || suffix === "mdc2" || suffix === "mdc3")
-  const pascal = (f) => f.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join("")
   Promise.all(earlier.map(([suite, f]) =>
-    fetch("../../" + suite + "/" + f + "-" + suffix + "/" + pascal(f) + viewFileSuffix[suffix] + ".purs", { cache: "no-cache" })
+    fetch(viewPath(suite, f, suffix), { cache: "no-cache" })
       .then((r) => r.ok ? r.text() : "").catch(() => "")
   )).then((sources) => {
     const known = new Set(sources.flatMap(wordsOf))
@@ -200,9 +228,8 @@ const showNewWords = (viewSource) => {
 }
 
 // data-source names the demo's source files, space-separated: the view module
-// first, then its logic module (for design-system twins a relative path into
-// the shared unsuffixed sibling directory), then any packaged components
-// module. The first fills the existing listing, each further file gets its own
+// first, then its view model module, then any further modules (crud's
+// stand-in server, order-dashboard's packaged controls). The first fills the existing listing, each further file gets its own
 // heading + listing beneath it (headings show the basename, links keep the
 // path), and the header readout sums their sizes.
 const showSource = (files) => {
@@ -210,7 +237,7 @@ const showSource = (files) => {
   wordsStyle()
   return Promise.all([
     Promise.all(names.map(f => fetch(f, { cache: "no-cache" }).then(r => r.text()))),
-    fetch("bundle.js", { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
+    fetch(bundleFile, { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
   ]).then(([sources, bundleBytes]) => {
     const el = document.getElementById("src")
     const panel = el.closest("#source-panel") || document.getElementById("source-panel")
@@ -239,11 +266,12 @@ const showSource = (files) => {
     if (bundleBytes) {
       document.getElementById("bundle-sep").hidden = false
       document.getElementById("bundle-size").innerHTML =
-        '<a href="bundle.js">bundle</a> (' + fmt(+bundleBytes) + ')'
+        '<a href="' + bundleFile + '">bundle</a> (' + fmt(+bundleBytes) + ')'
     }
   })
 }
 
+installVariant()
 groupDemoWithNote()
 offerDesignSystemSwitch()
 showSource(document.body.dataset.source)

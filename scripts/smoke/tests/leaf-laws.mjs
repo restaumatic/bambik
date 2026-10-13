@@ -19,7 +19,7 @@
 // check the replay half of the ×→+ protocol: the click leaves as the leaf's
 // case carrying the row last fed.
 const vocabularies = ['mdc2', 'mdc3', 'shoelace', 'fluent', 'bootstrap', 'html']
-export const demos = vocabularies.map((v) => `demo/laws/${v}`)
+export const demos = vocabularies // the laws set's registry names
 export const pages = vocabularies.map((v) => ({ url: `/demo/laws/${v}/`, label: v }))
 
 // A leaf that answers late is not answering "within its step": wait long

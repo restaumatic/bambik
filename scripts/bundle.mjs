@@ -3,14 +3,12 @@
 // (scripts/demos.mjs) — `spago bundle-app` can only call Main.main.
 //
 //   node scripts/bundle.mjs               (all demos)
-//   node scripts/bundle.mjs 7guis         (one set, or single demos by name)
+//   node scripts/bundle.mjs 7guis         (a set, an app, or single demos by name)
 import { build } from 'esbuild'
-import { all, entryFor } from './demos.mjs'
+import { entryFor, matching } from './demos.mjs'
 
 const filters = process.argv.slice(2)
-const demos = filters.length
-  ? all.filter(d => filters.some(f => f === d.name || f === d.set))
-  : all
+const demos = matching(filters)
 if (!demos.length) {
   console.error(`no demo matches ${filters.join(' ')}`)
   process.exit(1)
@@ -22,7 +20,7 @@ for (const d of demos) {
     bundle: true,
     minify: true,
     format: 'esm',
-    outfile: `${d.dir}/bundle.js`,
+    outfile: d.bundle,
   })
   console.log(`bundled ${d.name} (${d.mod}.${d.fn})`)
 }

@@ -4,10 +4,11 @@
 // once stayed up after a click because it showed on `:focus-within`; the
 // MDC2 twin runs the same walk over the MDCTooltip foundation.
 import { a11y } from '../a11y.mjs'
+import { byName } from '../../demos.mjs'
 
 const twins = ['mdc2', 'mdc3']
-export const demos = twins.map((t) => `demo/nguis/espresso-bar-${t}`)
-export const pages = twins.map((t) => ({ url: `/demo/nguis/espresso-bar-${t}/`, label: t }))
+export const demos = twins.map((t) => `espresso-bar-${t}`)
+export const pages = twins.map((t) => ({ url: `/${byName(`espresso-bar-${t}`).page}`, label: t }))
 
 const tipVisible = `(() => {
   const tip = document.querySelector('.md3-tooltip, .mdc-tooltip')

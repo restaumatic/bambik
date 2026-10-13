@@ -6,17 +6,16 @@
 // .holey/demo/, mirroring demo/, for scripts/smoke/tests/holes.mjs to mount.
 //
 //   node scripts/holes.mjs              (all demos)
-//   node scripts/holes.mjs counter-mdc2 (single demos by name, or a set)
+//   node scripts/holes.mjs counter-mdc2 (single demos by name, an app, or a set)
 import { build } from 'esbuild'
 import { spawnSync } from 'node:child_process'
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { all } from './demos.mjs'
+import { matching } from './demos.mjs'
 
 const out = '.holey'
 const filters = process.argv.slice(2)
-const demos = all.filter(d => d.set !== 'laws')
-  .filter(d => !filters.length || filters.some(f => f === d.name || f === d.set))
+const demos = matching(filters).filter(d => d.set !== 'laws')
 if (!demos.length) {
   console.error(`no demo matches ${filters.join(' ')}`)
   process.exit(1)
@@ -48,7 +47,7 @@ const twin = src => src
 
 rmSync(out, { recursive: true, force: true })
 mkdirSync(`${out}/src`, { recursive: true })
-cpSync('demo', `${out}/demo`, { recursive: true, filter: f => !f.endsWith('bundle.js') && !f.includes(`demo${path.sep}laws`) })
+cpSync('demo', `${out}/demo`, { recursive: true, filter: f => !/bundle[\w-]*\.js$/.test(f) && !f.includes(`demo${path.sep}laws`) })
 
 const written = new Set()
 const emit = mod => {
@@ -68,7 +67,7 @@ for (const d of demos) {
     stdin: { contents: `import { ${d.fn} } from './output/Holey.${d.mod}/index.js'; ${d.fn}();`, resolveDir: process.cwd() },
     bundle: true,
     format: 'esm',
-    outfile: `${out}/${d.dir}/bundle.js`,
+    outfile: `${out}/${d.bundle}`,
     logLevel: 'error',
   })
 }

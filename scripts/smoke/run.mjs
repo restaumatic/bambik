@@ -21,6 +21,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { openSession } from './cdp.mjs'
+import { byName } from '../demos.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '../..')
@@ -91,18 +92,19 @@ const main = async () => {
     process.exit(1)
   }
 
-  // every demo a selected test needs must be bundled
+  // every demo a selected test needs (by registry name) must be bundled
   const missing = new Set()
   const mods = []
   for (const f of testFiles) {
     const mod = await import(pathToFileURL(path.join(testsDir, f)))
     mods.push({ name: f.replace(/\.mjs$/, ''), mod })
-    for (const demo of mod.demos) {
-      if (!existsSync(path.join(root, demo, 'bundle.js'))) missing.add(demo)
+    for (const name of mod.demos) {
+      const { bundle } = byName(name)
+      if (!existsSync(path.join(root, bundle))) missing.add(bundle)
     }
   }
   if (missing.size) {
-    console.error('missing bundles:\n' + [...missing].map(d => `  ${d}/bundle.js`).join('\n'))
+    console.error('missing bundles:\n' + [...missing].map(b => `  ${b}`).join('\n'))
     console.error('bundle first: npm run bundle-demos')
     process.exit(1)
   }

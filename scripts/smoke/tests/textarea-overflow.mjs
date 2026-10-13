@@ -2,10 +2,11 @@
 // preferred size in `columns`, but on a viewport narrower than that (a
 // phone) it must clamp to its card, not overflow it. Regression test at a
 // 400px device viewport over both Material twins of the flagship.
-export const demos = ['demo/nguis/order-form-mdc2', 'demo/nguis/order-form-mdc3']
+import { byName } from '../../demos.mjs'
+export const demos = ['order-form-mdc2', 'order-form-mdc3']
 export const pages = [
-  { url: '/demo/nguis/order-form-mdc2/', label: 'mdc2' },
-  { url: '/demo/nguis/order-form-mdc3/', label: 'mdc3' },
+  { url: `/${byName('order-form-mdc2').page}`, label: 'mdc2' },
+  { url: `/${byName('order-form-mdc3').page}`, label: 'mdc3' },
 ]
 
 export const run = async ({ ev, session, assertEq, sleep, page }) => {

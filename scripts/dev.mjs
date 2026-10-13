@@ -1,6 +1,6 @@
 // Watch-mode dev server for every demo at once. The repo's demo/ tree is the
 // server root, in the same folder layout the deploy scp's to the remote host —
-// /7guis/counter/ here is /bambik/demo/7guis/counter/ there, so every relative
+// /nguis/inbox/ here is /bambik/demo/nguis/inbox/ there, so every relative
 // link and asset path resolves identically in both places.
 //
 // An mtime-polling watcher over src/ and demo/ drives two paths by file kind:
@@ -17,23 +17,21 @@
 // looks healthy and never rebuilds. A stat sweep has no budget to exhaust.
 //
 //   node scripts/dev.mjs                  (all demos)
-//   node scripts/dev.mjs counter cells    (only these, by name or set)
+//   node scripts/dev.mjs counter-mdc2 inbox (only these, by name, app or set)
 import { context } from 'esbuild'
 import { spawn } from 'node:child_process'
 import { createServer } from 'node:http'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { all, entryFor } from './demos.mjs'
+import { all, entryFor, matching } from './demos.mjs'
 
 const PORT = 1234
 
 const filters = process.argv.slice(2)
-const demos = filters.length
-  ? all.filter(d => filters.some(f => f === d.name || f === d.set))
-  : all
+const demos = matching(filters)
 if (!demos.length) {
   console.error(`no demo matches ${filters.join(' ')}\n` +
-    `demos: ${all.map(d => d.name).join(', ')}\nsets: 1, 7guis, nguis`)
+    `demos: ${all.map(d => d.name).join(', ')}\nsets: 7guis, nguis, laws`)
   process.exit(1)
 }
 
@@ -119,7 +117,7 @@ await Promise.all(demos.map(async d => {
     stdin: { contents: entryFor(d), resolveDir: process.cwd() },
     bundle: true,
     format: 'esm',
-    outfile: `${d.dir}/bundle.js`,
+    outfile: d.bundle,
     banner: { js: `new EventSource('/esbuild').addEventListener('change', () => location.reload());` },
     plugins: [reloadPlugin(d.name)],
     logLevel: 'warning',
@@ -176,5 +174,5 @@ createServer((req, res) => {
   res.end(req.method === 'HEAD' ? undefined : body)
 }).listen(PORT, '127.0.0.1', () => {
   console.log(`dev server: http://127.0.0.1:${PORT}/  (${demos.length} demo(s), auto-reload on)`)
-  for (const d of demos) console.log(`  http://127.0.0.1:${PORT}/${d.dir.slice('demo/'.length)}/`)
+  for (const d of demos) console.log(`  http://127.0.0.1:${PORT}/${d.page.slice('demo/'.length)}`)
 })

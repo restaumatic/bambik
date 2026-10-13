@@ -12,9 +12,9 @@ Where to read:
 - **a module name** — its header and per-word docs: `npx spago docs --open`
   in the app, or the source under `.spago/bambik/v0.1.6/src/`
   (`PUI.Web.MDC2` is `src/PUI/Web/MDC2.purs`).
-- **a demo name** — `.spago/bambik/v0.1.6/demo/7guis/<name>-<ds>/` or
-  `demo/nguis/<name>-<ds>/`, its view model module in the unsuffixed sibling
-  directory.
+- **a demo name** — `.spago/bambik/v0.1.6/demo/7guis/<name>/` or
+  `demo/nguis/<name>/`, every design system's view and the view model in
+  one directory.
 
 Words not listed here — typography, surfaces, icons, the other selectors
 and emitters of a catalogue — are in the design-system module header
@@ -63,7 +63,7 @@ and emitters of a catalogue — are in the design-system module header
 | a list, displayed | `ul $ ( li $ text lapLine ) # foreach @"number" lapRows` | stopwatch | writing.md *Collections* |
 | a card that edits nothing | `card $ body1 (text summaryLine)` | order-form, product-review | writing.md *Components* |
 | a readout that settles before it redraws | `# debounced itinerarySettleTime` | flight-booker | `PUI` |
-| a hint on hover | `# tooltip "You must accept the terms of service to sign up"`; `# tooltipWith loyaltyNote` | signup-form; espresso-bar | the design-system module |
+| a hint on hover | `# tooltip "You must accept the terms of service to sign up"` | signup-form, espresso-bar | the design-system module |
 | a value-computed attribute | `attrWith "style" keyFace` | calculator, cells, circle-drawer | `PUI.Web` |
 | a field as an attribute | `attrAt @"x" "cx"` | circle-drawer | writing.md *Code style* |
 | a fixed attribute or class | `"style" := "…"`; `cl "dish"` | cells; restaurant-menu | `PUI.Web` |
@@ -78,7 +78,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- | --- |
 | a text field | `filledTextField @"First name"` | order-form | writing.md *Components* |
 | a text field checked as the user pauses | `debouncedTextField @"Username" usernameSettleTime` | signup-form | the design-system module |
-| a yes/no over a two-case field | `checkbox @"Terms" @"accepted" @"declined" (…)` | signup-form, espresso-bar | the design-system module |
+| a yes/no over a two-case field | `checkbox @"Terms" @"accepted" @"declined"` | signup-form, espresso-bar | the design-system module |
 | a switch | `toggleSwitch @"Takeaway cup"` | espresso-bar | the design-system module |
 | a selection that always has a value | `select @"Flight type" (choice @"one-way" <+> choice @"return")` | flight-booker | writing.md *Components* |
 | a selection owed but not yet made | `dropdownUnpicked @"Room" @"chosen" […]`; `segmentedButtonUnpicked @"Dish" @"chosen"` | meeting-booker; potluck | writing.md *Components* |
@@ -97,12 +97,13 @@ and emitters of a catalogue — are in the design-system module header
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
 | a button stepping the model | `button @"Count"` and `unshown @"Count" # fold increment` | counter, todo-list | writing.md *Stages* |
-| a button with a fixed payload | `buttonWith @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
-| an event folded into the model | `unshown @"Customer refunded" # fold refundStandard`, each fold opened by its status, which tells only what an action returned (`snackbar @"Person created" personCreatedLine # fold identity`), the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
+| a button with a fixed payload | `button' @"Take a deposit" { icon: "savings" } # with customerDeposit` | cashbox | writing.md *Stages* |
+| an event folded into the model | `unshown @"Customer refunded" # fold refundStandard`, each fold opened by its status, which tells only what an action returned (`snackbar @"Person created" personCreatedLine # captured`), the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
 | a clicked element naming itself | `clicked @"Cell claimed" @"key" (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
 | an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"finished" quizPhase` | stopwatch; quiz, inbox | writing.md *Conditional visibility* |
 | an event replacing the model whole | `unshown @"New game" # reset openingPosition` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
+| an outcome that is the model | `snackbar @"Card charged" cardChargedLine # captured` (`fold identity`) | crud, order-form, payment, weather, password-generator, reorder | `PUI` |
 | two buttons sharing one handler | `unshown @"Next" # fold stepTo`, `unshown @"Back" # fold stepTo` — two cases, one handler applied in each fold | checkout | `PUI` |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
 | an event intercepted by a dialog | `( Semigroupoid.do { confirmed "Refund" "Refund the customer?" $ …; unshown @"Customer refunded" # fold refundStandard } ) # atCase @"Refund a customer"` — the dialog owns the button's case in the fold block | cashbox | writing.md *Stages* |
@@ -116,7 +117,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- | --- |
 | an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { … its outcome statuses, each # fold … } } ) # atCase @"Create"` in the fold block, the action typed at exactly its outcomes | crud, reorder | writing.md *Business functions* |
 | … opened by its outcome statuses | `( VariantToRecord.do { snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker | writing.md *Business functions* |
-| an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine # fold identity` (or `unshown @"People loaded" # fold identity` where nothing needs telling) | order-form, crud | writing.md *App shape* |
+| an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine # captured` (or `unshown @"People loaded" # captured` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
 | a periodic occurrence | `unshown @"Clock ticked" # ticks tickPeriod` and `unshown @"Clock ticked" # fold tick` | timer, stopwatch, scoreboard | `PUI` |
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
@@ -134,7 +135,7 @@ and emitters of a catalogue — are in the design-system module header
 | the array → the array, decided jointly or edited in place | `# acted @"name"`; `# acted @"id"`; a stored array `# actedAt @"id" @"Setlist"` | potluck; reorder; reorder-html | writing.md *Collections* |
 | one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
 | one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
-| a selectable list (MDC2, MDC3) | `listOfAtWith @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |
+| a selectable list (MDC2, MDC3) | `listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |
 | a selectable list elsewhere | `clicked @"Person picked" @"key" (…) # foreach @"key" …` | crud (html) | writing.md *Collections* |
 
 ## View model not written yet

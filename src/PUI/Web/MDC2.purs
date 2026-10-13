@@ -42,7 +42,7 @@ module PUI.Web.MDC2
   , body1
   , body2
   , button
-  , buttonWith
+  , button'
   , caption
   , card
   , cardActions
@@ -83,9 +83,9 @@ module PUI.Web.MDC2
   , list
   , listItem
   , listOf
-  , listOfWith
+  , listOf'
   , listOfAt
-  , listOfAtWith
+  , listOfAt'
   , menu
   , menuItem
   , outlinedButton
@@ -111,7 +111,6 @@ module PUI.Web.MDC2
   , textButton
   , toggleSwitch
   , tooltip
-  , tooltipWith
   , topAppBar
   )
   where
@@ -228,7 +227,7 @@ import Type.Proxy (Proxy(..))
 -- |
 -- | It reports on click, carrying the data it was showing, under the name
 -- | the app gives the action: `button @"Book the flight"`, the case label
--- | verbatim as its caption, so the case *is* the copy. `buttonWith`
+-- | verbatim as its caption, so the case *is* the copy. `button'`
 -- | takes the face's options.
 button
   :: forall @l r v
@@ -238,17 +237,17 @@ button
 button = buttonOf @l (Just "mdc-button--raised") {}
 
 -- | `button` with options for its face: `icon: "add"` puts a Material
--- | Icons glyph before the label (`buttonWith @"Place order" { icon:
+-- | Icons glyph before the label (`button' @"Place order" { icon:
 -- | "local_cafe" }`), `label:` overrides the caption with copy the case
 -- | cannot be.
-buttonWith
+button'
   :: forall @l provided r v
    . IsSymbol l
   => Cons l { | r } () v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
   -> PUI Web { | r } [ | v ]
-buttonWith = buttonOf @l (Just "mdc-button--raised")
+button' = buttonOf @l (Just "mdc-button--raised")
 
 -- | `button` at medium emphasis — outlined, no fill: an important action
 -- | that is not *the* action of the screen.
@@ -445,21 +444,20 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
   comp <- liftEffect $ newComponent material.textField."MDCTextField" fieldNode
   liftEffect $ textFieldWiring comp inputNode Nothing
 
--- | The Material **checkbox**, with its label beside it: the label is
--- | ordinary content (usually a `staticText`), properly associated, so
--- | clicking the words toggles the box and the whole line is a comfortable
--- | target.
+-- | The Material **checkbox**, captioned beside it by its label verbatim,
+-- | properly associated, so clicking the words toggles the box and the
+-- | whole line is a comfortable target.
 -- |
 -- | The field is a **named two-case variant** the application spells:
--- | `checkbox @"Terms" @"accepted" @"declined" (staticText …)`
+-- | `checkbox @"Terms" @"accepted" @"declined"
 -- | is ticked exactly while `"Terms"` sits at `accepted`; ticking reports
 -- | `.accepted {}`, clearing reports `.declined {}` — so an optional part
 -- | of the model *is* the box's state under its own names, with no second
 -- | flag to keep in step and no `Maybe`. Use a checkbox for a fact the user
 -- | states as part of a form; use `toggleSwitch` for a setting that takes
 -- | effect at once.
-checkbox :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => PUI Web {} {} -> PUI Web { | r } { | r }
-checkbox labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+checkbox :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => PUI Web { | r } { | r }
+checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
   checkboxId <- liftEffect uniqueId
   aRef <- liftEffect $ Ref.new {}
   parts <- element "div" do
@@ -481,7 +479,7 @@ checkbox labelContent = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wra
     clazz "mdc-checkbox"
     cbNode <- gets _.sibling
     cbComp <- liftEffect $ newComponent material.checkbox."MDCCheckbox" cbNode
-    lbl <- unwrap (label >>> "for" := checkboxId $ labelContent)
+    lbl <- unwrap (label >>> "for" := checkboxId $ staticText (reflectSymbol (Proxy @l)))
     pure { inputNode, cbComp, lbl }
   clazz "mdc-form-field"
   ffNode <- gets _.sibling
@@ -1353,13 +1351,13 @@ listOf
   => ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOf = listOfWith @l @k @r {}
+listOf = listOf' @l @k @r {}
 
 
 -- | `listOf` with options: `selected` takes a predicate on a row, and the
--- | rows it holds take the catalogue's selected styling (`listOfWith
+-- | rows it holds take the catalogue's selected styling (`listOf'
 -- | @"Person picked" @"key" @( … ) { selected: isSelected } entries item`).
-listOfWith
+listOf'
   :: forall @l @k @r provided i b o key v
    . IsSymbol l
   => IsSymbol k
@@ -1370,7 +1368,7 @@ listOfWith
   -> ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOfWith provided f item = withStructuralOrd @key $ wrap do
+listOf' provided f item = withStructuralOrd @key $ wrap do
   w <- unwrap $ ul >>> cl "mdc-deprecated-list" >>> "style" := "overflow-y: auto;" $
     ( clicked @l @k $ clWhen config.selected "mdc-deprecated-list-item--selected"
         $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
@@ -1401,13 +1399,13 @@ listOfAt
   => Cons t (Array { | r }) b2 i
   => PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOfAt = listOfAtWith @l @k @t {}
+listOfAt = listOfAt' @l @k @t {}
 
 -- | `listOfAt` with options: `selected` takes a predicate on a row, and the
 -- | rows it holds take the catalogue's selected styling
--- | (`listOfAtWith @"Message opened" @"id" @"messages" { selected:
+-- | (`listOfAt' @"Message opened" @"id" @"messages" { selected:
 -- | highlighted } item`).
-listOfAtWith
+listOfAt'
   :: forall @l @k @t provided i r b1 b2 o key v
    . IsSymbol l
   => IsSymbol k
@@ -1419,7 +1417,7 @@ listOfAtWith
   => { | provided }
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOfAtWith provided = listOfWith @l @k @r provided (Record.get (Proxy @t))
+listOfAt' provided = listOf' @l @k @r provided (Record.get (Proxy @t))
 
 -- | A **data table**: values in rows and columns, where the column a value
 -- | sits in is what says what it means. Its header slot holds the fixed
@@ -1498,9 +1496,10 @@ drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
 -- | Attach a **tooltip** to a control: the short explanation that appears
 -- | on hover or keyboard focus. For clarification only — never for
 -- | information the user needs to complete the task, which belongs on the
--- | screen. Wrap a single control, and write it trailing so the control
--- | still reads first:
--- | `checkbox @"Loyalty" @"member" @"guest" (staticText "Loyalty member") # tooltip @"Members get 10% off"`.
+-- | screen. The tip is static: its text is fixed when the control is
+-- | built, never read from data. Wrap a single control, and write it
+-- | trailing so the control still reads first:
+-- | `checkbox @"Loyalty member" @"member" @"guest" # tooltip "Members get 10% off"`.
 tooltip :: String -> Ocular (PUI Web)
 tooltip tipText content = wrap do
   tipId <- liftEffect uniqueId
@@ -1509,23 +1508,6 @@ tooltip tipText content = wrap do
   tipNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.tooltip."MDCTooltip" tipNode
   pure w
-
--- | `tooltip`'s channel-fed sibling, as `attrWith` is `attr`'s: the tip's
--- | text is a copy function of the row the decorated element is fed,
--- | re-read on every feed — for a note formatted from a business value
--- | (`# tooltipWith loyaltyNote`) or from the model itself. It is typed at the
--- | row, like a display's copy function.
-tooltipWith :: forall i o. ({ | i } -> String) -> PUI Web { | i } o -> PUI Web { | i } o
-tooltipWith f content = wrap do
-  tipId <- liftEffect uniqueId
-  w <- unwrap ("aria-describedby" := tipId $ content)
-  tip <- unwrap (div >>> "id" := tipId >>> cl "mdc-tooltip" >>> "role" := "tooltip" >>> "aria-hidden" := "true" $ div >>> "class" := "mdc-tooltip__surface mdc-tooltip__surface-animation" $ text f)
-  tipNode <- gets _.sibling
-  _ <- liftEffect $ newComponent material.tooltip."MDCTooltip" tipNode
-  pure
-    { toUser: \row -> w.toUser row *> tip.toUser row
-    , fromUser: \prop -> w.fromUser prop *> tip.fromUser (\_ -> pure unit)
-    }
 
 -- announcing statics (`{}`-output chrome with a face, at any row)
 

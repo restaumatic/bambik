@@ -11,11 +11,12 @@ This file never documents a component. What a word does, its signature
 and its options are in the library's module headers — see
 [Looking things up](#looking-things-up). Words appear here only as
 examples, each from a demo you can open under
-`.spago/bambik/<tag>/demo/7guis/` or `demo/nguis/`. A demo directory's
-suffix names its design system (`counter-mdc2`, `counter-mdc3`, …,
-`counter-html`); the siblings share one view model module in the
-unsuffixed directory (`counter/CounterViewModel.purs`), so read
-whichever twin matches your design system.
+`.spago/bambik/<tag>/demo/7guis/` or `demo/nguis/`. A view module's
+suffix names its design system (`CounterMDC2.purs`, …,
+`CounterHTML.purs`), and the twins share one view model module
+(`CounterViewModel.purs`), all in the app's one directory
+(`demo/7guis/counter/`), so read whichever twin matches your design
+system.
 
 ## Terms
 
@@ -118,8 +119,8 @@ the label (`filledTextField @"Start date (DD.MM.YYYY)"`,
 `sliderLive @"Amount (€)"`); where a symbol is the conventional
 caption, write the symbol (`@celsius`). A leaf takes no options record:
 the label is its caption. The few words with optional presentation have
-a `…With` sibling taking it (`buttonWith @"Place order" { icon:
-"local_cafe" }`, `listOfWith … { selected: isSelected } …`).
+a primed sibling taking it (`button' @"Place order" { icon:
+"local_cafe" }`, `listOf' … { selected: isSelected } …`).
 
 How each kind takes its business meaning:
 
@@ -167,8 +168,8 @@ ordersCount`). A signature with a bare `String`, `Maybe a` or `a` on
 either side is a smell: that value belongs in a field of the row, read
 by a business function.
 
-A `…With` word's options are a record whose field names belong to the
-component (`buttonWith`'s `icon`, `listOfWith`'s `selected`), so copy a
+A primed word's options are a record whose field names belong to the
+component (`button'`'s `icon`, `listOf'`'s `selected`), so copy a
 demo's call or read the header instead of guessing — a guessed field
 fails as `TypesDoNotUnify` on the options record.
 
@@ -183,7 +184,7 @@ for:
 | a display or chrome, always there | `headlineSmall $ text orderLine` | order-form |
 | a display shown in one case | `text distanceLine # pane @"estimated" distanceOf` | order-form |
 | an editor that exists in one case | `filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"` | order-form |
-| a button that exists in one case | `buttonWith @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"` | stopwatch |
+| a button that exists in one case | `button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"` | stopwatch |
 | a list rendered from the row | `ul $ (li $ text lapLine) # foreach @"number" lapRows` | stopwatch |
 | a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count"` | counter |
 | several displays before a stage | `prefixed ( RecordToRecord.do … ) $ slider @"Split between"` | tip-calculator, weather |
@@ -194,8 +195,8 @@ for:
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
 | a periodic occurrence | `unshown @"Clock ticked" # ticks tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @celsius # settled fromCelsius` | temperature-converter |
-| an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" personCreatedLine # fold identity; … } } ) # atCase @"Create"`, the pair owning the case in the fold block, the action typed at exactly its outcomes | crud |
-| an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `unshown @"Forecast fetched" # fold identity` | weather |
+| an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" personCreatedLine # captured; … } } ) # atCase @"Create"`, the pair owning the case in the fold block, the action typed at exactly its outcomes | crud |
+| an effect whose outcome is the model | `indeterminateCircularProgress # action fetchReport # atCase @"Forecast requested"` then `unshown @"Forecast fetched" # captured` | weather |
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
 | a fold nothing needs telling about | `unshown @"Todo toggled" # fold toggleTodo`, `unshown @"Clock ticked" # fold tick` | todo-list, timer, stopwatch |
 
@@ -233,8 +234,8 @@ Semigroupoid.do
     ( Semigroupoid.do                         --   an effect on a case, folded by its own outcomes
       indeterminateLinearProgress # action createPerson
       VariantToRecord.do
-        snackbar @"Person created" personCreatedLine # fold identity
-        snackbar @"Person not created" personNotCreatedLine # fold identity ) # atCase @"Create"
+        snackbar @"Person created" personCreatedLine # captured
+        snackbar @"Person not created" personNotCreatedLine # captured ) # atCase @"Create"
 # looped @( … ) # with seed
 ```
 
@@ -423,8 +424,8 @@ and that pair owns the button's case there:
 ( Semigroupoid.do
   indeterminateLinearProgress # action createPerson
   VariantToRecord.do
-    snackbar @"Person created" personCreatedLine # fold identity
-    snackbar @"Person not created" personNotCreatedLine # fold identity ) # atCase @"Create"
+    snackbar @"Person created" personCreatedLine # captured
+    snackbar @"Person not created" personNotCreatedLine # captured ) # atCase @"Create"
 ```
 
 So **every action is typed at exactly its own outcomes**, the cases its
@@ -483,11 +484,11 @@ arguments:
 ```purescript
 snackbar  @"booked"  bookedLine              -- the booked snackbar, saying bookedLine
 confirmed "Refund"   "Refund the customer?"   -- the title is static: a value
-buttonWith    @"Sign up" { icon: "person_add" }  -- the record: optional presentation
+button'    @"Sign up" { icon: "person_add" }  -- the record: optional presentation
 ```
 
 **A record never holds an anchor or a required value.** A record stays
-only for optional presentation (`{ icon }`, `{ selected }`, on a `…With` word) or for
+only for optional presentation (`{ icon }`, `{ selected }`, on a primed word) or for
 two same-typed values a positional pair could swap
 (`drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }`).
 If you must open a record to learn what the line is about, the line
@@ -511,11 +512,11 @@ text is computed, a chrome line nothing.
   lines.
 - **A line leads with what is seen, via `$`, and trails with data
   concerns, via `#`.** No data word leads a line.
-- **A decorator rides its element.** `cl`, `clWhen`, `attrWith`,
-  `tooltip` and `tooltipWith` compose onto a container with `>>>`
+- **A decorator rides its element.** `cl`, `clWhen`, `attrWith` and
+  `tooltip` compose onto a container with `>>>`
   (`td >>> attrWith "style" cellFace $ …`) or trail a finished leaf with
   `#` (`span (textAt @"title") # clWhen isCompleted "todo-done"`,
-  `checkbox @"Loyalty" … # tooltipWith loyaltyNote`); never lead with
+  `checkbox @"Loyalty member" … # tooltip "Members get 10% off"`); never lead with
   one.
 - **Closing parens and `#` chains never start a line.** A trailing
   chain stays on one line at the end of the component's last line, and
@@ -554,7 +555,7 @@ text is computed, a chrome line nothing.
   the seed line (`# looped @( counted :: Int ) # with freshCount`; inbox's two
   fields, one per line). A load action before the knot
   emits its outcome as an event folded into the loop (`unshown @"People
-  loaded" # fold identity`, crud and order-form), so the
+  loaded" # captured`, crud and order-form), so the
   knot declares the model like any other. Every editor, selector, list and field label is checked
   against it — so a stored field is read by its label
   (`listOfAt … @"messages"`, `# providedAt @"halted" @"phase"`). A
@@ -636,8 +637,7 @@ text is computed, a chrome line nothing.
   introduces renders something — never above an absent pane or an empty
   list. A **constant** shows only through data — a sentence's glue,
   a pane's message — and lives in a copy function: `text faultLine #
-  pane @"faulty" readout` (calculator), `# tooltipWith loyaltyNote`
-  (espresso-bar). Text that *is* data (a parsed markdown run) is
+  pane @"faulty" readout` (calculator). Text that *is* data (a parsed markdown run) is
   `staticText` too.
 - **A label is read back, never restated.** A case label is the copy it
   draws, so write it as the exact copy the line needs
@@ -693,13 +693,14 @@ text is computed, a chrome line nothing.
   `refundStandard`); an effect returns the model under its outcome case
   (`createPerson :: model -> Aff [ "Person created" :: model, "Person not
   created" :: model ]`), so each outcome's fold is `snackbar @"Person
-  created" personCreatedLine # fold identity`; a constant replacing the
+  created" personCreatedLine # captured` (`captured` is `fold
+  identity`: the payload becomes the model); a constant replacing the
   model is `unshown @"New game" # reset openingPosition`. A status's copy function takes the event's
   payload, never the handler's result.
 - **A status only after an action.** A fold opens with a visible
   status where an action returned what the status tells, an
   action's outcome (crud's `snackbar @"Person created"
-  personCreatedLine # fold identity`). A command straight from an
+  personCreatedLine # captured`). A command straight from an
   emitter folds silently, whatever it does, since the screen already
   shows its result (counter's count, cashbox's till, inbox's list):
   `unshown @"Todo toggled" # fold toggleTodo`.

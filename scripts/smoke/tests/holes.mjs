@@ -10,7 +10,7 @@
 import { existsSync } from 'node:fs'
 import { all } from '../../demos.mjs'
 
-const twins = all.filter(d => d.set !== 'laws').map(d => `.holey/${d.dir}`)
+const twins = all.filter(d => d.set !== 'laws')
 export const demos = []
 export const url = '/.holey/demo/'
 
@@ -45,12 +45,12 @@ const exercise = `(() => {
 })()`
 
 export const run = async ({ open, assertEq, sleep }) => {
-  const missing = twins.filter(d => !existsSync(`${d}/bundle.js`))
-  assertEq(missing, [], 'every demo has a bundled holey twin (node scripts/holes.mjs)')
-  const dirs = twins.filter(d => !missing.includes(d))
-  for (let i = 0; i < dirs.length; i += batch) {
-    const chunk = dirs.slice(i, i + batch)
-    const sessions = await Promise.all(chunk.map(dir => open(`/${dir}/`)))
+  const missing = twins.filter(d => !existsSync(`.holey/${d.bundle}`))
+  assertEq(missing.map(d => d.name), [], 'every demo has a bundled holey twin (node scripts/holes.mjs)')
+  const pages = twins.filter(d => !missing.includes(d)).map(d => `.holey/${d.page}`)
+  for (let i = 0; i < pages.length; i += batch) {
+    const chunk = pages.slice(i, i + batch)
+    const sessions = await Promise.all(chunk.map(dir => open(`/${dir}`)))
     await sleep(watch)
     for (const [k, dir] of chunk.entries()) {
       const s = sessions[k]

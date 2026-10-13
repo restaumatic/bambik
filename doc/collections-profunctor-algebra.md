@@ -283,7 +283,7 @@ pure treatments never see.
   rebuilds on re-feed/permutation/drop; output order follows fed key order),
   collapsed silent-on-empty. DOM-identity laws stay in
   `scripts/smoke/tests/acting-laws.mjs` (green).
-- **`demo/nguis/potluck-mdc2/`** — the focused `acted` demo: per-guest dish
+- **`demo/nguis/potluck/`** — the focused `acted` demo: per-guest dish
   editors lifted with `# acted _.name`, the menu summary withheld by the
   gather gate until every guest has chosen, retain-last on re-choices, row
   nodes surviving every re-feed.
