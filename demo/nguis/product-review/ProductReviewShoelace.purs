@@ -4,7 +4,7 @@ import Prelude (Unit, ($), (#))
 
 import Effect (Effect)
 import ProductReviewViewModel (freshImpression, previewLine, submittedLine)
-import PUI (looped, prefixed, with)
+import PUI (looped, with)
 import PUI.Web ((<+>), choice, text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, card, divider, rating, select, textArea, textField, toast, toggleSwitch)
@@ -29,5 +29,6 @@ productReviewShoelace =
        , "I'd recommend it to a friend" :: Boolean
        , "Nickname" :: String
        ) # with freshImpression
-    divider $ prefixed (card $ p (text previewLine)) $ button @"Submit review"
+    divider $ card $ p (text previewLine)
+    button @"Submit review"
     toast @"Submit review" submittedLine

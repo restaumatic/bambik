@@ -19,32 +19,24 @@ tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 100.0 }
 
 beginTiming
-  :: { event :: {}
-     , model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-     }
+  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
   -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-beginTiming { model: sw } = sw { phase = .timing {} }
+beginTiming sw = sw { phase = .timing {} }
 
 haltTiming
-  :: { event :: {}
-     , model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-     }
+  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
   -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-haltTiming { model: sw } = sw { phase = .halted {} }
+haltTiming sw = sw { phase = .halted {} }
 
 recordLap
-  :: { event :: {}
-     , model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-     }
+  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
   -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-recordLap { model: sw@{ laps, elapsedTenths } } = sw { laps = snoc laps elapsedTenths }
+recordLap sw@{ laps, elapsedTenths } = sw { laps = snoc laps elapsedTenths }
 
 clearStopwatch
-  :: { event :: {}
-     , model :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-     }
+  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
   -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-clearStopwatch { model: sw } = sw { elapsedTenths = 0, laps = [] }
+clearStopwatch sw = sw { elapsedTenths = 0, laps = [] }
 
 tick
   :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }

@@ -1,13 +1,13 @@
 module CircleDrawerShoelace (circleDrawerShoelace) where
 
-import Prelude ((#), ($), (>>>), Unit)
+import Prelude ((#), ($), (>>>), Unit, identity)
 
 import CircleDrawerViewModel (canvasCircles, emptyCanvas, redo, resizeSelected, selectOrAddCircle, undo)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (blank, fold, foreach, joined, looped, settled, unshown, with)
+import PUI (fold, foreach, joined, looped, settled, unshown, with)
 import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.Shoelace (body, button, sliderLive)
@@ -22,7 +22,7 @@ circleDrawerShoelace =
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
         ( onClickedXY @"Canvas clicked"
           ( ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
-            >>> attrWith "fill" circleFill $ blank ) # foreach @"key"
+            >>> attrWith "fill" circleFill $ identity ) # foreach @"key"
               @( key :: String
                , x :: String
                , y :: String

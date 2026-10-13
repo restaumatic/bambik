@@ -2,11 +2,10 @@ module ShoppingCartMDC2 (shoppingCartMDC2) where
 
 import Prelude ((#), ($), Unit)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, foreach, joined, looped, prefixed, reset, unshown, with)
+import PUI (anyOf, fold, joined, looped, reset, unshown, with)
 import PUI.Web (clicked, text)
 import PUI.Web.MDC2 (body, body1, button, columnHeader, dataCell, dataRow, dataTable, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,17 +14,18 @@ import ShoppingCartViewModel (addUnit, cartLines, catalogueLine, emptyCart, line
 shoppingCartMDC2 :: Effect Unit
 shoppingCartMDC2 =
   body $ Semigroupoid.do
-    prefixed (body1 (text totalLine)) $ RecordToVariant.do
+    body1 (text totalLine)
+    RecordToVariant.do
       listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) productCatalogue (text catalogueLine) # joined @"Unit added"
       dataTable "Cart"
-        ( RecordToRecord.do
+        ( Semigroupoid.do
           columnHeader "Product"
           columnHeader "Qty"
           columnHeader "Total" )
-        ( ( clicked @"Unit removed" @"product" $ dataRow RecordToRecord.do
+        ( ( clicked @"Unit removed" @"product" $ dataRow Semigroupoid.do
           dataCell (text productLine)
           dataCell (text quantityLine)
-          dataCell (text lineTotalLine) ) # foreach @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"Unit removed"
+          dataCell (text lineTotalLine) ) # anyOf @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"Unit removed"
       button @"Empty cart"
     VariantToRecord.do
       unshown @"Unit added" # fold addUnit

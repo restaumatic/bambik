@@ -2,35 +2,30 @@ module TicTacToeMDC3 (ticTacToeMDC3) where
 
 import Prelude ((#), ($), (<>), (>>>), Unit)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, foreach, joined, looped, prefixed, reset, unshown, with)
-import PUI.Web (attrWith, clicked, pane, text, (:=))
+import PUI (anyOf, fold, joined, looped, reset, unshown, with)
+import PUI.Web (attrWith, clicked, inCase, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, button', headlineSmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TicTacToeViewModel (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine)
+import TicTacToeViewModel (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine)
 
 ticTacToeMDC3 :: Effect Unit
 ticTacToeMDC3 =
   body $ Semigroupoid.do
-    prefixed ( RecordToRecord.do
-      headlineSmall (text wonLine) # pane @"won"
-        @( won :: { mark :: [ x :: {}, o :: {}, free :: {} ] }
-         , drawn :: {}
-         , toMove :: { mark :: [ x :: {}, o :: {}, free :: {} ] }
-         ) gameOutcome
-      headlineSmall (text drawnLine) # pane @"drawn" gameOutcome
-      headlineSmall (text toMoveLine) # pane @"toMove" gameOutcome ) $ RecordToVariant.do
-      ( ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-        clicked @"Cell claimed" @"key" ( div >>> attrWith "style" cellFace $ text cellMark ) # foreach @"key"
+    headlineSmall (text wonLine) # inCase @"won" @( won :: {}, drawn :: {}, toMove :: {} ) gameOutcome
+    headlineSmall (staticText "Draw") # inCase @"drawn" gameOutcome
+    headlineSmall (text toMoveLine) # inCase @"toMove" gameOutcome
+    RecordToVariant.do
+      ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
+        clicked @"Cell claimed" @"key" ( div >>> attrWith "style" cellFace $ text cellMark ) # anyOf @"key"
           @( key :: String
            , mark :: [ x :: {}, o :: {}, free :: {} ]
            , line :: [ winning :: {}, plain :: {} ]
-           ) cells ) ) # joined @"Cell claimed"
+           ) cells ) # joined @"Cell claimed"
       button' @"New game" { icon: "replay" }
     VariantToRecord.do
       unshown @"Cell claimed" # fold claimCell

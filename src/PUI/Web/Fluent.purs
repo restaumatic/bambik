@@ -299,8 +299,8 @@ radioGroupOf clearable lift options = let config = { label: reflectSymbol (Proxy
 -- | value is a **read function** like every display's, since a fraction is
 -- | derived (a ratio of source fields), not state.
 progressBar
-  :: forall reads
-   . ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall r
+   . ({ | r } -> Number) -> PUI Web { | r } { | r }
 progressBar f = wrap do
   element "fluent-progress-bar" (pure unit)
   attribute "max" "1"
@@ -313,8 +313,8 @@ progressBar f = wrap do
 -- | there is deliberately no star *editor* here (Shoelace's `rating` is
 -- | the one).
 ratingDisplay
-  :: forall reads
-   . ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall r
+   . ({ | r } -> Number) -> PUI Web { | r } { | r }
 ratingDisplay f = wrap do
   element "fluent-rating-display" (pure unit)
   node <- gets _.sibling
@@ -389,7 +389,7 @@ cardCss = """
 .fluent-card { background: var(--colorNeutralBackground1, #fff); color: var(--colorNeutralForeground1, #242424); font-family: var(--fontFamilyBase, 'Segoe UI', sans-serif); border-radius: var(--borderRadiusXLarge, 8px); box-shadow: var(--shadow4, 0 2px 4px rgba(0,0,0,.14)); padding: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
 """
 
--- announcing statics ({}-output chrome with a face, at any row)
+-- statics (chrome with a face, the wire at any row)
 
 -- | A **divider**: the hairline rule between sections of a surface. Fixed
 -- | decoration, carrying no data.

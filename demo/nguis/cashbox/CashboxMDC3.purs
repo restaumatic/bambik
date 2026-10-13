@@ -6,7 +6,7 @@ import CashboxViewModel (balanceLine, openedTill, payCourier, payoutLine, refund
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (atCase, fold, looped, prefixed, toCase, unshown, with)
+import PUI (atCase, fold, looped, toCase, unshown, with)
 import PUI.Web (text)
 import PUI.Web.MDC3 (body, bodyLarge, button', headlineSmall, confirmed)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,7 +14,8 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 cashboxMDC3 :: Effect Unit
 cashboxMDC3 =
   body $ Semigroupoid.do
-    prefixed (headlineSmall $ text balanceLine) $ RecordToVariant.do
+    headlineSmall $ text balanceLine
+    RecordToVariant.do
       button' @"Refund a customer" { icon: "undo" }
       button' @"Pay the courier" { icon: "local_shipping" }
       button' @"Take a deposit" { icon: "savings" }

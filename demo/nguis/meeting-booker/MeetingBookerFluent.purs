@@ -2,11 +2,10 @@ module MeetingBookerFluent (meetingBookerFluent) where
 
 import Prelude (Unit, ($), (#))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import MeetingBookerViewModel (blankBooking, bookRoom, bookedLine, plan, planLine, ratedRoom, roomRatingCaption, roomStars, seatOccupancy, seatsInRoom, seatsTaken, seatsTakenCaption)
-import PUI (action, atCase, looped, prefixed, settled, with)
-import PUI.Web ((<+>), choice, inCaseAt, pane, provided, text)
+import MeetingBookerViewModel (blankBooking, bookRoom, bookedLine, plan, planLine, ratedRoom, roomStars, seatOccupancy, seatsInRoom, seatsTaken)
+import PUI (action, atCase, looped, settled, with)
+import PUI.Web ((<+>), choice, inCase, inCaseAt, provided, staticText, text)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdownOptional, dropdownUnpicked, indeterminateLinearProgress, messageBar, progressBar, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -32,17 +31,16 @@ meetingBookerFluent =
        , "Include a Teams link" :: Boolean
        , "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ]
        ) # with blankBooking
-    prefixed ( RecordToRecord.do
-      ( div $ RecordToRecord.do
-        caption1 $ text roomRatingCaption
-        ratingDisplay roomStars ) # pane @"rated" @( rated :: { rating :: Number }, unrated :: {} ) ratedRoom
-      ( div $ RecordToRecord.do
-        caption1 $ text seatsTakenCaption
-        progressBar seatOccupancy ) # pane @"seated" @( seated :: { occupancy :: Number }, unseated :: {} ) seatsTaken ) $ ( card $ prefixed (body1 (text planLine)) $ button @"Book the room" ) # provided @"complete"
-        @( complete :: { "Meeting title" :: String, room :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], duration :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean, catering :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ] }
-         , incomplete :: {}
-         ) plan
+    ( div $ Semigroupoid.do
+      caption1 $ staticText "How attendees rated this room"
+      ratingDisplay roomStars ) # inCase @"rated" @( rated :: {}, unrated :: {} ) ratedRoom
+    ( div $ Semigroupoid.do
+      caption1 $ staticText "Seats taken"
+      progressBar seatOccupancy ) # inCase @"seated" @( seated :: {}, unseated :: {} ) seatsTaken
+    ( card $ Semigroupoid.do
+      body1 (text planLine)
+      button @"Book the room" ) # provided @"complete" @( complete :: {}, incomplete :: {} ) plan
     ( indeterminateLinearProgress # action
-      @( "Room booked" :: { "Meeting title" :: String, room :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], duration :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean, catering :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ] } )
+      @( "Room booked" :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Include a Teams link" :: Boolean, "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ] } )
       bookRoom ) # atCase @"Book the room"
     messageBar @"Room booked" bookedLine

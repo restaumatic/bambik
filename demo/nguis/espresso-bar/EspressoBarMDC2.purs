@@ -2,12 +2,11 @@ module EspressoBarMDC2 (espressoBarMDC2) where
 
 import Prelude ((#), ($), Unit)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import EspressoBarViewModel (caffeineFraction, cupLine, espressoNoFrills, orderPlacedLine, placeOrder, theUsual, usualOrder)
-import PUI (action, atCase, fold, looped, prefixed, reset, unshown, with)
+import PUI (action, atCase, fold, looped, reset, unshown, with)
 import PUI.Web ((<+>), choice, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body, body2, button', caption, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, indeterminateLinearProgress, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
@@ -33,11 +32,12 @@ espressoBarMDC2 =
       toggleSwitch @"Takeaway cup"
       iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "favorite_border" }
       checkbox @"Loyalty member" @"member" @"guest" # tooltip "Members get 10% off"
-      divider $ prefixed ( RecordToRecord.do
+      divider $ Semigroupoid.do
         body2 (text cupLine)
-        ( div $ RecordToRecord.do
+        div $ Semigroupoid.do
           caption $ staticText "Caffeine"
-          linearProgress caffeineFraction ) ) $ RecordToVariant.do
+          linearProgress caffeineFraction
+      RecordToVariant.do
         menu "Presets" ( RecordToVariant.do
           menuItem @"The usual"
           menuItem @"Espresso, no frills" )

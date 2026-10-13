@@ -70,14 +70,13 @@ module PUI
   , reset
   , captured
   , static
-  , prefixed
-  , suffixed
   , ticks
   , accumulated
   , debounced
   , dispatched
   , foreach
-  , foreachAt
+  , anyOf
+  , anyOfAt
   , observed
   , resolveFor
   , module Adopters
@@ -114,7 +113,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- component's own row is always stated by a
 -- business function, never placed at another row at the call site; the
 -- placement is the vocabularies' plumbing for their statics.
-import Data.Profunctor.Row.RecordToRecord (asField, blank, muted, settled, with) as Adopters
+import Data.Profunctor.Row.RecordToRecord (asField, settled, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, replaying, silence) as Adopters
 import Data.Profunctor.Row.VariantToVariant (atCase, toCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
@@ -126,7 +125,7 @@ import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant, silence)
-import Data.Profunctor.Row (class RowLabels, atAnyRow, exactRow, fedFirst, fedSecond, rowLabels, widenVariantOutput)
+import Data.Profunctor.Row (class RowLabels, exactRow, fedFirst, fedSecond, rowLabels, widenVariantOutput)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
@@ -1167,53 +1166,14 @@ type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 -- | inside the gate what the gate drops outside.
 type Ocular p = forall a b. Optic p a b a b
 
--- | An element with **nothing in it**: an ocular applied to the wire, its
--- | output `{}` at any input row — a ripple, a focus ring, a decorative
--- | circle, an empty cell. Reads nothing, contributes nothing; the merge
--- | gates ignore its echo (a zero-field side is pre-known and inert), so it
--- | sits in any `RecordToRecord.do` beside `staticText` and `staticHTML`,
--- | the other two statics. `static (span >>> cl "mdc-button__ripple")`.
-static :: forall p r. Category p => Profunctor p => Ocular p -> p { | r } {}
-static o = atAnyRow (o identity :: p {} {})
-
--- | A display **before** what it introduces — a heading before its section,
--- | a caption before its field, a readout before the control it reads —
--- | as a decorator over that part of the flow: the display is built first,
--- | then the content, and is fed whatever the content is fed, before it.
--- | Its `{}` answers are discarded lawfully (the type says they carry
--- | nothing) and the content's channels pass untouched, so the data flow is
--- | the content's alone. Written first because it is shown first:
--- | `label $ prefixed (staticText "°C ") $ input @"celsius" "text"`,
--- | `prefixed (headline4 (text countLine)) $ button @"Count"`; several
--- | displays in a row are one `RecordToRecord.do` group under one
--- | `prefixed`. In a `Semigroupoid.do` block this is how a line that shows
--- | data (output `{}`) sits before a stage: it decorates the stage rather
--- | than feeding it.
-prefixed :: forall m a b. MonadEffect m => PUI m a {} -> PUI m a b -> PUI m a b
-prefixed d w = wrap do
-  d' <- unwrap d
-  liftEffect $ d'.fromUser \_ -> pure unit
-  w' <- unwrap w
-  pure
-    { toUser: \a -> d'.toUser a *> w'.toUser a
-    , fromUser: w'.fromUser
-    }
-
--- | A display **after** what it reports on — a total after the sliders it
--- | sums, a lap list after the clock — as a decorator over that part of the
--- | flow: the content is built first, then the display, which is fed each
--- | row the content releases, before the row goes on. Like `prefixed`, it
--- | changes no data: `slider @"Split between" # suffixed ( RecordToRecord.do
--- | … )` keeps the slider's row flowing past the totals under it.
-suffixed :: forall m a b. MonadEffect m => PUI m b {} -> PUI m a b -> PUI m a b
-suffixed d w = wrap do
-  w' <- unwrap w
-  d' <- unwrap d
-  liftEffect $ d'.fromUser \_ -> pure unit
-  pure
-    { toUser: w'.toUser
-    , fromUser: \prop -> w'.fromUser \b -> d'.toUser b *> prop b
-    }
+-- | An element with **nothing in it**: an ocular applied to the wire — a
+-- | ripple, a focus ring, a decorative circle, an empty cell. Reads
+-- | nothing, changes nothing: like every static it is the wire at its row,
+-- | so it is a line of a `Semigroupoid.do` block beside `staticText` and
+-- | `staticHTML`, the other two statics. `static (span >>> cl
+-- | "mdc-button__ripple")`.
+static :: forall p r. Category p => Ocular p -> p { | r } { | r }
+static o = o identity
 
 -- | An action is **opened by its statuses**: the slot is a `+→×` citizen
 -- | owning any of the run's cases — the two lifecycle occurrences `started`
@@ -1229,8 +1189,8 @@ suffixed d w = wrap do
 -- | follow (flight-booker). No application owns a
 -- | "busy": the indicator shows between `started` and `ended` and, like
 -- | every status, owes the channel nothing. A stage with nothing to show
--- | opens with `unshown @l` naming its outcome case; `blank` alone
--- | names no case and so leaves the slot's row undetermined.
+-- | opens with `unshown @l` naming its outcome case, which determines
+-- | the slot's row.
 -- |
 -- | A failing action is **reported, not swallowed**: `ended` is dispatched
 -- | whichever way the `Aff` ends — so a throw cannot strand the spinner —
@@ -1479,27 +1439,46 @@ instance Hosting m node => Acting (PUI m) where
 -- | follows the item, not the position. Keys must be unique.
 -- |
 -- | Written trailing, wrapped in a container ocular: `ul $ item # foreach
--- | @"id"` — keyed by the row's **materialized identity field** (the element
--- | is a data-model row; rows carry their identity; `Show` renders the
--- | reconciliation index, so unique keys must render uniquely). Every
--- | element's emission collapses onto one shared channel `o` (the
--- | sum-flavored sibling of `acted`'s gathered `Array b`), so it is ungated
--- | and lawfully **silent on an empty array** (no `o` to fabricate) — as a
--- | terminal display pass the carrier through with `# lcmap proj
--- | # muted` inside a gated stage, the comonoid a pipeline tail requires; when the aggregate
--- | array itself is the output, use `acted` (gathered, knowledge-gated,
--- | announces `[]`). Both share this keyed reconciler.
-foreach :: forall @l @r m node k b a c. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } c -> PUI m a c
-foreach f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs = f r in if isHole xs then [] else xs) $ wrap do
+-- | @"id" rowsOf` — keyed by the row's **materialized identity field** (the
+-- | element is a data-model row; rows carry their identity). The element
+-- | is a display of its row — it releases the row it shows — and the list
+-- | is a display of the row it is fed: the elements' releases stay inside
+-- | and the fed row passes, so a list of displays is a line of the
+-- | pipeline like any display. An array the model stores is `actedAt`,
+-- | the container action, which writes the elements' releases back; a
+-- | list whose elements **emit** is `anyOf`. Both share this keyed
+-- | reconciler.
+foreach :: forall @l @r m node k b a. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } { | r } -> PUI m a a
+foreach f w = withStructuralOrd @k $ wrap do
+  hooks <- hosting w
+  liftEffect do
+    list <- collapsedWith (Record.get (Proxy @l)) hooks
+    list.fromUser \_ -> pure unit
+    propRef <- Ref.new Nothing
+    pure
+      { toUser: \a -> do
+          list.toUser (if isHole f then [] else let xs = f a in if isHole xs then [] else xs)
+          Ref.read propRef >>= traverse_ (_ $ a)
+      , fromUser: \prop -> Ref.write (Just prop) propRef
+      }
+
+-- | The **emitting collection** — `foreach`'s `×→+` sibling: the same keyed
+-- | and retaining reconciliation over elements that emit (a clickable row,
+-- | a cell reporting its key). Every element's emission collapses onto one
+-- | shared channel as it happens, ungated and lawfully **silent on an empty
+-- | array** (no event to fabricate):
+-- | `clicked @"Key entered" @"key" cell # anyOf @"key" keyPad`.
+anyOf :: forall @l @r m node k b a v. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } [ | v ] -> PUI m a [ | v ]
+anyOf f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs = f r in if isHole xs then [] else xs) $ wrap do
   hooks <- hosting w
   liftEffect $ collapsedWith (Record.get (Proxy @l)) hooks)
 
--- | `foreach` over an array the model stores: keyed by field `l` of each
+-- | `anyOf` over an array the model stores: keyed by field `l` of each
 -- | element, the array field `t` of the fed row, both named by label
--- | (`item # foreachAt @"key" @"cells"`). An array derived from the row is
--- | a projection, `foreach`.
-foreachAt :: forall @l @t m node k b1 b2 r1 r c. Hosting m node => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => PUI m { | r1 } c -> PUI m { | r } c
-foreachAt = foreach @l @r1 (Record.get (Proxy @t))
+-- | (`# anyOfAt @"key" @"cells"`, cells). An array derived from the row is
+-- | a projection, `anyOf`.
+anyOfAt :: forall @l @t m node k b1 b2 r1 r v. Hosting m node => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => PUI m { | r1 } [ | v ] -> PUI m { | r } [ | v ]
+anyOfAt = anyOf @l @r1 (Record.get (Proxy @t))
 
 -- | The **keyed dispatch** — the +→+ member: one runtime case at a time.
 -- | A fed `{ key, value }` reaches exactly the instance whose key matches —
@@ -1510,7 +1489,7 @@ foreachAt = foreach @l @r1 (Record.get (Proxy @t))
 -- | function: the runtime variant input carries its tag, as a variant case
 -- | carries its label.
 dispatched :: forall @k @a m node i b. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }
-dispatched f w = withStructuralOrd @k (lcmap f $ wrap do
+dispatched f w = withStructuralOrd @k (wrap do
   hooks <- hosting w
   liftEffect do
     propRef <- Ref.new Nothing
@@ -1521,7 +1500,9 @@ dispatched f w = withStructuralOrd @k (lcmap f $ wrap do
         mProp <- Ref.read propRef
         for_ mProp \prop -> prop { key: k, value: b }
     pure
-      { toUser: \u -> do
+      -- a hole projection is absent (guardrails L18): the feed reaches no case
+      { toUser: \i -> if isHole f then pure unit else do
+          let u = f i
           e <- ensureInstance hooks onEmit indexRef orderRef u.key
           e.feed u.value
       , fromUser: \prop -> Ref.write (Just prop) propRef
@@ -1536,7 +1517,7 @@ dispatched f w = withStructuralOrd @k (lcmap f $ wrap do
 -- | time. Emits `[]` for no keys yet only in the sense that nothing has been
 -- | fed; order is first-appearance order.
 accumulated :: forall @k @a m node i. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a a -> PUI m i (Array a)
-accumulated f w = withStructuralOrd @k (lcmap f $ wrap do
+accumulated f w = withStructuralOrd @k (wrap do
   hooks <- hosting w
   liftEffect do
     propRef <- Ref.new Nothing
@@ -1555,7 +1536,8 @@ accumulated f w = withStructuralOrd @k (lcmap f $ wrap do
         busy <- Ref.read busyRef
         unless busy emitAll
     pure
-      { toUser: \u -> do
+      { toUser: \i -> if isHole f then pure unit else do
+          let u = f i
           Ref.write true busyRef
           e <- ensureInstance hooks onEmit indexRef orderRef u.key
           Ref.write (Just u.value) e.slot

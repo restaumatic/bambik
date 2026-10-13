@@ -14,10 +14,10 @@
 -- |   * **free functions** — over the strength: `focusField` (the field
 -- |     lens — the leaf lift, making every label-indexed editor a whole-row
 -- |     citizen); over the
--- |     wire and the point: `blank` (the faceless leaf), `with`
+-- |     point: `with`
 -- |     (`announce a >>> w` — discharge the initial-state obligation, so
 -- |     `with seed (looped w)` is the app shape, the knot closed);
--- |     over bare `Profunctor`: the rename `asField`, the counit `muted`
+-- |     over bare `Profunctor`: the rename `asField`
 -- |     and the normalization `settled`.
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
@@ -46,10 +46,10 @@
 -- |      renderings, exactly one. Leaves answer on the nose (`identity` is
 -- |      the echo wire, `focusField @l` the echo with its background); a stage
 -- |      may refine the liveness half in time (`confirmed`, the gather
--- |      gate). A display's answer is `{}`, which no gate awaits.
+-- |      gate). A display answers with the row it shows (2026-10-13).
 -- |   3. **Monoid** — unit the `{}` wire at the merge's row,
--- |      `blank = lcmap (const {}) identity`, exact:
--- |      `recordToRecord blank g = g = recordToRecord g blank`;
+-- |      `lcmap (const {}) identity`, exact:
+-- |      `recordToRecord unit g = g = recordToRecord g unit`;
 -- |      symmetric and associative up to `≈`. The operands share one input
 -- |      row, so the unit is the terminal arrow out of it (`identity` at
 -- |      `{}` only when that row is `{}`). The merge has no unit of its own,
@@ -80,15 +80,12 @@ module Data.Profunctor.Row.RecordToRecord
   , bind
   , discard
   , focusField
-  , blank
   , with
   , asField
-  , muted
   , settled
   )
   where
 
-import Control.Category (class Category, identity)
 import Control.Semigroupoid ((>>>))
 import Data.Function (const)
 import Data.Lens.Record (prop)
@@ -143,10 +140,6 @@ focusField
   -> p { | r } { | r1 }
 focusField = prop (Proxy @l)
 
--- | The faceless leaf that reads nothing and contributes nothing, at any input.
-blank :: forall p a. Category p => Profunctor p => p a {}
-blank = lcmap (const {}) identity
-
 -- | Discharge a chain's initial obligation by announcing its t=0 value.
 -- | The seed is whatever the chain's first stage takes: a model row into
 -- | the knot (`with seed (looped @( … ) w)`, the app shape) or into a
@@ -171,10 +164,6 @@ asField
   => p { | r2 } { | r3 }
   -> p { | r } { | r1 }
 asField = dimap (\r -> Record.insert (Proxy @c) (Record.get (Proxy @l) r) {}) (\r -> Record.insert (Proxy @l) (Record.get (Proxy @c) r) {})
-
--- | Render the component and deliberately discard its output.
-muted :: forall p a b. Profunctor p => p a b -> p a {}
-muted = rmap (const {})
 
 -- | Normalize a stage's emissions with an idempotent function over the row.
 -- | The normalizer is typed at the stage's row, its signature the view's

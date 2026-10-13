@@ -1,6 +1,6 @@
-module ScoreboardViewModel (boardSummary, gameStart, goal, scoreLine, summaryLine, tick, tickPeriod) where
+module ScoreboardViewModel (boardSummary, goal, scoreLine, summaryLine, tickPeriod) where
 
-import Prelude (const, show, (+), (<>), (==), mod)
+import Prelude (const, show, (*), (+), (<>), (==), mod)
 
 import Data.Array (filter, index, length, range)
 import Data.Foldable (maximumBy)
@@ -8,18 +8,13 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Ord (comparing)
 import Data.Variant (match)
 
-gameStart :: { beat :: Int }
-gameStart = { beat: 0 }
-
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-tick :: { beat :: Int } -> { beat :: Int }
-tick { beat } = { beat: beat + 1 }
-
-goal :: { beat :: Int } -> { key :: String, value :: { points :: Int, team :: String } }
-goal { beat } =
-  let team = pick teams beat
+goal :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } -> { key :: String, value :: { points :: Int, team :: String } }
+goal { time } =
+  let beat = time.minutes * 60 + time.seconds
+      team = pick teams beat
       points = scored team beat
   in { key: team, value: { team, points } }
 

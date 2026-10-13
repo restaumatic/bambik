@@ -32,21 +32,23 @@ quoteLine :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, 
 quoteLine { quotes } = show (length quotes) <> " quotes received" <> maybe "" (\p -> ", last " <> show p) (last quotes)
 
 watch
-  :: { event :: {}, model :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } }
+  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
   -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-watch { model } = model { phase = .watching {} }
+watch model = model { phase = .watching {} }
 
 stepAway
-  :: { event :: {}, model :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } }
+  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
   -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-stepAway { model } = model { phase = .away {} }
+stepAway model = model { phase = .away {} }
 
 tick
-  :: { event :: {}, model :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } }
+  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
   -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-tick { model } = model { ticks = model.ticks + 1 }
+tick model = model { ticks = model.ticks + 1 }
 
-fetchQuote :: {} -> Aff [ "Quote fetched" :: { price :: Number } ]
+fetchQuote
+  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+  -> Aff [ "Quote fetched" :: { price :: Number } ]
 fetchQuote _ = do
   delay (Milliseconds quoteDelay.ms)
   cents <- liftEffect $ randomInt 9000 11000

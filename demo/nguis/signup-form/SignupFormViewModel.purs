@@ -1,4 +1,4 @@
-module SignupFormViewModel (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, unnamedLine, usernameSettleTime, usernameStatus, validation) where
+module SignupFormViewModel (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, usernameSettleTime, usernameStatus, validation) where
 
 import Prelude (const, not, (<>), (==))
 
@@ -66,28 +66,28 @@ validation
      , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
      , "Username" :: String
      }
-  -> [ invalid :: { reason :: [ badEmail :: {}
-                              , taken :: { "Username" :: String }
-                              , termsUnaccepted :: {}
-                              , unnamed :: {}
-                              ]
-                  }
-     , ready :: { "Username" :: String }
-     ]
-validation applicant = either (\reason -> .invalid { reason }) (\name -> .ready { "Username": name }) (validate applicant)
+  -> [ invalid :: {}, ready :: {} ]
+validation applicant = either (const (.invalid {})) (const (.ready {})) (validate applicant)
 
 invalidLine
-  :: { reason :: [ badEmail :: {}
-                 , taken :: { "Username" :: String }
-                 , termsUnaccepted :: {}
-                 , unnamed :: {}
-                 ]
+  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+     , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
+     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+     , "Username" :: String
      }
   -> String
-invalidLine { reason } = "⚠ " <> refusalText reason
+invalidLine applicant = either (\reason -> "⚠ " <> refusalText reason) (const "") (validate applicant)
 
-readyLine :: { "Username" :: String } -> String
-readyLine { "Username": username } = "Ready to sign up as " <> username
+readyLine
+  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+     , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
+     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+     , "Username" :: String
+     }
+  -> String
+readyLine applicant = either (const "") (\name -> "Ready to sign up as " <> name) (validate applicant)
 
 usernameStatus
   :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
@@ -96,17 +96,31 @@ usernameStatus
      , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
      , "Username" :: String
      }
-  -> [ available :: { "Username" :: String }, taken :: { "Username" :: String }, unnamed :: {} ]
+  -> [ available :: {}, taken :: {}, unnamed :: {} ]
 usernameStatus { "Username": username } = case trim username of
   "" -> .unnamed {}
-  name | usernameTaken name -> .taken { "Username": name }
-  name -> .available { "Username": name }
+  name | usernameTaken name -> .taken {}
+  _ -> .available {}
 
-takenLine :: { "Username" :: String } -> String
-takenLine { "Username": username } = "✗ " <> username <> " is already taken"
+takenLine
+  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+     , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
+     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+     , "Username" :: String
+     }
+  -> String
+takenLine { "Username": username } = "✗ " <> trim username <> " is already taken"
 
-availableLine :: { "Username" :: String } -> String
-availableLine { "Username": username } = "✓ " <> username <> " is available"
+availableLine
+  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+     , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
+     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+     , "Username" :: String
+     }
+  -> String
+availableLine { "Username": username } = "✓ " <> trim username <> " is available"
 
 usernameTaken :: String -> Boolean
 usernameTaken username = username `elem` takenUsernames
@@ -117,5 +131,3 @@ takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
 declined :: [ accepted :: {}, declined :: {} ] -> Boolean
 declined = match { accepted: const false, declined: const true }
 
-unnamedLine :: {} -> String
-unnamedLine _ = "Pick a username to check its availability"

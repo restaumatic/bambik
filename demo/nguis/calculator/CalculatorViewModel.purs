@@ -1,4 +1,4 @@
-module CalculatorViewModel (blankTally, faultLine, functionKeys, keyPad, operatorKeys, pressKey, readout) where
+module CalculatorViewModel (blankTally, functionKeys, keyPad, operatorKeys, pressKey) where
 
 import Prelude ((&&), (<$>), (<>), (==), (/=), (+), (-), (*), (/), otherwise, show)
 
@@ -31,16 +31,6 @@ operatorKeys = [ "÷", "×", "−", "+", "=" ]
 
 functionKeys :: Array String
 functionKeys = [ "C", "±" ]
-
-readout
-  :: { condition :: [ faulty :: {}, sound :: {} ]
-     , entry :: String
-     , input :: [ entering :: {}, settled :: {} ]
-     , operation :: [ none :: {}, pending :: { key :: String } ]
-     , total :: Number
-     }
-  -> [ faulty :: {}, sound :: { entry :: String } ]
-readout { condition, entry } = match { sound: \_ -> .sound { entry }, faulty: \_ -> .faulty {} } condition
 
 pressKey
   :: { event :: String
@@ -106,5 +96,3 @@ negated entry = case stripPrefix (Pattern "-") entry of
 format :: Number -> String
 format n = fromMaybe (show n) (stripSuffix (Pattern ".0") (show n))
 
-faultLine :: {} -> String
-faultLine _ = "Error"

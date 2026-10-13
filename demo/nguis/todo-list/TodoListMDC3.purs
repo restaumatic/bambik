@@ -2,12 +2,11 @@ module TodoListMDC3 (todoListMDC3) where
 
 import Prelude ((#), ($), Unit)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, joined, looped, prefixed, unshown, with)
-import PUI.Web ((<+>), choice, clWhen, pane, text, textAt)
+import PUI (fold, joined, looped, unshown, with)
+import PUI.Web ((<+>), choice, clWhen, inCase, text, textAt)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, button, bodySmall, filledTextField, listOf, segmentedButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -19,9 +18,9 @@ todoListMDC3 =
     filledTextField @"What needs to be done?"
     segmentedButton @"Visibility"
       (choice @"All" <+> choice @"Active" <+> choice @"Completed")
-    prefixed ( RecordToRecord.do
-      bodySmall (text soleLine) # pane @"sole" @( sole :: { count :: Int }, several :: { count :: Int } ) remainingItems
-      bodySmall (text severalLine) # pane @"several" remainingItems ) $ RecordToVariant.do
+    bodySmall (text soleLine) # inCase @"sole" @( sole :: {}, several :: {} ) remainingItems
+    bodySmall (text severalLine) # inCase @"several" remainingItems
+    RecordToVariant.do
       button @"Add"
       listOf @"Todo toggled" @"key"
         @( key :: Int

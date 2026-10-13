@@ -5,7 +5,7 @@ import Prelude ((#), ($), (>>>), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (actedAt, action, atCase, captured, looped, prefixed, static, unshown, with)
+import PUI (actedAt, action, atCase, captured, looped, static, unshown, with)
 import PUI.Web (el, staticText, textAt, (:=))
 import PUI.Web.HTML (body, button, dd, div, dl, dt, h3, indeterminateLinearProgress, input, label)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,9 +14,15 @@ import ReorderViewModel (openingSetlist, rotateAction, shuffleAction)
 reorderHTML :: Effect Unit
 reorderHTML =
   body $ div $ Semigroupoid.do
-    prefixed (h3 $ staticText "Setlist") $ dl $
-      ( prefixed ( dt $ prefixed (static (el "input" >>> "type" := "checkbox")) $ textAt @"Title" ) $
-        dd $ label $ prefixed (staticText "Rename ") $ input @"Title" "text" ) # actedAt @"id" @"Setlist"
+    h3 $ staticText "Setlist"
+    dl $
+      ( Semigroupoid.do
+        dt $ Semigroupoid.do
+          static (el "input" >>> "type" := "checkbox")
+          textAt @"Title"
+        dd $ label $ Semigroupoid.do
+          staticText "Rename "
+          input @"Title" "text" ) # actedAt @"id" @"Setlist"
     RecordToVariant.do
       button @"Rotate"
       button @"Shuffle"

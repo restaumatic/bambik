@@ -83,7 +83,7 @@
 -- | ```
 -- | shape        Profunctor only                 over the strength            knot
 -- | -----------  ------------------------------  ---------------------------  --------------------
--- | p {|a} {|b}  asField, muted, settled         focusField                   looped (Looping)
+-- | p {|a} {|b}  asField, settled                focusField                   looped (Looping)
 -- | p [|a] [|b]  atCase, toCase, forCase         focusCase                    —
 -- | p {|a} [|b]  replaying, joined               —                            —
 -- | p [|a] {|b}  fold                            —                            —
@@ -244,10 +244,10 @@
 -- | the sibling. Law 2's liveness half is a **leaf** law: a stage may
 -- | refine it in time (`confirmed` releases on confirmation, the gather
 -- | gate once every element has spoken), and by 6 the merge refines with
--- | it. `{}` is always known, so a `{}` output is answered by `{}` — which
--- | no gate awaits — and a `{}`-input component counts registration as
--- | its feed (`announce`, the point). The `×→×` unit is the `{}` wire at
--- | the merge's own input, `lcmap (const {}) identity` (`blank`): the
+-- | it. `{}` is always known, so a `{}`-input component counts registration
+-- | as its feed (`announce`, the point), and a display is a stage that
+-- | answers with the row it shows (2026-10-13). The `×→×` unit is the `{}` wire at
+-- | the merge's own input, `lcmap (const {}) identity`: the
 -- | operands of a `×→×` merge share one input row, so the unit is the
 -- | terminal arrow out of it — `identity @{}` is that wire only at `{}`.
 -- |

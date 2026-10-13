@@ -4,8 +4,8 @@ import Prelude hiding (div)
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, clicked, dynamic, each, inCase, inCaseAt, onClickedXY, pane, paneAt, provided, providedAt, staticText, text, textAt)
-import PUI.Web.HTML (body, button, div, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
+import PUI.Web ((<+>), choice, clicked, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, online, provided, providedAt, staticText, text, textAt)
+import PUI.Web.HTML (body, button, div, filePicked, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
 lawBenchHTML = do
@@ -23,16 +23,21 @@ lawBenchHTML = do
     , bench "textAt" "×→×" titled (textAt @"title")
     , bench "dynamic" "×→×" titled (dynamic \r -> staticText r.title)
     , bench "each" "×→×" units (each [ "a", "b" ] staticText)
-    , bench "pane" "×→×" gated (pane @"on" modeOf (textAt @"n"))
-    , bench "paneAt" "×→×" gated (paneAt @"on" @"mode" (textAt @"n"))
     , bench "inCase" "×→×" gated (inCase @"on" modeOf (input @"Name" "text"))
     , bench "inCaseAt" "×→×" gated (inCaseAt @"on" @"mode" (input @"Name" "text"))
+    , bench "inCase display" "×→×" gated (inCase @"on" modeOf (textAt @"Name"))
+    , bench "inCaseAt display" "×→×" gated (inCaseAt @"on" @"mode" (textAt @"Name"))
     , bench "provided" "×→+" modes (provided @"on" modeOf (button @"Go"))
     , bench "providedAt" "×→+" modes (providedAt @"on" @"mode" (button @"Go"))
     , bench "button" "×→+" rows (button @"Go")
     , bench "clicked" "×→+" rows (clicked @"Go" @"n" (div (staticText "Go")))
     , bench "onClickedXY" "×→+" units (onClickedXY @"at" (div (staticText "canvas")))
     , bench "output" "+→×" events (output @"event" identity)
+    , bench "geolocated" "×→×" units (geolocated @"position")
+    , bench "online" "×→×" units (online @"connection")
+    , bench "clock" "×→×" units (clock @"time" { ms: 60000.0 })
+    , bench "colorScheme" "×→×" units (colorScheme @"scheme")
+    , bench "filePicked" "×→×" units (filePicked @"Photo")
     ]
   where
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]

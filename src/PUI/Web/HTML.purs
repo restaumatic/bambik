@@ -11,7 +11,7 @@
 -- | Everything that names no element — the decorators (`attr`/`:=`, `cl`,
 -- | `attrWith`, `clWhen`), the text leaves (`text`, `staticText`), the
 -- | occurrence sources (`clicked`, `onClickedXY`),
--- | and the panes (`provided`, `pane`, `inCase`),
+-- | the panes (`provided`, `inCase`), the sources (`geolocated`, `clock`, …),
 -- | and the structure builders (`dynamic`, `each`, `el`) — lives in the
 -- | parent module, `PUI.Web`, shared with SVG and the design systems.
 module PUI.Web.HTML
@@ -39,6 +39,7 @@ module PUI.Web.HTML
   , i
   , img
   , input
+  , filePicked
   , label
   , li
   , ol
@@ -85,7 +86,7 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (Ocular, PUI)
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, eventText, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, textOf, separating, (:=), (:=>))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, eventText, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, textOf, separating, (:=), (:=>))
 
 -- UIs
 
@@ -111,6 +112,20 @@ input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := typ
     , reports: listenNode node "input"
     , read: \_ -> getValue node
     }
+
+-- | A **file picker** — a capture, not an editor: the user supplies the
+-- | file and the platform cannot be shown one, so it owns its field like a
+-- | source (`PUI.Web.source`): `none` until a file is chosen, then `picked`
+-- | with its name, size and MIME type. Label-indexed, `name` stamped.
+filePicked
+  :: forall @l r r1
+   . IsSymbol l
+  => Cons l [ picked :: { name :: String, size :: Number, mime :: String }, none :: {} ] () r1
+  => PUI Web { | r } { | r1 }
+filePicked = "name" := reflectSymbol (Proxy @l) $ "type" := "file" $ wrap do
+  element "input" (pure unit)
+  node <- gets _.sibling
+  unwrap (source @l (pure (inj (Proxy @"none") {})) \tell -> onFilePicked node (tell <<< inj (Proxy @"picked")))
 
 -- | The multi-line `input` — same citizenship (label-indexed, `name`
 -- | stamped) and same guarantee: typing is never interrupted by values
@@ -201,8 +216,8 @@ rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "ran
 -- | function** like every display's, since a fraction is derived (a ratio
 -- | of source fields), not state.
 progress
-  :: forall reads
-   . ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall r
+   . ({ | r } -> Number) -> PUI Web { | r } { | r }
 progress f = wrap do
   element "progress" (pure unit)
   attribute "max" "1"

@@ -1,13 +1,12 @@
 module FlightBookerFluent (flightBookerFluent) where
 
-import Prelude (Unit, identity, (#), ($))
+import Prelude (Unit, (#), ($))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
-import PUI (action, atCase, debounced, looped, prefixed, with)
-import PUI.Web ((<+>), choice, inCaseAt, pane, text)
+import PUI (action, atCase, debounced, looped, with)
+import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
 import PUI.Web.Fluent (body, body1, button, dropdown, messageBar, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -24,14 +23,12 @@ flightBookerFluent =
        , "Start date (DD.MM.YYYY)" :: String
        , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
-    prefixed ( RecordToRecord.do
-      body1 (text problemLine) # pane @"problem"
-        @( problem :: { problem :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] }
-         , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }
-         , "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
-         ) bookingState
-      body1 (text oneWayLine) # pane @"one-way" bookingState
-      body1 (text returnLine) # pane @"return" bookingState ) identity # debounced itinerarySettleTime
+    ( Semigroupoid.do
+      body1 (text problemLine) # inCase @"problem"
+        @( "one-way" :: {}, problem :: {}, return :: {} ) bookingState
+      body1 (text oneWayLine) # inCase @"one-way" bookingState
+      body1 (text returnLine) # inCase @"return" bookingState
+    ) # debounced itinerarySettleTime
     button @"Book"
     ( VariantToRecord.do
       messageBar @"Flight booked" bookedLine

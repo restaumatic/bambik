@@ -241,8 +241,8 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
 -- | function** like every display's, since a fraction is derived (a ratio
 -- | of source fields), not state.
 progress
-  :: forall reads
-   . ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall r
+   . ({ | r } -> Number) -> PUI Web { | r } { | r }
 progress f = wrap do
   barNode <- element "div" do
     element "div" (pure unit)

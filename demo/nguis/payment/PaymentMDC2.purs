@@ -2,10 +2,9 @@ module PaymentMDC2 (paymentMDC2) where
 
 import Prelude ((#), ($), Unit)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PaymentViewModel (amountLine, cardChargedLine, chargeFlaky, chargingLine, statusLine, unpaidOrder)
-import PUI (action, atCase, captured, looped, observed, prefixed, with)
+import PUI (action, atCase, captured, looped, observed, with)
 import PUI.Web (text)
 import PUI.Web.MDC2 (body, body2, button', headline6, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -13,9 +12,9 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 paymentMDC2 :: Effect Unit
 paymentMDC2 =
   body $ Semigroupoid.do
-    prefixed ( RecordToRecord.do
-      headline6 $ text amountLine
-      body2 $ text statusLine ) $ button' @"Charge card" { icon: "credit_card" }
+    headline6 $ text amountLine
+    body2 $ text statusLine
+    button' @"Charge card" { icon: "credit_card" }
     ( Semigroupoid.do
       snackbar @"Charge card" chargingLine # observed
       indeterminateCircularProgress # action chargeFlaky # atCase @"Charge card" )

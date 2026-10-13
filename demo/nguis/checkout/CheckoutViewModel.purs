@@ -1,4 +1,4 @@
-module CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo) where
+module CheckoutViewModel (cartLine, freshOrder, onwardFrom, orderPlaced, paymentLine, placedLine, previousOf, shippingLine, stepBack, stepOnward) where
 
 import Prelude ((<>))
 
@@ -19,30 +19,34 @@ freshOrder =
   , step: .cart {}
   }
 
-checkoutStep
+cartLine
   :: { address :: String
      , card :: String
      , item :: String
      , status :: [ pending :: {}, placed :: {} ]
      , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
      }
-  -> [ cart :: { item :: String }
-     , payment :: { card :: String }
-     , shipping :: { address :: String }
-     ]
-checkoutStep { item, address, card, step } = match
-  { cart: \_ -> .cart { item }
-  , shipping: \_ -> .shipping { address }
-  , payment: \_ -> .payment { card }
-  } step
-
-cartLine :: { item :: String } -> String
+  -> String
 cartLine { item } = "Step 1 of 3 — Cart: " <> item
 
-shippingLine :: { address :: String } -> String
+shippingLine
+  :: { address :: String
+     , card :: String
+     , item :: String
+     , status :: [ pending :: {}, placed :: {} ]
+     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
+     }
+  -> String
 shippingLine { address } = "Step 2 of 3 — Shipping to " <> address
 
-paymentLine :: { card :: String } -> String
+paymentLine
+  :: { address :: String
+     , card :: String
+     , item :: String
+     , status :: [ pending :: {}, placed :: {} ]
+     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
+     }
+  -> String
 paymentLine { card } = "Step 3 of 3 — Pay with card " <> card
 
 onwardFrom
@@ -52,10 +56,10 @@ onwardFrom
      , status :: [ pending :: {}, placed :: {} ]
      , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
      }
-  -> [ last :: {}, onward :: { step :: [ cart :: {}, payment :: {}, shipping :: {} ] } ]
+  -> [ last :: {}, onward :: {} ]
 onwardFrom { step } = match
-  { cart: \_ -> .onward { step: .shipping {} }
-  , shipping: \_ -> .onward { step: .payment {} }
+  { cart: \_ -> .onward {}
+  , shipping: \_ -> .onward {}
   , payment: \_ -> .last {}
   } step
 
@@ -66,56 +70,76 @@ previousOf
      , status :: [ pending :: {}, placed :: {} ]
      , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
      }
-  -> [ back :: { step :: [ cart :: {}, payment :: {}, shipping :: {} ] }, first :: {} ]
+  -> [ back :: {}, first :: {} ]
 previousOf { step } = match
   { cart: \_ -> .first {}
-  , shipping: \_ -> .back { step: .cart {} }
-  , payment: \_ -> .back { step: .shipping {} }
+  , shipping: \_ -> .back {}
+  , payment: \_ -> .back {}
   } step
 
-stepTo
-  :: { event :: { step :: [ cart :: {}, payment :: {}, shipping :: {} ] }
-     , model :: { address :: String
-                , card :: String
-                , item :: String
-                , status :: [ pending :: {}, placed :: {} ]
-                , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
-                }
-     }
-  -> { address :: String
-     , card :: String
-     , item :: String
-     , status :: [ pending :: {}, placed :: {} ]
-     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
-     }
-stepTo { event: { step }, model } = model { step = step }
-
-orderPlaced
-  :: { event :: { card :: String }
-     , model :: { address :: String
-                , card :: String
-                , item :: String
-                , status :: [ pending :: {}, placed :: {} ]
-                , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
-                }
-     }
-  -> { address :: String
-     , card :: String
-     , item :: String
-     , status :: [ pending :: {}, placed :: {} ]
-     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
-     }
-orderPlaced { model } = model { status = .placed {} }
-
-orderStatus
+stepOnward
   :: { address :: String
      , card :: String
      , item :: String
      , status :: [ pending :: {}, placed :: {} ]
      , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
      }
-  -> [ pending :: {}, placed :: { address :: String, card :: String, item :: String } ]
-orderStatus { item, address, card, status } = match { pending: \_ -> .pending {}, placed: \_ -> .placed { item, address, card } } status
+  -> { address :: String
+     , card :: String
+     , item :: String
+     , status :: [ pending :: {}, placed :: {} ]
+     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
+     }
+stepOnward model@{ step } = model
+  { step = match
+    { cart: \_ -> .shipping {}
+    , shipping: \_ -> .payment {}
+    , payment: \_ -> .payment {}
+    } step
+  }
 
-placedLine :: { address :: String, card :: String, item :: String } -> String
+stepBack
+  :: { address :: String
+     , card :: String
+     , item :: String
+     , status :: [ pending :: {}, placed :: {} ]
+     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
+     }
+  -> { address :: String
+     , card :: String
+     , item :: String
+     , status :: [ pending :: {}, placed :: {} ]
+     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
+     }
+stepBack model@{ step } = model
+  { step = match
+    { cart: \_ -> .cart {}
+    , shipping: \_ -> .cart {}
+    , payment: \_ -> .shipping {}
+    } step
+  }
+
+orderPlaced
+  :: { address :: String
+     , card :: String
+     , item :: String
+     , status :: [ pending :: {}, placed :: {} ]
+     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
+     }
+  -> { address :: String
+     , card :: String
+     , item :: String
+     , status :: [ pending :: {}, placed :: {} ]
+     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
+     }
+orderPlaced model = model { status = .placed {} }
+
+placedLine
+  :: { address :: String
+     , card :: String
+     , item :: String
+     , status :: [ pending :: {}, placed :: {} ]
+     , step :: [ cart :: {}, payment :: {}, shipping :: {} ]
+     }
+  -> String
 placedLine { item, address, card } = "Order placed: " <> item <> " → " <> address <> " (card " <> card <> ")"

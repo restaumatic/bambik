@@ -20,7 +20,7 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (focusField, muted, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (focusField, recordToRecord)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (recordToVariant)
 import Data.Profunctor.Row.VariantToVariant (focusCase, toCase, variantToVariant)
@@ -38,7 +38,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, unshown, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, prefixed, replaying, reset, resolveFor, resumeScope, seeded, silence, suffixed, suspendScope, ticks, with)
+import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, unshown, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, replaying, reset, resolveFor, resumeScope, seeded, silence, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -1053,21 +1053,6 @@ main = do
     assertEqual "+→+ associativity: each case reached its handler, every emission left"
       { as: [ .x 2, .x 4 ], bs: [ .y 1 ], cs: [ .z 3 ], os: [ .ok "c", .ok "a", .ok "b" ] } left
 
-  -- muted: the counit — render, discard the output deliberately. On (->):
-  -- muted g = const {}. On the PUI carrier it makes any emitting component
-  -- a lawful display ({} output): beside the wire its emissions are no
-  -- contribution, and the type says the write-off was deliberate.
-  do
-    assertEqual "muted on (->): the counit" {} (muted (\(x :: Int) -> x + 1) 5)
-  do
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { v :: Int })
-    m <- unwrap (recordToRecord (muted (probe gProp :: PUI Effect { v :: Int } { edit :: Int })) identity)
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser { v: 4 }
-    fire gProp { edit: 9 }
-    Ref.read outs >>= assertEqual "muted beside the wire: a discarded emission contributes nothing — written off, and nothing else moves" [ { v: 4 } ]
-
   -- == The container action (Data.Profunctor.Acting): the Array case of ==
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==
 
@@ -1145,19 +1130,36 @@ main = do
     Ref.read builds >>= assertEqual "acted/keys: dropping a key rebuilds nothing" 2
     Ref.read outs >>= \os -> assertEqual "acted/keys: after drop, gathers the survivor" (Just [ { k: "a", txt: "x" } ]) (os !! (length os - 1))
 
-  -- foreach (the collapsed, sum-flavored sibling): silent on empty, forwards each
+  -- anyOf (the collapsed, sum-flavored sibling): silent on empty, forwards each
   -- element emission as it happens — ungated.
   do
     builds <- Ref.new 0
-    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } String))
-    outs <- Ref.new ([] :: Array String)
-    m <- unwrap (foreach @"k" identity (elemProbe builds roster))
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } [ z :: String ]))
+    outs <- Ref.new ([] :: Array [ z :: String ])
+    m <- unwrap (anyOf @"k" identity (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser []
-    Ref.read outs >>= assertEqual "foreach: silent on empty" []
+    Ref.read outs >>= assertEqual "anyOf: silent on empty" []
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
-    fireElem roster 0 "z"
-    Ref.read outs >>= assertEqual "foreach: forwards immediately, no gate" [ "z" ]
+    fireElem roster 0 (.z "z")
+    Ref.read outs >>= assertEqual "anyOf: forwards immediately, no gate" [ .z "z" ]
+
+  -- foreach (the list of displays): the elements are fed their rows, their
+  -- releases stay inside, and the list releases the row it was fed — once
+  -- per feed, the empty array included.
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
+    outs <- Ref.new ([] :: Array { rows :: Array { k :: String, v :: Int } })
+    m <- unwrap (foreach @"k" _.rows (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { rows: [] }
+    Ref.read outs >>= assertEqual "foreach: the fed row passes, empty array included" [ { rows: [] } ]
+    m.toUser { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] }
+    Ref.read builds >>= assertEqual "foreach: one element per key" 2
+    fireElem roster 0 { k: "a", v: 99 }
+    Ref.read outs >>= assertEqual "foreach: an element's release stays inside; the row passes once per feed"
+      [ { rows: [] }, { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] } ]
 
   -- == The keyed-input members — the runtime variant `{ key, value }` feeds ==
   -- == one case at a time; the tag arrives in the input, no key function. ==
@@ -2076,28 +2078,6 @@ main = do
       Ref.read seen
     assertEqual "capturing decorator: inside the gate it sees the dropped emission too" 2 inside
     assertEqual "capturing decorator: outside the gate it does not — the admission law fails, so it is not an ocular" 1 outside
-
-  -- == prefixed / suffixed: a display decorates a part of the flow and ==
-  -- == changes no data — fed what the part is fed, before it (prefixed), ==
-  -- == or each row the part releases, before it goes on (suffixed). ==
-  do
-    let
-      run build = do
-        log <- Ref.new ([] :: Array String)
-        wProp <- Ref.new Nothing
-        dProp <- Ref.new Nothing
-        m <- unwrap (build (logged "d" log dProp :: PUI Effect { n :: Int } {}) (logged "w" log wProp :: PUI Effect { n :: Int } { n :: Int }))
-        m.fromUser \o -> Ref.modify_ (_ <> [ "out" <> show o ]) log
-        m.toUser { n: 1 }
-        fire wProp { n: 2 }
-        fire dProp {}
-        Ref.read log
-    before <- run prefixed
-    assertEqual "prefixed: the display is fed what the part is fed, before it; the part's stream is the block's; the display's answers go nowhere"
-      [ "d{ n: 1 }", "w{ n: 1 }", "out{ n: 2 }" ] before
-    after <- run suffixed
-    assertEqual "suffixed: the display is fed each row the part releases, before it goes on; the display's answers go nowhere"
-      [ "w{ n: 1 }", "d{ n: 2 }", "out{ n: 2 }" ] after
 
   -- announce's naturality: rmap f (announce a) = announce (f a).
   do

@@ -59,16 +59,24 @@ remainingItems
      , "What needs to be done?" :: String
      , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
      }
-  -> [ several :: { count :: Int }, sole :: { count :: Int } ]
-remainingItems { todos } =
-  let count = itemsLeft { todos }
-  in if count == 1 then .sole { count } else .several { count }
+  -> [ several :: {}, sole :: {} ]
+remainingItems { todos } = if itemsLeft { todos } == 1 then .sole {} else .several {}
 
-soleLine :: { count :: Int } -> String
-soleLine { count } = show count <> " item left"
+soleLine
+  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
+     , "What needs to be done?" :: String
+     , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
+     }
+  -> String
+soleLine { todos } = show (itemsLeft { todos }) <> " item left"
 
-severalLine :: { count :: Int } -> String
-severalLine { count } = show count <> " items left"
+severalLine
+  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
+     , "What needs to be done?" :: String
+     , todos :: Array { status :: [ active :: {}, completed :: {} ], title :: String }
+     }
+  -> String
+severalLine { todos } = show (itemsLeft { todos }) <> " items left"
 
 visibleEntries
   :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]

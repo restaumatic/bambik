@@ -2,43 +2,30 @@ module CheckoutMDC2 (checkoutMDC2) where
 
 import Prelude ((#), ($), Unit)
 
-import CheckoutViewModel (cartLine, checkoutStep, freshOrder, onwardFrom, orderPlaced, orderStatus, paymentLine, placedLine, previousOf, shippingLine, stepTo)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
+import CheckoutViewModel (cartLine, freshOrder, onwardFrom, orderPlaced, paymentLine, placedLine, previousOf, shippingLine, stepBack, stepOnward)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, joined, looped, prefixed, suffixed, unshown, with)
-import PUI.Web (pane, provided, text)
+import PUI (fold, looped, unshown, with)
+import PUI.Web (inCaseAt, provided, providedAt, text)
 import PUI.Web.MDC2 (body, body2, button, button')
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 checkoutMDC2 :: Effect Unit
 checkoutMDC2 =
   body $ Semigroupoid.do
-    prefixed ( RecordToRecord.do
-      ( body2 $ text cartLine ) # pane @"cart"
-        @( cart :: { item :: String }
-         , shipping :: { address :: String }
-         , payment :: { card :: String }
-         ) checkoutStep
-      ( body2 $ text shippingLine ) # pane @"shipping" checkoutStep
-      ( body2 $ text paymentLine ) # pane @"payment" checkoutStep ) $ RecordToVariant.do
-      button @"Next" # provided @"onward"
-        @( onward :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
-         , last :: {}
-         ) onwardFrom # joined @"Next"
-      button @"Back" # provided @"back"
-        @( back :: { step :: [ cart :: {}, shipping :: {}, payment :: {} ] }
-         , first :: {}
-         ) previousOf # joined @"Back"
-      button' @"Place order" { icon: "shopping_cart_checkout" } # provided @"payment" checkoutStep # joined @"Place order"
-    ( VariantToRecord.do
-      unshown @"Next" # fold stepTo
-      unshown @"Back" # fold stepTo
-      unshown @"Place order" # fold orderPlaced ) # suffixed ( body2 (text placedLine) # pane @"placed"
-        @( pending :: {}
-         , placed :: { item :: String, address :: String, card :: String }
-         ) orderStatus )
+    ( body2 $ text cartLine ) # inCaseAt @"cart" @"step"
+    ( body2 $ text shippingLine ) # inCaseAt @"shipping" @"step"
+    ( body2 $ text paymentLine ) # inCaseAt @"payment" @"step"
+    RecordToVariant.do
+      button @"Next" # provided @"onward" @( onward :: {}, last :: {} ) onwardFrom
+      button @"Back" # provided @"back" @( back :: {}, first :: {} ) previousOf
+      button' @"Place order" { icon: "shopping_cart_checkout" } # providedAt @"payment" @"step"
+    VariantToRecord.do
+      unshown @"Next" # fold stepOnward
+      unshown @"Back" # fold stepBack
+      unshown @"Place order" # fold orderPlaced
+    body2 (text placedLine) # inCaseAt @"placed" @"status"
   # looped
     @( item :: String
      , address :: String

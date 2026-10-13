@@ -72,11 +72,10 @@ sheetRows
 sheetRows m =
   let
     values = evalSheet m.cells
-    rowCells r = range 0 (cols - 1) <#> \c -> let key = refKey { c, r } in { key, text: fromMaybe "" (lookup key values), status: statusOf key }
+    cellsOfRow r = range 0 (cols - 1) <#> \c -> let key = refKey { c, r } in { key, text: fromMaybe "" (lookup key values), status: statusOf key }
     statusOf key = match { picked: \p -> if p.name == key then .selected {} else .unselected {}, none: \_ -> .unselected {} } m.selected
   in
-    range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: rowCells r }
-
+    range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: cellsOfRow r }
 rowLabel
   :: { cells :: Array { key :: String
                       , status :: [ selected :: {}, unselected :: {} ]

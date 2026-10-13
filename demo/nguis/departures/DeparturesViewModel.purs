@@ -1,22 +1,17 @@
-module DeparturesViewModel (arrival, boardOpening, flightLine, tick, tickPeriod, updateLine) where
+module DeparturesViewModel (arrival, flightLine, tickPeriod, updateLine) where
 
-import Prelude ((+), (<>), div, mod)
+import Prelude ((*), (+), (<>), div, mod)
 
 import Data.Array (index, length)
 import Data.Maybe (fromMaybe)
 
-boardOpening :: { beat :: Int }
-boardOpening = { beat: 0 }
-
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-tick :: { beat :: Int } -> { beat :: Int }
-tick { beat } = { beat: beat + 1 }
-
-arrival :: { beat :: Int } -> { key :: String, value :: { code :: String, status :: String } }
-arrival { beat } =
+arrival :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } -> { key :: String, value :: { code :: String, status :: String } }
+arrival { time } =
   let
+    beat = time.minutes * 60 + time.seconds
     code = pick flights beat
     status = pick statuses (beat + beat `div` length flights)
   in

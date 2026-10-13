@@ -40,7 +40,7 @@ interruption ranking (snackbar < banner < dialog):
 
 | Policy | Fulfillment | Witness | Citizens |
 | --- | --- | --- | --- |
-| ambient | stay visible, always current | none | `text`/`progress` (in merges, or `prefixed` over a stage — `shown` until 2026-10-11); the indeterminate progress, ambient over an **occurrence** input — a status showing between `action`'s `started` and `ended` |
+| ambient | stay visible, always current | none | `text`/`progress` (stages releasing the row they show since 2026-10-13; `prefixed` over a stage before, `shown` until 2026-10-11); the indeterminate progress, ambient over an **occurrence** input — a status showing between `action`'s `started` and `ended` |
 | salient-transient | interrupt attention, briefly | none | `snackbar`, `toast` |
 | persistent-until-acted | remain until superseded or dismissed | the dismiss | `banner`, `output` |
 | modal-witnessed | block everything until confirmed | the confirm | `dialog`, `simpleDialog` — open on feed, close on emission |

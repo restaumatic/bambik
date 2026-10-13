@@ -7,50 +7,58 @@ module DashboardControlsMDC3
   , trendChart
   ) where
 
-import Prelude (otherwise, show, (#), ($), (*), (-), (/), (<), (<<<), (<>), (==), (>>>))
+import Prelude ((#), ($), (*), (-), (/), (<), (<<<), (<>), (==), (>>>), identity, otherwise, show)
 
 import Data.Array (foldl, length, mapWithIndex)
 import Data.Int (round, toNumber)
 import Data.Number (max)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons)
-import PUI (Ocular, PUI, blank, foreach, muted, prefixed)
+import PUI (Ocular, PUI, foreach)
 import PUI.Web (Web, attrWith, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
+import QualifiedDo.Semigroupoid as Semigroupoid
 import Type.Proxy (Proxy(..))
 
 board :: Ocular (PUI Web)
 board = div >>> "style" := "display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch;"
 
-statTile :: forall r. String -> ({ | r } -> String) -> PUI Web { | r } {}
+statTile :: forall r. String -> ({ | r } -> String) -> PUI Web { | r } { | r }
 statTile l f =
-  tile >>> "aria-label" := l $ prefixed (labelMedium $ staticText l) $ displaySmall (text f)
+  tile >>> "aria-label" := l $ Semigroupoid.do
+    labelMedium $ staticText l
+    displaySmall $ text f
 
-gauge :: forall r. String -> ({ | r } -> Number) -> PUI Web { | r } {}
+gauge :: forall r. String -> ({ | r } -> Number) -> PUI Web { | r } { | r }
 gauge l f =
-  tile $ ( prefixed (labelMedium $ staticText l) $ RecordToRecord.do
+  tile $ Semigroupoid.do
+    labelMedium $ staticText l
     linearProgress f
-    ( labelLarge $ text (percentLine <<< f) ) ) # muted
+    labelLarge $ text (percentLine <<< f)
 
-trendChart :: forall r. String -> ({ | r } -> Array Number) -> PUI Web { | r } {}
+trendChart :: forall r. String -> ({ | r } -> Array Number) -> PUI Web { | r } { | r }
 trendChart l f =
-  tile >>> "aria-label" := l $ prefixed (labelMedium $ staticText l) $
+  tile >>> "aria-label" := l $ Semigroupoid.do
+    labelMedium $ staticText l
     SVG.svg >>> "viewBox" := "0 0 120 40" >>> "preserveAspectRatio" := "none" >>> "style" := "width: 100%; height: 40px;" $
       SVG.path >>> "fill" := "none" >>> "stroke" := "var(--md-sys-color-primary, #6750a4)" >>> "stroke-width" := "2"
         >>> "stroke-linejoin" := "round" >>> "vector-effect" := "non-scaling-stroke"
-        >>> attrWith "d" (sparkline <<< f) $ blank
+        >>> attrWith "d" (sparkline <<< f) $ identity
 
-leaderboard :: forall r. String -> ({ | r } -> Array { name :: String, score :: String }) -> PUI Web { | r } {}
+leaderboard :: forall r. String -> ({ | r } -> Array { name :: String, score :: String }) -> PUI Web { | r } { | r }
 leaderboard l f =
-  tile >>> "aria-label" := l $ prefixed (labelMedium $ staticText l) $ list ( ( listItem $ text entryLine ) # foreach @"name" f ) # muted
+  tile >>> "aria-label" := l $ Semigroupoid.do
+    labelMedium $ staticText l
+    list $ ( listItem $ text entryLine ) # foreach @"name" f
 
 rangePicker :: forall @l a rest r. IsSymbol l => Cons l a rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
 rangePicker options =
-  div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ prefixed (labelMedium $ staticText config.label) $ segmentedButton @l options
+  div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Semigroupoid.do
+    labelMedium $ staticText config.label
+    segmentedButton @l options
   where
   config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 

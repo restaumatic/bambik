@@ -1,10 +1,10 @@
 module FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit) where
 
-import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, pure, show)
+import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, const, pure, show)
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.String (Pattern(..), split)
 import Data.Variant (expand, match)
 import Effect.Aff (Aff)
@@ -57,30 +57,20 @@ bookingState
      , "Return date (DD.MM.YYYY)" :: String
      , "Start date (DD.MM.YYYY)" :: String
      }
-  -> [ "one-way" :: { out :: { d :: Int, m :: Int, y :: Int } }
-     , problem :: { problem :: [ returnBeforeStart :: {}
-                               , unreadableReturn :: { input :: String }
-                               , unreadableStart :: { input :: String }
-                               ]
-                  }
-     , return :: { back :: { d :: Int, m :: Int, y :: Int }
-                 , out :: { d :: Int, m :: Int, y :: Int }
-                 }
-     ]
-bookingState = parse >>> either (\problem -> .problem { problem })
+  -> [ "one-way" :: {}, problem :: {}, return :: {} ]
+bookingState = parse >>> either (const (.problem {}))
   (match
-    { oneWayOn: \out -> ."one-way" { out }
-    , returnBetween: ."return"
+    { oneWayOn: \_ -> ."one-way" {}
+    , returnBetween: \_ -> .return {}
     })
 
 problemLine
-  :: { problem :: [ returnBeforeStart :: {}
-                  , unreadableReturn :: { input :: String }
-                  , unreadableStart :: { input :: String }
-                  ]
+  :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+     , "Return date (DD.MM.YYYY)" :: String
+     , "Start date (DD.MM.YYYY)" :: String
      }
   -> String
-problemLine { problem } = "⚠ " <> problemText problem
+problemLine = parse >>> either (\problem -> "⚠ " <> problemText problem) (const "")
 
 problemText :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] -> String
 problemText = match
@@ -89,13 +79,25 @@ problemText = match
   , returnBeforeStart: \_ -> "the return date is before the start date"
   }
 
-oneWayLine :: { out :: { d :: Int, m :: Int, y :: Int } } -> String
-oneWayLine { out } = summary (.oneWayOn out)
+oneWayLine
+  :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+     , "Return date (DD.MM.YYYY)" :: String
+     , "Start date (DD.MM.YYYY)" :: String
+     }
+  -> String
+oneWayLine { "Start date (DD.MM.YYYY)": startInput } =
+  maybe "" (\out -> summary (.oneWayOn out)) (parseDate startInput)
 
 returnLine
-  :: { back :: { d :: Int, m :: Int, y :: Int }, out :: { d :: Int, m :: Int, y :: Int } }
+  :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+     , "Return date (DD.MM.YYYY)" :: String
+     , "Start date (DD.MM.YYYY)" :: String
+     }
   -> String
-returnLine r = summary (.returnBetween { out: r.out, back: r.back })
+returnLine { "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } =
+  case parseDate startInput, parseDate returnInput of
+    Just out, Just back -> summary (.returnBetween { out, back })
+    _, _ -> ""
 
 summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
 summary = match

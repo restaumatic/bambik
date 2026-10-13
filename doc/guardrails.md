@@ -93,15 +93,19 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
   | Type | Shape | Sort |
   | --- | --- | --- |
-  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes that answer (`pane`, `inCase`), stages |
-  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided` |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`foreach`, `actedAt`), sources (`geolocated`, `clock`, `filePicked` — pointed, owning one field), stages |
+  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided`, the emitting list `anyOf` |
   | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`) and the folds they open, `snackbar @l line # fold f` |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
 
   A closed row (`{}`, `[ event :: String ]`) is a row. A word that
   would need two shapes is two words, each lawful at its own: a pane is `provided` for emitters (a detached one's
-  silence is `×→+`'s answer), `pane` for displays, `inCase` for
-  editors (each once an exception to Answer, none now).
+  silence is `×→+`'s answer) and `inCase` for displays and editors (the
+  wire while detached); a list is `foreach` for displays and `anyOf` for
+  emitters. A display is `×→×` like an editor: it releases the row it
+  shows (2026-10-13; its output was `{}` before, which made every
+  display line a decorator of its neighbour — `prefixed`/`suffixed` —
+  and the display pane a word of its own).
   A selector is one word because it is one shape: the widget stores
   the option it shows, so it is an editor (`×→×`, every feed answered
   with the row) — a split into a `×→+` picker plus a completing stage
@@ -167,8 +171,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the model row where the model first appears (`looped @( … )`, or `with @{ … }` for a flow with no loop,
   or a load action's outcome `action @{ … }` standing before the knot), and a derived
   row where it is introduced: a classifier's cases on its first pane
-  (`provided`/`pane`/`inCase @l @s`), an action's outcome, a
-  projection's element row (`listOf`/`foreach @… @r`), a
+  (`provided`/`inCase @l @s`), an action's outcome, a
+  projection's element row (`listOf`/`foreach`/`anyOf @… @r`), a
   payload. It names no field and no case, and
   with it every typed hole in a view reports a concrete type with nothing
   unknown (L18). Every leaf therefore reads as a noun phrase — word, anchor,
@@ -240,7 +244,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - A merge MUST NOT carry a unit of its own where a wire fits. Its unit law
   is conditional on the carrier: *if* `p` is also a `Category`, the wire at
   the unit object — the `{}` wire at the merge's row, `lcmap (const {})
-  identity` (`blank`), for `×→×` (the operands share one input row, so the
+  identity`, for `×→×` (the operands share one input row, so the
   unit is the terminal arrow out of it: `identity @{}` only at `{}`),
   `identity @(Variant ())` for `+→+`, `lcmap case_ identity` for `+→×` —
   MUST play well with the merge,
@@ -411,18 +415,23 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   duplicated label via `DisjointLabels`); named runtime watchdogs where they
   cannot (gate starvation names the gate and the missing fields). A
   blank screen with no diagnosis is a library bug, always.
-- **No silent information loss.** A combinator that discards the
-  emissions of the component it wraps MUST demand, in its type, that
-  those emissions carry nothing: the gated displays' content slots and
-  `observed` accept only the output `{}` — exactly what a unit display
-  emits, and no new class to say so — so an editor or emitter placed
-  where a display belongs fails to unify, never swallows an edit.
-  Deliberate discarding is its own visible word: `muted`, the counit
-  (render and drop), written at the call site (`# muted` on a `foreach`
-  that forwards its elements, or a packaged collection display echoing
-  its array); an adopted display keeps its `{}` by reading its field
-  through its own read function, not through `focusField @l`. Information may be lost only
-  in writing.
+- **No silent information loss.** A combinator MUST NOT discard the
+  emissions of the component it wraps unless they have nowhere to go.
+  A display releases the row it shows, so it is a stage and nothing
+  discards it; a pane (`inCase`) releases what its content releases; a
+  list over a stored array is the container action (`actedAt`), which
+  writes its elements' releases back; `observed` accepts a status, which
+  releases nothing. Two slots discard by construction, because their
+  content's release has no row to land in: `foreach` over a **derived**
+  array and `clicked`'s content (a face, not a form). An editor placed
+  in either is a mistake the type cannot catch, so `npm run
+  check-view-model` rejects an editor word inside a `foreach` element
+  or a `clicked` face in any demo view (2026-10-13; until then displays
+  output `{}` and every discarding slot demanded it in its type).
+  Nothing discards deliberately either: `muted`, the counit, is DELETED
+  (2026-10-13) — a chain whose output is not the model ends the block
+  (departures' `dispatched` stream, fed by the `clock` source). Information
+  is never lost.
 
 ### L14. The library stays small by rule, not by accident.
 
@@ -500,7 +509,7 @@ The codebase is three floors, each greppable:
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
   `wrap`/`unwrap`, `PUI.Web`, FFI) plus the same re-exported vocabulary
-  applications use (`focusField`, `toCase`, `blank`).
+  applications use (`focusField`, `toCase`, `static`).
   It never imports the ecosystem algebra: a design-system module proves
   the vocabulary complete by being its own first customer. **The floor is
   the namespace**: every web vocabulary is a submodule of its carrier
@@ -556,7 +565,7 @@ code below the UI) are algebra-layer material and exempt by location.
   writers inherent, type preservation the point); a `present<App>`
   normalization that feeds a display, of either shape, is a violation.
   Checkable form: every `# settled` in `demo/` sits on an editor
-  stage. A context-pinned row (collection item, pane payload)
+  stage. A context-pinned row (a collection item)
   carries the **source** fields its producing function built, and the
   read function formats them.
 - The gain is the point: the screen's copy is a pure function under
@@ -643,8 +652,8 @@ code below the UI) are algebra-layer material and exempt by location.
   view, law benches included. So every word taking a read function that
   an application feeds a stored field has a **label sibling**, `…At`,
   whose label slot is that read: `textAt @l`, `attrAt @l name`,
-  `providedAt`/`paneAt`/`inCaseAt @case @field`, `foreachAt @key
-  @field`, `actedAt @key @field`, `listOfAt @l @key @field`. The function form stays for what
+  `providedAt`/`inCaseAt @case @field`, `actedAt`/`anyOfAt @key
+  @field`, `listOfAt @l @key @field`. The function form stays for what
   is *derived* — a copy function, a classifier, a projection, a read
   deeper than one field (weather's `cityLine`) — named in the view model
   module. A word whose every reach reads one field takes only the label:
@@ -662,14 +671,14 @@ code below the UI) are algebra-layer material and exempt by location.
   that row as a **visible type argument after its anchor** — `looped @model` (`with
   @model` for a flow with no loop), `action @outcome`, `listOf`/`foreach`/`acted
   @row`, `dispatched`/`accumulated @key @value`, the panes
-  `provided`/`pane`/`inCase @l @s`, `toCase @payload`, `each @element`;
+  `provided`/`inCase @l @s`, `toCase @payload`, `each @element`;
   a new word of that kind
   MUST do the
   same — and an option list MUST close its row (`choice @"a" <+> choice
   @"b"`). What it demands of the application: the model row is declared
   once, where the model first appears (the seed line, or the load
   action's outcome when a load stands before the knot); a stored variant field is named by label on
-  its pane line (`providedAt`/`paneAt`/`inCaseAt @case @field`); a derived row is declared once, where its function
+  its pane line (`providedAt`/`inCaseAt @case @field`); a derived row is declared once, where its function
   first appears (each `?name` is its own hole, so the function's later
   uses are typed once it is written); a view helper applies one view
   model function per value. An unknown anywhere names a missing

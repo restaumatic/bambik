@@ -258,8 +258,8 @@ selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wr
 -- | value is a **read function** like every display's, since a fraction is
 -- | derived (a ratio of source fields), not state.
 progressBar
-  :: forall reads
-   . ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall r
+   . ({ | r } -> Number) -> PUI Web { | r } { | r }
 progressBar f = wrap do
   element "sl-progress-bar" (pure unit)
   attribute "style" "width: 100%; min-width: 200px;"
@@ -309,7 +309,7 @@ card :: Ocular (PUI Web)
 card content = el "sl-card" $
   div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start; gap: var(--sl-spacing-medium);" $ content
 
--- announcing statics ({}-output chrome with a face, at any row)
+-- statics (chrome with a face, the wire at any row)
 
 -- | A **divider**: the hairline rule between sections of a surface. Fixed
 -- | decoration, carrying no data.

@@ -2,30 +2,30 @@ module RestaurantMenu (restaurantMenu) where
 
 import Prelude ((#), ($), (>>>), Unit)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PUI (foreach, static)
 import PUI.Web (cl, staticText, text, textAt, (:=))
 import PUI.Web.HTML (a, article, blockquote, body, div, footer, h1, h2, h3, header, hr, li, p, section, span, ul)
 import PUI.Web.SVG as SVG
+import QualifiedDo.Semigroupoid as Semigroupoid
 import RestaurantMenuViewModel (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine)
 
 restaurantMenu :: Effect Unit
 restaurantMenu =
-  body $ ( article >>> cl "menu" $ RecordToRecord.do
-    header >>> cl "menu-header" $ RecordToRecord.do
-      SVG.svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ RecordToRecord.do
+  body $ ( article >>> cl "menu" $ Semigroupoid.do
+    header >>> cl "menu-header" $ Semigroupoid.do
+      SVG.svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ Semigroupoid.do
         static (SVG.circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47")
         SVG.text >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
           >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText "Y"
       h1 >>> cl "restaurant-name" $ staticText "Osteria Yoneda"
       p >>> cl "tagline" $ staticText "Cucina componibile — a tasting menu, composed"
     hr $ div >>> cl "courses" $
-      ( section >>> cl "course" $ RecordToRecord.do
+      ( section >>> cl "course" $ Semigroupoid.do
         h2 (text courseName)
         ul >>> cl "dishes" $
-          ( li >>> cl "dish" $ RecordToRecord.do
-            div >>> cl "dish-head" $ RecordToRecord.do
+          ( li >>> cl "dish" $ Semigroupoid.do
+            div >>> cl "dish-head" $ Semigroupoid.do
               span >>> cl "dish-name" $ text dishName
               static (span >>> cl "dish-dots")
               span >>> cl "dish-price" $ text priceLine
@@ -40,17 +40,17 @@ restaurantMenu =
                 @( name :: String
                  , dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String }
                  ) menuCourses
-    blockquote >>> cl "chef-note" $ RecordToRecord.do
+    blockquote >>> cl "chef-note" $ Semigroupoid.do
       p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
       p >>> cl "attribution" $ staticText "— from the kitchen"
-    footer >>> cl "menu-footer" $ RecordToRecord.do
-      div >>> cl "info" $ RecordToRecord.do
+    footer >>> cl "menu-footer" $ Semigroupoid.do
+      div >>> cl "info" $ Semigroupoid.do
         h3 (staticText "Hours")
         p (staticText "Tuesday – Sunday · 17:00 – 23:00")
-      div >>> cl "info" $ RecordToRecord.do
+      div >>> cl "info" $ Semigroupoid.do
         h3 (staticText "Find us")
         p (staticText "12 Category Lane · Kraków")
-      p >>> cl "colophon" $ RecordToRecord.do
+      p >>> cl "colophon" $ Semigroupoid.do
         staticText "A static page composed from HTML oculars with "
         a >>> "href" := "https://github.com/restaumatic/bambik" >>> "target" := "_blank" $ staticText "Bambik"
         staticText " — no Material components, just structure."

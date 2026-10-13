@@ -2,10 +2,9 @@ module PasswordGeneratorMDC2 (passwordGeneratorMDC2) where
 
 import Prelude (Unit, (#), ($), (>>>))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import PasswordGeneratorViewModel (passwordText, samplePassword, strengthLine, strongMixRecipe)
-import PUI (action, atCase, captured, looped, prefixed, unshown, with)
+import PUI (action, atCase, captured, looped, unshown, with)
 import PUI.Web (attr, text)
 import PUI.Web.HTML (code)
 import PUI.Web.MDC2 (body, body2, button, indeterminateLinearProgress, slider, toggleSwitch)
@@ -19,9 +18,9 @@ passwordGeneratorMDC2 =
     toggleSwitch @"Lowercase letters"
     toggleSwitch @"Digits"
     toggleSwitch @"Symbols"
-    prefixed ( RecordToRecord.do
-      body2 (text strengthLine)
-      code >>> attr "style" "word-break: break-all;" $ text passwordText ) $ button @"Generate"
+    body2 (text strengthLine)
+    code >>> attr "style" "word-break: break-all;" $ text passwordText
+    button @"Generate"
     indeterminateLinearProgress # action samplePassword # atCase @"Generate"
     unshown @"Password generated" # captured
   # looped

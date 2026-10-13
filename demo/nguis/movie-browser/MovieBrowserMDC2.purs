@@ -2,10 +2,9 @@ module MovieBrowserMDC2 (movieBrowserMDC2) where
 
 import Prelude ((#), ($), Unit)
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import MovieBrowserViewModel (favoriteMark, favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
-import PUI (fold, foreach, joined, looped, prefixed, toCase, unshown, with)
+import PUI (anyOf, fold, joined, looped, toCase, unshown, with)
 import PUI.Web ((<+>), choice, clWhen, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC2 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
@@ -20,16 +19,18 @@ movieBrowserMDC2 =
       filterChip @"Classic"
       filterChip @"Cult"
       filterChip @"Oscar" )
-    prefixed (elevation1 $ subtitle1 $ text favoritesLine) $ list $
-      ( listItem $ prefixed ( RecordToRecord.do
+    elevation1 $ subtitle1 $ text favoritesLine
+    list $
+      ( listItem $ Semigroupoid.do
         span (text titleLine)
         span (text yearLine)
-        span (text ratingLine) ) $ iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # foreach @"title"
+        span (text ratingLine)
+        iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # clWhen isFavorite "mdc-deprecated-list-item--selected" # toCase @"Favorite changed" @{ title :: String, "Favorite" :: Boolean } favoriteMark # anyOf @"title"
         @( title :: String
          , year :: Int
          , rating :: Number
          , "Favorite" :: Boolean
-         ) visibleMovies # toCase @"Favorite changed" @{ title :: String, "Favorite" :: Boolean } favoriteMark # joined @"Favorite changed"
+         ) visibleMovies # joined @"Favorite changed"
     unshown @"Favorite changed" # fold markFavorite
   # looped
     @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]

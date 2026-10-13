@@ -1,10 +1,10 @@
-module QuizViewModel (answer, askedPrompt, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
+module QuizViewModel (answer, askedPrompt, choices, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
 
 import Prelude (show, (+), (/), (<>), (==), min)
 
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 
 freshQuizRun :: { correct :: Int, question :: Int }
 freshQuizRun = { question: 0, correct: 0 }
@@ -31,17 +31,16 @@ answer { event: choice, model: run@{ question, correct } } = case index question
   Just q -> run { question = question + 1, correct = correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
-quizPhase
-  :: { correct :: Int, question :: Int }
-  -> [ asking :: { choices :: Array { key :: Int, label :: String }, prompt :: String }
-     , finished :: { correct :: Int }
-     ]
-quizPhase { question, correct } = case index questionCatalogue question of
-  Just q -> .asking { prompt: q.prompt, choices: mapWithIndex (\i label -> { key: i, label }) q.choices }
-  Nothing -> .finished { correct }
+quizPhase :: { correct :: Int, question :: Int } -> [ asking :: {}, finished :: {} ]
+quizPhase { question } = case index questionCatalogue question of
+  Just _ -> .asking {}
+  Nothing -> .finished {}
 
-askedPrompt :: { choices :: Array { key :: Int, label :: String }, prompt :: String } -> String
-askedPrompt { prompt } = prompt
+askedPrompt :: { correct :: Int, question :: Int } -> String
+askedPrompt { question } = maybe "" _.prompt (index questionCatalogue question)
 
-finalScoreLine :: { correct :: Int } -> String
+choices :: { correct :: Int, question :: Int } -> Array { key :: Int, label :: String }
+choices { question } = maybe [] (\q -> mapWithIndex (\i label -> { key: i, label }) q.choices) (index questionCatalogue question)
+
+finalScoreLine :: { correct :: Int, question :: Int } -> String
 finalScoreLine { correct } = "Final score: " <> show correct <> " / " <> show (length questionCatalogue)

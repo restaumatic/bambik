@@ -2,19 +2,19 @@ module SignupFormMDC3 (signupFormMDC3) where
 
 import Prelude (Unit, (#), ($))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (looped, prefixed, with)
-import PUI.Web ((<+>), choice, pane, staticText, text)
+import PUI (looped, with)
+import PUI.Web ((<+>), choice, inCase, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button', checkbox, debouncedTextField, filledTextField, headlineLarge, radioButton, select, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import SignupFormViewModel (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, unnamedLine, usernameSettleTime, usernameStatus, validation)
+import SignupFormViewModel (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, usernameSettleTime, usernameStatus, validation)
 
 signupFormMDC3 :: Effect Unit
 signupFormMDC3 =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      prefixed (headlineLarge $ staticText "Create account") $ debouncedTextField @"Username" usernameSettleTime
+      headlineLarge $ staticText "Create account"
+      debouncedTextField @"Username" usernameSettleTime
       radioButton @"Plan"
         (choice @"Free" <+> choice @"Pro" <+> choice @"Team")
       select @"Country"
@@ -28,17 +28,10 @@ signupFormMDC3 =
        , "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ]
        , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
        ) # with newApplicant
-    prefixed ( RecordToRecord.do
-      ( bodyMedium $ text unnamedLine ) # pane @"unnamed"
-        @( unnamed :: {}
-         , taken :: { "Username" :: String }
-         , available :: { "Username" :: String }
-         ) usernameStatus
-      ( bodyMedium $ text takenLine ) # pane @"taken" usernameStatus
-      ( bodyMedium $ text availableLine ) # pane @"available" usernameStatus
-      ( titleSmall $ text invalidLine ) # pane @"invalid"
-        @( invalid :: { reason :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] }
-         , ready :: { "Username" :: String }
-         ) validation
-      ( titleSmall $ text readyLine ) # pane @"ready" validation ) $ button' @"Sign up" { icon: "person_add" }
+    ( bodyMedium $ staticText "Pick a username to check its availability" ) # inCase @"unnamed" @( unnamed :: {}, taken :: {}, available :: {} ) usernameStatus
+    ( bodyMedium $ text takenLine ) # inCase @"taken" usernameStatus
+    ( bodyMedium $ text availableLine ) # inCase @"available" usernameStatus
+    ( titleSmall $ text invalidLine ) # inCase @"invalid" @( invalid :: {}, ready :: {} ) validation
+    ( titleSmall $ text readyLine ) # inCase @"ready" validation
+    button' @"Sign up" { icon: "person_add" }
     snackbar @"Sign up" signupLine

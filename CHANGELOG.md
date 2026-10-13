@@ -6,6 +6,73 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
+## 2026-10-13, later
+
+- **Displays release the row they show.** A display — `text`/`textAt`,
+  the statics, `each`/`dynamic`, every progress bar, `imagePane`,
+  `columnHeader` — is `{ | r } → { | r }`: `displayWiring` renders the
+  value and echoes it, so a display is a stage like an editor and a view
+  line sits where it sits on the screen. Before, a display output `{}`,
+  which made a display line a decorator of its neighbour: `prefixed d $
+  stage` put the stage at the end of the display's last line and
+  `# suffixed d` put the display inside the stage's statement, and
+  neither let a line begin with the element it draws. With the `{}`
+  output go the words that existed for it:
+  - `prefixed` and `suffixed` DELETED (two days old); `confirmed`'s
+    content, the drawer's content and `group`'s heading are plain stages
+    inside the library.
+  - `pane`/`paneAt` DELETED: `inCase`/`inCaseAt` is the pane for displays
+    and editors alike. **Panes no longer narrow**: `inCase` and
+    `provided` feed their content the whole model, never a case
+    payload, so a classifier's cases carry a payload only where the
+    business needs one and every read function inside a pane is typed at
+    the model (inbox's `subjectLine` finds the open message itself;
+    checkout's `checkoutStep` dissolved into the stored `step` field).
+    A button inside a `provided` pane replays the model, so it needs no
+    `# joined` (stopwatch's four, inbox's, checkout's two); `joined` is
+    for list elements and canvases.
+  - The list splits by shape: `foreach @l f` is the list of **displays**
+    (the fed row passes on, so the list is a stage line), `anyOf @l f`
+    the list whose elements **emit** (the old `foreach`'s forwarding),
+    with `anyOfAt @l @t` over a stored array (cells). `foreachAt`
+    DELETED: a display list over a stored array is `actedAt`, the
+    container action, which writes the elements' echoes back. `muted`
+    is DELETED with the last slot that demanded `{}`: departures and
+    scoreboard, whose board's output is the stream and not the model,
+    are fed by the `clock` source instead of a `beat` loop — no loop,
+    fold, seed or merge, the board after the clock, the `dispatched`/
+    `accumulated` chain ending the block.
+  - Every `RecordToRecord.do` in the demos became `Semigroupoid.do`: a
+    display owns the row it releases, so two cannot merge, and composing
+    them is the same screen; the vocabularies' groups of statics the
+    same, since a static is the wire at its row.
+  - Guardrails L13's no-silent-loss rule is restated: the type no longer
+    tells a display from an editor, so `npm run check-view-model` rejects
+    an editor word inside a `foreach` element or a `clicked` face, the
+    two slots whose content's release has nowhere to go.
+- **`blank` DELETED**: with displays releasing their row the faceless
+  leaf became `identity` under a name, and an element whose whole face is
+  its decorators is written as the wire, decorated (`SVG.circle >>> attrWith
+  "fill" circleFill $ identity`, circle-drawer; MDC2/MDC3's `imagePane`
+  and absent icon slots the same).
+- **Sources.** `source @l now watch` (`PUI.Web`) and the facts over it —
+  `geolocated`, `online`, `clock`, `colorScheme` — plus HTML's capture
+  `filePicked`: a fact the platform knows and the app cannot seed, owning
+  one field, pointed (its first value announced at registration), every
+  feed answered with the last value known, each platform change an
+  emission outside any feed; a fact the platform may withhold is a
+  variant with named cases. Merged `RecordToRecord.do`, the `×→×`
+  merge's one application use now that every editor owns the whole row.
+  Two demos: **here-and-now** (MDC3 + HTML, a knotless flow of four
+  facts) and **incident-report** (MDC3, facts and a photo filed by an
+  action). `text` renders nothing of a hole read, and `dispatched`/
+  `accumulated` treat a hole projection as absent, so a row that reaches
+  them before the logic is written (as from a source) reaches no hole.
+  The law-bench pages and `scripts/smoke/tests/leaf-laws.mjs` follow;
+  test/Main.purs gains the display-list law (the fed row passes once per
+  feed, the elements' releases stay inside) and loses the
+  `prefixed`/`suffixed` test.
+
 ## 2026-10-13
 
 - **`captured`**, beside `reset`: one case folded by taking its payload
@@ -29,6 +96,20 @@ Before 2026-07 the history is the git log.
   MDC3: `tooltip "…"` is the one form. espresso-bar's loyalty tip was its
   one use; it reads `# tooltip "Members get 10% off"` and
   `loyaltyNote` left the view model.
+- **A static inside a pane is a static.** Seven copy functions that
+  ignored their row — calculator's `faultLine`, tic-tac-toe's
+  `drawnLine`, signup-form's `unnamedLine`, ticket-dispenser's
+  `noTicketLine` and `firstTicketHint`, meeting-booker's
+  `roomRatingCaption` and `seatsTakenCaption` — are DELETED from their
+  view models, their lines now `staticText "…"` inside the same pane
+  (`staticText "Error" # inCaseAt @"faulty" @"condition"`). They existed
+  because `staticText` was pinned at `{} → {}` and could not sit in a
+  row-typed block; with every static the wire at any row (above), the
+  pane decides when the text shows and the text reads nothing, so a
+  function with a wildcard argument is a static in the wrong module.
+  writing.md's *Fixed copy is static or constant* says so; a constant
+  is now fixed copy that reads data or carries a business value
+  (cashbox's `refundLine`, which interpolates `standardRefund`).
 - **A demo app is one directory and one page.** `demo/<suite>/<app>/`
   holds every design system's view (`InboxMDC2.purs`, `InboxMDC3.purs`),
   the shared view model and one page whose query picks the design system

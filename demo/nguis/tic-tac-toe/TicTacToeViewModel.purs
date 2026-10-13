@@ -1,10 +1,10 @@
-module TicTacToeViewModel (cellMark, cells, claimCell, drawnLine, gameOutcome, openingPosition, toMoveLine, wonLine) where
+module TicTacToeViewModel (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine) where
 
 import Prelude ((&&), (/=), (<#>), (<>), (==), bind, mod, not, show)
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
 import Data.Int (fromString)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Variant (match)
 
 openingPosition :: { board :: Array [ free :: {}, o :: {}, x :: {} ] }
@@ -32,10 +32,10 @@ cellMark
      , mark :: [ free :: {}, o :: {}, x :: {} ]
      }
   -> String
-cellMark { mark } = markText { mark }
+cellMark { mark } = markText mark
 
-markText :: forall r1. { mark :: [ x :: {}, o :: {}, free :: {} ] | r1 } -> String
-markText { mark } = match { x: \_ -> "X", o: \_ -> "O", free: \_ -> "" } mark
+markText :: [ x :: {}, o :: {}, free :: {} ] -> String
+markText = match { x: \_ -> "X", o: \_ -> "O", free: \_ -> "" }
 
 claimCell
   :: { event :: String, model :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } }
@@ -73,19 +73,14 @@ boardFull board = not ((.free {}) `elem` board)
 
 gameOutcome
   :: { board :: Array [ free :: {}, o :: {}, x :: {} ] }
-  -> [ drawn :: {}
-     , toMove :: { mark :: [ free :: {}, o :: {}, x :: {} ] }
-     , won :: { mark :: [ free :: {}, o :: {}, x :: {} ] }
-     ]
+  -> [ drawn :: {}, toMove :: {}, won :: {} ]
 gameOutcome { board } = case winner board of
-  Just m -> .won { mark: m }
-  Nothing -> if boardFull board then .drawn {} else .toMove { mark: playerToMove board }
+  Just _ -> .won {}
+  Nothing -> if boardFull board then .drawn {} else .toMove {}
 
-wonLine :: { mark :: [ free :: {}, o :: {}, x :: {} ] } -> String
-wonLine r = markText r <> " wins"
+wonLine :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> String
+wonLine { board } = maybe "" (\mark -> markText mark <> " wins") (winner board)
 
-toMoveLine :: { mark :: [ free :: {}, o :: {}, x :: {} ] } -> String
-toMoveLine r = markText r <> " to move"
+toMoveLine :: { board :: Array [ free :: {}, o :: {}, x :: {} ] } -> String
+toMoveLine { board } = markText (playerToMove board) <> " to move"
 
-drawnLine :: {} -> String
-drawnLine _ = "Draw"

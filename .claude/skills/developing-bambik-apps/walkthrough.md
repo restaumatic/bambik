@@ -16,15 +16,14 @@ are under `.spago/bambik/v0.1.6/`. The rules the lines follow are in
 ```purescript
 module FlightBookerMDC2 (flightBookerMDC2) where
 
-import Prelude (Unit, identity, (#), ($))
+import Prelude (Unit, (#), ($))
 
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
-import PUI (action, atCase, debounced, looped, prefixed, with)
-import PUI.Web ((<+>), choice, inCaseAt, pane, text)
-import PUI.Web.MDC2 (body, body1, button, filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI (action, atCase, debounced, looped, with)
+import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
+import PUI.Web.MDC2 (body, body1, button', filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBookerMDC2 :: Effect Unit
@@ -40,14 +39,12 @@ flightBookerMDC2 =
        , "Start date (DD.MM.YYYY)" :: String
        , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
-    prefixed ( RecordToRecord.do
-      body1 (text problemLine) # pane @"problem"
-        @( problem :: { problem :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] }
-         , "one-way" :: { out :: { y :: Int, m :: Int, d :: Int } }
-         , "return" :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
-         ) bookingState
-      body1 (text oneWayLine) # pane @"one-way" bookingState
-      body1 (text returnLine) # pane @"return" bookingState ) identity # debounced itinerarySettleTime
+    ( Semigroupoid.do
+      body1 (text problemLine) # inCase @"problem"
+        @( "one-way" :: {}, problem :: {}, return :: {} ) bookingState
+      body1 (text oneWayLine) # inCase @"one-way" bookingState
+      body1 (text returnLine) # inCase @"return" bookingState
+    ) # debounced itinerarySettleTime
     button' @"Book" { icon: "flight_takeoff" }
     ( VariantToRecord.do
       indeterminateLinearProgress
@@ -59,8 +56,8 @@ flightBookerMDC2 =
 ```
 
 **The imports.** `PUI` for the words that shape data flow (`looped`, `with`,
-`prefixed`, `debounced`, `action`, `atCase`); `PUI.Web` for the words every
-design system shares (`choice` and `<+>`, the panes `pane` and `inCaseAt`,
+`debounced`, `action`, `atCase`); `PUI.Web` for the words every
+design system shares (`choice` and `<+>`, the panes `inCase` and `inCaseAt`,
 the `text` leaf); `VariantToRecord` for the block that sets the two statuses side by
 side; and `PUI.Web.MDC2` for the design system, its `body` included. The
 MDC3 twin differs in its module and entry name, that one vocabulary import,
@@ -103,30 +100,29 @@ it also closes the app's input to `{}`, which `body` requires (writing.md
 *App shape*).
 
 **Stage 2 — the itinerary line.** Three panes over one classifier, in a
-block of their own over the wire, `prefixed ( RecordToRecord.do … ) identity #
-debounced itinerarySettleTime`.
+block of their own, `( Semigroupoid.do … ) # debounced itinerarySettleTime`.
 
 - `body1 (text oneWayLine)` — the `text` leaf takes a **read function**:
   the whole sentence ("A one-way flight on 27.03.2026") is `oneWayLine`,
   one pure function in the view model module. The view holds no glue, and the
-  line names its own copy function.
-- `# pane @"one-way" bookingState` — the pane is shown while
-  `bookingState` yields case `one-way`, and its content reads that case's
-  payload `{ out :: { y, m, d } }` — the source data the line is computed
-  from. A pane shows data and passes nothing on itself. Three panes over
-  one classifier make the three states exclusive, because the classifier
-  returns one case (writing.md *Conditional visibility*). The first of the
-  three, `# pane @"problem" @( … ) bookingState`,
-  declares the classifier's cases — a derived row, so the view states it
-  where it is introduced; the other two name only their case.
-- `prefixed ( … ) identity` — the panes decorate the wire, `identity`,
-  so the line is a stage that passes the model on, and `# debounced
-  itinerarySettleTime` releases it only once the edits pause for
-  `itinerarySettleTime` (`{ ms: 300.0 }` in the view model module, so the
-  view carries no literal): the line redraws live, but the Book button is
-  handed the itinerary only after it has stood still on screen. A display
-  that no later line depends on needs none of this — it is a plain line,
-  and is `prefixed` over the stage after it (writing.md *The pipeline*).
+  line names its own copy function. A display is a stage: it shows the
+  model and releases it, so the next line is fed what it shows.
+- `# inCase @"one-way" bookingState` — the pane is shown while
+  `bookingState` yields case `one-way`, and its content is fed the model,
+  from which `oneWayLine` reads the start date. Detached, the pane is the
+  wire. Three panes over one classifier make the three states exclusive,
+  because the classifier returns one case (writing.md *Conditional
+  visibility*). The first of the three, `# inCase @"problem" @( … )
+  bookingState`, declares the classifier's cases — a derived row, so the
+  view states it where it is introduced; the other two name only their
+  case.
+- `( Semigroupoid.do … ) # debounced itinerarySettleTime` — the block of
+  panes passes the model on, and `debounced` releases it only once the
+  edits pause for `itinerarySettleTime` (`{ ms: 300.0 }` in the view
+  model module, so the view carries no literal): the line redraws live,
+  but the Book button is handed the itinerary only after it has stood
+  still on screen. A display that no later line depends on needs none of
+  this — it is a plain line (writing.md *The pipeline*).
 
 **Stage 3 — `button' @"Book" { icon: "flight_takeoff" }`.** The first shape
 change, `×→+`: fed the model, it emits case `"Book"` carrying the model on
@@ -306,14 +302,15 @@ module*).
   its variant field is written with the constructor sugar `."one-way" {}`
   (the type `[ … ]` is the matching type sugar).
 - `itinerarySettleTime` — a duration, `{ ms :: Number }`.
-- `bookingState` — the classifier behind the three panes: one
-  of three exclusive states, each carrying exactly the data its line is
-  computed from (`{ problem }`, `{ out }`, `{ out, back }`), so a pane's
-  `text oneWayLine` is typed against it. A problem is a reason
-  (`.returnBeforeStart {}`, `.unreadableStart { input }`), never a
-  sentence: the copy functions spell it out.
+- `bookingState` — the classifier behind the three panes: one of
+  three exclusive states, the cases bare since the panes show the
+  model itself. A problem is a reason (`.returnBeforeStart {}`,
+  `.unreadableStart { input }`) `parse` finds, never a sentence: the
+  copy functions spell it out.
 - `problemLine`/`oneWayLine`/`returnLine` — the panes' copy functions,
-  glue and warning glyph included.
+  each reading the model, glue and warning glyph included;
+  `problemLine` shares `parse` with the classifier, so what it says is
+  exactly what the pane was shown for.
 - `submit` — the `Aff` boundary. It shares `parse` with `bookingState`, so
   what the live line calls a problem is precisely what Book refuses.
 - `bookedLine`/`rejectedLine` — the snackbars' copy functions, each
@@ -323,7 +320,7 @@ module*).
 itinerary variant six times — because application code declares no
 `type` synonyms: the shape is the interface (writing.md *Code style* →
 *Types and values*). Every exported function carries the signature the
-view reported for it, verbatim — the row its pane or stage is fed, closed,
+view reported for it, verbatim — the model row its line is fed, closed,
 its fields in the compiler's alphabetical order — while the private
 helpers (`parse`, `formatDate`, `dateKey`) keep open rows of their own,
 since no view line types them; a function handing its argument on to a
@@ -336,7 +333,7 @@ real `do` — `Maybe`'s monad: `Semigroupoid.do` in the view composes stages,
 ## What to read next
 
 - **counter** — one display reading one function
-  (`prefixed (headline4 (text countLine)) $ button @"Count"`), one fold opened by
+  (`headline4 (text countLine)` above its `button @"Count"`), one fold opened by
   its status (`unshown @"Count" # fold increment`), over a
   model of `{ counted :: Int }`.
 - **timer** — two displays of different sorts,

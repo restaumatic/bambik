@@ -47,28 +47,44 @@ menuState
                          , name :: String
                          }
      }
-  -> [ complete :: { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
-                                     , name :: String
-                                     }
-                   }
-     , waiting :: { remaining :: Array String }
-     ]
-menuState { "Guests": guests } = case foldr sorted { dishes: [], remaining: [] } guests of
-  { dishes, remaining: [] } -> .complete { dishes }
-  { remaining } -> .waiting { remaining }
-  where
-  sorted guest table = guest."Dish" # match
-    { chosen: \dish -> table { dishes = cons { name: guest.name, dish } table.dishes }
-    , unchosen: \_ -> table { remaining = cons guest.name table.remaining }
-    }
+  -> [ complete :: {}, waiting :: {} ]
+menuState invited = case table invited of
+  { remaining: [] } -> .complete {}
+  _ -> .waiting {}
 
 menuLine
-  :: { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
-                       , name :: String
-                       }
+  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+                                     , unchosen :: {}
+                                     ]
+                         , name :: String
+                         }
      }
   -> String
-menuLine { dishes } = "On the table: " <> joinWith ", " (map (\d -> d.name <> "’s " <> caseText d.dish) dishes)
+menuLine invited = "On the table: " <> joinWith ", " (map (\d -> d.name <> "’s " <> caseText d.dish) (table invited).dishes)
 
-waitingLine :: { remaining :: Array String } -> String
-waitingLine { remaining } = "Still choosing: " <> joinWith ", " remaining
+waitingLine
+  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+                                     , unchosen :: {}
+                                     ]
+                         , name :: String
+                         }
+     }
+  -> String
+waitingLine invited = "Still choosing: " <> joinWith ", " (table invited).remaining
+
+table
+  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+                                     , unchosen :: {}
+                                     ]
+                         , name :: String
+                         }
+     }
+  -> { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], name :: String }
+     , remaining :: Array String
+     }
+table { "Guests": guests } = foldr sorted { dishes: [], remaining: [] } guests
+  where
+  sorted guest t = guest."Dish" # match
+    { chosen: \dish -> t { dishes = cons { name: guest.name, dish } t.dishes }
+    , unchosen: \_ -> t { remaining = cons guest.name t.remaining }
+    }

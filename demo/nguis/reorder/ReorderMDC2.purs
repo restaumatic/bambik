@@ -5,7 +5,7 @@ import Prelude ((#), ($), (>>>), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (acted, action, atCase, captured, looped, prefixed, static, unshown, with)
+import PUI (acted, action, atCase, captured, looped, static, unshown, with)
 import PUI.Web (el, (:=))
 import PUI.Web.MDC2 (body, button', filledTextField, group, indeterminateLinearProgress, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,7 +15,9 @@ reorderMDC2 :: Effect Unit
 reorderMDC2 =
   body $ Semigroupoid.do
     group @"Setlist" $ list $
-      ( listItem $ prefixed (static (el "input" >>> "type" := "checkbox")) $ filledTextField @"Title" ) # acted @"id"
+      ( listItem $ Semigroupoid.do
+        static (el "input" >>> "type" := "checkbox")
+        filledTextField @"Title" ) # acted @"id"
     RecordToVariant.do
       button' @"Rotate" { icon: "sync" }
       button' @"Shuffle" { icon: "shuffle" }

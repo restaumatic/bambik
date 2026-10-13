@@ -1,13 +1,13 @@
 module OrderFormMDC2 (orderFormMDC2) where
 
-import Prelude (identity, Unit, (#), ($))
+import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import OrderFormViewModel (deliveryAddress, distanceLine, distanceOf, estimateDistance, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine)
-import PUI (action, atCase, captured, fold, joined, looped, prefixed, settled, suffixed, unshown)
-import PUI.Web ((<+>), choice, inCaseAt, pane, provided, text)
+import OrderFormViewModel (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine)
+import PUI (action, atCase, captured, fold, joined, looped, settled, unshown)
+import PUI.Web ((<+>), choice, inCaseAt, provided, text)
 import PUI.Web.MDC2 (body, body1, button', card, filledTextArea, filledTextField, group, headline6, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -18,7 +18,8 @@ orderFormMDC2 =
     snackbar @"Order loaded" orderLoadedLine # captured
     ( Semigroupoid.do
       ( Semigroupoid.do
-        prefixed (headline6 $ text orderLine) $ group @"Identifier" $ Semigroupoid.do
+        headline6 $ text orderLine
+        group @"Identifier" $ Semigroupoid.do
           filledTextField @"Short ID"
           filledTextField @"Unique ID"
         group @"Customer" $ Semigroupoid.do
@@ -29,17 +30,20 @@ orderFormMDC2 =
             (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
           filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"
           filledTextField @"Time" # inCaseAt @"Takeaway" @"Mode"
-          filledTextField @"Address" # settled staleDistanceForgotten # suffixed (body1 (text distanceLine) # pane @"estimated" @( estimated :: { km :: Int }, unknown :: {} ) distanceOf) # inCaseAt @"Delivery" @"Mode"
+          ( Semigroupoid.do
+            filledTextField @"Address" # settled staleDistanceForgotten
+            body1 (text distanceLine) # inCaseAt @"estimated" @"distance" ) # inCaseAt @"Delivery" @"Mode"
         group @"Payment" $ Semigroupoid.do
           filledTextField @"Total"
           segmentedButton @"Method"
             (choice @"cash" <+> choice @"card")
-          filledTextField @"Paid" # suffixed (body1 $ text payingLine)
+          filledTextField @"Paid"
+          body1 $ text payingLine
         group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
-      prefixed (card $ body1 (text summaryLine)) identity
+      card $ body1 (text summaryLine)
       RecordToVariant.do
         ( Semigroupoid.do
-          button' @"Estimate distance" { icon: "near_me" } # provided @"Delivery" @( "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: { "Address" :: String } ) deliveryAddress
+          button' @"Estimate distance" { icon: "near_me" } # provided @"Delivery" @( "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ) fulfillmentMode
           indeterminateLinearProgress # action @( "Distance estimated" :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # joined @"Distance estimated"
         button' @"Submit order" { icon: "save" }
         button' @"Receipt" { icon: "file" }

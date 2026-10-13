@@ -260,12 +260,16 @@ stands (2026-09-14, after `action`'s progress slot left the `×` side):
   downstream, not to its sibling. Freshness across siblings is the
   enclosing loop's job: `looped` re-broadcasts every emission and each lens
   re-retains its background within the turn.
-- **A display never enters the gate.** It owns no field. Its `{}` per feed
-  is its answer under law 2, inert to every gate and consumed only by
-  sequencing (§3.1); as a *stage* a display is integrated by the rung,
-  `recordToRecord content identity`, and it is the rung that releases the
-  row. An emitter (`×→+`) never sees a `×→×` gate — its fed row leaves only
-  as replay — and neither does a status (`+→×`), which is dispatched.
+- **A display never enters the gate.** Since 2026-10-13 a display is
+  `{ | r } → { | r }`: it releases the row it shows, so it is a stage of
+  the pipeline and never an operand of a gated merge (it would own every
+  field, so nothing could merge beside it; two displays compose instead).
+  The zero-field account above is what the carrier was until then, when a
+  display output `{}` and stood beside a stage as its `prefixed` decorator;
+  the zero-field law itself still holds of any `{}`-output operand
+  (test/Main.purs). An emitter (`×→+`) never sees a `×→×` gate — its fed
+  row leaves only as replay — and neither does a status (`+→×`), which is
+  dispatched.
 - **Starvation is a priming failure of an owned field**, always: an editor
   or source never fed, never seeded, or sitting after a stage that never
   released. The cure is `with`/`seeded`, the seed where the loop is

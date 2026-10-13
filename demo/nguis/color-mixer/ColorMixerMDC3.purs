@@ -1,11 +1,10 @@
 module ColorMixerMDC3 (colorMixerMDC3) where
 
-import Prelude ((#), ($), (<>), (>>>), Unit, const)
+import Prelude ((#), ($), (<>), (>>>), Unit, const, identity)
 
 import ColorMixerViewModel (applyPreset, duskViolet, hexLine, mixedColor, palette, rgb, rgbLine)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import PUI (blank, fold, foreach, joined, looped, prefixed, unshown, with)
+import PUI (anyOf, fold, joined, looped, unshown, with)
 import PUI.Web (attrAt, attrWith, clicked, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, sliderLive)
@@ -17,12 +16,12 @@ colorMixerMDC3 =
     sliderLive @"Red"
     sliderLive @"Green"
     sliderLive @"Blue"
-    prefixed ( RecordToRecord.do
-      bodyMedium $ text hexLine
-      bodyMedium $ text rgbLine ) $ ( div $ Semigroupoid.do
-      div >>> attrWith "style" swatchStyle $ blank
+    bodyMedium $ text hexLine
+    bodyMedium $ text rgbLine
+    ( div $ Semigroupoid.do
+      div >>> attrWith "style" swatchStyle $ identity
       div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-        clicked @"Preset applied" @"name" ( div >>> attrAt @"name" "title" >>> attrWith "style" chipFace $ blank ) # foreach @"name"
+        clicked @"Preset applied" @"name" ( div >>> attrAt @"name" "title" >>> attrWith "style" chipFace $ identity ) # anyOf @"name"
           @( name :: String
            , mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
            ) (const palette) ) # joined @"Preset applied"

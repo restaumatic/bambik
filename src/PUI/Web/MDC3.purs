@@ -136,18 +136,16 @@ import Data.Foldable (foldMap, for_, traverse_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Row (atAnyRow)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (forCase)
-import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Data.Traversable (for)
 import Data.Variant (inj, match, prj) as Variant
-import Data.Profunctor (lcmap, rmap) as Profunctor
+import Data.Profunctor (rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Data.Profunctor.Seeding (isHole)
-import PUI (Ocular, PUI, blank, foreach, prefixed)
+import PUI (Ocular, PUI, anyOf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, attribute, attrWith, autoDismiss, cl, clicked, clickedRow, clWhen, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, eventText, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
@@ -287,13 +285,13 @@ buttonOf
   => String
   -> { | provided }
   -> PUI Web { | r } [ | v ]
-buttonOf tag provided = eventLeaf @l $ el tag $ RecordToRecord.do
+buttonOf tag provided = eventLeaf @l $ el tag $ Semigroupoid.do
   case config.icon of
     Just icon' -> el "md-icon" >>> "slot" := "icon" $ staticText icon'
-    Nothing -> blank
+    Nothing -> identity
   case config.label of
     Just label' -> staticText label'
-    Nothing -> blank
+    Nothing -> identity
   where
   config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
 
@@ -720,7 +718,7 @@ iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PU
 iconToggleLeaf config = wrap do
   -- the selected icon renders filled (the MD3 selected-state convention),
   -- so a same-glyph pair still reads as off/on
-  _ <- unwrap $ el "md-icon-button" >>> "toggle" := "" >>> "aria-label" := config.label $ RecordToRecord.do
+  _ <- unwrap $ el "md-icon-button" >>> "toggle" := "" >>> "aria-label" := config.label $ Semigroupoid.do
     el "md-icon" $ staticText config.offIcon
     el "md-icon" >>> "slot" := "selected" >>> "style" := "font-variation-settings: 'FILL' 1;" $ staticText config.onIcon
   node <- gets _.sibling
@@ -789,8 +787,8 @@ indeterminateLinearProgress = wrap do
 -- | function** like every display's, since a fraction is derived (a ratio
 -- | of source fields), not state.
 linearProgress
-  :: forall reads
-   . ({ | reads } -> Number) -> PUI Web { | reads } {}
+  :: forall r
+   . ({ | r } -> Number) -> PUI Web { | r } { | r }
 linearProgress f = wrap do
   element "md-linear-progress" (pure unit)
   attribute "style" "min-width: 200px;"
@@ -979,7 +977,7 @@ group
 group w = wrap do
   headingId <- liftEffect uniqueId
   unwrap $ "role" := "group" $ "aria-labelledby" := headingId $ card $
-    prefixed ("id" := headingId $ titleMedium $ staticText (reflectSymbol (Proxy @l))) (focusField @l w)
+    ("id" := headingId $ titleMedium $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
 
 -- | A **modal dialog** — dimmed backdrop, trapped focus, Esc to leave — for
 -- | the decision that must be made before anything else continues.
@@ -997,14 +995,14 @@ dialog title content =
     unwrap (div >>> "slot" := "content" $ content)
 
 -- | The witness rung — see `PUI.Web.MDC2.confirmed`.
-confirmed :: forall row. String -> String -> PUI Web { | row } {} -> PUI Web { | row } { | row }
-confirmed confirmCaption title content = simpleDialog confirmCaption title (prefixed content identity)
+confirmed :: forall row. String -> String -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
+confirmed confirmCaption title content = simpleDialog confirmCaption title content
 
 -- | `dialog` with a **confirm button** built in — the confirmation step:
 -- | show what is about to happen, and the button reports it. The content
--- | needs no button of its own; a content that only displays needs to be
--- | applied to the wire (`prefixed content identity`) so there is something
--- | to confirm — `confirmed` is exactly that specialization.
+-- | needs no button of its own: a display releases the row it shows, so
+-- | there is something to confirm — `confirmed` is exactly that
+-- | specialization.
 -- | Not a full `Ocular`, deliberately: the confirm **replays** the
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the
@@ -1128,7 +1126,7 @@ listOf' provided f item = withStructuralOrd @key $ wrap do
   unwrap $ el "md-list" >>> "style" := "overflow-y: auto;" $
     ( clicked @l @k $ clWhen config.selected "md3-list-item--selected"
         $ el "md-list-item" >>> "type" := "button" $ item
-    ) # foreach @k f
+    ) # anyOf @k f
   where
   config = convertOptionsWithDefaults OptSelected { selected: const false } provided
 
@@ -1187,11 +1185,8 @@ dataTable tableName headerCells content = wrap do
 
 -- | One **column header** of a `dataTable` — static copy naming the column,
 -- | its text a value like every static: `columnHeader "Qty"`.
-columnHeaderExact :: String -> PUI Web {} {}
-columnHeaderExact heading = th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText heading
-
-columnHeader :: forall r. String -> PUI Web { | r } {}
-columnHeader = atAnyRow <<< columnHeaderExact
+columnHeader :: forall r. String -> PUI Web { | r } { | r }
+columnHeader heading = th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText heading
 
 dataTableCss :: String
 dataTableCss = """
@@ -1256,14 +1251,14 @@ topAppBarCss = """
 -- | its pick to the app's loop, which folds it into the model and feeds
 -- | the drawer again, and the content shows that model beside it
 -- | (photo-gallery).
-drawer :: forall r o. { title :: String, subtitle :: String } -> PUI Web { | r } o -> PUI Web { | r } {} -> PUI Web { | r } o
+drawer :: forall r o. { title :: String, subtitle :: String } -> PUI Web { | r } o -> PUI Web { | r } { | r } -> PUI Web { | r } o
 drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
   liftEffect $ ensureStyle "md3-drawer" drawerCss
   nav' <- unwrap $ aside >>> cl "md3-drawer" $ wrap do
     _ <- unwrap (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
     unwrap (div $ nav)
   content' <- unwrap (div >>> "style" := "flex: 1; padding: 16px;" $ content)
-  -- the content is a display: its `{}` answers carry nothing
+  -- the content is a display: its echoes are the row the nav already has
   liftEffect $ content'.fromUser \_ -> pure unit
   pure { toUser: \r -> nav'.toUser r *> content'.toUser r, fromUser: nav'.fromUser }
 
@@ -1315,8 +1310,8 @@ divider = separating dividerExact
 
 -- | One picture in an `imageList`, with `label` shown as its caption and
 -- | used as its alternative text.
-imageListItemExact :: { src :: String, alt :: String } -> PUI Web {} {}
-imageListItemExact config = wrap do
+imageListItem :: forall r. { src :: String, alt :: String } -> PUI Web { | r } { | r }
+imageListItem config = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   unwrap $ staticHTML $
     "<li class=\"md3-image-list__item\">"
@@ -1324,8 +1319,6 @@ imageListItemExact config = wrap do
       <> "<span class=\"md3-image-list__label\">" <> escaped config.alt <> "</span>"
       <> "</li>"
 
-imageListItem :: forall r. { src :: String, alt :: String } -> PUI Web { | r } {}
-imageListItem = atAnyRow <<< imageListItemExact
 
 -- | One picture in an `imageList`, **fed through the channel**: like any
 -- | display it takes its read function — the business row in, the picture's
@@ -1334,19 +1327,15 @@ imageListItem = atAnyRow <<< imageListItemExact
 -- | `imagePane developedShot # foreach @"shot" albumShots`, each item built once and its
 -- | source and caption updated in place. `imageListItem`'s sibling, for the
 -- | collection case; `imageListItem` stays the closure-known static.
-imagePane :: forall reads. ({ | reads } -> { src :: String, alt :: String }) -> PUI Web { | reads } {}
-imagePane picture = Profunctor.lcmap picture imagePaneFace
+imagePane :: forall r. ({ | r } -> { src :: String, alt :: String }) -> PUI Web { | r } { | r }
+imagePane picture = imagePaneFace picture
 
-imagePaneFace :: PUI Web { src :: String, alt :: String } {}
-imagePaneFace = wrap do
+imagePaneFace :: forall r. ({ | r } -> { src :: String, alt :: String }) -> PUI Web { | r } { | r }
+imagePaneFace picture = wrap do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
-  unwrap $ el "li" >>> cl "md3-image-list__item" $ RecordToRecord.do
-    imageFace
-    span >>> cl "md3-image-list__label" $ (text _.alt :: PUI Web { src :: String, alt :: String } {})
-
-imageFace :: PUI Web { src :: String, alt :: String } {}
-imageFace =
-  img >>> cl "md3-image-list__image" >>> attrWith "src" _.src >>> attrWith "alt" _.alt $ blank
+  unwrap $ el "li" >>> cl "md3-image-list__item" $ Semigroupoid.do
+    img >>> cl "md3-image-list__image" >>> attrWith "src" (_.src <<< picture) >>> attrWith "alt" (_.alt <<< picture) $ identity
+    span >>> cl "md3-image-list__label" $ text (_.alt <<< picture)
 
 -- the element adapter for the index-keyed internal collection: reads the
 -- item out of the reconciler's { ix, item } row at the wiring level (the

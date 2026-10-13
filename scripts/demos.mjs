@@ -97,6 +97,8 @@ export const sets = {
     'restaurant-menu': ['RestaurantMenu', 'restaurantMenu'],
     'espresso-bar': { mdc3: ['EspressoBarMDC3', 'espressoBarMDC3'], mdc2: ['EspressoBarMDC2', 'espressoBarMDC2'] },
     'order-dashboard': { mdc3: ['OrderDashboardMDC3', 'orderDashboardMDC3'] },
+    'here-and-now': { mdc3: ['HereAndNowMDC3', 'hereAndNowMDC3'], html: ['HereAndNowHTML', 'hereAndNowHTML'] },
+    'incident-report': { mdc3: ['IncidentReportMDC3', 'incidentReportMDC3'] },
     'product-review': { shoelace: ['ProductReviewShoelace', 'productReviewShoelace'] },
     'meeting-booker': { fluent: ['MeetingBookerFluent', 'meetingBookerFluent'] },
     'loan-calculator': { bootstrap: ['LoanCalculatorBootstrap', 'loanCalculatorBootstrap'] },

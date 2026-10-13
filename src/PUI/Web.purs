@@ -17,17 +17,18 @@
 -- |   field shown as stored), `textOf` (a status's payload), `staticText`,
 -- |   and `staticHTML`, kept off the public vocabularies (L10);
 -- | - **occurrence sources** — `clicked @l @k`, `onClickedXY @l`;
--- | - **panes** — `provided` (emitters), `pane` (displays) and `inCase`
--- |   (editors); a pane over a variant the model stores names its field by
--- |   label (`providedAt`, `paneAt`, `inCaseAt`). A line that shows data
--- |   sits in a pipeline as `prefixed`/`suffixed` over a stage (`PUI`);
+-- | - **panes** — `provided` (emitters) and `inCase` (displays and
+-- |   editors), each fed the whole row; a pane over a variant the model
+-- |   stores names its field by label (`providedAt`, `inCaseAt`);
+-- | - **sources** — `source` and the facts over it (`geolocated`, `online`,
+-- |   `clock`, `colorScheme`), each owning one field the app cannot seed;
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
 -- |   tag;
 -- | - **the leaf protocol, as functions** — what every vocabulary's leaves
 -- |   are built from: `editorWiring` (write unless held, echo every feed,
 -- |   report the platform's change through a busy guard),
 -- |   `selectorWiring` (the same over an option list, in index terms),
--- |   `displayWiring` (render, answer `{}`), `statusWiring` (render,
+-- |   `displayWiring` (render, release the row shown), `statusWiring` (render,
 -- |   release nothing), `eventLeaf` (the click emitter over chrome),
 -- |   `eventText` (a status's canonical payload), `escaped` (a runtime
 -- |   string made safe for `staticHTML`), `listenNode`/`listenNodeDeferred`,
@@ -104,9 +105,13 @@ module PUI.Web
   , textContent
   , uniqueId
   , hole
-  , pane
-  , paneAt
   , separating
+  , source
+  , geolocated
+  , online
+  , clock
+  , colorScheme
+  , onFilePicked
   , inCase
   , inCaseAt
   , text
@@ -152,7 +157,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import PUI (class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, replaying, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
+import PUI (class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, replaying, resumeScope, scopeActive, setDiagnostics, setSink, setTracing, suspendScope)
 import Data.Profunctor.Row (atAnyRow)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Prim.Row (class Cons)
@@ -327,6 +332,14 @@ foreign import childrenFrom :: Int -> Node -> Effect (Array Node)
 -- | space (an SVG's viewBox units when present, CSS pixels otherwise) —
 -- | works for mouse, touch and pen alike.
 foreign import onClickXY :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
+foreign import watchPosition :: ({ lat :: Number, lng :: Number } -> Effect Unit) -> Effect Unit -> Effect (Effect Unit)
+foreign import isOnline :: Effect Boolean
+foreign import watchOnline :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
+foreign import localTime :: Effect { hours :: Int, minutes :: Int, seconds :: Int }
+foreign import everyMs :: Number -> Effect Unit -> Effect (Effect Unit)
+foreign import prefersDark :: Effect Boolean
+foreign import watchColorScheme :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
+foreign import onFilePicked :: Node -> ({ name :: String, size :: Number, mime :: String } -> Effect Unit) -> Effect (Effect Unit)
 foreign import onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> Effect Unit
 
 foreign import hostTracing :: Effect Boolean
@@ -398,8 +411,8 @@ staticHTMLExact html = wrap do
     , fromUser: \prop -> prop {}
     }
 
-staticHTML :: forall r. String -> PUI Web { | r } {}
-staticHTML = atAnyRow <<< staticHTMLExact
+staticHTML :: forall r. String -> PUI Web { | r } { | r }
+staticHTML = built <<< unwrap <<< staticHTMLExact
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
@@ -560,16 +573,17 @@ selectorWiring options leaf = do
     }
 
 -- | A **display leaf**'s wiring: `show` renders each fed value, and the
--- | feed is answered with `{}` — the display's echo, inert to every gate
--- | (a zero-field side is pre-satisfied) and real to sequencing. Nothing
--- | at registration, since an answer needs a feed.
-displayWiring :: forall a. (a -> Effect Unit) -> Effect (Wiring a {})
+-- | feed is answered with the value itself — the display's echo, so a
+-- | display is a stage of the pipeline that changes no data: the row it
+-- | shows is the row the next line is fed. Nothing at registration, since
+-- | an answer needs a feed.
+displayWiring :: forall a. (a -> Effect Unit) -> Effect (Wiring a a)
 displayWiring show = do
   propRef <- Ref.new Nothing
   pure
     { toUser: \a -> do
         show a
-        Ref.read propRef >>= traverse_ (_ $ {})
+        Ref.read propRef >>= traverse_ (_ $ a)
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
@@ -736,49 +750,12 @@ separating rule w = wrap do
   liftEffect $ onCancel sc disconnect
   pure w'
 
--- | The **display pane**: content that shows data, attached and fed the
--- | case payload while the classifier yields case `l`, detached on any
--- | other case. It shows data itself (output `{}`): attached, the
--- | content's answer is the pane's; detached, the pane answers for it, so
--- | every feed is answered once. It shows data, so in a pipeline it is
--- | `prefixed` over the stage after it, like any display. Trails its content:
--- | `text faultLine # pane @"faulty" readout`. The classifier's variant is a
--- | visible type argument after the case, so the view can declare every
--- | state the pane chooses among
--- | (`# pane @"serving" @( serving :: { number :: Int }, idle :: {} ) displayOf`).
-pane
-  :: forall @l @v r r1 b
-   . IsSymbol l => Cons l { | r1 } b v
-  => ({ | r } -> [ | v ]) -> PUI Web { | r1 } {} -> PUI Web { | r } {}
-pane f content = wrap do
-  { result: shownPane, ensureAttached, ensureDetached } <- attachable $ unwrap content
-  propRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \row -> case prj (Proxy @l) (f row) of
-        Nothing -> do
-          ensureDetached
-          Ref.read propRef >>= traverse_ (_ $ {})
-        -- attach before feeding, as `provided` does
-        Just y -> ensureAttached *> shownPane.toUser y
-    , fromUser: \prop -> do
-        Ref.write (Just prop) propRef
-        shownPane.fromUser prop
-    }
-
--- | `pane` over a variant the model stores: the pane names case `c` of
--- | field `l`, both by label (`# paneAt @"serving" @"display"`). A state
--- | derived from several fields is a classifier, `pane`.
-paneAt
-  :: forall @c @l r r1 v b1 b2
-   . IsSymbol c => IsSymbol l => Cons c { | r1 } b1 v => Cons l [ | v ] b2 r
-  => PUI Web { | r1 } {} -> PUI Web { | r } {}
-paneAt = pane @c @v (Record.get (Proxy @l))
-
--- | The **editor pane** — `pane`'s
--- | editor sibling. A whole-row citizen (an editor, or a pipeline of them)
--- | that *exists* only while the classifier yields case `l`: attached and
--- | fed the whole row on that case, detached on any other, the fed row
--- | released always. Where `pane`'s content shows data (it emits `{}`),
+-- | The **pane**: a whole-row citizen — a display, an editor, or a pipeline
+-- | of them — that *exists* only while the classifier yields case `l`:
+-- | attached and fed the whole row on that case, detached on any other,
+-- | the fed row released always. Where its content is a display, it shows
+-- | the row only in that state (`text ticketLine # inCaseAt @"serving"
+-- | @"display"`); where
 -- | this pane's content emits the **row**, so the pane is a stage — the
 -- | pane's channel and the wire's, side by side over one input and one
 -- | output.
@@ -834,7 +811,7 @@ inCaseAt = inCase @c @v (Record.get (Proxy @l))
 -- | function from the fields it needs to the words on the screen, living in
 -- | the logic module where it is one pure function and one unit test
 -- | (`text progressLineOf`). The read function is typed at
--- | the row its line is fed (a pane's payload, a list's element),
+-- | the row its line is fed (the model, or a list's element),
 -- | so no call site coerces. This is why `text` takes no label:
 -- | its content *is* the copy, so there is no field to name and nothing to
 -- | caption — a caption is surrounding chrome (`staticText`, a `label`, a
@@ -844,13 +821,17 @@ inCaseAt = inCase @c @v (Record.get (Proxy @l))
 -- | A whole line is one function, glue included — never several leaves with
 -- | `staticText` between them, and never a formatter in the view.
 -- | doc/research-copy-is-a-function.md is the rationale.
-text :: forall r. ({ | r } -> String) -> PUI Web { | r } {}
+-- |
+-- | Like every display it is a stage that **changes no data**: the row it
+-- | shows is the row it releases, so it is a line of a `Semigroupoid.do`
+-- | block like an editor, in its place on the screen.
+text :: forall r. ({ | r } -> String) -> PUI Web { | r } { | r }
 text = textLeaf
 
 -- | `text` of one field shown as it is stored: the field is named by its
 -- | label, never picked by a function (`textAt @"title"`). A line that
 -- | formats, joins or derives is a copy function, `text`.
-textAt :: forall @l b r. IsSymbol l => Cons l String b r => PUI Web { | r } {}
+textAt :: forall @l b r. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textAt = text (Record.get (Proxy @l))
 
 -- | `text`'s variant-input sibling: a status renders its own payload
@@ -858,14 +839,14 @@ textAt = text (Record.get (Proxy @l))
 -- | code shows copy with `text`, whose row-shaped read states its footprint.
 -- | Unlike the display it renders with, a status **releases nothing**: the
 -- | `+→×` merge forwards every release as the whole shared row, so the
--- | leaf's `{}` echo is swallowed here and the output is typed at every
+-- | leaf's echo is swallowed here and the output is typed at every
 -- | row, as `silence`'s is.
 textOf :: forall v r. ([ | v ] -> String) -> PUI Web [ | v ] { | r }
 textOf f = wrap do
   leaf <- unwrap (textLeaf f)
   pure { toUser: leaf.toUser, fromUser: \_ -> leaf.fromUser \_ -> pure unit }
 
-textLeaf :: forall a. (a -> String) -> PUI Web a {}
+textLeaf :: forall a. (a -> String) -> PUI Web a a
 textLeaf f = wrap do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
@@ -880,32 +861,34 @@ textLeaf f = wrap do
     pure node
   modify_ _ { sibling = newNode}
   node <- gets (_.sibling)
-  -- the display's answer to the feed (record-echo totality: the whole
-  -- of a `{}` output row is `{}`). Inert to every gate — a zero-field
-  -- side is pre-satisfied, so a display never enters one — but real to
-  -- sequencing: a stage after the display is fed it (`simpleDialog`'s
-  -- confirm replays what its content last answered). Nothing at
-  -- registration, since an answer needs a feed. Every `{}`-output
-  -- display follows this protocol (`displayWiring`).
-  liftEffect $ displayWiring \s -> setTextNodeValue node (f s)
+  -- the display's answer to the feed is the row it was shown, so the
+  -- stage after it is fed it (`simpleDialog`'s confirm replays what its
+  -- content last answered). Nothing at registration, since an answer
+  -- needs a feed. Every display follows this protocol (`displayWiring`).
+  -- a hole read renders nothing (guardrails L18): a row may reach a display
+  -- before its copy is written, as from a merge of sources
+  liftEffect $ displayWiring \s -> setTextNodeValue node (if isHole f then "" else f s)
 
 -- | **Static copy**: text that is part of the structure — on screen before,
--- | and regardless of, any model value — written as a type, so it is known
--- | to the compiler like every label: `h3 (staticText @"Hours")`,
--- | `label $ staticText @"Name "`. Fixed decoration carrying no data,
--- | rendered at build. Copy that is fixed but shows only through data — a
--- | pane's message, the glue of a sentence, a formatted value — is a
--- | *constant*, and lives in a copy function of the logic module
--- | (`text faultLine`); text that *is* data is `staticText`.
+-- | and regardless of, any model value — a value, never a label, since it
+-- | names no field and no case: `h3 (staticText "Hours")`, `label $
+-- | staticText "Name "`. Fixed decoration carrying no data, rendered at
+-- | build, the wire at any row. A static inside a pane is still a static
+-- | — the pane decides when it shows, the text reads nothing
+-- | (`staticText "Error" # inCaseAt @"faulty" @"condition"`), so a copy
+-- | function ignoring its row is a static in the wrong module. Copy that
+-- | is fixed but reads data — the glue of a sentence, a formatted value, a
+-- | business constant — is a *constant*, and lives in the copy function
+-- | of the view model module (`text refundLine`); text that *is* data is
+-- | `staticText` too.
 
 -- | Fixed text given as a runtime string — for vocabulary code captioning
 -- | from its configuration, and for closure-known text that is data (a
 -- | parsed markdown run). Application copy that is static is `staticText (reflectSymbol (Proxy @s))`.
 staticTextExact :: String -> PUI Web {} {}
 staticTextExact content = wrap do
-  -- decoration contributes nothing: the `{}` it announces is ignored by
-  -- the gates (a zero-field side is pre-known and inert), so this is the
-  -- chrome's own completeness, not a merge requirement
+  -- the `{}` it announces at registration is the point's answer to the
+  -- terminal record: at `{}` chrome is complete as built
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
     node <- createTextNode content
@@ -917,8 +900,8 @@ staticTextExact content = wrap do
     , fromUser: \prop -> prop {}
     }
 
-staticText :: forall r. String -> PUI Web { | r } {}
-staticText = atAnyRow <<< staticTextExact
+staticText :: forall r. String -> PUI Web { | r } { | r }
+staticText = built <<< unwrap <<< staticTextExact
 
 -- | Set a fixed attribute on the element being decorated, written infix as
 -- | `:=`: `"placeholder" := "you@example.com" $ input "email" $ …`. For an
@@ -991,11 +974,10 @@ attrDyn name valueFunction w = wrap do
 -- | computed rather than given.
 infixr 10 attrDyn as :=>
 
--- | Show the **emitter pane** while the model is in state `l`, fed that
--- | state's own data — visibility is **case adoption**: the argument is a
--- | business function classifying the situation into a variant, and the
--- | pane is attached and fed the payload of case `l`, detached on every
--- | other case. A quiz whose run is either `asking` or `finished` shows its
+-- | Show the **emitter pane** while the model is in state `l` — visibility
+-- | is **case adoption**: the argument is a business function classifying
+-- | the situation into a variant, and the pane is attached and fed the row
+-- | on case `l`, detached on every other case. A quiz whose run is either `asking` or `finished` shows its
 -- | answer list as `listOf … # provided @"asking" quizPhase`; a stopwatch
 -- | shows Start only while `halted`.
 -- |
@@ -1007,10 +989,9 @@ infixr 10 attrDyn as :=>
 -- | occurrences have no cause on the channel, it is the pane's **scope**:
 -- | the content is built in a scope the pane suspends while detached, so a
 -- | tick skips its beat and an outcome that settles meanwhile is dropped
--- | (`PUI`, "Scope"). The pane family is indexed by what the pane holds, each
--- | member lawful at its shape: `provided` for emitters, `pane` for
--- | displays (answers `{}` whether attached or not), `inCase` for
--- | editors (the wire while detached).
+-- | (`PUI`, "Scope"). The pane family is indexed by the shape of what the
+-- | pane holds, each member lawful at its shape: `provided` for emitters,
+-- | `inCase` for displays and editors (the wire while detached).
 -- |
 -- | A `Maybe`-gated pane is the same
 -- | thing with its two cases unnamed, so there is no `Maybe` form: a state a
@@ -1022,42 +1003,41 @@ infixr 10 attrDyn as :=>
 -- | adopts its own case, so two panes can never both be on screen — which
 -- | separate "should this be visible?" tests can always accidentally allow.
 -- |
--- | The pane is handed exactly the case payload and never the whole model,
--- | and it is removed from the page while the model sits elsewhere. Two
--- | things follow: the rule for *what is on screen when* lives in business
--- | code where it can be tested, and a pane that is absent contributes
--- | nothing — so anything downstream waiting on it waits, rather than
--- | showing a stale or invented value.
+-- | The pane is fed the whole row, like every stage, and it is removed
+-- | from the page while the model sits elsewhere: the rule for *what is on
+-- | screen when* lives in business code where it can be tested, and a pane
+-- | that is absent contributes nothing — so anything downstream waiting on
+-- | it waits, rather than showing a stale or invented value.
 -- |
 -- | The classifier's variant is a visible type argument after the case, so
 -- | the view can declare every state the pane chooses among
--- | (`# provided @"reading" @( reading :: { … }, browsing :: {} ) messageView`).
+-- | (`# provided @"reading" @( reading :: {}, browsing :: {} ) messageView`).
 -- | A variant the model stores is named by its label instead, `providedAt`.
-provided :: forall @l @v r r1 b v1. IsSymbol l => Cons l { | r1 } b v => ({ | r } -> [ | v ]) -> PUI Web { | r1 } [ | v1 ] -> PUI Web { | r } [ | v1 ]
+provided :: forall @l @v r a b v1. IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI Web { | r } [ | v1 ] -> PUI Web { | r } [ | v1 ]
 provided = attachedOn @l
 
 -- | `provided` over a variant the model stores: the emitter exists in case
 -- | `c` of field `l`, both named by label (`# providedAt @"halted" @"phase"`).
-providedAt :: forall @c @l r r1 v v1 b1 b2. IsSymbol c => IsSymbol l => Cons c { | r1 } b1 v => Cons l [ | v ] b2 r => PUI Web { | r1 } [ | v1 ] -> PUI Web { | r } [ | v1 ]
+providedAt :: forall @c @l r a v v1 b1 b2. IsSymbol c => IsSymbol l => Cons c a b1 v => Cons l [ | v ] b2 r => PUI Web { | r } [ | v1 ] -> PUI Web { | r } [ | v1 ]
 providedAt = provided @c @v (Record.get (Proxy @l))
 
 -- The pane mechanism every pane shares, at any content output: attach and
--- feed the payload on case `l`, detach on every other case. Public only
+-- feed the row on case `l`, detach on every other case. Public only
 -- through its lawful restrictions — `provided` at emitter content, where a
--- detached pane's silence is `×→+`'s Answer (`pane` and `inCase` answer for
--- a detached content themselves).
-attachedOn :: forall @l @v r r1 b a. IsSymbol l => Cons l { | r1 } b v => ({ | r } -> [ | v ]) -> PUI Web { | r1 } a -> PUI Web { | r } a
+-- detached pane's silence is `×→+`'s Answer (`inCase` answers for a
+-- detached content itself).
+attachedOn :: forall @l @v r a b c. IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI Web { | r } c -> PUI Web { | r } c
 attachedOn f w = wrap do
   {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
   pure
     { toUser: \fed -> case prj (Proxy @l) (f fed) of
       Nothing -> ensureDetached
-      Just y -> do
+      Just _ -> do
         -- attach before feeding: a UI component that measures itself on toUser (the
         -- MDC slider positions its thumb from the track width) needs to be in
         -- the document first, or it lays out against a zero-width detached node
         ensureAttached
-        toUser y
+        toUser fed
     , fromUser
     }
 
@@ -1209,33 +1189,119 @@ foreachWith build = wrap do
 -- | redraw when the value changes — the scene whose whole composition
 -- | depends on the data. `div $ dynamic renderSwatch`. Owns the element it
 -- | sits in.
-dynamic :: forall r r1. ({ | r } -> PUI Web {} { | r1 }) -> PUI Web { | r } { | r1 }
-dynamic build = wrap $ unwrap (foreachWith build) <#> \w ->
-  { toUser: \value -> w.toUser [ value ], fromUser: w.fromUser }
+dynamic :: forall r. ({ | r } -> PUI Web {} {}) -> PUI Web { | r } { | r }
+dynamic build = wrap do
+  w <- unwrap (foreachWith build)
+  liftEffect $ w.fromUser \_ -> pure unit
+  liftEffect $ displayWiring \value -> w.toUser [ value ]
 
 -- | Lay out a list that is known up front and never changes — the courses
 -- | on a menu, the keys of a keypad, a row of preset swatches:
 -- | `ul $ each courses renderCourse`, `tr $ each keys keyComponent`. Nothing
 -- | about it comes from the model, so it sits among fixed decoration and,
 -- | like every static, is built once, at registration: it is on screen
--- | before any feed and whether or not one arrives.
--- | It answers each feed once, with `{}`, for the whole list: the elements'
--- | own `{}` answers are absorbed, so a list of n elements is one answer,
--- | not n (Answer at `×→×`).
-eachExact :: forall a. Array a -> (a -> PUI Web {} {}) -> PUI Web {} {}
-eachExact items0 build = let items = if isHole items0 then [] else items0 in wrap do
+-- | before any feed and whether or not one arrives, and like every static
+-- | it is the wire at its row: the elements are fed nothing, and the row
+-- | passes.
+each :: forall @a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } { | r }
+each items0 build = let items = if isHole items0 then [] else items0 in built do
   w <- unwrap (foreachWith build)
   liftEffect do
     w.fromUser \_ -> pure unit
     w.toUser items
+
+-- A static is the wire with something built at registration: what `built`
+-- builds is on screen before any feed, and every feed passes through it.
+built :: forall a r. Web a -> PUI Web { | r } { | r }
+built build = wrap (build *> unwrap (identity :: PUI Web { | r } { | r }))
+
+-- Sources
+
+-- | A **source**: a fact the platform knows and the app cannot seed — where
+-- | the device is, whether it is online, what time it is, which colour
+-- | scheme is preferred. A source owns one field, `l`, reads nothing of the
+-- | row it is fed, and is **pointed**: it announces its first value at
+-- | registration (`now`), so a merge of sources is a row the gate releases
+-- | at once and keeps current. Every feed is answered with the last value
+-- | known (Answer at `×→×`), and each change the platform reports is an
+-- | emission outside any feed — the editor whose user is the platform. A
+-- | fact the platform may never supply is a variant with its named cases
+-- | (`geolocated`'s `located`/`unknown`/`denied`), never a `Maybe`, so the
+-- | gate never starves on it. The watch is quiet while the scope is
+-- | suspended (a detached pane) and ends when it is cancelled. Several
+-- | sources are merged, `RecordToRecord.do`, each owning its field
+-- | (here-and-now, incident-report) — the one application use of the
+-- | `×→×` merge, since every editor owns the whole row.
+source
+  :: forall @l a r r1
+   . IsSymbol l
+  => Cons l a () r1
+  => Effect a
+  -> ((a -> Effect Unit) -> Effect (Effect Unit))
+  -> PUI Web { | r } { | r1 }
+source now watch = wrap do
+  sc <- gets _.scope
+  first <- liftEffect now
+  lastRef <- liftEffect $ Ref.new first
   propRef <- liftEffect $ Ref.new Nothing
+  let row a = Record.insert (Proxy @l) a {}
   pure
-    { toUser: \_ -> Ref.read propRef >>= traverse_ (_ $ {})
-    , fromUser: \prop -> Ref.write (Just prop) propRef
+    { toUser: \_ -> do
+        a <- Ref.read lastRef
+        Ref.read propRef >>= traverse_ (_ $ row a)
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        Ref.read lastRef >>= prop <<< row
+        stop <- watch \a -> do
+          Ref.write a lastRef
+          active <- scopeActive sc
+          when active $ prop (row a)
+        onCancel sc stop
     }
 
-each :: forall @a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } {}
-each items build = atAnyRow (eachExact items build)
+-- | Where the device is: `located` with its coordinates once the platform
+-- | answers, `unknown` until then, `denied` when the user refuses or the
+-- | platform has no geolocation. Follows the device thereafter.
+geolocated
+  :: forall @l r r1
+   . IsSymbol l
+  => Cons l [ located :: { lat :: Number, lng :: Number }, unknown :: {}, denied :: {} ] () r1
+  => PUI Web { | r } { | r1 }
+geolocated = source @l (pure (inj (Proxy @"unknown") {})) \tell ->
+  watchPosition (tell <<< inj (Proxy @"located")) (tell (inj (Proxy @"denied") {}))
+
+-- | Whether the browser is online, as it reports it, followed as it changes.
+online
+  :: forall @l r r1
+   . IsSymbol l
+  => Cons l [ online :: {}, offline :: {} ] () r1
+  => PUI Web { | r } { | r1 }
+online = source @l (onlineCase <$> isOnline) \tell -> watchOnline (tell <<< onlineCase)
+  where
+  onlineCase on = if on then inj (Proxy @"online") {} else inj (Proxy @"offline") {}
+
+-- | The wall clock as a fact — local hours, minutes and seconds, read every
+-- | `period` — the `×→×` sibling of `ticks`, which is the clock as an
+-- | event. Known at registration; a hole period never ticks (L18).
+clock
+  :: forall @l r r1
+   . IsSymbol l
+  => Cons l { hours :: Int, minutes :: Int, seconds :: Int } () r1
+  => { ms :: Number }
+  -> PUI Web { | r } { | r1 }
+clock period = source @l localTime \tell ->
+  if isHole period then pure (pure unit) else everyMs period.ms (localTime >>= tell)
+
+-- | The colour scheme the user prefers, `light` or `dark`, followed as the
+-- | system setting changes.
+colorScheme
+  :: forall @l r r1
+   . IsSymbol l
+  => Cons l [ light :: {}, dark :: {} ] () r1
+  => PUI Web { | r } { | r1 }
+colorScheme = source @l (schemeCase <$> prefersDark) \tell -> watchColorScheme (tell <<< schemeCase)
+  where
+  schemeCase dark = if dark then inj (Proxy @"dark") {} else inj (Proxy @"light") {}
 
 -- Entry point
 

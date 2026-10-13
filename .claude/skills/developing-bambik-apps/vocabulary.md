@@ -26,9 +26,8 @@ and emitters of a catalogue — are in the design-system module header
 | You are writing | Word | Demo | Read |
 | --- | --- | --- | --- |
 | stages one after another | `Semigroupoid.do` (`import QualifiedDo.Semigroupoid as Semigroupoid`) | counter | writing.md *The pipeline* |
-| a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count"`; several, `prefixed ( RecordToRecord.do … ) $ …` | counter; tip-calculator | writing.md *The pipeline*; `PUI` |
-| displays after a stage whose row flows on | `slider @"Split between" # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch | writing.md *The pipeline* |
-| displays and chrome reading one record side by side | `RecordToRecord.do` — `div $ RecordToRecord.do` | espresso-bar, loan-calculator, meeting-booker, shopping-cart | `Data.Profunctor.Row.RecordToRecord` |
+| a display among stages | `headline4 (text countLine)` on its own line, where it sits on the screen | counter, tip-calculator, stopwatch | writing.md *The pipeline* |
+| displays and chrome one after another in an element | `div $ Semigroupoid.do …` | espresso-bar, loan-calculator, meeting-booker, shopping-cart | writing.md *The pipeline* |
 | several emitters over one record | `RecordToVariant.do` | cashbox, stopwatch, crud | `Data.Profunctor.Row.RecordToVariant` |
 | a stage on one event case | `( … ) # atCase @"Create"`, the stage owning the case in the fold block | crud, cashbox, reorder | writing.md *Stages* |
 | one status per outcome case | `VariantToRecord.do` | flight-booker, order-form | `Data.Profunctor.Row.VariantToRecord` |
@@ -56,10 +55,10 @@ and emitters of a catalogue — are in the design-system module header
 | a sentence composed from several fields | `headline6 $ text balanceLine` | cashbox | writing.md *Code style* → *Types and values* |
 | a case label read as copy | `caseText` (`Data.Variant.Case`), in the view model module | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
 | a number as a bar, gauge or stars | `linearProgress elapsedFraction`; `progressBar seatOccupancy` | timer; meeting-booker | the design-system module |
-| fixed copy introducing what follows — a heading, a caption | `headline4 $ staticText "Create account"` as a block line; inside one element, `label $ prefixed (staticText "°C ") $ input @"celsius" "text"` | signup-form; temperature-converter-html | writing.md *Code style* → *Types and values*; `PUI` |
+| fixed copy introducing what follows — a heading, a caption | `headline4 $ staticText "Create account"` as a block line; inside one element, `label $ Semigroupoid.do { staticText "°C "; input @"celsius" "text" }` | signup-form; temperature-converter-html | writing.md *Code style* → *Types and values*; `PUI` |
 | fixed copy on its own — a note | `listItem $ staticText "…"` | photo-gallery | writing.md *Components* |
 | a rule between things | `divider $ …`, `hr $ …` — shown only while both sides render something | meeting-booker, photo-gallery, restaurant-menu | writing.md *Code style* → *Types and values*; `PUI.Web` |
-| a pane for one state of the model | `# pane @"faulty" readout`; `# paneAt @"serving" @"display"` | calculator, flight-booker, checkout; ticket-dispenser | writing.md *Conditional visibility* |
+| a pane for one state of the model | `# inCase @"faulty" readout`; `# inCaseAt @"serving" @"display"` — displays and editors alike | calculator, flight-booker, checkout; ticket-dispenser | writing.md *Conditional visibility* |
 | a list, displayed | `ul $ ( li $ text lapLine ) # foreach @"number" lapRows` | stopwatch | writing.md *Collections* |
 | a card that edits nothing | `card $ body1 (text summaryLine)` | order-form, product-review | writing.md *Components* |
 | a readout that settles before it redraws | `# debounced itinerarySettleTime` | flight-booker | `PUI` |
@@ -70,7 +69,7 @@ and emitters of a catalogue — are in the design-system module header
 | a class that depends on the value | `# clWhen isCompleted "todo-done"` | todo-list | `PUI.Web` |
 | structure that varies with the value | `dynamic documentView`; `each items …`; `el ("h" <> show h.level)` | markdown-previewer | `PUI.Web` |
 | an element with nothing in it | `static (span >>> cl "dish-dots")` | restaurant-menu, reorder | `PUI` |
-| a leaf with no face | `blank` | circle-drawer, color-mixer | `PUI` |
+| an element whose whole face is its decorators | `… $ identity` — the wire, decorated (`SVG.circle >>> attrWith "fill" circleFill $ identity`) | circle-drawer, color-mixer | writing.md *Components* |
 
 ## Editing
 
@@ -123,20 +122,21 @@ and emitters of a catalogue — are in the design-system module header
 | a status per outcome case | `snackbar @"booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
 | narrate an event while passing it on | `snackbar @"Charge card" chargingLine # observed` | payment, inbox | `PUI` |
 | confirm before the flow continues | `confirmed "Refund" "Refund the customer?" $ …` | cashbox | writing.md *Modals* |
+| a fact the platform knows and the app cannot seed — position, connectivity, the time, the colour scheme, a chosen file | `geolocated @l`, `online @l`, `clock @l period`, `colorScheme @l` (`PUI.Web`), `filePicked @l` (`PUI.Web.HTML`), merged `RecordToRecord.do` | here-and-now, incident-report | writing.md *The pipeline*; `PUI.Web` (`source`) |
 | a dialog of choices | `dialog "Delete the last message?" $ RecordToVariant.do …` | inbox | writing.md *Modals* |
 | an informational dialog | `simpleDialog "Got it" "About this dashboard" (…)` | weather | writing.md *Modals* |
-| discard an assembly's output deliberately | `# muted` | scoreboard, order-dashboard | writing.md *Stages* |
 
 ## Collections
 
 | What comes in → what goes out | Word | Demo | Read |
 | --- | --- | --- | --- |
-| the array → each element's event | `# foreachAt @"key" @"cells"`; `# foreach @"key" (const keyPad)` | cells; calculator, tic-tac-toe, shopping-cart | writing.md *Collections* |
+| the array → each element shown, the row passing on | `# foreach @"number" lapRows`; a stored array `# actedAt @"key" @"cells"` | stopwatch; cells | writing.md *Collections* |
+| the array → each element's event | `clicked @"Key entered" @"key" ( … ) # anyOf @"key" (const keyPad)`; a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe, shopping-cart; cells | writing.md *Collections* |
 | the array → the array, decided jointly or edited in place | `# acted @"name"`; `# acted @"id"`; a stored array `# actedAt @"id" @"Setlist"` | potluck; reorder; reorder-html | writing.md *Collections* |
 | one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
 | one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
 | a selectable list (MDC2, MDC3) | `listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |
-| a selectable list elsewhere | `clicked @"Person picked" @"key" (…) # foreach @"key" …` | crud (html) | writing.md *Collections* |
+| a selectable list elsewhere | `clicked @"Person picked" @"key" (…) # anyOf @"key" …` | crud (html) | writing.md *Collections* |
 
 ## View model not written yet
 
@@ -145,6 +145,6 @@ and emitters of a catalogue — are in the design-system module header
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
 | the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, nothing unknown | writing.md *Writing order* |
 | the model row | `# looped @( … ) # with seed` (counter, inbox); `# looped @( … )` after a load action folded in (crud, order-form) | writing.md *Types and values* |
-| a derived row, where it is introduced | a classifier's first pane `# pane @l @( … ) f` (checkout), `# action @( … ) f` (flight-booker), `# foreach @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
+| a derived row, where it is introduced | a classifier's first pane `# inCase @l @( … ) f` (checkout), `# action @( … ) f` (flight-booker), `# foreach @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

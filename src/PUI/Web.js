@@ -468,3 +468,76 @@ export const hole = new Proxy(function () {}, {
   apply: () => holeReached("called"),
   construct: () => holeReached("constructed"),
 });
+
+// Sources (see `source` in PUI.Web): each watch returns the effect that ends it.
+
+// watchPosition :: ({ lat, lng } -> Effect Unit) -> Effect Unit -> Effect (Effect Unit)
+export function watchPosition(located) {
+  return function (denied) {
+    return function () {
+      if (!navigator.geolocation) { denied(); return function () {}; }
+      const id = navigator.geolocation.watchPosition(
+        (pos) => located({ lat: pos.coords.latitude, lng: pos.coords.longitude })(),
+        () => denied(),
+        { enableHighAccuracy: false, maximumAge: 60000 });
+      return function () { navigator.geolocation.clearWatch(id); };
+    };
+  };
+}
+
+export function isOnline() { return navigator.onLine; }
+
+// watchOnline :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
+export function watchOnline(tell) {
+  return function () {
+    const on = () => tell(true)();
+    const off = () => tell(false)();
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return function () { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  };
+}
+
+export function localTime() {
+  const d = new Date();
+  return { hours: d.getHours(), minutes: d.getMinutes(), seconds: d.getSeconds() };
+}
+
+// everyMs :: Number -> Effect Unit -> Effect (Effect Unit)
+export function everyMs(ms) {
+  return function (action) {
+    return function () {
+      const id = setInterval(action, ms);
+      return function () { clearInterval(id); };
+    };
+  };
+}
+
+const darkQuery = () => window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+
+export function prefersDark() { const q = darkQuery(); return !!(q && q.matches); }
+
+// watchColorScheme :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
+export function watchColorScheme(tell) {
+  return function () {
+    const q = darkQuery();
+    if (!q) return function () {};
+    const handler = (e) => tell(e.matches)();
+    q.addEventListener("change", handler);
+    return function () { q.removeEventListener("change", handler); };
+  };
+}
+
+// onFilePicked :: Node -> ({ name, size, mime } -> Effect Unit) -> Effect (Effect Unit)
+export function onFilePicked(node) {
+  return function (tell) {
+    return function () {
+      const handler = () => {
+        const f = node.files && node.files[0];
+        if (f) tell({ name: f.name, size: f.size, mime: f.type })();
+      };
+      node.addEventListener("change", handler);
+      return function () { node.removeEventListener("change", handler); };
+    };
+  };
+}

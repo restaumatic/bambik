@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, foreach, joined, looped, prefixed, suffixed, ticks, unshown, with)
+import PUI (fold, foreach, looped, ticks, unshown, with)
 import PUI.Web (providedAt, text)
 import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC3 (body, button', displaySmall)
@@ -15,18 +15,20 @@ import StopwatchViewModel (beginTiming, clearStopwatch, elapsedText, haltTiming,
 stopwatchMDC3 :: Effect Unit
 stopwatchMDC3 =
   body $ Semigroupoid.do
-    prefixed (displaySmall (text elapsedText)) $ RecordToVariant.do
+    displaySmall (text elapsedText)
+    RecordToVariant.do
       unshown @"Clock ticked" # ticks tickPeriod
-      button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase" # joined @"Start"
-      button' @"Stop" { icon: "stop" } # providedAt @"timing" @"phase" # joined @"Stop"
-      button' @"Lap" { icon: "flag" } # providedAt @"timing" @"phase" # joined @"Lap"
-      button' @"Reset" { icon: "replay" } # providedAt @"halted" @"phase" # joined @"Reset"
-    ( VariantToRecord.do
+      button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"
+      button' @"Stop" { icon: "stop" } # providedAt @"timing" @"phase"
+      button' @"Lap" { icon: "flag" } # providedAt @"timing" @"phase"
+      button' @"Reset" { icon: "replay" } # providedAt @"halted" @"phase"
+    VariantToRecord.do
       unshown @"Clock ticked" # fold tick
       unshown @"Start" # fold beginTiming
       unshown @"Stop" # fold haltTiming
       unshown @"Lap" # fold recordLap
-      unshown @"Reset" # fold clearStopwatch ) # suffixed (ul $ ( li $ text lapLine ) # foreach @"number" @( number :: Int, tenths :: Int ) lapRows)
+      unshown @"Reset" # fold clearStopwatch
+    ul $ ( li $ text lapLine ) # foreach @"number" @( number :: Int, tenths :: Int ) lapRows
   # looped
     @( phase :: [ halted :: {}, timing :: {} ]
      , elapsedTenths :: Int

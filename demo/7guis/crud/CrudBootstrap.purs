@@ -6,7 +6,7 @@ import CrudViewModel (createPerson, deletePerson, entries, isSelected, loadPeopl
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, captured, fold, foreach, joined, looped, unshown)
+import PUI (action, anyOf, atCase, captured, fold, joined, looped, unshown)
 import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, listGroup, listGroupItem, textField, toast)
 import PUI.Web (cl, clicked, clWhen, text, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,7 +22,7 @@ crudBootstrap =
       textField @"Surname"
       RecordToVariant.do
         ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
-          ( clicked @"Person picked" @"key" ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # foreach @"key"
+          ( clicked @"Person picked" @"key" ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # anyOf @"key"
             @( key :: Int
              , "Name" :: String
              , "Surname" :: String

@@ -1,4 +1,4 @@
-module OrderFormViewModel (deliveryAddress, distanceLine, distanceOf, estimateDistance, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine) where
+module OrderFormViewModel (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine) where
 
 import Prelude ((<>), ($), (==), (/=), bind, const, discard, pure, show)
 
@@ -10,9 +10,19 @@ import Effect.Console (log)
 import Effect.Random (randomInt)
 
 estimateDistance
-  :: { "Address" :: String }
+  :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+     , "Fulfillment" :: { "Address" :: String
+                        , "Mode" :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+                        , "Table" :: String
+                        , "Time" :: String
+                        , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+                        }
+     , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+     , "Kitchen" :: { "Remarks" :: String }
+     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     }
   -> Aff [ "Distance estimated" :: { km :: Int, to :: String } ]
-estimateDistance { "Address": address } = do
+estimateDistance { "Fulfillment": { "Address": address } } = do
   liftEffect $ log $ "estimating the distance to " <> address
   delay (Milliseconds 700.0)
   km <- liftEffect $ randomInt 1 6
@@ -54,7 +64,7 @@ setDistance
      }
 setDistance { event, model: order } = order { "Fulfillment" = order."Fulfillment" { distance = .estimated event } }
 
-deliveryAddress
+fulfillmentMode
   :: { "Customer" :: { "First name" :: String, "Last name" :: String }
      , "Fulfillment" :: { "Address" :: String
                         , "Mode" :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
@@ -66,12 +76,8 @@ deliveryAddress
      , "Kitchen" :: { "Remarks" :: String }
      , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
      }
-  -> [ "Delivery" :: { "Address" :: String }, "Dine in" :: {}, "Takeaway" :: {} ]
-deliveryAddress order = match
-  { "Dine in": \_ -> ."Dine in" {}
-  , "Takeaway": \_ -> ."Takeaway" {}
-  , "Delivery": \_ -> ."Delivery" { "Address": order."Fulfillment"."Address" }
-  } order."Fulfillment"."Mode"
+  -> [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+fulfillmentMode order = order."Fulfillment"."Mode"
 
 staleDistanceForgotten
   :: { "Address" :: String
@@ -91,18 +97,15 @@ staleDistanceForgotten r@{ "Address": address, distance } = match
   , unknown: \_ -> r
   } distance
 
-distanceOf
+distanceLine
   :: { "Address" :: String
      , "Mode" :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
      , "Table" :: String
      , "Time" :: String
      , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
      }
-  -> [ estimated :: { km :: Int }, unknown :: {} ]
-distanceOf { distance } = match { estimated: \e -> .estimated { km: e.km }, unknown: const (.unknown {}) } distance
-
-distanceLine :: { km :: Int } -> String
-distanceLine { km } = "Distance " <> show km <> " km"
+  -> String
+distanceLine { distance } = match { estimated: \e -> "Distance " <> show e.km <> " km", unknown: const "" } distance
 
 orderLine
   :: { "Customer" :: { "First name" :: String, "Last name" :: String }

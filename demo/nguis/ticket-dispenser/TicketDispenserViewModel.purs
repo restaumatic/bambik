@@ -1,6 +1,8 @@
-module TicketDispenserViewModel (emptyQueue, firstTicketHint, issue, noTicketLine, servingLine, ticketLine) where
+module TicketDispenserViewModel (emptyQueue, issue, servingLine, ticketLine) where
 
-import Prelude ((+), (<>), show)
+import Prelude ((+), (<>), const, show)
+
+import Data.Variant (match)
 
 emptyQueue :: { display :: [ serving :: { number :: Int }, waiting :: {} ], next :: Int }
 emptyQueue = { display: .waiting {}, next: 1 }
@@ -10,14 +12,9 @@ issue
   -> { display :: [ serving :: { number :: Int }, waiting :: {} ], next :: Int }
 issue { next } = { display: .serving { number: next }, next: next + 1 }
 
-ticketLine :: { number :: Int } -> String
-ticketLine { number } = "#" <> show number
+ticketLine :: { display :: [ serving :: { number :: Int }, waiting :: {} ], next :: Int } -> String
+ticketLine { display } = match { serving: \{ number } -> "#" <> show number, waiting: const "" } display
 
-servingLine :: { number :: Int } -> String
-servingLine { number } = "Now serving ticket " <> show number <> "."
+servingLine :: { display :: [ serving :: { number :: Int }, waiting :: {} ], next :: Int } -> String
+servingLine { display } = match { serving: \{ number } -> "Now serving ticket " <> show number <> ".", waiting: const "" } display
 
-noTicketLine :: {} -> String
-noTicketLine _ = "—"
-
-firstTicketHint :: {} -> String
-firstTicketHint _ = "Press the button to draw the first ticket."

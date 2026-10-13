@@ -42,7 +42,7 @@ system.
   stays blank until the fields it waits for have values; a seed gives
   them one.
 - **pane** — a component that exists only while the model is in one
-  case (`# pane @"estimated" distanceOf`).
+  case (`# inCase @"estimated" distanceOf`).
 - **anchor** — the one model symbol a view line names: a field, a case,
   a copy function, or nothing (see [Code style](#code-style)).
 - **view model module** — the module beside the view holding the seed
@@ -59,22 +59,25 @@ system.
 The app is one pipeline composed with `Semigroupoid.do`
 (`import QualifiedDo.Semigroupoid as Semigroupoid`): each line's output
 is the next line's input, so code order is screen order *and* data
-order. A **stage** (an editor, an event ensemble, a fold) is a line as it
-stands. A line that **shows data** — a display, a static, a pane, a list
-of displays: it outputs `{}` — changes no data, so it is not a stage but a
-decorator over the stage it stands before, written `prefixed d $ stage`
-(counter's `prefixed (headline4 (text countLine)) $ button @"Count"`);
-several in a row are one `RecordToRecord.do` group under one `prefixed`
-(tip-calculator). Displays **after** a stage whose row must flow on —
-tip-calculator's totals after the last slider, stopwatch's laps after the
-folds — trail it: `slider @"Split between" # suffixed ( RecordToRecord.do
-… )`. A display that ends a block, or the whole content of a pane, is
-written plainly: nothing follows it, so there is nothing to decorate. Four more qualified `do` blocks put several components over one
-value, one per shape:
+order. Every line is a **stage**: an editor, a display, a static, a pane,
+a list, an event ensemble, a fold. A line that **shows data** — a
+display, a static, a pane of displays, a list of displays — changes no
+data: it releases the row it was fed, so the next line is fed what it
+shows. It is written in its place on the screen and nothing else
+(counter's `headlineLarge (text countLine)` above its `button @"Count"`;
+tip-calculator's totals after its last slider; stopwatch's lap list after
+the folds). Three more qualified `do` blocks put several components over
+one value, one per shape:
 
-- `RecordToRecord.do` (×→×) — chrome and displays reading one record
-  together (espresso-bar's caffeine readout, shopping-cart's rows).
-  Never an editor: editors are pipeline stages ([Components](#components)).
+- `RecordToRecord.do` (×→×) — components over one record side by
+  side, each owning the fields it releases: **sources** — facts the
+  platform knows and the app cannot seed, `geolocated @"position"`,
+  `online @"connection"`, `clock @"time" clockPeriod`, `colorScheme
+  @"scheme"`, the capture `filePicked @"Photo"` — each owning its one
+  field, merged into the row the lines below read (here-and-now,
+  incident-report). Every editor owns the whole row, so editors never
+  merge, and a display owns the row it releases, so two displays
+  compose ([Components](#components)).
 - `RecordToVariant.do` (×→+) — a row of buttons over the model
   (cashbox, stopwatch).
 - `VariantToVariant.do` (+→+) — one handler per event case. No demo
@@ -175,21 +178,21 @@ fails as `TypesDoNotUnify` on the options record.
 
 ## Stages
 
-An editor is a stage, and a display or chrome is a line that shows data,
-as they stand. Everything else takes a trailing word that says what it is
-for:
+An editor, a display or chrome is a stage as it stands. Everything else
+takes a trailing word that says what it is for:
 
 | The line | Write | Demo |
 | --- | --- | --- |
 | a display or chrome, always there | `headlineSmall $ text orderLine` | order-form |
-| a display shown in one case | `text distanceLine # pane @"estimated" distanceOf` | order-form |
+| an element whose whole face is its decorators | `SVG.circle >>> attrAt @"x" "cx" >>> attrWith "fill" circleFill $ identity` — the wire, decorated | circle-drawer, color-mixer |
+| a display shown in one case | `text ticketLine # inCaseAt @"serving" @"display"` | ticket-dispenser |
 | an editor that exists in one case | `filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"` | order-form |
 | a button that exists in one case | `button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"` | stopwatch |
-| a list rendered from the row | `ul $ (li $ text lapLine) # foreach @"number" lapRows` | stopwatch |
-| a display before a stage | `prefixed (headline4 (text countLine)) $ button @"Count"` | counter |
-| several displays before a stage | `prefixed ( RecordToRecord.do … ) $ slider @"Split between"` | tip-calculator, weather |
-| displays after a stage whose row flows on | `slider @"Split between" # suffixed ( RecordToRecord.do … )` | tip-calculator, stopwatch |
-| a list element echoing the row it shows | `prefixed (listItem $ text flightLine) identity # dispatched …` | departures, scoreboard |
+| a list of displays rendered from the row | `ul $ (li $ text lapLine) # foreach @"number" lapRows` | stopwatch |
+| a list of displays over an array the model stores | `( … ) # actedAt @"id" @"Setlist"` | reorder |
+| a list whose elements emit | `clicked @"Key entered" @"key" ( … ) # anyOf @"key" keyPad`; over a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe; cells |
+| a list element echoing the row it shows | `( listItem $ text flightLine ) # dispatched …` | departures, scoreboard |
+| a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, merged in `RecordToRecord.do` | here-and-now, incident-report |
 | content that waits for the user to confirm | `confirmed "Refund" "Refund the customer?" $ …` | cashbox |
 | an event folded into the model | `unshown @"Add" # fold addTodo`, one per case, each opened by its status, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
@@ -200,9 +203,13 @@ for:
 | an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
 | a fold nothing needs telling about | `unshown @"Todo toggled" # fold toggleTodo`, `unshown @"Clock ticked" # fold tick` | todo-list, timer, stopwatch |
 
-Content of the panes and of `confirmed` must output `{}`. An
-assembly that emits something you mean to drop is dropped **in
-writing**, with `# muted` (scoreboard's summary list).
+A pane's content, a list's element and `confirmed`'s content release
+the row they are fed: a display does so by itself. An editor inside a
+pane edits the model (`inCase`); an editor inside a list of displays
+(`foreach`) or inside `clicked` is a mistake — its edits go nowhere —
+and `npm run check-view-model` rejects it. Nothing is discarded: a
+chain whose output is not the model — departures' `dispatched` stream —
+ends the block, and what feeds it is a source (`clock`), not a loop.
 
 A display's policy is a business decision about how sure the business
 must be that the user read it: a readout, then a toast, then a banner,
@@ -224,8 +231,8 @@ An app is one loop through the four shapes, tied once by `# looped @( … ) # wi
 
 ```purescript
 Semigroupoid.do
-  prefixed (headline4 (text countLine)) $     -- ×→× a display, decorating the stage it stands before
-    RecordToVariant.do                        -- ×→+ the event ensemble: every emitter and pane
+  headline4 (text countLine)                  -- ×→× a display: shows the row and passes it on
+  RecordToVariant.do                          -- ×→+ the event ensemble: every emitter and pane
     button @"Add"
     listOf @"Todo toggled" … # joined @"Todo toggled"   --   an event with a payload of its own, joined with the model
   VariantToRecord.do                          -- +→× the folds, one per case, each opened by its status
@@ -301,21 +308,23 @@ compile error at `body` naming the missing fields.
 A component that exists only sometimes is a **pane over a case**, never
 a predicate in the view and never a `Maybe`. The argument is a business
 function that classifies the model into a variant; the pane exists while
-the variant is at the named case and is given that case's payload:
-`pane` for a display, `inCase` for an editor, `provided` for an
+the variant is at the named case, and its content is fed the model, as
+every stage is: `inCase` for displays and editors, `provided` for an
 emitter.
 
 When the state is stored in the model as a variant, the pane names the
-case and then the field, both by label — `providedAt`, `paneAt`,
-`inCaseAt` (stopwatch's `# providedAt @"halted" @"phase"`,
-flight-booker's `# inCaseAt @"return" @"Flight type"`) — typed by the
-model row the seed line declares. When it is derived, one classifier
-derives it, naming every case and giving each case exactly what its
-pane shows — checkout's `checkoutStep`, calculator's `readout`, inbox's
+case and then the field, both by label — `providedAt`, `inCaseAt`
+(stopwatch's `# providedAt @"halted" @"phase"`, ticket-dispenser's
+`text ticketLine # inCaseAt @"serving" @"display"`, flight-booker's
+`# inCaseAt @"return" @"Flight type"`) — typed by the model row the seed
+line declares. When it is derived, one classifier derives it, naming
+every case — checkout's `checkoutStep`, calculator's `readout`, inbox's
 `messageView` — and the classifier's first pane declares those cases
-(`# provided @"reading" @( reading :: { sender :: String, subject :: String, body :: String }, browsing :: {} ) messageView`);
+(`# provided @"reading" @( reading :: {}, browsing :: {} ) messageView`);
 its later panes name only their case. Two panes over one classifier
-can never both be on screen.
+can never both be on screen. A case carries a payload only where the
+business needs one; what a pane shows, its read functions read from the
+model (inbox's `subjectLine` finds the open message itself).
 
 A `Maybe` a pane depends on is a two-case state with unnamed cases.
 Name them: order-form's distance is
@@ -352,7 +361,7 @@ the pick reaches the content directly (photo-gallery).
 
 - **Keyed and kept.** `foreach @"key" rowsOf` and `listOf @l @k` render
   one element per row, identified by a key field of the row; an array
-  the model stores is named instead of projected (`foreachAt @"key"
+  the model stores is named instead of projected (`anyOfAt @"key"
   @"cells"`, `actedAt @"id" @"Setlist"`, `listOfAt @l @k @"messages"`). An element
   whose key survives a change is updated in place and keeps its focus
   and local state; a reordered list moves elements with their keys. Rows
@@ -451,7 +460,7 @@ the anchor's own position, and the anchor says what the line is:
   label is the model field the line edits (`filledTextField @"First
   name"`, `group @"Customer" $ …`);
 - a **case** — the type argument of an emitter, pane or status
-  (`button @"Submit order"`, `# pane @"estimated" distanceOf`,
+  (`button @"Submit order"`, `# inCase @"estimated" distanceOf`,
   `snackbar @"booked" bookedLine`);
 - a **copy function** — the positional argument of a display
   (`text balanceLine`, `imagePane developedShot`);
@@ -465,7 +474,7 @@ accessor: a display shows it (`textAt @"title"`, todo-list), a decorator
 sets it (`attrAt @"x" "cx"`, circle-drawer), a click reports it
 (`clicked @"Cell picked" @"key"`, cells), a pane is in one of its cases
 (`# providedAt @"halted" @"phase"`, stopwatch), a collection repeats it
-(`# foreachAt @"key" @"cells"`, cells; `listOfAt @"Message opened"
+(`# anyOfAt @"key" @"cells"`, cells; `listOfAt @"Message opened"
 @"id" @"messages"`, inbox). Each `…At` word is the sibling of a word
 that takes a function, and the function form is for what is derived —
 a copy function, a classifier, a projection, a read deeper than one
@@ -562,7 +571,7 @@ text is computed, a chrome line nothing.
   **derived row** is a shape no model field holds, and the line that
   introduces it declares it after its anchor:
   - a classifier's cases, on its first pane
-    (`# pane @"cart" @( cart :: { item :: String }, shipping :: { address :: String }, payment :: { card :: String } ) checkoutStep`);
+    (`# provided @"cart" @( cart :: {}, shipping :: {}, payment :: {} ) checkoutStep`);
   - an action's outcome, where no status or fold fixes it (`# action @( "Flight booked" :: …, "Booking rejected" :: String ) submit`, flight-booker);
   - a projection's element row
     (`# foreach @"name" @( name :: String, mix :: … ) (const palette)`,
@@ -626,18 +635,23 @@ text is computed, a chrome line nothing.
   and is a value, never a label, since it names no field and no case:
   `staticText "Hours"`. A static that introduces what follows — a
   heading over its section, a caption before its field — is written
-  first: in a block it is a line like any display (signup-form's
-  `headline4 $ staticText "Create account"`); inside one element, where
-  there is no block, it is `prefixed` over what it introduces
-  (`label $ prefixed (staticText "°C ") $ input @"celsius" "text"`,
+  first, a line like any display (signup-form's `headline4 $ staticText
+  "Create account"`; inside one element, a block of two lines: `label $
+  Semigroupoid.do { staticText "°C "; input @"celsius" "text" }`,
   temperature-converter-html). A **separator** is written the same way,
   leading over what it introduces (`divider $ slider @"Attendees" #
   inCaseAt @"chosen" @"Room"`, meeting-booker), and shows itself only
   between things: while something is rendered before it and what it
   introduces renders something — never above an absent pane or an empty
-  list. A **constant** shows only through data — a sentence's glue,
-  a pane's message — and lives in a copy function: `text faultLine #
-  pane @"faulty" readout` (calculator). Text that *is* data (a parsed markdown run) is
+  list. A static inside a pane is still a static: the pane decides when
+  it shows, the text reads nothing (`staticText "Error" # inCaseAt
+  @"faulty" @"condition"`, calculator; `caption1 $ staticText "Seats
+  taken"`, meeting-booker) — a copy function that ignores its row is a
+  static written in the wrong module. A **constant** is fixed copy that
+  shows only through data — a sentence's glue, or a line carrying a
+  business value — and lives in the copy function that reads it (`text
+  refundLine`, cashbox: the refund amount belongs to the view model, not
+  the view). Text that *is* data (a parsed markdown run) is
   `staticText` too.
 - **A label is read back, never restated.** A case label is the copy it
   draws, so write it as the exact copy the line needs
@@ -869,8 +883,7 @@ in the message, the one the line wants and the one it got, and look
 | The message | Reported at | The mistake | The fix |
 | --- | --- | --- | --- |
 | the model row against `()` | the whole app expression | the loop has no seed: the entry feeds only `{}` | close the loop with `# with seed` (counter) |
-| the model row against `()`, `while matching label "Count"` | the status or fold of that case | a display stands as a line of its own before the emitter, so it passes on `{}` and the emitter replays it | make it `prefixed (…) $` over the line after it (counter) |
-| `()` against `( event :: …, model :: … )`, `while matching label "Start"` | the fold of that case | an emitter inside a pane lacks `# joined @"Start"`, so it replays the pane's payload instead of the model | add `# joined` to the emitter (stopwatch) |
+| the model row against `( event :: …, model :: … )`, `while matching label "Start"` | the fold of that case | an emitter inside a pane is `# joined`, but it already replays the model: `joined` is for an emitter fed something narrower, a list element or a canvas | drop the `# joined` and take the model in the handler (stopwatch) |
 | `( "Cout" :: … )` against `( "Count" :: … )` | the fold | one case spelled two ways | spell the case the same on the emitter and its fold |
 | `( "Reset" :: … )` against `( … )` | the emitter | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `unshown @"Clock ticked" # fold tick`), or remove the emitter |
 | `( size :: Int … )` against `( … )` | the seed line | a business function names a field the model does not have | copy the signature from the hole its line reports ([Writing order](#writing-order)) |
