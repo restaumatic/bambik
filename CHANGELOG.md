@@ -56,6 +56,12 @@ Before 2026-07 the history is the git log.
   emitters and the folds with the untouched cases passed through — is
   gone from the demos (crud, order-form, espresso-bar, cashbox, whose
   dialogs now own their cases in the fold block).
+- **`subResolving` and `subRetaining` are deleted**, with `splitRow` and
+  their two `BusinessOptics` examples: the last of the sub-row family
+  (one `dimap` around each shape's strength, the background threaded
+  past a stage as a case or a field), reached by no demo — an app keeps
+  its background as model fields. `Shutter`/`Reel` stay as the
+  value-level optics; `debounced` still stands on `Resolving`.
 
 ## 2026-10-11, last
 

@@ -10,8 +10,7 @@
 -- |   * **shape class** — `VariantToRecord`, the binary **merge**: the
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`).
--- |   * **free functions** — over the strength: `subRetaining` (a
--- |     sub-variant, the background wrapped as a field); over `Category`:
+-- |   * **free functions** — over `Category`:
 -- |     `fold @l f` (one case folded into the record, `f` of its payload —
 -- |     the merge pinned at its unit, under `atCase @l`; a loop's folds, one
 -- |     per case, merge here beside the statuses). The co-strength
@@ -24,8 +23,9 @@
 -- | the mixed modules hold only their strength, their trace and the words
 -- | that genuinely span both sides.
 -- | The variant-input words `atCase` and `forCase` are therefore
--- | `VariantToVariant`'s. A label `@w` appears exactly where a row is
--- | wrapped as one field to cross the shape change (`subRetaining`).
+-- | `VariantToVariant`'s. The strength `Retaining` has no row form here
+-- | either: no app shape threads a variant's remainder through a stage as
+-- | a field (CHANGELOG, 2026-10-13).
 -- |
 -- | ## Laws at `+→×`
 -- |
@@ -82,24 +82,16 @@ module Data.Profunctor.Row.VariantToRecord
   , variantToRecord
   , bind
   , discard
-  , subRetaining
   , unshown
   )
   where
 
 import Control.Category (class Category, identity)
-import Data.Lens.Reel (reelE)
 import Data.Profunctor (class Profunctor, lcmap)
-import Data.Profunctor.Retaining (class Retaining)
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, splitVariant)
-import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Profunctor.Row (class OwnedVariantInputs)
 import Data.Function (const)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable)
 import Prim.Row (class Cons)
-import Record.Unsafe (unsafeSet)
-import Type.Proxy (Proxy(..))
 
 class Profunctor p <= VariantToRecord p where
   variantToRecord
@@ -126,25 +118,6 @@ discard
   -> (Unit -> p [ | v2 ] { | r })
   -> p [ | v ] { | r }
 discard first cont = bind first (\_ -> cont unit)
-
--- | Focus a sub-variant of the input, wrapping the background into output field `w`.
-subRetaining
-  :: forall @w p v1 b v r1 r
-   . Retaining p
-  => IsSymbol w
-  => ExclusiveRows v1 b v
-  => Contractable v v1
-  => Contractable v b
-  => Cons w [ | b ] r1 r
-  => p [ | v1 ] { | r1 }
-  -> p [ | v ] { | r }
-subRetaining g =
-  reelE
-    splitVariant
-    -- no `Lacks`: `unsafeSet` realizes the layout `Cons w [ | b ] b' s'` pins —
-    -- first-label convention, as `inj`/`on`.
-    (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
-    g
 
 -- | Case `l`, **unshown**: the faceless `+→×` leaf owning case `l` and
 -- | showing nothing of it — `blank` with a name — wherever the case came

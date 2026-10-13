@@ -38,8 +38,8 @@ import Data.Tuple (Tuple)
 -- | a terminating iteration (`tailRec`-style). It is the `identity`-pinned form
 -- | of the positional product→sum base merge
 -- | `p a b -> p c d -> p (Tuple a c) (Either b d)` (its second operand fixed
--- | to `identity`) — the product→sum analogue of how `RecordToRecord.subStrong` is the
--- | unary form of `recordToRecord`.
+-- | to `identity`) — the product→sum analogue of the unary form of
+-- | `recordToRecord`.
 -- |
 -- | With no out-of-band loop signal in the wire protocol (values are just
 -- | values), the `PUI` instance derives the branch **from time**: every
@@ -65,8 +65,7 @@ import Data.Tuple (Tuple)
 -- | is not claimed.
 -- |
 -- | This is the **bare strength** for the `× → +` shape (the analogue of
--- | `Strong`/`Choice`); the row combinator built on it is
--- | `RecordToVariant.subResolving` — exactly as `RecordToRecord.subStrong` is
--- | built on `Strong`.
+-- | `Strong`/`Choice`). Its row form, `subResolving`, was deleted unreached
+-- | (CHANGELOG, 2026-10-13); `debounced` is what stands on it.
 class Profunctor p <= Resolving p where
   resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)

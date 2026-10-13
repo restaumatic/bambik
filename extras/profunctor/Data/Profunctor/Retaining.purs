@@ -54,8 +54,7 @@ import Data.Tuple (Tuple)
 -- | not claimed.
 -- |
 -- | This is the **bare strength** for the `+ → ×` shape (the analogue of
--- | `Strong`/`Choice`); the row combinator built on it is
--- | `VariantToRecord.subRetaining` — exactly as `RecordToRecord.subStrong` is
--- | built on `Strong`.
+-- | `Strong`/`Choice`). Its row form, `subRetaining`, was deleted unreached
+-- | (CHANGELOG, 2026-10-13).
 class Profunctor p <= Retaining p where
   retain :: forall a b c. p a b -> p (Either a c) (Tuple b c)

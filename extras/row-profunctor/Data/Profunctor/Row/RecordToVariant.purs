@@ -10,8 +10,7 @@
 -- |   * **shape class** — `RecordToVariant`, the binary **merge** and
 -- |     its unit `silence`: the one genuine per-carrier primitive, with its
 -- |     qualified-do sugar (`bind`/`discard`).
--- |   * **free functions** — over the strength: `subResolving` (a
--- |     sub-record, the background escaping as a case); over `Strong`:
+-- |   * **free functions** — over `Strong`:
 -- |     `replaying @l` (replay as `Strong`'s retention) and `joined @l` (an
 -- |     event joined with the row its emitter was fed). The co-strength `Coresolving`
 -- |     has no row form here: a chain of this shape is closed by the knot
@@ -22,8 +21,10 @@
 -- | on one side sits in the diagonal module of the side it constrains, so
 -- | the mixed modules hold only their strength, their trace and the words
 -- | that genuinely span both sides.
--- | The variant-output adopter `toCase` is therefore `VariantToVariant`'s. A label `@w` appears exactly where a row is
--- | wrapped as one case to cross the shape change (`subResolving`).
+-- | The variant-output adopter `toCase` is therefore `VariantToVariant`'s.
+-- | The strength `Resolving` has no row form here either: no app shape
+-- | threads a record's remainder through a stage as a case (CHANGELOG,
+-- | 2026-10-13).
 -- |
 -- | ## Laws at `×→+`
 -- |
@@ -90,24 +91,19 @@ module Data.Profunctor.Row.RecordToVariant
   , joined
   , bind
   , discard
-  , subResolving
   , replaying
   )
   where
 
 import Control.Category (identity)
-import Data.Either (either)
-import Data.Lens.Shutter (shutterE)
 import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class RowLabels, class SharedRecordInputs, class SharedVariantOutputs, splitRow)
+import Data.Profunctor.Row (class SharedRecordInputs, class SharedVariantOutputs)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (case_, expand, inj, on)
-import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
+import Data.Variant (case_, inj, on)
+import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= RecordToVariant p where
@@ -138,25 +134,6 @@ discard
   -> (Unit -> p { | r } [ | v2 ])
   -> p { | r } [ | v ]
 discard first cont = bind first (\_ -> cont unit)
-
--- | Focus a sub-record of the input, wrapping the background into output case `w`.
-subResolving
-  :: forall @w p r1 rl b r v1 v2 v3
-   . Resolving p
-  => IsSymbol w
-  => ExclusiveRows r1 b r
-  => RowToList r1 rl
-  => FieldNames rl r r1
-  => RowLabels rl
-  => Cons w { | b } v1 v2
-  => Union v1 v3 v2
-  => p { | r1 } [ | v1 ]
-  -> p { | r } [ | v2 ]
-subResolving g =
-  shutterE
-    splitRow
-    (either expand (inj (Proxy @w)))
-    g
 
 -- | Replay the last fed row, mapped by `f`, as case `l` on each occurrence of the source.
 -- | The source is fed the row it replays, whole.

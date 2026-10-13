@@ -83,24 +83,23 @@
 -- | ```
 -- | shape        Profunctor only                 over the strength            knot
 -- | -----------  ------------------------------  ---------------------------  --------------------
--- | p {|a} {|b}  asField, muted, settled         subStrong, focusField       looped (Looping)
+-- | p {|a} {|b}  asField, muted, settled         focusField                   looped (Looping)
 -- | p [|a] [|b]  atCase, toCase, forCase         focusCase                    —
--- | p {|a} [|b]  replaying, joined               subResolving                 —
--- | p [|a] {|b}  fold                            subRetaining                 —
+-- | p {|a} [|b]  replaying, joined               —                            —
+-- | p [|a] {|b}  fold                            —                            —
 -- | ```
 -- |
 -- | The **left** column is `dimap` alone: renaming and rewrapping labels, with
 -- | nothing threaded and no state. The **middle** column carries a
--- | **background** the strength threads. The sub-row family is named for the
--- | strength it stands on, so each name is the first constraint in its own
--- | signature (`subResolving`/`subRetaining`) — a
--- | strength names the carrier *pair*, so no side is privileged, where a
--- | carrier word would be honest on the pure shapes and half-true on the
--- | mixed ones. The pure shapes add their ecosystem single-label optic
--- | (`focusField`, the Lens, also the leaf lift making every label-indexed
--- | editor a whole-row citizen; `focusCase`, the Prism). The mixed shapes
--- | have none: a single label, or a single label's complement, is the
--- | sub-row focus at a singleton row plus an adopter. The **right** column
+-- | **background** the strength threads: the pure shapes' ecosystem
+-- | single-label optics (`focusField`, the Lens, also the leaf lift making
+-- | every label-indexed editor a whole-row citizen; `focusCase`, the
+-- | Prism). The mixed shapes have none, and the sub-row family that once
+-- | stood here — `subStrong`/`subChoice`/`subResolving`/`subRetaining`,
+-- | one per shape, each `dimap` around its strength with the background
+-- | threaded past a stage — is gone: an app keeps its background as model
+-- | fields and folds every event in its loop, so no stage carries a
+-- | remainder (CHANGELOG, 2026-10-11 and 2026-10-13). The **right** column
 -- | is the **knot**: a loop through the four shapes is cut at its record
 -- | junction, where the model re-enters whole (`looped`), so the record
 -- | shape carries the one knot and the others none — an event re-enters
@@ -326,7 +325,6 @@ module Data.Profunctor.Row
   , class NoDuplicateLabelsK
   , class RowLabels
   , exactRow
-  , splitRow
   , fieldNames
   , rowLabels
   , atAnyRow
@@ -339,8 +337,6 @@ import Prelude (const, identity, (<<<), (<>))
 import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Either (Either(..))
-import Data.Foldable (foldr)
-import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
 import Data.Variant (class Contractable, contract, expand)
 import Effect.Exception.Unsafe (unsafeThrow)
@@ -354,8 +350,6 @@ import Prim.TypeError (class Fail, Above, Beside, Text)
 import Record (get) as Record
 import Record.Builder (Builder)
 import Record.Builder (buildFromScratch, insert) as Builder
-import Record.Unsafe (unsafeDelete)
-import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 
 -- =====================================================================
@@ -423,17 +417,6 @@ instance
 -- | shadow the siblings' genuine contributions.
 exactRow :: forall r rl. RowToList r rl => FieldNames rl r r => { | r } -> { | r }
 exactRow r = Builder.buildFromScratch (fieldNames (Proxy @rl) r)
-
--- | Split a fed record into a focus row `r1` and the rest: the focus is
--- | built from exactly its labels, read off the fed record, and the rest is
--- | a copy of the fed record with those labels removed — so neither half
--- | runtime-carries a field of the other. The sub-record focusing words
--- | (`subResolving`) feed their focus and retain their
--- | background through it; before (CHANGELOG, 2026-10-11) both halves were
--- | the fed record itself under a coercion, the background carrying stale
--- | copies of the focus's fields.
-splitRow :: forall r1 rl r b. RowToList r1 rl => FieldNames rl r r1 => RowLabels rl => { | r } -> Tuple { | r1 } { | b }
-splitRow s = Tuple (Builder.buildFromScratch (fieldNames (Proxy @rl) s)) (foldr unsafeDelete (unsafeUnion {} s) (rowLabels (Proxy @rl)))
 
 -- | Rows o1 and o2 carry runtime rebuild evidence for the gated merge's
 -- | exactness trim (`exactRow`). Witness lists: o1l = RowToList o1,
@@ -723,7 +706,7 @@ widenVariantOutput = rmap expand
 
 -- | Dispatch a shot into the focused sub-variant or the background — a
 -- | plain row function, no profunctor in sight, which is why it sits on the
--- | floor rather than in a shape module. `subRetaining` splits with it.
+-- | floor rather than in a shape module; the `+→+` merge splits with it.
 splitVariant
   :: forall v1 b v
    . ExclusiveRows v1 b v

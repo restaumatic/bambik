@@ -9,8 +9,8 @@ encoding, at arbitrary `s t a b`.
 
 Nothing here mentions `PUI`, a row, or a carrier. Every optic is
 `p a b -> p s t` quantified over its generating class, so the row layer's
-combinators are these optics at row granularity —
-`subResolving`/`subRetaining` a `Shutter`/`Reel`; `Colens`, `Coshutter`
+combinators were these optics at row granularity —
+`subResolving`/`subRetaining` a `Shutter`/`Reel` until 2026-10-13; `Colens`, `Coshutter`
 and `Coreel` had row forms (`feedback`, `folding`, `unfolding`) until
 2026-10-05, and `Coprism` one (`cycled`) until 2026-10-06, when the knot
 became one (`looped`).

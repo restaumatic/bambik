@@ -1,8 +1,8 @@
 -- | The **`Reel`** — the profunctor-encoded optic of
 -- | `Data.Profunctor.Retaining`'s `retain`, for the coined `+ → ×` shape.
 -- | Both the class and the optic are this library's. Its co-optic is
--- | `Data.Lens.Coreel`, and nothing here mentions a row: the row form is
--- | `Data.Profunctor.Row.VariantToRecord.subRetaining`.
+-- | `Data.Lens.Coreel`, and nothing here mentions a row; its row form,
+-- | `subRetaining`, was deleted unreached (CHANGELOG, 2026-10-13).
 -- |
 -- | Like the other coined optics: the existential constructor `reelE` is
 -- | **sound**, and completeness is **not claimed** — see
