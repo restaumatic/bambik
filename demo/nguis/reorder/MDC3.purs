@@ -1,0 +1,31 @@
+module Reorder.MDC3 (reorder) where
+
+import Prelude ((#), ($), (>>>), Unit)
+
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Effect (Effect)
+import PUI (acted, action, atCase, captured, looped, static, unshown, with)
+import PUI.Web (el, (:=))
+import PUI.Web.MDC3 (body, button', filledTextField, group, indeterminateLinearProgress, list, listItem)
+import QualifiedDo.Semigroupoid as Semigroupoid
+import Reorder (openingSetlist, rotateAction, shuffleAction)
+
+reorder :: Effect Unit
+reorder =
+  body $ Semigroupoid.do
+    group @"Setlist" $ list $
+      ( listItem $ Semigroupoid.do
+        static (el "input" >>> "type" := "checkbox")
+        filledTextField @"Title" ) # acted @"id"
+    RecordToVariant.do
+      button' @"Rotate" { icon: "sync" }
+      button' @"Shuffle" { icon: "shuffle" }
+    VariantToRecord.do
+      ( Semigroupoid.do
+        indeterminateLinearProgress # action rotateAction
+        unshown @"Setlist rotated" # captured ) # atCase @"Rotate"
+      ( Semigroupoid.do
+        indeterminateLinearProgress # action shuffleAction
+        unshown @"Setlist shuffled" # captured ) # atCase @"Shuffle"
+  # looped @( "Setlist" :: Array { id :: String, "Title" :: String } ) # with openingSetlist

@@ -69,8 +69,8 @@
     (<code>@( "Pizza" :: String )</code>) and the chrome
     (<code>headlineSmall</code>) are complete as written.</p>
 
-    <h3>src/Order.purs</h3>
-<pre><code class="language-haskell">module Order (orderApp) where
+    <h3>src/MDC3.purs</h3>
+<pre><code class="language-haskell">module Order.MDC3 (order) where
 
 import Prelude ((#), ($), Unit)
 
@@ -80,8 +80,8 @@ import PUI.Web (text)
 import PUI.Web.MDC3 (body, button, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-orderApp :: Effect Unit
-orderApp =
+order :: Effect Unit
+order =
   body $ Semigroupoid.do
     filledTextField @"Pizza"
     headlineSmall (text ?orderLine)
@@ -100,8 +100,8 @@ orderApp =
 
 <pre class="compiler">Error 1 of 4:
 
-  in module Order
-  at src/Order.purs:15:25 - 15:35 (line 15, column 25 - line 15, column 35)
+  in module Order.MDC3
+  at src/MDC3.purs:15:25 - 15:35 (line 15, column 25 - line 15, column 35)
 
     Hole 'orderLine' has the inferred type
 
@@ -116,7 +116,7 @@ orderApp =
 
 Error 2 of 4:
 
-  at src/Order.purs:17:23 - 17:37 (line 17, column 23 - line 17, column 37)
+  at src/MDC3.purs:17:23 - 17:37 (line 17, column 23 - line 17, column 37)
 
     Hole 'confirmedLine' has the inferred type
 
@@ -127,7 +127,7 @@ Error 2 of 4:
 
 Error 3 of 4:
 
-  at src/Order.purs:18:33 - 18:39 (line 18, column 33 - line 18, column 39)
+  at src/MDC3.purs:18:33 - 18:39 (line 18, column 33 - line 18, column 39)
 
     Hole 'start' has the inferred type
 
@@ -137,7 +137,7 @@ Error 3 of 4:
 
 Error 4 of 4:
 
-  at src/Order.purs:11:1 - 11:9 (line 11, column 1 - line 11, column 9)
+  at src/MDC3.purs:11:1 - 11:6 (line 11, column 1 - line 11, column 6)
 
     The 3 holes in this declaration, with one numbering of unknowns across them:
 
@@ -165,8 +165,8 @@ Error 4 of 4:
 
     <h2>2 · One decision in — one hole gone</h2>
 
-    <h3>src/OrderViewModel.purs — the view model module begins</h3>
-<pre><code class="language-haskell">module OrderViewModel (orderLine) where
+    <h3>src/Order.purs — the view model module begins</h3>
+<pre><code class="language-haskell">module Order (orderLine) where
 
 import Prelude ((&lt;&gt;))
 
@@ -174,8 +174,8 @@ orderLine :: { "Pizza" :: String } -&gt; String
 orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 </code></pre>
 
-    <h3>src/Order.purs — the display line takes its name</h3>
-<pre><code class="language-haskell">import OrderViewModel (orderLine)
+    <h3>src/MDC3.purs — the display line takes its name</h3>
+<pre><code class="language-haskell">import Order (orderLine)
   ⋮
   headlineSmall (text orderLine)
   button @"Order"
@@ -187,8 +187,8 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
 <pre class="compiler">Error 1 of 3:
 
-  in module Order
-  at src/Order.purs:18:23 - 18:37 (line 18, column 23 - line 18, column 37)
+  in module Order.MDC3
+  at src/MDC3.purs:18:23 - 18:37 (line 18, column 23 - line 18, column 37)
 
     Hole 'confirmedLine' has the inferred type
 
@@ -198,15 +198,15 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 
     You could substitute the hole with one of these values:
 
-      _."Pizza"                 :: String
-      OrderViewModel.orderLine  :: { "Pizza" :: String
-                                   }
-                                   -&gt; String
+      _."Pizza"        :: String
+      Order.orderLine  :: { "Pizza" :: String
+                          }
+                          -&gt; String
   ⋯
 
 Error 2 of 3:
 
-  at src/Order.purs:19:33 - 19:39 (line 19, column 33 - line 19, column 39)
+  at src/MDC3.purs:19:33 - 19:39 (line 19, column 33 - line 19, column 39)
 
     Hole 'start' has the inferred type
 
@@ -216,7 +216,7 @@ Error 2 of 3:
 
 Error 3 of 3:
 
-  at src/Order.purs:12:1 - 12:9 (line 12, column 1 - line 12, column 9)
+  at src/MDC3.purs:12:1 - 12:6 (line 12, column 1 - line 12, column 6)
 
     The 2 holes in this declaration, with one numbering of unknowns across them:
 
@@ -230,19 +230,19 @@ Error 3 of 3:
     <p>The confirmation copy sits where the button's payload goes — the
     button replays the row it is fed, so case <code>"Order"</code> carries the
     pipeline's row — and the compiler offers <code>_."Pizza"</code>, and even
-    <code>OrderViewModel.orderLine</code>, the function written thirty seconds
+    <code>Order.orderLine</code>, the function written thirty seconds
     earlier, whose signature is exactly this hint.</p>
 
     <h2>3 · The last hole is the seed — and the seed closes the model</h2>
 
-    <h3>src/OrderViewModel.purs — the confirmation copy joins</h3>
+    <h3>src/Order.purs — the confirmation copy joins</h3>
 <pre><code class="language-haskell">confirmedLine :: { "Pizza" :: String } -&gt; String
 confirmedLine r = r."Pizza" &lt;&gt; " is on its way!"
 </code></pre>
 
 <pre class="compiler">Error found:
-in module Order
-at src/Order.purs:19:33 - 19:39 (line 19, column 33 - line 19, column 39)
+in module Order.MDC3
+at src/MDC3.purs:19:33 - 19:39 (line 19, column 33 - line 19, column 39)
 
   Hole 'start' has the inferred type
 
@@ -258,8 +258,8 @@ at src/Order.purs:19:33 - 19:39 (line 19, column 33 - line 19, column 39)
 
     <h2>4 · Green</h2>
 
-    <h3>src/OrderViewModel.purs</h3>
-<pre><code class="language-haskell">module OrderViewModel (confirmedLine, orderLine, plainMargherita) where
+    <h3>src/Order.purs</h3>
+<pre><code class="language-haskell">module Order (confirmedLine, orderLine, plainMargherita) where
 
 import Prelude ((&lt;&gt;))
 
@@ -273,20 +273,20 @@ plainMargherita :: { "Pizza" :: String }
 plainMargherita = { "Pizza": "Margherita" }
 </code></pre>
 
-    <h3>src/Order.purs</h3>
-<pre><code class="language-haskell">module Order (orderApp) where
+    <h3>src/MDC3.purs</h3>
+<pre><code class="language-haskell">module Order.MDC3 (order) where
 
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import OrderViewModel (confirmedLine, orderLine, plainMargherita)
+import Order (confirmedLine, orderLine, plainMargherita)
 import PUI (with)
 import PUI.Web (text)
 import PUI.Web.MDC3 (body, button, filledTextField, headlineSmall, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-orderApp :: Effect Unit
-orderApp =
+order :: Effect Unit
+order =
   body $ Semigroupoid.do
     filledTextField @"Pizza"
     headlineSmall (text orderLine)
@@ -295,8 +295,8 @@ orderApp =
   # with @{ "Pizza" :: String } plainMargherita
 </code></pre>
 
-<pre class="compiler">[1 of 2] Compiling OrderViewModel
-[2 of 2] Compiling Order</pre>
+<pre class="compiler">[1 of 2] Compiling Order
+[2 of 2] Compiling Order.MDC3</pre>
 
     <p>Every anchor resolved: <code>orderLine</code> and
     <code>confirmedLine</code> are pure functions under unit test in the view model
@@ -312,8 +312,8 @@ orderApp =
     data order, so the display is now fed what the button emits.</p>
 
 <pre class="compiler">Error found:
-in module Order
-<mark>at src/Order.purs:18:5 - 18:36 (line 18, column 5 - line 18, column 36)</mark>
+in module Order.MDC3
+<mark>at src/MDC3.purs:18:5 - 18:36 (line 18, column 5 - line 18, column 36)</mark>
 
   Could not match type
 
@@ -332,7 +332,7 @@ while checking that expression (snackbar) confirmedLine
              { "Pizza" :: String
              }
              t0
-in value declaration orderApp
+in value declaration order
   ⋯</pre>
 
     <p>It points at the snackbar, the line after the misplaced display. The

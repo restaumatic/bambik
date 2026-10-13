@@ -2,11 +2,11 @@
 // source listings, the header size readouts, and the column that groups the
 // running demo with its tracing note. Pages declare only what differs and
 // load this with a relative src: an app's page carries one
-// <template data-variant="mdc3" data-source="CounterMDC3.purs CounterViewModel.purs">
+// <template data-variant="mdc3" data-source="MDC3.purs Counter.purs">
 // per design system, holding that system's stylesheets and style, and this
-// loads the chosen one's bundle-<variant>.js; a page with no design system
-// names its .purs files on <body data-source="HelloWorld.purs"> and loads its
-// bundle.js itself.
+// loads the chosen one's bundle-<variant>.js (a plain-HTML app carries one
+// `html` template; a page with no template loads its own bundle.js — the
+// law benches).
 
 const labels = { mdc2: "MDC2", mdc3: "MDC3", shoelace: "Shoelace", fluent: "Fluent", bootstrap: "Bootstrap", html: "HTML" }
 
@@ -194,10 +194,9 @@ const wordsOf = (src) => {
   return words
 }
 
-const viewPath = (suite, family, suffix) => {
-  const pascal = family.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join("")
-  return "../../" + suite + "/" + family + "/" + pascal + labels[suffix] + ".purs"
-}
+// a view's file is named by its design system alone (`counter/MDC2.purs`)
+const viewPath = (suite, family, suffix) => "../../" + suite + "/" + family + "/" + labels[suffix] + ".purs"
+
 
 const showNewWords = (viewSource) => {
   const m = location.pathname.match(/\/(7guis|nguis)\/([a-z0-9-]+)\/(index\.html)?$/)

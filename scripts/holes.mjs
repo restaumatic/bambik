@@ -1,6 +1,6 @@
 // Holey twins of every demo (guardrails L18): the view runs before its logic
-// exists. Each demo's view model modules (`*ViewModel`) are replaced by
-// stubs whose every export
+// exists. Each demo's view model module (the app's own, per
+// scripts/demos.mjs) is replaced by a stub whose every export
 // is a bare, untyped `hole`; every other demo module is copied unchanged, over
 // the real library. The result is built under holey.dhall and bundled into
 // .holey/demo/, mirroring demo/, for scripts/smoke/tests/holes.mjs to mount.
@@ -11,7 +11,7 @@ import { build } from 'esbuild'
 import { spawnSync } from 'node:child_process'
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { matching } from './demos.mjs'
+import { matching, viewModelModules } from './demos.mjs'
 
 const out = '.holey'
 const filters = process.argv.slice(2)
@@ -31,7 +31,7 @@ const local = new Map(walk('demo').filter(f => f.endsWith('.purs') && !f.startsW
   .map(f => [moduleOf(f), f]))
 
 const importsOf = src => [...src.matchAll(/^import\s+([\w.]+)/gm)].map(m => m[1])
-const isLogic = mod => /ViewModel$/.test(mod)
+const isLogic = mod => viewModelModules.has(mod)
 
 const stub = src => {
   const [, mod, exports] = src.match(/^module\s+([\w.]+)\s*\(([\s\S]*?)\)\s*where/m)

@@ -5,8 +5,9 @@ a live line describing the itinerary (or what is wrong with it), a Book
 button, and a confirmation. It is a small demo that uses all four shapes —
 editors (`×→×`), an emitter (`×→+`), an action (`+→+`) and statuses
 (`+→×`) — so once it reads plainly, the larger demos are the same moves
-repeated. The view is `demo/7guis/flight-booker/FlightBookerMDC2.purs`,
-the view model module `demo/7guis/flight-booker/FlightBookerViewModel.purs`; in an app both
+repeated. The view is `demo/7guis/flight-booker/MDC2.purs` (module
+`FlightBooker.MDC2`), the view model module
+`demo/7guis/flight-booker/FlightBooker.purs`; in an app both
 are under `.spago/bambik/v0.1.6/`. The rules the lines follow are in
 [writing.md](writing.md); what each component does is in its module header
 (`npx spago docs --open`).
@@ -14,20 +15,20 @@ are under `.spago/bambik/v0.1.6/`. The rules the lines follow are in
 ## The view
 
 ```purescript
-module FlightBookerMDC2 (flightBookerMDC2) where
+module FlightBooker.MDC2 (flightBooker) where
 
 import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
+import FlightBooker (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
 import PUI (action, atCase, debounced, looped, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
 import PUI.Web.MDC2 (body, body1, button', filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
-flightBookerMDC2 :: Effect Unit
-flightBookerMDC2 =
+flightBooker :: Effect Unit
+flightBooker =
   body $ Semigroupoid.do
     ( Semigroupoid.do
       select @"Flight type"
@@ -142,7 +143,7 @@ emitted when the `Aff` settles, and the pipeline ends there (writing.md
 ## The view model
 
 ```purescript
-module FlightBookerViewModel (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit) where
+module FlightBooker (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit) where
 
 import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, pure, show)
 

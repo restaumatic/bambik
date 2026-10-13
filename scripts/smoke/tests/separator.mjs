@@ -3,12 +3,12 @@
 // renders nothing — decided on the DOM, so a detached pane on its far side
 // takes the rule away and the feed that attaches the pane brings it back.
 import { byName } from '../../demos.mjs'
-export const demos = ['meeting-booker-fluent', 'product-review-shoelace', 'photo-gallery-mdc2', 'restaurant-menu']
+export const demos = ['meeting-booker-fluent', 'product-review-shoelace', 'photo-gallery-mdc2', 'restaurant-menu-html']
 export const pages = [
   { url: `/${byName('meeting-booker-fluent').page}`, label: 'meeting-booker' },
   { url: `/${byName('product-review-shoelace').page}`, label: 'product-review' },
   { url: `/${byName('photo-gallery-mdc2').page}`, label: 'photo-gallery' },
-  { url: `/${byName('restaurant-menu').page}`, label: 'restaurant-menu' },
+  { url: `/${byName('restaurant-menu-html').page}`, label: 'restaurant-menu-html' },
 ]
 
 const rules = `[...document.querySelectorAll('hr, md-divider, sl-divider, fluent-divider')].map(r => r.style.display !== 'none')`

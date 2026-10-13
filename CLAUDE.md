@@ -31,11 +31,11 @@ Verification stack: `spago test` (value-level law tests over probes — merge un
 ## Building & Deploying Demos
 
 1. Verify the forked compiler: `node_modules/.bin/purs --version` must report `0.15.16 [development build ...]`; if it shows stock `0.15.15`, run `npm install` (stock purs fails with "Module Prim.Variant was not found").
-2. Bundle for deploy: `npm run bundle-demos` (minified, all demos; `node scripts/bundle.mjs <name|set>` for a subset) — use `npm run dev` for watch mode, not for deploys. **Every** demo is a named module (`OrderForm`, `Counter`, `Cells`, `TodoList`, ...) entered at its own function (`orderForm`, `counter`, `cells`, `todoList`, ...) — no module is `Main`, so they all compile together under one plain `spago build` — and each bundles from the shared registry in **scripts/demos.mjs** (the single source of truth for directory + module + entry, shared with the dev server), which synthesizes the esbuild entry per demo because `spago bundle-app` can only call `Main.main`.
+2. Bundle for deploy: `npm run bundle-demos` (minified, all demos; `node scripts/bundle.mjs <name|set>` for a subset) — use `npm run dev` for watch mode, not for deploys. **Every** demo is a named module (`Counter.MDC2`, `Crud.HTML`, `OrderFormMDC2`, ...) entered at its own function (`counter`, `crud`, `orderFormMDC2`, ...) — no module is `Main`, so they all compile together under one plain `spago build` — and each bundles from the shared registry in **scripts/demos.mjs** (the single source of truth for directory + module + entry, shared with the dev server), which synthesizes the esbuild entry per demo because `spago bundle-app` can only call `Main.main`.
 3. Deploy: `npm run deploy-demos` — scps demo/index.html, demo/workflow.html and both suite directories to host `xyz` (root@erykciepiela.xyz, see `~/.ssh/config`) at `/var/www/html/bambik/demo/`.
 4. Verify: `http://erykciepiela.xyz/bambik/demo/<d>/` returns 200 (plain HTTP only). The deploy copies over the remote tree and deletes nothing, so a directory removed or renamed here lingers there until removed by hand.
 
-Every demo page is pure structure over **shared chrome**: `demo/page.js` (loaded as `../../page.js`) runs the page's design system and fetches the listing it names. A page with no design system (helloworld, restaurant-menu) names it on `<body data-source="HelloWorld.purs">` and loads its own `bundle.js`; every other page carries one `<template data-variant="mdc3" data-source="InboxMDC3.purs InboxViewModel.purs">` per design system, holding that system's stylesheets (and any style of its own), and page.js installs the one the query names (`inbox/?mdc3`, the first template when it names none), drops the page's elements marked `data-variant` for the others (reorder's per-twin notes, espresso-bar's subtitle), and loads `bundle-<variant>.js` once the stylesheets have loaded, so a catalogue never initializes on an unstyled page. Space-separated filenames render several listings — the first fills the existing box, each further file gets a filename heading + listing, the header readout sums the sizes; order-dashboard shows its app and its packaged controls module this way. page.js fills the header's source/bundle size readouts, shows every listing verbatim, notes the vocabulary words the view imports beyond the earlier demos of README's reading order (each linked into vocabulary.md), and groups the running demo with its tracing note into one `#demo-column` — on a page marked `<body data-surface>`, inside the vocabulary's card surface built by page.js (the app's surface is the page's, so no app wraps itself in a card) — the demo mounts into `<body>` at runtime with no marker class of its own, so it cannot be wrapped in static markup and is collected once, then the observer disconnects. The two notes that used to be pasted into all 34 pages now live once in **demo/index.html** as `#code-style` and `#tracing` sections, linked from beneath the source box and beneath the running demo respectively; the source-box note also links **demo/workflow.html**, the writing-session showcase.
+Every demo page is pure structure over **shared chrome**: `demo/page.js` (loaded as `../../page.js`) runs the page's design system and fetches the listing it names. Every page carries one `<template data-variant="mdc3" data-source="MDC3.purs Inbox.purs">` per design system (a plain-HTML app one `html` template), holding that system's stylesheets (and any style of its own), and page.js installs the one the query names (`inbox/?mdc3`, the first template when it names none), drops the page's elements marked `data-variant` for the others (reorder's per-twin notes, espresso-bar's subtitle), and loads `bundle-<variant>.js` once the stylesheets have loaded, so a catalogue never initializes on an unstyled page. Space-separated filenames render several listings — the first fills the existing box, each further file gets a filename heading + listing, the header readout sums the sizes; order-dashboard shows its app and its packaged controls module this way. page.js fills the header's source/bundle size readouts, shows every listing verbatim, notes the vocabulary words the view imports beyond the earlier demos of README's reading order (each linked into vocabulary.md), and groups the running demo with its tracing note into one `#demo-column` — on a page marked `<body data-surface>`, inside the vocabulary's card surface built by page.js (the app's surface is the page's, so no app wraps itself in a card) — the demo mounts into `<body>` at runtime with no marker class of its own, so it cannot be wrapped in static markup and is collected once, then the observer disconnects. The two notes that used to be pasted into all 34 pages now live once in **demo/index.html** as `#code-style` and `#tracing` sections, linked from beneath the source box and beneath the running demo respectively; the source-box note also links **demo/workflow.html**, the writing-session showcase.
 
 ## Cutting a release
 
@@ -517,8 +517,9 @@ server, the holey twins, check-determined and the smoke tests). Two suites: **de
 **Conventions every demo follows** — stated here once, not per demo:
 
 - **View/view-model module separation** (writing.md): the demo module is the
-  view (design-system vocabulary + the view model module); a
-  `<Demo>ViewModel` module holds the seed and the pure business functions
+  view (design-system vocabulary + the view model module); the app's own
+  module (`Counter`, in `Counter.purs`; `<Demo>ViewModel` until
+  2026-10-13) holds the seed and the pure business functions
   and depends only on the domain — and **the view determines it**
   (guardrails L18): with a typed hole for every value the view imports, the
   compiler's hole list is the module's signatures, verbatim, with
@@ -526,15 +527,26 @@ server, the holey twins, check-determined and the smoke tests). Two suites: **de
   (inbox 2026-10-01, the rest 2026-10-02). Twins share that module
   *verbatim*, so **a twin diff is view-only by construction**: it sits
   beside its views in the app's one directory
-  (`demo/nguis/inbox/InboxViewModel.purs` beside `InboxMDC2.purs` and
-  `InboxMDC3.purs`); helloworld (all view) has none.
-- **Named module + entry, never `Main`** (`CounterMDC2`/`counterMDC2`), so
-  every demo compiles under one `spago build`.
+  (`demo/7guis/counter/Counter.purs` beside `MDC2.purs` and `HTML.purs`);
+  hello-world (all view) has none. Any further module of an app is named
+  the same way, its file the module minus the app prefix (crud's
+  `PeopleServer.purs` is `Crud.PeopleServer`, order-dashboard's
+  `ControlsMDC3.purs` is `OrderDashboard.ControlsMDC3`). Which module is the view model is the
+  registry's to say (scripts/demos.mjs: `viewModel`/`viewModelFile` per
+  demo), and the holey sweep, `check-view-model` and `check-determined`
+  ask it rather than match a name.
+- **Named module + entry, never `Main`** (`Counter.MDC2`/`counter` — the
+  module carries the design system, since all 107 demos compile under one
+  `spago build`, and the entry is the app's name in every twin).
 - **One app, every design system**: an app is one flat directory
-  (2026-10-13) holding a view module per design system, the module suffix
-  naming it (`CounterMDC2.purs`, …, `CounterHTML.purs`), the shared view
-  model and one page whose header switches between them
-  (`counter/?mdc3`); pages with no design system get no switcher. The per-variant diff is the
+  (2026-10-13) holding a view module per design system, the file named by
+  the design system alone and the module by both (`MDC2.purs` is
+  `Counter.MDC2`, …, `HTML.purs` is `Counter.HTML`), the shared view
+  model (`Counter.purs`) and one page whose header switches between them
+  (`counter/?mdc3`); a plain-HTML app (hello-world, restaurant-menu) is
+  one `html` variant, and a page with one variant shows no switcher. The
+  registry lists an app as its design systems in page order and derives
+  the rest from the app's name. The per-variant diff is the
   honest catalog mapping (typography renames per the Material migration guide;
   vocabularies lacking `listOf` build selectable lists as a keyed `foreach` of
   `clicked @l` rows; every vocabulary has `indeterminateLinearProgress` since 2026-10-07).
@@ -642,12 +654,12 @@ reports a concrete signature), movie-browser (`tabBar` + `filterChip` filters ov
 `visibleMovies` projection, a `foreach` of rows whose in-row `iconToggle`
 folds back `# joined @"favored"` through the fold; the MDC3 twin honestly drops the MDC2
 selected-row class, the favorite state riding the toggle),
-weather (Aff service with a canned per-city delay), ticker (the **scope** showcase: a `ticks` and a `button # action` inside a `providedAt @"watching" @"phase"` pane — parked, the clock skips its beats and a quote settling meanwhile is dropped; scripts/smoke/tests/scope.mjs walks it), helloworld
+weather (Aff service with a canned per-city delay), ticker (the **scope** showcase: a `ticks` and a `button # action` inside a `providedAt @"watching" @"phase"` pane — parked, the clock skips its beats and a quote settling meanwhile is dropped; scripts/smoke/tests/scope.mjs walks it), hello-world
 (`body $ staticText "Hello, World!"` — the 5 kB bundle floor).
 
-**Vocabulary showcases.** restaurant-menu is the plain-HTML one (no design
-system: element oculars, `cl`/`:=` decorators, `each` from data, no seed
-at all; the fine-dining look is ordinary CSS). espresso-bar is the MDC3 one
+**Vocabulary showcases.** restaurant-menu is the plain-HTML one (the HTML
+vocabulary alone: element oculars, `cl`/`:=` decorators, `each` from data,
+no seed at all; the fine-dining look is ordinary CSS). espresso-bar is the MDC3 one
 (with an MDC2 twin generated in reverse, so its page opens on MDC3). One
 per non-Material vocabulary, each a page of one design system, as
 order-dashboard (MDC3) is too: product-review (Shoelace's

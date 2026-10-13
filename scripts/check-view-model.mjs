@@ -4,8 +4,9 @@
 // and `:: Boolean` field types and reports every one not on the allow-list.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { viewModelFiles } from "./demos.mjs";
 
-const isViewModel = (file) => file.endsWith("ViewModel.purs");
+const isViewModel = (file) => viewModelFiles.has(file);
 
 const walk = (dir) => readdirSync(dir).flatMap((n) => {
   const p = join(dir, n);

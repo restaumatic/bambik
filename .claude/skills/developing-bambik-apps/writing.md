@@ -1,8 +1,9 @@
 # Writing a bambik application
 
 The rules below govern the two app modules the scaffold ships: the view
-module (`src/<Module>.purs`) and the view model module beside it
-(`src/<Module>ViewModel.purs`), whose signatures the view determines
+module (`src/<Suffix>.purs`, module `<App>.<Suffix>`, named by its design
+system) and the view model module beside it (`src/<App>.purs`, module
+`<App>`: the app itself), whose signatures the view determines
 ([Writing order](#writing-order)). [Code style](#code-style) is the strict
 contract; the sections before it are the shapes that contract is
 written in. Other files of this skill point here and state no rules.
@@ -11,12 +12,12 @@ This file never documents a component. What a word does, its signature
 and its options are in the library's module headers — see
 [Looking things up](#looking-things-up). Words appear here only as
 examples, each from a demo you can open under
-`.spago/bambik/<tag>/demo/7guis/` or `demo/nguis/`. A view module's
-suffix names its design system (`CounterMDC2.purs`, …,
-`CounterHTML.purs`), and the twins share one view model module
-(`CounterViewModel.purs`), all in the app's one directory
-(`demo/7guis/counter/`), so read whichever twin matches your design
-system.
+`.spago/bambik/<tag>/demo/7guis/` or `demo/nguis/`. A view module is
+named by its design system (`MDC2.purs`, …, `HTML.purs`, the modules
+`Counter.MDC2`, …, `Counter.HTML`), and the twins share one view model
+module, the app itself (`Counter.purs`, module `Counter`), all in the
+app's one directory (`demo/7guis/counter/`), so read whichever twin
+matches your design system.
 
 ## Terms
 
@@ -295,7 +296,7 @@ compile error at `body` naming the missing fields.
 | panes over one classifier | quiz, checkout |
 | effects and time | password-generator, stopwatch, timer, weather |
 | structure that varies with the data | markdown-previewer |
-| no design system at all | restaurant-menu, helloworld |
+| no design system at all | restaurant-menu, hello-world |
 | a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, which `body`'s one feed of `{}` runs) |
 | an action that retries until it succeeds, narrated on its way in | payment (`chargeFlaky`, `# observed`) |
 | state that used to be a hidden loop, now a model field | auction (`settled raiseTop`), checkout (`stepTo`), ticket-dispenser (`issue`) |
@@ -391,11 +392,11 @@ the pick reaches the content directly (photo-gallery).
 Every function belongs to one of two classes, in two modules with a
 one-way dependency:
 
-- **The view module** (`<App>.purs`) exports the one entry function and
+- **The view module** (`<Suffix>.purs`, module `<App>.<Suffix>`) exports the one entry function and
   keeps UI-wiring functions that span several lines (a `dynamic`/`each`
   builder, a reusable sub-form like parcel's `addressForm`). It imports
   the design system, the library's words and the view model module.
-- **The view model module** (`<App>ViewModel.purs`) exports business
+- **The view model module** (`<App>.purs`, module `<App>`) exports business
   functions and named business values: seed models, tick periods, fixed
   payloads, copy functions, parsers, `Aff` actions — exactly the names
   the view imports, nothing a view line does not type (a helper only
@@ -446,7 +447,7 @@ block on its own.
 
 Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app
-with no business functions (helloworld) is a single view module.
+with no business functions (hello-world) is a single view module.
 
 ## Code style
 

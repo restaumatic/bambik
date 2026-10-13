@@ -8,6 +8,27 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-13, later
 
+- **A demo app is its module; its views are named by their design
+  system.** `demo/7guis/counter/` holds `Counter.purs`
+  (module `Counter`, the view model — the app itself) and `MDC2.purs`,
+  `MDC3.purs`, `Shoelace.purs`, `Fluent.purs`, `Bootstrap.purs`,
+  `HTML.purs` (modules `Counter.MDC2`, …, `Counter.HTML`, every one
+  entered at `counter`); crud's stand-in server is `Crud.PeopleServer`.
+  Before: `CounterMDC2.purs` (module `CounterMDC2`, entry
+  `counterMDC2`) and `CounterViewModel.purs`. Any further module is
+  named the same way, its file the module minus the app prefix
+  (order-dashboard's `ControlsMDC3.purs` is `OrderDashboard.ControlsMDC3`).
+  The two plain-HTML apps are one `html` variant each, their pages
+  carrying one template like every other (helloworld's directory is
+  `hello-world`, so its entry derives as `helloWorld`). The registry
+  (scripts/demos.mjs) lists an app as its design systems in page order
+  and derives module, file, entry and view model from the app's name;
+  the holey sweep, `check-view-model` and `check-determined` ask the
+  registry which module is the view model instead of matching a
+  `ViewModel` suffix. demo/workflow.html's session was replayed under the
+  new names with the pinned compiler (view `src/MDC3.purs`, module
+  `Order.MDC3`; view model `src/Order.purs`). The law benches keep their
+  `LawBenchMDC2` names: not apps.
 - **Displays release the row they show.** A display — `text`/`textAt`,
   the statics, `each`/`dynamic`, every progress bar, `imagePane`,
   `columnHeader` — is `{ | r } → { | r }`: `displayWiring` renders the

@@ -3,8 +3,10 @@
 -- |
 -- |   * **strength** — `Strong` (ecosystem, with a `(->)` instance): the
 -- |     unary power, the field lens. Its co-strength is the ecosystem's
--- |     `Costrong` (gated on `PUI`, so the knot at this shape is
--- |     `Looping`'s `looped`, not a derivation — `Data.Profunctor.Looping`),
+-- |     `Costrong` (gated on `PUI`, so the knots at this shape need a
+-- |     starting point: the whole-row `looped`, `Looping`'s —
+-- |     `Data.Profunctor.Looping` — primed by its first feed, and the
+-- |     one-field `feedback` over the seeded `PointedCostrong`),
 -- |     and their optics are `Data.Lens.Lens` and `Data.Lens.Colens` —
 -- |     neither the classes nor the optics mention a row, so none of them
 -- |     lives here.
@@ -13,12 +15,12 @@
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusField` (the field
 -- |     lens — the leaf lift, making every label-indexed editor a whole-row
--- |     citizen); over the
--- |     point: `with`
--- |     (`announce a >>> w` — discharge the initial-state obligation, so
--- |     `with seed (looped w)` is the app shape, the knot closed);
--- |     over bare `Profunctor`: the rename `asField`
--- |     and the normalization `settled`.
+-- |     citizen); over the point: `with` (`announce a >>> w` — discharge
+-- |     the initial-state obligation, so `w # looped @( … ) # with seed` is
+-- |     the app shape, the knot closed); over the pointed co-strength:
+-- |     `feedback @l` (the `×`-trace at one hidden field, seeded — the
+-- |     `Colens` at row granularity); over bare `Profunctor`: the rename
+-- |     `asField` and the normalization `settled`.
 -- |
 -- | A word lives in the module of the sides it constrains: one polymorphic
 -- | on one side sits in the diagonal module of the side it constrains, so
@@ -36,7 +38,8 @@
 -- |
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
 -- | a component `w :: p { | i } { | o }` is an **editor** of knowledge, or
--- | at `o = {}` a **display**; the merge is `m = recordToRecord w1 w2`,
+-- | at `i = o` a **display** releasing the row it was fed; the merge is
+-- | `m = recordToRecord w1 w2`,
 -- | inputs shared (`SharedRecordInputs`: both operands are fed the merge's
 -- | one row), outputs owned (`OwnedRecordOutputs`).
 -- |
@@ -46,10 +49,10 @@
 -- |      renderings, exactly one. Leaves answer on the nose (`identity` is
 -- |      the echo wire, `focusField @l` the echo with its background); a stage
 -- |      may refine the liveness half in time (`confirmed`, the gather
--- |      gate). A display answers with the row it shows (2026-10-13).
+-- |      gate). A display answers with the row it shows.
 -- |   3. **Monoid** — unit the `{}` wire at the merge's row,
--- |      `lcmap (const {}) identity`, exact:
--- |      `recordToRecord unit g = g = recordToRecord g unit`;
+-- |      `e = lcmap (const {}) identity`, exact:
+-- |      `recordToRecord e g = g = recordToRecord g e`;
 -- |      symmetric and associative up to `≈`. The operands share one input
 -- |      row, so the unit is the terminal arrow out of it (`identity` at
 -- |      `{}` only when that row is `{}`). The merge has no unit of its own,
@@ -67,11 +70,15 @@
 -- |   6. **Monotonicity** — `w1 ⊑ w1'` implies
 -- |      `recordToRecord w1 w2 ⊑ recordToRecord w1' w2`.
 -- |
--- | On `PUI`: broadcast in one step, gate out (`PUI.Gate.gateStep`) —
--- | retain each side's last contribution, release once both owned sides
--- | have spoken, withhold and drop before. A merge silent after its first
--- | feed has an operand breaking 2; one silent before any feed is unprimed
--- | (`with`, `seeded`). Probes carry law and shape in test/Main.purs;
+-- | On `PUI`: broadcast in one step, gate out (`PUI.Gate.gateStep`) — the
+-- | participants are the owned field labels, each retaining its last
+-- | value; the merge releases once every owned field is known, withholds
+-- | and drops before. An operand owning no field enrols nothing, so it is
+-- | born satisfied and never starves its sibling. A merge silent after its
+-- | first feed has an operand breaking 2; one silent before any feed is
+-- | unprimed (`with`, `seeded`, or a source, pointed by construction — the
+-- | merge's application use, sources each owning its field and released
+-- | together at registration). Probes carry law and shape in test/Main.purs;
 -- | 3–6, with 5's two clauses, run over every script to a bound in
 -- | test/Exhaustive.purs.
 module Data.Profunctor.Row.RecordToRecord
@@ -83,6 +90,7 @@ module Data.Profunctor.Row.RecordToRecord
   , with
   , asField
   , settled
+  , feedback
   )
   where
 
@@ -91,13 +99,17 @@ import Data.Function (const)
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, exactRow, fedFirst, fedSecond)
+import Data.Profunctor.PointedCostrong (class PointedCostrong, unfirstFrom)
 import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Profunctor.Strong (class Strong)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons)
 import Record (get, insert, union) as Record
+import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
   recordToRecord
@@ -142,12 +154,12 @@ focusField = prop (Proxy @l)
 
 -- | Discharge a chain's initial obligation by announcing its t=0 value.
 -- | The seed is whatever the chain's first stage takes: a model row into
--- | the knot (`with seed (looped @( … ) w)`, the app shape) or into a
--- | knotless flow (potluck). Never `{}`: `body` feeds the terminal record
--- | once itself, so a load action standing before the knot runs on that
--- | feed with no seed written. Its
--- | own input is ignored, so it sits at any row; a seed that is a hole is
--- | never announced (`announce`, guardrails L18).
+-- | the knot (`w # looped @( … ) # with seed`, the app shape) or into a
+-- | knotless flow (`# with @{ … } invitation`, potluck). Never `{}`: `body`
+-- | feeds the terminal record once itself, so a load action standing
+-- | before the knot runs on that feed with no seed written. Its own input
+-- | is ignored, so it sits at any row; a seed that is a hole is never
+-- | announced (`announce`, guardrails L18).
 with :: forall @a p b r. Seeding p => a -> p a b -> p { | r } b
 with a w = lcmap (const {}) (announce a >>> w)
 
@@ -175,3 +187,27 @@ settled
   -> p a { | r }
   -> p a { | r }
 settled f = rmap f
+
+-- | Loop state field `l` of the output back into the input, starting it at
+-- | the given value: the `×`-trace at one field, the `Colens` optic's row
+-- | form over the pointed trace `PointedCostrong`. The state is one field,
+-- | labelled on the view line (`feedback @"top" noBids`), so the split is a
+-- | `Cons` at a label the view states. The field is written over the fresh
+-- | input, so a stale runtime copy of it never shadows the looped state.
+-- | Where the state is the model's, the knot is `looped` and the state a
+-- | model field; `feedback` hides it from the rows on both sides.
+feedback
+  :: forall @l @a p r r1 r2 r3
+   . IsSymbol l
+  => PointedCostrong p
+  => Cons l a r r2
+  => Cons l a r1 r3
+  => a
+  -> p { | r2 } { | r3 }
+  -> p { | r } { | r1 }
+feedback seed g =
+  unfirstFrom seed
+    (dimap
+      (\(Tuple i a) -> unsafeSet (reflectSymbol (Proxy @l)) a i :: { | r2 })
+      (\ow -> Tuple (unsafeCoerce ow) (Record.get (Proxy @l) ow))
+      g)

@@ -1,57 +1,78 @@
-module RestaurantMenu (restaurantMenu) where
+module RestaurantMenu (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine) where
 
-import Prelude ((#), ($), (>>>), Unit)
+import Prelude ((<>), map)
 
-import Effect (Effect)
-import PUI (foreach, static)
-import PUI.Web (cl, staticText, text, textAt, (:=))
-import PUI.Web.HTML (a, article, blockquote, body, div, footer, h1, h2, h3, header, hr, li, p, section, span, ul)
-import PUI.Web.SVG as SVG
-import QualifiedDo.Semigroupoid as Semigroupoid
-import RestaurantMenuViewModel (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine)
+courseName
+  :: { dishes :: Array { description :: String
+                       , name :: String
+                       , price :: String
+                       , tags :: Array String
+                       }
+     , name :: String
+     }
+  -> String
+courseName = _.name
 
-restaurantMenu :: Effect Unit
-restaurantMenu =
-  body $ ( article >>> cl "menu" $ Semigroupoid.do
-    header >>> cl "menu-header" $ Semigroupoid.do
-      SVG.svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ Semigroupoid.do
-        static (SVG.circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47")
-        SVG.text >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
-          >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText "Y"
-      h1 >>> cl "restaurant-name" $ staticText "Osteria Yoneda"
-      p >>> cl "tagline" $ staticText "Cucina componibile — a tasting menu, composed"
-    hr $ div >>> cl "courses" $
-      ( section >>> cl "course" $ Semigroupoid.do
-        h2 (text courseName)
-        ul >>> cl "dishes" $
-          ( li >>> cl "dish" $ Semigroupoid.do
-            div >>> cl "dish-head" $ Semigroupoid.do
-              span >>> cl "dish-name" $ text dishName
-              static (span >>> cl "dish-dots")
-              span >>> cl "dish-price" $ text priceLine
-            p >>> cl "dish-desc" $ text dishDescription
-            span >>> cl "tags" $
-              ( span >>> cl "tag" $ textAt @"tag" ) # foreach @"tag" @( tag :: String ) dishTags ) # foreach @"name"
-                @( name :: String
-                 , price :: String
-                 , description :: String
-                 , tags :: Array String
-                 ) courseDishes ) # foreach @"name"
-                @( name :: String
-                 , dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String }
-                 ) menuCourses
-    blockquote >>> cl "chef-note" $ Semigroupoid.do
-      p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
-      p >>> cl "attribution" $ staticText "— from the kitchen"
-    footer >>> cl "menu-footer" $ Semigroupoid.do
-      div >>> cl "info" $ Semigroupoid.do
-        h3 (staticText "Hours")
-        p (staticText "Tuesday – Sunday · 17:00 – 23:00")
-      div >>> cl "info" $ Semigroupoid.do
-        h3 (staticText "Find us")
-        p (staticText "12 Category Lane · Kraków")
-      p >>> cl "colophon" $ Semigroupoid.do
-        staticText "A static page composed from HTML oculars with "
-        a >>> "href" := "https://github.com/restaumatic/bambik" >>> "target" := "_blank" $ staticText "Bambik"
-        staticText " — no Material components, just structure."
-  )
+courseDishes
+  :: { dishes :: Array { description :: String
+                       , name :: String
+                       , price :: String
+                       , tags :: Array String
+                       }
+     , name :: String
+     }
+  -> Array { description :: String, name :: String, price :: String, tags :: Array String }
+courseDishes = _.dishes
+
+dishName
+  :: { description :: String, name :: String, price :: String, tags :: Array String }
+  -> String
+dishName = _.name
+
+dishDescription
+  :: { description :: String, name :: String, price :: String, tags :: Array String }
+  -> String
+dishDescription = _.description
+
+menuCourses
+  :: {}
+  -> Array { dishes :: Array { description :: String
+                             , name :: String
+                             , price :: String
+                             , tags :: Array String
+                             }
+           , name :: String
+           }
+menuCourses _ =
+  [ { name: "Antipasti"
+    , dishes:
+      [ { name: "Burrata di Puglia", price: "14", description: "Heirloom tomato, basil oil, Maldon salt.", tags: [ "vegetarian" ] }
+      , { name: "Vitello Tonnato", price: "16", description: "Rose veal, tuna-caper emulsion, fried capers.", tags: [] }
+      , { name: "Carciofi alla Romana", price: "13", description: "Braised artichoke, mint, lemon.", tags: [ "vegetarian", "gluten-free" ] }
+      ]
+    }
+  , { name: "Primi"
+    , dishes:
+      [ { name: "Tagliatelle al Tartufo", price: "24", description: "Fresh egg pasta, black truffle, aged parmigiano.", tags: [ "signature" ] }
+      , { name: "Risotto ai Porcini", price: "21", description: "Carnaroli rice, porcini, grana padano.", tags: [ "vegetarian", "gluten-free" ] }
+      , { name: "Gnocchi alla Sorrentina", price: "18", description: "Potato gnocchi, San Marzano, fior di latte.", tags: [ "vegetarian" ] }
+      ]
+    }
+  , { name: "Dolci"
+    , dishes:
+      [ { name: "Tiramisù della Casa", price: "9", description: "Mascarpone, espresso, savoiardi, bitter cocoa.", tags: [ "signature" ] }
+      , { name: "Panna Cotta ai Frutti", price: "8", description: "Vanilla cream, forest berries.", tags: [ "gluten-free" ] }
+      , { name: "Affogato al Caffè", price: "7", description: "Fior di latte gelato drowned in hot espresso.", tags: [ "vegetarian", "gluten-free" ] }
+      ]
+    }
+  ]
+
+priceLine
+  :: { description :: String, name :: String, price :: String, tags :: Array String }
+  -> String
+priceLine { price } = "€" <> price
+
+dishTags
+  :: { description :: String, name :: String, price :: String, tags :: Array String }
+  -> Array { tag :: String }
+dishTags { tags } = map { tag: _ } tags

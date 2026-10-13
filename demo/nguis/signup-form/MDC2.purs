@@ -1,0 +1,37 @@
+module SignupForm.MDC2 (signupForm) where
+
+import Prelude (Unit, (#), ($))
+
+import Effect (Effect)
+import PUI (looped, with)
+import PUI.Web ((<+>), choice, inCase, staticText, text)
+import PUI.Web.MDC2 (body, body2, button', checkbox, debouncedTextField, filledTextField, headline4, radioButton, select, snackbar, subtitle2, tooltip)
+import QualifiedDo.Semigroupoid as Semigroupoid
+import SignupForm (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, usernameSettleTime, usernameStatus, validation)
+
+signupForm :: Effect Unit
+signupForm =
+  body $ Semigroupoid.do
+    ( Semigroupoid.do
+      headline4 $ staticText "Create account"
+      debouncedTextField @"Username" usernameSettleTime
+      radioButton @"Plan"
+        (choice @"Free" <+> choice @"Pro" <+> choice @"Team")
+      select @"Country"
+        (choice @"Poland" <+> choice @"Germany" <+> choice @"France" <+> choice @"Spain")
+      filledTextField @"Email"
+      checkbox @"I accept the terms of service" @"accepted" @"declined" # tooltip "You must accept the terms of service to sign up"
+    ) # looped
+      @( "Username" :: String
+       , "Email" :: String
+       , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+       , "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ]
+       , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
+       ) # with newApplicant
+    ( body2 $ staticText "Pick a username to check its availability" ) # inCase @"unnamed" @( unnamed :: {}, taken :: {}, available :: {} ) usernameStatus
+    ( body2 $ text takenLine ) # inCase @"taken" usernameStatus
+    ( body2 $ text availableLine ) # inCase @"available" usernameStatus
+    ( subtitle2 $ text invalidLine ) # inCase @"invalid" @( invalid :: {}, ready :: {} ) validation
+    ( subtitle2 $ text readyLine ) # inCase @"ready" validation
+    button' @"Sign up" { icon: "person_add" }
+    snackbar @"Sign up" signupLine

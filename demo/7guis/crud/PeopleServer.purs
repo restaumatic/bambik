@@ -1,4 +1,4 @@
-module PeopleServer (fetchPeople, storePeople) where
+module Crud.PeopleServer (fetchPeople, storePeople) where
 
 import Prelude (discard, ($))
 

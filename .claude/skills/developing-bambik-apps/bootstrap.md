@@ -31,19 +31,21 @@ Below, `<tag>` is the bambik tag (`v0.1.6`).
    npm dependency, the page's links and the starter view module. The
    choice is a look, not an architecture:
 
-   | Vocabulary module   | npm dependency (`package.json`)          | Page links (`public/index.html`) | Body font | Counter twin (`<twin>` / `<Suffix>`) |
+   | Vocabulary module   | npm dependency (`package.json`)          | Page links (`public/index.html`) | Body font | `<Suffix>` |
    |---------------------|------------------------------------------|----------------------------------|-----------|--------------------------------------|
-   | `PUI.Web.MDC2`      | `"material-components-web": "^14.0.0"`   | `https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.min.css`, `https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap`, `https://fonts.googleapis.com/icon?family=Material+Icons` | `Roboto, sans-serif` | `counter-mdc2` / `MDC2` |
-   | `PUI.Web.MDC3`      | `"@material/web": "^2.5.0"`              | `https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap`, `https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap` | `Roboto, sans-serif` | `counter-mdc3` / `MDC3` |
-   | `PUI.Web.Shoelace`  | `"@shoelace-style/shoelace": "^2.20.1"`  | `https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css` | `var(--sl-font-sans, sans-serif)` | `counter-shoelace` / `Shoelace` |
-   | `PUI.Web.Fluent`    | `"@fluentui/web-components": "^3.0.2"`   | none                             | `'Segoe UI', system-ui, sans-serif` | `counter-fluent` / `Fluent` |
-   | `PUI.Web.Bootstrap` | none                                     | `https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css` | (Bootstrap's own) | `counter-bootstrap` / `Bootstrap` |
-   | `PUI.Web.HTML`      | none                                     | the app's own CSS                | `system-ui, sans-serif` | `counter-html` / `HTML` |
+   | `PUI.Web.MDC2`      | `"material-components-web": "^14.0.0"`   | `https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.min.css`, `https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap`, `https://fonts.googleapis.com/icon?family=Material+Icons` | `Roboto, sans-serif` | `MDC2` |
+   | `PUI.Web.MDC3`      | `"@material/web": "^2.5.0"`              | `https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap`, `https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap` | `Roboto, sans-serif` | `MDC3` |
+   | `PUI.Web.Shoelace`  | `"@shoelace-style/shoelace": "^2.20.1"`  | `https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css` | `var(--sl-font-sans, sans-serif)` | `Shoelace` |
+   | `PUI.Web.Fluent`    | `"@fluentui/web-components": "^3.0.2"`   | none                             | `'Segoe UI', system-ui, sans-serif` | `Fluent` |
+   | `PUI.Web.Bootstrap` | none                                     | `https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css` | (Bootstrap's own) | `Bootstrap` |
+   | `PUI.Web.HTML`      | none                                     | the app's own CSS                | `system-ui, sans-serif` | `HTML` |
 
 2. **Name the app.** Three names, used throughout: `<app>` (kebab-case:
-   directory and package name), `<Module>` (PascalCase: the view module;
-   the view model module is `<Module>ViewModel`), `<entryFn>` (camelCase: the
-   exported entry function, named after the app, never `main`).
+   directory and package name), `<App>` (PascalCase: the view model
+   module, `src/<App>.purs`; the view module is `<App>.<Suffix>` in
+   `src/<Suffix>.purs`, named by the design system from step 1),
+   `<entryFn>` (camelCase: the exported entry function, named after the
+   app, never `main`).
 
 3. **Write the scaffold files** from [Scaffold](#scaffold) into a fresh
    `<app>/`:
@@ -66,11 +68,10 @@ Below, `<tag>` is the bambik tag (`v0.1.6`).
    ```sh
    cd <app> && mkdir -p src
    RAW=https://raw.githubusercontent.com/restaumatic/bambik/<tag>
-   curl -sfL $RAW/demo/7guis/<twin>/Counter<Suffix>.purs \
-     | sed -e 's/Counter<Suffix>/<Module>/g' -e 's/counter<Suffix>/<entryFn>/g' \
-           -e 's/CounterLogic/<Module>ViewModel/g' > src/<Module>.purs
-   curl -sfL $RAW/demo/7guis/counter/CounterLogic.purs \
-     | sed 's/CounterLogic/<Module>ViewModel/g' > src/<Module>ViewModel.purs
+   curl -sfL $RAW/demo/7guis/counter/<Suffix>.purs \
+     | sed -e 's/Counter/<App>/g' -e 's/counter/<entryFn>/g' > src/<Suffix>.purs
+   curl -sfL $RAW/demo/7guis/counter/Counter.purs \
+     | sed 's/Counter/<App>/g' > src/<App>.purs
    ```
 
    The result is the counter shown in [SKILL.md](SKILL.md) under your
@@ -197,7 +198,7 @@ list lacks.
 ### entry.mjs
 
 ```js
-import { <entryFn> } from './output/<Module>/index.js'
+import { <entryFn> } from './output/<App>.<Suffix>/index.js'
 <entryFn>()
 ```
 

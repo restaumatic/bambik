@@ -587,8 +587,9 @@ code below the UI) are algebra-layer material and exempt by location.
 ### L18. A view runs before its view model exists — and determines it.
 
 - The library MUST let every application view run with its view model
-  **deleted**: each view model module (`*ViewModel`, or `*Logic` where not
-  yet renamed) replaced by a stub whose every export
+  **deleted**: each view model module (the app's own module, `Counter`
+  beside its `Counter.MDC2`; registered in scripts/demos.mjs) replaced by
+  a stub whose every export
   is a bare, untyped `hole` (no signature), **against the real library**
   — no shadow modules, no changed import, nothing else touched. The
   result MUST compile, mount clean and render the view's initial UI, and

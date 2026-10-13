@@ -28,8 +28,9 @@ import { spawnSync } from 'node:child_process'
 import { all } from './demos.mjs'
 import { layoutSignature } from './signature-layout.mjs'
 
-const importRe = /^import (\w+ViewModel) \(([^)]*)\)[ \t]*\n/m
-const demos = all.map(d => ({ ...d, file: `${d.dir}/${d.mod}.purs` }))
+// the view's one import of its view model module, the module named by the registry
+const importRe = d => d.viewModel && new RegExp(`^import (${d.viewModel.replace(/\./g, '\\.')}) \\(([^)]*)\\)[ \\t]*\\n`, 'm')
+const demos = all
 const write = process.argv.includes('--write')
 const wanted = process.argv.slice(2).filter(a => a !== '--write')
 const chosen = wanted.length ? demos.filter(d => wanted.includes(d.name)) : demos
@@ -39,15 +40,12 @@ rmSync('.determined', { recursive: true, force: true })
 mkdirSync('.determined/src', { recursive: true })
 cpSync('output', '.determined/output', { recursive: true })
 
-// the view model module sits beside the views it serves
-const viewModelFile = (d, mod) => [`${d.dir}/${mod}.purs`].find(existsSync)
-
 const holed = chosen.flatMap(d => {
   const src = readFileSync(d.file, 'utf8')
-  const m = importRe.exec(src)
+  const m = d.viewModel && importRe(d).exec(src)
   if (!m) { console.log(`– ${d.name}: no view model module, all view`); return [] }
   const names = m[2].split(',').map(s => s.trim()).filter(Boolean)
-  let out = src.replace(m[0], '').replace(/^module (\w+)/m, 'module Determined.$1')
+  let out = src.replace(m[0], '').replace(/^module ([\w.]+)/m, 'module Determined.$1')
   // A derived row is declared once, where its function first appears; the
   // function's later occurrences are typed by the function itself once it is
   // written. Each `?name` is its own hole, so that second step is emulated:
@@ -59,7 +57,7 @@ const holed = chosen.flatMap(d => {
   // a record label (`tick:` in a `match`) or a field accessor is not the value
   for (const n of names) out = out.replace(new RegExp(`(?<![\\w."])${n}\\b(?!\\s*:(?!:))`, 'g'), `?${n}`)
   writeFileSync(`.determined/src/${d.mod}.purs`, out)
-  return [{ ...d, names, module: m[1], viewModel: viewModelFile(d, m[1]) }]
+  return [{ ...d, names, module: m[1], viewModel: existsSync(d.viewModelFile) && d.viewModelFile }]
 })
 
 // what every registered view imports from each view model module, twins
@@ -67,12 +65,12 @@ const holed = chosen.flatMap(d => {
 // one twin only is still a reached export
 const importedBy = new Map()
 for (const d of demos) {
-  const m = importRe.exec(readFileSync(d.file, 'utf8'))
+  const m = d.viewModel && importRe(d).exec(readFileSync(d.file, 'utf8'))
   if (!m) continue
   if (!importedBy.has(m[1])) importedBy.set(m[1], new Set())
   for (const n of m[2].split(',').map(s => s.trim()).filter(Boolean)) importedBy.get(m[1]).add(n)
 }
-const exportsOf = src => src.match(/^module \w+ \(([\s\S]*?)\) where/)?.[1].split(',').map(s => s.trim()).filter(Boolean) ?? []
+const exportsOf = src => src.match(/^module [\w.]+ \(([\s\S]*?)\) where/)?.[1].split(',').map(s => s.trim()).filter(Boolean) ?? []
 
 const bin = n => `node_modules/.bin/${n}`
 const globs = spawnSync(bin('spago'), ['sources'], { encoding: 'utf8' }).stdout.trim().split('\n')
@@ -159,7 +157,7 @@ const writeSignature = (file, name, h) => {
   else if (new RegExp(`^${name}\\b`, 'm').test(src)) src = src.replace(new RegExp(`^(?=${name}\\b)`, 'm'), `${want}\n`)
   else {
     src = `${src.replace(/\n*$/, '\n')}\n${want}\n${name} = hole\n`
-    src = src.replace(/^module (\w+) \(([\s\S]*?)\) where/m, (m, mod, list) =>
+    src = src.replace(/^module ([\w.]+) \(([\s\S]*?)\) where/m, (m, mod, list) =>
       `module ${mod} (${[...list.split(',').map(x => x.trim()).filter(Boolean), name].sort((a, b) => a.localeCompare(b)).join(', ')}) where`)
     if (!/^import PUI\.Web \(hole\)/m.test(src)) src = src.replace(/^(import .*\n)(?!import)/m, `$1import PUI.Web (hole)\n`)
   }
