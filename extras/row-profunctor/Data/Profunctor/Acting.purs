@@ -46,8 +46,8 @@
 -- |
 -- | This module is the **pure algebra** — the class (whose primitive
 -- | `actedBy` takes the key as a function, the minimal carrier obligation),
--- | the label forms `acted @l` and `actedAt @l @t`, the `(->)` face, and
--- | the derived `Maybe` action. The carrier machinery lives with the carriers, exactly as the
+-- | the label forms `acted @l` and `actedAt @l @t`, and the `(->)` face.
+-- | The carrier machinery lives with the carriers, exactly as the
 -- | merge classes' instances do: `PUI` holds the shared keyed reconciler,
 -- | the generic `Hosting m node => Acting (PUI m)` instance and the sibling
 -- | collection combinators (`foreach`, `dispatched`, `accumulated`); each display carrier holds its own `Hosting` instance.
@@ -56,14 +56,11 @@ module Data.Profunctor.Acting
   , actedBy
   , acted
   , actedAt
-  , optioned
   ) where
 
 import Data.Profunctor.Row.Structural (withStructuralOrd)
 import Prelude
 
-import Data.Array (head) as Array
-import Data.Maybe (Maybe, maybe)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Strong (class Strong, second)
@@ -111,16 +108,3 @@ acted w = withStructuralOrd @k (actedBy (Record.get prox)
 actedAt :: forall @l @t p k b1 b2 r1 r. Acting p => Strong p => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => p { | r1 } { | r1 } -> p { | r } { | r }
 actedAt w = focusField @t (acted @l @r1 w)
 
--- | The `Maybe = 1 + a` container action, derived: `Maybe` embeds in `Array`
--- | as the at-most-one-element arrays (identity is trivial at one element, so
--- | the key is a constant). Keeps the element *fed and live* on
--- | `Nothing`-to-`Just` transitions per the carrier's retention; contrast a
--- | carrier's *detaching* visibility form, which drops the element and
--- | collapses its output.
-optioned :: forall p a b. Acting p => Strong p => p a b -> p (Maybe a) (Maybe b)
-optioned w = dimap (maybe [] \x -> [ { key: "the", value: x } ]) (Array.head >>> map _.value)
-  (acted @"key" element)
-  where
-  -- the element sees and emits its whole row; the carrier re-sets the key
-  element :: p { key :: String, value :: a } { key :: String, value :: b }
-  element = dimap _.value { key: "the", value: _ } w

@@ -8,6 +8,24 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **`Seeding` and `Looping` deleted; `optioned` with them.** The two
+  classes each stated one thing a timeless carrier lacks — a beginning
+  (`announce`) and feedback (`looped`) — and each had one real instance,
+  `PUI`; `Seeding`'s `(->)` instance was `const` and its three pure
+  assertions tested that, `Looping` had none by its own theorem, and
+  every law with content was temporal and ran on `PUI` already. They
+  were carrier facts dressed as algebra, so the four words
+  `announce`/`seeded`/`with`/`looped` are now `PUI` functions (`with`
+  leaving the floor, the floor staying `Profunctor`-only), their laws
+  and the trace-asymmetry account moved into `PUI`'s headers, `Cont`
+  losing its `Seeding` instance. Demos import both words from `PUI` as
+  before. `Acting` stays a class: its `(->)` instance is `map`, its
+  `Cont` instance `traverse`, and `acted`'s key re-set is tested as a
+  pure equality, so it is the merge classes' peer. Its `optioned` (the
+  `Maybe` action) goes on `asField`'s grounds — unreachable by design,
+  the view-model rule admitting no `Maybe` field. extras/row-profunctor
+  now holds exactly the floor, the four shape modules and `Acting`,
+  every class with a `(->)` instance.
 - **`isHole` is `PUI`'s.** It read a field the carrier's JavaScript
   invents (`__bambikHole`) from inside `Data.Profunctor.Seeding`, the
   carrier-agnostic algebra. It now sits beside `tr` and `gateGuard` as

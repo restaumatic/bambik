@@ -1,8 +1,8 @@
 -- | The **pointed** `×`-trace — `Data.Profunctor.Costrong`'s `unfirst` given
 -- | a starting point for its state channel, stated **positionally**
--- | (`Tuple`) with no row in sight. Its row form is
--- | `Data.Profunctor.Row.RecordToRecord.feedback` (one hidden state
--- | field, seeded); the whole-row knot is `Looping`'s `looped`.
+-- | (`Tuple`) with no row in sight. It has no row form (a loop's state is
+-- | a model field, `Data.Profunctor.Row`, *What is deliberately not
+-- | here*); the whole-row knot is `PUI`'s `looped`.
 -- |
 -- | Why a class of its own: on a gated carrier the raw composite
 -- | `unfirst (first g)` is dead — `unfirst` withholds every input until the
@@ -12,7 +12,7 @@
 -- | belongs on the state, not on the input: `unfirstFrom c0` starts the
 -- | state channel at `c0`, the first input is joined with it, and every
 -- | emission's `c` replaces it from then on. It is not derivable from
--- | `Costrong` plus `Seeding`, since neither can write the state channel
+-- | `Costrong` plus a point, since neither can write the state channel
 -- | without an emission on the output channel.
 -- |
 -- | Laws:

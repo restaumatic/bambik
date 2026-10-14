@@ -30,7 +30,6 @@ root defines is a general algebra:
 - **The container action** (`Data.Profunctor.Acting`), one `μ` past the rows —
   rows being the finitary, `μ`-free, label-strict fragment of the same
   container grammar.
-- **Pointedness as carrier structure** (`Data.Profunctor.Seeding`).
 
 Every one of those is stated for an arbitrary profunctor `p`. The laws are in
 the module headers and are **value-testable on `(->)`**, which is how the
@@ -45,7 +44,6 @@ that this layer does not depend on the one downstream of it.
 | `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `joined` |
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `unshown` |
 | `Data.Profunctor.Acting` | the container action `class Acting`/`actedBy` |
-| `Data.Profunctor.Seeding` | `class Category p <= Seeding p`, the pointed wire |
 
 ## What extraction would take
 

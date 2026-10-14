@@ -38,7 +38,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, unshown, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, reset, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
+import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, unshown, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, reset, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -819,7 +819,7 @@ main = do
     m.toUser {}
     Ref.read outs >>= assertEqual "announce: exactly one registration emission" [ { n: 42 } ]
 
-  -- Seeding's answer law: the point is the wire's answer to the terminal
+  -- The point's answer law: the point is the wire's answer to the terminal
   -- record's one value, announce a ≈ lcmap (const a) identity — under the
   -- mount's protocol (register, feed {} once) the streams agree, and a
   -- further {} feed differs only by stutter (Repetition at {}).
@@ -835,16 +835,10 @@ main = do
         Ref.read outs
     point <- stream (announce { n: 7 })
     wire <- stream (lcmap (const { n: 7 }) identity)
-    assertEqual "Seeding/answer: the point emits the wire's answer, early" [ { n: 7 } ] point
-    assertEqual "Seeding/answer: the wire answers every {} feed alike" [ { n: 7 }, { n: 7 } ] wire
-    assertEqual "Seeding/answer: announce a ≈ lcmap (const a) identity up to stutter" (nub point) (nub wire)
+    assertEqual "announce/answer: the point emits the wire's answer, early" [ { n: 7 } ] point
+    assertEqual "announce/answer: the wire answers every {} feed alike" [ { n: 7 }, { n: 7 } ] wire
+    assertEqual "announce/answer: announce a ≈ lcmap (const a) identity up to stutter" (nub point) (nub wire)
 
-  -- Seeding on (->): the timeless point is const, with is application,
-  -- the seeded wire is identity (the seed invisible, as a timeless wire
-  -- should have it).
-  assertEqual "Seeding/(->): announce a = const a" 5 (announce 5 {})
-  assertEqual "Seeding/(->): with a w = w a" 1 (with { n: 1 } _.n {})
-  assertEqual "Seeding/(->): seeded a = identity" 9 (seeded 3 9)
 
   -- compose registers downstream first, so an upstream registration
   -- announcement finds downstream's wiring already listening.
@@ -1062,10 +1056,6 @@ main = do
 
   -- acted on (->): pure carriers have no identity — acted _ = map.
   assertEqual "acted/(->) = map, key re-set" [ { k: "a", v: 2 }, { k: "b", v: 6 } ] (acted @"k" (\(r :: { k :: String, v :: Int }) -> r { v = r.v * 2 }) [ { k: "a", v: 1 }, { k: "b", v: 3 } ])
-
-  -- optioned on (->): the Maybe = 1 + a container action, via the Array embedding.
-  assertEqual "optioned/(->): Just" (Just 6) (optioned (_ * 2) (Just 3))
-  assertEqual "optioned/(->): Nothing" (Nothing :: Maybe Int) (optioned (_ * 2) Nothing)
 
   -- empty: fed [], emits [] — the inhabited nullary of μx. 1 + a×x. And only
   -- on feed: registration alone announces nothing ([] is not the only Array b).
@@ -1293,7 +1283,7 @@ main = do
     m.toUser 1
     Ref.read ins >>= assertEqual "raw coresolve∘resolve: inputs never reach g" []
 
-  -- == The Looping laws (Data.Profunctor.Looping): yanking, conjugation ==
+  -- == The knot's laws (PUI.looped): yanking, conjugation ==
   -- == (the corrected dinaturality), idempotence — and the counterexample ==
   -- == that corrected it. ==
 

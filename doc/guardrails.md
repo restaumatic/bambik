@@ -52,8 +52,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   carrier (`PUI Effect`, `(->)` where lawful) without a DOM.
 - A class MUST NOT be given an instance a carrier cannot honestly
   support. `(->)` has no `Retaining` (a stateless function has nowhere to
-  keep memory), no `Resolving` (no notion of quiescence), no `Seeding` (a
-  timeless carrier has no registration moment). A missing instance is a
+  keep memory), no `Resolving` (no notion of quiescence), no point or
+  knot (a timeless carrier has no registration moment and no feedback —
+  which is why `announce` and `looped` are `PUI`'s words, not classes). A missing instance is a
   theorem about the carrier, and it MUST be kept missing. Faking one —
   a trivial always-`Done` `resolve`, a `Default`-fabricated `retain` —
   is the cardinal sin: it makes the types lie.
@@ -265,7 +266,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   from: copairing with silence routes the input but leaves the source's
   emission channel connected (verified on the probe carrier), so absence
   is `Hosting`'s and `provided` stays a carrier primitive (deleted and
-  restored on that argument; CHANGELOG, 2026-09-11). Pointing — one emission at registration — is `Seeding`'s
+  restored on that argument; CHANGELOG, 2026-09-11). Pointing — one emission at registration — is
   `announce`, never a unit's: units carry no information and add none.
   No future combinator may invert this. Every starvation bug in the
   library's history was a `+`-behaviour where a `×`-behaviour was
@@ -328,7 +329,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `looped`: a variant knot was a second way of writing the same loop whose model no line of the view
   could declare, so a loop is cut at its record junction and an event
   re-enters through its fold). The point's *value* is row-forced (`announce a ≈
-  lcmap (const a) identity`, `Data.Profunctor.Seeding`); what the class
+  lcmap (const a) identity`, `PUI`'s `announce`); what the carrier
   adds is its *earliness*, the one moment a stateful carrier has and a
   timeless one lacks — so a proposal to derive `announce` from the wire is
   right about the value and wrong about the moment the knot needs.
@@ -506,7 +507,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 The codebase is three floors, each greppable:
 
 - **Algebra layer** (`PUI`, `Data.Profunctor.Row.*`, `Data.Profunctor.Acting`,
-  the optics and `Seeding`) — the **only** importer of the ecosystem's
+  and the optics) — the **only** importer of the ecosystem's
   `Data.Profunctor` (and `.Strong`/`.Choice`/`.Cochoice`/...). This is
   where instances live, so it is forced. (Bambik's own `Data.Profunctor.Row.*`
   and `.Acting` namespaces are vocabulary, not the ecosystem — the greps

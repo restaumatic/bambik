@@ -166,7 +166,7 @@ import Record as Record
 -- | any read of it, or call, throws and marks the page (`__bambikHoleReached`),
 -- | so a view run with its logic stubbed to holes that reaches none proves no
 -- | data reached the logic. The one exception is the field `__bambikHole`,
--- | which answers `true` — what `Data.Profunctor.Seeding.isHole` reads, so a
+-- | which answers `true` — what `PUI.isHole` reads, so a
 -- | word consuming a logic value when built can skip a hole.
 foreign import hole :: forall a. a
 

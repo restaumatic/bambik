@@ -26,7 +26,7 @@
 -- | `Costrong`/`Cochoice` — whose optics `Colens`/`Coprism`, however, the
 -- | ecosystem never built). `**`: the raw `unfirst` composite is dead on
 -- | a gated carrier, so the knot at this shape needs a starting point —
--- | the whole-row `looped` (`Data.Profunctor.Looping`, primed by its
+-- | the whole-row `looped` (`PUI`'s, primed by its
 -- | first feed; the pointed trace `PointedCostrong` *,
 -- | `Data.Profunctor.PointedCostrong`, is the seeded `unfirst` it is
 -- | stated against) — while the `+` side needs no class of its own,
@@ -50,8 +50,10 @@
 -- | `extras/lenses` source roots: complements of the ecosystem's families,
 -- | mentioning no `PUI`, no row and no carrier. A `Data.Profunctor.Row.*`
 -- | module holds only what is about rows — the merge, its unit, and the
--- | placements and knots below; the whole-row knot `looped` is
--- | `Data.Profunctor.Looping`'s, beside `Seeding`.
+-- | placements below; the whole-row knot `looped` and the point it is
+-- | closed with (`with`, over `announce`) are the carrier's, in `PUI`:
+-- | a beginning and feedback are the two things a timeless carrier
+-- | lacks, so they are stated where the carrier is, not as classes.
 -- |
 -- | The row layer itself is a **third** source root, `extras/row-profunctor`,
 -- | which is a different claim again: these modules are bambik's own
@@ -124,14 +126,13 @@
 -- |     needs `Retaining`'s memory.
 -- |
 -- | What is deliberately *not* here: the one-sided words
--- | (`atField`/`toField`, `atCase`/`toCase`, `with`, `settled`), which
--- | are the floor's and appear
--- | under *The shared floor* below — among them `with`, which no
--- | variant-input shape could mirror, there being no point at a variant
--- | input; and the whole-row knot `looped`, which is
--- | `Data.Profunctor.Looping`'s — a class of its own beside `Seeding`,
--- | carrier structure rather than a row form, for the reason the first
--- | table's `**` gives. And
+-- | (`atField`/`toField`, `atCase`/`toCase`, `settled`), which are the
+-- | floor's and appear under *The shared floor* below; the seed `with`,
+-- | which no variant-input shape could mirror, there being no point at a
+-- | variant input, and the whole-row knot `looped` — both `PUI`'s,
+-- | carrier structure rather than row forms, for the reason the first
+-- | table's `**` gives (they were the classes `Seeding` and `Looping`
+-- | until 2026-10-14, CHANGELOG). And
 -- | deliberately *not* here, on grounds of the row discipline rather
 -- | than reach (CHANGELOG, 2026-10-14): the **row forms of the mixed
 -- | strengths and of every co-strength**. `subResolving @w`/
@@ -160,7 +161,7 @@
 -- | stage at one label: the single-label `Lens`/`Prism` (`focusField`,
 -- | also the leaf lift making every label-indexed editor a whole-row
 -- | citizen; `focusCase`). The one **knot** is not here but
--- | `Looping`'s `looped` (the model re-enters whole, primed by its first
+-- | `PUI`'s `looped` (the model re-enters whole, primed by its first
 -- | feed): an app's loop is cut at its record junction, where the model
 -- | can be declared (`w # looped @( … ) # with seed`, guardrails L18).
 -- | The one **unit** word, `unshown @l` (`lcmap (const {})
@@ -419,15 +420,13 @@ module Data.Profunctor.Row
   , toField
   , atCase
   , toCase
-  , with
   , settled
   )
   where
 
-import Prelude (const, identity, (<<<), (<>), (>>>))
+import Prelude (identity, (<<<), (<>))
 
 import Data.Profunctor (class Profunctor, lcmap, rmap)
-import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -826,17 +825,6 @@ toCase
   => p c a
   -> p c [ | v ]
 toCase = rmap (inj (Proxy @l))
-
--- | Discharge a chain's initial obligation by announcing its t=0 value.
--- | The seed is whatever the chain's first stage takes: a model row into
--- | the knot (`w # looped @( … ) # with seed`, the app shape) or into a
--- | knotless flow (`# with @{ … } invitation`, potluck). Never `{}`: `body`
--- | feeds the terminal record once itself, so a load action standing
--- | before the knot runs on that feed with no seed written. Its own input
--- | is ignored, so it sits at any row; a seed that is a hole is never
--- | announced (`announce`, guardrails L18).
-with :: forall @a p b r. Seeding p => a -> p a b -> p { | r } b
-with a w = lcmap (const {}) (announce a >>> w)
 
 -- | Normalize a stage's emissions with an idempotent function over the row.
 -- | The normalizer is typed at the stage's row, its signature the view's

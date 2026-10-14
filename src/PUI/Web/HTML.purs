@@ -467,7 +467,7 @@ h6 = el "h6"
 -- | is fed exactly what its type says it needs, which is nothing. A
 -- | `{}`-input display (`text (const "…")`) renders on that feed; a point
 -- | (`announce`, `with`) has already answered at registration and,
--- | by Repetition at `{}`, has nothing more to say (`Data.Profunctor.Seeding`).
+-- | by Repetition at `{}`, has nothing more to say (`PUI.announce`).
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
   adoptHostDiagnostics

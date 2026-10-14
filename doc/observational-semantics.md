@@ -385,9 +385,9 @@ ties is `looped` (a variant knot over `unleft`, `cycled`, lasted a day —
 This is the operational face of a classical fact: coproduct iteration
 (Elgot) is free, while product feedback (Conway/Hasegawa fixpoints) needs a
 starting point — **the seeds are the operational ⊥**. It is also why
-`Looping` is a class of its own: the gated `unfirst` cannot self-feed, so
-the diagonal self-trace is carrier structure, not a `Costrong` derivation.
-It fixes, too, exactly what `Seeding` adds beyond rows: the point's *value*
+the knot `looped` is a carrier primitive: the gated `unfirst` cannot
+self-feed, so the diagonal self-trace is carrier structure, not a
+`Costrong` derivation. It fixes, too, exactly what the point adds beyond rows: the point's *value*
 is row-forced (`announce a ≈ lcmap (const a) identity` — `{}` has one
 value, and Repetition makes once and every time the same answer, so `(->)`
 and `Cont` have lawful points), and only its *earliness* — the answer given
@@ -634,7 +634,7 @@ runs — for the merges and the collection at once.
 test/Main.purs, in order: the merge unit/zero-field/exactness/gating laws; the
 trace quartet and the knot; the Category laws; the container-action
 laws; then the audit section — seeded retractions and the three raw
-deadlocks, the `Looping` triple (yanking, conjugation with the `dimap f f`
+deadlocks, the knot's triple (yanking, conjugation with the `dimap f f`
 counterexample, idempotence with the feed-duplication quotient made
 visible), the Strong deviation, the interchange deviation at the inner
 surface and its refinement direction, merge symmetry (`×→×`, `+→×`) and

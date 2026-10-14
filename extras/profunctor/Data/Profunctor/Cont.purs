@@ -47,7 +47,7 @@
 -- | plus `Wander`, the `extras/profunctor` complements (the four coined
 -- | strengths `Resolving`/`Coresolving`/`Retaining`/`Coretaining` and the
 -- | pointed trace `PointedCostrong`), and bambik's own
--- | `Acting`, `Seeding`, `Looping` and four row merges. Nothing is merely unwritten:
+-- | `Acting` and four row merges. Nothing is merely unwritten:
 -- | each class either has an instance here or appears below with its reason.
 -- |
 -- | What it cannot inhabit, and why — graded, because there are two kinds
@@ -57,7 +57,7 @@
 -- |     *input* side before any output exists. Contrast `Cochoice`, where
 -- |     `Left a` needs none: that asymmetry is why `looped` is a primitive
 -- |     and `debounced` seeds its loop branch (`PointedCostrong` starts the
--- |     state channel instead, and `feedback`/`folding` take a seed)
+-- |     state channel instead)
 -- |   * `Retaining` — must produce a `b` for a `Right c` input; a stateless
 -- |     carrier has none (same reason there is no `(->)` instance)
 -- |   * `VariantToRecord` — an input case reaches one operand only, so the
@@ -67,13 +67,14 @@
 -- |
 -- | **Law-level** (a body typechecks; the class's temporal laws refuse it):
 -- |
--- |   * `Looping` — `looped = identity` typechecks and even satisfies the
--- |     equational trace triple (which is exactly why the class also states
--- |     the behavioral re-entry law); what fails is re-entry itself — a CPS
--- |     run is a single pass through one continuation, nothing to feed back
--- |     into. (`Seeding` is inhabited: its law is the wire's answer at
--- |     `{}`, which a CPS run gives; only the *early* answer is carrier
--- |     time, and nothing here needs it — see the instance.)
+-- |   * the knot (`PUI`'s `looped`, no class) — `identity` typechecks and
+-- |     even satisfies the equational trace triple (which is exactly why
+-- |     the word also states the behavioral re-entry law); what fails is
+-- |     re-entry itself — a CPS run is a single pass through one
+-- |     continuation, nothing to feed back into. (The point, `PUI`'s
+-- |     `announce`, a CPS run *has*, as the wire's answer at `{}` —
+-- |     `\k _ -> k a`; only the *early* answer is carrier time, and
+-- |     nothing here needs it, so none is written.)
 module Data.Profunctor.Cont where
 
 import Prelude
@@ -92,7 +93,6 @@ import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
-import Data.Profunctor.Seeding (class Seeding)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Traversable (traverse)
@@ -146,15 +146,6 @@ instance Semigroupoid (Cont r) where
 
 instance Category (Cont r) where
   identity = wrap identity
-
--- The point as the wire's answer to the terminal record's one value
--- (`Data.Profunctor.Seeding`): a CPS run answers each feed, and at `{}`
--- every feed is the same one, so "once" and "every time" coincide. What
--- `Cont` lacks is the *early* answer — a registration moment before any
--- feed — which only the seeded `×`-trace forms need, and they need
--- `Costrong` too, which `Cont` cannot have: nothing is left half-inhabited.
-instance Seeding (Cont r) where
-  announce a = wrap \k _ -> k a
 
 instance Wander (Cont r) where
   wander trav p = unstar (trav (star p))

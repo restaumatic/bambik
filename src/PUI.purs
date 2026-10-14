@@ -80,9 +80,11 @@ module PUI
   , anyOfAt
   , observed
   , resolveFor
+  , announce
+  , seeded
+  , with
+  , looped
   , module Adopters
-  , module Looping
-  , module Seeding
   )
   where
 
@@ -90,7 +92,7 @@ import Data.Profunctor.Row.Structural (withStructuralOrd)
 import Prelude
 
 import Data.Array as Array
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (elem, foldl, for_)
 import Data.Lens (Optic)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -114,14 +116,10 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- own row is always stated by a business function, never placed at
 -- another row at the call site; `{}`-input chrome is placed by the
 -- vocabulary's `eventLeaf` with a bare `lcmap (const {})`.
-import Data.Profunctor.Row (atCase, atField, settled, toCase, toField, with) as Adopters
+import Data.Profunctor.Row (atCase, atField, settled, toCase, toField) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
-import Data.Profunctor.Acting (acted, actedAt, optioned) as Adopters
-import Data.Profunctor.Looping (class Looping)
-import Data.Profunctor.Looping (class Looping, looped) as Looping
-import Data.Profunctor.Seeding (class Seeding, seeded)
-import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
+import Data.Profunctor.Acting (acted, actedAt) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant)
@@ -271,7 +269,7 @@ instance MonadEffect m => Choice (PUI m) where
 -- | unfirst (seeded (Tuple a0 c0) >>> first g) ≈ seeded a0 >>> g
 -- | ```
 -- |
--- | — which is why the knot at a record junction is `Looping`'s `looped`
+-- | — which is why the knot at a record junction is `looped`
 -- | (the self-feeding diagonal, ungated) rather than a derivation from
 -- | this class. Contrast `Cochoice` below,
 -- | whose retraction holds raw: this carrier is genuinely traced over `+`
@@ -463,14 +461,37 @@ instance MonadEffect m => Category (PUI m) where
       , fromUser: \prop -> Ref.write (Just prop) mPropRef
       }
 
--- | The **point** (the `Seeding` instance): one emission of `a` at
--- | registration, then nothing — the informationless `{}` it is fed is
--- | ignored. The pointedness primitive: `with` closes the knot over it,
--- | and the seeded echo wire `debounced` primes its loop
--- | branch with is derived from it through `Choice`
--- | (`Data.Profunctor.Seeding`).
-instance MonadEffect m => Seeding (PUI m) where
-  announce a = wrap $ pure
+-- | **Pointedness: the terminal record's one answer.** An entity (a record
+-- | channel) has a known initial state; an event (a variant channel) merely
+-- | occurs. The **point** `announce a :: p {} a` is how this carrier
+-- | supplies that initial state: one emission of `a` at registration, then
+-- | nothing — the informationless `{}` it is fed is ignored. `with` closes
+-- | the knot over it, and the seeded echo wire `debounced` primes its loop
+-- | branch with is derived from it through `Choice` (`seeded`).
+-- |
+-- | What the point *is* follows from rows alone: `{}` has exactly one
+-- | value, so every feed of a `{}`-input component is a repetition of the
+-- | first, and the Repetition law of a record input makes answering it
+-- | once and answering it every time the same behaviour —
+-- |
+-- |   * **answer** — `announce a ≈ lcmap (const a) identity`: the point is
+-- |     the wire's answer to the terminal record's one value (up to
+-- |     stutter, doc/observational-semantics.md §2). On a timeless carrier
+-- |     that is an equality, `const`.
+-- |   * **early** — a carrier with a registration moment gives the answer
+-- |     at registration, before any feed arrives, and (by Repetition)
+-- |     never again: feeding it `{}` changes nothing.
+-- |
+-- | That earliness is carrier structure, the operational ⊥ of the trace
+-- | asymmetry theorem (doc §5): `debounced` composes a `seeded` wire into a
+-- | positional loop no feed can reach, and primes it only because the
+-- | answer comes before the first input. It was a class, `Seeding`, with
+-- | `(->)` and `Cont` instances, until the class was dropped as a carrier
+-- | fact dressed as algebra (CHANGELOG, 2026-10-14). The merge units are
+-- | *not* pointed: the record gates ignore a contribution of zero fields —
+-- | pointing is this word's business alone.
+announce :: forall m a. MonadEffect m => a -> PUI m {} a
+announce a = wrap $ pure
     { toUser: mempty
     -- an `if`, not `unless`: the branch must not even be built for a hole,
     -- since a downstream stage (a gated merge's `exactRow`) reads the value
@@ -478,11 +499,82 @@ instance MonadEffect m => Seeding (PUI m) where
     , fromUser: \prop -> if isHole a then pure unit else prop a
     }
 
--- | Self-reference as carrier structure (`Data.Profunctor.Looping`,
--- | `Seeding`'s sibling): feed a UI component its own emissions,
--- | re-entrancy-guarded — leaf UI components echo on `toUser`, and the
--- | guard swallows the echoes the re-feed provokes (the class's
--- | idempotence law, operationally). Wrapped around a record merge it
+-- | The **seeded echo wire**: `identity`'s pass-through plus the point,
+-- | derived through `Choice` — the point sits on the `Left` branch, the
+-- | wire on the `Right`, and both branches rejoin — so the pointed wire
+-- | needs no second primitive. It is the initial-state supply a seeded
+-- | value-level trace builds on: `debounced` primes its loop branch by
+-- | composing one into the traced chain.
+seeded :: forall m a. MonadEffect m => a -> PUI m a a
+seeded a = dimap Right (either identity identity) (left (announce a))
+
+-- | Discharge a chain's initial obligation by announcing its t=0 value.
+-- | The seed is whatever the chain's first stage takes: a model row into
+-- | the knot (`w # looped @( … ) # with seed`, the app shape) or into a
+-- | knotless flow (`# with @{ … } invitation`, potluck). Never `{}`: `body`
+-- | feeds the terminal record once itself, so a load action standing
+-- | before the knot runs on that feed with no seed written. Its own input
+-- | is ignored, so it sits at any row; a seed that is a hole is never
+-- | announced (`announce`, guardrails L18). A pipeline's residual input row
+-- | *is* its initial-state obligation, discharged by `with` down to `{}`,
+-- | the one self-pointed record, which `body` demands.
+with :: forall @a m b r. MonadEffect m => a -> PUI m a b -> PUI m { | r } b
+with a w = lcmap (const {}) (announce a >>> w)
+
+-- | **Self-reference as carrier structure** — the point's sibling: the
+-- | point says *a beginning exists* (one registration moment), the knot
+-- | says *feedback exists* (an emission can re-enter its own input). The
+-- | two things a timeless carrier lacks: feeding a function its own output
+-- | is `fix`, a fixpoint computation, not a wire.
+-- |
+-- | The `×`-diagonal **self-trace** at record rows: feed a UI component its
+-- | own emissions, re-entrancy-guarded — leaf UI components echo on
+-- | `toUser`, and the guard swallows the echoes the re-feed provokes (the
+-- | idempotence law, operationally). A primitive because no ecosystem
+-- | class reaches it: on this knowledge-gated carrier `Costrong`'s
+-- | `unfirst` cannot self-feed (no `c` before the first emission, no
+-- | emission before the first input — the gate deadlocks), so the
+-- | self-feeding special case is carrier structure, not a derivation.
+-- | Row-shaped in the word itself: the looped value is an entity (a model
+-- | row), declared as the visible argument, `looped @( count :: Int ) w`.
+-- | It is the app's knot, and the only knot: a loop through the four
+-- | shapes is cut at its record junction, where the model can be declared,
+-- | and an event re-enters through its fold. (The variant side would need
+-- | no primitive — `Cochoice`'s `unleft` holds raw here, the carrier being
+-- | traced over `+` and pointed-traced over `×` — and a one-field `×`-knot
+-- | would be seeded through `PointedCostrong`; neither has a word,
+-- | `Data.Profunctor.Row`, *What is deliberately not here*.)
+-- |
+-- | Laws — the trace axioms restricted to the diagonal, stated up to the
+-- | observational equivalence of doc/observational-semantics.md (boundary
+-- | channels; inner feeds compared up to consecutive duplication — the
+-- | quotient feed-idempotence licenses):
+-- |
+-- | ```
+-- | looped identity         = identity                        (yanking)
+-- | looped (dimap f f⁻¹ g)  = dimap f f⁻¹ (looped g)          (conjugation — dinaturality at an iso f)
+-- | looped (looped g)       ≈ looped g                        (idempotence: the guard; nesting only duplicates feeds)
+-- | ```
+-- |
+-- | Conjugation needs the inverse pair: `dimap f f` in both positions is
+-- | false for every non-involutive iso (counterexample in test/Main.purs).
+-- | The triple is necessary, not sufficient — `looped = identity`
+-- | satisfies all three — so what the word *means* is a fourth,
+-- | behavioral law (temporal, like the point's): **re-entry** — each
+-- | emission of the wrapped UI component is fed back to it exactly once,
+-- | before propagating; the echoes that re-feed provokes are swallowed.
+-- | Two of its three facts are row consequences: the re-entry guard is the
+-- | Repetition law of a record input made operational, and the knot does
+-- | not deadlock where positional `unfirst` does because a record input
+-- | is **shared** — the loop-back and the outside are two feeders of one
+-- | inclusive input row. What is not a row consequence is the cycle
+-- | itself: an emission becoming a feed. The knot hides nothing and takes
+-- | no seed of its own: it exposes the whole row and is primed by its
+-- | first feed (`with seed`) — a looped state is a model field, never a
+-- | hidden channel. It was a class, `Looping`, with this one instance,
+-- | until the class was dropped (CHANGELOG, 2026-10-14).
+-- |
+-- | Wrapped around a record merge it
 -- | supplies the sibling cross-feed the gated merge deliberately omits —
 -- | every operand sees every emission re-broadcast, and per-operand
 -- | *retention* falls out of the merge gates (each gate holds its side's
@@ -492,12 +584,9 @@ instance MonadEffect m => Seeding (PUI m) where
 -- | re-feeds every stage on every emission, so no editor can emit a stale
 -- | sibling for longer than the turn in flight — which is why editor
 -- | ensembles live inside `looped`, and a loop-free
--- | flow wraps its editor window in `looped` (order-form). The instance
--- | is the primitive the class exists
--- | for: `Costrong`'s gated `unfirst` cannot self-feed, so the knot is
--- | tied directly here.
-instance MonadEffect m => Looping (PUI m) where
-  looping p = wrap do
+-- | flow wraps its editor window in `looped` (order-form).
+looped :: forall @r m. MonadEffect m => PUI m { | r } { | r } -> PUI m { | r } { | r }
+looped p = wrap do
     p' <- unwrap p
     busyRef <- liftEffect $ Ref.new false
     -- `Just pending` while the body is being wired: downstream registers

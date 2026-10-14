@@ -4,8 +4,8 @@
 -- |   * **strength** — `Strong` (ecosystem, with a `(->)` instance): the
 -- |     unary power, the field lens. Its co-strength is the ecosystem's
 -- |     `Costrong` (gated on `PUI`, so the knot at this shape needs a
--- |     starting point: the whole-row `looped`, `Looping`'s —
--- |     `Data.Profunctor.Looping` — primed by its first feed),
+-- |     starting point: the whole-row `looped`, the carrier's, primed by
+-- |     its first feed),
 -- |     and their optics are `Data.Lens.Lens` and `Data.Lens.Colens` —
 -- |     neither the classes nor the optics mention a row, so none of them
 -- |     lives here.
@@ -18,8 +18,9 @@
 -- |     field the whole-row `looped` carries, never a hidden one
 -- |     (`Data.Profunctor.Row`, *What is deliberately not here*). The
 -- |     one-sided words of this shape — `atField`/`toField` (the halves of
--- |     the closed-singleton iso), `with` (the knot's closure, over the
--- |     point) and `settled` (the normalization) — live on the floor.
+-- |     the closed-singleton iso) and `settled` (the normalization) —
+-- |     live on the floor; the knot's closure `with`, over the point, is
+-- |     the carrier's (`PUI`).
 -- |
 -- | A word lives where the sides it constrains do: one constraining both
 -- | sides in its shape's module, one constraining a single side on the
