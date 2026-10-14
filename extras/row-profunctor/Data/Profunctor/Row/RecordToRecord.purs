@@ -36,9 +36,10 @@
 -- | (test/Main.purs, with `focusField @l = toField @l <<< atField @l` at
 -- | the closed singleton: the focus is derived from its halves there,
 -- | never the halves from it) — while the mixed shapes' words hand bare values
--- | to and from cases all the time. `toField` closes its row where
--- | `toCase` leaves it open: a variant output may be widened, a record
--- | output is owned and exact.
+-- | to and from cases all the time. Both halves close their row to the
+-- | one label (`Cons l a () r`, `Cons l a () v`): a stage introducing a
+-- | case is typed at exactly that case, as one introducing a field is,
+-- | and the `×→+` merge widens each operand into its union itself.
 -- |
 -- | ## Laws at `×→×`
 -- |

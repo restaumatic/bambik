@@ -815,9 +815,9 @@ atCase = lcmap (on (Proxy @l) identity case_)
 
 -- | Emit a component's bare output as case `l`.
 toCase
-  :: forall @l @a p c b v
+  :: forall @l @a p c v
    . IsSymbol l
-  => Row.Cons l a b v
+  => Row.Cons l a () v
   => Profunctor p
   => p c a
   -> p c [ | v ]

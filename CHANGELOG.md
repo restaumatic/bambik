@@ -8,6 +8,13 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **`toCase` closes its row.** `Cons l a () v` like `toField`'s `Cons l a
+  () r`, where its rest was open (`Cons l a b v`) since it arrived. Every
+  call site sits in a `RecordToVariant.do` block, whose merge widens each
+  operand into the union with `rmap expand`, and `joined` already closed
+  it, so a stage introducing a case is now typed at exactly that case,
+  its hole hint one case rather than an open row. The single-label grid
+  is uniform in both halves.
 - **`atAnyRow` and `widenVariantOutput` dropped, inlined.** The floor's
   two named reshapings were one-liners (`lcmap (const {})`, `rmap
   expand`) with one caller each outside a test: the vocabulary's
