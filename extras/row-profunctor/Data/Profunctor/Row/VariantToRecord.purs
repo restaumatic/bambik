@@ -31,7 +31,7 @@
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
 -- | a component `w :: p [ | v ] { | r }` is a **fold** of occurrences into
 -- | the record, or a **status**, which releases nothing and so is typed at
--- | every row like `silence`; the merge is `m = variantToRecord w1 w2`,
+-- | every row like the silent component; the merge is `m = variantToRecord w1 w2`,
 -- | inputs owned (`OwnedVariantInputs`), the output row **shared** — the
 -- | copairing `[f, g] : A + B -> R` of the coproduct. Each
 -- | operand releases the whole row, so the merge forwards releases as they
@@ -50,7 +50,7 @@
 -- |      variantToRecord g (lcmap case_ identity)`; symmetric and
 -- |      associative up to `≈`. Never fed and owning no field, the unit's
 -- |      side is born spoken, so any silent element of that type serves
--- |      equally (`silence` at `b = ()` is one). The merge pinned at it is
+-- |      equally (the silent component at `b = ()` is one). The merge pinned at it is
 -- |      `fold @l f` (below), one case folded into the record
 -- |      (`fold @"Count" increment`, counter); a loop's folds merge here one
 -- |      per case, each releasing the whole next model, the statuses beside

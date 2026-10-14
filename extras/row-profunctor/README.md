@@ -46,7 +46,6 @@ that this layer does not depend on the one downstream of it.
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `unshown` |
 | `Data.Profunctor.Acting` | the container action `class Acting`/`actedBy` |
 | `Data.Profunctor.Seeding` | `class Category p <= Seeding p`, the pointed wire |
-| `Data.Profunctor.Silencing` | `class Profunctor p <= Silencing p`, the silent component — the `× → +` unit, so no merge class carries one |
 
 ## What extraction would take
 

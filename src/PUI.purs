@@ -115,7 +115,6 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- vocabulary's `eventLeaf` with a bare `lcmap (const {})`.
 import Data.Profunctor.Row (atCase, atField, settled, toCase, toField, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined) as Adopters
-import Data.Profunctor.Silencing (silence) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping)
@@ -125,7 +124,6 @@ import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant)
-import Data.Profunctor.Silencing (class Silencing, silence)
 import Data.Profunctor.Row (class RowLabels, exactRow, fedFirst, fedSecond, rowLabels)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
@@ -556,9 +554,15 @@ instance MonadEffect m => RecordToRecord (PUI m) where
     labels1 = labelsOf p1
     labels2 = labelsOf p2
 
--- the one unit no wire reaches (terminal → initial): silent at any rows
-instance Applicative m => Silencing (PUI m) where
-  silence = wrap $ pure
+-- The silent component: fed anything, emits nothing. The `×→+` merge's
+-- unit on this carrier (test/Main.purs, test/Exhaustive.purs), and what
+-- a detached emitter pane observationally is (`PUI.Web.provided`,
+-- doc/observational-semantics.md). No wire reaches it — `{}` is
+-- terminal, `Variant ()` initial — so it is carrier structure with no
+-- class to borrow it from, and the algebra names no unit but
+-- `Category`'s `identity`; `observed` is its one caller.
+silent :: forall m i o. Applicative m => PUI m { | i } [ | o ]
+silent = wrap $ pure
     { toUser: mempty
     , fromUser: mempty
     }
@@ -846,7 +850,7 @@ instance MonadEffect m => Retaining (PUI m) where
 -- subtree it was built in is on the screen. A pane parks its content and
 -- **suspends** its scope, so a `ticks` inside skips its beats and an
 -- `action` that settles inside posts nothing: the pane law — a detached
--- emitter *is* `silence` — holds for emitters that originate occurrences
+-- emitter *is* silent — holds for emitters that originate occurrences
 -- themselves, not only for those whose occurrences come from a node the
 -- document no longer holds. A collection's leaver and a `dynamic` rebuild
 -- **cancel** their scope: a cancelled `ticks` ends its loop and the
@@ -1083,7 +1087,7 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- |
 -- | **Derived**: the wire and the status, merged by the
 -- | `× → +` merge over the event nested as a record field — the status
--- | behind `left` so it sees only its contracted cases, `>>> silence` so its
+-- | behind `left` so it sees only its contracted cases, `>>> silent` so its
 -- | emissions leave as nothing.
 observed
   :: forall m v v1
@@ -1093,7 +1097,7 @@ observed
   -> PUI m [ | v ] [ | v ]
 observed status = dimap (\v -> { event: v }) (match { forwarded: identity }) $ recordToVariant
   (dimap _.event (inj (Proxy @"forwarded")) identity :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
-  (lcmap (\r -> maybe (Right unit) Left (contract r.event)) (left (status >>> silence)) >>> lcmap (const {}) silence :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
+  (lcmap (\r -> maybe (Right unit) Left (contract r.event)) (left (status >>> silent)) >>> lcmap (const {}) silent :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
 
 -- | The **tick source**, opened by its status like a fold or an action
 -- | (`unshown @"Clock ticked" # ticks tickPeriod`, timer): every
@@ -1204,7 +1208,7 @@ static o = o identity
 -- | it before its logic exists. An outcome that settles in a suspended or
 -- | cancelled scope — the pane that held the action detached meanwhile — is
 -- | dropped: the case the model left gets no occurrence from it, so a
--- | detached action is `silence` like a detached button; the slot is still
+-- | detached action is silent like a detached button; the slot is still
 -- | told `ended`, so a re-attached indicator is not left running.
 action
   :: forall @t a v1 m

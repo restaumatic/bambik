@@ -588,8 +588,8 @@ displayWiring show = do
 
 -- | A **status leaf**'s wiring: `show` renders each occurrence, and the
 -- | status releases nothing — the `+→×` merge forwards every release as
--- | the whole shared row, so a status is typed at every row, as `silence`
--- | is.
+-- | the whole shared row, so a status is typed at every row, as the
+-- | silent component is.
 statusWiring :: forall a b. (a -> Effect Unit) -> Wiring a b
 statusWiring show = { toUser: show, fromUser: \_ -> pure unit }
 
@@ -837,7 +837,7 @@ textAt = text (Record.get (Proxy @l))
 -- | Unlike the display it renders with, a status **releases nothing**: the
 -- | `+→×` merge forwards every release as the whole shared row, so the
 -- | leaf's echo is swallowed here and the output is typed at every
--- | row, as `silence`'s is.
+-- | row, as the silent component's is.
 textOf :: forall a r. (a -> String) -> PUI Web a { | r }
 textOf f = wrap do
   leaf <- unwrap (textLeaf f)
@@ -981,7 +981,7 @@ infixr 10 attrDyn as :=>
 -- | The content is an emitter (`×→+`), and that is what makes the pane
 -- | lawful: a feed arms an emitter and fires nothing, so a detached one
 -- | firing nothing is the same answer — an emitter removed by `provided`
--- | *is* `silence`. For a button that is the document's doing (a parked
+-- | *is* silent. For a button that is the document's doing (a parked
 -- | node gets no clicks); for a `ticks` or an `action` inside, whose
 -- | occurrences have no cause on the channel, it is the pane's **scope**:
 -- | the content is built in a scope the pane suspends while detached, so a

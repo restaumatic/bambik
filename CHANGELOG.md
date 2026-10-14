@@ -8,6 +8,17 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **`Silencing` deleted; the algebra names no unit but `identity`.** The
+  one-method class coined earlier today for the `×→+` unit is gone with
+  its two instances: no shape needs a unit word of its own, the three
+  wires are `Category`'s `identity` placed, and the fourth, which no wire
+  reaches, is the carrier's own silent component — `PUI`'s private
+  `silent` (the one thing `observed` needed `silence` for) and `Cont`'s
+  `mempty` — stated and law-tested per carrier (test/Main.purs and
+  test/Exhaustive.purs write it as a probe), named by no class. `silence`
+  leaves `PUI`'s re-exports: no vocabulary or demo ever wrote it, every
+  situation that observationally is silence (a detached pane, a status,
+  a hole) having its own word.
 - **`toCase` closes its row.** `Cons l a () v` like `toField`'s `Cons l a
   () r`, where its rest was open (`Cons l a b v`) since it arrived. Every
   call site sits in a `RecordToVariant.do` block, whose merge widens each

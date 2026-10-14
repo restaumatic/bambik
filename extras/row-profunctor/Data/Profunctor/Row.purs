@@ -104,15 +104,19 @@
 -- | below, and a two-sided record↔variant conversion is a classifier, a
 -- | business function):
 -- |
--- |   * **unit** — one shape only: no merge class carries a unit, each
--- |     shape borrowing its own from the class that can supply it. Three
--- |     borrow from `Category` — `identity` at `+→+`, the `{}` wire at the
--- |     merge's row (`lcmap (const {}) identity`) at `×→×`, `lcmap case_ identity`
--- |     at `+→×`, where `unshown @l` is that unit named at one case, the
--- |     one unit word a shape module has. `×→+`'s cannot be a wire, since
--- |     no wire fabricates a case, so it borrows from
--- |     `Data.Profunctor.Silencing` — `silence`, a class of its own beside
--- |     `Seeding` and `Looping`, and so not a shape module's word.
+-- |   * **unit** — one shape only: no merge class carries a unit, and the
+-- |     algebra names no unit but `Category`'s `identity`. Three shapes
+-- |     reach theirs from it — `identity` at `+→+`, the `{}` wire at the
+-- |     merge's row (`lcmap (const {}) identity`) at `×→×`, `lcmap case_
+-- |     identity` at `+→×`, where `unshown @l` is that unit named at one
+-- |     case, the one unit word a shape module has. `×→+`'s cannot be a
+-- |     wire, since no wire fabricates a case (`{}` is terminal, `Variant
+-- |     ()` initial): over the algebra that merge is a semigroup, and a
+-- |     carrier with *nothing* in it supplies the unit as its own
+-- |     structure — `PUI`'s silent component, `Cont`'s `mempty` — stated
+-- |     and law-tested per carrier, named by no class (`Silencing`, a
+-- |     one-method class with those two instances, lasted a day:
+-- |     CHANGELOG, 2026-10-14).
 -- |   * **retention** (over `Strong`, `×→×`'s strength used at `×→+`) —
 -- |     one shape only: the fed row carried out with each occurrence.
 -- |     `+→×` has no `Choice` mirror, because `left` would release an
@@ -124,10 +128,10 @@
 -- | are the floor's and appear
 -- | under *The shared floor* below — among them `with`, which no
 -- | variant-input shape could mirror, there being no point at a variant
--- | input; the `×→+` unit `silence`, which is `Data.Profunctor.Silencing`'s;
--- | and the whole-row knot `looped`, which is `Data.Profunctor.Looping`'s
--- | — each a class of its own beside `Seeding`, carrier structure rather
--- | than a row form, for the reason the first table's `**` gives. And
+-- | input; and the whole-row knot `looped`, which is
+-- | `Data.Profunctor.Looping`'s — a class of its own beside `Seeding`,
+-- | carrier structure rather than a row form, for the reason the first
+-- | table's `**` gives. And
 -- | deliberately *not* here, on grounds of the row discipline rather
 -- | than reach (CHANGELOG, 2026-10-14): the **row forms of the mixed
 -- | strengths and of every co-strength**. `subResolving @w`/
@@ -308,7 +312,7 @@
 -- | --------------  ----------------  --------------  ----------------------  ---------------------
 -- | 1 repetition    owed              owed            —                       —
 -- | 2 answer        a row, once       nothing         —                       —
--- | 3 unit u        the {} wire       silence         identity @(Variant ())  lcmap case_ identity
+-- | 3 unit u        the {} wire       silent (carrier)  identity @(Variant ())  lcmap case_ identity
 -- | 4 π_k           whole row         whole row       own cases               own cases
 -- |   exact         trim              identity        identity                trim
 -- | 5 preservation  of 1 and 2        of 1 and 2      vacuous                 vacuous
@@ -356,8 +360,8 @@
 -- | gathered by the same machine over the fed keys as labels
 -- | (`Data.Profunctor.Acting`) — and the unit is forced, not designed: a wire
 -- | into the unit object wherever a wire fits (a zero-field side enrols
--- | no participant, so it is born satisfied), `silence` at the one shape
--- | no wire reaches. Counting
+-- | no participant, so it is born satisfied), the carrier's silent
+-- | component at the one shape no wire reaches. Counting
 -- | renderings a gated merge is premonoidal — interchange at the inner
 -- | surfaces holds as `⊑` — and counting channels monoidal; at the
 -- | boundary interchange holds on the nose because a feed is one step

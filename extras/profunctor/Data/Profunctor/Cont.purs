@@ -32,8 +32,9 @@
 -- |   * `VariantToVariant` — one input case reaches exactly one operand, so
 -- |     no combining is needed
 -- |   * `RecordToVariant` — needs `Monoid r`: both operands are fed and both
--- |     may emit, so two answers must combine; its unit, `Silencing`'s
--- |     `silence`, is `mempty` under the same constraint
+-- |     may emit, so two answers must combine; the silent component,
+-- |     `wrap \_ _ -> mempty`, is its unit under the same constraint —
+-- |     a carrier fact with no class to name it
 -- |
 -- | `Resolving`/`Coretaining`/`PointedCostrong` typecheck but are degenerate
 -- | and stated here only to record that: `resolve` can only ever take `Left`
@@ -91,7 +92,6 @@ import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
-import Data.Profunctor.Silencing (class Silencing)
 import Data.Profunctor.Seeding (class Seeding)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
@@ -184,9 +184,6 @@ instance VariantToVariant (Cont r) where
   variantToVariant p1 p2 = wrap \k v -> case splitVariant v of
     Left v1 -> unwrap p1 k v1
     Right v2 -> unwrap p2 k v2
-
-instance Monoid r => Silencing (Cont r) where
-  silence = wrap \_ _ -> mempty
 
 instance Monoid r => RecordToVariant (Cont r) where
   recordToVariant p1 p2 = wrap \k i ->

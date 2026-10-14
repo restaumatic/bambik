@@ -9,9 +9,10 @@
 -- |     lives here.
 -- |   * **shape class** — `RecordToVariant`, the binary **merge**: the
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
--- |     (`bind`/`discard`). Its unit `silence` is not its own but
--- |     `Data.Profunctor.Silencing`'s, as the other shapes' units are
--- |     `Category`'s — no merge class carries a unit.
+-- |     (`bind`/`discard`). It carries no unit, like the other merge
+-- |     classes; theirs is `Category`'s `identity`, and this one, which no
+-- |     wire reaches, is the carrier's silent component (`PUI`, `Cont`),
+-- |     named by no class.
 -- |   * **free functions** — over `Strong`: `joined @l` (an event joined
 -- |     with the row its emitter was fed — replay is this at the empty
 -- |     payload, `PUI.Web`'s click source dropping the `{}` event). No strength or co-strength row form: a
@@ -44,10 +45,11 @@
 -- |      a loop re-feed an emitter without firing it. What an
 -- |      emission carries is the source's contract, not the shape's:
 -- |      `clicked` replays the row last fed.
--- |   3. **Monoid** — unit `silence` (`Data.Profunctor.Silencing`'s; the
--- |      law conditional on that class, as the others' are on `Category`),
+-- |   3. **Monoid** — unit the carrier's silent component (the others'
+-- |      laws are conditional on `Category`; this one is stated per
+-- |      carrier, `PUI`'s in test/Main.purs and test/Exhaustive.purs),
 -- |      exact:
--- |      `recordToVariant silence g = g = recordToVariant g silence`;
+-- |      `recordToVariant silent g = g = recordToVariant g silent`;
 -- |      symmetric and associative up to `≈`. No wire reaches this unit
 -- |      (`{}` is terminal, `Variant ()` initial), and parametricity
 -- |      extends the silent element to any rows. The merge pinned at it is
@@ -66,27 +68,27 @@
 -- | On `PUI`: broadcast in, passage out — each emission exits as it
 -- | occurs, nothing retained, no state (`Applicative m` suffices). Law 2
 -- | is why this shape has no starvation: a silent source is lawful, and
--- | an absent one is `silence` (below). Probes carry law and shape in
+-- | an absent one is the silent component (below). Probes carry law and shape in
 -- | test/Main.purs (`answer ×→+` on the probe carrier's replay source; the
 -- | real sources are clicked on the leaf-law bench); 3–6 run over every
 -- | script to a bound in test/Exhaustive.purs.
 -- |
--- | `silence` is also what an **absent event source is**. A `×→+` component that
+-- | The silent component is also what an **absent event source is**. A `×→+` component that
 -- | exists in one state and not in another
 -- | (`button @"Start" # provided @"halted" phaseOf`) is, in the state
--- | where it is absent, observationally `silence`: fed nothing, emitting
+-- | where it is absent, observationally silent: fed nothing, emitting
 -- | nothing. That is why the type is variant-output only — silent at
 -- | *variant* output is a source with nothing to say, while silent at an
 -- | inhabited *record* output would be a starved gate, which is why the
 -- | record-side pane answers every feed instead — `inCase`, with the fed
 -- | row. But absence is **not a copairing**: routing the input away
 -- | from `w` leaves `w`'s own emission channel connected, so
--- | `lcmap f' (left w >>> right silence)` still emits when the source
+-- | `lcmap f' (left w >>> right silent)` still emits when the source
 -- | fires in the "absent" case (checked on the probe carrier: a Start
 -- | button clicked while `timing` still emitted). Only removing
 -- | the component silences it, and removal is `Hosting`'s — the DOM's —
 -- | not the algebra's. So `provided` stays a carrier primitive, and
--- | `silence` is the *value* of what it removes, not an operand it is
+-- | the silent component is the *value* of what it removes, not an operand it is
 -- | built from. (Deleted and restored on this argument; CHANGELOG, 2026-09-11.)
 module Data.Profunctor.Row.RecordToVariant
   ( class RecordToVariant

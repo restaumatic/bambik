@@ -41,7 +41,7 @@ import Effect (Effect, foreachE)
 import Effect.Class.Console (log)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), acted, silence)
+import PUI (PUI(..), acted)
 import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -559,8 +559,10 @@ unitVV = lcmap case_ identity
 unitVR :: forall r. PUI Effect (Variant ()) { | r }
 unitVR = lcmap case_ identity
 
+-- the silent component: the ×→+ unit is carrier structure no class
+-- names, so it is written here as a probe
 unitRV :: forall r. PUI Effect { | r } (Variant ())
-unitRV = silence
+unitRV = PUI (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit })
 
 laws :: Array Law
 laws =

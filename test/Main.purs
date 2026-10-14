@@ -38,7 +38,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, unshown, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, reset, resolveFor, resumeScope, seeded, silence, suspendScope, ticks, with)
+import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, unshown, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, reset, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -678,12 +678,14 @@ main = do
     fire p2Prop (.y "e")
     Ref.read outs >>= assertEqual "×→+ broadcast: either operand's case exits, ungated" [ .x 7, .y "e" ]
 
-  -- ×→+ unit law: recordToVariant silence g = g (the unit is the silent
-  -- source — uninhabited variant output, so silence is forced).
+  -- ×→+ unit law: recordToVariant silent g = g — the unit is the silent
+  -- component, carrier structure no class names (uninhabited variant
+  -- output, so silence is forced), written here as a probe.
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int ])
-    m <- unwrap (recordToVariant (silence :: PUI Effect {} (Variant ())) (probe gProp :: PUI Effect {} [ x :: Int ]))
+    let silent = PUI (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit }) :: PUI Effect {} (Variant ())
+    m <- unwrap (recordToVariant silent (probe gProp :: PUI Effect {} [ x :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp (.x 1)
     Ref.read outs >>= assertEqual "unit law ×→+: recordToVariant silence g = g" [ .x 1 ]

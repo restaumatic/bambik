@@ -254,10 +254,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   exactly, not up to an echo, because a record gate MUST treat
   a contribution of zero fields as no contribution (L6). The one unit no
   wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
-  maps terminal→initial), and it is `Silencing`'s `silence`
-  (parametricity, not policy) — the method of a class beside `Seeding`
-  and `Looping`, not of the merge and not a carrier function, so that
-  no merge class carries a unit,
+  maps terminal→initial), and it is the carrier's silent component
+  (parametricity, not policy) — not the merge's method and not a class's
+  (`Silencing` lasted a day, 2026-10-14): the algebra names no unit but
+  `Category`'s `identity`, so no merge class carries a unit,
   and what an event source removed by `provided` observationally *is*;
   its variant-only output type is the honesty boundary: silent at an
   inhabited record output is a starved gate, which the record-side panes
