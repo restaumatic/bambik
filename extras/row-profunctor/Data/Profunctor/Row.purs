@@ -86,7 +86,7 @@
 -- | -----------  ----------  -------  -----------------
 -- | p {|a} {|b}  focusField
 -- | p [|a] [|b]  focusCase
--- | p {|a} [|b]                       replaying, joined
+-- | p {|a} [|b]                       joined
 -- | p [|a] {|b}              unshown
 -- | ```
 -- |
@@ -162,10 +162,12 @@
 -- | (`unshown @l # fold f`), derived through the `×→×` merge.
 -- | **Retention** is `×→×`'s `Strong` at `×→+`: `first` around an
 -- | occurrence source, its state channel carrying the fed row out with
--- | each occurrence (`replaying @l f`, of which `clicked` is one;
--- | `joined @l`, `{ event, model }`), each followed by the grid's output
--- | half, `toCase @l` — the case introduced over the retained row, never
--- | renamed from the source's.
+-- | each occurrence (`joined @l`, `{ event, model }`), followed by the
+-- | grid's output half, `toCase @l` — the case introduced over the
+-- | retained row, never renamed from the source's. A click, whose
+-- | occurrence carries nothing, is `joined` with the `{}` event dropped
+-- | (`PUI.Web.clicked`; the word `replaying @l f` that named it was a
+-- | derivation and was deleted — CHANGELOG, 2026-10-14).
 -- |
 -- | The pure shapes' two-sided words above and the floor's one-sided
 -- | halves together form one **single-label grid**, the same three words

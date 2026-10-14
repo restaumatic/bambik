@@ -8,6 +8,14 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **`replaying` deleted.** Since yesterday its body was `joined` at the
+  empty payload with the event dropped and the case renamed — a
+  derivation, with `PUI.Web.clicked`/`clickedRow` its only callers. They
+  now write it themselves (the private `replayed`), the occurrence-source
+  pin (`RowToList v1 (Cons c {} Nil)`) going with the word since the
+  private click source is `[ occurred :: {} ]` by construction, and its
+  law test folds into `joined`'s primed `Strong` law. The `×→+` module
+  exports `joined` alone beside its merge.
 - **The six per-shape row forms deleted: `feedback`, `cycled`,
   `folding`, `unfolding`, `subResolving`, `subRetaining`.** All six were
   restored on 2026-10-13 for the completeness of the shape table's

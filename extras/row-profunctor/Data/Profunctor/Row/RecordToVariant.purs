@@ -12,9 +12,9 @@
 -- |     (`bind`/`discard`). Its unit `silence` is not its own but
 -- |     `Data.Profunctor.Silencing`'s, as the other shapes' units are
 -- |     `Category`'s — no merge class carries a unit.
--- |   * **free functions** — over `Strong`: `replaying @l` (replay as
--- |     `Strong`'s retention) and `joined @l` (an event joined with the
--- |     row its emitter was fed). No strength or co-strength row form: a
+-- |   * **free functions** — over `Strong`: `joined @l` (an event joined
+-- |     with the row its emitter was fed — replay is this at the empty
+-- |     payload, `PUI.Web`'s click source dropping the `{}` event). No strength or co-strength row form: a
 -- |     stage is typed at one row, so no word narrows it to a sub-record
 -- |     with the rest escaping as a case, and a fold's state is a model
 -- |     field, never a hidden one (`Data.Profunctor.Row`, *What is
@@ -26,7 +26,7 @@
 -- | — so no shape module imports another, and every module holds only
 -- | its merge, its strength and trace forms, and the words that genuinely
 -- | span both of its sides.
--- | `replaying`/`joined` take `toCase` from the floor.
+-- | `joined` takes `toCase` from the floor.
 -- |
 -- | ## Laws at `×→+`
 -- |
@@ -94,23 +94,18 @@ module Data.Profunctor.Row.RecordToVariant
   , joined
   , bind
   , discard
-  , replaying
   )
   where
 
 import Control.Category (identity)
-import Control.Semigroupoid ((<<<))
-import Data.Function ((#))
-import Data.Profunctor (class Profunctor, dimap, rmap)
+import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Row (class SharedRecordInputs, class SharedVariantOutputs, toCase)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (case_, inj, on)
+import Data.Variant (case_, on)
 import Prim.Row (class Cons)
-import Prim.RowList (class RowToList)
-import Prim.RowList as RowList
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= RecordToVariant p where
@@ -140,27 +135,6 @@ discard
   -> p { | r } [ | v ]
 discard first cont = bind first (\_ -> cont unit)
 
--- | Replay the last fed row, mapped by `f`, as case `l` on each occurrence of the source.
--- | The source is fed the row it replays, whole. An **occurrence source**:
--- | one case carrying `{}`, the row pinned by `RowToList` so the one label is
--- | read off it — a source with a payload, or with several cases, is a type
--- | error rather than a silent discard. Derived: `joined` at the empty
--- | payload, the event dropped and the case renamed to `l`, so replay is
--- | `Strong`'s retention and nothing else.
-replaying
-  :: forall @l p r c v1 v2 k v
-   . Strong p
-  => IsSymbol l
-  => IsSymbol c
-  => RowToList v1 (RowList.Cons c {} RowList.Nil)
-  => Cons c {} () v1
-  => Cons c { event :: {}, model :: { | r } } () v2
-  => Cons l k () v
-  => ({ | r } -> k)
-  -> p { | r } [ | v1 ]
-  -> p { | r } [ | v ]
-replaying f src = joined @c src # rmap (on (Proxy @c) (inj (Proxy @l) <<< f <<< _.model) case_)
-
 -- | An event joined with the row its emitter was fed: the `×→+` stage's
 -- | `Strong` retention, exposed. `first` around the source — the fed row
 -- | rides the state channel and leaves beside each occurrence's payload as
@@ -168,9 +142,11 @@ replaying f src = joined @c src # rmap (on (Proxy @c) (inj (Proxy @l) <<< f <<< 
 -- | canvas click or a tick reaches the fold with the model in hand, and its
 -- | handler is one function of one record (`listOf … # joined @"toggled"`,
 -- | `unshown @"Todo toggled" # fold toggleTodo` with `toggleTodo ::
--- | { event :: Int, model :: { … } } -> { … }`, todo-list). `replaying @l f`
--- | is the degenerate case where the occurrence carries nothing of its
--- | own.
+-- | { event :: Int, model :: { … } } -> { … }`, todo-list). A click is the
+-- | degenerate case where the occurrence carries nothing of its own:
+-- | `PUI.Web.clicked` is this word over its private click source with
+-- | the `{}` event dropped and the case renamed — a derivation, so no
+-- | word of its own (`Data.Profunctor.Row`, *Retention*).
 joined
   :: forall @l p r a v v1
    . Strong p

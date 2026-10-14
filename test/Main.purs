@@ -38,7 +38,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, unshown, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, replaying, reset, resolveFor, resumeScope, seeded, silence, suspendScope, ticks, with)
+import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, unshown, cancelScope, dispatched, fold, foreach, inScope, looped, newScope, observed, optioned, reset, resolveFor, resumeScope, seeded, silence, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -843,25 +843,6 @@ main = do
   assertEqual "Seeding/(->): announce a = const a" 5 (announce 5 {})
   assertEqual "Seeding/(->): with a w = w a" 1 (with { n: 1 } _.n {})
   assertEqual "Seeding/(->): seeded a = identity" 9 (seeded 3 9)
-
-  -- replaying: the ×→+ leaf's replay-last-value protocol as Strong's
-  -- retention — an occurrence before any feed is withheld, a feed never
-  -- emits, and each occurrence leaves as case l carrying f of the row last
-  -- fed (holey-weak-types: the source is fed the row replayed, whole — no
-  -- longer a sub-row of it; the replay function's footprint stays free).
-  do
-    outs <- Ref.new ([] :: Array (Variant (picked :: Int)))
-    src <- Ref.new Nothing
-    m <- unwrap (replaying @"picked" _.k (probe src :: PUI Effect { k :: Int, extra :: Boolean } (Variant (occurred :: {}))) :: PUI Effect { k :: Int, extra :: Boolean } (Variant (picked :: Int)))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire src (inj (Proxy @"occurred") {})
-    Ref.read outs >>= assertEqual "replaying: an occurrence before any feed is withheld" []
-    m.toUser { k: 1, extra: true }
-    Ref.read outs >>= assertEqual "replaying: a feed never emits" []
-    fire src (inj (Proxy @"occurred") {})
-    m.toUser { k: 2, extra: false }
-    fire src (inj (Proxy @"occurred") {})
-    Ref.read outs >>= assertEqual "replaying: each occurrence replays f of the row last fed, as case l" [ .picked 1, .picked 2 ]
 
   -- compose registers downstream first, so an upstream registration
   -- announcement finds downstream's wiring already listening.

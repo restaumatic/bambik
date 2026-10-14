@@ -138,6 +138,7 @@ module PUI.Web
   where
 
 import Data.Profunctor.Row.Structural (withStructuralEq)
+import Data.Profunctor (rmap)
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
@@ -145,7 +146,7 @@ import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Array (concat, findIndex, (!!))
 import Data.String (replaceAll, Pattern(..), Replacement(..))
-import Data.Variant (Variant, expand, inj, prj)
+import Data.Variant (Variant, case_, expand, inj, on, prj)
 import Prim.Row as Row
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
@@ -156,7 +157,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import PUI (class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, replaying, resumeScope, scopeActive, setDiagnostics, setSink, setTracing, suspendScope)
+import PUI (class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, joined, newScope, onCancel, resumeScope, scopeActive, setDiagnostics, setSink, setTracing, suspendScope)
 import Data.Profunctor.Row (atAnyRow)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Prim.Row (class Cons)
@@ -1100,7 +1101,7 @@ attrAt name = attrWith name (Record.get (Proxy @l))
 -- | emits field `k` of the row last fed, as case `l`; before the first feed
 -- | a click emits nothing.
 clicked :: forall @l @k r a b f v. IsSymbol l => IsSymbol k => Cons k f b r => Cons l f () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
-clicked w = replaying @l (Record.get (Proxy @k)) (occurrences w)
+clicked w = replayed @l (Record.get (Proxy @k)) (occurrences w)
 
 -- | `clicked` replaying the whole row it was last fed, as case `l` — the
 -- | click half of every vocabulary's emitter family (`button @l` emits the
@@ -1108,7 +1109,15 @@ clicked w = replaying @l (Record.get (Proxy @k)) (occurrences w)
 -- | the vocabulary's emitters, or names the field a click reports with
 -- | `clicked @l @k`.
 clickedRow :: forall @l r a v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
-clickedRow w = replaying @l identity (occurrences w)
+clickedRow w = replayed @l identity (occurrences w)
+
+-- `joined` at the empty payload: the click source's occurrence carries
+-- nothing, so the event is dropped, `f` is read off the row last fed and
+-- the case is renamed from the source's to `l`. Replay is `Strong`'s
+-- retention and nothing else — the primed `Strong` law: an occurrence
+-- before any feed is withheld, a feed never emits.
+replayed :: forall @l r k v. IsSymbol l => Cons l k () v => ({ | r } -> k) -> PUI Web { | r } [ occurred :: {} ] -> PUI Web { | r } [ | v ]
+replayed f src = joined @"occurred" src # rmap (on (Proxy @"occurred") (inj (Proxy @l) <<< f <<< _.model) case_)
 
 -- The click source `clicked` is built from: each click on the last-built
 -- element (the content's own node) leaves as an occurrence carrying nothing;
@@ -1117,7 +1126,7 @@ clickedRow w = replaying @l identity (occurrences w)
 -- PUI Web {} [ occurred :: {} ]` is the point's dual, an occurrence out of
 -- the terminal record (`ticks` is its timer sibling in `PUI`). Private, with
 -- one fixed case: the business label is `clicked @l`'s to state, and
--- `replaying @l` relabels while it attaches the row — replay is `Strong`'s
+-- `replayed @l` relabels while it attaches the row — replay is `Strong`'s
 -- retention, so no source keeps a copy of the row it was shown.
 occurrences :: forall a b. PUI Web a b -> PUI Web a [ occurred :: {} ]
 occurrences w = wrap do

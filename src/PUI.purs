@@ -114,7 +114,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- business function, never placed at another row at the call site; the
 -- placement is the vocabularies' plumbing for their statics.
 import Data.Profunctor.Row (atCase, atField, settled, toCase, toField, with) as Adopters
-import Data.Profunctor.Row.RecordToVariant (joined, replaying) as Adopters
+import Data.Profunctor.Row.RecordToVariant (joined) as Adopters
 import Data.Profunctor.Silencing (silence) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt, optioned) as Adopters

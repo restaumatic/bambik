@@ -42,7 +42,7 @@ that this layer does not depend on the one downstream of it.
 | `Data.Profunctor.Row` | the shared floor: the row-constraint vocabulary, the split `splitVariant`, and every one-sided word — `atField`/`toField`, `atCase`/`toCase`, `with`, `settled`, `atAnyRow`, `widenVariantOutput` — so no shape module imports another |
 | `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, `focusField` |
 | `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase` |
-| `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `replaying`, `joined` |
+| `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `joined` |
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `unshown` |
 | `Data.Profunctor.Acting` | the container action `class Acting`/`actedBy` |
 | `Data.Profunctor.Seeding` | `class Category p <= Seeding p`, the pointed wire |
