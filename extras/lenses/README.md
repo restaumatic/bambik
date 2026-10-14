@@ -8,10 +8,11 @@ carrying its type, its collapsed constructor and its `*E` existential
 encoding, at arbitrary `s t a b`.
 
 Nothing here mentions `PUI`, a row, or a carrier. Every optic is
-`p a b -> p s t` quantified over its generating class, so the row layer's
-combinators are these optics at row granularity — `subResolving`/
-`subRetaining` a `Shutter`/`Reel`, `feedback` a `Colens`, `cycled` a
-`Coprism`, `folding` a `Coshutter`, `unfolding` a `Coreel`.
+`p a b -> p s t` quantified over its generating class. The row layer
+reaches only the pure shapes' optics (`focusField` a `Lens`, `focusCase`
+a `Prism`); the coined and co- optics have no row form, by the row
+discipline stated in `Data.Profunctor.Row` (*What is deliberately not
+here*), and are exercised as business optics in test/BusinessOptics.purs.
 
 Optics follow from their generating classes by **Pastro–Street**, so what
 had to be invented here is the actions, not the technique.

@@ -10,14 +10,14 @@
 -- |   * **shape class** — `VariantToRecord`, the binary **merge**: the
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`).
--- |   * **free functions** — over the strength: `subRetaining @w` (a
--- |     sub-variant focused, the other cases retained as field `w` — the
--- |     `Reel` at row granularity); over the co-strength `Coretaining`:
--- |     `unfolding @w @l` (the productive unfold, its state one field `l`
--- |     resumed as case `w` — the `Coreel` at row granularity); over
--- |     `Category`: `unshown @l` (the faceless leaf owning case `l`, what
--- |     opens a fold whose occurrence nothing needs to tell). The fold
--- |     itself is `PUI`'s, an optic over its status.
+-- |   * **free functions** — over `Category`: `unshown @l` (the faceless
+-- |     leaf owning case `l`, what opens a fold whose occurrence nothing
+-- |     needs to tell). The fold itself is `PUI`'s, an optic over its
+-- |     status. No strength or co-strength row form: a stage is typed at
+-- |     one row, so no word narrows it to a sub-variant with the other
+-- |     cases retained as a field, and an unfold's state is a model
+-- |     field, never a hidden one (`Data.Profunctor.Row`, *What is
+-- |     deliberately not here*).
 -- |
 -- | A word lives where the sides it constrains do: one constraining both
 -- | sides in its shape's module, one constraining a single side on the
@@ -25,9 +25,6 @@
 -- | — so no shape module imports another, and every module holds only
 -- | its merge, its strength and trace forms, and the words that genuinely
 -- | span both of its sides.
--- | A label `@w` appears exactly where a row is
--- | wrapped as one field to cross the shape change (`subRetaining`,
--- | `unfolding`).
 -- |
 -- | ## Laws at `+→×`
 -- |
@@ -85,29 +82,15 @@ module Data.Profunctor.Row.VariantToRecord
   , bind
   , discard
   , unshown
-  , subRetaining
-  , unfolding
   )
   where
 
 import Control.Category (class Category, identity)
-import Control.Semigroupoid ((>>>))
-import Data.Either (either)
-import Data.Lens.Reel (reelE)
-import Data.Profunctor (class Profunctor, dimap, lcmap)
-import Data.Profunctor.Coretaining (class Coretaining, coretain)
-import Data.Profunctor.Retaining (class Retaining)
-import Data.Profunctor.Row (class ExclusiveRows, class OwnedVariantInputs, splitVariant)
-import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
-import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Tuple (Tuple(..))
-import Data.Variant (class Contractable, expand, inj)
-import Record.Unsafe (unsafeSet)
-import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
+import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor.Row (class OwnedVariantInputs)
 import Data.Function (const)
 import Data.Unit (Unit, unit)
-import Prim.Row (class Cons, class Union)
+import Prim.Row (class Cons)
 
 class Profunctor p <= VariantToRecord p where
   variantToRecord
@@ -145,51 +128,3 @@ discard first cont = bind first (\_ -> cont unit)
 -- | `lcmap (const {}) identity`, like `blank`.
 unshown :: forall @l p a v. Cons l a () v => Profunctor p => Category p => p [ | v ] {}
 unshown = lcmap (const {}) identity
-
--- | Focus a sub-variant of the input, wrapping the background into output
--- | field `w`: the `Reel` optic's row form over the strength `Retaining`.
--- | An occurrence of a focused case steps the focus; any other case is
--- | retained and released as field `w` beside the focus's last row.
-subRetaining
-  :: forall @w p v1 b v r1 r
-   . Retaining p
-  => IsSymbol w
-  => ExclusiveRows v1 b v
-  => Contractable v v1
-  => Contractable v b
-  => Cons w [ | b ] r1 r
-  => p [ | v1 ] { | r1 }
-  -> p [ | v ] { | r }
-subRetaining g =
-  reelE
-    splitVariant
-    -- no `Lacks`: `unsafeSet` realizes the layout `Cons w [ | b ] r1 r` pins —
-    -- first-label convention, as `inj`/`on`.
-    (\(Tuple b' bg) -> unsafeSet (reflectSymbol (Proxy @w)) bg b')
-    g
-
--- | Resume state field `l` of every emission as case `w`, seeded with its
--- | initial value: the productive unfold at one field, the `Coreel`
--- | optic's row form over the co-strength `Coretaining`. The state is one
--- | field labelled on the view line (`unfolding @"resume" @"next"
--- | firstTicket`); case `w` carries `{ l :: a }`. A seed that is a hole is
--- | not injected (guardrails L18).
-unfolding
-  :: forall @w @l @a p v r1 v1 v2 r r2
-   . Seeding p
-  => Coretaining p
-  => IsSymbol w
-  => IsSymbol l
-  => Cons l a () r1
-  => Cons w { | r1 } v v1
-  => Union v v2 v1
-  => Cons l a r r2
-  => a
-  -> p [ | v1 ] { | r2 }
-  -> p [ | v ] { | r }
-unfolding seed g =
-  coretain
-    (dimap
-      (either expand (inj (Proxy @w)))
-      (\ow -> Tuple (unsafeCoerce ow) (unsafeCoerce ow))
-      (if isHole seed then g else seeded (inj (Proxy @w) (unsafeSet (reflectSymbol (Proxy @l)) seed {} :: { | r1 })) >>> g))

@@ -54,7 +54,7 @@ import Data.Tuple (Tuple)
 -- | not claimed.
 -- |
 -- | This is the **bare strength** for the `+ → ×` shape (the analogue of
--- | `Strong`/`Choice`). Its row form is
--- | `Data.Profunctor.Row.VariantToRecord.subRetaining`.
+-- | `Strong`/`Choice`). It has no row form: a stage is typed at one row
+-- | (`Data.Profunctor.Row`, *What is deliberately not here*).
 class Profunctor p <= Retaining p where
   retain :: forall a b c. p a b -> p (Either a c) (Tuple b c)

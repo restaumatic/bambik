@@ -1,8 +1,8 @@
 -- | The **`Shutter`** — the profunctor-encoded optic of
 -- | `Data.Profunctor.Resolving`'s `resolve`, for the coined `× → +` shape.
 -- | Both the class and the optic are this library's. Its co-optic is
--- | `Data.Lens.Coshutter`, and nothing here mentions a row: the row form is
--- | `Data.Profunctor.Row.RecordToVariant.subResolving`.
+-- | `Data.Lens.Coshutter`, and nothing here mentions a row; it has no row
+-- | form (`Data.Profunctor.Row`, *What is deliberately not here*).
 -- |
 -- | **Soundness, not completeness.** `shutterE` constructs an inhabitant
 -- | from any existential datum — sound. The converse (every inhabitant of

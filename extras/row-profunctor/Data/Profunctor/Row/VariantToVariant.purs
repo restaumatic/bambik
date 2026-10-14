@@ -13,9 +13,9 @@
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusCase` (one case, the
 -- |     value-level prism; the one-sided halves `atCase`/`toCase` live
--- |     on the floor); over the co-strength `Cochoice`: `cycled`
--- |     (the variant knot, the loop cases re-entering — the `Coprism` at
--- |     row granularity).
+-- |     on the floor). No co-strength row form: an app's loop is cut at
+-- |     its record junction, where the model can be declared
+-- |     (`Data.Profunctor.Row`, *What is deliberately not here*).
 -- |
 -- | A word lives where the sides it constrains do: one constraining both
 -- | sides in its shape's module, one constraining a single side on the
@@ -84,8 +84,8 @@
 -- | On `PUI`: dispatch in, passage out — no broadcast, no gate, no state
 -- | (`Applicative m` suffices; the one merge with neither feed
 -- | obligation). `Cochoice`'s retraction holds raw here — `unleft (left
--- | g) = g` — the one shape where it does (doc §5), which is why the knot
--- | at this shape, `cycled`, is a derivation needing no class of its own. Probes carry law and shape in test/Main.purs; 3, 4 and
+-- | g) = g` — the one shape where it does (doc §5), which is why a knot
+-- | at this shape would need no class of its own. Probes carry law and shape in test/Main.purs; 3, 4 and
 -- | 6 run over every script to a bound in test/Exhaustive.purs.
 -- |
 -- | One transpose of a `RecordToRecord` name is **deliberately absent**
@@ -109,21 +109,17 @@ module Data.Profunctor.Row.VariantToVariant
   , bind
   , discard
   , focusCase
-  , cycled
   )
   where
-import Control.Category (identity)
 import Data.Either (Either(..), either)
 import Data.Lens.Prism.Existential (prismE)
-import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Cochoice (class Cochoice, unleft)
-import Data.Profunctor.Row (class ExclusiveRows, class LoopCases, class OwnedVariantInputs, splitVariant)
+import Data.Profunctor.Row (class OwnedVariantInputs, splitVariant)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, expand, inj, on)
+import Data.Variant (expand, inj, on)
 import Prim.Row (class Cons, class Union)
-import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= VariantToVariant p where
@@ -171,31 +167,3 @@ focusCase =
   prismE
     (on (Proxy @l) Left Right)
     (either (inj (Proxy @l)) expand)
-
--- | The variant knot: tie a chain's emitted cases back into its input —
--- | the `Coprism` optic's row form over `Cochoice`'s `unleft`. The cases
--- | the body both accepts and emits are its **loop cases** (`LoopCases`,
--- | computed from the two rows): each such emission re-enters the body
--- | once and goes no further; a case emitted but not accepted **exits**; a
--- | case accepted but never emitted is fed from outside only — a seed
--- | (`with`) or an upstream stage. `unleft`'s retraction holds raw on
--- | `PUI` — the carrier is genuinely traced over `+` — so this knot needs
--- | no class of its own where `looped` does. Laws: with no loop case
--- | `cycled g = g`; each loop emission is re-fed exactly once and leaves
--- | nothing on the output; termination is the no-synchronous-event-echo
--- | law — an event re-fed provokes no synchronous event. An app's loop is
--- | cut at its record junction (`looped`), where the model can be
--- | declared; this is the knot of a loop whose state is its events.
-cycled
-  :: forall p v vl v1 v1l v2 v3 b
-   . Cochoice p
-  => RowToList v vl
-  => RowToList v1 v1l
-  => LoopCases vl v1l v2
-  => ExclusiveRows v3 v2 v1
-  => Contractable v1 v3
-  => Contractable v1 v2
-  => Union v2 b v
-  => p [ | v ] [ | v1 ]
-  -> p [ | v ] [ | v3 ]
-cycled g = unleft (dimap (either identity expand) splitVariant g)

@@ -35,7 +35,8 @@ import Data.Tuple (Tuple(..))
 -- | each emission either exits with `t` or yields a **new way to read
 -- | inputs** — the fold state is a reader. The collapsed form has no initial
 -- | reader, which is exactly why the `PUI` carrier gates inputs until primed.
--- | `folding @w @l` is this optic at row granularity.
+-- | It has no row form: a fold's state is a model field under `looped`
+-- | (`Data.Profunctor.Row`, *What is deliberately not here*).
 type Coshutter s t a b = forall p. Coresolving p => p a b -> p s t
 
 coshutter :: forall s t a b. (b -> Either t (s -> a)) -> Coshutter s t a b

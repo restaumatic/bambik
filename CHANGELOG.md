@@ -8,6 +8,31 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **The six per-shape row forms deleted: `feedback`, `cycled`,
+  `folding`, `unfolding`, `subResolving`, `subRetaining`.** All six were
+  restored on 2026-10-13 for the completeness of the shape table's
+  strength-optic and co-strength-optic columns; they go on two grounds,
+  neither of them reach. The four co-strength forms are **subsumed**: each
+  kept one state the rows did not show (a seeded field, a re-entering
+  case, a fold's accumulator, an unfold's resume case), and a model field
+  under `looped` does the same job with the state declared — the
+  replacement every demo had already made on 2026-10-05/06 (auction's
+  `top`, checkout's `step`, ticket-dispenser's `next`, payment's retry
+  inside its `Aff`). The two strength forms are a **narrowing and
+  widening**: a stage's input shrunk to a sub-row and its output grown
+  by the leftover, which the one-row-per-stage rule (L18) excludes —
+  coercions of `atAnyRow`'s kind, plumbing and never vocabulary; the
+  model-side idioms are `group @l` for a nested sub-record and a pane
+  for a case. With them go the floor's `splitRow` (only `subResolving`
+  called it) and `LoopCases`/`LoopCasesK` (only `cycled` constrained on
+  them). Nothing else moves: the classes `PointedCostrong`, `Cochoice`,
+  `Coresolving`, `Coretaining` and the lens modules in extras stay, their
+  `PUI` instances law-tested in test/Main.purs, and
+  test/BusinessOptics.purs writes its two sub-row examples out as
+  `shutterE`/`reelE` existentials. The shape modules now export their
+  merge, its sugar and, per shape, `focusField` / `focusCase` /
+  `joined`+`replaying` / `unshown`. No demo or vocabulary module named
+  any of the six.
 - **`asField`/`asCase` deleted.** The rename column of the single-label
   grid, back since 2026-10-13 for the grid's symmetry: a closed singleton
   relabelled on both sides, `dimap` alone. Its one use is re-labelling a

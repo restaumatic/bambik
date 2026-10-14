@@ -12,13 +12,13 @@
 -- |     (`bind`/`discard`). Its unit `silence` is not its own but
 -- |     `Data.Profunctor.Silencing`'s, as the other shapes' units are
 -- |     `Category`'s — no merge class carries a unit.
--- |   * **free functions** — over the strength: `subResolving @w` (a
--- |     sub-record focused, the background escaping as case `w` — the
--- |     `Shutter` at row granularity); over the co-strength `Coresolving`:
--- |     `folding @w @l` (the terminating fold, its state one field `l`
--- |     carried by case `w` — the `Coshutter` at row granularity); over
--- |     `Strong`: `replaying @l` (replay as `Strong`'s retention) and
--- |     `joined @l` (an event joined with the row its emitter was fed).
+-- |   * **free functions** — over `Strong`: `replaying @l` (replay as
+-- |     `Strong`'s retention) and `joined @l` (an event joined with the
+-- |     row its emitter was fed). No strength or co-strength row form: a
+-- |     stage is typed at one row, so no word narrows it to a sub-record
+-- |     with the rest escaping as a case, and a fold's state is a model
+-- |     field, never a hidden one (`Data.Profunctor.Row`, *What is
+-- |     deliberately not here*).
 -- |
 -- | A word lives where the sides it constrains do: one constraining both
 -- | sides in its shape's module, one constraining a single side on the
@@ -26,8 +26,7 @@
 -- | — so no shape module imports another, and every module holds only
 -- | its merge, its strength and trace forms, and the words that genuinely
 -- | span both of its sides.
--- | `replaying`/`joined` take `toCase` from the floor. A label `@w` appears exactly where a row is wrapped as one case to
--- | cross the shape change (`subResolving`, `folding`).
+-- | `replaying`/`joined` take `toCase` from the floor.
 -- |
 -- | ## Laws at `×→+`
 -- |
@@ -96,31 +95,22 @@ module Data.Profunctor.Row.RecordToVariant
   , bind
   , discard
   , replaying
-  , subResolving
-  , folding
   )
   where
 
 import Control.Category (identity)
-import Control.Semigroupoid ((>>>), (<<<))
-import Data.Either (Either(..), either)
+import Control.Semigroupoid ((<<<))
 import Data.Function ((#))
-import Data.Lens.Shutter (shutterE)
 import Data.Profunctor (class Profunctor, dimap, rmap)
-import Data.Profunctor.Coresolving (class Coresolving, coresolve)
-import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row (class ExclusiveRows, class FieldNames, class RowLabels, class SharedRecordInputs, class SharedVariantOutputs, splitRow, toCase)
-import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
+import Data.Profunctor.Row (class SharedRecordInputs, class SharedVariantOutputs, toCase)
 import Data.Profunctor.Strong (class Strong, first)
-import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (case_, expand, inj, on)
-import Prim.Row (class Cons, class Union)
+import Data.Variant (case_, inj, on)
+import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RowList
-import Record.Unsafe (unsafeSet)
-import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= RecordToVariant p where
@@ -190,52 +180,3 @@ joined
   => p { | r } [ | v ]
   -> p { | r } [ | v1 ]
 joined src = toCase @l (dimap (\r -> Tuple r r) (\(Tuple e r) -> { event: on (Proxy @l) identity case_ e, model: r }) (first src))
-
--- | Focus a sub-record of the input, wrapping the background into output
--- | case `w`: the `Shutter` optic's row form over the strength `Resolving`.
--- | The focus is fed exactly its labels (`splitRow`); the background, the
--- | rest of the fed row, escapes as case `w` once the focus quiesces.
-subResolving
-  :: forall @w p r1 rl b r v1 v2 v3
-   . Resolving p
-  => IsSymbol w
-  => ExclusiveRows r1 b r
-  => RowToList r1 rl
-  => FieldNames rl r r1
-  => RowLabels rl
-  => Cons w { | b } v1 v2
-  => Union v1 v3 v2
-  => p { | r1 } [ | v1 ]
-  -> p { | r } [ | v2 ]
-subResolving g =
-  shutterE
-    splitRow
-    (either expand (inj (Proxy @w)))
-    g
-
--- | Fold state field `l` through case `w` until another case exits, seeded
--- | with its initial value: the terminating fold at one field, the
--- | `Coshutter` optic's row form over the co-strength `Coresolving`. The
--- | state is one field labelled on the view line (`folding @"next" @"step"
--- | firstStep`); the loop case carries `{ l :: a }` and never leaves. A
--- | seed that is a hole is not injected (guardrails L18).
-folding
-  :: forall @w @l @a p r r1 r2 v v1
-   . Seeding p
-  => Coresolving p
-  => IsSymbol w
-  => IsSymbol l
-  => Cons l a () r1
-  => Cons l a r r2
-  => Cons w { | r1 } v v1
-  => a
-  -> p { | r2 } [ | v1 ]
-  -> p { | r } [ | v ]
-folding seed g =
-  coresolve
-    (dimap
-      -- the fold state is written over the fresh input, so a stale runtime
-      -- copy of it never shadows the folded state
-      (\(Tuple i fb) -> unsafeUnion fb i :: { | r2 })
-      (on (Proxy @w) Right Left)
-      (if isHole seed then g else g >>> seeded (inj (Proxy @w) (unsafeSet (reflectSymbol (Proxy @l)) seed {} :: { | r1 }))))

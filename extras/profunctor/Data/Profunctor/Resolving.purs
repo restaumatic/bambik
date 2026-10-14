@@ -65,8 +65,8 @@ import Data.Tuple (Tuple)
 -- | is not claimed.
 -- |
 -- | This is the **bare strength** for the `× → +` shape (the analogue of
--- | `Strong`/`Choice`). Its row form is
--- | `Data.Profunctor.Row.RecordToVariant.subResolving`, and `debounced`
--- | stands on it.
+-- | `Strong`/`Choice`). It has no row form — a stage is typed at one row
+-- | (`Data.Profunctor.Row`, *What is deliberately not here*) — and
+-- | `debounced` stands on it.
 class Profunctor p <= Resolving p where
   resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)

@@ -10,12 +10,12 @@ module BusinessOptics where
 
 import Prelude
 
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Lens.Reel (Reel, reelE)
 import Data.Lens.Shutter (Shutter, shutterE)
-import Data.Profunctor.Row.RecordToVariant (subResolving)
-import Data.Profunctor.Row.VariantToRecord (subRetaining)
 import Data.Tuple (Tuple(..))
+import Data.Variant (expand, inj, on)
+import Type.Proxy (Proxy(..))
 
 type Money = Int
 
@@ -58,18 +58,19 @@ verifyKyc =
         Left identity_ -> Verified identity_
         Right partial  -> Pending partial )
 
--- | `subResolving` (row, sub-Record focus): price an order line, focusing only the
+-- | A sub-Record focus over rows: price an order line, focusing only the
 -- | `(item, qty)` sub-Record; the leftover field `note` is **wrapped** into the
 -- | output case `draft`. On `Done` the inner's `priced` case passes through; on
 -- | `Loop` the unpriced remainder `{ note }` is carried out as `draft`, not dropped.
--- | (`Proxy @"draft"` is the only thing the caller must supply — the wrapper case name.)
+-- | Written out as its existential (the row form `subResolving @w` that did
+-- | this split was deleted 2026-10-14: a UI stage is typed at one row).
 checkout
   :: Shutter
        (Record (item :: String, qty :: Int, note :: String))  -- i'  full input
        [ priced :: Money, draft :: Record (note :: String) ]  -- o'  full output (o + case `draft`)
        (Record (item :: String, qty :: Int))                  -- i   sub-Record focus
        [ priced :: Money ]                                    -- o   inner output
-checkout = subResolving @"draft"
+checkout = shutterE (\r -> Tuple { item: r.item, qty: r.qty } { note: r.note }) (either expand (inj (Proxy @"draft")))
 
 --------------------------------------------------------------------------------
 -- Reel (+ → ×): fresh focus, or resume state c; fold the result into c.
@@ -108,13 +109,14 @@ ledgerReel =
         ResumeBalance b -> Right b )
     (\(Tuple entry balance) -> { cents: balance.cents + entry.delta })
 
--- | `subRetaining` (row, sub-Variant focus): the dual of `subResolving`. Focus the
+-- | A sub-Variant focus over rows, the dual of the one above. Focus the
 -- | `cancel` sub-Variant; the rest of the input variant is wrapped into output
--- | field `pending`. (`Proxy @"pending"` is the only caller-supplied bit.)
+-- | field `pending`. Written out as its existential (the row form
+-- | `subRetaining @w` that did this split was deleted 2026-10-14).
 countdownStep
   :: Reel
        [ cancel :: Unit, tick :: Int ]                               -- i'  full input
        (Record (done :: Boolean, pending :: [ tick :: Int ]))        -- o'  full output (o + field `pending`)
        [ cancel :: Unit ]                                            -- i   sub-Variant focus
        (Record (done :: Boolean))                                    -- o   inner output
-countdownStep = subRetaining @"pending"
+countdownStep = reelE (on (Proxy @"cancel") (Left <<< inj (Proxy @"cancel")) Right) (\(Tuple b pending) -> { done: b.done, pending })

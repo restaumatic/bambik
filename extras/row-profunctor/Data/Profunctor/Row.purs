@@ -25,12 +25,12 @@
 -- | (`Strong`/`Choice` with their `Lens`/`Prism`, and the duals
 -- | `Costrong`/`Cochoice` — whose optics `Colens`/`Coprism`, however, the
 -- | ecosystem never built). `**`: the raw `unfirst` composite is dead on
--- | a gated carrier, so the knots at this shape need a starting point —
+-- | a gated carrier, so the knot at this shape needs a starting point —
 -- | the whole-row `looped` (`Data.Profunctor.Looping`, primed by its
--- | first feed) and the one-field `feedback` over the pointed trace
--- | `PointedCostrong` * (`Data.Profunctor.PointedCostrong`, seeded) —
--- | while the `+` side needs no class of its own, `unleft` holding raw
--- | (`cycled`). For the ecosystem pairs the optics follow by
+-- | first feed; the pointed trace `PointedCostrong` *,
+-- | `Data.Profunctor.PointedCostrong`, is the seeded `unfirst` it is
+-- | stated against) — while the `+` side needs no class of its own,
+-- | `unleft` holding raw. For the ecosystem pairs the optics follow by
 -- | Pastro–Street (`Strong`/`Choice` are lawful Tambara modules, so
 -- | `Lens`/`Prism` — and, dually, `Colens`/`Coprism` — are representation
 -- | theorems). The four **coined** optics are profunctor-encoded classes
@@ -38,10 +38,8 @@
 -- | mixed strengths carry no unit or composition coherence
 -- | (`Data.Profunctor.Resolving`), so Pastro–Street does not apply — and
 -- | indeed `identity` inhabits `Shutter a b a b` while no existential
--- | shutter produces it (every existential carries an escape `s → t`) —
--- | which is what the row forms `subResolving`/`subRetaining`/`folding`/
--- | `unfolding` inherit: each is its optic at row granularity, an encoding
--- | rather than a representation theorem. Neither the classes nor the
+-- | shutter produces it (every existential carries an escape `s → t`).
+-- | Neither the classes nor the
 -- | optics mention a row, so neither lives in `Data.Profunctor.Row.*`. Both follow
 -- | the ecosystem's own layout: one class per module beside `Strong`/`Costrong`
 -- | (`Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`),
@@ -84,23 +82,24 @@
 -- | another. The four shape modules' functions, by role:
 -- |
 -- | ```
--- | shape        strength optic  co-strength optic  unit     retention
--- | -----------  --------------  -----------------  -------  -----------------
--- | p {|a} {|b}  focusField      feedback
--- | p [|a] [|b]  focusCase       cycled
--- | p {|a} [|b]  subResolving    folding                     replaying, joined
--- | p [|a] {|b}  subRetaining    unfolding          unshown
+-- | shape        focus       unit     retention
+-- | -----------  ----------  -------  -----------------
+-- | p {|a} {|b}  focusField
+-- | p [|a] [|b]  focusCase
+-- | p {|a} [|b]                       replaying, joined
+-- | p [|a] {|b}              unshown
 -- | ```
 -- |
 -- | This is **every function the four shape modules export** beside their
 -- | merge and its `do` sugar, and nothing else — each constrains both of
--- | its shape's sides. Two columns are full and are the first table at
--- | row granularity: the **strength optic** (`Lens`, `Prism`, `Shutter`,
--- | `Reel`) and the **co-strength optic** (`Colens` seeded through
--- | `PointedCostrong`, `Coprism`, `Coshutter`, `Coreel`), one word per
--- | shape, each over its shape's own class. The other two columns are
--- | half-full in complementary ways, and each empty cell is a fact (so
--- | is the absent column: no shape has a `dimap`-only word — a rename of
+-- | its shape's sides. The **focus** column is the pure shapes' strength
+-- | optic at one label (`Lens`, `Prism`), and it is the only column the
+-- | first table reaches at row granularity: the mixed strengths' optics
+-- | (`Shutter`, `Reel`) and every co-strength optic (`Colens`, `Coprism`,
+-- | `Coshutter`, `Coreel`) have **no row form**, for the reasons under
+-- | *What is deliberately not here*. The other two columns are half-full
+-- | in complementary ways, and each empty cell is a fact (so is the
+-- | absent rename column: no shape has a `dimap`-only word — a rename of
 -- | a closed singleton on both sides has no reach under guardrails L3,
 -- | below, and a two-sided record↔variant conversion is a classifier, a
 -- | business function):
@@ -128,27 +127,35 @@
 -- | input; the `×→+` unit `silence`, which is `Data.Profunctor.Silencing`'s;
 -- | and the whole-row knot `looped`, which is `Data.Profunctor.Looping`'s
 -- | — each a class of its own beside `Seeding`, carrier structure rather
--- | than a row form, for the reason the first table's `**` gives.
+-- | than a row form, for the reason the first table's `**` gives. And
+-- | deliberately *not* here, on grounds of the row discipline rather
+-- | than reach (CHANGELOG, 2026-10-14): the **row forms of the mixed
+-- | strengths and of every co-strength**. `subResolving @w`/
+-- | `subRetaining @w` (a sub-row focused, the rest escaping as a case or
+-- | retained as a field) are a **narrowing** of a stage's input and a
+-- | **widening** of its output — a stage is typed at one row, the row the
+-- | view declares and its business function is typed at (guardrails
+-- | L18), so they are coercions of the kind `atAnyRow` is, plumbing and
+-- | not vocabulary; a sub-record a stage should see is the model's own
+-- | nesting under `group @l`, a sub-variant a case a pane adopts.
+-- | `feedback @l`, `cycled`, `folding @w @l` and `unfolding @w @l` (one
+-- | hidden state each: a seeded field, a re-entering case, a fold's
+-- | accumulator, an unfold's resume case) are **subsumed** by a model
+-- | field under `looped` — state the app needs is a model field
+-- | (guardrails L14), and every demo that once used one now declares it
+-- | (auction's `top`, checkout's `step`, ticket-dispenser's `next`). The
+-- | optics they encoded (`Shutter`/`Reel`, `Colens`/`Coprism`/
+-- | `Coshutter`/`Coreel`) stay stated in extras/lenses at arbitrary
+-- | `s t a b`, as business optics (test/BusinessOptics.purs).
 -- |
--- | Column by column. The **strength optic** threads a
--- | **background** past a stage: at the pure shapes the single-label
--- | `Lens`/`Prism` (`focusField`, also the leaf lift making every
--- | label-indexed editor a whole-row citizen; `focusCase`), at the mixed
--- | shapes the sub-row `Shutter`/`Reel` (`subResolving @w`: a sub-record
--- | focused, the rest of the row escaping as case `w`; `subRetaining @w`:
--- | a sub-variant focused, the other cases retained as field `w`). The
--- | **co-strength optic** ties the knot the strength opens — one trace per
--- | shape: `feedback @l` (one hidden field, seeded) at `×→×`, where
+-- | Column by column. The **focus** threads a **background** past a
+-- | stage at one label: the single-label `Lens`/`Prism` (`focusField`,
+-- | also the leaf lift making every label-indexed editor a whole-row
+-- | citizen; `focusCase`). The one **knot** is not here but
 -- | `Looping`'s `looped` (the model re-enters whole, primed by its first
--- | feed) is the whole-row knot beside it; `cycled` (the loop cases
--- | re-enter, computed by `LoopCases`) at `+→+`; `folding @w @l` (a
--- | terminating fold, its state one field carried by case `w`) at `×→+`;
--- | `unfolding @w @l` (a productive unfold, its state resumed as case `w`)
--- | at `+→×` — every `×`-side knot seeded or primed, the `+`-side one raw.
--- | An app's loop is cut at its record junction, where the model can be
--- | declared (`w # looped @( … ) # with seed`, guardrails L18); the other
--- | knots are the same algebra at the other junctions, a state the rows
--- | do not show. The one **unit** word, `unshown @l` (`lcmap (const {})
+-- | feed): an app's loop is cut at its record junction, where the model
+-- | can be declared (`w # looped @( … ) # with seed`, guardrails L18).
+-- | The one **unit** word, `unshown @l` (`lcmap (const {})
 -- | identity`), is the faceless leaf owning case `l` and showing nothing
 -- | of it — what opens a fold whose occurrence nothing needs to tell; the
 -- | fold itself is not here but an optic over its status in `PUI`
@@ -198,10 +205,9 @@
 -- | record side to adopt and the record words other than `focusField`
 -- | are law-tested only, while the mixed shapes hand bare values to and
 -- | from cases all the time (`atCase` opening an action's fold block,
--- | `toCase` naming a dialog's outcome). The entries outside the grid
--- | are `splitVariant` and `splitRow`, plain functions rather than
--- | placements: the dispatch the `+`-side words split with and the focus
--- | the `×`-side ones feed.
+-- | `toCase` naming a dialog's outcome). The entry outside the grid is
+-- | `splitVariant`, a plain function rather than a placement: the
+-- | dispatch the `+→+` merge splits with.
 -- |
 -- | The merge's two obligations are per-side and dual, and they are what the
 -- | constraint vocabulary below spells out: on an **input** side, where does
@@ -233,12 +239,9 @@
 -- |     must have exactly one handler and each record field exactly one
 -- |     producer. `MergeableRecords` adds the **runtime-exactness** evidence the
 -- |     gated merge uses to trim operand emissions to their declared
--- |     output rows (`exactRow`); `LoopCases` computes a variant knot's
--- |     re-entering row from the two label lists (`cycled`).
--- |   * **splits** — the plain row functions the strength forms stand on:
--- |     `splitRow` (a record into a focus built from exactly its labels and
--- |     the rest, `subResolving`), `splitVariant` (a case into the focus or
--- |     the background, the `+→+` merge's dispatch and `subRetaining`'s).
+-- |     output rows (`exactRow`).
+-- |   * **the split** — `splitVariant`, the plain row function the `+→+`
+-- |     merge dispatches with (a case into the focus or the background).
 -- |   * **one-sided placements** — every word constraining a single side,
 -- |     so that no shape module needs another's: the closed-singleton
 -- |     halves `atField`/`toField` and `atCase`/`toCase`, the knot's
@@ -404,9 +407,6 @@ module Data.Profunctor.Row
   , class NoDuplicateLabelsK
   , class RowLabels
   , exactRow
-  , splitRow
-  , class LoopCases
-  , class LoopCasesK
   , fieldNames
   , rowLabels
   , atAnyRow
@@ -426,8 +426,6 @@ import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Either (Either(..))
-import Data.Foldable (foldr)
-import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
 import Data.Variant (class Contractable, case_, contract, expand, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
@@ -441,8 +439,6 @@ import Prim.TypeError (class Fail, Above, Beside, Text)
 import Record (get, insert) as Record
 import Record.Builder (Builder)
 import Record.Builder (buildFromScratch, insert) as Builder
-import Record.Unsafe (unsafeDelete)
-import Record.Unsafe.Union (unsafeUnion)
 import Type.Proxy (Proxy(..))
 
 -- =====================================================================
@@ -510,31 +506,6 @@ instance
 -- | shadow the siblings' genuine contributions.
 exactRow :: forall r rl. RowToList r rl => FieldNames rl r r => { | r } -> { | r }
 exactRow r = Builder.buildFromScratch (fieldNames (Proxy @rl) r)
-
--- | Split a fed record into a focus row `r1` and the rest: the focus is
--- | built from exactly its labels, read off the fed record, and the rest is
--- | a copy of the fed record with those labels removed — so neither half
--- | runtime-carries a field of the other. `subResolving` feeds its focus
--- | and retains its background through it.
-splitRow :: forall r1 rl r b. RowToList r1 rl => FieldNames rl r r1 => RowLabels rl => { | r } -> Tuple { | r1 } { | b }
-splitRow s = Tuple (Builder.buildFromScratch (fieldNames (Proxy @rl) s)) (foldr unsafeDelete (unsafeUnion {} s) (rowLabels (Proxy @rl)))
-
--- | The **loop cases** of a variant knot: the cases a body both accepts
--- | (`il`) and emits (`ol`), computed by walking the two sorted label
--- | lists — `cycled`'s re-entering row.
-class LoopCases :: RowList Type -> RowList Type -> Row Type -> Constraint
-class LoopCases il ol loop | il ol -> loop
-
-instance LoopCases RL.Nil ol ()
-else instance LoopCases il RL.Nil ()
-else instance (Symbol.Compare l l' ord, LoopCasesK ord l a rest l' b rest' loop) => LoopCases (RL.Cons l a rest) (RL.Cons l' b rest') loop
-
-class LoopCasesK :: Ordering -> Symbol -> Type -> RowList Type -> Symbol -> Type -> RowList Type -> Row Type -> Constraint
-class LoopCasesK ord l a rest l' b rest' loop | ord l a rest l' b rest' -> loop
-
-instance (LoopCases rest rest' loop', Row.Cons l a loop' loop) => LoopCasesK EQ l a rest l' b rest' loop
-instance LoopCases rest (RL.Cons l' b rest') loop => LoopCasesK LT l a rest l' b rest' loop
-instance LoopCases (RL.Cons l a rest) rest' loop => LoopCasesK GT l a rest l' b rest' loop
 
 -- | Rows o1 and o2 carry runtime rebuild evidence for the gated merge's
 -- | exactness trim (`exactRow`). Witness lists: o1l = RowToList o1,

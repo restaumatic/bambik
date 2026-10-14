@@ -39,11 +39,11 @@ that this layer does not depend on the one downstream of it.
 
 | Module | Holds |
 |---|---|
-| `Data.Profunctor.Row` | the shared floor: the row-constraint vocabulary, the splits `splitRow`/`splitVariant`, and every one-sided word — `atField`/`toField`, `atCase`/`toCase`, `with`, `settled`, `atAnyRow`, `widenVariantOutput` — so no shape module imports another |
-| `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, `focusField`, `feedback` |
-| `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase`, the variant knot `cycled` |
-| `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `subResolving`, `folding`, `replaying`, `joined` |
-| `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `subRetaining`, `unfolding`, `unshown` |
+| `Data.Profunctor.Row` | the shared floor: the row-constraint vocabulary, the split `splitVariant`, and every one-sided word — `atField`/`toField`, `atCase`/`toCase`, `with`, `settled`, `atAnyRow`, `widenVariantOutput` — so no shape module imports another |
+| `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, `focusField` |
+| `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase` |
+| `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `replaying`, `joined` |
+| `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `unshown` |
 | `Data.Profunctor.Acting` | the container action `class Acting`/`actedBy` |
 | `Data.Profunctor.Seeding` | `class Category p <= Seeding p`, the pointed wire |
 | `Data.Profunctor.Silencing` | `class Profunctor p <= Silencing p`, the silent component — the `× → +` unit, so no merge class carries one |

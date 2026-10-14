@@ -389,7 +389,7 @@ instance MonadEffect m => Coresolving (PUI m) where
           mc <- Ref.read cRef
           case mc of
             Nothing -> do
-              guard.blocked "Coresolving.coresolve: inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Seed the loop branch (`seeded`, as `debounced` does); an application loop closes at a junction instead (`looped`/`cycled`)." []
+              guard.blocked "Coresolving.coresolve: inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Seed the loop branch (`seeded`, as `debounced` does); an application loop closes at its record junction instead (`looped`)." []
               tr "Coresolving.coresolve: input withheld (fold state unprimed)" a
             Just c -> p'.toUser $ Tuple a c
       , fromUser: \prop -> p'.fromUser case _ of
@@ -829,7 +829,7 @@ instance MonadEffect m => Retaining (PUI m) where
             mc <- Ref.read cRef
             case mc of
               Nothing -> do
-                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: seed the state case (`seeded`); an application loop closes at a junction instead (`looped`/`cycled`)." []
+                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: seed the state case (`seeded`); an application loop closes at its record junction instead (`looped`)." []
                 tr "Retaining.retain: emission withheld (state unprimed)" b
               Just c -> prop $ Tuple b c
       }

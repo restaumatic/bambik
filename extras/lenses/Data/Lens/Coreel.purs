@@ -33,8 +33,9 @@ import Data.Tuple (Tuple(..))
 -- | `∃c. (s + c → a) × (b → t × c)` to
 -- | `(embed : s → a) × (out : b → t) × (resume : b → a)`: every emission
 -- | both leaves as `t` and **re-enters as the next focus input** — a
--- | generator, producing on every step. `unfolding @w @l` is this optic
--- | at row granularity.
+-- | generator, producing on every step. It has no row form: an unfold's
+-- | state is a model field under `looped` (`Data.Profunctor.Row`, *What
+-- | is deliberately not here*).
 type Coreel s t a b = forall p. Coretaining p => p a b -> p s t
 
 coreel :: forall s t a b. (s -> a) -> (b -> t) -> (b -> a) -> Coreel s t a b

@@ -3,10 +3,9 @@
 -- |
 -- |   * **strength** — `Strong` (ecosystem, with a `(->)` instance): the
 -- |     unary power, the field lens. Its co-strength is the ecosystem's
--- |     `Costrong` (gated on `PUI`, so the knots at this shape need a
+-- |     `Costrong` (gated on `PUI`, so the knot at this shape needs a
 -- |     starting point: the whole-row `looped`, `Looping`'s —
--- |     `Data.Profunctor.Looping` — primed by its first feed, and the
--- |     one-field `feedback` over the seeded `PointedCostrong`),
+-- |     `Data.Profunctor.Looping` — primed by its first feed),
 -- |     and their optics are `Data.Lens.Lens` and `Data.Lens.Colens` —
 -- |     neither the classes nor the optics mention a row, so none of them
 -- |     lives here.
@@ -15,9 +14,9 @@
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusField` (the field
 -- |     lens — the leaf lift, making every label-indexed editor a whole-row
--- |     citizen); over the pointed co-strength: `feedback @l` (the
--- |     `×`-trace at one hidden field, seeded — the `Colens` at row
--- |     granularity). The
+-- |     citizen). No co-strength row form: a loop's state is a model
+-- |     field the whole-row `looped` carries, never a hidden one
+-- |     (`Data.Profunctor.Row`, *What is deliberately not here*). The
 -- |     one-sided words of this shape — `atField`/`toField` (the halves of
 -- |     the closed-singleton iso), `with` (the knot's closure, over the
 -- |     point) and `settled` (the normalization) — live on the floor.
@@ -94,23 +93,18 @@ module Data.Profunctor.Row.RecordToRecord
   , bind
   , discard
   , focusField
-  , feedback
   )
   where
 
 import Data.Lens.Record (prop)
-import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, exactRow, fedFirst, fedSecond)
-import Data.Profunctor.PointedCostrong (class PointedCostrong, unfirstFrom)
 import Data.Profunctor.Strong (class Strong)
-import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons)
-import Record (get, union) as Record
-import Record.Unsafe (unsafeSet)
+import Record (union) as Record
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
   recordToRecord
@@ -152,27 +146,3 @@ focusField
   => p f f'
   -> p { | r } { | r1 }
 focusField = prop (Proxy @l)
-
--- | Loop state field `l` of the output back into the input, starting it at
--- | the given value: the `×`-trace at one field, the `Colens` optic's row
--- | form over the pointed trace `PointedCostrong`. The state is one field,
--- | labelled on the view line (`feedback @"top" noBids`), so the split is a
--- | `Cons` at a label the view states. The field is written over the fresh
--- | input, so a stale runtime copy of it never shadows the looped state.
--- | Where the state is the model's, the knot is `looped` and the state a
--- | model field; `feedback` hides it from the rows on both sides.
-feedback
-  :: forall @l @a p r r1 r2 r3
-   . IsSymbol l
-  => PointedCostrong p
-  => Cons l a r r2
-  => Cons l a r1 r3
-  => a
-  -> p { | r2 } { | r3 }
-  -> p { | r } { | r1 }
-feedback seed g =
-  unfirstFrom seed
-    (dimap
-      (\(Tuple i a) -> unsafeSet (reflectSymbol (Proxy @l)) a i :: { | r2 })
-      (\ow -> Tuple (unsafeCoerce ow) (Record.get (Proxy @l) ow))
-      g)

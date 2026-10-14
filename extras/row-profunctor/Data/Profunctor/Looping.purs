@@ -16,9 +16,9 @@
 -- | model can be declared, and an event re-enters through its fold. The
 -- | variant side needs no class — `Cochoice`'s `unleft` holds raw on
 -- | `PUI` (the carrier is traced over `+`, pointed-traced over `×`), so
--- | the variant knot `cycled` is a derivation
--- | (`Data.Profunctor.Row.VariantToVariant`); the one-field `×`-knot
--- | `feedback` is seeded through `PointedCostrong` instead.
+-- | a variant knot would be a derivation; a one-field `×`-knot would be
+-- | seeded through `PointedCostrong`. Neither has a row form: this is the
+-- | only knot (`Data.Profunctor.Row`, *What is deliberately not here*).
 -- |
 -- | Laws — the trace axioms restricted to the diagonal (`identity` on
 -- | `Category` carriers), stated up to the observational equivalence of
