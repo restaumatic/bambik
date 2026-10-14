@@ -5,7 +5,7 @@ import Prelude
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI.Web ((<+>), choice, staticText, textAt)
-import PUI.Web.MDC2 (body, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, textButton, banner, toggleSwitch)
+import PUI.Web.MDC2 (body, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, textButton, toggleSwitch)
 
 lawBenchMDC2 :: Effect Unit
 lawBenchMDC2 = do
@@ -42,8 +42,7 @@ lawBenchMDC2 = do
     , bench "menuItem" "×→+" rows (menuItem @"Go")
     , bench "listOf" "×→+" lists (listOf @"picked" @"id" itemsOf (textAt @"title"))
     , bench "listOfAt" "×→+" lists (listOfAt @"picked" @"id" @"items" (textAt @"title"))
-    , bench "snackbar" "+→×" events (snackbar @"event" identity (const {}))
-    , bench "banner" "+→×" events (banner @"event" identity (const {}))
+    , bench "snackbar" "+→×" events (snackbar @"event" (const {}))
     , bench "indeterminateLinearProgress" "+→×" runs (indeterminateLinearProgress)
     , bench "indeterminateCircularProgress" "+→×" runs (indeterminateCircularProgress)
     ]

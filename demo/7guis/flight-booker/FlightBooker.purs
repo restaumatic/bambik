@@ -1,4 +1,4 @@
-module FlightBooker (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit) where
+module FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit) where
 
 import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, const, pure, show)
 
@@ -18,33 +18,6 @@ plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.
 
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
-
-bookedLine
-  :: { event :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }
-                , returnBetween :: { back :: { d :: Int, m :: Int, y :: Int }
-                                   , out :: { d :: Int, m :: Int, y :: Int }
-                                   }
-                ]
-     , model :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-                , "Return date (DD.MM.YYYY)" :: String
-                , "Start date (DD.MM.YYYY)" :: String
-                }
-     }
-  -> String
-bookedLine { event: itinerary } = "You have booked: " <> summary itinerary
-
-rejectedLine
-  :: { event :: [ returnBeforeStart :: {}
-                , unreadableReturn :: { input :: String }
-                , unreadableStart :: { input :: String }
-                ]
-     , model :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-                , "Return date (DD.MM.YYYY)" :: String
-                , "Start date (DD.MM.YYYY)" :: String
-                }
-     }
-  -> String
-rejectedLine { event: problem } = "Cannot book: " <> problemText problem
 
 returnBetween :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween { out, back } =
@@ -120,22 +93,13 @@ submit
      , "Return date (DD.MM.YYYY)" :: String
      , "Start date (DD.MM.YYYY)" :: String
      }
-  -> Aff [ "Booking rejected" :: [ returnBeforeStart :: {}
-                                 , unreadableReturn :: { input :: String }
-                                 , unreadableStart :: { input :: String }
-                                 ]
-         , "Flight booked" :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }
-                              , returnBetween :: { back :: { d :: Int, m :: Int, y :: Int }
-                                                 , out :: { d :: Int, m :: Int, y :: Int }
-                                                 }
-                              ]
-         ]
+  -> Aff [ "Booking rejected" :: {}, "Flight booked" :: {} ]
 submit trip = case parse trip of
-  Left problem -> pure (."Booking rejected" problem)
+  Left _ -> pure (."Booking rejected" {})
   Right itinerary -> expand <$> bookFlight itinerary
 
-bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] ]
-bookFlight itinerary = pure (."Flight booked" itinerary)
+bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ "Flight booked" :: {} ]
+bookFlight _ = pure (."Flight booked" {})
 
 parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
 parseDate s = case split (Pattern ".") s of

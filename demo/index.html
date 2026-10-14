@@ -60,7 +60,7 @@
         <li><b>Every line names exactly one anchor:</b>
           <ul>
             <li>a model field, as the type argument of an editor, selector or group: <code>filledTextField @"First name"</code>, <code>group @"Customer" $ …</code>;</li>
-            <li>a business case, as the type argument of an emitter, pane or status: <code>button @"Submit order"</code>, <code>snackbar @"booked" bookedLine</code>;</li>
+            <li>a business case, as the type argument of an emitter, pane or status: <code>button @"Submit order"</code>, <code>snackbar @"Flight booked" kept</code>;</li>
             <li>a copy function, as a display's positional argument: <code>text balanceLine</code>;</li>
             <li>nothing, for chrome: <code>card</code>, <code>staticText "Hours"</code>.</li>
           </ul>
@@ -78,7 +78,7 @@
         <li>A case label is read back with <code>caseText</code>, never restated in a <code>match</code>.</li>
         <li>A display's text is a named copy function in the view model, whole line including glue: <code>balanceLine :: { balance :: Number } -&gt; String</code>.</li>
         <li>Static copy (a heading, a note) is a literal in the view: <code>staticText "Hours"</code>.</li>
-        <li>Events and outcomes carry data, never copy: flight-booker's problems are reasons, phrased by <code>problemLine</code>.</li>
+        <li>Events and outcomes carry data, never copy: flight-booker's problems are reasons, phrased by <code>problemLine</code>. A status tells its case and the case label is its whole copy, so an action names its outcomes as the words the user reads: <code>Aff [ "Order rejected: no total" :: {}, "Order submitted" :: {} ]</code>.</li>
       </ul>
 
       <h3>Types and values</h3>
@@ -100,7 +100,7 @@
         <li>A handler updates the row it is given: <code>increment m = m { counted = m.counted + 1 }</code>.</li>
         <li>A constant replaces the model only whole, by a reset: <code>reset @"New game" openingPosition</code>.</li>
         <li>Each event case has its own fold: <code>fold @"Count" increment</code>.</li>
-        <li>A status is a fold with a face, <code>snackbar @"Person created" personCreatedLine identity</code>; it shows the event, never the fold's result, so it stands only after an action that returned what it tells. A command straight from an emitter folds silently: <code>fold @"Todo toggled" toggleTodo</code>.</li>
+        <li>A status is a fold with a face, <code>snackbar @"Person created" identity</code>; it shows its case label, never the fold's result, so it stands only after an action whose outcome it is. A command straight from an emitter folds silently: <code>fold @"Todo toggled" toggleTodo</code>. What the user must keep is a model field shown by a display, never copy flashed by a status.</li>
         <li>An action is opened by its progress indicator alone; an outcome that is told and changes nothing is <code>joined</code> with its button and folded <code>kept</code>.</li>
         <li>An event with a payload of its own is <code># joined</code> and handled by one record: <code>toggleTodo :: { event :: Int, model :: … } -&gt; …</code>.</li>
         <li>An action returns the model under its outcome case, folded by <code>identity</code>.</li>

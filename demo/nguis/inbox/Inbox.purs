@@ -1,4 +1,4 @@
-module Inbox (mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, inboxZeroLine, openMessage, requestDelete, deleteOpened, keepMessages, composeMessage, sortBySender, sortBySubject, sortUnreadFirst) where
+module Inbox (mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, inboxState, openMessage, requestDelete, deleteOpened, keepMessages, composeMessage, sortBySender, sortBySubject, sortUnreadFirst) where
 
 import Prelude ((<<<), (<>), (+), (==), comparing, const, map, max, not, show)
 
@@ -119,7 +119,7 @@ openMessageLine
   -> String
 openMessageLine line { messages } = maybe "" line (find (isOpen <<< _.status) messages)
 
-inboxZeroLine
+inboxState
   :: { deletion :: [ confirming :: {}, silent :: {} ]
      , messages :: Array { body :: String
                          , id :: Int
@@ -128,8 +128,8 @@ inboxZeroLine
                          , subject :: String
                          }
      }
-  -> String
-inboxZeroLine _ = "Inbox zero!"
+  -> [ empty :: {}, filled :: {} ]
+inboxState { messages } = if length messages == 0 then .empty {} else .filled {}
 
 openMessage
   :: { event :: Int

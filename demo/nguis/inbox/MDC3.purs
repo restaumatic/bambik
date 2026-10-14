@@ -5,17 +5,18 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import Inbox (composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
+import Inbox (composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxState, keepMessages, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
 import PUI (fold, joined, looped, with)
-import PUI.Web (provided, providedAt, text)
+import PUI.Web (inCase, provided, providedAt, staticText, text)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC3 (snackbar, body, bodySmall, headlineSmall, bodyMedium, bodyLarge, button, dialog, fab, iconButton, listOfAt', menu, menuItem)
+import PUI.Web.MDC3 (body, bodySmall, headlineSmall, bodyMedium, bodyLarge, button, dialog, fab, iconButton, listOfAt', menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 inbox :: Effect Unit
 inbox =
   body $ Semigroupoid.do
     bodySmall $ text unreadLine
+    ( bodyLarge $ staticText "Inbox zero!" ) # inCase @"empty" @( empty :: {}, filled :: {} ) inboxState
     RecordToVariant.do
       ( listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } $ span $ text messageLine ) # joined
       ( Semigroupoid.do
@@ -34,7 +35,7 @@ inbox =
     VariantToRecord.do
       fold @"Message opened" openMessage
       fold @"Delete message" requestDelete
-      snackbar @"Delete" inboxZeroLine deleteOpened
+      fold @"Delete" deleteOpened
       fold @"Keep" keepMessages
       fold @"Compose" composeMessage
       fold @"By sender" sortBySender

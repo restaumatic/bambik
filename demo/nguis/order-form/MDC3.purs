@@ -5,7 +5,7 @@ import Prelude ((#), ($), identity, Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine)
+import OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, payingLine, printReceipt, setDistance, staleDistanceForgotten, submitOrder, summaryLine)
 import PUI (action, atCase, fold, joined, kept, looped, settled)
 import PUI.Web ((<+>), choice, inCaseAt, provided, text)
 import PUI.Web.MDC3 (body, bodyLarge, button', card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
@@ -15,7 +15,7 @@ orderForm :: Effect Unit
 orderForm =
   body $ Semigroupoid.do
     indeterminateLinearProgress # action loadOrder
-    snackbar @"Order loaded" orderLoadedLine identity
+    snackbar @"Order loaded" identity
     ( Semigroupoid.do
       ( Semigroupoid.do
         headlineSmall $ text orderLine
@@ -48,17 +48,15 @@ orderForm =
         ( Semigroupoid.do
           button' @"Submit order" { icon: "save" }
           indeterminateLinearProgress # action
-            @( "Order submitted" :: { "Short ID" :: String }
-             , "Submission failed" :: { "Short ID" :: String, reason :: String }
-             ) submitOrder # atCase @"Submit order" ) # joined
+            @( "Order submitted" :: {}, "Order rejected: no total" :: {} ) submitOrder # atCase @"Submit order" ) # joined
         ( Semigroupoid.do
           button' @"Receipt" { icon: "file" }
-          indeterminateLinearProgress # action @( "Receipt printed" :: { "Short ID" :: String } ) printReceipt # atCase @"Receipt" ) # joined
+          indeterminateLinearProgress # action @( "Receipt printed" :: {} ) printReceipt # atCase @"Receipt" ) # joined
       VariantToRecord.do
         fold @"Distance estimated" setDistance
-        snackbar @"Order submitted" submittedLine kept
-        snackbar @"Submission failed" rejectionLine kept
-        snackbar @"Receipt printed" receiptLine kept ) # looped
+        snackbar @"Order submitted" kept
+        snackbar @"Order rejected: no total" kept
+        snackbar @"Receipt printed" kept ) # looped
       @( "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
        , "Customer" :: { "First name" :: String, "Last name" :: String }
        , "Fulfillment" :: { "Mode" :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }

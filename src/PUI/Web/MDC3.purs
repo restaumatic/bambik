@@ -146,7 +146,7 @@ import Effect.Ref as Ref
 import PUI (anyOf, folding, isHole, Ocular, PUI)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, OptCaption(..), OptIcon(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, clicked, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectedAt, selectedOptionalAt, selectedUnpickedAt, selectorWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, uniqueId, witnessed, (:=))
+import PUI.Web (Node, OptCaption(..), OptIcon(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, clicked, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectedAt, selectedOptionalAt, selectedUnpickedAt, selectorWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, uniqueId, witnessed, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1018,27 +1018,26 @@ simpleDialog confirmCaption title content =
 -- | happened and needs no reply ("Order placed"). It never interrupts — for
 -- | something the user must acknowledge, use a `dialog`.
 -- |
--- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar @"Order placed" orderPlacedLine (const usualOrder)` — and
--- | let the event carry the bare facts. Mutually exclusive outcomes are
--- | sibling snackbars, one per business case. A snackbar is a `+→×` leaf
--- | like `fold @l f`: after its copy it takes its fold of the payload —
--- | `identity` for an outcome that is the model, `kept` for a joined
--- | outcome that changes nothing, `(const x)` for a reset.
+-- | A status **tells its case**: its caption is the case label verbatim,
+-- | so the outcome is named as what it tells (`snackbar @"Order placed"
+-- | (const usualOrder)`) and the payload is read by nothing but the fold. Mutually
+-- | exclusive outcomes are sibling snackbars, one per business case. A
+-- | snackbar is a `+→×` leaf like `fold @l f`: it takes its fold of the
+-- | payload — `identity` for an outcome that is the model, `kept` for a
+-- | joined outcome that changes nothing, `(const x)` for a reset.
 snackbar
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
-  => (a -> String)
-  -> (a -> { | r })
+  => (a -> { | r })
   -> PUI Web [ | v ] { | r }
-snackbar copy f = snackbarFace copy # atCase @l # folding @l f
+snackbar f = snackbarFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
-snackbarFace :: forall a r. (a -> String) -> PUI Web a { | r }
-snackbarFace copy = wrap do
+snackbarFace :: forall a r. String -> PUI Web a { | r }
+snackbarFace caseLabel = wrap do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
   w <- unwrap $ div >>> cl "md3-snackbar" >>> "role" := "status" $
-    textOf copy
+    statusText caseLabel
   node <- gets _.sibling
   pure
     { toUser: \i -> do

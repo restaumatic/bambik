@@ -25,13 +25,13 @@
 -- | span both of its sides.
 -- |
 -- | Business functions are arguments of leaves, never adopters: a display
--- | takes its read function, a status its business case and copy function
--- | (`snackbar @"booked" bookedLine`), and an emitter emits its own case,
+-- | takes its read function, a status its business case and fold
+-- | (`snackbar @"Flight booked" kept`), and an emitter emits its own case,
 -- | which the fold consumes. So the adopters are structural and take no
 -- | function: `atCase` and `toCase` take only their cases, since there
--- | the case is the caller's to name. A status is its face over the
--- | copy function, adopted as its case: `snackbar copy = snackbarFace copy
--- | # atCase @l`.
+-- | the case is the caller's to name. A status is its face over its
+-- | label, adopted as its case: `snackbar f = snackbarFace (reflectSymbol
+-- | (Proxy @l)) # atCase @l # folding @l f`.
 -- |
 -- | The three single-label words mirror `RecordToRecord`'s one for one —
 -- | `focusCase`/`focusField` (the background threaded), `atCase`/`atField`

@@ -97,12 +97,12 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- | --- |
 | a button stepping the model | `button @"Count"` and `fold @"Count" increment` | counter, todo-list | writing.md *Stages* |
 | a button with a fixed amount | `button' @"Take a deposit" { icon: "savings" }` and `fold @"Take a deposit" takeDeposit`, the amount baked into the handler | cashbox | writing.md *Business functions* |
-| an event folded into the model | `fold @"Customer refunded" refundStandard`; a status is a fold with a face and tells only what an action returned (`snackbar @"Person created" personCreatedLine identity`); the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
+| an event folded into the model | `fold @"Customer refunded" refundStandard`; a status is a fold with a face and tells only what an action returned, its case label its whole copy (`snackbar @"Person created" identity`); the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
 | a clicked element naming itself | `clicked @"Cell claimed" @"key" (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
 | an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"finished" quizPhase` | stopwatch; quiz, inbox | writing.md *Conditional visibility* |
-| an event replacing the model whole | `reset @"New game" openingPosition`; on a status, `snackbar @"Order placed" orderPlacedLine (const usualOrder)` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
-| an outcome that is the model | `snackbar @"Card charged" cardChargedLine identity`; `capture @"Forecast fetched"` where nothing needs telling | crud, order-form, payment, weather, password-generator, reorder | `PUI` |
+| an event replacing the model whole | `reset @"New game" openingPosition`; on a status, `snackbar @"Order placed" (const usualOrder)` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
+| an outcome that is the model | `snackbar @"Card charged" identity`; `capture @"Forecast fetched"` where nothing needs telling | crud, order-form, payment, weather, password-generator, reorder | `PUI` |
 | two buttons stepping one field | `fold @"Next" stepOnward`, `fold @"Back" stepBack` — two cases, two folds, never one button with a caption parameter | checkout | writing.md *Components* |
 | an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
 | an event intercepted by a dialog | `( Semigroupoid.do { confirmed "Refund" "Refund the customer?" $ …; fold @"Customer refunded" refundStandard } ) # atCase @"Refund a customer"` — the dialog owns the button's case in the fold block | cashbox | writing.md *Stages* |
@@ -115,12 +115,13 @@ and emitters of a catalogue — are in the design-system module header
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
 | an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { … its outcome statuses, each with its fold } } ) # atCase @"Create"` in the fold block, the action typed at exactly its outcomes | crud, reorder | writing.md *Business functions* |
-| … opened by its outcome statuses | `( VariantToRecord.do { snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker | writing.md *Business functions* |
-| an outcome told, the model kept | the action `joined` with its button in the event ensemble, its status folding `kept` (`snackbar @"Order submitted" submittedLine kept`) | order-form, flight-booker, incident-report | writing.md *Business functions* |
-| an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" orderLoadedLine identity` (or `capture @"People loaded"` where nothing needs telling) | order-form, crud | writing.md *App shape* |
+| … whose outcomes are told | `indeterminateLinearProgress # action @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book"`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` | flight-booker | writing.md *Business functions* |
+| an outcome told, the model kept | the action `joined` with its button in the event ensemble, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form, flight-booker, incident-report | writing.md *Business functions* |
+| an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" identity` (or `capture @"People loaded"` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` and `fold @"Clock ticked" tick` | timer, stopwatch | `PUI` |
-| a status per outcome case | `snackbar @"Flight booked" bookedLine` | flight-booker, order-form | writing.md *Components* |
+| a status per outcome case | `snackbar @"Flight booked" kept` — the label is the copy; a reason is a sibling case, `snackbar @"Order rejected: no total" kept` | flight-booker, order-form | writing.md *Components* |
+| a message that stays while a state holds | `( banner $ staticText "Inbox zero!" ) # inCase @"empty" inboxState` — a display under a pane, not a status | inbox | writing.md *Components* |
 | confirm before the flow continues | `confirmed "Refund" "Refund the customer?" $ …` | cashbox | writing.md *Modals* |
 | a fact the platform knows and the app cannot seed — position, connectivity, the time, the colour scheme, a chosen file | `geolocated @l`, `online @l`, `clock @l period`, `colorScheme @l` (`PUI.Web`), `filePicked @l` (`PUI.Web.HTML`), merged `RecordToRecord.do` | here-and-now, incident-report | writing.md *The pipeline*; `PUI.Web` (`source`) |
 | a dialog of choices | `dialog "Delete the last message?" $ RecordToVariant.do …` | inbox | writing.md *Modals* |

@@ -1,12 +1,11 @@
-module LoanCalculator (appliedLine, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine) where
+module LoanCalculator (applyForLoan, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine) where
 
-import Prelude (const, negate, show, (*), (+), (-), (/), (<>))
+import Prelude (const, discard, negate, pure, (*), (+), (-), (/), (<>))
 
-import Data.Int (round)
 import Data.Number (pow)
 import Data.Number.Format (fixed, toStringWith)
-import Data.String (trim)
 import Data.Variant (match)
+import Effect.Aff (Aff, Milliseconds(..), delay)
 
 cityCarLoan
   :: { "Amount (€)" :: { current :: Number
@@ -85,7 +84,7 @@ totalInterestLine
   -> String
 totalInterestLine loan = "Total interest €" <> toStringWith (fixed 2) (totalInterest loan)
 
-appliedLine
+applyForLoan
   :: { "Amount (€)" :: { current :: Number
                        , max :: Number
                        , min :: Number
@@ -100,17 +99,27 @@ appliedLine
                          , step :: [ continuous :: {}, discrete :: Number ]
                          }
      }
-  -> String
-appliedLine loan =
-  "Application received" <> forApplicant { "Applicant": loan."Applicant" }
-    <> ": €" <> toStringWith (fixed 0) loan."Amount (€)".current
-    <> " over " <> show (round loan."Term (years)".current) <> " years, "
-    <> monthlyText { "Amount (€)": loan."Amount (€)", "Term (years)": loan."Term (years)", "Purpose": loan."Purpose", "Payment protection insurance": loan."Payment protection insurance" } <> " monthly"
+  -> Aff [ "Application received" :: { "Amount (€)" :: { current :: Number
+                                                        , max :: Number
+                                                        , min :: Number
+                                                        , step :: [ continuous :: {}, discrete :: Number ]
+                                                        }
+                                      , "Applicant" :: String
+                                      , "Payment protection insurance" :: Boolean
+                                      , "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ]
+                                      , "Term (years)" :: { current :: Number
+                                                          , max :: Number
+                                                          , min :: Number
+                                                          , step :: [ continuous :: {}, discrete :: Number ]
+                                                          }
+                                      }
+         ]
+applyForLoan loan = do
+  delay (Milliseconds applicationDelay.ms)
+  pure (."Application received" loan)
 
-forApplicant :: forall r1. { "Applicant" :: String | r1 } -> String
-forApplicant { "Applicant": applicant } = case trim applicant of
-  "" -> ""
-  name -> ", " <> name
+applicationDelay :: { ms :: Number }
+applicationDelay = { ms: 800.0 }
 
 monthlyText :: forall r1. { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> String
 monthlyText loan = "€" <> toStringWith (fixed 2) (monthlyPayment loan)

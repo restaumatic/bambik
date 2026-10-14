@@ -8,6 +8,47 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **A status tells its case: the copy function is gone from every
+  `+→×` status.** `snackbar`/`toast`/`messageBar`/`output` take their
+  fold and nothing else — `snackbar @"Flight booked" kept`, `toast
+  @"Review submitted" identity`, `snackbar @"Order placed" (const
+  usualOrder)` — and show their case label verbatim, as a button draws
+  its label (L3: a label is the copy it draws). Eryk's reasoning: a
+  status is ephemeral, so elaborate copy in it only raises cognitive
+  load. The census of the twenty demo copy functions agreed: four
+  ignored their payload, seven named an entity already on screen, three
+  dispatched on a sub-variant (a disguised sibling status), four flashed
+  data that existed nowhere else (an order number, a report reference,
+  an attempt count, a server reason — data the user cannot keep from a
+  five-second toast, so a model field shown by a display, or nothing),
+  and three recapped the whole form in a sentence. The consequences:
+  an action's outcome row names its outcomes as the words the user
+  reads, a reason being a sibling case (order-form's `"Order rejected:
+  no total"`); a dead payload is `{}` (flight-booker's itinerary,
+  order-form's short id, espresso-bar's order number, incident-report's
+  reference); and a status on a button's own case — the four
+  non-Material showcases and signup-form told the *command* — is
+  replaced by a stand-in action returning the model under an outcome
+  case (`toast @"Review submitted" identity` after `action
+  submitReview`, loan-calculator's `applyForLoan`, signup-form's
+  `signUp` behind `# provided @"ready" validation`). `PUI.Web.textOf`
+  is `statusText :: String -> PUI Web a { | r }`, the face rendering
+  its caption per occurrence; the `…Face` words take a `String`. The
+  leaf-law bench checks that a status shows its case label. The
+  previous day's entry below records the form this replaces.
+- **`banner` is an ocular; `output` stays the plain floor's status.** The
+  two non-ephemeral statuses were asked which shape they are. Material
+  defines a banner as a message that stays while a state holds, which
+  is a pane over model state, so MDC2's `banner` is a surface over a
+  display, `( banner $ staticText "Inbox zero!" ) # inCase @"empty"
+  inboxState` (inbox; its MDC3 twin shows the line as plain typography,
+  MD3 having no banner), with no dismiss of its own — the MDCBanner
+  foundation and its Dismiss button went with the status. HTML's
+  `<output>` is specified as the result of a user action, and the plain
+  floor needs one status, so `output @l f` stays a status, in place
+  because nothing in plain HTML dismisses itself. doc/research-copy-is-a-
+  function.md keeps its display half and records the status half as
+  withdrawn.
 - **Every `+→×` leaf folds: statuses take their fold, the action slot is
   lifecycle-only, `joined` joins every case.** `fold @l f`, `reset @l x`
   and `capture @l` are the faceless folds, label-indexed leaves

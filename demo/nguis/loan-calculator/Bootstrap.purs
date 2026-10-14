@@ -3,30 +3,22 @@ module LoanCalculator.Bootstrap (loanCalculator) where
 import Prelude (($), (#), identity, Unit)
 
 import Effect (Effect)
-import LoanCalculator (appliedLine, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
-import PUI (looped, with)
+import LoanCalculator (applyForLoan, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
+import PUI (action, atCase, looped, with)
 import PUI.Web ((<+>), choice, staticText, text)
-import PUI.Web.Bootstrap (body, button, card, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
+import PUI.Web.Bootstrap (body, button, card, indeterminateLinearProgress, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 loanCalculator :: Effect Unit
 loanCalculator =
   body $ Semigroupoid.do
-    ( Semigroupoid.do
-      textField @"Applicant"
-      sliderLive @"Amount (€)"
-      sliderLive @"Term (years)"
-      select @"Purpose"
-        (choice @"Car" <+> choice @"Home improvement" <+> choice @"Holiday")
-      toggleSwitch @"Payment protection insurance"
-    ) # looped
-      @( "Applicant" :: String
-       , "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
-       , "Payment protection insurance" :: Boolean
-       ) # with cityCarLoan
+    textField @"Applicant"
+    sliderLive @"Amount (€)"
+    sliderLive @"Term (years)"
+    select @"Purpose"
+      (choice @"Car" <+> choice @"Home improvement" <+> choice @"Holiday")
+    toggleSwitch @"Payment protection insurance"
     card $ Semigroupoid.do
       listGroup $ Semigroupoid.do
         listGroupItem $ text monthlyLine
@@ -36,4 +28,12 @@ loanCalculator =
         staticText "Interest share of total repayment"
         progress interestShare
     button @"Apply for this loan"
-    toast @"Apply for this loan" appliedLine identity
+    indeterminateLinearProgress # action applyForLoan # atCase @"Apply for this loan"
+    toast @"Application received" identity
+  # looped
+    @( "Applicant" :: String
+     , "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+     , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
+     , "Payment protection insurance" :: Boolean
+     ) # with cityCarLoan

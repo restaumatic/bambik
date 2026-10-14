@@ -135,7 +135,7 @@ import Effect.Ref as Ref
 import PUI (anyOf, folding, isHole, Ocular, PUI, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (witnessed, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, addClass, attribute, attrWith, cl, clazz, clicked, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
+import PUI.Web (witnessed, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, addClass, attribute, attrWith, cl, clazz, clicked, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, statusText, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1220,24 +1220,23 @@ simpleDialog confirmCaption title content = wrap do
 -- | reply ("Order placed"). It never interrupts — for something the user
 -- | must acknowledge, use `banner` or a `dialog`.
 -- |
--- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar @"Flight booked" bookedLine kept` —
--- | and let the event carry the bare facts. Mutually exclusive outcomes are
--- | sibling snackbars, one per business case. A snackbar is a `+→×` leaf
--- | like `fold @l f`: after its copy it takes its fold of the payload —
--- | `identity` for an outcome that is the model, `kept` for a joined
--- | outcome that changes nothing, `(const x)` for a reset.
+-- | A status **tells its case**: its caption is the case label verbatim,
+-- | so the outcome is named as what it tells (`snackbar @"Flight booked"
+-- | kept`) and the payload is read by nothing but the fold. Mutually
+-- | exclusive outcomes are sibling snackbars, one per business case. A
+-- | snackbar is a `+→×` leaf like `fold @l f`: it takes its fold of the
+-- | payload — `identity` for an outcome that is the model, `kept` for a
+-- | joined outcome that changes nothing, `(const x)` for a reset.
 snackbar
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
-  => (a -> String)
-  -> (a -> { | r })
+  => (a -> { | r })
   -> PUI Web [ | v ] { | r }
-snackbar copy f = snackbarFace copy # atCase @l # folding @l f
+snackbar f = snackbarFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
-snackbarFace :: forall a r. (a -> String) -> PUI Web a { | r }
-snackbarFace copy = snackbarContainer $ textOf copy
+snackbarFace :: forall a r. String -> PUI Web a { | r }
+snackbarFace caseLabel = snackbarContainer $ statusText caseLabel
 
 -- opens on every message and auto-dismisses on the foundation's timeout;
 -- closing on emission instead would race the open (the `text` leaf echoes
@@ -1249,43 +1248,25 @@ snackbarContainer content =
       div >>> cl "mdc-snackbar__label" >>> "aria-atomic" := "false" $
         content
 
--- | The **banner**: a prominent message at the top of the content that
--- | stays until the user dismisses it — for something they should actually
--- | read (an outage, a required action), where a `snackbar` would slip past
--- | unnoticed. Like the snackbar, the wording lives here, the event
--- | carries the bare facts, and the banner folds its payload.
+-- | The **banner**: a prominent message at the top of the content for
+-- | something the user should actually read — an outage, an empty inbox, a
+-- | required action — where a `snackbar` would slip past unnoticed. A
+-- | banner stays while its state holds, so it is a surface over a display,
+-- | shown by a pane on the model (`( banner $ staticText "Inbox zero!" ) #
+-- | inCase @"empty" inboxState`, inbox) and gone when the state resolves:
+-- | an ocular, like `card`, with no model interface and no dismiss of its
+-- | own — what resolves the state is the app's own emitter beside it.
 -- |
 -- | Material Design 2 only — MD3 dropped the banner, so `PUI.Web.MDC3` has
 -- | none.
-banner
-  :: forall @l a v r
-   . IsSymbol l
-  => Cons l a () v
-  => (a -> String)
-  -> (a -> { | r })
-  -> PUI Web [ | v ] { | r }
-banner copy f = bannerFace copy # atCase @l # folding @l f
-
-bannerFace :: forall a r. (a -> String) -> PUI Web a { | r }
-bannerFace copy = bannerContainer $ textOf copy
-
-bannerContainer :: Ocular (PUI Web)
-bannerContainer content = wrap do
-  w <- unwrap $ div >>> cl "mdc-banner" >>> "role" := "banner" $
-    div >>> cl "mdc-banner__content" >>> "role" := "alertdialog" >>> "aria-live" := "assertive" $ wrap do
-      w' <- unwrap (div >>> cl "mdc-banner__graphic-text-wrapper" $ div >>> cl "mdc-banner__text" $ content)
-      _ <- unwrap (div >>> cl "mdc-banner__actions" $ staticHTML "<button type=\"button\" class=\"mdc-button mdc-banner__primary-action\"><div class=\"mdc-button__ripple\"></div><div class=\"mdc-button__label\">Dismiss</div></button>")
-      pure w'
-  node <- gets _.sibling
-  comp <- liftEffect $ newComponent material.banner."MDCBanner" node
-  dismissNode <- liftEffect $ querySelectorIn node ".mdc-banner__primary-action"
-  liftEffect $ listenNode dismissNode "click" (closeBanner comp)
-  pure
-    { toUser: \msg -> do
-        open comp
-        w.toUser msg
-    , fromUser: w.fromUser
-    }
+banner :: Ocular (PUI Web)
+banner content =
+  -- the foundation would size the root to its absolutely positioned content
+  -- when opening; a banner shown by a pane is open while attached, so the
+  -- content sits in flow and the root takes its height
+  div >>> cl "mdc-banner" >>> cl "mdc-banner--open" >>> "style" := "height: auto;" >>> "role" := "banner" $
+    div >>> cl "mdc-banner__content" >>> "style" := "position: static;" >>> "role" := "status" $
+      div >>> cl "mdc-banner__graphic-text-wrapper" $ div >>> cl "mdc-banner__text" $ content
 
 -- | A **menu**: a labelled button that opens a short list of `menuItem`
 -- | actions and closes again when one is picked. For actions; for choosing
@@ -1557,7 +1538,6 @@ foreign import data ComponentClass :: Type
 foreign import newComponent :: ComponentClass -> Node -> Effect Component
 foreign import open :: Component -> Effect Unit
 foreign import close :: Component -> Effect Unit
-foreign import closeBanner :: Component -> Effect Unit
 foreign import layoutComponent :: Component -> Effect Unit
 foreign import activateTab :: Component -> Int -> Effect Unit
 foreign import onTabBarActivated :: Component -> (Int -> Effect Unit) -> Effect Unit

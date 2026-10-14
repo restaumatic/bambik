@@ -1247,14 +1247,14 @@ static o = o identity
 -- | nothing else — a status that tells an outcome is never the slot, and
 -- | the types forbid it. The outcome leaves as the variant `[ | t ]` the
 -- | `Aff` names and is folded after the action by the statuses that tell
--- | it (`snackbar @"Person created" personCreatedLine identity`, crud), or
+-- | it (`snackbar @"Person created" identity`, crud), or
 -- | by `capture @l` where nothing needs telling (weather). A loop's actions
 -- | stand in the fold block, each with its button's case: `( Semigroupoid.do
 -- | { indeterminateLinearProgress # action createPerson; VariantToRecord.do
 -- | { … } } ) # atCase @"Create"`; an outcome whose fold keeps the model is
 -- | `joined` with its button, so the fold has the model in hand (order-form's
 -- | submit, flight-booker). The outcome row is fixed by the folds that
--- | consume it, or declared `@( … )` where only their copy reads it. No
+-- | consume it, or declared `@( … )` where nothing reads its payload. No
 -- | application owns a "busy": the indicator shows between `started` and
 -- | `ended` and, like every status, owes the channel nothing.
 -- |
@@ -1315,8 +1315,18 @@ running run w = action'
 -- | returns the model (`capture @l`), so every handler has the model in
 -- | hand and the loop's memory stays at the emitters and in the knot. A
 -- | fold whose event needs telling is a **status**, which takes its fold
--- | the same way (`snackbar @"Person created" personCreatedLine identity`);
--- | this is that fold with no face, `folding @l f` over `unshown @l`.
+-- | the same way (`snackbar @"Person created" identity`) and tells its
+-- | case, the label its whole copy; this is that fold with no face,
+-- | `folding @l f` over `unshown @l`.
+-- |
+-- | A status is **named as what it tells**: its case label is the words on
+-- | the screen, so it stands after an action whose outcome row names its
+-- | outcomes (`"Person created"`, `"Order placed"`), and a command straight
+-- | from an emitter — whose case is the button's caption — folds here,
+-- | silently, its result already on screen. Whatever the user must keep
+-- | (a reference, an order number) is a model field shown by a display,
+-- | never copy flashed by a status; an outcome's reasons are its cases,
+-- | each told by a sibling status.
 fold
   :: forall @l m a v r
    . MonadEffect m
@@ -1329,8 +1339,8 @@ fold f = folding @l f (Adopters.unshown @l)
 -- | One case folded into the record by **resetting** it to `x`
 -- | (`reset @"New game" openingPosition`, tic-tac-toe): the row released is
 -- | `x` whole, whatever the payload. `reset @l x = fold @l (const x)`; a
--- | status resets the same way, `snackbar @"Order placed" orderPlacedLine
--- | (const usualOrder)` (espresso-bar).
+-- | status resets the same way, `snackbar @"Order placed" (const
+-- | usualOrder)` (espresso-bar).
 reset
   :: forall @l m a v r
    . MonadEffect m
@@ -1344,8 +1354,8 @@ reset x = fold @l (const x)
 -- | model whole (`capture @"People loaded"`, crud): the case an effect
 -- | returns the model under — a load, a fetch, a server's answer — where
 -- | nothing needs telling. `capture @l = fold @l identity`; a status
--- | captures with `identity` (`snackbar @"Order loaded" orderLoadedLine
--- | identity`, order-form).
+-- | captures with `identity` (`snackbar @"Order loaded" identity`,
+-- | order-form).
 capture
   :: forall @l m v r
    . MonadEffect m
@@ -1356,12 +1366,12 @@ capture = fold @l identity
 
 -- | The fold behind every `+→×` leaf — plumbing, not vocabulary: a status
 -- | face owning case `l` and the fold of its payload, in one leaf. The
--- | vocabularies build their statuses with it (`snackbar @l copy f =
--- | snackbarFace copy # atCase @l # folding @l f`), and `fold @l f` is it
--- | over the faceless `unshown @l`. The status is fed the **event**, never
--- | the fold's result — its copy function is typed at the payload, so
--- | whatever a status says must be in the event — and `f` of the payload
--- | is the row released.
+-- | vocabularies build their statuses with it (`snackbar @l f =
+-- | snackbarFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f`),
+-- | and `fold @l f` is it over the faceless `unshown @l`. The status is fed
+-- | the **event**, never the fold's result — it shows its case's label, so
+-- | what a status says is the name of what happened — and `f` of the
+-- | payload is the row released.
 -- |
 -- | **Derived**: the wire and the status under the `×→×` merge, fed the
 -- | occurrence's outcome and the occurrence in one two-field record — the

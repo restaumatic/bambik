@@ -14,7 +14,7 @@
 -- |   effect-computed attributes), `cl`, and the channel-fed `attrWith`,
 -- |   `attrAt` and `clWhen`; `init` for per-element setup;
 -- | - **text leaves** — `text` (copy from a read function), `textAt` (a
--- |   field shown as stored), `textOf` (a status's payload), `staticText`,
+-- |   field shown as stored), `statusText` (a status's caption), `staticText`,
 -- |   and `staticHTML`, kept off the public vocabularies (L10);
 -- | - **occurrence sources** — `clicked @l @k`, `onClickedXY @l`;
 -- | - **panes** — `provided` (emitters) and `inCase` (displays and
@@ -115,7 +115,7 @@ module PUI.Web
   , inCaseAt
   , text
   , textAt
-  , textOf
+  , statusText
   , staticText
   , attr
   , (:=)
@@ -830,17 +830,19 @@ text = textLeaf
 textAt :: forall @l b r. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textAt = text (Record.get (Proxy @l))
 
--- | `text`'s status sibling: a status face renders its payload through
--- | its copy function (`textOf copy`), adopted as its case by
--- | `atCase @l` — a `+→×` leaf. Vocabulary-internal — application
--- | code shows copy with `text`, whose row-shaped read states its footprint.
--- | Unlike the display it renders with, a status **releases nothing**: the
--- | `+→×` merge forwards every release as the whole shared row, so the
--- | leaf's echo is swallowed here and the output is typed at every
--- | row, as the silent component's is.
-textOf :: forall a r. (a -> String) -> PUI Web a { | r }
-textOf f = wrap do
-  leaf <- unwrap (textLeaf f)
+-- | `text`'s status sibling: a status face renders its caption on every
+-- | occurrence (`statusText caption`), adopted as its case by `atCase @l`
+-- | — a `+→×` leaf. The caption is the case label verbatim, so the face
+-- | reads nothing of the payload: a status tells its case. Unlike a static,
+-- | nothing shows before the first occurrence. Vocabulary-internal —
+-- | application code shows copy with `text`, whose row-shaped read states
+-- | its footprint. Unlike the display it renders with, a status **releases
+-- | nothing**: the `+→×` merge forwards every release as the whole shared
+-- | row, so the leaf's echo is swallowed here and the output is typed at
+-- | every row, as the silent component's is.
+statusText :: forall a r. String -> PUI Web a { | r }
+statusText caption = wrap do
+  leaf <- unwrap (textLeaf (const caption))
   pure { toUser: leaf.toUser, fromUser: \_ -> leaf.fromUser \_ -> pure unit }
 
 textLeaf :: forall a. (a -> String) -> PUI Web a a

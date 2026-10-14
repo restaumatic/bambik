@@ -72,9 +72,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `button @"Submit order"`, `select @"Milk" opts`). No canonical
   label (`value`/`clicked`/`event`) appears in application code: business
   functions are arguments of leaves, never adopters — a display takes its
-  read function, a status its business case and copy function
-  (`snackbar @"booked" bookedLine`; inside the vocabulary, the face over
-  the copy function is adopted `# atCase @l`), and an emitter emits its
+  read function, a status its business case and fold, its case label its
+  whole copy (`snackbar @"Flight booked" kept`; inside the vocabulary, the
+  face over the label is adopted `# atCase @l`), and an emitter emits its
   own case. The structural adopters `atField`/`atCase`, `toField`/`toCase`
   take no function, and there is no rename adopter: re-labelling a
   component built at a fixed internal label is exactly what this
@@ -181,8 +181,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
-  swap. Precedents: the statuses (`snackbar @"booked"
-  bookedLine`, replacing a per-case copy record), `confirmed "Refund"
+  swap. Precedents: the statuses (`snackbar @"Flight booked" kept`,
+  replacing a per-case copy record and then the copy function), `confirmed "Refund"
   "Refund the customer?"` and `simpleDialog`, and the one-field ocular
   configs made positional (`tooltip`, `dialog`, `topAppBar`, `menu`,
   `imageList`, `layoutCell`, `badge`). The vocabulary MUST
@@ -556,8 +556,8 @@ The codebase is three floors, each greppable:
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf @l @k
-rowsOf item`, `dispatched envelopeOf`, a status's copy function
-(`snackbar @"booked" bookedLine`), `settled normalize` (`identity` says
+rowsOf item`, `dispatched envelopeOf`, a status's fold
+(`snackbar @"Flight booked" kept`), `settled normalize` (`identity` says
 verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next word waiting to be coined — never a reason to import the
@@ -576,8 +576,8 @@ code below the UI) are algebra-layer material and exempt by location.
   named by its label (`textAt @l`, L3); a formatter bracket, a
   view-side lambda and a `staticText`-plus-leaf text run are all
   forbidden; there is no read adopter (doc/research-presentation-model.md
-  records the two that were). The vocabulary-internal `textOf` serves
-  the statuses' own variant payload.
+  records the two that were). The vocabulary-internal `statusText`
+  renders a status's case label per occurrence.
 - A display that renders a **number** — `progressBar`,
   `linearProgress`, `progress`, `gauge`, `ratingDisplay` — MUST take a
   read function too: a fraction is *derived* (a ratio of source
@@ -600,12 +600,24 @@ code below the UI) are algebra-layer material and exempt by location.
   `spago test`, no browser, and the view line names its own writer.
   Checkable form: `npm run check-view-model` rejects the retired read
   adopters anywhere in `demo/` and any lambda in a `text` read.
-- A status is label-indexed at its business case and takes that case's
-  copy function (`snackbar @"booked" bookedLine`) — the status's
-  counterpart of a display's read function. Mutually exclusive outcomes
-  are sibling statuses, each owning its case. Its face is private to the
-  vocabulary — the copy function over a bare payload — adopted as its
-  case by `atCase @l`, as an editor's face is lifted by `focusField @l`.
+- A status is label-indexed at its business case and **tells its case**:
+  it takes no copy function, its case label is its whole copy
+  (`snackbar @"Flight booked" kept`, `toast @"Review submitted"
+  identity`) — a status is ephemeral, and copy a status would compute
+  from its payload is either data the user must keep (a reference, an
+  order number), which is a model field shown by a display, or a reason,
+  which is a sibling case told by its own status. Mutually exclusive
+  outcomes are sibling statuses, each owning its case, so an action's
+  outcome row names its outcomes as the words the user reads
+  (`Aff [ "Order rejected: no total" :: {}, "Order submitted" :: {} ]`),
+  and a command straight from an emitter, whose case is the button's
+  caption, folds silently. Its face is private to the vocabulary — the
+  label rendered per occurrence — adopted as its case by `atCase @l`, as
+  an editor's face is lifted by `focusField @l`. A message that stays
+  while a state holds is no status but a surface over a display, shown by
+  a pane (MDC2's `banner`, an ocular); HTML's `output`, the element for a
+  user action's result, is the plain floor's status and stays in place
+  only because nothing there dismisses itself.
 - Rationale, census and laws: doc/research-copy-is-a-function.md, which
   partially reverses doc/research-presentation-model.md (keeping its
   testability motivation and its `settled` half); the application-side

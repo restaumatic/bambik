@@ -24,7 +24,7 @@ lawBenchFluent = do
     , bench "radioGroupUnpicked" "×→×" picks (radioGroupUnpicked @"Pick" @"chosen" options)
     , bench "radioGroupOptional" "×→×" picks (radioGroupOptional @"Pick" @"chosen" @"unchosen" options)
     , bench "button" "×→+" rows (button @"Go")
-    , bench "messageBar" "+→×" events (messageBar @"event" identity (const {}))
+    , bench "messageBar" "+→×" events (messageBar @"event" (const {}))
     ]
   where
   fractionOf { fraction } = fraction

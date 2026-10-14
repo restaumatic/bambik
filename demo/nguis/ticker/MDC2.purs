@@ -9,7 +9,7 @@ import PUI (action, atCase, fold, joined, looped, ticks, with)
 import PUI.Web (providedAt, text)
 import PUI.Web.MDC2 (body, body1, button', headline6, indeterminateLinearProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Ticker (closedTicker, fetchQuote, phaseLine, quoteFetchedLine, quoteLine, recordQuote, stepAway, tick, tickLine, tickPeriod, watch)
+import Ticker (closedTicker, fetchQuote, phaseLine, quoteLine, recordQuote, stepAway, tick, tickLine, tickPeriod, watch)
 
 ticker :: Effect Unit
 ticker =
@@ -28,5 +28,5 @@ ticker =
       fold @"Watch" watch
       fold @"Step away" stepAway
       fold @"Ticked" tick
-      snackbar @"Quote fetched" quoteFetchedLine recordQuote
+      snackbar @"Quote fetched" recordQuote
   # looped @( phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int ) # with closedTicker

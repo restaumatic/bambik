@@ -54,7 +54,7 @@ import Effect.Class (liftEffect)
 import PUI (folding, Ocular, PUI)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, selectorWiring, setAttribute, setChecked, setValue, staticText, statusWiring, text, textOf, uniqueId, (:=))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, selectorWiring, setAttribute, setChecked, setValue, staticText, statusWiring, text, statusText, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -90,7 +90,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 --       `×→+` events — `button @l` (`.btn.btn-primary`);
 --       `+→×` statuses — `toast` (`.toast` fixed at the bottom, shown
 --         on feed and dismissed by the hand-wired timer) — each taking
---         its business case and copy function (`toast @"booked" bookedLine`).
+--         its business case and fold, the case label its copy (`toast @"Application received" identity`).
 --   * **oculars** — shape-preserving decorators: `card`
 --     (`.card`, a plain surface), `listGroup`/`listGroupItem`
 --     (`.list-group`), `badge variant` (`.badge.text-bg-*`).
@@ -260,24 +260,23 @@ progress f = wrap do
 -- | dismisses itself after a few seconds, for something that has just
 -- | happened and needs no reply. It never interrupts.
 -- |
--- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast @"Apply for this loan" appliedLine identity` — and let
--- | the event carry the bare facts. A `+→×` leaf like `fold @l f`, it
--- | takes its fold of the payload after its copy.
+-- | A status **tells its case**: its caption is the case label verbatim,
+-- | so the outcome is named as what it tells (`toast @"Application
+-- | received" identity`) and the payload is read by nothing but the fold. A
+-- | `+→×` leaf like `fold @l f`, it takes its fold of the payload.
 toast
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
-  => (a -> String)
-  -> (a -> { | r })
+  => (a -> { | r })
   -> PUI Web [ | v ] { | r }
-toast copy f = toastFace copy # atCase @l # folding @l f
+toast f = toastFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
-toastFace :: forall a r. (a -> String) -> PUI Web a { | r }
-toastFace copy = wrap do
+toastFace :: forall a r. String -> PUI Web a { | r }
+toastFace caseLabel = wrap do
   w <- unwrap $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
-      (div $ textOf copy) # cl "toast-body")
+      (div $ statusText caseLabel) # cl "toast-body")
     # cl "toast" # cl "text-bg-primary" # cl "border-0"
   node <- gets _.sibling
   pure

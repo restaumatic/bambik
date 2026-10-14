@@ -1,4 +1,4 @@
-module OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, orderLoadedLine, payingLine, printReceipt, receiptLine, rejectionLine, setDistance, staleDistanceForgotten, submitOrder, submittedLine, summaryLine) where
+module OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, payingLine, printReceipt, setDistance, staleDistanceForgotten, submitOrder, summaryLine) where
 
 import Prelude ((<>), ($), (==), (/=), bind, const, discard, pure, show)
 
@@ -122,21 +122,6 @@ orderLine
   -> String
 orderLine r = "Order " <> r."Identifier"."Short ID"
 
-orderLoadedLine
-  :: { "Customer" :: { "First name" :: String, "Last name" :: String }
-     , "Fulfillment" :: { "Address" :: String
-                        , "Mode" :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
-                        , "Table" :: String
-                        , "Time" :: String
-                        , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
-                        }
-     , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
-     , "Kitchen" :: { "Remarks" :: String }
-     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
-     }
-  -> String
-orderLoadedLine r = "Loaded order " <> r."Identifier"."Short ID" <> " for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name"
-
 summaryLine
   :: { "Customer" :: { "First name" :: String, "Last name" :: String }
      , "Fulfillment" :: { "Address" :: String
@@ -224,69 +209,17 @@ submitOrder
      , "Kitchen" :: { "Remarks" :: String }
      , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
      }
-  -> Aff [ "Order submitted" :: { "Short ID" :: String }
-         , "Submission failed" :: { "Short ID" :: String, reason :: String }
-         ]
-submitOrder { "Identifier": { "Short ID": shortId, "Unique ID": orderId }, "Payment": { "Total": total } } = do
+  -> Aff [ "Order rejected: no total" :: {}, "Order submitted" :: {} ]
+submitOrder { "Identifier": { "Unique ID": orderId }, "Payment": { "Total": total } } = do
   liftEffect $ log $ "submitting order " <> orderId
   delay (Milliseconds 1000.0)
   if total == ""
     then do
       liftEffect $ log "order submission failed"
-      pure $ ."Submission failed" { "Short ID": shortId, reason: "missing total" }
+      pure $ ."Order rejected: no total" {}
     else do
       liftEffect $ log "submitted order"
-      pure $ ."Order submitted" { "Short ID": shortId }
-
-submittedLine
-  :: { event :: { "Short ID" :: String }
-     , model :: { "Customer" :: { "First name" :: String, "Last name" :: String }
-                , "Fulfillment" :: { "Address" :: String
-                                   , "Mode" :: [ "Delivery" :: {}
-                                               , "Dine in" :: {}
-                                               , "Takeaway" :: {}
-                                               ]
-                                   , "Table" :: String
-                                   , "Time" :: String
-                                   , distance :: [ estimated :: { km :: Int, to :: String }
-                                                 , unknown :: {}
-                                                 ]
-                                   }
-                , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
-                , "Kitchen" :: { "Remarks" :: String }
-                , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ]
-                               , "Paid" :: String
-                               , "Total" :: String
-                               }
-                }
-     }
-  -> String
-submittedLine { event: { "Short ID": shortId } } = "Order " <> shortId <> " submitted"
-
-rejectionLine
-  :: { event :: { "Short ID" :: String, reason :: String }
-     , model :: { "Customer" :: { "First name" :: String, "Last name" :: String }
-                , "Fulfillment" :: { "Address" :: String
-                                   , "Mode" :: [ "Delivery" :: {}
-                                               , "Dine in" :: {}
-                                               , "Takeaway" :: {}
-                                               ]
-                                   , "Table" :: String
-                                   , "Time" :: String
-                                   , distance :: [ estimated :: { km :: Int, to :: String }
-                                                 , unknown :: {}
-                                                 ]
-                                   }
-                , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
-                , "Kitchen" :: { "Remarks" :: String }
-                , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ]
-                               , "Paid" :: String
-                               , "Total" :: String
-                               }
-                }
-     }
-  -> String
-rejectionLine { event: { "Short ID": shortId, reason } } = "Order " <> shortId <> " rejected: " <> reason
+      pure $ ."Order submitted" {}
 
 printReceipt
   :: { "Customer" :: { "First name" :: String, "Last name" :: String }
@@ -300,34 +233,10 @@ printReceipt
      , "Kitchen" :: { "Remarks" :: String }
      , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
      }
-  -> Aff [ "Receipt printed" :: { "Short ID" :: String } ]
-printReceipt { "Identifier": { "Short ID": shortId, "Unique ID": orderId } } = do
+  -> Aff [ "Receipt printed" :: {} ]
+printReceipt { "Identifier": { "Unique ID": orderId } } = do
   liftEffect $ log $ "printing receipt for order " <> orderId
   delay (Milliseconds 2000.0)
   liftEffect $ log $ "printed receipt for order " <> orderId
-  pure $ ."Receipt printed" { "Short ID": shortId }
+  pure $ ."Receipt printed" {}
 
-receiptLine
-  :: { event :: { "Short ID" :: String }
-     , model :: { "Customer" :: { "First name" :: String, "Last name" :: String }
-                , "Fulfillment" :: { "Address" :: String
-                                   , "Mode" :: [ "Delivery" :: {}
-                                               , "Dine in" :: {}
-                                               , "Takeaway" :: {}
-                                               ]
-                                   , "Table" :: String
-                                   , "Time" :: String
-                                   , distance :: [ estimated :: { km :: Int, to :: String }
-                                                 , unknown :: {}
-                                                 ]
-                                   }
-                , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
-                , "Kitchen" :: { "Remarks" :: String }
-                , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ]
-                               , "Paid" :: String
-                               , "Total" :: String
-                               }
-                }
-     }
-  -> String
-receiptLine { event: { "Short ID": shortId } } = "Receipt for order " <> shortId <> " printed"

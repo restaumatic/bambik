@@ -196,8 +196,8 @@
 -- |
 -- | None takes a function: business functions are arguments of leaves,
 -- | never adopters — a display takes its **read function** (`text
--- | lineOf`), a status its business case and copy function (`snackbar
--- | @"booked" bookedLine`, its face over the copy, adopted `# atCase @l`),
+-- | lineOf`), a status its business case and fold (`snackbar @"Flight
+-- | booked" kept`, its face over its label, adopted `# atCase @l`),
 -- | and an emitter emits its own case, which the fold consumes
 -- | (doc/research-copy-is-a-function.md). The grid is symmetric in form
 -- | and asymmetric in reach: a label-indexed leaf already emits its

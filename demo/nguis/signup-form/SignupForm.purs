@@ -1,11 +1,12 @@
-module SignupForm (availableLine, invalidLine, newApplicant, readyLine, signupLine, takenLine, usernameSettleTime, usernameStatus, validation) where
+module SignupForm (availableLine, invalidLine, newApplicant, readyLine, signUp, takenLine, usernameSettleTime, usernameStatus, validation) where
 
-import Prelude (const, not, (<>), (==))
+import Prelude (const, discard, not, pure, (<>), (==))
 
 import Data.Either (Either(..), either)
 import Data.Foldable (elem)
 import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
+import Effect.Aff (Aff, Milliseconds(..), delay)
 
 newApplicant
   :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
@@ -25,22 +26,6 @@ newApplicant =
 usernameSettleTime :: { ms :: Number }
 usernameSettleTime = { ms: 300.0 }
 
-signupLine
-  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
-     , "Email" :: String
-     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Username" :: String
-     }
-  -> String
-signupLine applicant = either rejectionLine welcomeLine (validate applicant)
-
-welcomeLine :: String -> String
-welcomeLine name = "Welcome, " <> name <> "!"
-
-rejectionLine :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] -> String
-rejectionLine reason = "Cannot sign up: " <> refusalText reason
-
 refusalText :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] -> String
 refusalText = match
   { unnamed: const "choose a username"
@@ -58,6 +43,27 @@ validate applicant@{ "Email": email, "I accept the terms of service": terms } =
     else if not (contains (Pattern "@") email) then Left (.badEmail {})
     else if declined terms then Left (.termsUnaccepted {})
     else Right username
+
+signUp
+  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+     , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
+     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+     , "Username" :: String
+     }
+  -> Aff [ "Account created" :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+                                , "Email" :: String
+                                , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
+                                , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+                                , "Username" :: String
+                                }
+         ]
+signUp applicant = do
+  delay (Milliseconds signupDelay.ms)
+  pure (."Account created" applicant)
+
+signupDelay :: { ms :: Number }
+signupDelay = { ms: 800.0 }
 
 validation
   :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]

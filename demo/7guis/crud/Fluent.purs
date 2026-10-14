@@ -2,7 +2,7 @@ module Crud.Fluent (crud) where
 
 import Prelude ((#), ($), (<>), (>>>), identity, Unit)
 
-import Crud (createPerson, deletePerson, entries, loadPeopleCatalogue, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personUpdatedLine, pick, updatePerson)
+import Crud (createPerson, deletePerson, entries, loadPeopleCatalogue, personLine, pick, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
@@ -38,18 +38,18 @@ crud =
         ( Semigroupoid.do
           indeterminateLinearProgress # action createPerson
           VariantToRecord.do
-            messageBar @"Person created" personCreatedLine identity
-            messageBar @"Person not created" personNotCreatedLine identity ) # atCase @"Create"
+            messageBar @"Person created" identity
+            messageBar @"Person not created" identity ) # atCase @"Create"
         ( Semigroupoid.do
           indeterminateLinearProgress # action updatePerson
           VariantToRecord.do
-            messageBar @"Person updated" personUpdatedLine identity
-            messageBar @"Person not updated" personNotUpdatedLine identity ) # atCase @"Update"
+            messageBar @"Person updated" identity
+            messageBar @"Person not updated" identity ) # atCase @"Update"
         ( Semigroupoid.do
           indeterminateLinearProgress # action deletePerson
           VariantToRecord.do
-            messageBar @"Person deleted" personDeletedLine identity
-            messageBar @"Person not deleted" personNotDeletedLine identity ) # atCase @"Delete"
+            messageBar @"Person deleted" identity
+            messageBar @"Person not deleted" identity ) # atCase @"Delete"
     ) # looped
       @( "Filter prefix (surname)" :: String
        , "Name" :: String

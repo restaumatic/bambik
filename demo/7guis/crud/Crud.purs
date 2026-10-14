@@ -1,4 +1,4 @@
-module Crud (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personUpdatedLine, pick, updatePerson) where
+module Crud (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personLine, pick, updatePerson) where
 
 import Prelude (bind, otherwise, pure, (<$>), (<>), (==), (||))
 
@@ -158,62 +158,3 @@ isSelected
   -> Boolean
 isSelected { status } = match { selected: \_ -> true, unselected: \_ -> false } status
 
-personCreatedLine
-  :: { "Filter prefix (surname)" :: String
-     , "Name" :: String
-     , "Surname" :: String
-     , people :: Array { "Name" :: String, "Surname" :: String }
-     , selected :: [ none :: {}, picked :: { index :: Int } ]
-     }
-  -> String
-personCreatedLine { "Name": name, "Surname": surname } = "Created " <> name <> " " <> surname
-
-personUpdatedLine
-  :: { "Filter prefix (surname)" :: String
-     , "Name" :: String
-     , "Surname" :: String
-     , people :: Array { "Name" :: String, "Surname" :: String }
-     , selected :: [ none :: {}, picked :: { index :: Int } ]
-     }
-  -> String
-personUpdatedLine { "Name": name, "Surname": surname } = "Updated " <> name <> " " <> surname
-
-personDeletedLine
-  :: { "Filter prefix (surname)" :: String
-     , "Name" :: String
-     , "Surname" :: String
-     , people :: Array { "Name" :: String, "Surname" :: String }
-     , selected :: [ none :: {}, picked :: { index :: Int } ]
-     }
-  -> String
-personDeletedLine { "Name": name, "Surname": surname } = "Deleted " <> name <> " " <> surname
-
-personNotCreatedLine
-  :: { "Filter prefix (surname)" :: String
-     , "Name" :: String
-     , "Surname" :: String
-     , people :: Array { "Name" :: String, "Surname" :: String }
-     , selected :: [ none :: {}, picked :: { index :: Int } ]
-     }
-  -> String
-personNotCreatedLine _ = "Not created: a name and a surname are needed"
-
-personNotUpdatedLine
-  :: { "Filter prefix (surname)" :: String
-     , "Name" :: String
-     , "Surname" :: String
-     , people :: Array { "Name" :: String, "Surname" :: String }
-     , selected :: [ none :: {}, picked :: { index :: Int } ]
-     }
-  -> String
-personNotUpdatedLine _ = "Not updated: nobody is selected"
-
-personNotDeletedLine
-  :: { "Filter prefix (surname)" :: String
-     , "Name" :: String
-     , "Surname" :: String
-     , people :: Array { "Name" :: String, "Surname" :: String }
-     , selected :: [ none :: {}, picked :: { index :: Int } ]
-     }
-  -> String
-personNotDeletedLine _ = "Not deleted: nobody is selected"

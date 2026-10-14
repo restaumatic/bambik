@@ -59,7 +59,7 @@ import Effect.Ref as Ref
 import PUI (folding, Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, separating, (:=))
+import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, separating, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -96,7 +96,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 --       `×→+` events — `button @l` (`<fluent-button appearance="primary">`);
 --       `+→×` statuses — `messageBar` (`<fluent-message-bar
 --         intent="success">` shown on feed, auto-dismissing) — each taking
---         its business case and copy function (`messageBar @"booked" bookedLine`).
+--         its business case and fold, the case label its copy (`messageBar @"Room booked" identity`).
 --   * **oculars** — shape-preserving decorators: `card`
 --     (hand-rolled over the `--colorNeutral*`/`--shadow*` tokens — the
 --     Fluent card is a React-only catalog entry) and the type-ramp
@@ -324,24 +324,23 @@ ratingDisplay f = wrap do
 -- | screen that dismisses itself after a few seconds, for something that
 -- | has just happened and needs no reply. It never interrupts.
 -- |
--- | The wording belongs to the UI, not to the event: write the copy where
--- | the message bar is built — `messageBar @"Room booked" bookedLine identity`
--- | — and let the event carry the bare facts. A `+→×` leaf like `fold @l
--- | f`, it takes its fold of the payload after its copy.
+-- | A status **tells its case**: its caption is the case label verbatim,
+-- | so the outcome is named as what it tells (`messageBar @"Room booked"
+-- | identity`) and the payload is read by nothing but the fold. A `+→×`
+-- | leaf like `fold @l f`, it takes its fold of the payload.
 messageBar
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
-  => (a -> String)
-  -> (a -> { | r })
+  => (a -> { | r })
   -> PUI Web [ | v ] { | r }
-messageBar copy f = messageBarFace copy # atCase @l # folding @l f
+messageBar f = messageBarFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
-messageBarFace :: forall a r. (a -> String) -> PUI Web a { | r }
-messageBarFace copy = wrap do
+messageBarFace :: forall a r. String -> PUI Web a { | r }
+messageBarFace caseLabel = wrap do
   liftEffect $ ensureStyle "fluent-toast" toastCss
   w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
-    textOf copy) # cl "fluent-toast"
+    statusText caseLabel) # cl "fluent-toast"
   node <- gets _.sibling
   pure
     { toUser: \i -> do

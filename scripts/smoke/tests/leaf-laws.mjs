@@ -10,8 +10,8 @@
 //
 // Every editor then takes the platform's own input — typed text and arrow
 // keys and mouse clicks through CDP, a pick for selects — and must store a changed
-// row that keeps the rest of its fields; every status must show the text of
-// the event it was fed.
+// row that keeps the rest of its fields; every status must show the case
+// label of the event it was fed, its whole copy.
 // Optional selectors are then cleared by their face's own gesture and must
 // store the none case (the bench's first sample) exactly once.
 // Variant-input shapes (+→×, +→+) owe nothing; their entries are only
@@ -204,9 +204,9 @@ export const run = async ({ ev, session, assertEq, sleep, page }) => {
       if (stored && 'other' in fed) assertEq(stored.other, fed.other, `${at} Input: the edit keeps the rest of the row`)
     }
     if (r.shape === '+→×' && r.samples.every(x => x.type === 'event')) {
-      const last = r.samples[r.samples.length - 1].value
-      const shown = await ev(`document.querySelector('section[data-bench=' + JSON.stringify(${JSON.stringify(name)}) + ']').textContent.includes(${JSON.stringify(last)})`)
-      assertEq(shown, true, `${at} Status: the fed event's text is shown (${JSON.stringify(last)})`)
+      const label = r.samples[r.samples.length - 1].type
+      const shown = await ev(`document.querySelector('section[data-bench=' + JSON.stringify(${JSON.stringify(name)}) + '] h3 ~ *').textContent.includes(${JSON.stringify(label)})`)
+      assertEq(shown, true, `${at} Status: the fed event's case label is shown (${JSON.stringify(label)})`)
     }
     if (r.shape === '×→+') {
       for (const s of r.steps) {

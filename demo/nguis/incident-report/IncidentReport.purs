@@ -1,6 +1,6 @@
-module IncidentReport (clockPeriod, fileReport, filedLine, reportLine) where
+module IncidentReport (clockPeriod, fileReport, reportLine) where
 
-import Prelude (const, discard, pure, show, (*), (+), (/), (<), (<>))
+import Prelude (const, discard, pure, show, (/), (<), (<>))
 
 import Data.Int (round)
 import Data.Number.Format (fixed, toStringWith)
@@ -29,30 +29,15 @@ reportLine { "Photo": photo, position, time } =
     , none: const ", no photo attached"
     } photo
 
-filedLine
-  :: { event :: { reference :: Int }
-     , model :: { "Photo" :: [ none :: {}
-                             , picked :: { mime :: String, name :: String, size :: Number }
-                             ]
-                , position :: [ denied :: {}
-                              , located :: { lat :: Number, lng :: Number }
-                              , unknown :: {}
-                              ]
-                , time :: { hours :: Int, minutes :: Int, seconds :: Int }
-                }
-     }
-  -> String
-filedLine { event: { reference } } = "Report #" <> show reference <> " filed."
-
 fileReport
   :: { "Photo" :: [ none :: {}, picked :: { mime :: String, name :: String, size :: Number } ]
      , position :: [ denied :: {}, located :: { lat :: Number, lng :: Number }, unknown :: {} ]
      , time :: { hours :: Int, minutes :: Int, seconds :: Int }
      }
-  -> Aff [ "Report filed" :: { reference :: Int } ]
-fileReport { time } = do
+  -> Aff [ "Report filed" :: {} ]
+fileReport _ = do
   delay (Milliseconds filingDelay.ms)
-  pure (."Report filed" { reference: time.hours * 3600 + time.minutes * 60 + time.seconds })
+  pure (."Report filed" {})
 
 filingDelay :: { ms :: Number }
 filingDelay = { ms: 800.0 }

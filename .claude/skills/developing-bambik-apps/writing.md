@@ -31,7 +31,7 @@ matches your design system.
   | --- | --- | --- |
   | ×→× | **editor**, **display**, **stage** | `filledTextField @"Email"`, `headline4 $ text countLine` |
   | ×→+ | **emitter** | `button @"Count"` |
-  | +→× | **status** | `snackbar @"Flight booked" bookedLine` |
+  | +→× | **status** | `snackbar @"Flight booked" kept` |
   | +→+ | **handler** | a backend action |
 
 - **stage** — one step of the pipeline: its output is the next step's
@@ -149,15 +149,22 @@ How each kind takes its business meaning:
   See *Copy is a function* in [Types and values](#types-and-values).
 - **Emitters** emit their own case. Whatever the business decides about
   it is decided where the case is consumed — the fold's handler, the
-  status's copy function. Two buttons are two business cases, each
+  action's outcome row. Two buttons are two business cases, each
   with its own fold (checkout's `fold @"Next" stepOnward`,
   `fold @"Back" stepBack`); no emitter takes a caption
   parameter to stand for two.
-- **Statuses** are labelled with the case they show and take its copy
-  function: `snackbar @"Flight booked" bookedLine`. Mutually exclusive outcomes
+- **Statuses** are labelled with the case they tell, and the label is
+  their whole copy: `snackbar @"Flight booked" kept` shows the words
+  "Flight booked". A status takes no copy function — it is ephemeral,
+  so it names what happened and nothing more; what the user must keep
+  is a model field shown by a display. Mutually exclusive outcomes
   are sibling statuses in one `VariantToRecord.do`, each owning its
-  case; a run in progress is shown by the action's indicator, never by
-  a status.
+  case, so an action names its outcomes as the words the user reads
+  (`Aff [ "Order rejected: no total" :: {}, "Order submitted" :: {} ]`);
+  a run in progress is shown by the action's indicator, never by
+  a status. A message that stays while a state holds is a display
+  under a pane (`( banner $ staticText "Inbox zero!" ) # inCase @"empty"
+  inboxState`, inbox), not a status.
 - **Chrome** (`card`, `topAppBar`, typography, dialogs) wraps other
   components and adds nothing to the model; code order is screen order.
   A card around editors is a sub-record: write it as the labelled group
@@ -200,10 +207,10 @@ takes a trailing word that says what it is for:
 | an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Submit order" { icon: "save" }; indeterminateLinearProgress # action @( … ) submitOrder # atCase @"Submit order" } ) # joined` in the event ensemble, its statuses folding `kept` | order-form, flight-booker |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @celsius # settled fromCelsius` | temperature-converter |
-| an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" personCreatedLine identity; … } } ) # atCase @"Create"`, the pair owning the case in the fold block, the action typed at exactly its outcomes | crud |
+| an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" identity; … } } ) # atCase @"Create"`, the pair owning the case in the fold block, the action typed at exactly its outcomes | crud |
 | an effect whose outcome is the model | `( Semigroupoid.do { indeterminateCircularProgress # action fetchReport; capture @"Forecast fetched" } ) # atCase @"Forecast requested"` | weather |
-| an effect opened by its outcome statuses | `( VariantToRecord.do { indeterminateLinearProgress; snackbar @"Flight booked" bookedLine; snackbar @"Booking rejected" rejectedLine } ) # action @( … ) submit # atCase @"Book"` | flight-booker |
-| a fold told by a status | `snackbar @"Person created" personCreatedLine identity`, `snackbar @"Quote fetched" quoteFetchedLine recordQuote`, `snackbar @"Order submitted" submittedLine kept` — a status takes its fold like `fold @l f`, and stands only after an action that returned what it tells | crud, ticker, order-form |
+| an effect whose outcomes are told | `indeterminateLinearProgress # action @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book"`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` in the fold block | flight-booker |
+| a fold told by a status | `snackbar @"Person created" identity`, `snackbar @"Quote fetched" recordQuote`, `snackbar @"Order submitted" kept` — a status takes its fold like `fold @l f`, tells its case by its label, and stands only after an action whose outcome it is | crud, ticker, order-form |
 
 A pane's content, a list's element and `confirmed`'s content release
 the row they are fed: a display does so by itself. An editor inside a
@@ -243,23 +250,22 @@ Semigroupoid.do
     ( Semigroupoid.do                         --   an effect on a case, folded by its own outcomes
       indeterminateLinearProgress # action createPerson
       VariantToRecord.do
-        snackbar @"Person created" personCreatedLine identity
-        snackbar @"Person not created" personNotCreatedLine identity ) # atCase @"Create"
+        snackbar @"Person created" identity
+        snackbar @"Person not created" identity ) # atCase @"Create"
 # looped @( … ) # with seed
 ```
 
 A fold is one line per event case, `fold @l f` (`fold @"Count"
 increment`): the case is its label, `f` of the payload the whole next
 model. A fold with something to tell is a **status**, which takes its
-fold the same way, after its copy: `snackbar @l line f`. Every `+→×`
+fold the same way: `snackbar @l f`. Every `+→×`
 line folds; nothing stands in the block releasing nothing.
 The status names the case — its label is the event's, human copy like
-`"Person created"` — and shows the **event**, never the fold's result:
-it is fed the occurrence as it arrives, so its copy function is typed at
-the payload and everything it says must be in the event. A status with
-copy therefore stands after an action that returned what it tells
-(crud's action returns the model, so `personCreatedLine :: model ->
-String`, and its fold is `identity`). A command straight from an
+`"Person created"` — and that label is all it shows: it tells the
+**event**, never the fold's result, and reads nothing of the payload. A
+status therefore stands after an action whose outcome row names what
+happened (crud's action returns the model under `"Person created"`, and
+the status's fold is `identity`). A command straight from an
 emitter has nothing to tell that the displays do not already show, and a
 heartbeat nobody needs told about has nothing at all: both are bare
 folds (`fold @"Count" increment`, `fold @"Clock ticked" tick`). A fold is memoryless: an emitter's payload is the row it was fed, an event
@@ -438,8 +444,8 @@ that pair owns the button's case there:
 ( Semigroupoid.do
   indeterminateLinearProgress # action createPerson
   VariantToRecord.do
-    snackbar @"Person created" personCreatedLine identity
-    snackbar @"Person not created" personNotCreatedLine identity ) # atCase @"Create"
+    snackbar @"Person created" identity
+    snackbar @"Person not created" identity ) # atCase @"Create"
 ```
 
 So **every action is typed at exactly its own outcomes**, the cases its
@@ -469,7 +475,7 @@ the anchor's own position, and the anchor says what the line is:
   name"`, `group @"Customer" $ …`);
 - a **case** — the type argument of an emitter, pane or status
   (`button @"Submit order"`, `# inCase @"problem" bookingState`,
-  `snackbar @"Flight booked" bookedLine`);
+  `snackbar @"Flight booked" kept`);
 - a **copy function** — the positional argument of a display
   (`text balanceLine`, `imagePane developedShot`);
 - **nothing** — chrome (`card`, `h1 >>> cl "restaurant-name" $ staticText
@@ -499,7 +505,7 @@ So every leaf reads as a noun phrase — word, anchor, positional
 arguments:
 
 ```purescript
-snackbar  @"Flight booked" bookedLine          -- the "Flight booked" snackbar, saying bookedLine
+snackbar  @"Flight booked" kept                -- the "Flight booked" snackbar, folding kept
 confirmed "Refund" "Refund the customer?"      -- the title is static: a value
 button'   @"Sign up" { icon: "person_add" }    -- the record: optional presentation
 ```
@@ -524,7 +530,7 @@ text is computed, a chrome line nothing.
   names each change touches.
 - **A one-line UI function is inlined.** A named function whose whole
   body is one pipeline expression is indirection: write the expression
-  where it is used (`snackbar @"Order submitted" submittedLine` sits in
+  where it is used (`snackbar @"Order submitted" kept` sits in
   the status merge). A UI function earns its name only by spanning
   lines.
 - **A line leads with what is seen, via `$`, and trails with data
@@ -680,8 +686,8 @@ text is computed, a chrome line nothing.
   put it in the caption (`@"Duration (min)"` over `choice @"15"`) or in
   the line's glue.
 - **Events carry data, never UI copy.** An emission carries the order,
-  the outcome, the reason; the status's copy function turns it into a
-  sentence.
+  the outcome, the reason — a reason as a case of its own, since the
+  status telling it shows its label and nothing else.
 
 ### Business functions
 
@@ -723,19 +729,22 @@ text is computed, a chrome line nothing.
   `refundStandard`); an effect returns the model under its outcome case
   (`createPerson :: model -> Aff [ "Person created" :: model, "Person not
   created" :: model ]`), so each outcome's fold is `snackbar @"Person
-  created" personCreatedLine identity` (the payload becomes the model;
+  created" identity` (the payload becomes the model;
   `capture @l` where nothing needs telling); an outcome that changes
   nothing folds `kept` over its joined event; a constant replacing the
   model is `reset @"New game" openingPosition`, or `(const x)` on a
-  status. A status's copy function takes the event's
-  payload, never the handler's result.
+  status. A status shows its case label, never the handler's result.
 - **A status only after an action.** A fold opens with a visible
-  status where an action returned what the status tells, an
-  action's outcome (crud's `snackbar @"Person created"
-  personCreatedLine identity`). A command straight from an
+  status where an action's outcome row names what the status tells
+  (crud's `snackbar @"Person created" identity`, the action returning
+  the model under that case). A command straight from an
   emitter folds silently, whatever it does, since the screen already
-  shows its result (counter's count, cashbox's till, inbox's list):
-  `fold @"Todo toggled" toggleTodo`.
+  shows its result and its case is the button's caption (counter's
+  count, cashbox's till, inbox's list): `fold @"Todo toggled"
+  toggleTodo`. What a status would compute from its payload is not
+  copy: a value the user must keep is a model field shown by a display
+  (payment's `text statusLine` carries the attempt), a reason is a
+  sibling case (`"Order rejected: no total"`).
 - **A handler carries no field it does not touch.** Group buttons into
   stages by the fields their handlers touch (circle-drawer keeps undo and
   redo apart from the canvas click). An identity handler means the

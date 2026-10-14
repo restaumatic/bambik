@@ -86,7 +86,7 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (folding, Ocular, PUI)
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, textOf, separating, (:=), (:=>))
+import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, statusText, separating, (:=), (:=>))
 
 -- UIs
 
@@ -226,24 +226,23 @@ progress f = wrap do
 
 -- | What just happened, told in place — the native `<output>`, HTML's
 -- | element for the result of a user action. It shows the latest event's
--- | line and keeps it on the page (plain HTML has nothing that dismisses
+-- | caption and keeps it on the page (plain HTML has nothing that dismisses
 -- | itself).
 -- |
--- | The wording belongs to the UI, not to the event: write the copy where
--- | the output is built — `output @"Flight booked" bookedLine kept` — and
--- | let the event carry the bare facts. A `+→×` leaf like `fold @l f`, it
--- | takes its fold of the payload after its copy.
+-- | A status **tells its case**: its caption is the case label verbatim,
+-- | so the outcome is named as what it tells (`output @"Flight booked"
+-- | kept`) and the payload is read by nothing but the fold. A `+→×` leaf
+-- | like `fold @l f`, it takes its fold of the payload.
 output
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
-  => (a -> String)
-  -> (a -> { | r })
+  => (a -> { | r })
   -> PUI Web [ | v ] { | r }
-output copy f = outputFace copy # atCase @l # folding @l f
+output f = outputFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
-outputFace :: forall a r. (a -> String) -> PUI Web a { | r }
-outputFace copy = el "output" $ textOf copy
+outputFace :: forall a r. String -> PUI Web a { | r }
+outputFace caseLabel = el "output" $ statusText caseLabel
 
 -- TODO disable button after click?
 -- | A bare `<button>`, captioned by its label verbatim (`label:` overrides

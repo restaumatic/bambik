@@ -20,7 +20,7 @@ lawBenchBootstrap = do
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" options)
     , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
     , bench "button" "×→+" rows (button @"Go")
-    , bench "toast" "+→×" events (toast @"event" identity (const {}))
+    , bench "toast" "+→×" events (toast @"event" (const {}))
     ]
   where
   fractionOf { fraction } = fraction

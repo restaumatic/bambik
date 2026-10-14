@@ -174,7 +174,7 @@ joined src = dimap (\r -> Tuple r r) (\(Tuple e r) -> withModel r e) (first src)
 
 -- | The fold that **keeps the model** a joined event arrived with:
 -- | `kept = _.model`. For an outcome that is told and changes nothing —
--- | `snackbar @"Order submitted" submittedLine kept` (order-form), the
+-- | `snackbar @"Order submitted" kept` (order-form), the
 -- | action joined with its button so the model is in hand.
 kept :: forall a r. { event :: a, model :: { | r } } -> { | r }
 kept = _.model

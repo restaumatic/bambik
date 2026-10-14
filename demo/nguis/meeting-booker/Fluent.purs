@@ -3,7 +3,7 @@ module MeetingBooker.Fluent (meetingBooker) where
 import Prelude (($), (#), identity, Unit)
 
 import Effect (Effect)
-import MeetingBooker (blankBooking, bookRoom, bookedLine, plan, planLine, ratedRoom, roomStars, seatOccupancy, seatsInRoom, seatsTaken)
+import MeetingBooker (blankBooking, bookRoom, plan, planLine, ratedRoom, roomStars, seatOccupancy, seatsInRoom, seatsTaken)
 import PUI (action, atCase, looped, settled, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, provided, staticText, text)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdownOptional, dropdownUnpicked, indeterminateLinearProgress, messageBar, progressBar, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
@@ -43,4 +43,4 @@ meetingBooker =
     ( indeterminateLinearProgress # action
       @( "Room booked" :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Include a Teams link" :: Boolean, "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ] } )
       bookRoom ) # atCase @"Book the room"
-    messageBar @"Room booked" bookedLine identity
+    messageBar @"Room booked" identity

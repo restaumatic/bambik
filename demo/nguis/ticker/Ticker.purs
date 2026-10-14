@@ -1,4 +1,4 @@
-module Ticker (closedTicker, fetchQuote, phaseLine, quoteFetchedLine, quoteLine, recordQuote, stepAway, tick, tickLine, tickPeriod, watch) where
+module Ticker (closedTicker, fetchQuote, phaseLine, quoteLine, recordQuote, stepAway, tick, tickLine, tickPeriod, watch) where
 
 import Prelude ((<>), (+), (/), ($), bind, discard, pure, show)
 
@@ -59,7 +59,3 @@ recordQuote
   -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
 recordQuote { event: { price }, model } = model { quotes = snoc model.quotes price }
 
-quoteFetchedLine
-  :: { event :: { price :: Number }, model :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } }
-  -> String
-quoteFetchedLine { event: { price } } = "Quote received: " <> show price

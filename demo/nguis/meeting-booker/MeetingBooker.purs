@@ -1,4 +1,4 @@
-module MeetingBooker (blankBooking, bookRoom, bookedLine, plan, planLine, ratedRoom, roomStars, seatOccupancy, seatsInRoom, seatsTaken) where
+module MeetingBooker (blankBooking, bookRoom, plan, planLine, ratedRoom, roomStars, seatOccupancy, seatsInRoom, seatsTaken) where
 
 import Prelude (discard, pure, (<>), show, (/), ($))
 
@@ -131,28 +131,6 @@ planLine booking = match { complete: \p -> "Plan: " <> planText p, incomplete: \
 planText :: { "Meeting title" :: String, room :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], duration :: [ "15" :: {}, "30" :: {}, "60" :: {} ], attendees :: Number, "Include a Teams link" :: Boolean, catering :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ] } -> String
 planText p =
   titleText p."Meeting title" <> " in the " <> roomText p.room <> ", " <> caseText p.duration <> " min, " <> headcount p.attendees <> " attendees" <> onlineNote p."Include a Teams link" <> cateringNote p.catering
-
-bookedLine
-  :: { "Attendees" :: { current :: Number
-                      , max :: Number
-                      , min :: Number
-                      , step :: [ continuous :: {}, discrete :: Number ]
-                      }
-     , "Catering" :: [ none :: {}
-                     , ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
-                     ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-     , "Include a Teams link" :: Boolean
-     , "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Focus pod (4 seats)" :: {}
-                             ]
-                 , unchosen :: {}
-                 ]
-     }
-  -> String
-bookedLine booking = match { complete: \p -> "Booked: " <> titleText p."Meeting title" <> " — " <> roomText p.room <> " for " <> caseText p.duration <> " min", incomplete: \_ -> "" } (planned booking)
 
 headcount :: Number -> String
 headcount attendees = show (round attendees)

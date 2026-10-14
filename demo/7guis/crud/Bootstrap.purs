@@ -2,7 +2,7 @@ module Crud.Bootstrap (crud) where
 
 import Prelude ((#), ($), (>>>), identity, Unit)
 
-import Crud (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personUpdatedLine, pick, updatePerson)
+import Crud (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personLine, pick, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
@@ -36,18 +36,18 @@ crud =
         ( Semigroupoid.do
           indeterminateLinearProgress # action createPerson
           VariantToRecord.do
-            toast @"Person created" personCreatedLine identity
-            toast @"Person not created" personNotCreatedLine identity ) # atCase @"Create"
+            toast @"Person created" identity
+            toast @"Person not created" identity ) # atCase @"Create"
         ( Semigroupoid.do
           indeterminateLinearProgress # action updatePerson
           VariantToRecord.do
-            toast @"Person updated" personUpdatedLine identity
-            toast @"Person not updated" personNotUpdatedLine identity ) # atCase @"Update"
+            toast @"Person updated" identity
+            toast @"Person not updated" identity ) # atCase @"Update"
         ( Semigroupoid.do
           indeterminateLinearProgress # action deletePerson
           VariantToRecord.do
-            toast @"Person deleted" personDeletedLine identity
-            toast @"Person not deleted" personNotDeletedLine identity ) # atCase @"Delete"
+            toast @"Person deleted" identity
+            toast @"Person not deleted" identity ) # atCase @"Delete"
     ) # looped
       @( "Filter prefix (surname)" :: String
        , "Name" :: String

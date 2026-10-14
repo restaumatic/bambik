@@ -30,15 +30,6 @@ export function close(component) {
   };
 }
 
-// closeBanner :: Component -> Effect Unit (MDCBanner.close requires a CloseReason)
-export function closeBanner(component) {
-  return function () {
-    if (component.isOpen) {
-      component.close(material_.banner.CloseReason.UNSPECIFIED);
-    }
-  };
-}
-
 // layoutComponent :: Component -> Effect Unit (re-measure after style/content changes)
 export function layoutComponent(component) {
   return function () {

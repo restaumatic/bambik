@@ -1,14 +1,11 @@
-module EspressoBar (caffeineFraction, cupLine, espressoNoFrills, orderPlacedLine, placeOrder, theUsual, usualOrder) where
+module EspressoBar (caffeineFraction, cupLine, espressoNoFrills, placeOrder, theUsual, usualOrder) where
 
-import Prelude (bind, discard, min, otherwise, pure, show, ($), (*), (+), (-), (<>), (==))
+import Prelude (discard, min, otherwise, pure, ($), (*), (+), (-), (<>), (==))
 
 import Data.Number.Format (fixed, toStringWith)
-import Data.String (trim)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import Effect.Class (liftEffect)
-import Effect.Random (randomInt)
 
 usualOrder
   :: { "Decaf" :: Boolean
@@ -155,11 +152,6 @@ cupLine
   -> String
 cupLine order = "Your cup: " <> summaryText order
 
-forCustomer :: forall r1. { "Your name" :: String | r1 } -> String
-forCustomer { "Your name": customer } = case trim customer of
-  "" -> ""
-  name -> ", " <> name
-
 summaryText :: forall r1. { "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Loyalty member" :: [ member :: {}, guest :: {} ] | r1 } -> String
 summaryText { "Drink": drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty member": loyalty } =
   caseText size <> " " <> caseText drink
@@ -233,9 +225,6 @@ noSugar = 0.0
 maxSugar :: Number
 maxSugar = 4.0
 
-orderPlacedLine :: { "Your name" :: String, number :: Int } -> String
-orderPlacedLine order = "Order #" <> show order.number <> " placed, coming right up" <> forCustomer order
-
 placeOrder
   :: { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
@@ -257,8 +246,7 @@ placeOrder
      , "Takeaway cup" :: Boolean
      , "Your name" :: String
      }
-  -> Aff [ "Order placed" :: { "Your name" :: String, number :: Int } ]
-placeOrder order = do
+  -> Aff [ "Order placed" :: {} ]
+placeOrder _ = do
   delay (Milliseconds 800.0)
-  number <- liftEffect $ randomInt 1 99
-  pure $ ."Order placed" { number, "Your name": order."Your name" }
+  pure $ ."Order placed" {}
