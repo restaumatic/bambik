@@ -8,6 +8,13 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **`PUI`'s export list says what is vocabulary.** `announce`, `seeded`
+  and `resolveFor` are grouped apart as carrier plumbing — exported for
+  the vocabularies and the law tests, written by no demo (`with` closes
+  over the point, `debounced` over the other two) — above the words a
+  view writes. CLAUDE.md's vocabulary table folds the point's laws into
+  `with`'s row. (`focusCase` was never re-exported, so the focus pair was
+  already plumbing on both rows.)
 - **`Seeding` and `Looping` deleted; `optioned` with them.** The two
   classes each stated one thing a timeless carrier lacks — a beginning
   (`announce`) and feedback (`looped`) — and each had one real instance,

@@ -66,6 +66,13 @@ module PUI
   , setDiagnostics
   , diagnosticsOn
   , isHole
+  -- carrier plumbing the vocabularies and the law tests build on, not
+  -- application vocabulary: no demo writes one (`with` closes over
+  -- `announce`, `debounced` over `seeded` and `resolveFor`)
+  , announce
+  , seeded
+  , resolveFor
+  -- the vocabulary: what a view writes, with the words `Adopters` re-exports
   , action
   , fold
   , reset
@@ -79,9 +86,6 @@ module PUI
   , anyOf
   , anyOfAt
   , observed
-  , resolveFor
-  , announce
-  , seeded
   , with
   , looped
   , module Adopters
