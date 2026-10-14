@@ -56,5 +56,10 @@ raiseTop r = r { top = max r."Your bid ($)".current r.top }
 dollars :: Number -> String
 dollars = toStringWith (fixed 0)
 
-biddingRange :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+biddingRange
+  :: { current :: Number
+     , min :: Number
+     , max :: Number
+     , step :: [ discrete :: Number, continuous :: {} ]
+     }
 biddingRange = { current: 0.0, min: 0.0, max: 1000.0, step: .discrete 10.0 }

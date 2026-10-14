@@ -26,7 +26,7 @@ espressoBar =
       radioButton @"Roast"
         (choice @"Light" <+> choice @"Medium" <+> choice @"Dark")
       sliderLive @"Sugar"
-      chipSet Semigroupoid.do
+      chipSet $ Semigroupoid.do
         filterChip @"Extra shot"
         filterChip @"Decaf"
       toggleSwitch @"Takeaway cup"
@@ -38,9 +38,9 @@ espressoBar =
           caption $ staticText "Caffeine"
           linearProgress caffeineFraction
       RecordToVariant.do
-        menu "Presets" ( RecordToVariant.do
+        menu "Presets" $ RecordToVariant.do
           menuItem @"The usual"
-          menuItem @"Espresso, no frills" )
+          menuItem @"Espresso, no frills"
         button' @"Place order" { icon: "local_cafe" }
       VariantToRecord.do
         fold @"The usual" theUsual

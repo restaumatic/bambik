@@ -19,12 +19,30 @@ plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
 
-returnBetween :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+returnBetween
+  :: forall r1.
+     { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 }
+  -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
+           , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }
+                              , back :: { y :: Int, m :: Int, d :: Int }
+                              }
+           ]
 returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
-parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> Either [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+parse
+  :: forall r1.
+     { "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
+     , "Start date (DD.MM.YYYY)" :: String
+     , "Return date (DD.MM.YYYY)" :: String
+     | r1
+     }
+  -> Either
+       [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ]
+       [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
+       , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
+       ]
 parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } = case parseDate startInput of
   Nothing -> Left (.unreadableStart { input: startInput })
   Just start ->
@@ -55,7 +73,12 @@ problemLine
   -> String
 problemLine = parse >>> either (\problem -> "⚠ " <> problemText problem) (const "")
 
-problemText :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] -> String
+problemText
+  :: [ returnBeforeStart :: {}
+     , unreadableReturn :: { input :: String }
+     , unreadableStart :: { input :: String }
+     ]
+  -> String
 problemText = match
   { unreadableStart: \{ input } -> "start date " <> show input <> " is not a valid DD.MM.YYYY date"
   , unreadableReturn: \{ input } -> "return date " <> show input <> " is not a valid DD.MM.YYYY date"
@@ -82,7 +105,13 @@ returnLine { "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": 
     Just out, Just back -> summary (.returnBetween { out, back })
     _, _ -> ""
 
-summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
+summary
+  :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
+     , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }
+                        , back :: { y :: Int, m :: Int, d :: Int }
+                        }
+     ]
+  -> String
 summary = match
   { oneWayOn: \out -> "A one-way flight on " <> formatDate out
   , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
@@ -98,7 +127,13 @@ submit trip = case parse trip of
   Left _ -> pure (."Booking rejected" {})
   Right itinerary -> expand <$> bookFlight itinerary
 
-bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ "Flight booked" :: {} ]
+bookFlight
+  :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
+     , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }
+                        , back :: { y :: Int, m :: Int, d :: Int }
+                        }
+     ]
+  -> Aff [ "Flight booked" :: {} ]
 bookFlight _ = pure (."Flight booked" {})
 
 parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }

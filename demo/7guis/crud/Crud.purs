@@ -115,10 +115,36 @@ deletePerson m@{ people, selected } = match
   , none: \_ -> pure (."Person not deleted" m)
   } selected
 
-refreshPeople :: Array { "Name" :: String, "Surname" :: String } -> { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }
+refreshPeople
+  :: Array { "Name" :: String, "Surname" :: String }
+  -> { "Filter prefix (surname)" :: String
+     , "Name" :: String
+     , "Surname" :: String
+     , people :: Array { "Name" :: String, "Surname" :: String }
+     , selected :: [ none :: {}, picked :: { index :: Int } ]
+     }
+  -> { "Filter prefix (surname)" :: String
+     , "Name" :: String
+     , "Surname" :: String
+     , people :: Array { "Name" :: String, "Surname" :: String }
+     , selected :: [ none :: {}, picked :: { index :: Int } ]
+     }
 refreshPeople people m = m { people = people }
 
-peopleDeleted :: Array { "Name" :: String, "Surname" :: String } -> { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] } -> { "Filter prefix (surname)" :: String, "Name" :: String, "Surname" :: String, people :: Array { "Name" :: String, "Surname" :: String }, selected :: [ none :: {}, picked :: { index :: Int } ] }
+peopleDeleted
+  :: Array { "Name" :: String, "Surname" :: String }
+  -> { "Filter prefix (surname)" :: String
+     , "Name" :: String
+     , "Surname" :: String
+     , people :: Array { "Name" :: String, "Surname" :: String }
+     , selected :: [ none :: {}, picked :: { index :: Int } ]
+     }
+  -> { "Filter prefix (surname)" :: String
+     , "Name" :: String
+     , "Surname" :: String
+     , people :: Array { "Name" :: String, "Surname" :: String }
+     , selected :: [ none :: {}, picked :: { index :: Int } ]
+     }
 peopleDeleted people m = m { people = people, selected = .none {} }
 
 entries

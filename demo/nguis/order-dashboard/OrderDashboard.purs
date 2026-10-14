@@ -64,7 +64,14 @@ openingTick = -900
 windowStart :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ] -> Int -> Int
 windowStart window tick = match { "Last minute": \_ -> tick - 60, "Last 15 min": \_ -> tick - 900, "Since open": \_ -> openingTick } window
 
-inWindow :: forall r1. { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }, "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ], tick :: Int | r1 } -> Array { id :: Int, dish :: String, total :: Number, at :: Int }
+inWindow
+  :: forall r1.
+     { orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }
+     , "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ]
+     , tick :: Int
+     | r1
+     }
+  -> Array { id :: Int, dish :: String, total :: Number, at :: Int }
 inWindow { orders, "Showing": window, tick } = filter (\o -> o.at >= windowStart window tick) orders
 
 ordersCount

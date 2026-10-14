@@ -1,8 +1,8 @@
 module Cells.Fluent (cells) where
 
-import Prelude (Unit, (#), ($), (<>), (>>>))
+import Prelude (Unit, (#), ($), (<>), (>>>), const)
 
-import Cells (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows)
+import Cells (columnHeaders, commit, orderSheet, selectCell, selectedLine, sheetRows)
 import Data.Variant (match)
 import Effect (Effect)
 import PUI.Web.Fluent (body, body1, textField)
@@ -19,9 +19,9 @@ cells =
     textField @"Formula (e.g. =SUM(A0:A5)*2)" # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
       table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
-        tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) columnHeaders
+        tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) (const columnHeaders)
         ( tr $ Semigroupoid.do
-          td >>> "style" := headerFace $ text rowLabel
+          td >>> "style" := headerFace $ textAt @"rowKey"
           ( clicked @"Cell picked" @"key" $ td >>> attrWith "style" cellFace $ textAt @"text" ) # anyOfAt @"key" @"cells" ) # anyOf @"rowKey"
           @( rowKey :: String
            , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }

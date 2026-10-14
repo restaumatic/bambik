@@ -33,6 +33,9 @@ chargeFlaky order = attempt 1
     delay (Milliseconds 700.0)
     if n < 3 then attempt (n + 1) else pure $ ."Card charged" (recordCharged { attempt: n } order)
 
-recordCharged :: { attempt :: Int } -> { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] } -> { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
+recordCharged
+  :: { attempt :: Int }
+  -> { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
+  -> { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
 recordCharged approved charge = charge { approval = .approved { attempt: approved.attempt } }
 

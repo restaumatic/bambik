@@ -18,15 +18,15 @@ crud =
     indeterminateLinearProgress # action loadPeopleCatalogue
     capture @"People loaded"
     ( Semigroupoid.do
-      p ( label $ Semigroupoid.do
+      p $ label $ Semigroupoid.do
         staticText "Filter prefix (surname) "
-        input @"Filter prefix (surname)" "text" )
-      p ( label $ Semigroupoid.do
+        input @"Filter prefix (surname)" "text"
+      p $ label $ Semigroupoid.do
         staticText "Name "
-        input @"Name" "text" )
-      p ( label $ Semigroupoid.do
+        input @"Name" "text"
+      p $ label $ Semigroupoid.do
         staticText "Surname "
-        input @"Surname" "text" )
+        input @"Surname" "text"
       RecordToVariant.do
         ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid #ccc; max-height: 200px; overflow: auto; width: 100%;" $
           ( clicked @"Person picked" @"key" $ li >>> attrWith "style" entryFace $ text personLine ) # anyOf @"key"

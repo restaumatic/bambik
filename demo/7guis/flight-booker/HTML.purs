@@ -14,13 +14,13 @@ flightBooker :: Effect Unit
 flightBooker =
   body $ div $ Semigroupoid.do
     ( Semigroupoid.do
-      p ( label $ Semigroupoid.do
+      p $ label $ Semigroupoid.do
         staticText "Flight type "
-        select @"Flight type" (choice @"one-way" <+> choice @"return") )
-      p ( label $ Semigroupoid.do
+        select @"Flight type" (choice @"one-way" <+> choice @"return")
+      p $ label $ Semigroupoid.do
         staticText "Start date (DD.MM.YYYY) "
-        input @"Start date (DD.MM.YYYY)" "text" )
-      p ( label $ Semigroupoid.do
+        input @"Start date (DD.MM.YYYY)" "text"
+      ( p $ label $ Semigroupoid.do
         staticText "Return date (DD.MM.YYYY) "
         input @"Return date (DD.MM.YYYY)" "text" ) # inCaseAt @"return" @"Flight type"
     ) # looped

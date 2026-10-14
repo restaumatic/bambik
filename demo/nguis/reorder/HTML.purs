@@ -5,11 +5,11 @@ import Prelude ((#), ($), (>>>), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (actedAt, action, atCase, capture, looped, static, with)
+import PUI (actedAt, action, atCase, capture, fold, looped, static, with)
 import PUI.Web (el, staticText, textAt, (:=))
 import PUI.Web.HTML (body, button, dd, div, dl, dt, h3, indeterminateLinearProgress, input, label)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Reorder (openingSetlist, rotateAction, shuffleAction)
+import Reorder (openingSetlist, rotateSetlist, shuffleAction)
 
 reorder :: Effect Unit
 reorder =
@@ -27,9 +27,7 @@ reorder =
       button @"Rotate"
       button @"Shuffle"
     VariantToRecord.do
-      ( Semigroupoid.do
-        indeterminateLinearProgress # action rotateAction
-        capture @"Setlist rotated" ) # atCase @"Rotate"
+      fold @"Rotate" rotateSetlist
       ( Semigroupoid.do
         indeterminateLinearProgress # action shuffleAction
         capture @"Setlist shuffled" ) # atCase @"Shuffle"

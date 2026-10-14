@@ -101,13 +101,41 @@ perPersonLine
   -> String
 perPersonLine r = "Per person: " <> money ((_ / r."Split between".current) <$> total { "Bill amount": r."Bill amount", "Tip percentage": r."Tip percentage" })
 
-whole :: forall r1. { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] | r1 } -> String
+whole
+  :: forall r1.
+     { current :: Number
+     , min :: Number
+     , max :: Number
+     , step :: [ discrete :: Number, continuous :: {} ]
+     | r1
+     }
+  -> String
 whole { current } = toStringWith (fixed 0) current
 
-tipAmount :: forall r1. { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> Maybe Number
+tipAmount
+  :: forall r1.
+     { "Bill amount" :: String
+     , "Tip percentage" :: { current :: Number
+                           , min :: Number
+                           , max :: Number
+                           , step :: [ discrete :: Number, continuous :: {} ]
+                           }
+     | r1
+     }
+  -> Maybe Number
 tipAmount r = (\a -> a * r."Tip percentage".current / 100.0) <$> fromString r."Bill amount"
 
-total :: forall r1. { "Bill amount" :: String, "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> Maybe Number
+total
+  :: forall r1.
+     { "Bill amount" :: String
+     , "Tip percentage" :: { current :: Number
+                           , min :: Number
+                           , max :: Number
+                           , step :: [ discrete :: Number, continuous :: {} ]
+                           }
+     | r1
+     }
+  -> Maybe Number
 total r = (\a -> a * (1.0 + r."Tip percentage".current / 100.0)) <$> fromString r."Bill amount"
 
 money :: Maybe Number -> String

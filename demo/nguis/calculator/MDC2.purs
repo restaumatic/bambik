@@ -2,8 +2,7 @@ module Calculator.MDC2 (calculator) where
 
 import Prelude (const, (#), ($), (<>), (>>>), Unit)
 
-import Calculator (blankTally, functionKeys, keyPad, operatorKeys, pressKey)
-import Data.Array (elem)
+import Calculator (blankTally, isFunctionKey, isOperatorKey, keyPad, pressKey)
 import Effect (Effect)
 import PUI (anyOf, fold, joined, looped, with)
 import PUI.Web (attrWith, clicked, inCaseAt, staticText, textAt, (:=))
@@ -13,30 +12,32 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 calculator :: Effect Unit
 calculator =
-  body $
-    ( div >>> "style" := "display: inline-block; width: 296px;" $ Semigroupoid.do
-      div >>> "style"
-        := ( "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
-          <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
-          <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;" ) $ Semigroupoid.do
-          staticText "Error" # inCaseAt @"faulty" @"condition"
-          textAt @"entry" # inCaseAt @"sound" @"condition"
-      ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-        ( clicked @"Key entered" @"key" $ div >>> attrWith "style" keyFace $ textAt @"key" ) # anyOf @"key" @( key :: String ) (const keyPad) ) # joined
-      fold @"Key entered" pressKey
-    ) # looped
-      @( total :: Number
-       , operation :: [ pending :: { key :: String }, none :: {} ]
-       , entry :: String
-       , input :: [ entering :: {}, settled :: {} ]
-       , condition :: [ sound :: {}, faulty :: {} ]
-       ) # with blankTally
+  body $ div >>> "style" := "display: inline-block; width: 296px;" $ Semigroupoid.do
+    div >>> "style" := readoutFace $ Semigroupoid.do
+      staticText "Error" # inCaseAt @"faulty" @"condition"
+      textAt @"entry" # inCaseAt @"sound" @"condition"
+    ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
+      ( clicked @"Key entered" @"key" $ div >>> attrWith "style" keyFace $ textAt @"key" ) # anyOf @"key" @( key :: String ) (const keyPad) ) # joined
+    fold @"Key entered" pressKey
+  # looped
+    @( total :: Number
+     , operation :: [ pending :: { key :: String }, none :: {} ]
+     , entry :: String
+     , input :: [ entering :: {}, settled :: {} ]
+     , condition :: [ sound :: {}, faulty :: {} ]
+     ) # with blankTally
+
+readoutFace :: String
+readoutFace =
+  "height: 56px; display: flex; align-items: center; justify-content: flex-end; "
+    <> "padding: 0 16px; margin-bottom: 8px; border-radius: 4px; background: #263238; "
+    <> "color: #eceff1; font-size: 28px; font-family: Roboto Mono, monospace; overflow: hidden;"
 
 keyFace :: { key :: String } -> String
-keyFace { key } =
+keyFace key =
   "height: 52px; display: flex; align-items: center; justify-content: center; "
     <> "font-size: 22px; font-family: Roboto, sans-serif; cursor: pointer; "
     <> "border-radius: 4px; user-select: none; "
-    <> if key `elem` operatorKeys then "background: #ffab40; color: #263238;"
-      else if key `elem` functionKeys then "background: #b0bec5; color: #263238;"
+    <> if isOperatorKey key then "background: #ffab40; color: #263238;"
+      else if isFunctionKey key then "background: #b0bec5; color: #263238;"
       else "background: #eceff1; color: #263238;"

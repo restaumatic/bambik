@@ -34,7 +34,7 @@ statTile l f =
 
 gauge :: forall r. String -> ({ | r } -> Number) -> PUI Web { | r } { | r }
 gauge l f =
-  tile $ Semigroupoid.do
+  tile >>> "aria-label" := l $ Semigroupoid.do
     labelMedium $ staticText l
     linearProgress f
     labelLarge $ text $ percentLine <<< f
@@ -48,19 +48,26 @@ trendChart l f =
         >>> "stroke-linejoin" := "round" >>> "vector-effect" := "non-scaling-stroke"
         >>> attrWith "d" (sparkline <<< f) $ identity
 
-leaderboard :: forall r. String -> ({ | r } -> Array { name :: String, score :: String }) -> PUI Web { | r } { | r }
+leaderboard
+  :: forall r
+   . String
+  -> ({ | r } -> Array { name :: String, score :: String })
+  -> PUI Web { | r } { | r }
 leaderboard l f =
   tile >>> "aria-label" := l $ Semigroupoid.do
     labelMedium $ staticText l
     list $ ( listItem $ text entryLine ) # foreach @"name" f
 
-rangePicker :: forall @l a rest r. IsSymbol l => Cons l a rest r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
+rangePicker
+  :: forall @l a rest r
+   . IsSymbol l
+  => Cons l a rest r
+  => Array { value :: a, label :: String }
+  -> PUI Web { | r } { | r }
 rangePicker options =
   div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Semigroupoid.do
-    labelMedium $ staticText config.label
+    labelMedium $ staticText (reflectSymbol (Proxy @l))
     segmentedButton @l options
-  where
-  config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 
 percentLine :: Number -> String
 percentLine fraction = show (round (fraction * 100.0)) <> "%"

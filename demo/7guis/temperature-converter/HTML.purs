@@ -12,10 +12,10 @@ import TemperatureConverter (fromCelsius, fromFahrenheit, roomTemperature)
 temperatureConverter :: Effect Unit
 temperatureConverter =
   body $ div $ Semigroupoid.do
-    p ( label $ Semigroupoid.do
+    ( p $ label $ Semigroupoid.do
       staticText "°C "
       input @"celsius" "text" ) # settled fromCelsius
-    p ( label $ Semigroupoid.do
+    ( p $ label $ Semigroupoid.do
       staticText "°F "
       input @"fahrenheit" "text" ) # settled fromFahrenheit
   # looped @( celsius :: String, fahrenheit :: String ) # with roomTemperature

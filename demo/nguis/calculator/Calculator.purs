@@ -1,4 +1,4 @@
-module Calculator (blankTally, functionKeys, keyPad, operatorKeys, pressKey) where
+module Calculator (blankTally, isFunctionKey, isOperatorKey, keyPad, pressKey) where
 
 import Prelude ((&&), (<$>), (<>), (==), (/=), (+), (-), (*), (/), otherwise, show)
 
@@ -25,6 +25,12 @@ keyPad = { key: _ } <$>
   , "1", "2", "3", "="
   , "0", "."
   ]
+
+isOperatorKey :: { key :: String } -> Boolean
+isOperatorKey { key } = key `elem` operatorKeys
+
+isFunctionKey :: { key :: String } -> Boolean
+isFunctionKey { key } = key `elem` functionKeys
 
 operatorKeys :: Array String
 operatorKeys = [ "÷", "×", "−", "+", "=" ]
@@ -65,13 +71,36 @@ pressKey { event: key, model: tally@{ entry, operation, input } }
   | typing input = tally { entry = if entry == "0" then key else entry <> key }
   | otherwise = tally { entry = key, input = .entering {} }
 
-cleared :: forall r. { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r } -> { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ], condition :: [ sound :: {}, faulty :: {} ] | r }
+cleared
+  :: forall r.
+     { total :: Number
+     , operation :: [ pending :: { key :: String }, none :: {} ]
+     , entry :: String
+     , input :: [ entering :: {}, settled :: {} ]
+     , condition :: [ sound :: {}, faulty :: {} ]
+     | r
+     }
+  -> { total :: Number
+     , operation :: [ pending :: { key :: String }, none :: {} ]
+     , entry :: String
+     , input :: [ entering :: {}, settled :: {} ]
+     , condition :: [ sound :: {}, faulty :: {} ]
+     | r
+     }
 cleared t = t { total = blankTally.total, operation = blankTally.operation, entry = blankTally.entry, input = blankTally.input, condition = blankTally.condition }
 
 typing :: [ entering :: {}, settled :: {} ] -> Boolean
 typing = match { entering: \_ -> true, settled: \_ -> false }
 
-settle :: forall r1. { total :: Number, operation :: [ pending :: { key :: String }, none :: {} ], entry :: String, input :: [ entering :: {}, settled :: {} ] | r1 } -> Maybe Number
+settle
+  :: forall r1.
+     { total :: Number
+     , operation :: [ pending :: { key :: String }, none :: {} ]
+     , entry :: String
+     , input :: [ entering :: {}, settled :: {} ]
+     | r1
+     }
+  -> Maybe Number
 settle { operation, input, total, entry } = match
   { pending: \p -> if typing input then compute p.key total (entryValue { entry }) else Just (entryValue { entry })
   , none: \_ -> Just (entryValue { entry })

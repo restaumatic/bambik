@@ -22,8 +22,8 @@ todoList =
     ( bodySmall $ text severalLine ) # inCase @"several" remainingItems
     RecordToVariant.do
       button @"Add"
-      ( listOf @"Todo toggled" @"key"
-        @( key :: Int
+      ( listOf @"Todo toggled" @"id"
+        @( id :: Int
          , title :: String
          , status :: [ active :: {}, completed :: {} ]
          ) visibleEntries $ span >>> clWhen isCompleted "todo-done" $ textAt @"title" ) # joined
@@ -34,6 +34,6 @@ todoList =
       fold @"Clear completed" clearCompleted
   # looped
     @( "What needs to be done?" :: String
-     , todos :: Array { title :: String, status :: [ active :: {}, completed :: {} ] }
+     , todos :: Array { id :: Int, title :: String, status :: [ active :: {}, completed :: {} ] }
      , "Visibility" :: [ "All" :: {}, "Active" :: {}, "Completed" :: {} ]
      ) # with emptyTodoList

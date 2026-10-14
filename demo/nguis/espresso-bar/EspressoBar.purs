@@ -152,7 +152,28 @@ cupLine
   -> String
 cupLine order = "Your cup: " <> summaryText order
 
-summaryText :: forall r1. { "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ], "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ], "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Extra shot" :: Boolean, "Decaf" :: Boolean, "Takeaway cup" :: Boolean, "Loyalty member" :: [ member :: {}, guest :: {} ] | r1 } -> String
+summaryText
+  :: forall r1.
+     { "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]
+     , "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ]
+     , "Milk" :: [ "with whole milk" :: {}
+                 , "with oat milk" :: {}
+                 , "with almond milk" :: {}
+                 , "no milk" :: {}
+                 ]
+     , "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ]
+     , "Sugar" :: { current :: Number
+                  , min :: Number
+                  , max :: Number
+                  , step :: [ discrete :: Number, continuous :: {} ]
+                  }
+     , "Extra shot" :: Boolean
+     , "Decaf" :: Boolean
+     , "Takeaway cup" :: Boolean
+     , "Loyalty member" :: [ member :: {}, guest :: {} ]
+     | r1
+     }
+  -> String
 summaryText { "Drink": drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty member": loyalty } =
   caseText size <> " " <> caseText drink
     <> " " <> caseText milk
@@ -169,7 +190,19 @@ sugarsText n
   | n == 1.0 = ", 1 sugar"
   | otherwise = ", " <> toStringWith (fixed 0) n <> " sugars"
 
-price :: forall r1. { "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ], "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ], "Extra shot" :: Boolean, "Loyalty member" :: [ member :: {}, guest :: {} ] | r1 } -> Number
+price
+  :: forall r1.
+     { "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ]
+     , "Milk" :: [ "with whole milk" :: {}
+                 , "with oat milk" :: {}
+                 , "with almond milk" :: {}
+                 , "no milk" :: {}
+                 ]
+     , "Extra shot" :: Boolean
+     , "Loyalty member" :: [ member :: {}, guest :: {} ]
+     | r1
+     }
+  -> Number
 price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty member": loyalty } = discounted (sizePrice size + milkPrice milk + (if extraShot then 0.5 else 0.0))
   where
   discounted p = match { member: \_ -> p * (1.0 - memberDiscount), guest: \_ -> p } loyalty
@@ -181,7 +214,9 @@ memberDiscount = 0.1
 sizePrice :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ] -> Number
 sizePrice = match { "Small": \_ -> 3.0, "Medium": \_ -> 3.5, "Large": \_ -> 4.0 }
 
-milkPrice :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ] -> Number
+milkPrice
+  :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ]
+  -> Number
 milkPrice = match { "with whole milk": \_ -> 0.0, "with oat milk": \_ -> 0.4, "with almond milk": \_ -> 0.4, "no milk": \_ -> 0.0 }
 
 money :: Number -> String
@@ -216,7 +251,13 @@ caffeineFraction { "Drink": drink, "Extra shot": extraShot, "Decaf": decaf }
 drinkShots :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ] -> Number
 drinkShots = match { "Espresso": \_ -> 0.6, "Cappuccino": \_ -> 0.45, "Latte": \_ -> 0.3 }
 
-sugars :: Number -> { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+sugars
+  :: Number
+  -> { current :: Number
+     , min :: Number
+     , max :: Number
+     , step :: [ discrete :: Number, continuous :: {} ]
+     }
 sugars n = { current: n, min: noSugar, max: maxSugar, step: .discrete 1.0 }
 
 noSugar :: Number

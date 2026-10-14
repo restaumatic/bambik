@@ -12,20 +12,19 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderDashboard :: Effect Unit
 orderDashboard =
-  body $
-    topAppBar "Order Dashboard" $ ( Semigroupoid.do
-      rangePicker @"Showing"
-        (choice @"Last minute" <+> choice @"Last 15 min" <+> choice @"Since open")
-      board $ Semigroupoid.do
-        statTile "Orders placed" ordersCount
-        statTile "Revenue (EUR)" revenue
-        gauge "Kitchen load" kitchenLoad
-        trendChart "Order flow" orderFlow
-        leaderboard "Top dishes" topDishes
-      ticks @"Orders arrived" tickPeriod
-      fold @"Orders arrived" ordersArrive
-    ) # looped
-      @( tick :: Int
-       , orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }
-       , "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ]
-       ) # with openingDay
+  body $ topAppBar "Order Dashboard" $ Semigroupoid.do
+    rangePicker @"Showing"
+      (choice @"Last minute" <+> choice @"Last 15 min" <+> choice @"Since open")
+    board $ Semigroupoid.do
+      statTile "Orders placed" ordersCount
+      statTile "Revenue (EUR)" revenue
+      gauge "Kitchen load" kitchenLoad
+      trendChart "Order flow" orderFlow
+      leaderboard "Top dishes" topDishes
+    ticks @"Orders arrived" tickPeriod
+    fold @"Orders arrived" ordersArrive
+  # looped
+    @( tick :: Int
+     , orders :: Array { id :: Int, dish :: String, total :: Number, at :: Int }
+     , "Showing" :: [ "Last minute" :: {}, "Last 15 min" :: {}, "Since open" :: {} ]
+     ) # with openingDay

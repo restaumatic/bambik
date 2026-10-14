@@ -1,4 +1,4 @@
-module ShoppingCart (addUnit, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, productLine, quantityLine, removeUnit, totalLine) where
+module ShoppingCart (addUnit, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, quantityLine, removeUnit, totalLine) where
 
 import Prelude ((<>), (*), (+), (-), (/), (<), (==), map, mod, otherwise, show)
 
@@ -13,10 +13,8 @@ totalLine
   -> String
 totalLine { order } = "Total: $" <> formatMoney (foldl (\sum l -> sum + l.quantity * l.product.unitPrice) 0 order)
 
-productCatalogue
-  :: { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
-  -> Array { product :: { name :: String, unitPrice :: Int } }
-productCatalogue _ = map (\product -> { product })
+productCatalogue :: Array { product :: { name :: String, unitPrice :: Int } }
+productCatalogue = map (\product -> { product })
   [ { name: "Espresso", unitPrice: 350 }
   , { name: "Cappuccino", unitPrice: 450 }
   , { name: "Croissant", unitPrice: 320 }
@@ -61,9 +59,6 @@ cartLines
 cartLines { order } = map line order
   where
   line { product, quantity } = { product: product.name, unitPrice: product.unitPrice, quantity }
-
-productLine :: { product :: String, quantity :: Int, unitPrice :: Int } -> String
-productLine { product } = product
 
 quantityLine :: { product :: String, quantity :: Int, unitPrice :: Int } -> String
 quantityLine { quantity } = show quantity

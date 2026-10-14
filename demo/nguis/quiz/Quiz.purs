@@ -39,8 +39,8 @@ quizPhase { question } = case index questionCatalogue question of
 askedPrompt :: { correct :: Int, question :: Int } -> String
 askedPrompt { question } = maybe "" _.prompt (index questionCatalogue question)
 
-choices :: { correct :: Int, question :: Int } -> Array { key :: Int, label :: String }
-choices { question } = maybe [] (\q -> mapWithIndex (\i label -> { key: i, label }) q.choices) (index questionCatalogue question)
+choices :: { correct :: Int, question :: Int } -> Array { choice :: String, key :: Int }
+choices { question } = maybe [] (\q -> mapWithIndex (\i choice -> { key: i, choice }) q.choices) (index questionCatalogue question)
 
 finalScoreLine :: { correct :: Int, question :: Int } -> String
 finalScoreLine { correct } = "Final score: " <> show correct <> " / " <> show (length questionCatalogue)

@@ -19,16 +19,22 @@ tickPeriod = { ms: 250.0 }
 quoteDelay :: { ms :: Number }
 quoteDelay = { ms: 800.0 }
 
-phaseLine :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } -> String
+phaseLine
+  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+  -> String
 phaseLine { phase } = match
   { away: \_ -> "Away from the desk: the board is parked"
   , watching: \_ -> "Watching the market"
   } phase
 
-tickLine :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } -> String
+tickLine
+  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+  -> String
 tickLine { ticks } = show ticks <> " ticks while watching"
 
-quoteLine :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } -> String
+quoteLine
+  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+  -> String
 quoteLine { quotes } = show (length quotes) <> " quotes received" <> maybe "" (\p -> ", last " <> show p) (last quotes)
 
 watch
@@ -55,7 +61,9 @@ fetchQuote _ = do
   pure $ ."Quote fetched" { price: toNumber cents / 100.0 }
 
 recordQuote
-  :: { event :: { price :: Number }, model :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int } }
+  :: { event :: { price :: Number }
+     , model :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+     }
   -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
 recordQuote { event: { price }, model } = model { quotes = snoc model.quotes price }
 

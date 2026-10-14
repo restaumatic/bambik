@@ -137,7 +137,14 @@ summaryLine
   -> String
 summaryLine r = "Summary: Order " <> r."Identifier"."Short ID" <> " (uniquely " <> r."Identifier"."Unique ID" <> ") for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name" <> ", fulfilled as " <> fulfillmentText r."Fulfillment" <> ", paid " <> r."Payment"."Paid" <> " by " <> caseText r."Payment"."Method"
 
-fulfillmentText :: { "Address" :: String, "Mode" :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ], "Table" :: String, "Time" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] } -> String
+fulfillmentText
+  :: { "Address" :: String
+     , "Mode" :: [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
+     , "Table" :: String
+     , "Time" :: String
+     , distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ]
+     }
+  -> String
 fulfillmentText f = match
   { "Dine in": \_ -> "dine in at table " <> f."Table"
   , "Takeaway": \_ -> "takeaway at " <> f."Time"

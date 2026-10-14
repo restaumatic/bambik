@@ -82,7 +82,13 @@ aboutLine { servedReports } = "A simulated weather service: canned per-city clim
 serviceDelay :: { ms :: Number }
 serviceDelay = { ms: 800.0 }
 
-climateTable :: Array { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
+climateTable
+  :: Array { city :: String
+           , temperature :: Number
+           , condition :: String
+           , humidity :: Int
+           , wind :: Number
+           }
 climateTable =
   [ { city: "Warsaw", temperature: 21.0, condition: "Partly cloudy", humidity: 55, wind: 12.0 }
   , { city: "Lisbon", temperature: 27.0, condition: "Sunny", humidity: 48, wind: 18.0 }
@@ -92,7 +98,10 @@ climateTable =
   , { city: "Sydney", temperature: 17.0, condition: "Showers", humidity: 64, wind: 21.0 }
   ]
 
-conditionsFor :: String -> Int -> { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
+conditionsFor
+  :: String
+  -> Int
+  -> { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 conditionsFor city sample =
   let base = firstWithCity city
   in base
@@ -101,10 +110,13 @@ conditionsFor city sample =
     , wind = base.wind + toNumber (sample * 5 `mod` 7) - 3.0
     }
 
-firstWithCity :: String -> { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
+firstWithCity
+  :: String
+  -> { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == city) climateTable) 0)
 
-unknownTerritory :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
+unknownTerritory
+  :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
 fetchReport
@@ -131,7 +143,30 @@ fetchReport { event: { city, sample }, model: forecast } = do
   delay (Milliseconds serviceDelay.ms)
   pure (."Forecast fetched" (rememberReport { report: conditionsFor city sample } forecast))
 
-rememberReport :: { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number } } -> { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int } -> { report :: { city :: String, condition :: String, humidity :: Int, temperature :: Number, wind :: Number }, servedReports :: Int }
+rememberReport
+  :: { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     }
+  -> { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
+  -> { report :: { city :: String
+                 , condition :: String
+                 , humidity :: Int
+                 , temperature :: Number
+                 , wind :: Number
+                 }
+     , servedReports :: Int
+     }
 rememberReport { report } forecast = forecast { report = report, servedReports = forecast.servedReports + 1 }
 
 forecastRequests

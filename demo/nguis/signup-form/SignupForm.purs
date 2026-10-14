@@ -26,7 +26,9 @@ newApplicant =
 usernameSettleTime :: { ms :: Number }
 usernameSettleTime = { ms: 300.0 }
 
-refusalText :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] -> String
+refusalText
+  :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ]
+  -> String
 refusalText = match
   { unnamed: const "choose a username"
   , taken: \{ "Username": username } -> "username " <> username <> " is taken"
@@ -34,7 +36,16 @@ refusalText = match
   , termsUnaccepted: const "accept the terms of service"
   }
 
-validate :: forall r1. { "Username" :: String, "Email" :: String, "I accept the terms of service" :: [ accepted :: {}, declined :: {} ] | r1 } -> Either [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ] String
+validate
+  :: forall r1.
+     { "Username" :: String
+     , "Email" :: String
+     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
+     | r1
+     }
+  -> Either
+       [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ]
+       String
 validate applicant@{ "Email": email, "I accept the terms of service": terms } =
   let username = trim applicant."Username"
   in
@@ -51,9 +62,15 @@ signUp
      , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
      , "Username" :: String
      }
-  -> Aff [ "Account created" :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+  -> Aff [ "Account created" :: { "Country" :: [ "France" :: {}
+                                               , "Germany" :: {}
+                                               , "Poland" :: {}
+                                               , "Spain" :: {}
+                                               ]
                                 , "Email" :: String
-                                , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
+                                , "I accept the terms of service" :: [ accepted :: {}
+                                                                     , declined :: {}
+                                                                     ]
                                 , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
                                 , "Username" :: String
                                 }

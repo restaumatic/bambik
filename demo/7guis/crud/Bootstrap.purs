@@ -22,7 +22,7 @@ crud =
       textField @"Surname"
       RecordToVariant.do
         ( listGroup >>> cl "overflow-auto" >>> "style" := "max-height: 200px;" $
-          ( clicked @"Person picked" @"key" ( ( listGroupItem $ text personLine ) # cl "list-group-item-action" ) # clWhen isSelected "active" ) # anyOf @"key"
+          ( clicked @"Person picked" @"key" $ listGroupItem >>> cl "list-group-item-action" >>> clWhen isSelected "active" $ text personLine ) # anyOf @"key"
             @( key :: Int
              , "Name" :: String
              , "Surname" :: String

@@ -1,4 +1,4 @@
-module Reorder (openingSetlist, rotateAction, shuffleAction) where
+module Reorder (openingSetlist, rotateSetlist, shuffleAction) where
 
 import Prelude (bind, compare, map, pure, (<$>))
 
@@ -21,10 +21,10 @@ openingSetlist =
     ]
   }
 
-rotateAction
+rotateSetlist
   :: { "Setlist" :: Array { "Title" :: String, id :: String } }
-  -> Aff [ "Setlist rotated" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
-rotateAction pl@{ "Setlist": tracks } = pure (."Setlist rotated" (pl { "Setlist" = rotate tracks }))
+  -> { "Setlist" :: Array { "Title" :: String, id :: String } }
+rotateSetlist pl@{ "Setlist": tracks } = pl { "Setlist" = rotate tracks }
 
 shuffleAction
   :: { "Setlist" :: Array { "Title" :: String, id :: String } }
@@ -34,8 +34,9 @@ shuffleAction pl@{ "Setlist": tracks } = (\ts -> ."Setlist shuffled" (pl { "Setl
 rotate :: Array { id :: String, "Title" :: String } -> Array { id :: String, "Title" :: String }
 rotate tracks = maybe tracks (\{ head, tail } -> snoc tail head) (uncons tracks)
 
-
-shuffleOrder :: Array { id :: String, "Title" :: String } -> Effect (Array { id :: String, "Title" :: String })
+shuffleOrder
+  :: Array { id :: String, "Title" :: String }
+  -> Effect (Array { id :: String, "Title" :: String })
 shuffleOrder tracks = do
   keyed <- traverse withKey tracks
   pure (map snd (sortBy (\a b -> compare (fst a) (fst b)) keyed))

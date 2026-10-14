@@ -1,4 +1,4 @@
-module PhotoGallery (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum) where
+module PhotoGallery (albumChoices, albumShots, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum) where
 
 import Prelude (($), (*), (+), (<#>), (<>), (==), mod, show)
 
@@ -12,9 +12,6 @@ import Data.Variant (match)
 
 landscapesOpen :: { album :: String }
 landscapesOpen = { album: "Landscapes" }
-
-albumTitle :: { album :: String } -> String
-albumTitle { album } = album
 
 albumCatalogue :: Array { name :: String, shots :: Array String }
 albumCatalogue =

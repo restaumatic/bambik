@@ -1,49 +1,16 @@
-module RestaurantMenu (courseDishes, courseName, dishDescription, dishName, dishTags, menuCourses, priceLine) where
+module RestaurantMenu (dishTags, menuCourses, priceLine) where
 
 import Prelude ((<>), map)
 
-courseName
-  :: { dishes :: Array { description :: String
-                       , name :: String
-                       , price :: String
-                       , tags :: Array String
-                       }
-     , name :: String
-     }
-  -> String
-courseName = _.name
-
-courseDishes
-  :: { dishes :: Array { description :: String
-                       , name :: String
-                       , price :: String
-                       , tags :: Array String
-                       }
-     , name :: String
-     }
-  -> Array { description :: String, name :: String, price :: String, tags :: Array String }
-courseDishes = _.dishes
-
-dishName
-  :: { description :: String, name :: String, price :: String, tags :: Array String }
-  -> String
-dishName = _.name
-
-dishDescription
-  :: { description :: String, name :: String, price :: String, tags :: Array String }
-  -> String
-dishDescription = _.description
-
 menuCourses
-  :: {}
-  -> Array { dishes :: Array { description :: String
+  :: Array { dishes :: Array { description :: String
                              , name :: String
                              , price :: String
                              , tags :: Array String
                              }
            , name :: String
            }
-menuCourses _ =
+menuCourses =
   [ { name: "Antipasti"
     , dishes:
       [ { name: "Burrata di Puglia", price: "14", description: "Heirloom tomato, basil oil, Maldon salt.", tags: [ "vegetarian" ] }

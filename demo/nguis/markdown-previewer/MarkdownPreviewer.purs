@@ -28,7 +28,14 @@ This paragraph shows **bold**, *italic* and `inline code` text.
 """
   }
 
-parseMarkdown :: { "Source" :: String } -> Array [ bullets :: Array (Array [ bold :: String, code :: String, italic :: String, plain :: String ] ), heading :: { inlines :: Array [ bold :: String, code :: String, italic :: String, plain :: String ], level :: Int }, paragraph :: Array [ bold :: String, code :: String, italic :: String, plain :: String ], quote :: Array [ bold :: String, code :: String, italic :: String, plain :: String ] ]
+parseMarkdown
+  :: { "Source" :: String }
+  -> Array
+    [ bullets :: Array (Array [ bold :: String, code :: String, italic :: String, plain :: String ] )
+    , heading :: { inlines :: Array [ bold :: String, code :: String, italic :: String, plain :: String ], level :: Int }
+    , paragraph :: Array [ bold :: String, code :: String, italic :: String, plain :: String ]
+    , quote :: Array [ bold :: String, code :: String, italic :: String, plain :: String ]
+    ]
 parseMarkdown document = blocks (split (Pattern "\n") document."Source")
 
 blocks
@@ -68,7 +75,9 @@ dropMarker = drop 2
 isPlainLine :: String -> Boolean
 isPlainLine l = trim l /= "" && isNothing (stripPrefix (Pattern "#") l) && not (isBullet l || isQuote l)
 
-parseInlines :: String -> Array [ plain :: String, bold :: String, italic :: String, code :: String ]
+parseInlines
+  :: String
+  -> Array [ plain :: String, bold :: String, italic :: String, code :: String ]
 parseInlines s
   | s == "" = []
   | otherwise = case earliestSpan s of

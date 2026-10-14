@@ -28,10 +28,10 @@ inbox =
         button @"Delete"
         button @"Keep" ) # providedAt @"confirming" @"deletion"
       fab @"Compose" "edit"
-      ( menu "Sort" $ RecordToVariant.do
+      menu "Sort" $ RecordToVariant.do
         menuItem @"By sender"
         menuItem @"By subject"
-        menuItem @"Unread first" )
+        menuItem @"Unread first"
     VariantToRecord.do
       fold @"Message opened" openMessage
       fold @"Delete message" requestDelete

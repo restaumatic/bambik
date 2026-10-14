@@ -8,7 +8,9 @@ import Data.Maybe (fromMaybe)
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-arrival :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } -> { key :: String, value :: { code :: String, status :: String } }
+arrival
+  :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } }
+  -> { key :: String, value :: { code :: String, status :: String } }
 arrival { time } =
   let
     beat = time.minutes * 60 + time.seconds

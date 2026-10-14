@@ -274,9 +274,7 @@ with something of its own arrives `# joined` with that row as
 the model in hand and the loop's memory stays at the emitters and in
 the knot. Each fold releases the whole next model, and the `+→×` merge
 forwards each release as it comes — its output row is shared, where the
-`×→×` merge's operands own their fields — and a status with nothing to
-fold (an outcome outside any loop, flight-booker) stands alone in the
-block, releasing nothing and so fitting any row. The seed and every later model enter at the top, so everything that
+`×→×` merge's operands own their fields. The seed and every later model enter at the top, so everything that
 must be on screen at mount — displays, editors, the list a pick comes
 from — stands before the ensemble; a stage after the fold is fed only by
 events. Editors before the ensemble flow forward only; an editor whose

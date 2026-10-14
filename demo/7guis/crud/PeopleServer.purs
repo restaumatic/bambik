@@ -20,7 +20,9 @@ fetchPeople = do
   delay (Milliseconds 300.0)
   liftEffect (Ref.read storedPeople)
 
-storePeople :: Array { "Name" :: String, "Surname" :: String } -> Aff (Array { "Name" :: String, "Surname" :: String })
+storePeople
+  :: Array { "Name" :: String, "Surname" :: String }
+  -> Aff (Array { "Name" :: String, "Surname" :: String })
 storePeople people = do
   delay (Milliseconds 300.0)
   liftEffect (Ref.write people storedPeople)

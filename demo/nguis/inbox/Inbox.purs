@@ -107,7 +107,14 @@ bodyText
 bodyText = openMessageLine _.body
 
 openMessageLine
-  :: ({ body :: String, id :: Int, sender :: String, status :: [ open :: {}, read :: {}, unread :: {} ], subject :: String } -> String)
+  :: ( { body :: String
+       , id :: Int
+       , sender :: String
+       , status :: [ open :: {}, read :: {}, unread :: {} ]
+       , subject :: String
+       }
+       -> String
+     )
   -> { deletion :: [ confirming :: {}, silent :: {} ]
      , messages :: Array { body :: String
                          , id :: Int

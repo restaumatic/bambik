@@ -15,8 +15,9 @@ payment =
     headlineSmall $ text amountLine
     bodyMedium $ text statusLine
     button' @"Charge card" { icon: "credit_card" }
-    indeterminateCircularProgress # action chargeFlaky # atCase @"Charge card"
-    snackbar @"Card charged" identity
+    ( Semigroupoid.do
+      indeterminateCircularProgress # action chargeFlaky
+      snackbar @"Card charged" identity ) # atCase @"Charge card"
   # looped
     @( amount :: Number
      , approval :: [ approved :: { attempt :: Int }, pending :: {} ]

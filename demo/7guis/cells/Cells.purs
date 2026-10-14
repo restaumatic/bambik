@@ -1,4 +1,4 @@
-module Cells (columnHeaders, commit, orderSheet, rowLabel, selectCell, selectedLine, sheetRows) where
+module Cells (columnHeaders, commit, orderSheet, selectCell, selectedLine, sheetRows) where
 
 import Prelude ((<>), bind, identity, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
 
@@ -50,13 +50,8 @@ colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
 refKey :: forall r1. { c :: Int, r :: Int | r1 } -> String
 refKey { c, r } = colName c <> show r
 
-columnHeaders
-  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
-     , cells :: Object String
-     , selected :: [ none :: {}, picked :: { name :: String } ]
-     }
-  -> Array { key :: String, text :: String }
-columnHeaders _ = [ { key: "corner", text: "" } ] <> (range 0 (cols - 1) <#> \c -> { key: colName c, text: colName c })
+columnHeaders :: Array { key :: String, text :: String }
+columnHeaders = [ { key: "corner", text: "" } ] <> (range 0 (cols - 1) <#> \c -> { key: colName c, text: colName c })
 
 sheetRows
   :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
@@ -76,16 +71,6 @@ sheetRows m =
     statusOf key = match { picked: \p -> if p.name == key then .selected {} else .unselected {}, none: \_ -> .unselected {} } m.selected
   in
     range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: cellsOfRow r }
-rowLabel
-  :: { cells :: Array { key :: String
-                      , status :: [ selected :: {}, unselected :: {} ]
-                      , text :: String
-                      }
-     , rowKey :: String
-     }
-  -> String
-rowLabel { rowKey } = rowKey
-
 selectCell
   :: { event :: String
      , model :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
@@ -135,7 +120,11 @@ formatNum n =
     then show (scaled / 100)
     else show (Int.toNumber scaled / 100.0)
 
-evalCell :: Object String -> List String -> String -> [ numV :: Number, textV :: String, errV :: String ]
+evalCell
+  :: Object String
+  -> List String
+  -> String
+  -> [ numV :: Number, textV :: String, errV :: String ]
 evalCell cells visiting key =
   if key `elem` visiting then .errV "#CYCLE"
   else case lookup key cells of
@@ -232,7 +221,11 @@ parseRef s = case charAt 0 s of
       Nothing -> Nothing
   _ -> Nothing
 
-evalExpr :: Object String -> List String -> Expr -> [ numV :: Number, textV :: String, errV :: String ]
+evalExpr
+  :: Object String
+  -> List String
+  -> Expr
+  -> [ numV :: Number, textV :: String, errV :: String ]
 evalExpr cells visiting = go
   where
   go (Num n) = .numV n

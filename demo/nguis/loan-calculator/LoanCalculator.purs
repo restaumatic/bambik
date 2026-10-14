@@ -100,19 +100,26 @@ applyForLoan
                          }
      }
   -> Aff [ "Application received" :: { "Amount (€)" :: { current :: Number
-                                                        , max :: Number
-                                                        , min :: Number
-                                                        , step :: [ continuous :: {}, discrete :: Number ]
-                                                        }
-                                      , "Applicant" :: String
-                                      , "Payment protection insurance" :: Boolean
-                                      , "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ]
-                                      , "Term (years)" :: { current :: Number
-                                                          , max :: Number
-                                                          , min :: Number
-                                                          , step :: [ continuous :: {}, discrete :: Number ]
-                                                          }
-                                      }
+                                                       , max :: Number
+                                                       , min :: Number
+                                                       , step :: [ continuous :: {}
+                                                                 , discrete :: Number
+                                                                 ]
+                                                       }
+                                     , "Applicant" :: String
+                                     , "Payment protection insurance" :: Boolean
+                                     , "Purpose" :: [ "Car" :: {}
+                                                    , "Holiday" :: {}
+                                                    , "Home improvement" :: {}
+                                                    ]
+                                     , "Term (years)" :: { current :: Number
+                                                         , max :: Number
+                                                         , min :: Number
+                                                         , step :: [ continuous :: {}
+                                                                   , discrete :: Number
+                                                                   ]
+                                                         }
+                                     }
          ]
 applyForLoan loan = do
   delay (Milliseconds applicationDelay.ms)
@@ -121,16 +128,64 @@ applyForLoan loan = do
 applicationDelay :: { ms :: Number }
 applicationDelay = { ms: 800.0 }
 
-monthlyText :: forall r1. { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> String
+monthlyText
+  :: forall r1.
+     { "Amount (€)" :: { current :: Number
+                          , min :: Number
+                          , max :: Number
+                          , step :: [ discrete :: Number, continuous :: {} ]
+                          }
+     , "Term (years)" :: { current :: Number
+                        , min :: Number
+                        , max :: Number
+                        , step :: [ discrete :: Number, continuous :: {} ]
+                        }
+     , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
+     , "Payment protection insurance" :: Boolean
+     | r1
+     }
+  -> String
 monthlyText loan = "€" <> toStringWith (fixed 2) (monthlyPayment loan)
 
-monthlyPayment :: forall r1. { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> Number
+monthlyPayment
+  :: forall r1.
+     { "Amount (€)" :: { current :: Number
+                          , min :: Number
+                          , max :: Number
+                          , step :: [ discrete :: Number, continuous :: {} ]
+                          }
+     , "Term (years)" :: { current :: Number
+                        , min :: Number
+                        , max :: Number
+                        , step :: [ discrete :: Number, continuous :: {} ]
+                        }
+     , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
+     , "Payment protection insurance" :: Boolean
+     | r1
+     }
+  -> Number
 monthlyPayment { "Amount (€)": amount, "Term (years)": years, "Purpose": purpose, "Payment protection insurance": insured } =
   let monthlyRate = annualRate { "Purpose": purpose, "Payment protection insurance": insured } / 100.0 / 12.0
       months = years.current * 12.0
   in amount.current * monthlyRate / (1.0 - pow (1.0 + monthlyRate) (-months))
 
-totalInterest :: forall r1. { "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> Number
+totalInterest
+  :: forall r1.
+     { "Amount (€)" :: { current :: Number
+                          , min :: Number
+                          , max :: Number
+                          , step :: [ discrete :: Number, continuous :: {} ]
+                          }
+     , "Term (years)" :: { current :: Number
+                        , min :: Number
+                        , max :: Number
+                        , step :: [ discrete :: Number, continuous :: {} ]
+                        }
+     , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
+     , "Payment protection insurance" :: Boolean
+     | r1
+     }
+  -> Number
 totalInterest loan = monthlyPayment loan * loan."Term (years)".current * 12.0 - loan."Amount (€)".current
 
 interestShare
@@ -151,7 +206,13 @@ interestShare
   -> Number
 interestShare loan = totalInterest loan / (monthlyPayment loan * loan."Term (years)".current * 12.0)
 
-annualRate :: forall r1. { "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ], "Payment protection insurance" :: Boolean | r1 } -> Number
+annualRate
+  :: forall r1.
+     { "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
+     , "Payment protection insurance" :: Boolean
+     | r1
+     }
+  -> Number
 annualRate { "Purpose": purpose, "Payment protection insurance": insured } = basePurposeRate purpose + (if insured then -0.3 else 0.0)
 
 basePurposeRate :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ] -> Number

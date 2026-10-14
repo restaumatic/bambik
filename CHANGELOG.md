@@ -8,6 +8,34 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **Demo sweep after the day's cleanup.** Every demo read against
+  writing.md; the residue fell into a few patterns, each fixed wherever it
+  occurred. Ten view-model "copy functions" returned one stored field
+  verbatim (`titleLine { title } = title`, `courseName = _.name`), the
+  accessor the view-model side of the field-labels rule — each is now
+  `textAt @"field"` at the leaf (cells' row label, movie-browser's title,
+  password-generator's password, photo-gallery's album, potluck's guest,
+  shopping-cart's product, restaurant-menu's course and dish lines), and a
+  stored array is `# actedAt @"name" @"dishes"`. Three fixed catalogues
+  were functions ignoring their row (`productCatalogue _ = …`); they are
+  values under `(const …)` in the projection slot, as calculator's keypad.
+  Two derived classifiers in meeting-booker only renamed a stored
+  variant's cases and are `# inCaseAt @"chosen" @"Room"`. Todos carry an
+  `id` so the list is keyed by it, not by position. Reorder's Rotate is a
+  fold (`fold @"Rotate" rotateSetlist`), Shuffle the one action.
+  Ticket-dispenser's `issue` updates its row instead of rebuilding it;
+  calculator's views call `isOperatorKey`/`isFunctionKey` instead of
+  testing membership themselves. Layout: an ocular over a block is
+  applied with `$` everywhere (`chipSet $`, `menu "Presets" $`,
+  `list $`), the plain-HTML floor writes `( p $ label $ Semigroupoid.do …
+  ) # settled …`, decorators ride their element (`listItem >>> clWhen
+  isFavorite …`, Bootstrap's `listGroupItem >>> cl … >>> clWhen …`),
+  payment's action and status own the button's case as one bracketed
+  pair, ticker's and potluck's long rows break per the rule, and every
+  view-model signature over 100 columns is broken in the layout of
+  scripts/signature-layout.mjs (68 of them, circle-drawer's six exports
+  the longest). writing.md loses the sentence that still said a status
+  could stand in a fold block releasing nothing.
 - **A status tells its case: the copy function is gone from every
   `+→×` status.** `snackbar`/`toast`/`messageBar`/`output` take their
   fold and nothing else — `snackbar @"Flight booked" kept`, `toast

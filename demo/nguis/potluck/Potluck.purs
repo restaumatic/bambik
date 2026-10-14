@@ -1,4 +1,4 @@
-module Potluck (guestCountLine, guestName, invitation, menuLine, menuState, waitingLine) where
+module Potluck (guestCountLine, invitation, menuLine, menuState, waitingLine) where
 
 import Prelude ((#), (<>), map, show)
 
@@ -32,13 +32,6 @@ guestCountLine
      }
   -> String
 guestCountLine { "Guests": guests } = show (length guests) <> " guests invited — everyone picks one dish; the menu prints once the table is complete."
-
-guestName
-  :: { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], unchosen :: {} ]
-     , name :: String
-     }
-  -> String
-guestName { name } = name
 
 menuState
   :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
@@ -79,7 +72,9 @@ table
                          , name :: String
                          }
      }
-  -> { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ], name :: String }
+  -> { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+                       , name :: String
+                       }
      , remaining :: Array String
      }
 table { "Guests": guests } = foldr sorted { dishes: [], remaining: [] } guests

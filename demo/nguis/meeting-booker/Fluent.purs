@@ -3,9 +3,9 @@ module MeetingBooker.Fluent (meetingBooker) where
 import Prelude (($), (#), identity, Unit)
 
 import Effect (Effect)
-import MeetingBooker (blankBooking, bookRoom, plan, planLine, ratedRoom, roomStars, seatOccupancy, seatsInRoom, seatsTaken)
+import MeetingBooker (blankBooking, bookRoom, plan, planLine, roomStars, seatOccupancy, seatsInRoom)
 import PUI (action, atCase, looped, settled, with)
-import PUI.Web ((<+>), choice, inCase, inCaseAt, provided, staticText, text)
+import PUI.Web ((<+>), choice, inCaseAt, provided, staticText, text)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdownOptional, dropdownUnpicked, indeterminateLinearProgress, messageBar, progressBar, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -33,14 +33,21 @@ meetingBooker =
        ) # with blankBooking
     ( div $ Semigroupoid.do
       caption1 $ staticText "How attendees rated this room"
-      ratingDisplay roomStars ) # inCase @"rated" @( rated :: {}, unrated :: {} ) ratedRoom
+      ratingDisplay roomStars ) # inCaseAt @"chosen" @"Room"
     ( div $ Semigroupoid.do
       caption1 $ staticText "Seats taken"
-      progressBar seatOccupancy ) # inCase @"seated" @( seated :: {}, unseated :: {} ) seatsTaken
+      progressBar seatOccupancy ) # inCaseAt @"chosen" @"Room"
     ( card $ Semigroupoid.do
       body1 $ text planLine
       button @"Book the room" ) # provided @"complete" @( complete :: {}, incomplete :: {} ) plan
     ( indeterminateLinearProgress # action
-      @( "Room booked" :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Include a Teams link" :: Boolean, "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ] } )
-      bookRoom ) # atCase @"Book the room"
+      @( "Room booked" ::
+          { "Meeting title" :: String
+          , "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ]
+          , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
+          , "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+          , "Include a Teams link" :: Boolean
+          , "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ]
+          }
+       ) bookRoom ) # atCase @"Book the room"
     messageBar @"Room booked" identity

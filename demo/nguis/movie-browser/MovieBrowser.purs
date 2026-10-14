@@ -1,4 +1,4 @@
-module MovieBrowser (favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine) where
+module MovieBrowser (favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, visibleMovies, yearLine) where
 
 import Prelude ((&&), (||), (==), (<>), const, map, not, show)
 
@@ -96,9 +96,6 @@ markFavorite { event: { title, "Favorite": favorite }, model: catalogue } = cata
 
 isFavorite :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> Boolean
 isFavorite { "Favorite": favorite } = favorite
-
-titleLine :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> String
-titleLine { title } = title
 
 yearLine :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> String
 yearLine { year } = show year

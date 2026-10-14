@@ -20,15 +20,15 @@ circleDrawer =
     slider @"Diameter" # inCaseAt @"chosen" @"selected" # settled resizeSelected
     RecordToVariant.do
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
-        ( onClickedXY @"Canvas clicked"
-          ( ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
+        ( onClickedXY @"Canvas clicked" $
+          ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
             >>> attrWith "fill" circleFill $ identity ) # foreach @"key"
               @( key :: String
                , x :: String
                , y :: String
                , r :: String
                , status :: [ selected :: {}, unselected :: {} ]
-               ) canvasCircles ) ) ) # joined
+               ) canvasCircles ) ) # joined
       ( div $ RecordToVariant.do
         button @"Undo"
         button @"Redo" )

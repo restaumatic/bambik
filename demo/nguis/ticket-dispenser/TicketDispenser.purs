@@ -10,7 +10,7 @@ emptyQueue = { display: .waiting {}, next: 1 }
 issue
   :: { display :: [ serving :: { number :: Int }, waiting :: {} ], next :: Int }
   -> { display :: [ serving :: { number :: Int }, waiting :: {} ], next :: Int }
-issue { next } = { display: .serving { number: next }, next: next + 1 }
+issue m = m { display = .serving { number: m.next }, next = m.next + 1 }
 
 ticketLine :: { display :: [ serving :: { number :: Int }, waiting :: {} ], next :: Int } -> String
 ticketLine { display } = match { serving: \{ number } -> "#" <> show number, waiting: const "" } display

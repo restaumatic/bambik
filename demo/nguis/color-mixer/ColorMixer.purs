@@ -137,7 +137,26 @@ mixedColor
   -> String
 mixedColor = rgb <<< mixOf
 
-mixOf :: forall r1. { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } | r1 } -> { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
+mixOf
+  :: forall r1.
+     { "Red" :: { current :: Number
+                , min :: Number
+                , max :: Number
+                , step :: [ discrete :: Number, continuous :: {} ]
+                }
+     , "Green" :: { current :: Number
+                  , min :: Number
+                  , max :: Number
+                  , step :: [ discrete :: Number, continuous :: {} ]
+                  }
+     , "Blue" :: { current :: Number
+                 , min :: Number
+                 , max :: Number
+                 , step :: [ discrete :: Number, continuous :: {} ]
+                 }
+     | r1
+     }
+  -> { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
 mixOf { "Red": red, "Green": green, "Blue": blue } = { "Red": red.current, "Green": green.current, "Blue": blue.current }
 
 hex :: forall r1. { "Red" :: Number, "Green" :: Number, "Blue" :: Number | r1 } -> String
@@ -157,7 +176,13 @@ channel = show <<< round <<< clampChannel
 clampChannel :: Number -> Number
 clampChannel = max minChannel <<< min maxChannel
 
-channelRange :: Number -> { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+channelRange
+  :: Number
+  -> { current :: Number
+     , min :: Number
+     , max :: Number
+     , step :: [ discrete :: Number, continuous :: {} ]
+     }
 channelRange n = { current: n, min: minChannel, max: maxChannel, step: .discrete 1.0 }
 
 minChannel :: Number

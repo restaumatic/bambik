@@ -11,7 +11,9 @@ import Data.Variant (match)
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 1000.0 }
 
-goal :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } -> { key :: String, value :: { points :: Int, team :: String } }
+goal
+  :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } }
+  -> { key :: String, value :: { points :: Int, team :: String } }
 goal { time } =
   let beat = time.minutes * 60 + time.seconds
       team = pick teams beat
@@ -40,7 +42,9 @@ summaryLine
   -> String
 summaryLine r = show r.teams <> " teams on the board — leading: " <> match { led: \{ team, points } -> team <> " (" <> show points <> ")", unled: const "—" } r.leader
 
-leaderOf :: Array { team :: String, points :: Int } -> [ led :: { team :: String, points :: Int }, unled :: {} ]
+leaderOf
+  :: Array { team :: String, points :: Int }
+  -> [ led :: { team :: String, points :: Int }, unled :: {} ]
 leaderOf scores = case maximumBy (comparing _.points) scores of
   Just top -> .led { team: top.team, points: top.points }
   Nothing -> .unled {}
