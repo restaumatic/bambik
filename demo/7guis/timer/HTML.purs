@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, looped, ticks, unshown, with)
+import PUI (fold, looped, ticks, with)
 import PUI.Web (staticText, text)
 import PUI.Web.HTML (body, button, div, label, p, progress, rangeInput)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,11 +20,11 @@ timer =
       staticText "Duration "
       rangeInput @"Duration"
     RecordToVariant.do
-      unshown @"Clock ticked" # ticks tickPeriod
+      ticks @"Clock ticked" tickPeriod
       button @"Reset"
     VariantToRecord.do
-      unshown @"Clock ticked" # fold tick
-      unshown @"Reset" # fold restarted
+      fold @"Clock ticked" tick
+      fold @"Reset" restarted
   # looped
     @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
      , elapsed :: Number

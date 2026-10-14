@@ -12,9 +12,9 @@ a model, the counter (MDC2):
 counterMDC2 :: Effect Unit
 counterMDC2 =
   body $ Semigroupoid.do
-    headline4 (text countLine)
+    headline4 $ text countLine
     button @"Count"
-    unshown @"Count" # fold increment
+    fold @"Count" increment
   # looped @( counted :: Int ) # with freshCount
 ```
 
@@ -31,7 +31,7 @@ increment m = m { counted = m.counted + 1 }
 
 Read top to bottom, the view is the screen: a heading showing
 `countLine` of the model, then a `Count` button whose press `increment`
-folds with the case unshown (the heading already shows the count), the whole over the model `{ counted :: Int }` started at
+folds silently (the heading already shows the count), the whole over the model `{ counted :: Int }` started at
 `freshCount`. The view names design
 system words and view model values; the view model module is plain
 functions typed as the view reported them, unit-testable, importing no

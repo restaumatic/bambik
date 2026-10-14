@@ -2,7 +2,7 @@
 -- | `Data.Profunctor.Coretaining`'s `coretain`, for the coined `+ → ×`
 -- | shape. Both the class and the optic are this library's. Its
 -- | strength-side sibling is `Data.Lens.Reel`, and nothing here mentions a
--- | row: the row form is `Data.Profunctor.Row.VariantToRecord.unfolding`.
+-- | row; it has no row form.
 -- |
 -- | Like the other coined optics: the existential constructor `coreelE` is
 -- | **sound**, and completeness is **not claimed** — see

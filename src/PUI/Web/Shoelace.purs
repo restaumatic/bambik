@@ -48,7 +48,7 @@ import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import PUI (Ocular, PUI)
+import PUI (folding, Ocular, PUI)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, attribute, displayWiring, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, isFocused, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, textOf, separating, (:=))
@@ -272,15 +272,17 @@ progressBar f = wrap do
 -- | reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the toast is built — `toast @"submitted" thanksLine` — and
--- | let the event carry the bare facts.
+-- | the toast is built — `toast @"Submit review" submittedLine identity` — and
+-- | let the event carry the bare facts. A `+→×` leaf like `fold @l f`,
+-- | it takes its fold of the payload after its copy.
 toast
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
+  -> (a -> { | r })
   -> PUI Web [ | v ] { | r }
-toast copy = toastFace copy # atCase @l
+toast copy f = toastFace copy # atCase @l # folding @l f
 
 toastFace :: forall a r. (a -> String) -> PUI Web a { | r }
 toastFace copy = wrap do

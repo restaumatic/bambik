@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Counter (countLine, freshCount, increment)
 import Effect (Effect)
-import PUI (fold, looped, unshown, with)
+import PUI (fold, looped, with)
 import PUI.Web (text)
 import PUI.Web.HTML (body, button, div, h4)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -12,7 +12,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 counter :: Effect Unit
 counter =
   body $ div $ Semigroupoid.do
-    h4 (text countLine)
+    h4 $ text countLine
     button @"Count"
-    unshown @"Count" # fold increment
+    fold @"Count" increment
   # looped @( counted :: Int ) # with freshCount

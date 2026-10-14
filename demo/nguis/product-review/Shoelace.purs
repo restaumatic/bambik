@@ -1,6 +1,6 @@
 module ProductReview.Shoelace (productReview) where
 
-import Prelude (Unit, ($), (#))
+import Prelude (($), (#), identity, Unit)
 
 import Effect (Effect)
 import ProductReview (freshImpression, previewLine, submittedLine)
@@ -29,6 +29,6 @@ productReview =
        , "I'd recommend it to a friend" :: Boolean
        , "Nickname" :: String
        ) # with freshImpression
-    divider $ card $ p (text previewLine)
+    divider $ card $ p $ text previewLine
     button @"Submit review"
-    toast @"Submit review" submittedLine
+    toast @"Submit review" submittedLine identity

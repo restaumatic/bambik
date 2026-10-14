@@ -17,7 +17,7 @@ hereAndNow =
       online @"connection"
       clock @"time" clockPeriod
       colorScheme @"scheme"
-    h2 (text whereLine)
-    p (text whenLine)
-    p (text connectionLine)
-    p (text schemeLine)
+    h2 $ text whereLine
+    p $ text whenLine
+    p $ text connectionLine
+    p $ text schemeLine

@@ -1,11 +1,10 @@
 # The observational semantics: what the laws are stated against
 
-*Normative companion to the algebra's module headers (2026-09-08, from the
-category-theoretic audit). Every law in `PUI`, `Data.Profunctor.*` and
-`Data.Profunctor.Row.*` that is not a plain equality of pure values is stated
-against the definitions here. The headers cite this file rather than
-restating it; test/Main.purs exercises each named law and each named
-deviation.*
+*Normative companion to the algebra's module headers. Every law in `PUI`,
+`Data.Profunctor.*` and `Data.Profunctor.Row.*` that is not a plain equality
+of pure values is stated against the definitions here. The headers cite this
+file rather than restating it; test/Main.purs exercises each named law and
+each named deviation, test/Exhaustive.purs the merge laws to a bound (§9).*
 
 ## 1. The protocol: construction, registration, streaming
 
@@ -66,7 +65,7 @@ A morphism is a single-use process; reuse is re-instantiation.
   component — §3.) This is the inner-feed quotient
   above seen from the other side, and the same fact as feed-idempotence
   (§3): to be a behavior *is* to be stutter-invariant. The carrier's own
-  combinators no longer produce stutter — a merge's broadcast is one step,
+  combinators produce no stutter — a merge's broadcast is one step,
   released once (§4) — so the quotient is carried by the component protocol
   alone, not needed to make the merges lawful.
 - **Observation levels**. Two are natural, and laws are tagged by which
@@ -94,52 +93,49 @@ combinator laws below fail without them.
    editors echo it with the background re-attached, `identity` is the echo
    wire — every record-shaped leaf). What keeps the gated merges live
    and what the seeded `×`-retraction laws quantify over. The law has two
-   halves of different strength (2026-09-11, from an audit of every
-   `toUser` in the six vocabularies): **row totality** — whatever is
+   halves of different strength: **row totality** — whatever is
    released is the whole fed row — holds on the nose for every published
    stage; **feed liveness** — every feed is answered, once — holds for
    every leaf and the instant rungs and is *refined*, not broken, at
    exactly two sorts of place: in **time** by the witness rung
    (`confirmed` releases on confirmation; a declined reading withholds) and
    the gather gate (`acted` releases once every element has spoken). There
-   is no refinement in **value** any more: the selectors, whose echo was
-   silent on `Nothing`, were split (2026-09-23) into `×→+` pickers
-   completed by stages, and are now (2026-09-26) plain editors —
+   is no refinement in **value**: the selectors are plain editors,
    `{ l :: f | r } → { l :: f | r }`, answering every feed with the row,
    the unmade state a value of `f` rather than a missing one (`f` a
    variant with a made case under the `…Unpicked`/`…Optional` selectors,
    the option itself otherwise); a pick's echo is the pick, and an
-   optional selector's clear stores its none case.
-   "Once" is exact since the same audit:
-   `inCase` echoes only while its pane is detached (attached, the editor's
-   own echo is the release) and `drawer` sequences its nav into its content
-   instead of fanning one feed out to two echoing sides.
+   optional selector's clear stores its none case (a selector silent on
+   `Nothing` was the one value-refinement there was; CHANGELOG 2026-09-26).
+   "Once" is exact: `inCase` echoes only while its pane is detached
+   (attached, the editor's own echo is the release) and `drawer` sequences
+   its nav into its content instead of fanning one feed out to two echoing
+   sides.
 3. **No synchronous event echo** — a *variant-shaped* citizen (an occurrence
    source: `button`, `clicked`, `menuItem`, a status's event input) never
    emits from inside its own `toUser`. Events are occurrences, not
    responses; this is the termination argument for `Cochoice`'s re-entry
    (an event loop, not a busy loop), and what lets
    a loop's re-feed *arm* an emitter by feeding it without firing it.
-   Forwarding an occurrence that *arrived* — `identity`, `observed` and
-   `subChoice`'s background cases at `+→+` all emit inside `toUser` — is a
-   response to an input event, not an echo of a feed, and is not what this
-   law forbids; the law is about sources (§3.1).
+   Forwarding an occurrence that *arrived* — `identity` and `observed` at
+   `+→+` both emit inside `toUser` — is a response to an input event, not
+   an echo of a feed, and is not what this law forbids; the law is about
+   sources (§3.1).
 
    The law is about **shape**, and every published component has the
-   shape of its behaviour (2026-09-15). Two used not to. The variant-field
-   editor bracket (deleted 2026-10-11, §7) returned a variant *channel*
-   that carried sum-typed *state* — its looped record ensemble echoed
-   every feed, projected into a variant emission — and `clicked` returned
-   a record channel that carried clicks. Both were fixed at the type: the
-   bracket lifted its editor into the record field it edits, so a variant stands at channel position
-   only as an event and inside a field only as a value; and every
-   occurrence source — `clicked @l f`, `listOf @l f`, `onClickedXY @l`,
-   the HTML floor's `button @l` — emits as case `l`, so no record-shaped
-   source exists and `identity` and `clicked` no longer share a type. What
-   remains a protocol obligation is narrower: the type cannot stop a
-   `× → +` leaf from emitting inside its own `toUser`, so the proof burden
-   is the finite set of occurrence primitives — the vocabulary provider's
-   conformance, not a structural ambiguity in the algebra.
+   shape of its behaviour: a variant stands at channel position only as
+   an event and inside a field only as a value, and every occurrence
+   source — `clicked @l @k`, `listOf @l @k`, `onClickedXY @l`, the HTML
+   floor's `button @l` — emits as case `l`, so no record-shaped source
+   exists and `identity` and `clicked` share no type. (Two components once
+   had the shape of something else — a variant-field editor bracket whose
+   channel carried sum-typed state, and a `clicked` whose record channel
+   carried clicks; both were fixed at the type, CHANGELOG 2026-09-15 and
+   2026-10-11.) What remains a protocol obligation is narrower: the type
+   cannot stop a `× → +` leaf from emitting inside its own `toUser`, so
+   the proof burden is the finite set of occurrence primitives — the
+   vocabulary provider's conformance, not a structural ambiguity in the
+   algebra.
 
    **Why the carrier cannot take this one on.** Laws 2 and 3 are the two
    halves of a single obligation a *shared* record input carries — one
@@ -168,14 +164,13 @@ the gather gate).
 ### 3.1 Echo by shape: must, must not, may, may
 
 The three laws read off per shape give one **modality** each — what a
-component of that shape owes on `toUser` (2026-09-11, from the vocabulary
-audit; "echo" is an emission produced by a feed, "release" the same act
-over retained state):
+component of that shape owes on `toUser` ("echo" is an emission produced
+by a feed, "release" the same act over retained state):
 
 | shape | on input | modality | what stays obligatory | unit |
 | --- | --- | --- | --- | --- |
-| `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | the `{}` wire at the merge's row (`blank` = `lcmap (const {}) identity`); `identity` only at `{}` |
-| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `replaying`, `first` around a payload-less source, so the replay is `Strong`'s retention and the protocol its primed law; `# with payload`) or at quiescence (`resolve`) (law 3) | `silence` |
+| `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | the `{}` wire at the merge's row, `lcmap (const {}) identity`; `identity` only at `{}` |
+| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `joined @l`, `first` around the source with the fed row on the state channel, so the replay is `Strong`'s retention and the protocol its primed law) or at quiescence (`resolve`) (law 3) | the carrier's silent component (`PUI`'s private `silent`) |
 | `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is the well-foundedness of any `unleft` re-entry | `identity`, the forward wire |
 | `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is the whole row, one operand's own — a fold's next model — so a change can never stay private; a status releases nothing and is typed at every row | `lcmap case_ identity`, the never-fed wire |
 
@@ -202,26 +197,24 @@ state unchanged has nothing to say, and by law 1 saying it anyway is a
 no-op. A fold's releasing on every occurrence is therefore a **permitted
 choice** (made so that no row ever needs `Eq`), not the law, and a fold
 that released only on change would satisfy the same laws. The merge adds
-nothing of its own: since 2026-10-04 `variantToRecord` is the copairing —
-its operands share one output row, each release is one operand's whole
-row, forwarded as it comes — so there is no gate at this shape and nothing
-is retained. The degenerate case is every status, `[ event ] → { | r }`:
-each occurrence rendered to the user, nothing to the channel, and so typed
-at every row like `silence`. The `{}`-output displays' per-feed `{}`
-emission, by contrast, is a contribution of zero fields — pre-satisfied and
-inert at a gate — and so is never
-awaited by any **gate**: the stage a display is `prefixed` over releases the row, not the leaf (until 2026-10-11 a `shown` rung did).
-It is still the display's lawful answer under law 2 (the whole of a `{}`
-output row is `{}`), and *sequencing* may depend on it — `simpleDialog`'s
-confirm replays what its content last answered, so a bare `text` content
-is what arms it (§3.2).
+nothing of its own: `variantToRecord` is the copairing — its operands
+share one output row, each release is one operand's whole row, forwarded
+as it comes — so there is no gate at this shape and nothing is retained.
+The degenerate case is every status, `[ event ] → { | r }`: each
+occurrence rendered to the user, nothing to the channel, and so typed at
+every row like the silent component. Instantiated at `{}` — the operand
+`fold` and `observed` take — a status's per-feed answer is a contribution
+of zero fields, pre-satisfied and inert at a gate, and so never awaited by
+any **gate**; it is still a lawful answer under law 2 (the whole of a `{}`
+output row is `{}`), and *sequencing* may depend on it. A display is not
+such an operand: it is a stage, `{ | r } → { | r }`, releasing the row it
+shows (§3.2).
 The modality is also a **detector**: a `×→×` display whose field no model
-owns is a status in disguise. `action`'s progress slot was one until
-2026-09-13 — `{ busy :: Boolean } → {}`, fed `true` then `false` around the
-`Aff`, every `×→×` obligation vacuous (a `{}` echo of a row nobody awaited)
-— and is now `[ started :: {}, ended :: {} ] → {}`, the run's two
-occurrences dispatched to an indicator that owes nothing back; `blank`, the
-faceless leaf, stands at that input as at any other, since `{}` is terminal.
+owns is a status in disguise. `action`'s progress slot is one —
+`[ started :: {}, ended :: {} ] → { | r }`, the run's two occurrences
+dispatched to an indicator that owes nothing back (it was once
+`{ busy :: Boolean } → {}`, fed `true` then `false` around the `Aff`, every
+`×→×` obligation vacuous; CHANGELOG 2026-09-13).
 
 One fact sits outside the table. `action` is the one `+→+` form that can be
 *misplaced*: it responds through an `AVar` inside `launchAff_`, so an `Aff`
@@ -235,7 +228,7 @@ effects run on occurrences, not the type.
 A `×→×` gate is the set of **owned** output fields not yet known. A feed
 shrinks it as one step and releases once when it is empty; a display never
 enters it; an emitter or status never sees it. Stated for the carrier as it
-stands (2026-09-14, after `action`'s progress slot left the `×` side):
+stands:
 
 - **Two granularities, one principle.** `recordToRecord` gates on owned
   fields across its operands: each side's last contribution is retained and
@@ -253,23 +246,21 @@ stands (2026-09-14, after `action`'s progress slot left the `×` side):
   (runtime-exactness).
 - **A zero-field side is born satisfied.** Its slot is primed with `{}` at
   construction and its emissions neither open nor re-fire the gate.
-  `blank` (`identity @{}` at the empty row), an announcing static and a
-  `{}`-output display are indistinguishable as operands (the zero-field law,
-  test/Main.purs).
+  The `{}` wire (`lcmap (const {}) identity`), an announcing static and a
+  `{}`-output status are indistinguishable as operands (the zero-field law,
+  test/Main.purs); `fold` is built on it, the status beside the wire.
 - **No cross-feed inside the merge.** An operand's emission goes
   downstream, not to its sibling. Freshness across siblings is the
   enclosing loop's job: `looped` re-broadcasts every emission and each lens
   re-retains its background within the turn.
-- **A display never enters the gate.** Since 2026-10-13 a display is
-  `{ | r } → { | r }`: it releases the row it shows, so it is a stage of
-  the pipeline and never an operand of a gated merge (it would own every
-  field, so nothing could merge beside it; two displays compose instead).
-  The zero-field account above is what the carrier was until then, when a
-  display output `{}` and stood beside a stage as its `prefixed` decorator;
-  the zero-field law itself still holds of any `{}`-output operand
-  (test/Main.purs). An emitter (`×→+`) never sees a `×→×` gate — its fed
-  row leaves only as replay — and neither does a status (`+→×`), which is
-  dispatched.
+- **A display never enters the gate.** A display is `{ | r } → { | r }`:
+  it releases the row it shows, so it is a stage of the pipeline and never
+  an operand of a gated merge (it would own every field, so nothing could
+  merge beside it; two displays compose instead). A `{}`-output display
+  standing beside a stage as its decorator was tried and withdrawn
+  (CHANGELOG 2026-10-13). An emitter (`×→+`) never sees a `×→×` gate — its
+  fed row leaves only as replay — and neither does a status (`+→×`), which
+  is dispatched.
 - **Starvation is a priming failure of an owned field**, always: an editor
   or source never fed, never seeded, or sitting after a stage that never
   released. The cure is `with`/`seeded`, the seed where the loop is
@@ -323,11 +314,9 @@ guarantee*.
     (echo-total, feed-idempotent), it **holds on the nose**: a feed is one
     step — the broadcast runs batched and the gate releases once
     (`steppedFeed`) — so neither side stutters and the streams are equal
-    (tested with the exact common stream in test/Main.purs). Before the
-    step both sides stuttered: the free side emitted the torn
-    `{ c: 20, d: 101 }` between `h`'s and `k`'s echoes, the merged-first side
-    once more per middle-gate release — the stutter quotient was carrying
-    what the step now guarantees.
+    (tested with the exact common stream in test/Main.purs; without the
+    step the free side would emit the torn `{ c: 20, d: 101 }` between
+    `h`'s and `k`'s echoes, which is the probe's counterexample).
 
   So the answer to "is the gated merge monoidal?" is "which category?":
   counting only channels, it is **monoidal**; counting renderings, it is
@@ -340,8 +329,8 @@ guarantee*.
   user emission arrives outside any step and releases at once; nested
   merges release once, the inner step's release landing in the outer step
   (all tested). Denotationally this makes the gated merge the *exact*
-  product of Mealy machines — one input, one output pair — where before it
-  was that product up to stutter.
+  product of Mealy machines — one input, one output pair — not that
+  product up to stutter.
 - **Enrichment.** `⊑` is a genuine 2-cell because composition and the merges
   are **monotone** in it: `p ⊑ p′ ⇒ p >>> q ⊑ p′ >>> q` and
   `p ⊑ p′ ⇒ p ⊗ r ⊑ p′ ⊗ r` (tested, with the gated/ungated pairs as
@@ -377,23 +366,23 @@ coretain  (seeded (Right c0) >>> retain g)    ≈  g
 unleft    (left g)                            =  g                 -- raw
 ```
 
-These are value-level laws; since 2026-10-05 no row form stands on the
-three seeded ones (the field-level `feedback`/`folding`/`unfolding` are
-gone — a looped state is a model field), and the one knot an application
-ties is `looped` (a variant knot over `unleft`, `cycled`, lasted a day —
-2026-10-05 — as a second way of writing the same loop).
+These are value-level laws and have no row forms: a looped state is a
+model field, and the one knot an application ties is `looped` (per-shape
+row forms — `feedback`, `cycled`, `folding`, `unfolding` — were carried for
+a while and withdrawn; CHANGELOG 2026-10-14).
 This is the operational face of a classical fact: coproduct iteration
 (Elgot) is free, while product feedback (Conway/Hasegawa fixpoints) needs a
 starting point — **the seeds are the operational ⊥**. It is also why
-the knot `looped` is a carrier primitive: the gated `unfirst` cannot
+the knot `looped` is a `PUI` primitive: the gated `unfirst` cannot
 self-feed, so the diagonal self-trace is carrier structure, not a
-`Costrong` derivation. It fixes, too, exactly what the point adds beyond rows: the point's *value*
-is row-forced (`announce a ≈ lcmap (const a) identity` — `{}` has one
-value, and Repetition makes once and every time the same answer, so `(->)`
-and `Cont` have lawful points), and only its *earliness* — the answer given
-at registration, before the loop's first input — is carrier time. The
-seeded wire composed into a positional loop is primed by that earliness
-alone; a point that answered only when fed would never be reached there.
+`Costrong` derivation. It fixes, too, exactly what the point (`announce`,
+`PUI`'s) adds beyond rows: the point's *value* is row-forced
+(`announce a ≈ lcmap (const a) identity` — `{}` has one value, and
+Repetition makes once and every time the same answer), and only its
+*earliness* — the answer given at registration, before the loop's first
+input — is carrier time. The seeded wire composed into a positional loop
+is primed by that earliness alone; a point that answered only when fed
+would never be reached there.
 
 **The denotational home.** A `PUI` component is a Mealy machine with an
 asynchronous emission channel — state, a feed transition, an output stream —
@@ -426,21 +415,16 @@ principle* (input residuals compose as `c × d`, output residuals as
   shutter carries an escape `s → t` (`Data.Lens.Shutter`). The ∃-to-∃
   dualities (`Coshutter s t a b ≅ Reel b a t s`, pair swaps) do hold.
 
-## 7. Sums into products — retired
+## 7. Sums are not embedded into products
 
-The sum-typed field editor `bracketed @l stateOf caseOf` (deleted
-2026-10-11) embedded a sum into the product of its summands, projected
-back, and lifted the result into field `l`, its arguments owing the
-section–retraction `caseOf (stateOf v) = v`. The embedding `Σᵢ Aᵢ → Πᵢ Aᵢ`
-existed because every summand was pointed (a default payload for each
-absent case), and the other composite, `stateOf ∘ caseOf`, was
-deliberately not the identity: its kernel — the other cases' payloads —
-was what the editor retained across a selection change. That kernel was
-application state the model did not declare, which is why the word went
-(guardrails L14): a choice whose cases carry fields is now the product
-itself, a selector field beside every case's fields in the model, each
-edited while its case is selected, and the sum, where the business needs
-it, is a view model function of that record.
+A choice whose cases carry fields is the product itself: a selector field
+beside every case's fields in the model, each edited while its case is
+selected, and the sum, where the business needs it, is a view model
+function of that record. The alternative — a field editor embedding the
+sum into the product of its summands, `Σᵢ Aᵢ → Πᵢ Aᵢ`, and projecting back
+— retains the other cases' payloads across a selection change as state the
+model does not declare, which guardrails L14 forbids; it was carried as
+`bracketed` and withdrawn (CHANGELOG 2026-10-11).
 
 ## 8. Glitch-freedom is a style theorem
 
@@ -489,10 +473,9 @@ The two axes are independent, and `+→×` is the case that separates them:
 **input** inclusivity says whether the obligation exists, **output** shape
 says what discharges it. `variantToRecord` dispatches its input (so it has
 no torn-row hazard — nothing coalesces, at most one operand answers a case)
-and, since 2026-10-04, releases each operand's whole shared row as it
-comes: a record must be whole however its input arrived, and here each
-operand's release already is, so the merge needs no gate and no step
-(before, its outputs were owned fields and it gated like `×→×`).
+and releases each operand's whole shared row as it comes: a record must be
+whole however its input arrived, and here each operand's release already
+is, so the merge needs no gate and no step.
 `variantToVariant` has neither side's obligation either; the two dispatched
 merges are the ones needing no gate, no step, and no `MonadEffect`.
 
@@ -500,17 +483,17 @@ merges are the ones needing no gate, no step, and no `MonadEffect`.
 
 Tearing has two sources, and they are settled by two different authorities.
 
-**Within a merge** the carrier now guarantees freedom: a broadcast that
+**Within a merge** the carrier guarantees freedom: a broadcast that
 changes several fields releases once (§4, *one feed, one release*), so no
-`{ a: fresh, b: stale }` ever leaves the gate. The first version of this
-section argued that away from the independence of operands — a "stale"
-sibling being the current value of an unedited field — and that argument is
-sound only for *user edits*, where one operand changes at a time. A feed
-that changes two fields *did* tear under the per-operand release, and every
-stage between the merge and the loop end saw the phantom row (a `settled`
-invariant running against a state that never existed). The step closes it.
-Honest scope, and it is narrower than it first looks. No shipped demo ever
-built such a merge — every demo ensemble *sequences* its whole-row editors
+`{ a: fresh, b: stale }` ever leaves the gate. The independence of operands
+is not enough for that — a "stale" sibling is the current value of an
+unedited field only under *user edits*, where one operand changes at a
+time; a feed that changes two fields would tear under a per-operand
+release, and every stage between the merge and the loop end would see the
+phantom row (a `settled` invariant running against a state that never
+existed). The step closes it.
+Honest scope, and it is narrower than it first looks. No shipped demo
+builds such a merge — every demo ensemble *sequences* its whole-row editors
 with `Semigroupoid.do`, where each stage echoes once and nothing tears. That is
 not merely idiom: **the merge type forbids the parallel-editor shape
 outright**. `OwnedRecordOutputs` demands the two operands own *disjoint*
@@ -567,8 +550,7 @@ keep their slot, entrants are unknown, leavers are forgotten — knowledge
 changed, so it lands like a contribution) followed by the reconcile between
 them. The other three merges have no state at all: their `toUser`/`fromUser`
 are pure routing (`contract` and sequencing) and hold nothing between
-events — `variantToRecord` among them since 2026-10-04, when its output row
-became shared and the merge the copairing.
+events — `variantToRecord` among them, the copairing.
 
 **Data independence with finite control.** No branch of `gateStep` inspects
 a payload: the retained slots are stored and re-emitted, never compared or
@@ -611,7 +593,7 @@ over scripts whose feeds take every shape, **conformance** of `acted` to the
 step rekeyed per feed, `⊑`-monotonicity (each element instance minus its
 first emission), the wire law (`actedBy k identity` against `identity`),
 feed-idempotence and the answer law with `[]` the empty array's one release.
-Thirty-six laws, about three hundred and eighty thousand scripts, no
+Thirty-four laws, about three hundred and eighty thousand scripts, no
 distinguishing script. Because the pure step is the very function the
 carrier runs, and conformance pins each wrapper to it, a law that holds on
 the step holds on the merge and on the collection alike.
@@ -619,12 +601,11 @@ the step holds on the merge and on the collection alike.
 **What stays outside.** Scripts drive the boundary and the operands; they do
 not contain re-entrant feeds during a release, so the nested-step path
 (`depth > 1`) is exercised only by the `looped` probes. Registration
-ordering, that the widening coercion only forgets and never fabricates,
-that the record merge's field assembly is the row's union (`Record.Unsafe`
-under a `Union` witness), `Effect`'s sequencing, DOM placement (the smoke
-suite's identity-follows-key), and the timed instance `resolve` are checked
-by the named probes of §10, the smoke tests and by inspection, not by
-enumeration. The pure module is also the port target for a mechanised
+ordering, that the record merge's field assembly is the row's union
+(`Record.Unsafe` under a `Union` witness), `Effect`'s sequencing, DOM
+placement (the smoke suite's identity-follows-key), and the timed instance
+`resolve` are checked by the named probes of §10, the smoke tests and by
+inspection, not by enumeration. The pure module is also the port target for a mechanised
 proof: its four input constructors and one step function transcribe to Agda
 or Lean unchanged, and theorems there are about the function the carrier
 runs — for the merges and the collection at once.

@@ -72,11 +72,12 @@ module PUI
   , announce
   , seeded
   , resolveFor
+  , folding
   -- the vocabulary: what a view writes, with the words `Adopters` re-exports
   , action
   , fold
   , reset
-  , captured
+  , capture
   , static
   , ticks
   , accumulated
@@ -121,7 +122,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- another row at the call site; `{}`-input chrome is placed by the
 -- vocabulary's `eventLeaf` with a bare `lcmap (const {})`.
 import Data.Profunctor.Row (atCase, atField, settled, toCase, toField) as Adopters
-import Data.Profunctor.Row.RecordToVariant (joined) as Adopters
+import Data.Profunctor.Row.RecordToVariant (joined, kept) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
@@ -141,7 +142,6 @@ import Data.Symbol (class IsSymbol)
 import Data.Variant (class Contractable, case_, contract, expand, inj, match, on)
 import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
-import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Effect (Effect)
@@ -1182,55 +1182,53 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | the `+`-diagonal: every event flowing
 -- | through is forwarded exactly once, at feed time, and the events the
 -- | status consumes are also shown — `snackbar @"Charge card" chargingLine
--- | # observed` narrates a charge on its way to the action without
+-- | identity # observed` narrates a charge on its way to the action without
 -- | interrupting it (payment). The status
 -- | owns its cases within the stage's row (`Contractable s f`, the
 -- | shot/focus relation `splitVariant` dispatches by): the focus
 -- | cases are contracted out and shown, the background cases pass
 -- | untouched. The status's own emissions are dropped, deliberately —
 -- | events are one-shot, so re-emitting the last event would duplicate it —
--- | and the drop is lossless by type: like the gated displays, `observed` accepts
--- | only a status whose output is `{}`.
+-- | and the drop is lossless: a status folds, and what it folds is
+-- | dropped here — the fold argument of a narrating status is `identity`,
+-- | the payload it was fed.
 -- |
 -- | **Derived**: the wire and the status, merged by the
 -- | `× → +` merge over the event nested as a record field — the status
 -- | behind `left` so it sees only its contracted cases, `>>> silent` so its
 -- | emissions leave as nothing.
 observed
-  :: forall m v v1
+  :: forall m v v1 r
    . MonadEffect m
   => Contractable v v1
-  => PUI m [ | v1 ] {}
+  => PUI m [ | v1 ] { | r }
   -> PUI m [ | v ] [ | v ]
 observed status = dimap (\v -> { event: v }) (match { forwarded: identity }) $ recordToVariant
   (dimap _.event (inj (Proxy @"forwarded")) identity :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
   (lcmap (\r -> maybe (Right unit) Left (contract r.event)) (left (status >>> silent)) >>> lcmap (const {}) silent :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
 
--- | The **tick source**, opened by its status like a fold or an action
--- | (`unshown @"Clock ticked" # ticks tickPeriod`, timer): every
--- | `interval`, the row it was last fed leaves as case `l`, told to the
--- | status first — replay is `Strong`'s retention, the fed row riding the
--- | state channel as under `clicked`. Feeds are retained, never answered;
--- | nothing ticks before the first feed or while the period is a hole
--- | (guardrails L18). A beat in a suspended scope (a detached pane) is
--- | skipped, and a cancelled scope ends the loop.
+-- | The **tick source**: the `×→+` leaf owning case `l`
+-- | (`ticks @"Clock ticked" tickPeriod`, timer) — every `interval`, the
+-- | row it was last fed leaves as case `l`; replay is `Strong`'s
+-- | retention, the fed row riding the state channel as under `clicked`.
+-- | Feeds are retained, never answered; nothing ticks before the first feed
+-- | or while the period is a hole (guardrails L18). A beat in a suspended
+-- | scope (a detached pane) is skipped, and a cancelled scope ends the
+-- | loop. A tick that needs telling is told by a status on its way,
+-- | `ticks @l p >>> (status # observed)`, so the source opens with none.
 ticks
-  :: forall m l r v
+  :: forall @l m r v
    . Scoped m
-  => RowToList v (RL.Cons l { | r } RL.Nil)
   => IsSymbol l
   => Cons l { | r } () v
   => { ms :: Number }
-  -> PUI m [ | v ] {}
   -> PUI m { | r } [ | v ]
-ticks interval status = wrap do
-  status' <- unwrap status
+ticks interval = wrap do
   sc <- scope
   lastRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> Ref.write (Just r) lastRef
     , fromUser: \prop -> if isHole interval then pure unit else do
-        status'.fromUser \_ -> pure unit
         let
           loop = do
             delay (Milliseconds interval.ms)
@@ -1239,10 +1237,7 @@ ticks interval status = wrap do
               liftEffect do
                 active <- scopeActive sc
                 fed <- Ref.read lastRef
-                when active $ for_ fed \r -> do
-                  let occurrence = inj (Proxy @l) r
-                  status'.toUser occurrence
-                  prop occurrence
+                when active $ for_ fed \r -> prop (inj (Proxy @l) r)
               loop
         launchAff_ loop
     }
@@ -1290,22 +1285,22 @@ type Ocular p = forall a b. Optic p a b a b
 static :: forall p r. Category p => Ocular p -> p { | r } { | r }
 static o = o identity
 
--- | An action is **opened by its statuses**: the slot is a `+→×` citizen
--- | owning any of the run's cases — the two lifecycle occurrences `started`
--- | and `ended` (a progress indicator, `indeterminateLinearProgress # action createPerson`) and the **outcome cases** the `Aff`
--- | returns as a variant (`snackbar @"Flight booked" bookedLine # action
--- | submit`), or a `VariantToRecord.do` block of both. The slot's row is
--- | `[ started, ended | t ]`, so a status names only the cases it shows,
--- | and the outcome leaves as the variant `[ | t ]` named by the `Aff`, so
--- | no `toCase` follows. A loop's actions stand in one
--- | `VariantToVariant.do`, one line per case, each typed at the block's
--- | outcome row — one row, an equality — which the fold block after it
--- | fixes (crud, reorder), or which `@( … )` declares where only statuses
--- | follow (flight-booker). No application owns a
--- | "busy": the indicator shows between `started` and `ended` and, like
--- | every status, owes the channel nothing. A stage with nothing to show
--- | opens with `unshown @l` naming its outcome case, which determines
--- | the slot's row.
+-- | An action is **opened by its progress indicator**: the slot is a
+-- | `+→×` citizen of the run's two lifecycle occurrences, `started` and
+-- | `ended` (`indeterminateLinearProgress # action createPerson`), and of
+-- | nothing else — a status that tells an outcome is never the slot, and
+-- | the types forbid it. The outcome leaves as the variant `[ | t ]` the
+-- | `Aff` names and is folded after the action by the statuses that tell
+-- | it (`snackbar @"Person created" personCreatedLine identity`, crud), or
+-- | by `capture @l` where nothing needs telling (weather). A loop's actions
+-- | stand in the fold block, each with its button's case: `( Semigroupoid.do
+-- | { indeterminateLinearProgress # action createPerson; VariantToRecord.do
+-- | { … } } ) # atCase @"Create"`; an outcome whose fold keeps the model is
+-- | `joined` with its button, so the fold has the model in hand (order-form's
+-- | submit, flight-booker). The outcome row is fixed by the folds that
+-- | consume it, or declared `@( … )` where only their copy reads it. No
+-- | application owns a "busy": the indicator shows between `started` and
+-- | `ended` and, like every status, owes the channel nothing.
 -- |
 -- | A failing action is **reported, not swallowed**: `ended` is dispatched
 -- | whichever way the `Aff` ends — so a throw cannot strand the spinner —
@@ -1320,7 +1315,7 @@ static o = o identity
 action
   :: forall @t a v1 m
    . Scoped m
-  => Contractable ( started :: {}, ended :: {} | t ) v1
+  => Contractable ( started :: {}, ended :: {} ) v1
   => (a -> Aff [ | t ])
   -> PUI m [ | v1 ] {}
   -> PUI m a [ | t ]
@@ -1328,11 +1323,11 @@ action arr = running \i -> if isHole arr then Nothing else Just (arr i)
 
 -- The run behind `action`: `Nothing` is a hole, which
 -- never runs (guardrails L18); otherwise `started` and `ended` are told to
--- the slot around the `Aff`, and its outcome is posted onward and told too.
+-- the slot around the `Aff`, and its outcome is posted onward.
 running
   :: forall t a v1 m
    . Scoped m
-  => Contractable ( started :: {}, ended :: {} | t ) v1
+  => Contractable ( started :: {}, ended :: {} ) v1
   => (a -> Maybe (Aff [ | t ]))
   -> PUI m [ | v1 ] {}
   -> PUI m a [ | t ]
@@ -1340,7 +1335,7 @@ running run w = action'
   (\i pro post active -> case run i of
     Nothing -> pure unit
     Just aff -> do
-      let tell v = for_ (contract (v :: [ started :: {}, ended :: {} | t ]) :: Maybe _) pro
+      let tell v = for_ (contract (v :: [ started :: {}, ended :: {} ]) :: Maybe _) pro
       liftEffect $ tell (inj (Proxy @"started") {})
       result <- attempt aff
       liftEffect $ tell (inj (Proxy @"ended") {})
@@ -1349,33 +1344,68 @@ running run w = action'
         Right o -> liftEffect do
           on <- active
           if on
-            then do
-              post o
-              -- the outcome widened to the slot's row: a variant is a tagged
-              -- value, so the widening is the identity. It stays a coercion
-              -- because the solver cannot discharge `expand`'s
-              -- `Union t ( started, ended ) ( started, ended | t )` — a
-              -- `Union` whose open tail is on the left (tried again
-              -- 2026-10-11)
-              tell (unsafeCoerce o)
+            then post o
             else tr "action: outcome dropped, the scope is suspended or cancelled" o)
   w
 
--- | One case **folded into the record** (`+→×`), opened by its status —
--- | `snackbar @"Count" countedLine # fold increment`, as a run is opened by
--- | its progress indicator (`indeterminateLinearProgress # action
--- | createPerson`). The status names the case (its closed singleton row is
--- | the fold's input) and shows the **event**, never the fold's result: it
--- | is fed the occurrence as it arrives, so its copy function is typed at
--- | the payload, and whatever a status says must be in the event. `f` of
--- | the payload is the row released. A heartbeat nobody needs told about
--- | opens with `unshown @l`. A loop's folds are one per event case,
--- | merged by `VariantToRecord.do`, each releasing the whole next model.
--- | Memoryless: a replaying emitter's payload is the row it was fed, an
--- | event with something of its own arrives `joined @l` with that row as
--- | `{ event, model }`, and an effect returns the model (`… # captured`,
--- | which is `fold identity`), so every handler has the model in hand and the loop's
--- | memory stays at the emitters and in the knot.
+-- | One case **folded into the record** (`+→×`): the faceless leaf owning
+-- | case `l`, releasing `f` of its payload as the whole next model —
+-- | `fold @"Count" increment` (counter), `fold @"Todo toggled" toggleTodo`
+-- | (todo-list). A loop's folds are one per event case, merged by
+-- | `VariantToRecord.do`, each releasing the whole next model. Memoryless:
+-- | a replaying emitter's payload is the row it was fed, an event with
+-- | something of its own arrives `joined` with that row as
+-- | `{ event, model }` (`kept` is the fold that keeps it), and an effect
+-- | returns the model (`capture @l`), so every handler has the model in
+-- | hand and the loop's memory stays at the emitters and in the knot. A
+-- | fold whose event needs telling is a **status**, which takes its fold
+-- | the same way (`snackbar @"Person created" personCreatedLine identity`);
+-- | this is that fold with no face, `folding @l f` over `unshown @l`.
+fold
+  :: forall @l m a v r
+   . MonadEffect m
+  => IsSymbol l
+  => Cons l a () v
+  => (a -> { | r })
+  -> PUI m [ | v ] { | r }
+fold f = folding @l f (Adopters.unshown @l)
+
+-- | One case folded into the record by **resetting** it to `x`
+-- | (`reset @"New game" openingPosition`, tic-tac-toe): the row released is
+-- | `x` whole, whatever the payload. `reset @l x = fold @l (const x)`; a
+-- | status resets the same way, `snackbar @"Order placed" orderPlacedLine
+-- | (const usualOrder)` (espresso-bar).
+reset
+  :: forall @l m a v r
+   . MonadEffect m
+  => IsSymbol l
+  => Cons l a () v
+  => { | r }
+  -> PUI m [ | v ] { | r }
+reset x = fold @l (const x)
+
+-- | One case folded into the record by **capturing** its payload as the
+-- | model whole (`capture @"People loaded"`, crud): the case an effect
+-- | returns the model under — a load, a fetch, a server's answer — where
+-- | nothing needs telling. `capture @l = fold @l identity`; a status
+-- | captures with `identity` (`snackbar @"Order loaded" orderLoadedLine
+-- | identity`, order-form).
+capture
+  :: forall @l m v r
+   . MonadEffect m
+  => IsSymbol l
+  => Cons l { | r } () v
+  => PUI m [ | v ] { | r }
+capture = fold @l identity
+
+-- | The fold behind every `+→×` leaf — plumbing, not vocabulary: a status
+-- | face owning case `l` and the fold of its payload, in one leaf. The
+-- | vocabularies build their statuses with it (`snackbar @l copy f =
+-- | snackbarFace copy # atCase @l # folding @l f`), and `fold @l f` is it
+-- | over the faceless `unshown @l`. The status is fed the **event**, never
+-- | the fold's result — its copy function is typed at the payload, so
+-- | whatever a status says must be in the event — and `f` of the payload
+-- | is the row released.
 -- |
 -- | **Derived**: the wire and the status under the `×→×` merge, fed the
 -- | occurrence's outcome and the occurrence in one two-field record — the
@@ -1384,48 +1414,17 @@ running run w = action'
 -- | `fold @l f` once lived in `Data.Profunctor.Row.VariantToRecord`, the
 -- | statuses standing beside the folds as sibling operands; CHANGELOG,
 -- | 2026-10-07.)
-fold
-  :: forall m l a v r
+folding
+  :: forall @l m a v r
    . MonadEffect m
-  => RowToList v (RL.Cons l a RL.Nil)
   => IsSymbol l
   => Cons l a () v
   => (a -> { | r })
   -> PUI m [ | v ] {}
   -> PUI m [ | v ] { | r }
-fold f status = dimap (\v -> { event: v, model: on (Proxy @l) f case_ v }) _.model $ recordToRecord
+folding f status = dimap (\v -> { event: v, model: on (Proxy @l) f case_ v }) _.model $ recordToRecord
   (dimap _.model { model: _ } identity :: PUI m { event :: [ | v ], model :: { | r } } { model :: { | r } })
   (lcmap _.event status :: PUI m { event :: [ | v ], model :: { | r } } {})
-
--- | One case folded into the record by **resetting** it to `x`, opened by
--- | its status like `fold` (`unshown @"New game" # reset openingPosition`):
--- | the payload is the status's alone, the row released is `x` whole.
--- | `reset x = fold (const x)`.
-reset
-  :: forall m l a v r
-   . MonadEffect m
-  => RowToList v (RL.Cons l a RL.Nil)
-  => IsSymbol l
-  => Cons l a () v
-  => { | r }
-  -> PUI m [ | v ] {}
-  -> PUI m [ | v ] { | r }
-reset x = fold (const x)
-
--- | One case folded into the record by **capturing** its payload as the
--- | model whole, opened by its status like `fold`
--- | (`snackbar @"Order loaded" orderLoadedLine # captured`): the case an
--- | effect returns the model under — a load, a fetch, a server's answer.
--- | `captured = fold identity`.
-captured
-  :: forall m l v r
-   . MonadEffect m
-  => RowToList v (RL.Cons l { | r } RL.Nil)
-  => IsSymbol l
-  => Cons l { | r } () v
-  => PUI m [ | v ] {}
-  -> PUI m [ | v ] { | r }
-captured = fold identity
 
 action' :: forall a b s t m. Scoped m => (s -> (a -> Effect Unit) -> (t -> Effect Unit) -> Effect Boolean -> Aff Unit) -> Optic (PUI m) s t a b
 action' arr w = wrap do

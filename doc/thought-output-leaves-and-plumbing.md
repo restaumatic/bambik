@@ -1,5 +1,7 @@
 # Thought: output leaves and output data plumbing
 
+**Status (2026-10-14).** Two of this inventory's points stand: every display obeys the per-feed display echo (now written once as `displayWiring` in `PUI.Web`), and the statuses' canonical row stays private to the vocabularies. Almost every name in it has changed since 2026-08-31, because copy is a function, not a field (guardrails L17, CHANGELOG 2026-08-31 and 2026-09-02; doc/research-copy-is-a-function.md): `text @l` is `text f` over a read function or `textAt @l` for a stored field; the progress bars, `ratingDisplay` and `imagePane` take a read function and no label; `indeterminateLinearProgress`/`indeterminateCircularProgress` are statuses `[ started, ended ] → { | r }` with no label (CHANGELOG 2026-09-13); `forProperty`, `forCase`, `forCases`, `projected`, the `present<App>` normalizers, `armed`, `muted` and the `shown`/`shownWhen`/`shownEach` rungs are gone — a status is label-indexed at its business case with its copy function (`snackbar @"booked" bookedLine`), the pane is `inCase`/`inCaseAt` for displays and editors alike (no longer the editor-only pane) and `provided`/`providedAt` for emitters. A display is a stage `{ | r } → { | r }` releasing the row it shows (CHANGELOG 2026-10-13), so no content slot is pinned to `{}`-output components any more. `confirmed`, `observed`, `provided`, `attrWith`, `clWhen`, `caseText`, the statics and `npm run check-view-model` are current.
+
 *A briefing on the presentation direction — data shown through the UI to
 the user. In `PUI m i o` terms this is the **input side**: the `toUser`
 channel. The library's word for these components is **displays**.
@@ -21,11 +23,12 @@ what feeds it (`×` value row vs. `+` occurrence), its payload type, and
 
 ## Output leaves — all verbatim (L17)
 
-No display takes a formatter; each shows its field as fed.
+No display takes a formatter; each shows its field as fed (reversed
+2026-09-02: a display takes a read function, see Status).
 
 | Leaf | Row | Where |
 | --- | --- | --- |
-| `text @l` | `Cons l String` | `PUI.Web.HTML` — the workhorse, also inside every MDC/`foreach` cell |
+| `text @l` (since `text f` / `textAt @l` in `PUI.Web`, see Status) | `Cons l String` | `PUI.Web.HTML` — the workhorse, also inside every MDC/`foreach` cell |
 | `progress @l` | `Cons l Number` (fraction 0–1) | HTML, Bootstrap |
 | `linearProgress @l` / `progressBar @l` | `Cons l Number` | MDC2, MDC3 / Shoelace, Fluent |
 | `indeterminateLinearProgress @l`, `indeterminateCircularProgress @l` | `Cons l Boolean` (running/not) | MDC2, MDC3 |
@@ -36,7 +39,8 @@ No display takes a formatter; each shows its field as fed.
 `banner` (MDC2 only — the honest MD3 gap), `toast` (Shoelace,
 Bootstrap), `messageBar` (Fluent), HTML's `output`. Their canonical
 `[ event :: String ]` row is **private to the vocabulary**: application
-code meets a status only behind its `forCases` classifier.
+code meets a status only behind its `forCases` classifier (since
+removed; `snackbar @l copy`, see Status).
 
 **Presentation decorators**: `attrWith name f` (channel-fed attribute)
 and `clWhen pred name` (value-dependent class) — why grids and canvases
@@ -47,15 +51,15 @@ chrome at `{} → {}`, no model data.
 
 ## Output data plumbing
 
-- `# forProperty` — the one read adopter: verbatim field **selection**
+- `# forProperty` (since removed, see Status) — the one read adopter: verbatim field **selection**
   from a context-pinned wider row (a collection item, a pane payload),
   arity-0, label derived from the leaf. It survived the compaction
   because it is selection, never formatting.
-- `# forCase @l copyOf` — one status per business case, sibling merge
+- `# forCase @l copyOf` (since removed, see Status) — one status per business case, sibling merge
   operands each owning exactly their case. A **derived** word:
   `forCase @l f = forCases { l: f }` is its law — kept for the `@l`
   adopter grammar, exactly as `applied` keeps `const` off `updated`'s.
-- `# forCases classifier` — one status instance for a whole classified
+- `# forCases classifier` (since removed, see Status) — one status instance for a whole classified
   variant; the classifier is a **record of per-case copy functions**
   (flight-booker's `bookingLine`), the elimination the mechanism's own —
   no `match` anywhere in the status story.
@@ -70,7 +74,7 @@ to vocabulary-internal plumbing — the statuses'
 The rows a pipeline operates over are a **presentation model** — source
 fields beside the derived fields they render as. Per app:
 
-- One normalization `present<App> :: row -> row` in the logic module
+- One normalization `present<App> :: row -> row` (since removed, see Status) in the logic module
   writes every derived field (a formatted number, a unit-suffixed
   quantity, a composed sentence line) from its sources.
 - It runs as `# settled present<App>` trailing the pipeline (inside the
@@ -92,7 +96,8 @@ browser.
 ## Gated rungs and visibility
 
 `shown` (ambient, releases always), `shownWhen @l f` (display pane),
-`shownEach @l proj` (keyed collection), `confirmed` (modal witness),
+`shownEach @l proj` (keyed collection) — the `shown` family and `muted`
+below since removed, see Status — `confirmed` (modal witness),
 `observed` (the `+`-side sibling), plus `provided @l f` (case-gated
 existence). Content slots take only `{}`-output components (no silent
 loss); `# muted` is the explicit discard. Recorded fact: **`shownWhen`
@@ -100,4 +105,4 @@ is a derivation of `provided`** —
 `recordToRecord (provided @l f content) identity` — one visibility
 primitive, the display rung as the pane owned-merged with the wire.
 `inCase @l` is the honest primitive remainder and is the *editor* pane,
-not a display.
+not a display (since 2026-10-13 the pane for displays too, see Status).

@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import PhotoGallery (albumChoices, albumShots, albumTitle, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
-import PUI (fold, foreach, joined, looped, unshown, with)
+import PUI (fold, foreach, joined, looped, with)
 import PUI.Web (each, staticText, text, textAt)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, displayMedium, divider, drawer, imageList, imageListItem, imagePane, labelSmall, list, listItem, listOf', topAppBar)
@@ -16,8 +16,8 @@ photoGallery =
     topAppBar "Photo Gallery" $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
         ( Semigroupoid.do
-          listOf' @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices (span (textAt @"name")) # joined @"opened"
-          unshown @"opened" # fold openAlbum
+          ( listOf' @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices $ span $ textAt @"name" ) # joined
+          fold @"opened" openAlbum
           divider $ Semigroupoid.do
             ( list Semigroupoid.do
               listItem $ staticText "Every photo is an SVG"

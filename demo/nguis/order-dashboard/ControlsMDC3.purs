@@ -15,7 +15,7 @@ import Data.Number (max)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.Row (class Cons)
-import PUI (Ocular, PUI, foreach)
+import PUI (foreach, Ocular, PUI)
 import PUI.Web (Web, attrWith, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
@@ -37,7 +37,7 @@ gauge l f =
   tile $ Semigroupoid.do
     labelMedium $ staticText l
     linearProgress f
-    labelLarge $ text (percentLine <<< f)
+    labelLarge $ text $ percentLine <<< f
 
 trendChart :: forall r. String -> ({ | r } -> Array Number) -> PUI Web { | r } { | r }
 trendChart l f =

@@ -1,6 +1,6 @@
 module SignupForm.MDC2 (signupForm) where
 
-import Prelude (Unit, (#), ($))
+import Prelude ((#), ($), identity, Unit)
 
 import Effect (Effect)
 import PUI (looped, with)
@@ -34,4 +34,4 @@ signupForm =
     ( subtitle2 $ text invalidLine ) # inCase @"invalid" @( invalid :: {}, ready :: {} ) validation
     ( subtitle2 $ text readyLine ) # inCase @"ready" validation
     button' @"Sign up" { icon: "person_add" }
-    snackbar @"Sign up" signupLine
+    snackbar @"Sign up" signupLine identity

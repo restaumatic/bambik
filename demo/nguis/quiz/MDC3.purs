@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, joined, looped, reset, unshown, with)
+import PUI (fold, joined, looped, reset, with)
 import PUI.Web (provided, text, textAt)
 import PUI.Web.MDC3 (body, bodyLarge, button', headlineMedium, headlineSmall, linearProgress, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,12 +18,12 @@ quiz =
     bodyLarge $ text questionLine
     RecordToVariant.do
       ( Semigroupoid.do
-        headlineMedium (text askedPrompt)
-        listOf @"Question answered" @"key" @( key :: Int, label :: String ) choices (textAt @"label") ) # provided @"asking" @( asking :: {}, finished :: {} ) quizPhase # joined @"Question answered"
+        headlineMedium $ text askedPrompt
+        listOf @"Question answered" @"key" @( key :: Int, label :: String ) choices $ textAt @"label" ) # provided @"asking" @( asking :: {}, finished :: {} ) quizPhase # joined
       ( Semigroupoid.do
-        headlineSmall (text finalScoreLine)
+        headlineSmall $ text finalScoreLine
         button' @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase
     VariantToRecord.do
-      unshown @"Question answered" # fold answer
-      unshown @"Restart" # reset freshQuizRun
+      fold @"Question answered" answer
+      reset @"Restart" freshQuizRun
   # looped @( question :: Int, correct :: Int ) # with freshQuizRun

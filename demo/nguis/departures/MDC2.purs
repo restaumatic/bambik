@@ -14,4 +14,4 @@ departures =
   body $ Semigroupoid.do
     clock @"time" tickPeriod
     list $ ( listItem $ text flightLine ) # dispatched @String @{ code :: String, status :: String } arrival
-    body2 (text updateLine)
+    body2 $ text updateLine

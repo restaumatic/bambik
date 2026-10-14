@@ -46,7 +46,7 @@
       <ul>
         <li>No comments.</li>
         <li>Explicit imports, <code>Prelude</code> included.</li>
-        <li>A line leads with what is seen, via <code>$</code>, and trails with data concerns, via <code>#</code>.</li>
+        <li>A line leads with what is seen, via <code>$</code>, and trails with data concerns, via <code>#</code>. An element over one leaf applies it with <code>$</code>, never parentheses: <code>headline4 $ text countLine</code>; a chain on the wrapped element opens the paren before the wrapper: <code>( headlineSmall $ text wonLine ) # inCase @"won" gameOutcome</code>.</li>
         <li>A decorator trails its element: <code>checkbox @"Loyalty member" … # tooltip "Members get 10% off"</code>, never <code>tooltip … $ checkbox …</code>.</li>
         <li>Two-space indentation; a closer returns to its opener's column.</li>
         <li>A closer or <code>#</code> chain never starts a line, except a seed closer (<code>) # with seed</code>) and the closer of a broken row.</li>
@@ -98,10 +98,11 @@
       <ul>
         <li>A signature is the compiler's hint verbatim: the row the stage is fed, closed. <code>countLine :: { counted :: Int } -&gt; String</code>, never narrowed, never opened with a tail.</li>
         <li>A handler updates the row it is given: <code>increment m = m { counted = m.counted + 1 }</code>.</li>
-        <li>A constant replaces the model only whole, by a reset: <code>unshown @"New game" # reset openingPosition</code>.</li>
-        <li>Each event case has its own fold, opened by its status: <code>unshown @"Count" # fold increment</code>.</li>
-        <li>A status shows the event, never the fold's result, so a fold shows one only after an action that returned what it tells. A command straight from an emitter folds silently: <code>unshown @"Todo toggled" # fold toggleTodo</code>.</li>
-        <li>An event with a payload of its own is <code># joined @l</code> and handled by one record: <code>toggleTodo :: { event :: Int, model :: … } -&gt; …</code>.</li>
+        <li>A constant replaces the model only whole, by a reset: <code>reset @"New game" openingPosition</code>.</li>
+        <li>Each event case has its own fold: <code>fold @"Count" increment</code>.</li>
+        <li>A status is a fold with a face, <code>snackbar @"Person created" personCreatedLine identity</code>; it shows the event, never the fold's result, so it stands only after an action that returned what it tells. A command straight from an emitter folds silently: <code>fold @"Todo toggled" toggleTodo</code>.</li>
+        <li>An action is opened by its progress indicator alone; an outcome that is told and changes nothing is <code>joined</code> with its button and folded <code>kept</code>.</li>
+        <li>An event with a payload of its own is <code># joined</code> and handled by one record: <code>toggleTodo :: { event :: Int, model :: … } -&gt; …</code>.</li>
         <li>An action returns the model under its outcome case, folded by <code>identity</code>.</li>
         <li>A business function takes one record; field names carry the roles: <code>returnBetween { out, back }</code>.</li>
       </ul>

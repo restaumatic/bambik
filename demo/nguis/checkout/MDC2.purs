@@ -6,7 +6,7 @@ import Checkout (cartLine, freshOrder, onwardFrom, orderPlaced, paymentLine, pla
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, looped, unshown, with)
+import PUI (fold, looped, with)
 import PUI.Web (inCaseAt, provided, providedAt, text)
 import PUI.Web.MDC2 (body, body2, button, button')
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -22,10 +22,10 @@ checkout =
       button @"Back" # provided @"back" @( back :: {}, first :: {} ) previousOf
       button' @"Place order" { icon: "shopping_cart_checkout" } # providedAt @"payment" @"step"
     VariantToRecord.do
-      unshown @"Next" # fold stepOnward
-      unshown @"Back" # fold stepBack
-      unshown @"Place order" # fold orderPlaced
-    body2 (text placedLine) # inCaseAt @"placed" @"status"
+      fold @"Next" stepOnward
+      fold @"Back" stepBack
+      fold @"Place order" orderPlaced
+    ( body2 $ text placedLine ) # inCaseAt @"placed" @"status"
   # looped
     @( item :: String
      , address :: String

@@ -130,6 +130,7 @@ module PUI.Web
   , attrAt
   , clicked
   , clickedRow
+  , witnessed
   , onClickedXY
   , dynamic
   , each
@@ -1111,13 +1112,23 @@ clicked w = replayed @l (Record.get (Proxy @k)) (occurrences w)
 clickedRow :: forall @l r a v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
 clickedRow w = replayed @l identity (occurrences w)
 
+-- | The **witness rung**'s button: `{}`-input chrome whose click releases
+-- | the row the stage was last fed, as a row — `eventLeaf` with its one
+-- | case unwrapped, so a confirmation dialog stays a `×→×` stage
+-- | (`confirmed`, MDC2/MDC3), Answer refined in time: the row is released
+-- | on confirmation. The one lawful record-output emitter, and
+-- | vocabulary-internal like `clickedRow`: an application's emitters are
+-- | its vocabulary's.
+witnessed :: forall r. PUI Web {} {} -> PUI Web { | r } { | r }
+witnessed chrome = eventLeaf @"witnessed" chrome # rmap (on (Proxy @"witnessed") identity case_)
+
 -- `joined` at the empty payload: the click source's occurrence carries
 -- nothing, so the event is dropped, `f` is read off the row last fed and
 -- the case is renamed from the source's to `l`. Replay is `Strong`'s
 -- retention and nothing else — the primed `Strong` law: an occurrence
 -- before any feed is withheld, a feed never emits.
 replayed :: forall @l r k v. IsSymbol l => Cons l k () v => ({ | r } -> k) -> PUI Web { | r } [ occurred :: {} ] -> PUI Web { | r } [ | v ]
-replayed f src = joined @"occurred" src # rmap (on (Proxy @"occurred") (inj (Proxy @l) <<< f <<< _.model) case_)
+replayed f src = joined src # rmap (on (Proxy @"occurred") (inj (Proxy @l) <<< f <<< _.model) case_)
 
 -- The click source `clicked` is built from: each click on the last-built
 -- element (the content's own node) leaves as an occurrence carrying nothing;

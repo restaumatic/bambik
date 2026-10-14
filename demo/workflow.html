@@ -72,7 +72,7 @@
     <h3>src/MDC3.purs</h3>
 <pre><code class="language-haskell">module Order.MDC3 (order) where
 
-import Prelude ((#), ($), Unit)
+import Prelude ((#), ($), identity, Unit)
 
 import Effect (Effect)
 import PUI (with)
@@ -84,9 +84,9 @@ order :: Effect Unit
 order =
   body $ Semigroupoid.do
     filledTextField @"Pizza"
-    headlineSmall (text ?orderLine)
+    headlineSmall $ text ?orderLine
     button @"Order"
-    snackbar @"Order" ?confirmedLine
+    snackbar @"Order" ?confirmedLine identity
   # with @{ "Pizza" :: String } ?start
 </code></pre>
 
@@ -101,7 +101,7 @@ order =
 <pre class="compiler">Error 1 of 4:
 
   in module Order.MDC3
-  at src/MDC3.purs:15:25 - 15:35 (line 15, column 25 - line 15, column 35)
+  at src/MDC3.purs:15:26 - 15:36 (line 15, column 26 - line 15, column 36)
 
     Hole 'orderLine' has the inferred type
 
@@ -177,7 +177,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
     <h3>src/MDC3.purs — the display line takes its name</h3>
 <pre><code class="language-haskell">import Order (orderLine)
   ⋮
-  headlineSmall (text orderLine)
+  headlineSmall $ text orderLine
   button @"Order"
 </code></pre>
 
@@ -276,7 +276,7 @@ plainMargherita = { "Pizza": "Margherita" }
     <h3>src/MDC3.purs</h3>
 <pre><code class="language-haskell">module Order.MDC3 (order) where
 
-import Prelude ((#), ($), Unit)
+import Prelude ((#), ($), identity, Unit)
 
 import Effect (Effect)
 import Order (confirmedLine, orderLine, plainMargherita)
@@ -289,9 +289,9 @@ order :: Effect Unit
 order =
   body $ Semigroupoid.do
     filledTextField @"Pizza"
-    headlineSmall (text orderLine)
+    headlineSmall $ text orderLine
     button @"Order"
-    snackbar @"Order" confirmedLine
+    snackbar @"Order" confirmedLine identity
   # with @{ "Pizza" :: String } plainMargherita
 </code></pre>
 
@@ -313,7 +313,7 @@ order =
 
 <pre class="compiler">Error found:
 in module Order.MDC3
-<mark>at src/MDC3.purs:18:5 - 18:36 (line 18, column 5 - line 18, column 36)</mark>
+<mark>at src/MDC3.purs:18:5 - 18:45 (line 18, column 5 - line 18, column 45)</mark>
 
   Could not match type
 
@@ -327,7 +327,7 @@ in module Order.MDC3
 while trying to match type Variant t1
   with type { "Pizza" :: String
             }
-while checking that expression (snackbar) confirmedLine
+while checking that expression ((snackbar) confirmedLine) identity
   has type PUI Web
              { "Pizza" :: String
              }

@@ -238,11 +238,55 @@ submitOrder { "Identifier": { "Short ID": shortId, "Unique ID": orderId }, "Paym
       liftEffect $ log "submitted order"
       pure $ ."Order submitted" { "Short ID": shortId }
 
-submittedLine :: { "Short ID" :: String } -> String
-submittedLine { "Short ID": shortId } = "Order " <> shortId <> " submitted"
+submittedLine
+  :: { event :: { "Short ID" :: String }
+     , model :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+                , "Fulfillment" :: { "Address" :: String
+                                   , "Mode" :: [ "Delivery" :: {}
+                                               , "Dine in" :: {}
+                                               , "Takeaway" :: {}
+                                               ]
+                                   , "Table" :: String
+                                   , "Time" :: String
+                                   , distance :: [ estimated :: { km :: Int, to :: String }
+                                                 , unknown :: {}
+                                                 ]
+                                   }
+                , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+                , "Kitchen" :: { "Remarks" :: String }
+                , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ]
+                               , "Paid" :: String
+                               , "Total" :: String
+                               }
+                }
+     }
+  -> String
+submittedLine { event: { "Short ID": shortId } } = "Order " <> shortId <> " submitted"
 
-rejectionLine :: { "Short ID" :: String, reason :: String } -> String
-rejectionLine { "Short ID": shortId, reason } = "Order " <> shortId <> " rejected: " <> reason
+rejectionLine
+  :: { event :: { "Short ID" :: String, reason :: String }
+     , model :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+                , "Fulfillment" :: { "Address" :: String
+                                   , "Mode" :: [ "Delivery" :: {}
+                                               , "Dine in" :: {}
+                                               , "Takeaway" :: {}
+                                               ]
+                                   , "Table" :: String
+                                   , "Time" :: String
+                                   , distance :: [ estimated :: { km :: Int, to :: String }
+                                                 , unknown :: {}
+                                                 ]
+                                   }
+                , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+                , "Kitchen" :: { "Remarks" :: String }
+                , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ]
+                               , "Paid" :: String
+                               , "Total" :: String
+                               }
+                }
+     }
+  -> String
+rejectionLine { event: { "Short ID": shortId, reason } } = "Order " <> shortId <> " rejected: " <> reason
 
 printReceipt
   :: { "Customer" :: { "First name" :: String, "Last name" :: String }
@@ -263,5 +307,27 @@ printReceipt { "Identifier": { "Short ID": shortId, "Unique ID": orderId } } = d
   liftEffect $ log $ "printed receipt for order " <> orderId
   pure $ ."Receipt printed" { "Short ID": shortId }
 
-receiptLine :: { "Short ID" :: String } -> String
-receiptLine { "Short ID": shortId } = "Receipt for order " <> shortId <> " printed"
+receiptLine
+  :: { event :: { "Short ID" :: String }
+     , model :: { "Customer" :: { "First name" :: String, "Last name" :: String }
+                , "Fulfillment" :: { "Address" :: String
+                                   , "Mode" :: [ "Delivery" :: {}
+                                               , "Dine in" :: {}
+                                               , "Takeaway" :: {}
+                                               ]
+                                   , "Table" :: String
+                                   , "Time" :: String
+                                   , distance :: [ estimated :: { km :: Int, to :: String }
+                                                 , unknown :: {}
+                                                 ]
+                                   }
+                , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
+                , "Kitchen" :: { "Remarks" :: String }
+                , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ]
+                               , "Paid" :: String
+                               , "Total" :: String
+                               }
+                }
+     }
+  -> String
+receiptLine { event: { "Short ID": shortId } } = "Receipt for order " <> shortId <> " printed"

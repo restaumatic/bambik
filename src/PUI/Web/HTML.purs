@@ -85,7 +85,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
-import PUI (Ocular, PUI)
+import PUI (folding, Ocular, PUI)
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, textOf, separating, (:=), (:=>))
 
 -- UIs
@@ -230,15 +230,17 @@ progress f = wrap do
 -- | itself).
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the output is built — `output @"booked" bookedLine` — and
--- | let the event carry the bare facts.
+-- | the output is built — `output @"Flight booked" bookedLine kept` — and
+-- | let the event carry the bare facts. A `+→×` leaf like `fold @l f`, it
+-- | takes its fold of the payload after its copy.
 output
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
+  -> (a -> { | r })
   -> PUI Web [ | v ] { | r }
-output copy = outputFace copy # atCase @l
+output copy f = outputFace copy # atCase @l # folding @l f
 
 outputFace :: forall a r. (a -> String) -> PUI Web a { | r }
 outputFace copy = el "output" $ textOf copy

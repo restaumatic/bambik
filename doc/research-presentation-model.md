@@ -1,5 +1,7 @@
 # Research: the presentation model — verbatim displays
 
+**Status (2026-10-14).** Executed on 2026-08-31 and partially reversed two days later by doc/research-copy-is-a-function.md (guardrails L17, CHANGELOG 2026-08-31 and 2026-09-02): copy is a read function at the leaf (`text progressLine`), not a model field, so the Principle, the verbatim-display law, the `present<App>` normalizers, the seed placeholders and the `"Tip (€)" :: String` sketch no longer describe the library. What survives is the testability motivation — every copy function is a pure function of the view model module under `spago test` — and `settled`'s job as the home of invariants among edited fields, plus `provided`, `confirmed`, `observed`, `caseText` and `npm run check-view-model`. Of the words below, `projection` and `projected` are gone as planned, and so are `forProperty`, `forCases` and `forCase` (a status is label-indexed at its business case and takes its copy function, `snackbar @"booked" bookedLine`, CHANGELOG 2026-09-27 and 2026-10-13), `text @l` (a stored field is `textAt @l`), the `shown`/`shownWhen`/`shownEach` rungs (displays are stages `{ | r } → { | r }` releasing the row they show, the display and editor pane `inCase`/`inCaseAt`, CHANGELOG 2026-10-11 and 2026-10-13), `armed` and `subStrong` (a nested sub-record is `group @l`). The adopter grammar `for-`/`to-`/`at-`/`shown-` did not survive either: the single-label grid is `atField`/`toField`/`atCase`/`toCase`, and business functions are arguments of leaves, never adopters. The status row `[ event :: String ]` stays private to the vocabularies, as this note wanted.
+
 Status: **EXECUTED** (2026-08-31) — all 26 demo families migrated,
 `projection` deleted, `projected` demoted to vocabulary plumbing,
 `forCase` re-admitted as a derived word after a brief dissolution (see
@@ -87,10 +89,10 @@ function and one unit test.
 | Change | Rationale |
 | --- | --- |
 | `projection`, `projected` leave the application vocabulary | formatting is no longer a view-side act; `projected` may survive as library plumbing for the statuses' internal reads, or dissolve there too |
-| `forProperty` **stays** — the one read adopter | it is *selection*, not formatting: a verbatim field read from a context-pinned wider row (`foreach` item, `provided` pane payload) that `settled` cannot reach because the row is not the model's |
-| `forCase @l` dissolves into `forCases` — **revised same day**: restored as a *derived* word (`forCase @l f = forCases { l: f }` by law), and `forCases` now takes the record of per-case copy functions directly (elimination is the mechanism's own) | the dissolution made the dominant single-case sites (17 of 19) longer and broke the `@l` adopter grammar; the `applied = updated (const f)` precedent admits a derived convenience — and the record form removes `match` from the status story entirely |
+| `forProperty` **stays** — the one read adopter (since removed, see Status) | it is *selection*, not formatting: a verbatim field read from a context-pinned wider row (`foreach` item, `provided` pane payload) that `settled` cannot reach because the row is not the model's |
+| `forCase @l` dissolves into `forCases` (both since removed, see Status) — **revised same day**: restored as a *derived* word (`forCase @l f = forCases { l: f }` by law), and `forCases` now takes the record of per-case copy functions directly (elimination is the mechanism's own) | the dissolution made the dominant single-case sites (17 of 19) longer and broke the `@l` adopter grammar; the `applied = updated (const f)` precedent admits a derived convenience — and the record form removes `match` from the status story entirely |
 | the canonical `[ event :: String ]` row goes private | a status only ever appears behind its business classifier (`snackbar # forCases lineOf`); the last fixed display label stops being API |
-| `shownWhen` as a derivation of `provided` — **already holds** (since 2026-08-27, "Visibility is case adoption"): `shownWhen f content = recordToRecord (provided @l f content) identity` | one visibility primitive (`provided`), the display rung derived as the pane owned-merged with the wire; `inCase` is the honest primitive remainder — its content emits the *row*, which the owned merge's disjointness rejects, so it keeps a carrier body |
+| `shownWhen` as a derivation of `provided` (`shownWhen` since removed, see Status) — **already holds** (since 2026-08-27, "Visibility is case adoption"): `shownWhen f content = recordToRecord (provided @l f content) identity` | one visibility primitive (`provided`), the display rung derived as the pane owned-merged with the wire; `inCase` is the honest primitive remainder — its content emits the *row*, which the owned merge's disjointness rejects, so it keeps a carrier body |
 
 Context-row formatting is already logic-side by construction: it lands
 in the collection's **projection argument** (`foreach @l proj`,
@@ -99,11 +101,11 @@ only selects via `forProperty`.
 
 ## The resulting surface (data → user)
 
-- **Leaves**: `text @l`, the progress family, `ratingDisplay`,
+- **Leaves**: `text @l` (since `text f` / `textAt @l`, see Status), the progress family, `ratingDisplay`,
   `imagePane` — all verbatim.
 - **Adopters**: `forProperty` (select from a context row), `forCases`
-  (status + copy classifier). Nothing else.
-- **Rungs & visibility**: `shown` / `shownWhen` / `shownEach` /
+  (status + copy classifier). Nothing else. (Both since removed, see Status.)
+- **Rungs & visibility**: `shown` / `shownWhen` / `shownEach` (the `shown` family since removed, see Status) /
   `confirmed` / `observed`, `provided`.
 - **In logic**: formatters as `settled` bodies, `caseText` for label
   read-back, collection projections carrying item formatting.
@@ -152,7 +154,7 @@ function, one unit test, no browser.
   are derived fields like any other; see Principle. The residual
   question is only layout, not law: if order-form's flat sentence
   fields crowd the row, group them in a presentation sub-record nested
-  via `subStrong` — a readability refactor, not a retreat.
+  via `subStrong` (since removed; `group @l`, see Status) — a readability refactor, not a retreat.
 - Whether `forCases` fuses into the status leaves
   (`snackbar lineOf`) — rejected for now: adopter uniformity and the
   total grammar outweigh one saved `#`.

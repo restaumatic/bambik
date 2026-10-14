@@ -25,8 +25,6 @@ root defines is a general algebra:
   `(M, N)`-monoidal structure for `M, N ∈ {×, +}`; the units are borrowed
   from `Category` (`identity` at the unit object) wherever a wire fits, so
   every shape is a monoid on labelled rows.
-- **Row-granularity strengths and co-strengths**, the row forms of the optics
-  in `extras/lenses`.
 - **The container action** (`Data.Profunctor.Acting`), one `μ` past the rows —
   rows being the finitary, `μ`-free, label-strict fragment of the same
   container grammar.
@@ -38,12 +36,13 @@ that this layer does not depend on the one downstream of it.
 
 | Module | Holds |
 |---|---|
-| `Data.Profunctor.Row` | the shared floor: the row-constraint vocabulary, the split `splitVariant`, and every one-sided word — `atField`/`toField`, `atCase`/`toCase`, `with`, `settled` — so no shape module imports another |
+| `Data.Profunctor.Row` | the shared floor: the row-constraint vocabulary, the split `splitVariant` and `exactRow`, and every one-sided word — `atField`/`toField`, `atCase`/`toCase`, `settled` — so no shape module imports another |
 | `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, `focusField` |
 | `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase` |
 | `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `joined` |
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `unshown` |
-| `Data.Profunctor.Acting` | the container action `class Acting`/`actedBy` |
+| `Data.Profunctor.Acting` | the container action `class Acting`/`actedBy`, `acted @l`, `actedAt @l @t` |
+| `Data.Profunctor.Row.Structural` | structural `Eq`/`Ord` of plain values through `Foreign`, for options and keys no instance closes (holes) |
 
 ## What extraction would take
 
@@ -54,13 +53,13 @@ knowing before cutting a package:
    and the keyed reconciler live in `PUI`; DOM placement in `PUI.Web`. That
    split is already enforced (this root has no `PUI` import), so extraction is
    a move, not a disentangling.
-2. **Two dependencies come along**: `extras/profunctor` for the coined
-   strengths the row forms stand on, and `extras/lenses` for the optics they
-   are row-granularity forms of. Those are themselves upstream candidates, so
-   the honest packaging question is whether all three ship as one
-   `purescript-row-profunctor` package or as a small stack. (Each root here is
-   named after the upstream package it belongs to or would become, so the
-   directory names already carry the answer's shape.)
+2. **One dependency comes along**: `extras/lenses`, for `prismE` (the
+   existential `Prism` constructor `focusCase` stands on). `extras/profunctor`
+   is not imported here any more — the row layer has no row form of the
+   coined strengths or co-strengths — so the packaging question is whether
+   the two ship as one `purescript-row-profunctor` package or as a small
+   stack. (Each root here is named after the upstream package it belongs to
+   or would become, so the directory names already carry the answer's shape.)
 3. **The toolchain pins are milder than they look.** These modules import only
    the *standard* `Data.Variant` API (`inj`/`on`/`case_`/`expand`/`Contractable`)
    — no `Prim.Variant` reference anywhere — so the row layer itself is not
@@ -76,7 +75,7 @@ knowing before cutting a package:
    `extras/lenses` use no row sugar at all — positional `Tuple`/`Either`
    only — so they are fork-independent outright.)
 
-Meanwhile `src/` holds the carrier and its vocabularies — `PUI`, `PUI.Trace`,
+Meanwhile `src/` holds the carrier and its vocabularies — `PUI`, `PUI.Gate`,
 `PUI.Web`, `PUI.Web.*` — so the split already reads: **`src/` is the UI
 library, `extras/` is the general algebra it stands on.**
 

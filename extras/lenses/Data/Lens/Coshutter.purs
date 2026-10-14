@@ -2,7 +2,7 @@
 -- | `Data.Profunctor.Coresolving`'s `coresolve`, for the coined `× → +`
 -- | shape. Both the class and the optic are this library's. Its
 -- | strength-side sibling is `Data.Lens.Shutter`, and nothing here mentions
--- | a row: the row form is `Data.Profunctor.Row.RecordToVariant.folding`.
+-- | a row; it has no row form.
 -- |
 -- | Like the other coined optics: the existential constructor `coshutterE`
 -- | is **sound**, and completeness is **not claimed** — see

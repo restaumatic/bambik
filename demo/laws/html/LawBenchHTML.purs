@@ -32,7 +32,7 @@ lawBenchHTML = do
     , bench "button" "×→+" rows (button @"Go")
     , bench "clicked" "×→+" rows (clicked @"Go" @"n" (div (staticText "Go")))
     , bench "onClickedXY" "×→+" units (onClickedXY @"at" (div (staticText "canvas")))
-    , bench "output" "+→×" events (output @"event" identity)
+    , bench "output" "+→×" events (output @"event" identity (const {}))
     , bench "geolocated" "×→×" units (geolocated @"position")
     , bench "online" "×→×" units (online @"connection")
     , bench "clock" "×→×" units (clock @"time" { ms: 60000.0 })

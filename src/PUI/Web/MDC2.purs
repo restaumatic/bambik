@@ -129,14 +129,13 @@ import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
 import Data.Traversable (for)
 import Data.Variant (inj, match, prj) as Variant
-import Data.Profunctor (rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, anyOf, isHole, static)
+import PUI (anyOf, folding, isHole, Ocular, PUI, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, addClass, attribute, attrWith, cl, clazz, clicked, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
+import PUI.Web (witnessed, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, addClass, attribute, attrWith, cl, clazz, clicked, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1209,10 +1208,10 @@ simpleDialog confirmCaption title content = wrap do
           wrap do
             _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
             unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
-          div >>> cl "mdc-dialog__actions" $ (eventLeaf @"confirmed" $
+          div >>> cl "mdc-dialog__actions" $ witnessed $
             el "button" >>> "type" := "button" >>> "aria-label" := confirmCaption >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
               static (div >>> cl "mdc-button__ripple")
-              span >>> cl "mdc-button__label" $ staticText (confirmCaption)) # Profunctor.rmap (Variant.match { confirmed: identity })
+              span >>> cl "mdc-button__label" $ staticText confirmCaption
     _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
@@ -1222,16 +1221,20 @@ simpleDialog confirmCaption title content = wrap do
 -- | must acknowledge, use `banner` or a `dialog`.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar @"booked" bookedLine` —
+-- | the snackbar is built — `snackbar @"Flight booked" bookedLine kept` —
 -- | and let the event carry the bare facts. Mutually exclusive outcomes are
--- | sibling snackbars, one per business case.
+-- | sibling snackbars, one per business case. A snackbar is a `+→×` leaf
+-- | like `fold @l f`: after its copy it takes its fold of the payload —
+-- | `identity` for an outcome that is the model, `kept` for a joined
+-- | outcome that changes nothing, `(const x)` for a reset.
 snackbar
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
+  -> (a -> { | r })
   -> PUI Web [ | v ] { | r }
-snackbar copy = snackbarFace copy # atCase @l
+snackbar copy f = snackbarFace copy # atCase @l # folding @l f
 
 snackbarFace :: forall a r. (a -> String) -> PUI Web a { | r }
 snackbarFace copy = snackbarContainer $ textOf copy
@@ -1249,8 +1252,8 @@ snackbarContainer content =
 -- | The **banner**: a prominent message at the top of the content that
 -- | stays until the user dismisses it — for something they should actually
 -- | read (an outage, a required action), where a `snackbar` would slip past
--- | unnoticed. Like the snackbar, the wording lives here and the event
--- | carries the bare facts.
+-- | unnoticed. Like the snackbar, the wording lives here, the event
+-- | carries the bare facts, and the banner folds its payload.
 -- |
 -- | Material Design 2 only — MD3 dropped the banner, so `PUI.Web.MDC3` has
 -- | none.
@@ -1259,8 +1262,9 @@ banner
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
+  -> (a -> { | r })
   -> PUI Web [ | v ] { | r }
-banner copy = bannerFace copy # atCase @l
+banner copy f = bannerFace copy # atCase @l # folding @l f
 
 bannerFace :: forall a r. (a -> String) -> PUI Web a { | r }
 bannerFace copy = bannerContainer $ textOf copy

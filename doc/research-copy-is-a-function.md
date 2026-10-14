@@ -1,5 +1,7 @@
 # Research: copy is a function, not a field
 
+**Status (2026-10-14).** Decided and current as guardrails L17: `text` takes a read function and no label, copy functions live in the view model module and are unit-tested in `spago test`, `settled` keeps invariants among edited fields, and the `present<App>` normalizers, seed placeholders, `projection` and `forProperty` are gone as this note planned. Two details moved on since. The quantity displays no longer take `@l` beside their read function — a visible `@"…"` names a row label and nothing else, so it is `linearProgress elapsedFraction` / `progressBar f` with no accessible-name label (CHANGELOG 2026-10-07); and `text`'s type is `({ | r } -> String) -> PUI Web { | r } { | r }` rather than `p { | reads } {}`, because a display is a stage that releases the row it shows (CHANGELOG 2026-10-13) and reads it at the one row its stage is fed, with no `Union reads rest big` subsumption (L18). A field shown as it is stored is named `textAt @l`, never read through an accessor section (`_.title` is rejected by `npm run check-view-model` since 2026-10-10). The opening snippet is the old vocabulary throughout — `shown`, `every`, `updated`, `mvu`, `# settled presentTimer`, the `{}` options record — and the timer today reads `linearProgress elapsedFraction; body1 $ text progressLine; sliderLive @"Duration"; …; ticks @"Clock ticked" tickPeriod; …; fold @"Clock ticked" tick; … # looped @( … ) # with tenSecondFreshTimer`. `badge` is a Bootstrap ocular and `gauge` no library word (order-dashboard's own control).
+
 Status: DECIDED 2026-09-02. Partially reverses the *display* half of
 doc/research-presentation-model.md (2026-08-31), keeping its
 testability motivation and its `settled` half intact.
@@ -72,13 +74,13 @@ Two conclusions follow.
 **A display takes a read function. Full stop.**
 
 - A leaf whose content **is copy** (`text`) takes the read function and
-  no label: `text progressLineOf`, typed `p { | reads } {}` with the
+  no label: `text progressLineOf`, typed `p { | reads } {}` (since `p { | r } { | r }`, see Status) with the
   footprint stated by the function's own signature. The function is
   named at the point of use, so the read site answers *where is this
   computed* by itself.
 - A leaf that renders a **number** as a bar, gauge or stars takes the
   read function *and* keeps its label as the **accessible name**:
-  `progressBar @"Elapsed" elapsedFraction`. The label is copy there,
+  `progressBar @"Elapsed" elapsedFraction` (the label since dropped, see Status). The label is copy there,
   like an editor's caption — not a field reference.
 - Quantity **editors** are untouched: a slider genuinely edits a field,
   so `sliderLive @"Duration"` keeps label-as-field. The line is
@@ -116,11 +118,11 @@ presentation backbone.
 
 | Change | Why |
 | --- | --- |
-| `text :: ({ \| reads } -> String) -> PUI Web { \| row } {}` (subsuming, label-free) | copy is a function of the row |
-| `text @l` (label-indexed verbatim read) DELETED | ~85 of 109 sites were manufacturing a String for it; the remaining ~12 read `_.title`-style accessors, which say the same thing in the same space |
+| `text :: ({ \| reads } -> String) -> PUI Web { \| row } {}` (subsuming, label-free; since `{ \| r } { \| r }`, see Status) | copy is a function of the row |
+| `text @l` (label-indexed verbatim read) DELETED | ~85 of 109 sites were manufacturing a String for it; the remaining ~12 read `_.title`-style accessors (since forbidden; `textAt @l`, see Status), which say the same thing in the same space |
 | `forProperty` on `text` no longer needed | a context-pinned row is read by the function itself (`_.title`) |
 | quantity leaves (`progressBar`, `linearProgress`, `determinateLinearProgress`, `gauge`, `ratingDisplay`, `badge`) unchanged | label = field is honest there |
-| quantity leaves (`progressBar`/`linearProgress`/`progress`/`gauge`/`ratingDisplay`) take `@l` **plus** a read function | a fraction is derived; the label is the accessible name |
+| quantity leaves (`progressBar`/`linearProgress`/`progress`/`gauge`/`ratingDisplay`) take `@l` **plus** a read function (the `@l` since dropped, see Status) | a fraction is derived; the label is the accessible name |
 | `present<App>` disappears | every one of them existed to feed a display; `settled`'s remaining job is invariants among edited fields, and in the demos every surviving `# settled` sits on an editor |
 | seed placeholders for derived fields disappear | a derived line is not model state |
 

@@ -138,7 +138,7 @@ keep everything in one file, so each must be split:
   style to imitate is `Prism.purs`: a tutorial-shaped header with a worked
   example and the optic's **laws stated** (`Grate`'s one-liner-plus-citation
   is the floor, not the target). The co-Yoneda collapse narrative and
-  `Colens s t a b ≅ Lens b a t s` belong; bambik's row forms don't.
+  `Colens s t a b ≅ Lens b a t s` belong; bambik's row layer doesn't.
 - [ ] **Tests**: assert-based value-level tests appended to `test/Main.purs`.
   For `Colens`/`Coprism` this needs a lawful `Costrong`/`Cochoice` carrier to
   test against — `Re` over `(->)`-based optics, or the new internal carriers

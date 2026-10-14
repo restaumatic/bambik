@@ -1,12 +1,12 @@
 module Crud.MDC3 (crud) where
 
-import Prelude (Unit, (#), ($))
+import Prelude ((#), ($), identity, Unit)
 
 import Crud (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personUpdatedLine, pick, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, captured, fold, joined, looped, unshown)
+import PUI (action, atCase, capture, fold, joined, looped)
 import PUI.Web (text)
 import PUI.Web.MDC3 (body, button, filledTextField, indeterminateLinearProgress, listOf', snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,38 +15,38 @@ crud :: Effect Unit
 crud =
   body $ Semigroupoid.do
     indeterminateLinearProgress # action loadPeopleCatalogue
-    unshown @"People loaded" # captured
+    capture @"People loaded"
     ( Semigroupoid.do
       filledTextField @"Filter prefix (surname)"
       filledTextField @"Name"
       filledTextField @"Surname"
       RecordToVariant.do
-        listOf' @"Person picked" @"key"
+        ( listOf' @"Person picked" @"key"
           @( key :: Int
            , "Name" :: String
            , "Surname" :: String
            , status :: [ selected :: {}, unselected :: {} ]
-           ) { selected: isSelected } entries (text personLine) # joined @"Person picked"
+           ) { selected: isSelected } entries $ text personLine ) # joined
         button @"Create"
         button @"Update"
         button @"Delete"
       VariantToRecord.do
-        unshown @"Person picked" # fold pick
+        fold @"Person picked" pick
         ( Semigroupoid.do
           indeterminateLinearProgress # action createPerson
           VariantToRecord.do
-            snackbar @"Person created" personCreatedLine # captured
-            snackbar @"Person not created" personNotCreatedLine # captured ) # atCase @"Create"
+            snackbar @"Person created" personCreatedLine identity
+            snackbar @"Person not created" personNotCreatedLine identity ) # atCase @"Create"
         ( Semigroupoid.do
           indeterminateLinearProgress # action updatePerson
           VariantToRecord.do
-            snackbar @"Person updated" personUpdatedLine # captured
-            snackbar @"Person not updated" personNotUpdatedLine # captured ) # atCase @"Update"
+            snackbar @"Person updated" personUpdatedLine identity
+            snackbar @"Person not updated" personNotUpdatedLine identity ) # atCase @"Update"
         ( Semigroupoid.do
           indeterminateLinearProgress # action deletePerson
           VariantToRecord.do
-            snackbar @"Person deleted" personDeletedLine # captured
-            snackbar @"Person not deleted" personNotDeletedLine # captured ) # atCase @"Delete"
+            snackbar @"Person deleted" personDeletedLine identity
+            snackbar @"Person not deleted" personNotDeletedLine identity ) # atCase @"Delete"
     ) # looped
       @( "Filter prefix (surname)" :: String
        , "Name" :: String

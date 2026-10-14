@@ -24,12 +24,17 @@ action — hence the coinage, and hence `PUI m` instances but no `(->)`:
 `Data.Profunctor.Cont` is the root's one member that is **not** liftable: a
 carrier rather than a class, the CPS profunctor `Cont r a b = (b -> r) -> (a -> r)`
 whose header inventories which of the library's classes it validly inhabits
-and which it provably cannot. Those impossibilities are why the trace forms
-take seeds and why `looped` is a primitive.
+and which it provably cannot. Those impossibilities are why the seeded
+retractions take seeds and why `looped` is a primitive.
 
 The optics these classes generate live one root over, in
-[`extras/lenses`](../lenses/README.md). The row-granularity combinators built
-on them live in [`extras/row-profunctor`](../row-profunctor/README.md).
+[`extras/lenses`](../lenses/README.md). None of them has a row form in
+[`extras/row-profunctor`](../row-profunctor/README.md): a stage is typed at
+one row, and a loop's state is a model field, so the row layer reaches only
+`Lens` and `Prism` (`focusField`, `focusCase`). `PUI.debounced` is the one
+library word standing on `Resolving`/`Coresolving`; the rest are law-tested
+on the `PUI` and `Cont` carriers and exercised as business optics in
+test/BusinessOptics.purs.
 
 ## Building
 

@@ -11,8 +11,8 @@
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over `Category`: `unshown @l` (the faceless
--- |     leaf owning case `l`, what opens a fold whose occurrence nothing
--- |     needs to tell). The fold itself is `PUI`'s, an optic over its
+-- |     leaf owning case `l`, the status a silent fold opens with). The
+-- |     fold itself is `PUI`'s, an optic over its
 -- |     status. No strength or co-strength row form: a stage is typed at
 -- |     one row, so no word narrows it to a sub-variant with the other
 -- |     cases retained as a field, and an unfold's state is a model
@@ -120,11 +120,10 @@ discard first cont = bind first (\_ -> cont unit)
 
 -- | Case `l`, **unshown**: the faceless `+→×` leaf owning case `l` and
 -- | showing nothing of it — `blank` with a name — wherever the case came
--- | from, an emitter (`unshown @"Count" # fold increment`) or a `+→+`
--- | block. It opens a fold or a tick source whose occurrence nothing needs
--- | to tell (`unshown @"Clock ticked" # ticks tickPeriod`), or declares an
+-- | from, an emitter or a `+→+` block. It is the status `PUI`'s `fold @l f`
+-- | opens with (`fold @l f = unshown @l # folding @l f`), and it declares an
 -- | outcome case of an action that is only merged, never folded, where
--- | the merge needs the case named and there is no face to name it.
--- | `lcmap (const {}) identity`, like `blank`.
+-- | the merge needs the case named and there is no face to name it
+-- | (`unshown @l # action f`). `lcmap (const {}) identity`, like `blank`.
 unshown :: forall @l p a v. Cons l a () v => Profunctor p => Category p => p [ | v ] {}
 unshown = lcmap (const {}) identity

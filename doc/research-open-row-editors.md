@@ -1,5 +1,7 @@
 # Research: open-row editors and the joint merge
 
+**Status (2026-10-14).** What this note established still holds: an editor is a whole-row citizen lifted by the `Strong` field lens (now `focusField @l`, design-system plumbing not re-exported from `PUI`; the `field @l` named below is that word's earlier name), editors compose sequentially in `Semigroupoid.do` inside a loop and never as `×→×` merge operands, the bounded quantities of meeting-booker and circle-drawer sit in the model under `# settled seatsInRoom` / `# settled resizeSelected`, and the editor pane `inCase` is current (in `PUI.Web`, not `PUI.Web.HTML`). The joint merge did not survive its own postscript (`Joining`/`joint` removed, CHANGELOG 2026-08-27), so L4's "temporal responsibility" amendment is gone with it: the `×→×` merge is owned and gated, its shared record input one row every operand is fed whole. Of the words this note uses, these no longer exist: `completed`, `focusProperty`, `informed`, `applied`, `updated`, `every` (an event is `fold @l f` — or `reset @l x`/`capture @l` — in a `VariantToRecord.do` block, the handler a function of the payload, which carries the model by replay or `joined`), `told`, `shown`/`shownAs`/`shownAlways`/`shownWhen`/`shownEach` (displays are stages `{ | r } → { | r }` taking a read function, `text countLine`, a stored field named `textAt @l`; the pane is `inCase`/`inCaseAt` for displays and editors, `provided`/`providedAt` for emitters), `projection`/`projected`, `forProperty`, `mvu` (`looped @( … ) # with seed`), `bracketed`, `subChoice`, `feedback`, `Category.do`/`Pipeline.do` (`Semigroupoid.do`), the `required`/`optional` selector brackets (`…Unpicked @l @c` / `…Optional @l @c @n`), `text @l` (`textAt @l`) and the leaves' `{}` options record. A business function is now typed at the one closed row its stage is fed, its signature the view's hole hint verbatim (guardrails L18, CHANGELOG 2026-10-03), not an open-row footprint. CHANGELOG 2026-08-25 through 2026-10-14 dates each removal.
+
 **Merged into main. Developed on branch `research-open-row-editors` (off
 main after the gated-display merge); landed green in full — zero-warning
 build, tests, 102 bundles, the whole smoke suite including a new
@@ -92,7 +94,7 @@ at the cost of committing the vocabulary to it.
 The deferred fusion is done: the vocabulary is committed to the joint
 world, and `completed` is **deleted** (L14 subsumption).
 
-  * **`field @l` became the `Strong` field lens** (absorbing
+  * **`field @l` became the `Strong` field lens** (now `focusField @l`, see Status; absorbing
     `focusProperty`, also deleted — one name for one thing, and the demo
     word won). Every label-indexed editor was already `field @l`-lifted
     internally, so the whole leaf catalogue went open-row by signature
@@ -104,7 +106,8 @@ world, and `completed` is **deleted** (L14 subsumption).
     remain owned-merge operands where the `Maybe` is load-bearing
     (potluck's gather gate), and `required`/`optional` now *absorb* the
     completion — each adopts a closed selector as a whole-row citizen,
-    deriving the label from the closed rows exactly as before. Label
+    deriving the label from the closed rows exactly as before
+    (`required`/`optional` since removed, see Status). Label
     derivation is why the closed leaf shape must survive somewhere:
     `RowToList`'s fundep cannot read a label off an open row, which is
     also why `projected`-over-an-editor died (see the demo note below).
@@ -114,7 +117,7 @@ world, and `completed` is **deleted** (L14 subsumption).
     stages; parallel writers of one field use `joint`.
   * **The loop is now load-bearing for exactness** (the residual above,
     made policy): an editor's background is as fresh as its last feed,
-    so editor ensembles live inside `mvu`/`looped`/`bracketed`, and the
+    so editor ensembles live inside `mvu`/`looped`/`bracketed` (`mvu` and `bracketed` since removed, see Status), and the
     one loop-free flow (order-form) wraps its form window in `# looped`,
     fed by its load action — crud's shape, generalized.
   * **Demo sweep** (all under L15's full stack, green: zero-warning
@@ -164,8 +167,8 @@ setField)` with `setField` the **identity** (`setTable { "Table": t } =
 { "Table": t }`, `setReturn` likewise) — a pane pinning a whole-row
 editor down to its payload, then a retention `Ref`, a union and a
 do-nothing function rebuilding the completion its `field @l` lens would
-have done for free. The dissolution is `shownWhen`'s editor sibling,
-`inCase @l classifier`: a whole-row citizen whose *existence* is gated
+have done for free. The dissolution is `shownWhen`'s editor sibling
+(`shownWhen` since removed, see Status), `inCase @l classifier`: a whole-row citizen whose *existence* is gated
 on the case, derived as `joint (provided caseHolds w) identity` — the
 pane **`joint`** the wire, where `shownWhen` is the pane owned-merged
 with it (its content emits `{}`; an editor's emits the row, which the
@@ -340,7 +343,7 @@ them the lawful way. The five became `staticText`/`text` merges `# shown`
 @"balance" # projection euros ) # shown`), the five line functions left
 the logic modules, `told` reached zero sites and L14 pruned it; it was in
 any case `shown (text @l # projected line)` under a phantom label. The
-bottom rung is one word now: `shown`.
+bottom rung is one word now: `shown` (since removed, see Status).
 
 ## The occurrence stage (eighth step)
 
@@ -355,7 +358,7 @@ spelling; the payload position was load-bearing only as the pin of the
 emitter's input row — `updated (const f)`, the honest state-only shape,
 leaves a button's row ambiguous.
 
-**`applied`** is that pin given a name: `applied f = updated (const f)`
+**`applied`** (since removed, see Status) is that pin given a name: `applied f = updated (const f)`
 at the signature `({ | small } -> { | small }) -> PUI m { | small } [ | s ]
 -> PUI m { | big } { | big }`. The emitter is fed `f`'s footprint; its
 emissions are occurrences, their payload unread; `[ | s ]` keeps the
@@ -401,7 +404,7 @@ not to need it:
   "broadcast in, last writer wins" of the joint world, one stage at a
   time.
 * **`inCase`** was `joint (provided caseHolds w) identity`. It is now a
-  carrier primitive in `PUI.Web.HTML`, written directly over
+  carrier primitive in `PUI.Web.HTML` (since moved to `PUI.Web`), written directly over
   `attachable`: the pane's channel beside the wire's, over one input and
   one output — the same behaviour (row released always; two releases per
   feed while attached, idempotent under the loop), with no algebra

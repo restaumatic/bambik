@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, foreach, joined, looped, settled, unshown, with)
+import PUI (fold, foreach, joined, looped, settled, with)
 import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, (:=))
 import PUI.Web.MDC3 (body, button', cardActions, sliderLive)
 import PUI.Web.SVG (circle, svg)
@@ -27,14 +27,14 @@ circleDrawer =
                , y :: String
                , r :: String
                , status :: [ selected :: {}, unselected :: {} ]
-               ) canvasCircles ) ) ) # joined @"Canvas clicked"
+               ) canvasCircles ) ) ) # joined
       ( cardActions $ RecordToVariant.do
         button' @"Undo" { icon: "undo" }
         button' @"Redo" { icon: "redo" } )
     VariantToRecord.do
-      unshown @"Canvas clicked" # fold selectOrAddCircle
-      unshown @"Undo" # fold undo
-      unshown @"Redo" # fold redo
+      fold @"Canvas clicked" selectOrAddCircle
+      fold @"Undo" undo
+      fold @"Redo" redo
   # looped
     @( circles :: Array { x :: Number, y :: Number, r :: Number }
      , selected :: [ chosen :: { index :: Int }, none :: {} ]

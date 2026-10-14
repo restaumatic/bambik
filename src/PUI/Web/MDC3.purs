@@ -140,14 +140,13 @@ import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
 import Data.Traversable (for)
 import Data.Variant (inj, match, prj) as Variant
-import Data.Profunctor (rmap) as Profunctor
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI, anyOf, isHole)
+import PUI (anyOf, folding, isHole, Ocular, PUI)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, attribute, attrWith, autoDismiss, cl, clicked, clickedRow, clWhen, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, uniqueId, separating, (:=))
+import PUI.Web (Node, OptCaption(..), OptIcon(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, clicked, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectedAt, selectedOptionalAt, selectedUnpickedAt, selectorWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, uniqueId, witnessed, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1012,7 +1011,7 @@ simpleDialog confirmCaption title content =
     wrap do
       _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
       unwrap (div >>> "slot" := "content" $ content)
-    div >>> "slot" := "actions" $ (clickedRow @"confirmed" (el "md-text-button" $ staticText (confirmCaption))) # Profunctor.rmap (Variant.match { confirmed: identity })
+    div >>> "slot" := "actions" $ witnessed (el "md-text-button" $ staticText confirmCaption)
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just
@@ -1020,16 +1019,20 @@ simpleDialog confirmCaption title content =
 -- | something the user must acknowledge, use a `dialog`.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the snackbar is built — `snackbar @"brewed" brewedLine` — and
+-- | the snackbar is built — `snackbar @"Order placed" orderPlacedLine (const usualOrder)` — and
 -- | let the event carry the bare facts. Mutually exclusive outcomes are
--- | sibling snackbars, one per business case.
+-- | sibling snackbars, one per business case. A snackbar is a `+→×` leaf
+-- | like `fold @l f`: after its copy it takes its fold of the payload —
+-- | `identity` for an outcome that is the model, `kept` for a joined
+-- | outcome that changes nothing, `(const x)` for a reset.
 snackbar
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
+  -> (a -> { | r })
   -> PUI Web [ | v ] { | r }
-snackbar copy = snackbarFace copy # atCase @l
+snackbar copy f = snackbarFace copy # atCase @l # folding @l f
 
 snackbarFace :: forall a r. (a -> String) -> PUI Web a { | r }
 snackbarFace copy = wrap do

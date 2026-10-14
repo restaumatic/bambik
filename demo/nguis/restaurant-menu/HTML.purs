@@ -22,7 +22,7 @@ restaurantMenu =
       p >>> cl "tagline" $ staticText "Cucina componibile — a tasting menu, composed"
     hr $ div >>> cl "courses" $
       ( section >>> cl "course" $ Semigroupoid.do
-        h2 (text courseName)
+        h2 $ text courseName
         ul >>> cl "dishes" $
           ( li >>> cl "dish" $ Semigroupoid.do
             div >>> cl "dish-head" $ Semigroupoid.do
@@ -41,15 +41,15 @@ restaurantMenu =
                  , dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String }
                  ) menuCourses
     blockquote >>> cl "chef-note" $ Semigroupoid.do
-      p (staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page.")
+      p $ staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page."
       p >>> cl "attribution" $ staticText "— from the kitchen"
     footer >>> cl "menu-footer" $ Semigroupoid.do
       div >>> cl "info" $ Semigroupoid.do
-        h3 (staticText "Hours")
-        p (staticText "Tuesday – Sunday · 17:00 – 23:00")
+        h3 $ staticText "Hours"
+        p $ staticText "Tuesday – Sunday · 17:00 – 23:00"
       div >>> cl "info" $ Semigroupoid.do
-        h3 (staticText "Find us")
-        p (staticText "12 Category Lane · Kraków")
+        h3 $ staticText "Find us"
+        p $ staticText "12 Category Lane · Kraków"
       p >>> cl "colophon" $ Semigroupoid.do
         staticText "A static page composed from HTML oculars with "
         a >>> "href" := "https://github.com/restaumatic/bambik" >>> "target" := "_blank" $ staticText "Bambik"

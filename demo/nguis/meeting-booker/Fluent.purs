@@ -1,6 +1,6 @@
 module MeetingBooker.Fluent (meetingBooker) where
 
-import Prelude (Unit, ($), (#))
+import Prelude (($), (#), identity, Unit)
 
 import Effect (Effect)
 import MeetingBooker (blankBooking, bookRoom, bookedLine, plan, planLine, ratedRoom, roomStars, seatOccupancy, seatsInRoom, seatsTaken)
@@ -38,9 +38,9 @@ meetingBooker =
       caption1 $ staticText "Seats taken"
       progressBar seatOccupancy ) # inCase @"seated" @( seated :: {}, unseated :: {} ) seatsTaken
     ( card $ Semigroupoid.do
-      body1 (text planLine)
+      body1 $ text planLine
       button @"Book the room" ) # provided @"complete" @( complete :: {}, incomplete :: {} ) plan
     ( indeterminateLinearProgress # action
       @( "Room booked" :: { "Meeting title" :: String, "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ], "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ], "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Include a Teams link" :: Boolean, "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ] } )
       bookRoom ) # atCase @"Book the room"
-    messageBar @"Room booked" bookedLine
+    messageBar @"Room booked" bookedLine identity

@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import PUI (fold, looped, ticks, unshown, with)
+import PUI (fold, looped, ticks, with)
 import PUI.Web (text)
 import PUI.Web.MDC3 (body, bodyLarge, button', linearProgress, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,11 +18,11 @@ timer =
     bodyLarge $ text progressLine
     sliderLive @"Duration"
     RecordToVariant.do
-      unshown @"Clock ticked" # ticks tickPeriod
+      ticks @"Clock ticked" tickPeriod
       button' @"Reset" { icon: "replay" }
     VariantToRecord.do
-      unshown @"Clock ticked" # fold tick
-      unshown @"Reset" # fold restarted
+      fold @"Clock ticked" tick
+      fold @"Reset" restarted
   # looped
     @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
      , elapsed :: Number

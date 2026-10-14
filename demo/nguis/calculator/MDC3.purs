@@ -5,7 +5,7 @@ import Prelude (const, (#), ($), (<>), (>>>), Unit)
 import Calculator (blankTally, functionKeys, keyPad, operatorKeys, pressKey)
 import Data.Array (elem)
 import Effect (Effect)
-import PUI (anyOf, fold, joined, looped, unshown, with)
+import PUI (anyOf, fold, joined, looped, with)
 import PUI.Web (attrWith, clicked, inCaseAt, staticText, textAt, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body)
@@ -22,8 +22,8 @@ calculator =
           staticText "Error" # inCaseAt @"faulty" @"condition"
           textAt @"entry" # inCaseAt @"sound" @"condition"
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-        clicked @"Key entered" @"key" ( div >>> attrWith "style" keyFace $ textAt @"key" ) # anyOf @"key" @( key :: String ) (const keyPad) ) # joined @"Key entered"
-      unshown @"Key entered" # fold pressKey
+        ( clicked @"Key entered" @"key" $ div >>> attrWith "style" keyFace $ textAt @"key" ) # anyOf @"key" @( key :: String ) (const keyPad) ) # joined
+      fold @"Key entered" pressKey
     ) # looped
       @( total :: Number
        , operation :: [ pending :: { key :: String }, none :: {} ]

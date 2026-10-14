@@ -20,21 +20,31 @@ itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
 
 bookedLine
-  :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }
-     , returnBetween :: { back :: { d :: Int, m :: Int, y :: Int }
-                        , out :: { d :: Int, m :: Int, y :: Int }
-                        }
-     ]
+  :: { event :: [ oneWayOn :: { d :: Int, m :: Int, y :: Int }
+                , returnBetween :: { back :: { d :: Int, m :: Int, y :: Int }
+                                   , out :: { d :: Int, m :: Int, y :: Int }
+                                   }
+                ]
+     , model :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+                , "Return date (DD.MM.YYYY)" :: String
+                , "Start date (DD.MM.YYYY)" :: String
+                }
+     }
   -> String
-bookedLine itinerary = "You have booked: " <> summary itinerary
+bookedLine { event: itinerary } = "You have booked: " <> summary itinerary
 
 rejectedLine
-  :: [ returnBeforeStart :: {}
-     , unreadableReturn :: { input :: String }
-     , unreadableStart :: { input :: String }
-     ]
+  :: { event :: [ returnBeforeStart :: {}
+                , unreadableReturn :: { input :: String }
+                , unreadableStart :: { input :: String }
+                ]
+     , model :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+                , "Return date (DD.MM.YYYY)" :: String
+                , "Start date (DD.MM.YYYY)" :: String
+                }
+     }
   -> String
-rejectedLine problem = "Cannot book: " <> problemText problem
+rejectedLine { event: problem } = "Cannot book: " <> problemText problem
 
 returnBetween :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
 returnBetween { out, back } =

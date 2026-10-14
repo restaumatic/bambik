@@ -1,6 +1,6 @@
 module LoanCalculator.Bootstrap (loanCalculator) where
 
-import Prelude (Unit, ($), (#))
+import Prelude (($), (#), identity, Unit)
 
 import Effect (Effect)
 import LoanCalculator (appliedLine, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
@@ -29,11 +29,11 @@ loanCalculator =
        ) # with cityCarLoan
     card $ Semigroupoid.do
       listGroup $ Semigroupoid.do
-        listGroupItem (text monthlyLine)
-        listGroupItem (text rateLine)
-        listGroupItem (text totalInterestLine)
+        listGroupItem $ text monthlyLine
+        listGroupItem $ text rateLine
+        listGroupItem $ text totalInterestLine
       div $ Semigroupoid.do
         staticText "Interest share of total repayment"
         progress interestShare
     button @"Apply for this loan"
-    toast @"Apply for this loan" appliedLine
+    toast @"Apply for this loan" appliedLine identity

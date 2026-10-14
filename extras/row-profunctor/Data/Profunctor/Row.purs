@@ -116,9 +116,7 @@
 -- |     ()` initial): over the algebra that merge is a semigroup, and a
 -- |     carrier with *nothing* in it supplies the unit as its own
 -- |     structure — `PUI`'s silent component, `Cont`'s `mempty` — stated
--- |     and law-tested per carrier, named by no class (`Silencing`, a
--- |     one-method class with those two instances, lasted a day:
--- |     CHANGELOG, 2026-10-14).
+-- |     and law-tested per carrier, named by no class.
 -- |   * **retention** (over `Strong`, `×→×`'s strength used at `×→+`) —
 -- |     one shape only: the fed row carried out with each occurrence.
 -- |     `+→×` has no `Choice` mirror, because `left` would release an
@@ -127,35 +125,29 @@
 -- |
 -- | What is deliberately *not* here: the one-sided words
 -- | (`atField`/`toField`, `atCase`/`toCase`, `settled`), which are the
--- | floor's and appear under *The shared floor* below; the seed `with`,
--- | which no variant-input shape could mirror, there being no point at a
--- | variant input, and the whole-row knot `looped` — both `PUI`'s,
+-- | floor's and appear under *The shared floor* below; the seed `with`
+-- | (no variant-input shape could mirror it, there being no point at a
+-- | variant input) and the whole-row knot `looped`, both `PUI`'s —
 -- | carrier structure rather than row forms, for the reason the first
--- | table's `**` gives (they were the classes `Seeding` and `Looping`
--- | until 2026-10-14, CHANGELOG). And
--- | deliberately *not* here, on grounds of the row discipline rather
--- | than reach (CHANGELOG, 2026-10-14): the **row forms of the mixed
--- | strengths and of every co-strength**. `subResolving @w`/
--- | `subRetaining @w` (a sub-row focused, the rest escaping as a case or
--- | retained as a field) are a **narrowing** of a stage's input and a
--- | **widening** of its output — a stage is typed at one row, the row the
--- | view declares and its business function is typed at (guardrails
--- | L18), so they are coercions — and the library names no coercion,
--- | the two it needs being bare `lcmap (const {})` where a vocabulary
--- | places `{}`-input chrome and `rmap expand` where the `×→+` merge
--- | injects an operand's cases into its union (both one-liners, the
--- | named forms `atAnyRow`/`widenVariantOutput` dropped 2026-10-14); a
--- | sub-record a stage should see is the model's own
--- | nesting under `group @l`, a sub-variant a case a pane adopts.
--- | `feedback @l`, `cycled`, `folding @w @l` and `unfolding @w @l` (one
--- | hidden state each: a seeded field, a re-entering case, a fold's
--- | accumulator, an unfold's resume case) are **subsumed** by a model
--- | field under `looped` — state the app needs is a model field
--- | (guardrails L14), and every demo that once used one now declares it
--- | (auction's `top`, checkout's `step`, ticket-dispenser's `next`). The
--- | optics they encoded (`Shutter`/`Reel`, `Colens`/`Coprism`/
--- | `Coshutter`/`Coreel`) stay stated in extras/lenses at arbitrary
--- | `s t a b`, as business optics (test/BusinessOptics.purs).
+-- | table's `**` gives; and, on grounds of the row discipline rather
+-- | than reach, **every row form of a mixed strength or a co-strength**.
+-- | A sub-row focus (a sub-record focused with the rest escaping as a
+-- | case, or a sub-variant with the other cases retained as a field)
+-- | **narrows** a stage's input and **widens** its output, and a stage is
+-- | typed at one row, the row the view declares and its business function
+-- | is typed at (guardrails L18): a sub-record a stage should see is the
+-- | model's own nesting under `group @l`, a sub-variant a case a pane
+-- | adopts. The library names no coercion at all — the two it needs are
+-- | bare `lcmap (const {})` where a vocabulary places `{}`-input chrome
+-- | and `rmap expand` where the `×→+` merge injects an operand's cases
+-- | into its union. A per-shape knot (a hidden seeded field, a
+-- | re-entering case, a fold's accumulator, an unfold's resume case) is
+-- | **subsumed** by a model field under `looped` — state the app needs is
+-- | a model field (guardrails L14). Each of these had a word once and
+-- | each went on exactly those grounds (CHANGELOG, 2026-10-14, the
+-- | precedent); the optics they encoded (`Shutter`/`Reel`,
+-- | `Colens`/`Coprism`/`Coshutter`/`Coreel`) stay stated in extras/lenses
+-- | at arbitrary `s t a b`, as business optics (test/BusinessOptics.purs).
 -- |
 -- | Column by column. The **focus** threads a **background** past a
 -- | stage at one label: the single-label `Lens`/`Prism` (`focusField`,
@@ -166,17 +158,16 @@
 -- | can be declared (`w # looped @( … ) # with seed`, guardrails L18).
 -- | The one **unit** word, `unshown @l` (`lcmap (const {})
 -- | identity`), is the faceless leaf owning case `l` and showing nothing
--- | of it — what opens a fold whose occurrence nothing needs to tell; the
--- | fold itself is not here but an optic over its status in `PUI`
--- | (`unshown @l # fold f`), derived through the `×→×` merge.
+-- | of it — the status a silent fold opens with; the fold itself is not
+-- | here but an optic over its status in `PUI` (`folding f`, and
+-- | `fold @l f = unshown @l # folding @l f`), derived through the `×→×` merge.
 -- | **Retention** is `×→×`'s `Strong` at `×→+`: `first` around an
 -- | occurrence source, its state channel carrying the fed row out with
--- | each occurrence (`joined @l`, `{ event, model }`), followed by the
+-- | each occurrence (`joined`, `{ event, model }`), followed by the
 -- | grid's output half, `toCase @l` — the case introduced over the
 -- | retained row, never renamed from the source's. A click, whose
 -- | occurrence carries nothing, is `joined` with the `{}` event dropped
--- | (`PUI.Web.clicked`; the word `replaying @l f` that named it was a
--- | derivation and was deleted — CHANGELOG, 2026-10-14).
+-- | (`PUI.Web.clicked` writes that derivation itself; it needs no word).
 -- |
 -- | The pure shapes' two-sided words above and the floor's one-sided
 -- | halves together form one **single-label grid**, the same three words
@@ -201,8 +192,7 @@
 -- | the two `Profunctor` words per shape are generators. The fourth
 -- | way, both sides with no rest — a rename — is deliberately absent:
 -- | its one use is re-labelling a component built at a fixed label,
--- | which guardrails L3 forbids, so no application could reach it
--- | (CHANGELOG, 2026-10-14, where `asField`/`asCase` were deleted).
+-- | which guardrails L3 forbids, so no application could reach it.
 -- |
 -- | None takes a function: business functions are arguments of leaves,
 -- | never adopters — a display takes its **read function** (`text
@@ -255,8 +245,9 @@
 -- |     merge dispatches with (a case into the focus or the background).
 -- |   * **one-sided placements** — every word constraining a single side,
 -- |     so that no shape module needs another's: the closed-singleton
--- |     halves `atField`/`toField` and `atCase`/`toCase`, the knot's
--- |     closure `with` (over the point) and the normalization `settled`.
+-- |     halves `atField`/`toField` and `atCase`/`toCase`, and the
+-- |     normalization `settled`; the knot's closure `with`, over the
+-- |     point, is the carrier's (`PUI`).
 -- |
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.

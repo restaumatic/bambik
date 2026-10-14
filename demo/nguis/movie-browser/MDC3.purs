@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import MovieBrowser (favoritesLine, markFavorite, movieCatalogue, ratingLine, titleLine, visibleMovies, yearLine)
-import PUI (anyOf, fold, joined, looped, toCase, unshown, with)
+import PUI (anyOf, fold, joined, looped, toCase, with)
 import PUI.Web ((<+>), choice, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
@@ -22,16 +22,16 @@ movieBrowser =
     elevation1 $ titleMedium $ text favoritesLine
     list $
       ( listItem $ Semigroupoid.do
-        span (text titleLine)
-        span (text yearLine)
-        span (text ratingLine)
+        span $ text titleLine
+        span $ text yearLine
+        span $ text ratingLine
         iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # toCase @"Favorite changed" @{ title :: String, year :: Int, rating :: Number, "Favorite" :: Boolean } # anyOf @"title"
         @( title :: String
          , year :: Int
          , rating :: Number
          , "Favorite" :: Boolean
-         ) visibleMovies # joined @"Favorite changed"
-    unshown @"Favorite changed" # fold markFavorite
+         ) visibleMovies # joined
+    fold @"Favorite changed" markFavorite
   # looped
     @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]
      , "Classic" :: Boolean

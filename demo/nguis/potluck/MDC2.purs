@@ -12,14 +12,14 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 potluck :: Effect Unit
 potluck =
   body $ Semigroupoid.do
-    body2 (text guestCountLine)
+    body2 $ text guestCountLine
     group @"Guests" $ list $
       ( listItem $ Semigroupoid.do
-        subtitle1 (text guestName)
+        subtitle1 $ text guestName
         segmentedButtonUnpicked @"Dish" @"chosen"
           (choice @"Salad" <+> choice @"Lasagna" <+> choice @"Pavlova") ) # acted @"name"
-    headline6 (text menuLine) # inCase @"complete" @( complete :: {}, waiting :: {} ) menuState
-    body2 (text waitingLine) # inCase @"waiting" menuState
+    ( headline6 $ text menuLine ) # inCase @"complete" @( complete :: {}, waiting :: {} ) menuState
+    ( body2 $ text waitingLine ) # inCase @"waiting" menuState
   # with
     @{ "Guests" :: Array { name :: String, "Dish" :: [ chosen :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ], unchosen :: {} ] }
      }

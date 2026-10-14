@@ -29,8 +29,20 @@ reportLine { "Photo": photo, position, time } =
     , none: const ", no photo attached"
     } photo
 
-filedLine :: { reference :: Int } -> String
-filedLine { reference } = "Report #" <> show reference <> " filed."
+filedLine
+  :: { event :: { reference :: Int }
+     , model :: { "Photo" :: [ none :: {}
+                             , picked :: { mime :: String, name :: String, size :: Number }
+                             ]
+                , position :: [ denied :: {}
+                              , located :: { lat :: Number, lng :: Number }
+                              , unknown :: {}
+                              ]
+                , time :: { hours :: Int, minutes :: Int, seconds :: Int }
+                }
+     }
+  -> String
+filedLine { event: { reference } } = "Report #" <> show reference <> " filed."
 
 fileReport
   :: { "Photo" :: [ none :: {}, picked :: { mime :: String, name :: String, size :: Number } ]

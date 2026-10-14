@@ -3,84 +3,87 @@
 The boundary of an application is where the flow meets the world. This
 note names the citizens that live on that boundary, the laws that follow
 from which side of it can hold state, and the business reading of the
-types they carry. It consolidates what the no-silent-information-loss
-work (guardrails L13) made enforceable — and what the
-fulfillment-gated displays turned from contract into construction: a
-display is a stage whose **release is the witness**.
+types they carry. It states what guardrails L13 (no silent information
+loss) makes enforceable, and the construction behind it: a display is a
+stage whose **release is the witness**.
 
 ## Being read is always the business's concern
 
 A display exists because the business wants the user informed — there is
 no "display the business doesn't care about." And what it informs with is
-**vouched for verbatim**: a display shows its field as fed, never through
-a formatter, because the rows a pipeline operates over are a
-**presentation model** (guardrails L17,
-doc/research-presentation-model.md) — the copy the user reads is itself
-a model field the business logic wrote, so the assurance a display gives
-is assurance about a value the logic module can be unit-tested on.
-What varies between display
+**vouched for**: a display takes its read function at the leaf
+(`text balanceLine`), the function living in the view model module, because
+copy is a function, not a field (guardrails L17,
+doc/research-copy-is-a-function.md) — so the assurance a display gives is
+assurance about a value a pure function computes from the model, and that
+function is unit-tested in `spago test`. What varies between display
 components is not the concern but the **fulfillment policy**: *how* the
 component discharges the obligation that its content be read. Each policy
 either produces a **witness** — an event establishing that reading
-happened — or fulfills by trust. The type records exactly this and
+happened — or fulfills by trust. The release records exactly this and
 nothing more:
 
-> A `{}` output means **fulfilled without a witness** — assurance by
-> visibility or salience. An emission means **the witness itself**, and
-> the content-slot law (the gated displays' content slots and `observed`
-> accept only `{}`) makes a witness impossible to discard silently:
-> choosing a witnessing component is choosing to be unable to ignore its
-> answer. In the gated family the witness is the **release**: `confirmed`
-> withholds the flow until the user answers; a plain display decorates
-> its stage and never withholds (the zero-certainty case; until 2026-10-11
-> a `shown` rung); the pane renders on relevance and answers always.
+> A display is a stage, `{ | r } → { | r }`, that releases the row it was
+> fed. Releasing it **at once** is fulfillment **without a witness** —
+> assurance by visibility or salience. **Withholding** the release until
+> the user has answered makes the release **the witness itself**, and
+> since everything downstream waits on it, a witness is impossible to
+> discard silently: choosing a witnessing component is choosing to be
+> unable to ignore its answer. `confirmed` withholds the flow until the
+> user confirms; a plain display never withholds (the zero-certainty
+> case); the pane (`inCase`) renders on relevance and answers always. A
+> status, `[ | e ] → { | r }`, releases nothing — its reading is
+> unwitnessed by type, and `observed`, which forwards an event past its
+> status, accepts only a status whose output is `{}`, so a witness can
+> never be dropped there either.
 
 The vocabulary is an **assurance ladder**, and it matches Material's own
 interruption ranking (snackbar < banner < dialog):
 
 | Policy | Fulfillment | Witness | Citizens |
 | --- | --- | --- | --- |
-| ambient | stay visible, always current | none | `text`/`progress` (stages releasing the row they show since 2026-10-13; `prefixed` over a stage before, `shown` until 2026-10-11); the indeterminate progress, ambient over an **occurrence** input — a status showing between `action`'s `started` and `ended` |
+| ambient | stay visible, always current | none | `text`/`textAt`, the progress bars (stages releasing the row they show); the indeterminate progress, ambient over an **occurrence** input — a status showing between `action`'s `started` and `ended` |
 | salient-transient | interrupt attention, briefly | none | `snackbar`, `toast` |
 | persistent-until-acted | remain until superseded or dismissed | the dismiss | `banner`, `output` |
-| modal-witnessed | block everything until confirmed | the confirm | `dialog`, `simpleDialog` — open on feed, close on emission |
+| modal-witnessed | block everything until confirmed | the confirm | `confirmed` — the witness rung, the flow withheld until the user confirms; `dialog`, `simpleDialog` — open on feed, close on emission |
 
 Escalating assurance is a business decision made by **choosing the
 component**; routing by assurance is its composite form — cashbox is the
-worked example: outgoing money detours through confirmation dialogs (a
-witness demanded before money leaves), incoming money posts straight to
-the fold (ambient), and `subChoice` is the router. One rung is currently
-empty: **ambient-with-witness** — a display that fulfills by visibility
-but reports (via an `IntersectionObserver`-style sensor) that it was
-actually seen. Nothing occupies it; the ladder predicts it.
+worked example: outgoing money detours through a confirmation dialog (a
+witness demanded before money leaves), each such button's case owned by
+its `confirmed` in the fold block, while incoming money posts straight to
+its fold (ambient). One rung is currently empty: **ambient-with-witness** —
+a display that fulfills by visibility but reports (via an
+`IntersectionObserver`-style sensor) that it was actually seen. Nothing
+occupies it; the ladder predicts it.
 
 ## The boundary corners
 
-`{}` is the terminal record (one value, zero information) and the unit of
-the output-row union, which fixes both how displays compose and where the
-world's writes enter:
+`{}` is the terminal record (one value, zero information), which fixes
+both how displays compose and where the world's writes enter:
 
 | | entity (`×`) | event (`+`) |
 | --- | --- | --- |
-| **flow → world** (sink) | `p { \| r } {}` — displays | `p [ \| e ] {}` — statuses |
-| **world → flow** (source) | `p {} { \| r }` — seed, sensor | occurrences — emitters |
+| **flow → world** (sink) | `p { \| r } { \| r }` — displays, releasing what they show | `p [ \| e ] { \| r }` — statuses, releasing nothing |
+| **world → flow** (source) | `p {} { \| r }` — the seed; `p { \| r } { \| r1 }` — a platform source | occurrences — emitters |
 
-Two structural facts follow from terminality, both already load-bearing:
+Two structural facts follow from terminality, both load-bearing:
 
 - **A map to `1` cannot be a pipeline stage** (everything after it would
-  receive the unique `{}`), so a mid-pipeline display is integrated by
-  the merge's unit law — the display beside the wire,
-  `recordToRecord w identity`, which is what the gated displays' bodies
-  are (the standalone `tapped` combinator this construction once named is
-  deleted: the rungs carry it). Dually, a map from `1` ignores everything
-  before it, so sources sit at pipeline heads — which is what
-  `body :: PUI Web {} o` says about the app itself: an application
-  begins at `1` (`with` = source, then `looped`).
-- **Why the display-beside-the-wire is derived but `seeded` is primitive**: a display's `{}`
-  output is disjoint from every row, so it merges beside the wire for
-  free; a source's output row collides with the wire's own, so the
-  pass-through-plus-emission wire cannot be a merge and must be carrier
-  structure (`Seeding`).
+  receive the unique `{}`). A display is a stage only because it releases
+  its row (`displayWiring`: render, then echo the value); a status, which
+  is such a map once instantiated at `{}`, is integrated beside the wire by
+  the merge's unit law — `fold` is the status and the wire under the
+  `×→×` merge, `observed` the status and the wire under `×→+`. Dually, a
+  map from `1` ignores everything before it, so sources sit at pipeline
+  heads — which is what `body :: PUI Web {} o` says about the app itself:
+  an application begins at `1` (`with` = source, then `looped`).
+- **Why the status-beside-the-wire is derived but the point is primitive**:
+  a status's `{}` output is disjoint from every row, so it merges beside
+  the wire for free; a source's output row collides with the wire's own,
+  so the pass-through-plus-emission wire cannot be a merge and must be
+  carrier structure — `announce`, `PUI`'s point, from which the seeded
+  echo wire `seeded` is derived through `Choice`.
 
 ## Sources: the seed, generalized
 
@@ -90,10 +93,10 @@ current value can be *polled*:
 
 | Source | Who writes | When | Ontology | Form |
 | --- | --- | --- | --- | --- |
-| seed | the program | t = 0 | entity | `with`/`announce`, `Seeding` |
-| sensor | a machine | t > 0 | entity | `p {} { \| r }` — pollable, so a lawful record channel (clock, `matchMedia`, online/offline; not yet in the vocabulary) |
+| seed | the program | t = 0 | entity | `with`/`announce` (`PUI`) |
+| sensor | a machine | t > 0 | entity | `source @l now watch` (`PUI.Web`) and the facts over it — `clock`, `online`, `colorScheme`, `geolocated`, HTML's `filePicked`: pointed (the first value announced at registration), every feed answered with the last value known, each platform change an emission; a fact the platform may withhold is a variant with named cases, never a `Maybe` |
 | editor's write half | the user | t > 0 | entity draft | fused into editors; the focus guard arbitrates between the display half and the write half |
-| emitter | the user | t > 0 | event | `button`/`clicked` — **no seed possible**: events occur, they don't pre-exist (the `×→+` unit is silent) |
+| emitter | the user | t > 0 | event | `button`/`clicked` — **no seed possible**: events occur, they don't pre-exist (the `×→+` unit is the silent component) |
 | `action` result | an effect | t > 0 | either | the Aff adapter |
 
 The dividing law: **a record-channel source must answer "what is your
@@ -113,7 +116,8 @@ occurrence. The library encodes the commit in three forms:
   click delivers (`clicked`, the form-then-buttons compass walk);
 - **temporal** — quiescence: `Resolving` derives the branch from time
   (emissions loop while the component is still moving, the last resolves
-  at quiescence — `coresolve (resolve g) = debounced g`);
+  at quiescence — `coresolve (resolve g >>> seeded (Right c0)) ≈
+  debounced g`, the seeded retraction of observational-semantics.md §5);
 - **per-tick** — `sliderLive` against `slider`: the degenerate commit
   where every intermediate value is a legitimate fact.
 
@@ -127,9 +131,10 @@ only occurrences touch the model; this library chose otherwise, knowingly.
 ## The two laws
 
 > **Being read is always the business's concern; a display component is a
-> policy for fulfilling it.** The type records the policy's evidence:
-> `{}` for unwitnessed fulfillment, an emission for a witness — and the
-> tap law permits discarding only the unwitnessed.
+> policy for fulfilling it.** The release records the policy's evidence:
+> released at once for unwitnessed fulfillment, withheld until the witness
+> otherwise — and only the unwitnessed (a status, releasing nothing) may be
+> discarded.
 
 > **The user enters the model only as occurrences; editors prepare,
 > events commit** — explicitly, by quiescence, or per-tick — **and only

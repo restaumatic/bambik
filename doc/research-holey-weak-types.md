@@ -1,5 +1,7 @@
 # Holes against the real library: weakening the types (experiment)
 
+**Status (2026-10-14).** Round 3's result is the library's: every view compiles and runs against the real library with its view model module stubbed to `hole`s (guardrails L18, `npm run check-holes`), a shared record input is an equality (`SharedRecordInputs` over `TypeEquals`), selectors and keyed collections compare structurally (`Data.Profunctor.Row.Structural`, through `Foreign`), the carrier re-sets a collection element's key, and the words that consume a logic value treat a hole as absent. Round 2's open-row footprints (`countLine :: forall r. { count :: Int | r } -> String`) were superseded on 2026-10-03: a business function is typed at the one closed row its stage is fed, its signature the view's hole hint verbatim, checked by `npm run check-determined` (CHANGELOG 2026-10-03). `isHole` now lives in `PUI`; `Data.Profunctor.Seeding` no longer exists (CHANGELOG 2026-10-14). Of the words named here, these are gone: `applied`/`updated`/`every` (an event is `fold @l f`), `shown`/`shownWhen`/`shownEach` (the pane is `inCase`/`inCaseAt`), `replaying` (`joined`), `subChoice` (each action folded under its own `# atCase @l` block), `subStrong` (`group @l`), `feedback`/`folding`/`unfolding` (a looped state is a model field under `looped`), `edited` (`acted`/`actedAt`), `staticString` (`staticText "…"`), `toCase`'s projection argument (`toCase @l @a`) and the leaves' `{}` options record (`button @"Reset"`); `SharedVariantOutputs` still exists but since 2026-10-07 the `+→+` merge's output is one row every handler is typed at, the inclusive union remaining `×→+`'s. The six residual demos' fix — no editor as a merge operand, each action's outcomes named where the action is — is the rule today.
+
 *Branch `holey-weak-types`, 2026-09-30. Question: can guardrails L18 — every
 view runs with its logic modules stubbed to bare untyped `hole`s — hold
 against the **real** library, with no `.Holey` twin modules and no compiler
@@ -66,7 +68,7 @@ pass-through branch in the gate — which is a redesign, not a weakening.
    (`Data.Profunctor.Row.Structural`) — needed by real builds too, since a
    free projection like `_.cells` no longer infers its element type.
 7. **Runtime hole-awareness.** `hole` answers `true` to `__bambikHole`, read
-   by a pure `isHole` (`Data.Profunctor.Seeding`). `announce`, the
+   by a pure `isHole` (`Data.Profunctor.Seeding`; since moved to `PUI`, see Status). `announce`, the
    `folding`/`unfolding` seeds, `ticks`, the debounced text fields, `action`,
    `foreach` and `each` treat a hole as absent. This is needed even for a
    `{}` `body` feeds once (crud's and order-form's load actions; until
@@ -97,7 +99,8 @@ pass-through branch in the gate — which is a redesign, not a weakening.
 The free read rows of round 1 (steps 2, 3 and 6) were replaced by **one row
 per stage**: a read function's input is the row the stage is fed, and a
 business function states its footprint by **row polymorphism** instead of a
-closed row — `countLine :: forall r. { count :: Int | r } -> String`.
+closed row — `countLine :: forall r. { count :: Int | r } -> String`
+(since replaced by closed rows, see Status).
 Unification needs no `Union`, so a bare hole leaves nothing stuck, while a
 function reading a field the model lacks is a compile error again, reported
 at the view line (checked: `text wrongLine` over the counter model fails
@@ -115,7 +118,7 @@ What changed on top of round 1's merges, statics, row splits, structural
 comparison and runtime guards:
 
 - **The stages** read the row they are fed: `applied`/`updated`/`every`/
-  `settled` take `{ | big } -> { | big }`, the panes' classifiers and
+  `settled` (the first three since removed, see Status) take `{ | big } -> { | big }`, the panes' classifiers and
   `shownEach`'s projection read `{ | row }`, `foreach`'s projection reads its
   input, `tooltipWith` its content's row.
 - **The collections' items** are typed at the whole element row, key
@@ -174,7 +177,8 @@ hole guards, and the same six residual demos.
     (`# toCase @"created" identity`), and order-form's multi-outcome
     submit is followed by its own statuses, the two branches merged by
     `+→×`.
-- **Row splits restored.** `subChoice` is `main`'s, unchanged. `subStrong`
+- **Row splits restored.** (`subChoice`, `subStrong` and the three trace
+  forms below have all since been removed, see Status.) `subChoice` is `main`'s, unchanged. `subStrong`
   keeps only the forward `Union f b s` — the focus is closed, the
   background inferred and unable to overlap it — so an open model row
   (the logic still a hole) is no longer stuck. The trace forms take **one

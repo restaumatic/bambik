@@ -13,7 +13,7 @@
 -- |     classes; theirs is `Category`'s `identity`, and this one, which no
 -- |     wire reaches, is the carrier's silent component (`PUI`, `Cont`),
 -- |     named by no class.
--- |   * **free functions** — over `Strong`: `joined @l` (an event joined
+-- |   * **free functions** — over `Strong`: `joined` (every case joined
 -- |     with the row its emitter was fed — replay is this at the empty
 -- |     payload, `PUI.Web`'s click source dropping the `{}` event). No strength or co-strength row form: a
 -- |     stage is typed at one row, so no word narrows it to a sub-record
@@ -94,21 +94,23 @@ module Data.Profunctor.Row.RecordToVariant
   ( class RecordToVariant
   , recordToVariant
   , joined
+  , kept
+  , class JoinedCases
   , bind
   , discard
   )
   where
 
-import Control.Category (identity)
 import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Row (class SharedRecordInputs, class SharedVariantOutputs, toCase)
+import Data.Profunctor.Row (class SharedRecordInputs, class SharedVariantOutputs)
 import Data.Profunctor.Strong (class Strong, first)
-import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Data.Variant (case_, on)
+import Data.Variant.Internal (VariantRep(..))
+import Prim.RowList (class RowToList, RowList)
+import Prim.RowList (Cons, Nil) as RL
+import Unsafe.Coerce (unsafeCoerce)
 import Prim.Row (class Cons)
-import Type.Proxy (Proxy(..))
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant
@@ -137,24 +139,42 @@ discard
   -> p { | r } [ | v ]
 discard first cont = bind first (\_ -> cont unit)
 
--- | An event joined with the row its emitter was fed: the `×→+` stage's
--- | `Strong` retention, exposed. `first` around the source — the fed row
--- | rides the state channel and leaves beside each occurrence's payload as
--- | one record, `{ event, model }`, under the same case. So a list pick, a
--- | canvas click or a tick reaches the fold with the model in hand, and its
--- | handler is one function of one record (`listOf … # joined @"toggled"`,
--- | `unshown @"Todo toggled" # fold toggleTodo` with `toggleTodo ::
--- | { event :: Int, model :: { … } } -> { … }`, todo-list). A click is the
--- | degenerate case where the occurrence carries nothing of its own:
--- | `PUI.Web.clicked` is this word over its private click source with
--- | the `{}` event dropped and the case renamed — a derivation, so no
--- | word of its own (`Data.Profunctor.Row`, *Retention*).
+-- | **Every case joined with the row its emitter was fed** (`×→+`):
+-- | `first` around the source, the fed row riding the state channel and
+-- | leaving beside each occurrence's payload as one record, `{ event,
+-- | model }`, under the same case. So a list pick, a canvas click or an
+-- | action's outcome reaches the fold with the model in hand, and its
+-- | handler is one function of one record (`listOf … # joined`,
+-- | `fold @"Todo toggled" toggleTodo` with `toggleTodo ::
+-- | { event :: Int, model :: { … } } -> { … }`, todo-list); an outcome
+-- | whose fold keeps the model is `kept` (order-form's submit, joined with
+-- | its button and action). Every case of the source is joined, so a
+-- | two-outcome action needs no second word. A click is the degenerate
+-- | case where the occurrence carries nothing of its own: `PUI.Web.clicked`
+-- | is this with the `{}` event dropped and the case renamed — a
+-- | derivation, so no word of its own (`Data.Profunctor.Row`, *Retention*).
+class JoinedCases (rl :: RowList Type) (r :: Row Type) (v1 :: Row Type) | rl r -> v1
+
+instance JoinedCases RL.Nil r ()
+
+instance (JoinedCases rl r v2, Cons l { event :: a, model :: { | r } } v2 v1) => JoinedCases (RL.Cons l a rl) r v1
+
 joined
-  :: forall @l p r a v v1
+  :: forall p r v rl v1
    . Strong p
-  => IsSymbol l
-  => Cons l a () v
-  => Cons l { event :: a, model :: { | r } } () v1
+  => RowToList v rl
+  => JoinedCases rl r v1
   => p { | r } [ | v ]
   -> p { | r } [ | v1 ]
-joined src = toCase @l (dimap (\r -> Tuple r r) (\(Tuple e r) -> { event: on (Proxy @l) identity case_ e, model: r }) (first src))
+joined src = dimap (\r -> Tuple r r) (\(Tuple e r) -> withModel r e) (first src)
+  where
+  withModel :: { | r } -> [ | v ] -> [ | v1 ]
+  withModel r e = case (unsafeCoerce e :: VariantRep _) of
+    VariantRep rep -> unsafeCoerce (VariantRep { type: rep.type, value: { event: rep.value, model: r } })
+
+-- | The fold that **keeps the model** a joined event arrived with:
+-- | `kept = _.model`. For an outcome that is told and changes nothing —
+-- | `snackbar @"Order submitted" submittedLine kept` (order-form), the
+-- | action joined with its button so the model is in hand.
+kept :: forall a r. { event :: a, model :: { | r } } -> { | r }
+kept = _.model

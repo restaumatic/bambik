@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
 import Parcel (draftParcel, parcelLine)
-import PUI (PUI, looped, with)
+import PUI (looped, PUI, with)
 import PUI.Web.MDC3 (body, bodyLarge, filledTextField, group)
 import PUI.Web (Web, text)
 import QualifiedDo.Semigroupoid as Semigroupoid

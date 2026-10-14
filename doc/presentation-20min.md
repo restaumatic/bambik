@@ -10,6 +10,10 @@ theme: default
 
 Eryk Ciepiela
 
+<!--
+Status (2026-10-14). The talk's thesis holds — profunctors unify optics and arrows, the carrier is `StateT DOM Effect`, business and design are orthogonal optics, and `type Ocular p = forall a b. Optic p a b a b` on the "orthogonal optics" slide is verbatim the library's (src/PUI.purs) — but every code snippet is an earlier vocabulary and is stale against demo/7guis and demo/nguis. The core type is `PUI m i o` with bare `i`/`o` channels (no `New` wrapper, no `UI` name); its instances are `Profunctor`/`Strong`/`Choice`/`Semigroupoid`/`Category` plus the four row merges, so `Endo`/`Sum`/`Zero` with `pendo`/`psum`/`pzero` and the `Endo.do`/`Sum.do` blocks do not exist — their work is `Semigroupoid.do` for flow and `RecordToRecord.do`/`RecordToVariant.do`/`VariantToVariant.do`/`VariantToRecord.do` for the row merges. The leaves are label-indexed: `textInput`, `filledTextField { floatingLabel: "Name" }`, `containedButton { label: "Submit" }`, `snackbar $ staticText "…"`, `simpleDialog { title }` and `text :: UI Web String a` are today `input @"Name" "text"` / `filledTextField @"Name"`, `button @"Submit"`, `snackbar @"Order submitted" copyLine`, `simpleDialog title content`, `text copyFunction`; `staticHTML "<hr/>"` is `hr`; `indeterminateLinearProgress` is a status `[ started, ended ] → { | r }`; `card` and MDC2's `caption` survive as oculars. The `Lens`/`Prism` business optics over nominal `Order`/`Person`/`AuthorizedOrder` are row words over structural models (`focusField @l` inside the vocabularies, `group @l` for a sub-record, `inCase`/`provided` for a case), nominal model types being forbidden in application code (writing.md). Stale snippets: "`UI` is the generic basic building block", "`Endo`, `Sum` and `Zero`", "`UI Web` is the basic building block", "Plain HTML is possible" (today `body $ staticText "Hello, World!"`, demo/nguis/hello-world/HTML.purs), "Material Design Components are possible", "Data structures are enabled by `Endo.do`", "Data flows are enabled by `Semigroupoid.do` and `Sum.do`", the `module Business`/`MDC`/`UI` slide, and the "Building complex UI" bullet list (`Endo.do`, `Sum.do`); the order-form file linked there is now demo/nguis/order-form/MDC2.purs. CHANGELOG.md dates each change.
+-->
+
 ---
 # Profunctors
 
@@ -392,7 +396,7 @@ It involves only:
   * composition of building blocks with `Endo.do`, `Sum.do`, `Semigroupoid.do` blocks
   * `>>>`, `static`, `$`, `(` and `)`
 
-as in this [MDC form example](http://erykciepiela.xyz/bambik/demo/nguis/order-form/?mdc2) ([code](https://github.com/restaumatic/bambik/blob/main/demo/nguis/order-form/OrderFormMDC2.purs)).
+as in this [MDC form example](http://erykciepiela.xyz/bambik/demo/nguis/order-form/?mdc2) ([code](https://github.com/restaumatic/bambik/blob/main/demo/nguis/order-form/MDC2.purs)).
 
 ---
 # Profunctors are suitable for UIs

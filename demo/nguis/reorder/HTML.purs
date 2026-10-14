@@ -5,7 +5,7 @@ import Prelude ((#), ($), (>>>), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (actedAt, action, atCase, captured, looped, static, unshown, with)
+import PUI (actedAt, action, atCase, capture, looped, static, with)
 import PUI.Web (el, staticText, textAt, (:=))
 import PUI.Web.HTML (body, button, dd, div, dl, dt, h3, indeterminateLinearProgress, input, label)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -29,8 +29,8 @@ reorder =
     VariantToRecord.do
       ( Semigroupoid.do
         indeterminateLinearProgress # action rotateAction
-        unshown @"Setlist rotated" # captured ) # atCase @"Rotate"
+        capture @"Setlist rotated" ) # atCase @"Rotate"
       ( Semigroupoid.do
         indeterminateLinearProgress # action shuffleAction
-        unshown @"Setlist shuffled" # captured ) # atCase @"Shuffle"
+        capture @"Setlist shuffled" ) # atCase @"Shuffle"
   # looped @( "Setlist" :: Array { id :: String, "Title" :: String } ) # with openingSetlist

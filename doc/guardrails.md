@@ -68,20 +68,19 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `μ`) or wrongly conceived.
 - Every component MUST be a citizen of exactly one shape, and its
   row MUST speak the **business label**, stated once as the leaf's own
-  type argument (`text @"Total"`, `filledTextField @"First name"`,
-  `button @"Submit order"`, `select @"Milk" cfg opts`). No canonical
+  type argument (`textAt @"Total"`, `filledTextField @"First name"`,
+  `button @"Submit order"`, `select @"Milk" opts`). No canonical
   label (`value`/`clicked`/`event`) appears in application code: business
   functions are arguments of leaves, never adopters — a display takes its
   read function, a status its business case and copy function
-  (`snackbar @"booked" bookedLine`), and an emitter emits its own case
-  (the adopters `toCases`/`forCases`/`forCase` are deleted — a status
-  is its face over the copy function, adopted `# atCase @l`; the
-  structural adopters `atField`/`atCase`, `toField`/`toCase` take no
-  function, and the rename `asField`/`asCase` is deleted, 2026-10-14 —
-  its one use, re-labelling a component built at a fixed label, is what
-  this guardrail forbids; the view-side
-  read adopters `projection`/`projected` went earlier,
-  doc/research-presentation-model.md). Nor do the vocabulary's own row **field**
+  (`snackbar @"booked" bookedLine`; inside the vocabulary, the face over
+  the copy function is adopted `# atCase @l`), and an emitter emits its
+  own case. The structural adopters `atField`/`atCase`, `toField`/`toCase`
+  take no function, and there is no rename adopter: re-labelling a
+  component built at a fixed internal label is exactly what this
+  guardrail forbids, which is why `asField`/`asCase` went (CHANGELOG,
+  2026-10-14), as the view-side read adopters had before
+  (doc/research-presentation-model.md). Nor do the vocabulary's own row **field**
   names: a leaf reading structured data MUST NOT make the application
   name its rows `src`/`label`/`event` — it takes a read function, and
   the view model module translates at the boundary (`imagePane developedShot`,
@@ -99,7 +98,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   | --- | --- | --- |
   | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`foreach`, `actedAt`), sources (`geolocated`, `clock`, `filePicked` — pointed, owning one field), stages |
   | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided`, the emitting list `anyOf` |
-  | `PUI Web [ \| a ] { \| b }` | `+→×` | statuses (`snackbar`, `toast`, `textOf`) and the folds they open, `snackbar @l line # fold f` |
+  | `PUI Web [ \| a ] { \| b }` | `+→×` | the folds (`fold @l f`, `reset @l x`, `capture @l`) and the statuses, each a fold with a face (`snackbar @l line f`); the action slot (`indeterminateLinearProgress`) owns `started`/`ended` only, so a status is never the slot |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
 
   A closed row (`{}`, `[ event :: String ]`) is a row. A word that
@@ -107,9 +106,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   silence is `×→+`'s answer) and `inCase` for displays and editors (the
   wire while detached); a list is `foreach` for displays and `anyOf` for
   emitters. A display is `×→×` like an editor: it releases the row it
-  shows (2026-10-13; its output was `{}` before, which made every
-  display line a decorator of its neighbour — `prefixed`/`suffixed` —
-  and the display pane a word of its own).
+  shows (a `{}` output made every display line a decorator of its
+  neighbour and the display pane a word of its own; CHANGELOG,
+  2026-10-13).
   A selector is one word because it is one shape: the widget stores
   the option it shows, so it is an editor (`×→×`, every feed answered
   with the row) — a split into a `×→+` picker plus a completing stage
@@ -124,15 +123,14 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   behaviour, which is exactly why they are two words: a name says what
   the component does, not only what it stores. Lifted by
   `PUI.Web.selectedAt`/`selectedUnpickedAt`/`selectedOptionalAt`; a
-  pick's echo is the pick. (A selection-prism argument,
-  `required`/`optional @c`, preceded the words the same day.)
+  pick's echo is the pick.
   **Decorators** are outside the rule, as oculars (`Ocular (PUI Web)`)
   are: `clWhen`/`attrWith` read the row (`{ | i }`) to style the element
   just built and keep whatever shape they decorate, an emitter's or an
   editor's alike. A bare `i`/`a`/`Maybe a` side on an exported word is a
-  violation, whether a scalar leaf left public (HTML's `radioButton`,
-  deleted) or a combinator reading a bare value (`dynamic`,
-  now fed the row). The type cannot enforce this — `forall i o` compiles —
+  violation, whether a scalar leaf left public (HTML's scalar
+  `radioButton`, CHANGELOG 2026-09-23) or a combinator reading a bare
+  value (`dynamic`, since fed the row). The type cannot enforce this — `forall i o` compiles —
   so it is a review rule: a new or changed signature MUST be read against
   this table before it is accepted.
 - A **label is the copy it draws**: a captioned leaf's caption defaults
@@ -150,8 +148,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the label carries the copy whole — punctuation, format hints and units
   included (`@"Start date (DD.MM.YYYY)"`, `@"Amount (€)"`). A leaf takes
   no options record unless one is genuinely needed; a word with optional
-  presentation has a primed sibling (`button'`, `listOf'`,
-  2026-10-13), so no call site writes `{}`. A selector's **options** are its ordered case labels
+  presentation has a primed sibling (`button'`, `listOf'`), so no call
+  site writes `{}`. A selector's **options** are its ordered case labels
   (`choice @l` per option), never a hand-written `{ value, label }` array;
   the order MUST be the order written, never the variant row's, which the
   compiler sorts alphabetically.
@@ -184,10 +182,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
   swap. Precedents: the statuses (`snackbar @"booked"
-  bookedLine`, replacing a per-case copy record), `confirmed @"Refund"
-  title` and `simpleDialog`, and the one-field ocular configs made
-  positional (`tooltip`, `dialog`, `topAppBar`, `menu`, `imageList`,
-  `layoutCell`, `badge`, `checkbox`'s ticked payload). The vocabulary MUST
+  bookedLine`, replacing a per-case copy record), `confirmed "Refund"
+  "Refund the customer?"` and `simpleDialog`, and the one-field ocular
+  configs made positional (`tooltip`, `dialog`, `topAppBar`, `menu`,
+  `imageList`, `layoutCell`, `badge`). The vocabulary MUST
   keep every line's anchor expressible and singular: an ocular MUST NOT
   take a label (no model interface, nothing to anchor) nor copy that has a
   place in its content (a card's heading is typography in its content) —
@@ -195,7 +193,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   a String value when it is static (`tooltip "…"`, `dialog "…"`,
   `topAppBar "…"` — the static's own text, not an anchor) and a copy
   function when it is formatted or read from data; a tooltip's text is
-  always static (2026-10-13); a display MUST NOT carry a label except as
+  always static; a display MUST NOT carry a label except as
   an accessible name (L17); and no mechanism may leave a line's meaning in
   an anonymous position. The stronger rule — *every line a field*, oculars
   included — was considered and rejected: a label on an
@@ -256,14 +254,16 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   a contribution of zero fields as no contribution (L6). The one unit no
   wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
   maps terminal→initial), and it is the carrier's silent component
-  (parametricity, not policy) — not the merge's method and not a class's
-  (`Silencing` lasted a day, 2026-10-14): the algebra names no unit but
-  `Category`'s `identity`, so no merge class carries a unit,
-  and what an event source removed by `provided` observationally *is*;
-  its variant-only output type is the honesty boundary: silent at an
-  inhabited record output is a starved gate, which the record-side panes
-  avoid by releasing the row. It is NOT an operand `provided` is built
-  from: copairing with silence routes the input but leaves the source's
+  (parametricity, not policy), stated and law-tested per carrier —
+  `PUI`'s private `silent`, `Cont`'s `mempty` — and named by no class:
+  the algebra names no unit but `Category`'s `identity`, so no merge
+  class carries a unit and no word names silence (a `Silencing` class
+  was tried and withdrawn, CHANGELOG 2026-10-14). It is what an event
+  source removed by `provided` observationally *is*; its variant-only
+  output type is the honesty boundary: silent at an inhabited record
+  output is a starved gate, which the record-side panes avoid by
+  releasing the row. It is NOT an operand `provided` is built from:
+  copairing with silence routes the input but leaves the source's
   emission channel connected (verified on the probe carrier), so absence
   is `Hosting`'s and `provided` stays a carrier primitive (deleted and
   restored on that argument; CHANGELOG, 2026-09-11). Pointing — one emission at registration — is
@@ -324,11 +324,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   literal; a point has answered already and by Repetition at `{}` answers
   no further). The knot MUST be closed by its seed as an
   argument the caller cannot omit (`with`, after `looped @( … )`): a
-  model into the record junction (the field-level seeded forms are gone,
-  a looped state being a model field, and the knot is exactly one,
-  `looped`: a variant knot was a second way of writing the same loop whose model no line of the view
-  could declare, so a loop is cut at its record junction and an event
-  re-enters through its fold). The point's *value* is row-forced (`announce a ≈
+  model into the record junction. The knot is exactly one, `looped`,
+  and a looped state is a model field: a loop is cut at its record
+  junction and an event re-enters through its fold, because a variant
+  knot or a per-shape knot over a hidden field was a second way of
+  writing the same loop whose model no line of the view could declare
+  (CHANGELOG, 2026-10-06 and 2026-10-14). The point's *value* is row-forced (`announce a ≈
   lcmap (const a) identity`, `PUI`'s `announce`); what the carrier
   adds is its *earliness*, the one moment a stateful carrier has and a
   timeless one lacks — so a proposal to derive `announce` from the wire is
@@ -432,44 +433,59 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   array and `clicked`'s content (a face, not a form). An editor placed
   in either is a mistake the type cannot catch, so `npm run
   check-view-model` rejects an editor word inside a `foreach` element
-  or a `clicked` face in any demo view (2026-10-13; until then displays
-  output `{}` and every discarding slot demanded it in its type).
-  Nothing discards deliberately either: `muted`, the counit, is DELETED
-  (2026-10-13) — a chain whose output is not the model ends the block
-  (departures' `dispatched` stream, fed by the `clock` source). Information
-  is never lost.
+  or a `clicked` face in any demo view. Nothing discards deliberately
+  either: there is no counit — a chain whose output is not the model
+  ends the block (departures' `dispatched` stream, fed by the `clock`
+  source); `muted` went with the last slot that demanded `{}`
+  (CHANGELOG, 2026-10-13). Information is never lost.
 
 ### L14. The library stays small by rule, not by accident.
 
 - **Demo-reachability:** every export is reached by a demo or a law
   test; what nothing reaches gets pruned (the pruned combinators live on
-  in the design notes, where the algebra needs their names).
-- **Subsumption:** when a new form makes an old one derivable, the old
-  one is deleted, not deprecated alongside (`synced`/`latch`,
-  `Sequencing`, `labeled`, `constantly`, `forField`, `forCase`,
-  `humanizeLabel`, and on 2026-10-11 `bracketed`, `updated`/`applied`/
-  `every`, `edited`/`editedAt` and `subStrong` — all gone). Convergence
-  is the health metric: a design is right when the algebra starts
-  subsuming its own features. `humanizeLabel` is the sharpest case: once
-  a label *is* the copy it draws, deriving copy from an identifier has
-  nothing left to do.
+  in the design notes, where the algebra needs their names). A
+  vocabulary word a demo may yet reach — a catalogue entry carrying its
+  laws — is unreached, not unreachable, and stays.
+- **Three grounds delete a word**, each stated when it is used:
+  - **Subsumption:** when a new form makes an old one derivable, the
+    old one is deleted, not deprecated alongside (`synced`/`latch` into
+    `looped`, `Sequencing` into `Acting`, `labeled`, `constantly`,
+    `humanizeLabel`; the hidden-state words of CHANGELOG 2026-10-11; the
+    per-shape knots and traces, each keeping a state a model field
+    under `looped` declares, CHANGELOG 2026-10-14). Convergence is the
+    health metric: a design is right when the algebra starts subsuming
+    its own features. `humanizeLabel` is the sharpest case: once a
+    label *is* the copy it draws, deriving copy from an identifier has
+    nothing left to do.
+  - **Narrowing and widening:** a word whose job is to shrink a stage's
+    input to a sub-row or grow its output by the leftover is a
+    coercion, never vocabulary, since a stage is typed at one row (L18):
+    it is inlined where the library needs it (`lcmap (const {})`, `rmap
+    expand`) and no demo writes it (the sub-row strengths and the
+    floor's coercion words, CHANGELOG 2026-10-14). The model-side idioms
+    are `group @l` for a nested sub-record and a pane for a case.
+  - **Unreachable by design:** a word whose only use another guardrail
+    forbids is deleted even though it is lawful — a rename of a fixed
+    internal label (L3), an action on a `Maybe` field (the view-model
+    rule) — and the reachability clause's exception for catalogue words
+    does not apply (CHANGELOG, 2026-10-14).
 - **State the app needs is a model field; an event folds in the app's
   loop.** A word MUST NOT keep application state the model does not
-  declare, nor fold events into a row beside the loop's `fold`
-  (2026-10-11). So a choice whose cases carry fields is a selector field
-  with those fields beside it, each edited in its case (order-form's
-  Fulfillment, once `bracketed`, which kept the other cases' payloads
-  out of the model and lost them on every re-broadcast); an event folds
-  through `fold` in the app's loop, `joined` with the model its outcome
-  lands on when its effect takes time (order-form's estimate, once
-  `updated` in place); a keyed collection of editors is `acted`, the
-  container action (reorder, once `edited`); and a reusable sub-form
-  edits a sub-record under `group @l` (parcel, once `subStrong`).
+  declare, nor fold events into a row beside the loop's `fold`. So a
+  choice whose cases carry fields is a selector field with those fields
+  beside it, each edited in its case (order-form's Fulfillment); an
+  event folds through `fold` in the app's loop, `joined` with the model
+  its outcome lands on when its effect takes time (order-form's
+  estimate); a keyed collection of editors is `acted`, the container
+  action (reorder); and a reusable sub-form edits a sub-record under
+  `group @l` (parcel). Each of these once had a word that kept the state
+  or folded beside the loop, and lost edits or payloads on a
+  re-broadcast (CHANGELOG, 2026-10-11).
 - **Scope:** bambik owns model↔UI wiring and its algebra. It MUST NOT
   grow a router, an animation system, a theme engine, a CSS-in-PS
   layer, a state-management add-on, or an HTTP client. Styling is
   ordinary CSS plus the design-system vocabularies; effects enter
-  through the carrier (`action`/`affAdapter`) and stay at the edge.
+  through the carrier (`action`) and stay at the edge.
   Anything in this list that ever seems needed must first be shown to
   be a corollary of the algebra — the collection standard applies.
 
@@ -514,10 +530,16 @@ The codebase is three floors, each greppable:
   target `import Data.Profunctor (`/`.Strong`/... exactly.)
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
-  `wrap`/`unwrap`, `PUI.Web`, FFI) plus the same re-exported vocabulary
-  applications use (`focusField`, `toCase`, `static`).
+  `wrap`/`unwrap`, `PUI.Web`, FFI) plus the row vocabulary — the words
+  applications use (`atCase`, `static`) and the leaf lift `focusField`
+  from its shape module.
   It never imports the ecosystem algebra: a design-system module proves
-  the vocabulary complete by being its own first customer. **The floor is
+  the vocabulary complete by being its own first customer. `PUI.Web`
+  itself is the web **carrier** (`Hosting Web`, the DOM monad) and sits
+  with the algebra layer for its internals — it may import the
+  ecosystem's `Data.Profunctor` for the few reshapings it writes bare
+  (`eventLeaf`, `witnessed`) — so the checkable form of this floor is
+  `grep "import Data.Profunctor (" src/PUI/Web/ demo/`, empty. **The floor is
   the namespace**: every web vocabulary is a submodule of its carrier
   (`PUI.Web.*`, under `src/PUI/Web/`), so a module path states which
   carrier a vocabulary specializes and the carrier-independent algebra
@@ -528,13 +550,14 @@ The codebase is three floors, each greppable:
   building blocks (`element`, `attachable`, `runDomInNode`, `Node`, the
   DOM FFI, `staticHTML`), its **vocabulary** the element-neutral words
   every vocabulary shares (`choice`, the decorators, `text`/`staticText`,
-  `clicked`, `provided` and the gated rungs, `dynamic`/`each`/`el`) —
+  `clicked`, the panes `provided`/`inCase`, the sources,
+  `dynamic`/`each`/`el`) —
   an application imports the second and never the first.
 
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
-`rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf @l @k opts
-rowsOf`, `dispatched envelopeOf`, a status's copy function
+`rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf @l @k
+rowsOf item`, `dispatched envelopeOf`, a status's copy function
 (`snackbar @"booked" bookedLine`), `settled normalize` (`identity` says
 verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
@@ -546,16 +569,16 @@ code below the UI) are algebra-layer material and exempt by location.
 
 - What a pipeline operates over is the app's **state**, never its
   rendering. A display leaf whose content *is* copy MUST take the
-  **read function** — `text :: ({ | reads } -> String) -> PUI Web
-  { | reads } {}` — and MUST carry no label: its content is the copy,
+  **read function** — `text :: ({ | r } -> String) -> PUI Web
+  { | r } { | r }` — and MUST carry no label: its content is the copy,
   so there is no field to name and nothing to caption (a caption is
   surrounding chrome). The function MUST be a named function of the
   view model module; a field shown as it is stored is not copy and is
   named by its label (`textAt @l`, L3); a formatter bracket, a
   view-side lambda and a `staticText`-plus-leaf text run are all
-  forbidden. `projection` and `projected` are
-  deleted; the vocabulary-internal `textOf` serves the statuses' own
-  variant payload.
+  forbidden; there is no read adopter (doc/research-presentation-model.md
+  records the two that were). The vocabulary-internal `textOf` serves
+  the statuses' own variant payload.
 - A display that renders a **number** — `progressBar`,
   `linearProgress`, `progress`, `gauge`, `ratingDisplay` — MUST take a
   read function too: a fraction is *derived* (a ratio of source
@@ -576,9 +599,8 @@ code below the UI) are algebra-layer material and exempt by location.
   read function formats them.
 - The gain is the point: the screen's copy is a pure function under
   `spago test`, no browser, and the view line names its own writer.
-  Checkable form: `npm run check-view-model` rejects
-  `projection`/`projected` anywhere in `demo/` and any lambda in a
-  `text` read.
+  Checkable form: `npm run check-view-model` rejects the retired read
+  adopters anywhere in `demo/` and any lambda in a `text` read.
 - A status is label-indexed at its business case and takes that case's
   copy function (`snackbar @"booked" bookedLine`) — the status's
   counterpart of a display's read function. Mutually exclusive outcomes
@@ -616,10 +638,10 @@ code below the UI) are algebra-layer material and exempt by location.
   is that row, **verbatim from the view's hole hint**
   (`countLine :: { counted :: Int } -> String`): checked by
   unification, and never stuck on a hole, where a `Union small rest big`
-  is. Before this rule (CHANGELOG, 2026-10-03) the signature was an open-row footprint,
-  `forall r. { counted :: Int | r } -> String`, narrowed by hand from the
-  hint; the hint never suggested the quantifier, so the view did not
-  determine it, and it went. A name two lines call at different rows is
+  is. An open-row footprint (`forall r. { counted :: Int | r } ->
+  String`, narrowed by hand from the hint) was tried and withdrawn: the
+  hint never suggested the quantifier, so the view did not determine it
+  (CHANGELOG, 2026-10-03). A name two lines call at different rows is
   generalized to what they share, and only then carries a `forall`;
   `npm run check-determined` checks every exported signature against its
   hint. An emitter block's variant output
@@ -637,8 +659,9 @@ code below the UI) are algebra-layer material and exempt by location.
   value at build — a seed it announces, a period it schedules, a settle
   time — or calls a business function on the `{}` `body` feeds once (a
   load action standing before the knot) MUST treat a hole as
-  absent: `announce`, `ticks`, `debouncedTextField`, `action`, `foreach`
-  and `each` do. A new word of that kind MUST do the same.
+  absent: `announce`, `ticks`, `clock`, `debouncedTextField`, `action`,
+  `foreach`, `anyOf`, `dispatched`, `accumulated`, `each` and `text` do.
+  A new word of that kind MUST do the same.
 - The rule tightens the library itself: an exported signature MUST NOT
   carry a constraint only a concrete row can discharge, because at a
   hole the row is not concrete. (`listOf` and order-dashboard's `gauge`
@@ -759,8 +782,8 @@ these gates in order:
    only where the literature is genuinely silent).
 5. **Reachability.** A demo (or law test) reaches it, or it doesn't
    merge. Demos are the executable form of the rules — exactly one type
-   declaration survives in ~3,000 demo lines, and that ratio is a
-   regression test on this whole document.
+   declaration (cells' recursive `Expr`) survives in some 8,500 demo
+   lines, and that ratio is a regression test on this whole document.
 6. **Green stack.** The obligatory verification suite of L15 passes in
    full — `spago build`, `spago test`, `npm run bundle-demos`,
    `npm run smoke` — with no demo edited except where the demo is the

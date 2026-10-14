@@ -23,24 +23,26 @@ boundary, for protocol-respecting operands, it holds on the nose — a feed is
 one step, released once. Which category `PUI` is depends on what one counts
 as an observation — both are tested.
 
-One session bug becomes a theorem here. Broadcasting one input to two
+One starvation bug becomes a theorem here. Broadcasting one input to two
 `⊳`-composed stages requires the first stage to be a **comonoid**: it must
-*duplicate* — pass its input through — not merely consume it. A gated display
-equips a stage with exactly that comultiplication (render *and* forward);
-`muted` has only the counit (render and *discard*). That is the general
-reason `muted`-then-collection starved under `Semigroupoid.do` while
-display-beside-the-wire-then-collection worked: chrome in a pipeline needs
-comultiplication, chrome in a merge needs nothing (the merge broadcasts).
-Duoidal algebra names when `⊳` can emulate `⊗` — only through comonoids.
+*duplicate* — pass its input through — not merely consume it. A display is
+exactly that comonoid (render *and* release the row it shows,
+`displayWiring`); a status has only the counit (render and *discard*).
+That is the general reason a counit-only stage followed by a collection
+starves under `Semigroupoid.do` while a display followed by one flows
+(a counit-only display word, `muted`, went for it; CHANGELOG 2026-10-13):
+chrome in a pipeline needs comultiplication, chrome in a merge needs
+nothing (the merge broadcasts). Duoidal algebra names when `⊳` can emulate
+`⊗` — only through comonoids.
 
 At **equal types** no third combination is admitted. The ungated
 juxtaposition — `ArrowPlus`'s `<+>` at the profunctor kind, input shared
-by the diagonal, outputs interleaved on one channel — was carried for a
-while as `Joining`/`joint` and removed on 2026-08-27: it combined no
+by the diagonal, outputs interleaved on one channel — combines no
 *contributions* (no union of fields, no dispatch of cases — none of the
-(M, N)-monoids of §1), so last-writer-wins was carrier scheduling, not
-algebra, and every use was two whole-row citizens over one row, which
-compose *sequentially* — each is a wire that also edits.
+(M, N)-monoids of §1), so last-writer-wins would be carrier scheduling,
+not algebra, and every use is two whole-row citizens over one row, which
+compose *sequentially* — each is a wire that also edits (it was carried as
+`Joining`/`joint` and withdrawn; CHANGELOG 2026-08-27).
 
 ## 1. The four merges are the four (M, N)-monoidal structures
 
@@ -86,11 +88,13 @@ fields is no contribution and the record gates treat it so; `1_+ =
 Variant ()` is *initial and uninhabited*, so that wire can neither receive
 nor emit and is silence by parametricity. `1_× = {}` is *terminal and
 inhabited*: it has a canonical global element, which is what **pointing**
-emits — `announce a`, `Seeding`'s primitive, a map out of `1_×` — but
-pointing is not a unit's job, and the units carry no information. The one
-merge whose unit no wire reaches is `×→+` (terminal → initial), and its
-unit is `silence`. Every starvation symptom in the library's history is a
-use of a `+`-behaviour where a `×`-behaviour was required.
+emits — `announce a`, `PUI`'s point, a map out of `1_×` — but pointing is
+not a unit's job, and the units carry no information. The one merge whose
+unit no wire reaches is `×→+` (terminal → initial), and its unit is the
+carrier's silent component — `PUI`'s private `silent`, `Cont`'s `mempty`
+— named by no class, law-tested per carrier. Every starvation symptom in
+the library's history is a use of a `+`-behaviour where a `×`-behaviour
+was required.
 
 **Gates are the cost of laxity over time.** In a pure synchronous carrier the
 laxator `p a b ⊗ p c d → p (a×c) (b×d)` is trivial. `PUI`'s channels are
@@ -100,9 +104,9 @@ withhold until both have spoken, and release **once per feed** (a broadcast
 is one step, so the product is computed atomically per moment, never torn).
 That is the knowledge gate, and it appears
 wherever a product is assembled from several operands (`recordToRecord`;
-`variantToRecord` stopped assembling on 2026-10-04 — its operands release
-whole shared rows, so it is a copairing) and in none of the (·, +) ones
-(injections need no pairing). The gate is what the product of behaviors costs when
+`variantToRecord` assembles nothing — its operands release whole shared
+rows, so it is a copairing) and in none of the (·, +) ones (injections
+need no pairing). The gate is what the product of behaviors costs when
 computed over streams — carrier machinery for a universal construction, not
 an ad-hoc feature.
 
@@ -114,8 +118,8 @@ general notion behind the library's strength classes:
 
 - `Strong` = Tambara for the `×` self-action; `Choice` = Tambara for `+`.
   The Pastro–Street correspondence then *generates* the optics: lenses are
-  the optics of the `×` action, prisms of the `+` action — `focusField`,
-  `subStrong`, `focusCase` are their row-strict forms.
+  the optics of the `×` action, prisms of the `+` action — `focusField`
+  and `focusCase` are their row-strict forms.
 - `Resolving`/`Retaining` are the library's genuine addition: Tambara-*like*
   structures for **mixed actions that only a stateful, temporal carrier
   supports** (`resolve` needs a notion of quiescence — time; `retain` needs
@@ -140,8 +144,9 @@ general notion behind the library's strength classes:
 from constants, identity, `×`, `+`, and least fixpoints `μ`. Two members of
 that grammar are already in the library's vocabulary:
 
-- `Maybe a = 1 + a` — and `provided :: p a b -> p (Maybe a) b` is (up to the
-  output collapse) the action of that container;
+- `Maybe a = 1 + a` — whose action the library carried (`optioned`) and
+  withdrew as unreachable: no row holds a `Maybe`, an absent state being a
+  variant case a pane gates on (CHANGELOG 2026-10-14);
 - `Array a = μ x. 1 + a × x` — the collection.
 
 The relevant general theorem (Jaskelioff–O'Connor; the profunctor-optics
@@ -164,9 +169,8 @@ re-legislated: `Array b` at the empty shape is the `1` summand of the `μ` —
 inhabited, so the `(·, ×)` collection form announces `[]`; the collapsed
 event form has no output at zero elements — sum-flavored, silent, ungated.
 And the gather of `acting` at a `×`-output must retain every position's last
-output — the §1 gate, resurfacing exactly where the branch-B PoC found it
-("the traversal framing does not avoid retention; it requires it"). What that
-PoC observed empirically is just laxity-over-streams again.
+output — the §1 gate again: the traversal framing does not avoid retention,
+it requires it, which is laxity-over-streams once more.
 
 What the general theorem does **not** hand over is the *collapsed* event form
 `p a o -> p (Array a) o` and its "which element fired" semantics: that is
@@ -196,13 +200,12 @@ analytic-functor form). This single move explains the reconciler:
 - Unique keys = shapes are *sets*, not lists — the runtime `DisjointLabels`,
   degraded from compile error to invariant (watchdog territory, like the
   starvation warning).
-- The `data-key` epilogue, generally: the key is the species label. It lives
-  in the container's shape (carrier-private reconciler state) or in the
-  emission's tag (a `(Key, o)` channel — note a variant *is* a (tag, payload)
-  pair with a static tag set, so `(Key, o)` is its runtime degradation) —
-  never on the carrier's public surface. The delegated `closest("[data-key]")`
-  was case dispatch performed by the carrier because the algebra hadn't been
-  given the label; the keyed `foreach` gave it a lawful home.
+- The key is the species label. It lives in the container's shape
+  (carrier-private reconciler state) or in the emission's tag (a `(Key, o)`
+  channel — note a variant *is* a (tag, payload) pair with a static tag
+  set, so `(Key, o)` is its runtime degradation) — never on the carrier's
+  public surface: no `data-key` attribute, no dispatch performed on the
+  DOM, since the keyed collection gives the label its lawful home.
 
 ## 5. The co-side: the trace quartet is traced monoidal structure
 
@@ -224,8 +227,8 @@ The co-strengths are not a bambik invention either — they are **traces**:
   and the seeds are the operational ⊥
   (doc/observational-semantics.md §5).
 - By Hasegawa's correspondence (traces on cartesian structure ↔ Conway fixed
-  points), `looped` *is* a fixpoint operator — the model-view-update
-  loop is the Conway fixpoint of the update stage.
+  points), `looped` *is* a fixpoint operator — the app's loop is the
+  Conway fixpoint of its fold stage.
 - Collection traces come free once §3 exists: trace over the container action
   = the homogeneous ensemble (the cells grid under `looped` — elements
   cross-feeding with per-key retention, which is the gate again); the keyed
@@ -238,99 +241,88 @@ Instead of `Sequencing` (or a family of sequence shapes), the general
 inventory is:
 
 1. **Duoidal skeleton** — `⊳` and the `(M, N)`-monoidal `⊗`s, with comonoids
-   (the gated displays) mediating interchange. Already implemented; rename nothing,
-   but *document* the units-are-forced and gates-are-laxity facts once, at
-   this level.
+   (the displays) mediating interchange; the units-are-forced and
+   gates-are-laxity facts documented once, at this level.
 2. **Tambara modules per action** — `Strong`, `Choice` (ecosystem);
-   `Resolving`, `Retaining` (the stateful carrier's extra actions). Already
-   implemented.
+   `Resolving`, `Retaining` (the stateful carrier's extra actions).
 3. **One container-action class** in place of any collection shape:
-   `acting :: p a b -> p (F a) (F b)` for finitary containers, with the
-   species/keyed refinement for stateful carriers. Its `(->)` instance is
-   `map` — the laws (singleton retraction = yanking at the container,
-   `[]`-announcement, fusion) become value-testable in `test/Main.purs`;
-   `provided` (Maybe) and `foreach` (keyed Array) become two instances of one
-   thing. The collapsed event form and the keyed Mealy remain carrier-level,
-   typed as such — the same boundary that already separates
+   `actedBy :: Ord k => (a -> k) -> p a b -> p (Array a) (Array b)` for the
+   keyed `Array` container, the species refinement for stateful carriers.
+   Its `(->)` instance is `map`, so the laws (singleton retraction =
+   yanking at the container, the empty release, the wire law) are
+   value-testable. The collapsed event form and the keyed Mealy remain
+   carrier-level, typed as such — the same boundary that already separates
    `Strong`/`Choice` from `Resolving`/`Retaining`.
 4. **Traces** — the quartet as-is, plus their action-indexed lifts (ensemble,
    generators) which are theorems, not features.
 
 The rejected route multiplied bespoke classes to cover the collection's
-cases; this route *deletes* the bespoke class it had and covers the cases
-with three standard notions the library de facto instantiates already. The
-library's real novelty stays visible and gets sharper: it is not the
-shapes or the collection — it is being a **duplex, asynchronous, stateful
-Tambara module**, where more actions (mixed, temporal, keyed) exist than pure
-profunctor algebra provides, and where laxity has a price (the gate) that
-pure treatments never see.
+cases; this route covers them with three standard notions the library de
+facto instantiates already (the bespoke `Sequencing` shape it replaced is
+deleted). The library's real novelty stays visible and gets
+sharper: it is not the shapes or the collection — it is being a **duplex,
+asynchronous, stateful Tambara module**, where more actions (mixed,
+temporal, keyed) exist than pure profunctor algebra provides, and where
+laxity has a price (the gate) that pure treatments never see.
 
-## Rolled out
+## Where it lives
 
-§6 is implemented:
+- **`extras/row-profunctor/Data/Profunctor/Acting.purs`** holds the pure
+  algebra: `class Acting`/`actedBy`, `instance Acting (->)`
+  (`actedBy _ = map`), and the row forms `acted @l` and `actedAt @l @t`.
+  The carrier machinery lives with the carriers, like the merge instances:
+  `PUI` carries `class Hosting` (instantiate one element at runtime, detach
+  a leaver, restack survivors), the shared keyed reconciler and the one
+  generic `instance Hosting m node => Acting (PUI m)`; `PUI.Web` carries
+  `instance Hosting Web (Array Node)` (DOM placement over the run of nodes
+  an element appended, moved by `appendChild`, so identity follows the key).
+  Laws in the module header: empty, singleton retraction, gather gate,
+  identity-follows-key, wire — composition deliberately not preserved (two
+  reconcilers double-gate), so whole element pipelines are lifted, never
+  stages.
+- **Five forms** divide the ground by input (everything at once → `×`;
+  one entity at a time → `+`) and output. The `×`-members are keyed by a
+  **materialized identity field** `@l` of the element row (rows carry their
+  identity; `actedBy` keeps the function form as the minimal carrier
+  obligation); the `+`-members take the `{ key, value }` envelope, identity
+  being the structural tag that arrives in the input, so no key function.
 
-- **`extras/row-profunctor/Data/Profunctor/Acting.purs`** — `class Acting`/`acted` (the keyed
-  `Array` container action), instances for `(->)` (`acted _ = map`),
-  `PUI Effect` (the probe carrier), and `PUI Web` (DOM hooks); one shared
-  keyed reconciler carries both emission modes — `acted` gathers
-  (knowledge-gated, announces `[]` on an empty feed), `collapsed` forwards
-  (ungated, silent on empty); `optioned` derives the `Maybe` action.
-  `Data.Profunctor.Row.Sequence`/`Sequencing` is deleted;
-  `PUI.Web.HTML.foreach = collapsed` — surface and demo behavior unchanged.
-- **Value-level laws** in `test/Main.purs` on `PUI Effect` probes: empty
-  announces `[]` (and nothing at registration), singleton retraction, gather
-  gate (withhold → complete → retain-last), identity-follows-key (zero
-  rebuilds on re-feed/permutation/drop; output order follows fed key order),
-  collapsed silent-on-empty. DOM-identity laws stay in
-  `scripts/smoke/tests/acting-laws.mjs` (green).
-- **`demo/nguis/potluck/`** — the focused `acted` demo: per-guest dish
-  editors lifted with `# acted _.name`, the menu summary withheld by the
-  gather gate until every guest has chosen, retain-last on re-choices, row
-  nodes surviving every re-feed.
-- **The keyed-input members landed** (§6.3's deferral resolved): `dispatched`
-  (+→+) and `accumulated` (+→×) in `PUI`, fed the runtime variant
-  `{ key, value }` — the tag arrives in the input, so no key function; an
-  unknown key instantiates a new case, and the +-members never detach or
-  restack (absence of a key is no signal). `dispatched` has the canonical
-  pure reading (`\{key, value} -> {key, value: g value}`), `accumulated` is
-  the input-primed keyed Mealy — the (·,×)-gate/unit laws land on schedule.
-  Value-level laws in `test/Main.purs`; focused demos `demo/nguis/departures-mdc2`
-  (dispatched: a ticker's cases become rows on first mention, re-feed in
-  place, tagged output drives the last-update line) and
-  `demo/nguis/scoreboard-mdc2` (accumulated: the board grows to its key set,
-  updates in place, the whole array drives the standings).
-- The two laws of §1 are stated once in `Data.Profunctor.Row`'s header; the
-  duoidal reading of §0 (gated displays = comultiplication, muted = counit) in
-  `PUI`'s header.
-- **Keys are labels** (a revision of §4's "or in the reconciler's private
-  state" latitude): every ×-member is keyed by a **materialized identity
-  field** `@l` of the element row — the element is a data-model row, and rows
-  carry their identity (`foreach @"id"`, `acted @"name"`, `edited @"id"`; the
-  class primitive `actedBy` keeps the function form as the minimal carrier
-  obligation, `(->)`'s instance ignores it). In the product-output ×-members
-  (`acted`, `edited`) the element's output row *excludes* the key — it is
-  re-attached from the input row (in `acted` derived purely: the key rides
-  the `Strong` state channel around the element), so an element structurally
-  cannot forge or change identity. The +-members
-  keep the `{ key, value }` envelope: there identity is the runtime variant's
-  structural tag, arriving in the input. Two key forms, two ontologies, and
-  the scalar-keyed collections (calculator's keypad, stopwatch's laps,
-  restaurant-menu's tags) materialized their identity fields accordingly.
-- **The gather gate is the record gate (2026-09-15).** `acted`'s gather
-  runs the one pure machine `PUI.Gate.gateStep`, whose participants are
-  runtime keys: the record merges enrol their owned field labels, the
-  collection the fed keys, rekeyed per feed (`Rekeyed` — survivors keep
-  their slot, entrants unknown, leavers forgotten). So the collection
-  square's ×-output members are the ×-output merges over a runtime row —
-  `[]` is the zero-participant release, the empty law and L6's zero-field
-  clause the same consequence of enrolling nothing, a feed one step at both
-  (a reconcile whose elements echo gathers once, whole). `acted`'s
-  conformance to the step, monotonicity, wire law, feed-idempotence and
-  one-release-per-feed run over every script to a bound in
-  test/Exhaustive.purs beside the merges' (doc/observational-semantics.md
-  §9). `edited` and `accumulated` stay input-primed and never withhold, so
-  they do not need the gate; `foreach`/`dispatched` are variant-output and
-  gate nothing.
+  | Form | Shape | Behaviour |
+  | --- | --- | --- |
+  | `foreach @l` | `(a -> Array { \| r }) -> p { \| r } { \| r } -> p a a` | the list of displays: keyed, retaining reconciliation; the elements' releases stay inside and the fed row passes on, so the list is a stage |
+  | `anyOf @l` | `(a -> Array { \| r }) -> p { \| r } [ \| v ] -> p a [ \| v ]` | the emitting list: the same reconciler, every element emission forwarded onto one channel, ungated, silent on empty (`anyOfAt @l @t` over a stored array) |
+  | `acted @l` | `p { \| r } { \| r1 } -> p (Array { \| r }) (Array { \| r1 })` | the container action: the element typed at its whole row, key included, the carrier re-setting the key on every emission from the input row through the `Strong` state channel, so identity is unforgeable; output is the gather gate (`actedAt @l @t` over a stored array) |
+  | `dispatched` | `(i -> { key :: k, value :: a }) -> p a b -> p i { key :: k, value :: b }` | `+→+`: an unknown key instantiates a new case, a known key re-feeds its instance, emissions leave tagged |
+  | `accumulated` | `(i -> { key :: k, value :: a }) -> p a a -> p i (Array a)` | `+→×`, the keyed Mealy: grows per new key in first-appearance order, updates known slots, emits the whole array at once, input-primed |
+
+  The `+`-members never detach or restack: absence of a key is no signal,
+  so removal and ordering stay array-level concerns upstream.
+- **The gather gate is the record gate.** `acted`'s gather runs the one
+  pure machine `PUI.Gate.gateStep`, whose participants are runtime keys:
+  the record merge enrols its owned field labels, the collection the fed
+  keys, rekeyed per feed (`Rekeyed` — survivors keep their slot, entrants
+  unknown, leavers forgotten). So the `×`-output collection is the
+  `×`-output merge over a runtime row — `[]` is the zero-participant
+  release, the empty law and L6's zero-field clause the same consequence
+  of enrolling nothing, a feed one step at both (a reconcile whose elements
+  echo gathers once, whole). `accumulated` is input-primed and never
+  withholds, so it needs no gate; `anyOf` and `dispatched` are
+  variant-output and gate nothing.
+- **Tests and demos.** Value-level laws run in `test/Main.purs` on
+  `PUI Effect` probes (empty announces `[]` and nothing at registration,
+  singleton retraction, gather gate, identity-follows-key, `anyOf` silent
+  on empty), `acted`'s conformance to the step, monotonicity, wire law,
+  feed-idempotence and one release per feed over every script to a bound in
+  test/Exhaustive.purs (doc/observational-semantics.md §9), and DOM
+  identity in `scripts/smoke/tests/acting-laws.mjs`. Focused demos:
+  potluck (`acted @"name"`, per-guest dish selectors, the table's state a
+  classifier over the gathered rows), reorder (`acted @"id"`, a playlist
+  whose DOM nodes move with their keys; `actedAt @"id" @"Setlist"` in its
+  HTML twin), departures (`dispatched`) and scoreboard (`accumulated`),
+  both fed by the `clock` source; cells' grid is `anyOfAt @"key" @"cells"`
+  inside `anyOf @"rowKey"`.
+- The two component laws of §1 are stated once in `Data.Profunctor.Row`'s
+  header; the duoidal reading of §0 in `PUI`'s.
 
 ## Pointers
 

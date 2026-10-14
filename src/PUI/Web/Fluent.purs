@@ -56,7 +56,7 @@ import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (Ocular, PUI)
+import PUI (folding, Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, textOf, separating, (:=))
@@ -325,15 +325,17 @@ ratingDisplay f = wrap do
 -- | has just happened and needs no reply. It never interrupts.
 -- |
 -- | The wording belongs to the UI, not to the event: write the copy where
--- | the message bar is built — `messageBar @"booked" bookedLine`
--- | — and let the event carry the bare facts.
+-- | the message bar is built — `messageBar @"Room booked" bookedLine identity`
+-- | — and let the event carry the bare facts. A `+→×` leaf like `fold @l
+-- | f`, it takes its fold of the payload after its copy.
 messageBar
   :: forall @l a v r
    . IsSymbol l
   => Cons l a () v
   => (a -> String)
+  -> (a -> { | r })
   -> PUI Web [ | v ] { | r }
-messageBar copy = messageBarFace copy # atCase @l
+messageBar copy f = messageBarFace copy # atCase @l # folding @l f
 
 messageBarFace :: forall a r. (a -> String) -> PUI Web a { | r }
 messageBarFace copy = wrap do

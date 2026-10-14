@@ -1,5 +1,7 @@
 # Research: fulfillment-gated displays
 
+**Status (2026-10-14).** The design under test became the library's: every display is a stage `{ | r } → { | r }` that renders and releases the row it was fed (`displayWiring` in `PUI.Web`; CHANGELOG 2026-10-13), the witness rung `confirmed title question content` (MDC2/MDC3) is current, and a blocking gate still belongs on a branch, never on the loop's trunk. The rung names are gone: `shown @l f`, `told line`, `shownAs`, `shownWhen`, `shownEach` (CHANGELOG 2026-10-11 and 2026-10-13) — a display takes a read function (`text countLine`) or names its stored field (`textAt @l`), the display and editor pane is `inCase`/`inCaseAt`, a list of displays `foreach @l proj`; `tapped` went in this note's own round two, `projection` and `# completed` are gone (a display takes its read function), `mvu` is `looped @( … ) # with seed`, `subChoice` is gone (each action folded under its own `# atCase @l` block), `feedback` is a model field, and `confirmed cfg` takes its title and question as two strings. The unit-typed display `p { | r } {}` of the Standing table no longer exists at all, so the coexistence the note ends on was resolved for the pass-through form on every display. "A11" named an application rule in guardrails' Part II, which is now a pointer at writing.md; no rule carries that number today.
+
 **Merged into main. Developed on branch `research-gated-displays` (off
 the main line at the displays-and-sources doc); landed green in full —
 clean build, tests, 102 bundles, the whole smoke suite — with two rungs
@@ -23,7 +25,7 @@ instant-open degenerate form.
 
 Implemented rungs:
 
-  * **instant** — `PUI.Web.HTML.shown @l f`: render field `l` through the
+  * **instant** — `PUI.Web.HTML.shown @l f` (since removed, see Status): render field `l` through the
     formatter, release synchronously (render before release — the
     operand-order lesson, now baked into one body). Assurance by
     visibility.
@@ -83,7 +85,8 @@ dialog inside it is now a gated identity rather than a replayed tap.
 
 All 157 remaining tap sites converted and the combinator removed from the
 vocabulary (definition, export, re-export, laws rewritten against the
-inline derivation `recordToRecord w identity`). The final gated family:
+inline derivation `recordToRecord w identity`). The final gated family
+(every rung but `confirmed` since removed, see Status):
 
   * `shown @l f` — field, instant (HTML)
   * `told line` — narrow-row line, instant (HTML)

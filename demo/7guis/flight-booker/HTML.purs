@@ -5,9 +5,9 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBooker (bookedLine, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, rejectedLine, returnLine, submit)
-import PUI (action, atCase, debounced, looped, with)
+import PUI (action, atCase, debounced, joined, kept, looped, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, staticText, text)
-import PUI.Web.HTML (body, button, div, input, label, output, p, select)
+import PUI.Web.HTML (body, button, div, indeterminateLinearProgress, input, label, output, p, select)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
@@ -29,15 +29,17 @@ flightBooker =
        , "Return date (DD.MM.YYYY)" :: String
        ) # with plannedTrip
     ( Semigroupoid.do
-      p (text problemLine) # inCase @"problem"
+      ( p $ text problemLine ) # inCase @"problem"
         @( "one-way" :: {}, problem :: {}, return :: {} ) bookingState
-      p (text oneWayLine) # inCase @"one-way" bookingState
-      p (text returnLine) # inCase @"return" bookingState
+      ( p $ text oneWayLine ) # inCase @"one-way" bookingState
+      ( p $ text returnLine ) # inCase @"return" bookingState
     ) # debounced itinerarySettleTime
-    button @"Book"
-    ( VariantToRecord.do
-      output @"Flight booked" bookedLine
-      output @"Booking rejected" rejectedLine ) # action
+    ( Semigroupoid.do
+      button @"Book"
+      indeterminateLinearProgress # action
         @( "Flight booked" :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
          , "Booking rejected" :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ]
-         ) submit # atCase @"Book"
+         ) submit # atCase @"Book" ) # joined
+    VariantToRecord.do
+      output @"Flight booked" bookedLine kept
+      output @"Booking rejected" rejectedLine kept

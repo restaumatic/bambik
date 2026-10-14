@@ -110,15 +110,15 @@ unwrapNested v = case v of
 
 | form | adopted | where |
 |---|---|---|
-| Type `[ … ]` | **project-wide** | every variant type in `src/` and `test/`; the `Variant` type *name* is no longer written anywhere — it comes from the `Prim.Variant` builtin |
-| Constructor `.label` | **concrete code only** | `inj (Proxy @"lit") x` → `.lit x` in `test/Main.purs`, `test/RestaurantReel.purs` |
-| Pattern `case _ of .label` | **not used** | concrete eliminators stay as total `case_ # on …` (see below); the library is label-polymorphic |
+| Type `[ … ]` | **project-wide** | every variant type in `src/`, `extras/`, `test/` and the demos; the `Variant` type *name* appears only in imports of the library's plumbing (`case_`, `expand`, `on`) and in a few test probes spelling the empty wire `Variant ()` — the type itself is the `Prim.Variant` builtin |
+| Constructor `.label` | **concrete code** | every demo view model builds its cases this way (`.numV n`, `.selected {}`, `.unchosen {}`), as do the tests; the library constructs through `inj (Proxy @l)` |
+| Pattern `case _ of .label` | **where a catch-all is harmless** | cells' formula evaluator (`case v of .numV n -> …; .errV e -> …; _ -> …`); elsewhere a closed row is eliminated with `match { … }`, exhaustive by type, and a label is read back verbatim with `caseText` |
 
 The constructor and pattern forms need a **literal** label, so they have no site
 in the row-profunctor library itself — it constructs and eliminates variants
 through `inj (Proxy @l)` / `on (Proxy @l)` with a type-variable `l` (writing
 `.l` there would mean the *literal* field `"l"`). They apply only to concrete
-code: the tests above, and downstream business models and demos.
+code: the demos' view models, the tests, and downstream business models.
 
 Record sugar (`{ … }`, `{ | r }`, `{}`, `_.label`) used throughout the codebase
 is **stock PureScript**, not part of the fork; the variant forms above are the
@@ -131,8 +131,8 @@ the `Prim.Variant.Variant` type constructor, and the value sugar desugars to the
 same runtime representation. None of the runtime machinery the library code
 relies on — `inj`, `on`, `case_`, `expand`, `contract`, `class Contractable`,
 `class VariantTags` — has any sugar equivalent, so `Data.Variant` stays a
-dependency (imported across `Data.Profunctor.Row` and the
-`Data.Profunctor.Row.*` shape modules).
+dependency (imported by `Data.Profunctor.Row`, the shape modules that
+dispatch or widen, `PUI.Web` and the vocabularies).
 
 The value sugar can replace `inj`/`on`/`case_` **only where the label is a
 syntactic literal**, which rules out every site in the row-profunctor library
@@ -140,12 +140,14 @@ syntactic literal**, which rules out every site in the row-profunctor library
 would mean the *literal* field `"l"`, not the type variable). Two further
 caveats apply even in concrete code:
 
-- **Construction is a clean swap:** `inj (Proxy @"foo") x` → `.foo x`. Done in
-  the test suite (`test/Main.purs`, `test/RestaurantReel.purs`).
-- **Total elimination is *not* worth swapping:** `case_ # on … # on …` over a
-  closed row is checked exhaustive by the type system (it must consume the row
-  down to `Variant ()`). The pattern sugar can't reproduce that — it *requires* a
-  `_` catch-all (§3), which adds a dead branch and silently swallows a forgotten
-  case. So the remaining `case_`/`on` eliminators in `demo/nguis/order-form/OrderFormMDC2.purs`
-  (`methodText`, `summarize`), `test/RestaurantReel.purs`, and
-  `test/EntityEventExample.purs` are kept deliberately.
+- **Construction is a clean swap:** `inj (Proxy @"foo") x` → `.foo x`, done
+  throughout the demos and the tests.
+- **Total elimination is *not* worth swapping:** `match { … }` over a closed
+  row, like `case_ # on … # on …`, is checked exhaustive by the type system
+  (the handlers must cover the row). The pattern sugar can't reproduce that
+  — it *requires* a `_` catch-all (§3), which adds a dead branch and silently
+  swallows a forgotten case. So the demos eliminate closed rows with `match`
+  (and `caseText` where the label itself is the copy), and the `case_`/`on`
+  chains in `test/RestaurantReel.purs` and `test/EntityEventExample.purs`
+  are kept deliberately; the pattern form is used only where a catch-all is
+  the right answer anyway (cells' evaluator).

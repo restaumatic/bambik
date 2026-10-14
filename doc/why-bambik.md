@@ -78,9 +78,10 @@ and each is its own module under `Data.Profunctor.Row`:
 | `+ → ×` | status | snackbar, banner |
 | `+ → +` | dispatch | backend call routing |
 
-Every Material Design component in `PUI/MDC2.purs` is a citizen of exactly one
-shape: `filledTextField @l` is `×→×`, `button @l` is `×→+`,
-`snackbar @l` is `+→×`. An application is a journey around the compass:
+Every component of a design-system vocabulary (`PUI.Web.MDC2` and its
+siblings) is a citizen of exactly one shape: `filledTextField @l` is `×→×`,
+`button @l` is `×→+`, `snackbar @l` is `+→×`. An application is a journey
+around the compass:
 
 ```
 load → form (×→×) → live summary → buttons (×→+) → backend (+→+) → statuses (+→×)
@@ -108,7 +109,7 @@ sit side by side and become one:
   may fire an event.
 - `variantToRecord` — the copairing: each case is dispatched to its one
   handler, and whatever that handler releases is the whole shared row,
-  forwarded as it comes (2026-10-04; gated like `×→×` before).
+  forwarded as it comes.
 
 Look at the may-overlap/must-be-disjoint pattern for a moment, because it
 is a law, not a coincidence: **sharing is inclusive, responsibility is
@@ -157,10 +158,10 @@ each line one more whole-row stage — and code order is DOM order. Note
 there is no wrapping at the use site: every component carries its own
 label (`filledTextField @l` is already the whole-row editor at field
 `l` — fed the wide row, it edits its field and re-attaches the rest from
-the background its lens retains). The general lifter
-`focusField @l` exists for the other cases — lifting a raw scalar leaf, or
-nesting a whole sub-composite as one field of a larger
-record.
+the background its lens retains). The general lifter `focusField @l` is
+the vocabulary's plumbing behind that: it lifts a raw scalar leaf into its
+field, and `group @l` fuses it with a card surface to nest a sub-record's
+form as one field of a larger record.
 
 ## Nullary operators: the units
 
@@ -176,12 +177,13 @@ be able to *say* anything either. The record gates therefore treat a
 contribution of zero fields as no contribution: whether the chrome echoes
 its informationless `{}`, announces it once, or stays mute, the merge
 cannot tell, and `identity` is the unit exactly. What *does* speak at
-registration is the point — `announce a`, `Seeding`'s primitive, one
-emission of `a` out of the terminal record, which `with` uses to
-supply an app its initial state, and from which the seeded echo wire
+registration is the point — `announce a`, a `PUI` word rather than a
+class's, one emission of `a` out of the terminal record, which `with` uses
+to supply an app its initial state, and from which the seeded echo wire
 `seeded a` is derived. The one merge whose unit no wire reaches is the
 event merge `×→+`: nothing maps the terminal `{}` into the initial
-`Variant ()`, so its unit is `silence` — truly mute, by parametricity.
+`Variant ()`, so its unit is the carrier's silent component — truly mute,
+by parametricity, and named by no class.
 
 ## Unary operators: strengths, or the small UI component in the big world
 
@@ -206,9 +208,7 @@ of their own, and here the library coins two:
   still moving (mid-typing, mid-drag), and the last emission of a burst
   resolves at quiescence. Note the values on the wire are just values — no
   hidden "transient" flag rides along; transiency is when a value arrives,
-  not what it carries. (An earlier design *did* smuggle a continuity
-  `Boolean` through every wire in a `New` wrapper; deriving the branch from
-  time dissolved it.)
+  not what it carries.
 - **`Retaining`**: `p a b -> p (Either a c) (Tuple b c)` — a UI component that
   receives one case at a time but always *remembers* the rest: a
   Mealy/coroutine step. It underlies the `Reel` optic. Tellingly, `(->)` has
@@ -223,7 +223,7 @@ the channel is primed. This is the **trace quartet**:
 
 | strength | co-strength | ties into | co-optic | knot | example |
 |---|---|---|---|---|---|
-| `Strong` | `Costrong` / `unfirst` (pointed: `unfirstFrom`) | state feedback | `Colens` | `looped` (a class method — the gated `unfirst` cannot self-feed) | the model re-entering its own loop |
+| `Strong` | `Costrong` / `unfirst` (pointed: `unfirstFrom`) | state feedback | `Colens` | `looped` (`PUI`'s own word — the gated `unfirst` cannot self-feed) | the model re-entering its own loop |
 | `Choice` | `Cochoice` / `unleft` | iteration | `Coprism` | — (holds raw; an event re-enters through its fold) | retrying a flaky charge, written inside the action |
 | `Resolving` | `Coresolving` / `coresolve` | terminating fold | `Coshutter` | — (`debounced` is its one seeded use) | an accumulating multi-step wizard, written as a model field folded per step |
 | `Retaining` | `Coretaining` / `coretain` | productive unfold | `Coreel` | — | an activity meter counting every event, written as a model field |
@@ -231,11 +231,9 @@ the channel is primed. This is the **trace quartet**:
 A loop through the four shapes is cut at its record junction, so the knot
 an application ties is exactly one, `looped`, closed by `with` and the
 model its first stage takes; an event re-enters through its fold. The
-co-strengths keep their value-level laws and optics; the field-level row
-forms (`feedback @l`, `folding @w @l`, `unfolding @w @l`) were retired on
-2026-10-05, a looped state being a model field, and a variant knot
-(`cycled`) on 2026-10-06, a second way of writing the same loop whose
-model no line of the view could declare.
+co-strengths keep their value-level laws and optics and have no row forms:
+a looped state is a model field (per-shape knots were carried and
+withdrawn; CHANGELOG 2026-10-14).
 
 And just as each strength induces an optic (`Strong` the lens, `Choice`
 the prism, the coined pair `Shutter` and `Reel`), each co-strength induces
@@ -273,10 +271,9 @@ falling out of the merge gates. For whole-row editor stages the same
 re-broadcast is what keeps their retained backgrounds current — every
 stage is re-fed on every emission, so no editor can emit a stale sibling
 for longer than the turn in flight, which is why editor ensembles live
-inside `looped`. The library once had bespoke `synced`
-and
-`latch` combinators for this; they dissolved into `looped` — the algebra
-subsumed them, which is how you know a design is converging.
+inside `looped`. The bespoke ensemble combinators the library once had for
+this dissolved into `looped` — the algebra subsumed them, which is how you
+know a design is converging.
 
 ## The `Category` instance: the spine
 

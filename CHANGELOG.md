@@ -8,6 +8,60 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **Every `+→×` leaf folds: statuses take their fold, the action slot is
+  lifecycle-only, `joined` joins every case.** `fold @l f`, `reset @l x`
+  and `capture @l` are the faceless folds, label-indexed leaves
+  (`fold @"Count" increment`, `reset @"New game" openingPosition`,
+  `capture @"People loaded"`); the tick source is `ticks @"Clock ticked"
+  tickPeriod`, taking no status (a tick that needs telling is `ticks @l p
+  >>> (status # observed)`). A status is the same fold with a face: every
+  vocabulary status takes its fold after its copy function —
+  `snackbar @"Person created" personCreatedLine identity`, `snackbar
+  @"Order placed" orderPlacedLine (const usualOrder)`, `snackbar @"Quote
+  fetched" quoteFetchedLine recordQuote` — so nothing stands in a fold
+  block releasing nothing. The three places a status stood alone each
+  went: an action's slot is typed at `[ started, ended ]` (`Contractable
+  ( started :: {}, ended :: {} ) v1`), so a snackbar is never the slot
+  and the outcome leaves to be folded after the action (flight-booker,
+  incident-report); an outcome that is told and changes nothing is
+  `joined` with its button in the event ensemble and its status folds
+  `kept` (`kept = _.model`, order-form's submit and receipt,
+  flight-booker); a knotless flow's closing status folds `identity`
+  (signup-form, product-review, loan-calculator, meeting-booker). A
+  narrating status under `observed` folds `identity` too, and `observed`
+  drops it. `joined` is **label-free and joins every case** of its
+  source (class `JoinedCases`, the row mapped at the variant's
+  representation), so a two-outcome action needs no second word; the
+  `@l` on every `# joined` is gone. `folding @l f` is plumbing, the one
+  fold behind every status (`snackbar @l copy f = snackbarFace copy #
+  atCase @l # folding @l f`) and behind `fold @l f` (`unshown @l #
+  folding @l f`); `resetting` and `capturing` lasted the morning.
+  The day's first cut kept the status-opened optics (`# folding`,
+  `# capturing`, `# resetting`) beside the leaves; Eryk's call was that a
+  status should never be an action slot and that a no-change fold is
+  acceptable where necessary, which left no standalone status to keep
+  an optic for.
+- **An element over one leaf applies it with `$`.** `headline4 $ text
+  countLine`, `card $ body1 $ text summaryLine`; a chain on the wrapped
+  element opens the paren before the wrapper (`( headlineSmall $ text
+  wonLine ) # inCase @"won" gameOutcome`), a decorated list item composes
+  its decorator onto the element (`span >>> clWhen isCompleted
+  "todo-done" $ textAt @"title"`, todo-list), and `static`, whose
+  argument is a polymorphic ocular `$` cannot pass, keeps its parentheses.
+  writing.md *Layout* states it; every demo view follows it.
+- **`witnessed`, and the vocabularies import no ecosystem algebra.**
+  MDC2's and MDC3's `confirmed` unwrapped the confirm button's case with
+  the ecosystem's `rmap` — the one L16 violation in the vocabularies.
+  `PUI.Web.witnessed` is that button as a carrier word: `{}`-chrome whose
+  click releases the row the stage was fed, `eventLeaf` with its case
+  unwrapped, the one lawful record-output emitter (a dialog is a `×→×`
+  stage, Answer refined in time). L16 now places `PUI.Web`'s internals
+  on the carrier side and states the floor's check as
+  `grep "import Data.Profunctor (" src/PUI/Web/ demo/`, empty.
+- **Documentation sweep.** CLAUDE.md, guardrails, the skill, the design
+  docs and the extras READMEs state the current library; dated history
+  is this file's. The research notes keep their bodies and carry a
+  Status paragraph saying what of them still holds.
 - **`PUI`'s export list says what is vocabulary.** `announce`, `seeded`
   and `resolveFor` are grouped apart as carrier plumbing — exported for
   the vocabularies and the law tests, written by no demo (`with` closes

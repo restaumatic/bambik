@@ -1,12 +1,12 @@
 module EspressoBar.MDC3 (espressoBar) where
 
-import Prelude ((#), ($), Unit)
+import Prelude ((#), ($), const, Unit)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import EspressoBar (caffeineFraction, cupLine, espressoNoFrills, orderPlacedLine, placeOrder, theUsual, usualOrder)
-import PUI (action, atCase, fold, looped, reset, unshown, with)
+import PUI (action, atCase, fold, looped, with)
 import PUI.Web ((<+>), choice, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, button', checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, indeterminateLinearProgress, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
@@ -33,7 +33,7 @@ espressoBar =
       iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "heart_plus" }
       checkbox @"Loyalty member" @"member" @"guest" # tooltip "Members get 10% off"
       divider $ Semigroupoid.do
-        bodyMedium (text cupLine)
+        bodyMedium $ text cupLine
         div $ Semigroupoid.do
           labelMedium $ staticText "Caffeine"
           linearProgress caffeineFraction
@@ -43,11 +43,11 @@ espressoBar =
           menuItem @"Espresso, no frills" )
         button' @"Place order" { icon: "local_cafe" }
       VariantToRecord.do
-        unshown @"The usual" # fold theUsual
-        unshown @"Espresso, no frills" # fold espressoNoFrills
+        fold @"The usual" theUsual
+        fold @"Espresso, no frills" espressoNoFrills
         ( Semigroupoid.do
           indeterminateLinearProgress # action @( "Order placed" :: { number :: Int, "Your name" :: String } ) placeOrder
-          snackbar @"Order placed" orderPlacedLine # reset usualOrder ) # atCase @"Place order"
+          snackbar @"Order placed" orderPlacedLine (const usualOrder) ) # atCase @"Place order"
     # looped
       @( "Your name" :: String
        , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]

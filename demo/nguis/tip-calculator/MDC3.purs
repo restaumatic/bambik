@@ -16,12 +16,12 @@ tipCalculator =
     filledTextField @"Bill amount"
     slider @"Tip percentage"
     rangeInput @"Tip percentage"
-    bodyMedium (text tipLine)
-    bodyMedium (text splitLine)
+    bodyMedium $ text tipLine
+    bodyMedium $ text splitLine
     slider @"Split between"
-    bodyMedium (text tipAmountLine)
-    bodyMedium (text totalLine)
-    bodyMedium (text perPersonLine)
+    bodyMedium $ text tipAmountLine
+    bodyMedium $ text totalLine
+    bodyMedium $ text perPersonLine
   # looped
     @( "Bill amount" :: String
      , "Tip percentage" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

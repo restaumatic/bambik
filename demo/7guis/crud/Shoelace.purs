@@ -1,13 +1,13 @@
 module Crud.Shoelace (crud) where
 
-import Prelude (Unit, (#), ($), (<>), (>>>))
+import Prelude ((#), ($), (<>), (>>>), identity, Unit)
 
 import Crud (createPerson, deletePerson, entries, loadPeopleCatalogue, personCreatedLine, personDeletedLine, personLine, personNotCreatedLine, personNotDeletedLine, personNotUpdatedLine, personUpdatedLine, pick, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, anyOf, atCase, captured, fold, joined, looped, unshown)
+import PUI (action, anyOf, atCase, capture, fold, joined, looped)
 import PUI.Web (attrWith, clicked, text, (:=))
 import PUI.Web.HTML (li, ul)
 import PUI.Web.Shoelace (body, button, indeterminateLinearProgress, textField, toast)
@@ -17,39 +17,39 @@ crud :: Effect Unit
 crud =
   body $ Semigroupoid.do
     indeterminateLinearProgress # action loadPeopleCatalogue
-    unshown @"People loaded" # captured
+    capture @"People loaded"
     ( Semigroupoid.do
       textField @"Filter prefix (surname)"
       textField @"Name"
       textField @"Surname"
       RecordToVariant.do
         ( ul >>> "style" := "list-style: none; margin: 0; padding: 0; border: 1px solid var(--sl-color-neutral-300, #ccc); border-radius: 4px; max-height: 200px; overflow: auto; width: 100%;" $
-          ( clicked @"Person picked" @"key" ( li >>> attrWith "style" entryFace $ text personLine ) ) # anyOf @"key"
+          ( clicked @"Person picked" @"key" $ li >>> attrWith "style" entryFace $ text personLine ) # anyOf @"key"
             @( key :: Int
              , "Name" :: String
              , "Surname" :: String
              , status :: [ selected :: {}, unselected :: {} ]
-             ) entries ) # joined @"Person picked"
+             ) entries ) # joined
         button @"Create"
         button @"Update"
         button @"Delete"
       VariantToRecord.do
-        unshown @"Person picked" # fold pick
+        fold @"Person picked" pick
         ( Semigroupoid.do
           indeterminateLinearProgress # action createPerson
           VariantToRecord.do
-            toast @"Person created" personCreatedLine # captured
-            toast @"Person not created" personNotCreatedLine # captured ) # atCase @"Create"
+            toast @"Person created" personCreatedLine identity
+            toast @"Person not created" personNotCreatedLine identity ) # atCase @"Create"
         ( Semigroupoid.do
           indeterminateLinearProgress # action updatePerson
           VariantToRecord.do
-            toast @"Person updated" personUpdatedLine # captured
-            toast @"Person not updated" personNotUpdatedLine # captured ) # atCase @"Update"
+            toast @"Person updated" personUpdatedLine identity
+            toast @"Person not updated" personNotUpdatedLine identity ) # atCase @"Update"
         ( Semigroupoid.do
           indeterminateLinearProgress # action deletePerson
           VariantToRecord.do
-            toast @"Person deleted" personDeletedLine # captured
-            toast @"Person not deleted" personNotDeletedLine # captured ) # atCase @"Delete"
+            toast @"Person deleted" personDeletedLine identity
+            toast @"Person not deleted" personNotDeletedLine identity ) # atCase @"Delete"
     ) # looped
       @( "Filter prefix (surname)" :: String
        , "Name" :: String
