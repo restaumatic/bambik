@@ -17,7 +17,7 @@
 -- |     lens — the leaf lift, making every label-indexed editor a whole-row
 -- |     citizen); over the pointed co-strength: `feedback @l` (the
 -- |     `×`-trace at one hidden field, seeded — the `Colens` at row
--- |     granularity); over bare `Profunctor`: the rename `asField`. The
+-- |     granularity). The
 -- |     one-sided words of this shape — `atField`/`toField` (the halves of
 -- |     the closed-singleton iso), `with` (the knot's closure, over the
 -- |     point) and `settled` (the normalization) — live on the floor.
@@ -29,9 +29,8 @@
 -- | its merge, its strength and trace forms, and the words that genuinely
 -- | span both of its sides.
 -- |
--- | The four single-label words mirror `VariantToVariant`'s one for one:
--- | `focusField`/`focusCase`, `asField`/`asCase`, `atField`/`atCase`,
--- | `toField`/`toCase`. Where they differ is reach, not form: a record
+-- | The three single-label words mirror `VariantToVariant`'s one for one:
+-- | `focusField`/`focusCase`, `atField`/`atCase`, `toField`/`toCase`. Where they differ is reach, not form: a record
 -- | leaf already emits its labelled row (guardrails L3) and reads its
 -- | input through its own read function, so applications meet no bare
 -- | record side to adopt — `atField`/`toField` are law-tested
@@ -95,7 +94,6 @@ module Data.Profunctor.Row.RecordToRecord
   , bind
   , discard
   , focusField
-  , asField
   , feedback
   )
   where
@@ -109,7 +107,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons)
-import Record (get, insert, union) as Record
+import Record (get, union) as Record
 import Record.Unsafe (unsafeSet)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -154,20 +152,6 @@ focusField
   => p f f'
   -> p { | r } { | r1 }
 focusField = prop (Proxy @l)
-
--- | Rename a component's singleton field `c` to business field `l` on both sides.
-asField
-  :: forall @c @l p a b r r1 r2 r3
-   . IsSymbol c
-  => IsSymbol l
-  => Profunctor p
-  => Cons c a () r2
-  => Cons c b () r3
-  => Cons l a () r
-  => Cons l b () r1
-  => p { | r2 } { | r3 }
-  -> p { | r } { | r1 }
-asField = dimap (\r -> Record.insert (Proxy @c) (Record.get (Proxy @l) r) {}) (\r -> Record.insert (Proxy @l) (Record.get (Proxy @c) r) {})
 
 -- | Loop state field `l` of the output back into the input, starting it at
 -- | the given value: the `×`-trace at one field, the `Colens` optic's row

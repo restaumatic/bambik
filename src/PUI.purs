@@ -114,10 +114,8 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- business function, never placed at another row at the call site; the
 -- placement is the vocabularies' plumbing for their statics.
 import Data.Profunctor.Row (atCase, atField, settled, toCase, toField, with) as Adopters
-import Data.Profunctor.Row.RecordToRecord (asField) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, replaying) as Adopters
 import Data.Profunctor.Silencing (silence) as Adopters
-import Data.Profunctor.Row.VariantToVariant (asCase) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping)
@@ -1152,8 +1150,8 @@ type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 -- |
 -- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, carrier
 -- | nesting). Naturality is free, so every ocular commutes with the
--- | `dimap`-only adopters (`asField`/`asCase`, `atField`/`atCase`,
--- | `toField`/`toCase`) and the focus `focusField`.
+-- | `dimap`-only adopters (`atField`/`atCase`, `toField`/`toCase`) and
+-- | the focus `focusField`.
 -- | Commuting with the *strengths* is the extra law, and the admission test
 -- | for anything called an ocular:
 -- |

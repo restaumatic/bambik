@@ -12,9 +12,8 @@
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusCase` (one case, the
--- |     value-level prism); over bare `Profunctor`, the rename `asCase`
--- |     (the one-sided halves `atCase`/`toCase` live on the floor); over
--- |     the co-strength `Cochoice`: `cycled`
+-- |     value-level prism; the one-sided halves `atCase`/`toCase` live
+-- |     on the floor); over the co-strength `Cochoice`: `cycled`
 -- |     (the variant knot, the loop cases re-entering — the `Coprism` at
 -- |     row granularity).
 -- |
@@ -29,22 +28,23 @@
 -- | takes its read function, a status its business case and copy function
 -- | (`snackbar @"booked" bookedLine`), and an emitter emits its own case,
 -- | which the fold consumes. So the adopters are structural and take no
--- | function: `atCase`, `toCase` and `asCase` take only their cases, since
--- | there the case is the caller's to name. A status is its face over the
+-- | function: `atCase` and `toCase` take only their cases, since there
+-- | the case is the caller's to name. A status is its face over the
 -- | copy function, adopted as its case: `snackbar copy = snackbarFace copy
 -- | # atCase @l`.
 -- |
--- | The four single-label words mirror `RecordToRecord`'s one for one —
--- | `focusCase`/`focusField` (the background threaded), `asCase`/`asField`
--- | (a closed singleton renamed, nothing to thread), `atCase`/`atField`
+-- | The three single-label words mirror `RecordToRecord`'s one for one —
+-- | `focusCase`/`focusField` (the background threaded), `atCase`/`atField`
 -- | and `toCase`/`toField` (the input and output halves of the iso between
--- | a closed singleton and its payload). Laws: `asCase @c @c = identity`,
--- | renames compose, `atCase @l >>> toCase @l` is `identity` at the
--- | closed singleton, and there the focus is its two halves,
--- | `focusCase @l = toCase @l <<< atCase @l` (test/Main.purs). The
+-- | a closed singleton and its payload). Laws: `atCase @l >>> toCase @l`
+-- | is `identity` at the closed singleton, and there the focus is its two
+-- | halves, `focusCase @l = toCase @l <<< atCase @l` (test/Main.purs). The
 -- | derivation runs that way only: a two-sided wrap cannot be split into
--- | one side's, and a rename is neither, so the three `Profunctor` words
--- | are generators, not `focusCase` specialised.
+-- | one side's, so the two halves are generators, not `focusCase`
+-- | specialised. There is no rename (a closed singleton relabelled on
+-- | both sides): its one use, re-labelling a component built at a fixed
+-- | label, is what guardrails L3 forbids (`Data.Profunctor.Row`, the
+-- | single-label grid).
 -- |
 -- | ## Laws at `+→+`
 -- |
@@ -109,7 +109,6 @@ module Data.Profunctor.Row.VariantToVariant
   , bind
   , discard
   , focusCase
-  , asCase
   , cycled
   )
   where
@@ -122,7 +121,7 @@ import Data.Profunctor.Cochoice (class Cochoice, unleft)
 import Data.Profunctor.Row (class ExclusiveRows, class LoopCases, class OwnedVariantInputs, splitVariant)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Data.Variant (class Contractable, case_, expand, inj, on)
+import Data.Variant (class Contractable, expand, inj, on)
 import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
@@ -172,20 +171,6 @@ focusCase =
   prismE
     (on (Proxy @l) Left Right)
     (either (inj (Proxy @l)) expand)
-
--- | Rename a component's singleton case `c` to business case `l` on both sides.
-asCase
-  :: forall @c @l p a b v v1 v2 v3
-   . IsSymbol c
-  => IsSymbol l
-  => Profunctor p
-  => Cons c a () v2
-  => Cons c b () v3
-  => Cons l a () v
-  => Cons l b () v1
-  => p [ | v2 ] [ | v3 ]
-  -> p [ | v ] [ | v1 ]
-asCase = dimap (on (Proxy @l) (inj (Proxy @c)) case_) (on (Proxy @c) (inj (Proxy @l)) case_)
 
 -- | The variant knot: tie a chain's emitted cases back into its input —
 -- | the `Coprism` optic's row form over `Cochoice`'s `unleft`. The cases

@@ -8,6 +8,16 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **`asField`/`asCase` deleted.** The rename column of the single-label
+  grid, back since 2026-10-13 for the grid's symmetry: a closed singleton
+  relabelled on both sides, `dimap` alone. Its one use is re-labelling a
+  component built at a fixed internal label — exactly what guardrails L3
+  rules out, every leaf being label-indexed with no canonical label — so
+  it was unreachable by design, not merely unreached (L14's clause for
+  catalogue words a demo may yet use does not apply). The grid is three
+  words per shape: the focus and the two halves of the closed-singleton
+  iso, `focus = to <<< at`, the halves its generators; nothing reached the
+  rename but its law test, now gone with it.
 - **`replaying` is `joined` at the empty payload.** Its source is pinned
   to an **occurrence source** — one case carrying `{}`, the row read by
   `RowToList v1 (Cons c {} Nil)` so the label `c` is determined at the

@@ -20,10 +20,10 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (asField, feedback, focusField, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (feedback, focusField, recordToRecord)
 import Data.Profunctor.Row.VariantToRecord (unfolding, variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (folding, recordToVariant)
-import Data.Profunctor.Row.VariantToVariant (asCase, cycled, focusCase, variantToVariant)
+import Data.Profunctor.Row.VariantToVariant (cycled, focusCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
@@ -186,15 +186,9 @@ main = do
     (toCase @"picked" _.key { key: 7, label: "x" })
 
   -- The pure shapes' single-label grid on (->): focus (above, and
-  -- focusCase below), rename (`as`), and the two halves of the
-  -- closed-singleton iso (`at` on the input, `to` on the output), each
-  -- word mirrored across records and variants.
-  assertEqual "asField" { total: 8 } (asField @"n" @"total" (\r -> { n: r.n * 2 }) { total: 4 })
-  assertEqual "asField @c @c = identity" { n: 4 } (asField @"n" @"n" identity { n: 4 })
-  assertEqual "asCase"
-    (.total 8 :: [ total :: Int ])
-    (asCase @"n" @"total" (\v -> .n (match { n: (_ * 2) } v)) (.total 4))
-  assertEqual "asCase @c @c = identity" (.n 4 :: [ n :: Int ]) (asCase @"n" @"n" identity (.n 4))
+  -- focusCase below) and the two halves of the closed-singleton iso
+  -- (`at` on the input, `to` on the output), each word mirrored across
+  -- records and variants.
   assertEqual "atField" 8 (atField @"n" (_ * 2) { n: 4 })
   assertEqual "atCase" 8 (atCase @"n" (_ * 2) (.n 4))
   assertEqual "toField" { n: 8 } (toField @"n" (_ * 2) 4)

@@ -84,12 +84,12 @@
 -- | another. The four shape modules' functions, by role:
 -- |
 -- | ```
--- | shape        rename   strength optic  co-strength optic  unit     retention
--- | -----------  -------  --------------  -----------------  -------  -----------------
--- | p {|a} {|b}  asField  focusField      feedback
--- | p [|a] [|b]  asCase   focusCase       cycled
--- | p {|a} [|b]           subResolving    folding                     replaying, joined
--- | p [|a] {|b}           subRetaining    unfolding          unshown
+-- | shape        strength optic  co-strength optic  unit     retention
+-- | -----------  --------------  -----------------  -------  -----------------
+-- | p {|a} {|b}  focusField      feedback
+-- | p [|a] [|b]  focusCase       cycled
+-- | p {|a} [|b]  subResolving    folding                     replaying, joined
+-- | p [|a] {|b}  subRetaining    unfolding          unshown
 -- | ```
 -- |
 -- | This is **every function the four shape modules export** beside their
@@ -98,13 +98,13 @@
 -- | row granularity: the **strength optic** (`Lens`, `Prism`, `Shutter`,
 -- | `Reel`) and the **co-strength optic** (`Colens` seeded through
 -- | `PointedCostrong`, `Coprism`, `Coshutter`, `Coreel`), one word per
--- | shape, each over its shape's own class. The other three columns are
--- | half-full in complementary ways, and each empty cell is a fact:
+-- | shape, each over its shape's own class. The other two columns are
+-- | half-full in complementary ways, and each empty cell is a fact (so
+-- | is the absent column: no shape has a `dimap`-only word — a rename of
+-- | a closed singleton on both sides has no reach under guardrails L3,
+-- | below, and a two-sided record↔variant conversion is a classifier, a
+-- | business function):
 -- |
--- |   * **rename** (over `Profunctor`) — the pure shapes only: a closed
--- |     singleton relabelled on both sides. A mixed shape has no
--- |     `dimap`-only word, because a two-sided record↔variant conversion
--- |     is a classifier, a business function.
 -- |   * **unit** — one shape only: no merge class carries a unit, each
 -- |     shape borrowing its own from the class that can supply it. Three
 -- |     borrow from `Category` — `identity` at `+→+`, the `{}` wire at the
@@ -130,9 +130,7 @@
 -- | — each a class of its own beside `Seeding`, carrier structure rather
 -- | than a row form, for the reason the first table's `**` gives.
 -- |
--- | Column by column. **Rename** is `dimap` alone: `asField`/`asCase`
--- | relabel a closed singleton on both sides, nothing threaded, no state
--- | (the single-label grid, below). The **strength optic** threads a
+-- | Column by column. The **strength optic** threads a
 -- | **background** past a stage: at the pure shapes the single-label
 -- | `Lens`/`Prism` (`focusField`, also the leaf lift making every
 -- | label-indexed editor a whole-row citizen; `focusCase`), at the mixed
@@ -163,27 +161,30 @@
 -- | renamed from the source's.
 -- |
 -- | The pure shapes' two-sided words above and the floor's one-sided
--- | halves together form one **single-label grid**, the same four words
+-- | halves together form one **single-label grid**, the same three words
 -- | over records and variants. A closed singleton is its payload
--- | (`{ l :: a } ≅ a ≅ [ l :: a ]`), and the four are the four ways to use
--- | that: on both sides with the rest of the row threaded
--- | (`focusField`/`focusCase`, the shape's), on both sides with no rest
--- | (`asField`/`asCase`, a rename, the shape's), on the input side alone
+-- | (`{ l :: a } ≅ a ≅ [ l :: a ]`), and the three are the three ways to
+-- | use that: on both sides with the rest of the row threaded
+-- | (`focusField`/`focusCase`, the shape's), on the input side alone
 -- | (`atField`/`atCase`, the floor's) and on the output side alone
 -- | (`toField`/`toCase`, the floor's).
 -- |
 -- | ```
--- |                 both sides,     both sides,   input side   output side
--- |                 rest threaded   no rest
--- | --------------  --------------  ------------  -----------  -----------
--- | records  ×→×    focusField      asField       atField      toField
--- | variants +→+    focusCase       asCase        atCase       toCase
+-- |                 both sides,     input side   output side
+-- |                 rest threaded
+-- | --------------  --------------  -----------  -----------
+-- | records  ×→×    focusField      atField      toField
+-- | variants +→+    focusCase       atCase       toCase
 -- | ```
 -- |
 -- | At the closed singleton the focus is its two halves, `focusField @l =
--- | toField @l <<< atField @l` and likewise over cases; the halves and the
--- | rename are not derivable from the focus (a two-sided wrap does not
--- | split), so the three `Profunctor` words per shape are generators.
+-- | toField @l <<< atField @l` and likewise over cases; the halves are
+-- | not derivable from the focus (a two-sided wrap does not split), so
+-- | the two `Profunctor` words per shape are generators. The fourth
+-- | way, both sides with no rest — a rename — is deliberately absent:
+-- | its one use is re-labelling a component built at a fixed label,
+-- | which guardrails L3 forbids, so no application could reach it
+-- | (CHANGELOG, 2026-10-14, where `asField`/`asCase` were deleted).
 -- |
 -- | None takes a function: business functions are arguments of leaves,
 -- | never adopters — a display takes its **read function** (`text
@@ -720,7 +721,7 @@ instance
             (Beside (Beside (Beside (Beside (Text "One operand owns { ") (Text ownDoc)) (Text " }, the other { ")) (Text otherDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `focusField`/`asField`/`toField` or `focusCase`/`asCase`/`atCase` label in this `do` block.")))
+              (Text "Look for the duplicated `focusField`/`toField` or `focusCase`/`atCase` label in this `do` block.")))
       )
   ) => LabelAbsentK EQ l rest own other
 instance LabelAbsent l rest own other => LabelAbsentK LT l rest own other
@@ -752,7 +753,7 @@ instance
             (Beside (Beside (Text "The row is { ") (Text origDoc)) (Text " }."))
             (Above
               (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `focusField`/`asField`/`toField` or `focusCase`/`asCase`/`atCase` label in this `do` block.")))
+              (Text "Look for the duplicated `focusField`/`toField` or `focusCase`/`atCase` label in this `do` block.")))
       )
   ) => NoDuplicateLabelsK EQ l rest orig
 instance NoDuplicateLabels rest orig => NoDuplicateLabelsK LT l rest orig

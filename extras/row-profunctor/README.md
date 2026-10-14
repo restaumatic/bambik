@@ -40,8 +40,8 @@ that this layer does not depend on the one downstream of it.
 | Module | Holds |
 |---|---|
 | `Data.Profunctor.Row` | the shared floor: the row-constraint vocabulary, the splits `splitRow`/`splitVariant`, and every one-sided word — `atField`/`toField`, `atCase`/`toCase`, `with`, `settled`, `atAnyRow`, `widenVariantOutput` — so no shape module imports another |
-| `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, `focusField`, `asField`, `feedback` |
-| `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase`, `asCase`, the variant knot `cycled` |
+| `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, `focusField`, `feedback` |
+| `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase`, the variant knot `cycled` |
 | `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `subResolving`, `folding`, `replaying`, `joined` |
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `subRetaining`, `unfolding`, `unshown` |
 | `Data.Profunctor.Acting` | the container action `class Acting`/`actedBy` |

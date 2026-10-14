@@ -75,8 +75,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   (`snackbar @"booked" bookedLine`), and an emitter emits its own case
   (the adopters `toCases`/`forCases`/`forCase` are deleted — a status
   is its face over the copy function, adopted `# atCase @l`; the
-  structural adopters `asField`/`asCase`, `atField`/`atCase`,
-  `toField`/`toCase` take no function; the view-side
+  structural adopters `atField`/`atCase`, `toField`/`toCase` take no
+  function, and the rename `asField`/`asCase` is deleted, 2026-10-14 —
+  its one use, re-labelling a component built at a fixed label, is what
+  this guardrail forbids; the view-side
   read adopters `projection`/`projected` went earlier,
   doc/research-presentation-model.md). Nor do the vocabulary's own row **field**
   names: a leaf reading structured data MUST NOT make the application
