@@ -3,8 +3,8 @@ module Payment.MDC2 (payment) where
 import Prelude ((#), ($), identity, Unit)
 
 import Effect (Effect)
-import Payment (amountLine, cardChargedLine, chargeFlaky, chargingLine, statusLine, unpaidOrder)
-import PUI (action, atCase, looped, observed, with)
+import Payment (amountLine, cardChargedLine, chargeFlaky, statusLine, unpaidOrder)
+import PUI (action, atCase, looped, with)
 import PUI.Web (text)
 import PUI.Web.MDC2 (body, body2, button', headline6, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,9 +15,7 @@ payment =
     headline6 $ text amountLine
     body2 $ text statusLine
     button' @"Charge card" { icon: "credit_card" }
-    ( Semigroupoid.do
-      snackbar @"Charge card" chargingLine identity # observed
-      indeterminateCircularProgress # action chargeFlaky # atCase @"Charge card" )
+    indeterminateCircularProgress # action chargeFlaky # atCase @"Charge card"
     snackbar @"Card charged" cardChargedLine identity
   # looped
     @( amount :: Number

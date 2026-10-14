@@ -1196,7 +1196,7 @@ confirmed confirmCaption title content = simpleDialog confirmCaption title conte
 -- | Not a full `Ocular`, deliberately: the confirm **replays** the
 -- | content's last output, and replay is lawful over **records** only —
 -- | an entity's last value may be re-said, a one-shot event may not (the
--- | `looped`/`observed` argument) — so the content's output is row-shaped.
+-- | `looped` argument) — so the content's output is row-shaped.
 simpleDialog :: forall i o. String -> String -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
 simpleDialog confirmCaption title content = wrap do
   titleId <- liftEffect uniqueId

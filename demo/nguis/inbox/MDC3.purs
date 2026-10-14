@@ -1,12 +1,12 @@
 module Inbox.MDC3 (inbox) where
 
-import Prelude ((#), ($), identity, Unit)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Inbox (composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxZeroLine, keepMessages, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
-import PUI (fold, joined, looped, observed, with)
+import PUI (fold, joined, looped, with)
 import PUI.Web (provided, providedAt, text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (snackbar, body, bodySmall, headlineSmall, bodyMedium, bodyLarge, button, dialog, fab, iconButton, listOfAt', menu, menuItem)
@@ -23,11 +23,9 @@ inbox =
         bodyMedium $ text fromLine
         bodyLarge $ text bodyText
         iconButton @"Delete message" "delete" ) # provided @"reading" @( reading :: {}, browsing :: {} ) messageView
-      ( Semigroupoid.do
-        ( dialog "Delete the last message?" $ RecordToVariant.do
-          button @"Delete"
-          button @"Keep" ) # providedAt @"confirming" @"deletion"
-        snackbar @"Delete" inboxZeroLine identity # observed )
+      ( dialog "Delete the last message?" $ RecordToVariant.do
+        button @"Delete"
+        button @"Keep" ) # providedAt @"confirming" @"deletion"
       fab @"Compose" "edit"
       ( menu "Sort" $ RecordToVariant.do
         menuItem @"By sender"
@@ -36,7 +34,7 @@ inbox =
     VariantToRecord.do
       fold @"Message opened" openMessage
       fold @"Delete message" requestDelete
-      fold @"Delete" deleteOpened
+      snackbar @"Delete" inboxZeroLine deleteOpened
       fold @"Keep" keepMessages
       fold @"Compose" composeMessage
       fold @"By sender" sortBySender

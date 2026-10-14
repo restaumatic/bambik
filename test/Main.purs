@@ -30,15 +30,14 @@ import Data.Profunctor (dimap, lcmap, rmap)
 import Data.Profunctor.Row (atCase, atField, toCase, toField)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
-import Data.Variant (Variant, case_, expand, inj, match)
+import Data.Variant (Variant, case_, expand, match)
 import Data.Variant.Case (caseText)
-import Type.Proxy (Proxy(..))
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, cancelScope, capture, dispatched, fold, folding, foreach, inScope, looped, newScope, observed, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
+import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, cancelScope, capture, dispatched, fold, folding, foreach, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -571,21 +570,6 @@ main = do
     fire gProp 7
     Ref.read outs >>= assertEqual "coreel: emission leaves" [ "7" ]
     Ref.read ins >>= assertEqual "coreel: emission resumes as next input" [ 5, 8 ]
-
-  -- observed (the +-diagonal pass-through): every event forwards once at
-  -- feed time; the status is fed exactly the cases it consumes, and its
-  -- own emissions are dropped.
-  do
-    shown <- Ref.new ([] :: Array (Variant ( charge :: Int )))
-    sProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array (Variant ( charge :: Int, done :: String )))
-    m <- unwrap (observed (probeIO shown sProp :: PUI Effect (Variant ( charge :: Int )) {}))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser (inj (Proxy @"charge") 1)
-    m.toUser (inj (Proxy @"done") "ok")
-    fire sProp {}
-    Ref.read shown >>= \xs -> assertEqual "observed: the status sees only its cases" [ "charge" ] (map caseText xs)
-    Ref.read outs >>= \xs -> assertEqual "observed: every event forwards once, the status's emission dropped" [ "charge", "done" ] (map caseText xs)
 
   -- field (the leaf lift): a scalar control lifted under a label is a
   -- whole-row citizen — the background is retained by the Strong state

@@ -427,8 +427,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   A display releases the row it shows, so it is a stage and nothing
   discards it; a pane (`inCase`) releases what its content releases; a
   list over a stored array is the container action (`actedAt`), which
-  writes its elements' releases back; `observed` accepts a status, which
-  releases nothing. Two slots discard by construction, because their
+  writes its elements' releases back. Two slots discard by construction, because their
   content's release has no row to land in: `foreach` over a **derived**
   array and `clicked`'s content (a face, not a form). An editor placed
   in either is a mistake the type cannot catch, so `npm run

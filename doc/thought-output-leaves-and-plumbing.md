@@ -98,7 +98,7 @@ browser.
 `shown` (ambient, releases always), `shownWhen @l f` (display pane),
 `shownEach @l proj` (keyed collection) — the `shown` family and `muted`
 below since removed, see Status — `confirmed` (modal witness),
-`observed` (the `+`-side sibling), plus `provided @l f` (case-gated
+`observed` (the `+`-side sibling, since removed), plus `provided @l f` (case-gated
 existence). Content slots take only `{}`-output components (no silent
 loss); `# muted` is the explicit discard. Recorded fact: **`shownWhen`
 is a derivation of `provided`** —

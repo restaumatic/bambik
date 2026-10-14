@@ -156,8 +156,8 @@ How each kind takes its business meaning:
 - **Statuses** are labelled with the case they show and take its copy
   function: `snackbar @"Flight booked" bookedLine`. Mutually exclusive outcomes
   are sibling statuses in one `VariantToRecord.do`, each owning its
-  case. A status that must also let the event flow on is
-  `# observed` (payment's retry toast).
+  case; a run in progress is shown by the action's indicator, never by
+  a status.
 - **Chrome** (`card`, `topAppBar`, typography, dialogs) wraps other
   components and adds nothing to the model; code order is screen order.
   A card around editors is a sub-record: write it as the labelled group
@@ -301,7 +301,7 @@ compile error at `body` naming the missing fields.
 | structure that varies with the data | markdown-previewer |
 | no design system at all | restaurant-menu, hello-world |
 | a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, which `body`'s one feed of `{}` runs) |
-| an action that retries until it succeeds, narrated on its way in | payment (`chargeFlaky`, `# observed`) |
+| an action that retries until it succeeds | payment (`chargeFlaky`) |
 | a running maximum, a wizard's step, a counter: model fields | auction (`settled raiseTop`), checkout (`stepOnward`), ticket-dispenser (`issue`) |
 | a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed … # atCase`) |
 | an effect's outcome folded into the model it lands on | order-form (`… # joined`, `fold @"Distance estimated" setDistance`) |

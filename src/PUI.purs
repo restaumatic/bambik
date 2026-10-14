@@ -86,7 +86,6 @@ module PUI
   , foreach
   , anyOf
   , anyOfAt
-  , observed
   , with
   , looped
   , module Adopters
@@ -127,7 +126,7 @@ import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row (class RowLabels, exactRow, fedFirst, fedSecond, rowLabels)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
@@ -139,7 +138,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, case_, contract, expand, inj, match, on)
+import Data.Variant (class Contractable, case_, contract, expand, inj, on)
 import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
@@ -647,19 +646,6 @@ instance MonadEffect m => RecordToRecord (PUI m) where
     where
     labels1 = labelsOf p1
     labels2 = labelsOf p2
-
--- The silent component: fed anything, emits nothing. The `×→+` merge's
--- unit on this carrier (test/Main.purs, test/Exhaustive.purs), and what
--- a detached emitter pane observationally is (`PUI.Web.provided`,
--- doc/observational-semantics.md). No wire reaches it — `{}` is
--- terminal, `Variant ()` initial — so it is carrier structure with no
--- class to borrow it from, and the algebra names no unit but
--- `Category`'s `identity`; `observed` is its one caller.
-silent :: forall m i o. Applicative m => PUI m { | i } [ | o ]
-silent = wrap $ pure
-    { toUser: mempty
-    , fromUser: mempty
-    }
 
 instance Applicative m => RecordToVariant (PUI m) where
   -- broadcast in, passage out — the shape's projection law. A variant
@@ -1177,36 +1163,6 @@ renderFieldNames :: Array String -> String
 renderFieldNames [] = "{}"
 renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 
--- | Make a status an **event pass-through stage** — the gated displays'
--- | sibling on
--- | the `+`-diagonal: every event flowing
--- | through is forwarded exactly once, at feed time, and the events the
--- | status consumes are also shown — `snackbar @"Charge card" chargingLine
--- | identity # observed` narrates a charge on its way to the action without
--- | interrupting it (payment). The status
--- | owns its cases within the stage's row (`Contractable s f`, the
--- | shot/focus relation `splitVariant` dispatches by): the focus
--- | cases are contracted out and shown, the background cases pass
--- | untouched. The status's own emissions are dropped, deliberately —
--- | events are one-shot, so re-emitting the last event would duplicate it —
--- | and the drop is lossless: a status folds, and what it folds is
--- | dropped here — the fold argument of a narrating status is `identity`,
--- | the payload it was fed.
--- |
--- | **Derived**: the wire and the status, merged by the
--- | `× → +` merge over the event nested as a record field — the status
--- | behind `left` so it sees only its contracted cases, `>>> silent` so its
--- | emissions leave as nothing.
-observed
-  :: forall m v v1 r
-   . MonadEffect m
-  => Contractable v v1
-  => PUI m [ | v1 ] { | r }
-  -> PUI m [ | v ] [ | v ]
-observed status = dimap (\v -> { event: v }) (match { forwarded: identity }) $ recordToVariant
-  (dimap _.event (inj (Proxy @"forwarded")) identity :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
-  (lcmap (\r -> maybe (Right unit) Left (contract r.event)) (left (status >>> silent)) >>> lcmap (const {}) silent :: PUI m { event :: [ | v ] } [ forwarded :: [ | v ] ])
-
 -- | The **tick source**: the `×→+` leaf owning case `l`
 -- | (`ticks @"Clock ticked" tickPeriod`, timer) — every `interval`, the
 -- | row it was last fed leaves as case `l`; replay is `Strong`'s
@@ -1214,8 +1170,8 @@ observed status = dimap (\v -> { event: v }) (match { forwarded: identity }) $ r
 -- | Feeds are retained, never answered; nothing ticks before the first feed
 -- | or while the period is a hole (guardrails L18). A beat in a suspended
 -- | scope (a detached pane) is skipped, and a cancelled scope ends the
--- | loop. A tick that needs telling is told by a status on its way,
--- | `ticks @l p >>> (status # observed)`, so the source opens with none.
+-- | loop. A tick that needs telling is told by the status that folds it
+-- | in the fold block, so the source opens with none.
 ticks
   :: forall @l m r v
    . Scoped m

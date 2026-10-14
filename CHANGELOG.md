@@ -41,6 +41,12 @@ Before 2026-07 the history is the git log.
   status should never be an action slot and that a no-change fold is
   acceptable where necessary, which left no standalone status to keep
   an optic for.
+- **`observed` DELETED.** The pass-through that let a status narrate an
+  event on its way to an action (payment's "charging…" snackbar) was its
+  only use, and a run in progress is the action indicator's to show; a
+  status that tells something folds it in the fold block (inbox's banner
+  now folds the deletion it announces, `banner @"Delete" inboxZeroLine
+  deleteOpened`). With it goes the last status that stood without a fold.
 - **An element over one leaf applies it with `$`.** `headline4 $ text
   countLine`, `card $ body1 $ text summaryLine`; a chain on the wrapped
   element opens the paren before the wrapper (`( headlineSmall $ text

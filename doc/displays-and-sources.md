@@ -33,8 +33,7 @@ nothing more:
 > user confirms; a plain display never withholds (the zero-certainty
 > case); the pane (`inCase`) renders on relevance and answers always. A
 > status, `[ | e ] → { | r }`, releases nothing — its reading is
-> unwitnessed by type, and `observed`, which forwards an event past its
-> status, accepts only a status whose output is `{}`, so a witness can
+> unwitnessed by type, so a witness can
 > never be dropped there either.
 
 The vocabulary is an **assurance ladder**, and it matches Material's own
@@ -74,7 +73,7 @@ Two structural facts follow from terminality, both load-bearing:
   its row (`displayWiring`: render, then echo the value); a status, which
   is such a map once instantiated at `{}`, is integrated beside the wire by
   the merge's unit law — `fold` is the status and the wire under the
-  `×→×` merge, `observed` the status and the wire under `×→+`. Dually, a
+  `×→×` merge. Dually, a
   map from `1` ignores everything before it, so sources sit at pipeline
   heads — which is what `body :: PUI Web {} o` says about the app itself:
   an application begins at `1` (`with` = source, then `looped`).

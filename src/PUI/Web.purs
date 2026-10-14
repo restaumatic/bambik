@@ -1090,7 +1090,7 @@ attrAt name = attrWith name (Record.get (Proxy @l))
 -- | element has been shown anything does nothing. An **event source**,
 -- | `× → +` by shape as by behaviour: the click **replays** the last row
 -- | fed — replay is lawful over records only, an entity's value may be
--- | re-said where a one-shot event may not (the `looped`/`observed`/
+-- | re-said where a one-shot event may not (the `looped`/
 -- | `simpleDialog` argument) — and leaves as an occurrence of `l`, so
 -- | nothing record-shaped ever stands for a click. The content is fed the
 -- | row it replays; statics and chrome sit at any row, so

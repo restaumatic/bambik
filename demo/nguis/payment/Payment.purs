@@ -1,4 +1,4 @@
-module Payment (amountLine, cardChargedLine, chargeFlaky, chargingLine, statusLine, unpaidOrder) where
+module Payment (amountLine, cardChargedLine, chargeFlaky, statusLine, unpaidOrder) where
 
 import Prelude (show, (<>), ($), (+), (<), discard, pure)
 
@@ -20,11 +20,6 @@ statusLine { amount, approval } = match
   { pending: \_ -> "Ready to charge — the gateway is flaky, so it retries automatically."
   , approved: \{ attempt } -> "Approved — $" <> show amount <> " charged on attempt " <> show attempt
   } approval
-
-chargingLine
-  :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
-  -> String
-chargingLine { amount } = "Charging $" <> show amount <> " — the gateway is flaky, retrying until approved"
 
 chargeFlaky
   :: { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }

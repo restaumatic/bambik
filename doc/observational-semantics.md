@@ -117,8 +117,8 @@ combinator laws below fail without them.
    responses; this is the termination argument for `Cochoice`'s re-entry
    (an event loop, not a busy loop), and what lets
    a loop's re-feed *arm* an emitter by feeding it without firing it.
-   Forwarding an occurrence that *arrived* — `identity` and `observed` at
-   `+→+` both emit inside `toUser` — is a response to an input event, not
+   Forwarding an occurrence that *arrived* — `identity` at
+   `+→+` emits inside `toUser` — is a response to an input event, not
    an echo of a feed, and is not what this law forbids; the law is about
    sources (§3.1).
 
@@ -203,7 +203,7 @@ as it comes — so there is no gate at this shape and nothing is retained.
 The degenerate case is every status, `[ event ] → { | r }`: each
 occurrence rendered to the user, nothing to the channel, and so typed at
 every row like the silent component. Instantiated at `{}` — the operand
-`fold` and `observed` take — a status's per-feed answer is a contribution
+`fold` takes — a status's per-feed answer is a contribution
 of zero fields, pre-satisfied and inert at a gate, and so never awaited by
 any **gate**; it is still a lawful answer under law 2 (the whole of a `{}`
 output row is `{}`), and *sequencing* may depend on it. A display is not
