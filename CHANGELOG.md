@@ -640,6 +640,12 @@ Before 2026-07 the history is the git log.
 
 - Fused dispatch (`handled`/`FactsFold`) rejected.
 
+## 2026-08-11
+
+- **`Cont` builds again.** The CPS carrier had been parked out of the
+  build, which let its instance inventory drift; back in the glob, so a
+  layout move that invalidates it is a compile error, not silent rot.
+
 ## 2026-07-29
 
 - Pointedness merged: `Seeding`, `body`, `with`.
