@@ -220,8 +220,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   stamp was always work the bracket could not do), and with every public
   editor lifted inside its vocabulary and sub-model nesting carried by
   `group @l`, **`focusField` left the application surface** — it is no longer
-  re-exported from `PUI`, living as design-system plumbing beside
-  `atAnyRow`; a nesting no mechanism fits is a
+  re-exported from `PUI`, living as design-system plumbing; a nesting
+  no mechanism fits is a
   missing-vocabulary signal (L16), never a reason to reach for the
   lens. Checkable form: `grep "focusField @" demo/` is empty, always.
 

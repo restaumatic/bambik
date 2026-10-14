@@ -8,6 +8,15 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **`atAnyRow` and `widenVariantOutput` dropped, inlined.** The floor's
+  two named reshapings were one-liners (`lcmap (const {})`, `rmap
+  expand`) with one caller each outside a test: the vocabulary's
+  `eventLeaf` placing `{}`-input chrome at the emitter's row, and the two
+  `×→+` merge instances (`PUI`, `Cont`) injecting an operand's cases into
+  the union. Both now write the ecosystem function, so no export of the
+  library names a widening or a placement: the floor holds the row
+  evidence, the two owned-side row functions and the one-sided
+  vocabulary (`atField`/`toField`, `atCase`/`toCase`, `with`, `settled`).
 - **`replaying` deleted.** Since yesterday its body was `joined` at the
   empty payload with the event dropped and the case renamed — a
   derivation, with `PUI.Web.clicked`/`clickedRow` its only callers. They

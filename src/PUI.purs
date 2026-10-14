@@ -96,7 +96,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
@@ -108,11 +108,11 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- `focusField` is deliberately absent: the leaf lift is design-system plumbing —
 -- every vocabulary editor is `focusField @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
--- focus itself. `atAnyRow` is absent for the same reason: a stage is typed
--- at one row (the gated displays, `settled`, `acted`), so a UI
--- component's own row is always stated by a
--- business function, never placed at another row at the call site; the
--- placement is the vocabularies' plumbing for their statics.
+-- focus itself. No placement word is here either: a stage is typed at
+-- one row (the gated displays, `settled`, `acted`), so a UI component's
+-- own row is always stated by a business function, never placed at
+-- another row at the call site; `{}`-input chrome is placed by the
+-- vocabulary's `eventLeaf` with a bare `lcmap (const {})`.
 import Data.Profunctor.Row (atCase, atField, settled, toCase, toField, with) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined) as Adopters
 import Data.Profunctor.Silencing (silence) as Adopters
@@ -126,7 +126,7 @@ import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant)
 import Data.Profunctor.Silencing (class Silencing, silence)
-import Data.Profunctor.Row (class RowLabels, exactRow, fedFirst, fedSecond, rowLabels, widenVariantOutput)
+import Data.Profunctor.Row (class RowLabels, exactRow, fedFirst, fedSecond, rowLabels)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
@@ -137,7 +137,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, case_, contract, inj, match, on)
+import Data.Variant (class Contractable, case_, contract, expand, inj, match, on)
 import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -569,8 +569,8 @@ instance Applicative m => RecordToVariant (PUI m) where
   -- the one-thing-per-feed obligation falls on the operands (the answer
   -- law at ×→+, arming); hence `Applicative m`: no state here.
   recordToVariant p1 p2 = wrap ado
-    p1' <- unwrap (widenVariantOutput (lcmap fedFirst p1))
-    p2' <- unwrap (widenVariantOutput (lcmap fedSecond p2))
+    p1' <- unwrap (rmap expand (lcmap fedFirst p1))
+    p2' <- unwrap (rmap expand (lcmap fedSecond p2))
     in
       { toUser: \new -> do
           p1'.toUser new

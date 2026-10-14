@@ -138,7 +138,7 @@ module PUI.Web
   where
 
 import Data.Profunctor.Row.Structural (withStructuralEq)
-import Data.Profunctor (rmap)
+import Data.Profunctor (lcmap, rmap)
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
@@ -158,7 +158,6 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, joined, newScope, onCancel, resumeScope, scopeActive, setDiagnostics, setSink, setTracing, suspendScope)
-import Data.Profunctor.Row (atAnyRow)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Prim.Row (class Cons)
 import Data.Profunctor.Seeding (isHole)
@@ -596,11 +595,13 @@ statusWiring show = { toUser: show, fromUser: \_ -> pure unit }
 
 -- | The click-emitter protocol over any `{}`-output element chrome: replay
 -- | the row last fed on click, as case `l` (a click before any value
--- | arrived is withheld) — `clickedRow` over the chrome placed at the row,
--- | the last-built element listening. Every vocabulary's `button` family
+-- | arrived is withheld) — `clickedRow` over the chrome placed at the row
+-- | (`lcmap (const {})`: chrome reads nothing, and the terminal record is
+-- | the one row every row maps onto, so the placement is total), the
+-- | last-built element listening. Every vocabulary's `button` family
 -- | is this over its own chrome.
 eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
-eventLeaf chrome = clickedRow @l (atAnyRow chrome)
+eventLeaf chrome = clickedRow @l (lcmap (const {}) chrome)
 
 -- | A runtime string made safe to concatenate into `staticHTML` markup —
 -- | as text or as a double-quoted attribute value. Every caption, label,

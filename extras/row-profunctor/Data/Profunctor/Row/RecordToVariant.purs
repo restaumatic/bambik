@@ -22,7 +22,7 @@
 -- |
 -- | A word lives where the sides it constrains do: one constraining both
 -- | sides in its shape's module, one constraining a single side on the
--- | floor (`Data.Profunctor.Row`, beside `atAnyRow`/`widenVariantOutput`)
+-- | floor (`Data.Profunctor.Row`)
 -- | — so no shape module imports another, and every module holds only
 -- | its merge, its strength and trace forms, and the words that genuinely
 -- | span both of its sides.

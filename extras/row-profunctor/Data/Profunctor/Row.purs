@@ -107,7 +107,7 @@
 -- |   * **unit** — one shape only: no merge class carries a unit, each
 -- |     shape borrowing its own from the class that can supply it. Three
 -- |     borrow from `Category` — `identity` at `+→+`, the `{}` wire at the
--- |     merge's row (`atAnyRow identity`) at `×→×`, `lcmap case_ identity`
+-- |     merge's row (`lcmap (const {}) identity`) at `×→×`, `lcmap case_ identity`
 -- |     at `+→×`, where `unshown @l` is that unit named at one case, the
 -- |     one unit word a shape module has. `×→+`'s cannot be a wire, since
 -- |     no wire fabricates a case, so it borrows from
@@ -120,8 +120,8 @@
 -- |     needs `Retaining`'s memory.
 -- |
 -- | What is deliberately *not* here: the one-sided words
--- | (`atField`/`toField`, `atCase`/`toCase`, `with`, `settled`,
--- | `atAnyRow`, `widenVariantOutput`), which are the floor's and appear
+-- | (`atField`/`toField`, `atCase`/`toCase`, `with`, `settled`), which
+-- | are the floor's and appear
 -- | under *The shared floor* below — among them `with`, which no
 -- | variant-input shape could mirror, there being no point at a variant
 -- | input; the `×→+` unit `silence`, which is `Data.Profunctor.Silencing`'s;
@@ -135,8 +135,12 @@
 -- | retained as a field) are a **narrowing** of a stage's input and a
 -- | **widening** of its output — a stage is typed at one row, the row the
 -- | view declares and its business function is typed at (guardrails
--- | L18), so they are coercions of the kind `atAnyRow` is, plumbing and
--- | not vocabulary; a sub-record a stage should see is the model's own
+-- | L18), so they are coercions — and the library names no coercion,
+-- | the two it needs being bare `lcmap (const {})` where a vocabulary
+-- | places `{}`-input chrome and `rmap expand` where the `×→+` merge
+-- | injects an operand's cases into its union (both one-liners, the
+-- | named forms `atAnyRow`/`widenVariantOutput` dropped 2026-10-14); a
+-- | sub-record a stage should see is the model's own
 -- | nesting under `group @l`, a sub-variant a case a pane adopts.
 -- | `feedback @l`, `cycled`, `folding @w @l` and `unfolding @w @l` (one
 -- | hidden state each: a seeded field, a re-entering case, a fold's
@@ -247,11 +251,7 @@
 -- |   * **one-sided placements** — every word constraining a single side,
 -- |     so that no shape module needs another's: the closed-singleton
 -- |     halves `atField`/`toField` and `atCase`/`toCase`, the knot's
--- |     closure `with` (over the point), the normalization `settled`, and
--- |     the two reshapings `atAnyRow` (a component that reads nothing,
--- |     placed at any record input) and `widenVariantOutput` (a variant
--- |     output let into a wider row, nothing flowing through the added
--- |     labels).
+-- |     closure `with` (over the point) and the normalization `settled`.
 -- |
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.
@@ -316,7 +316,7 @@
 -- | ```
 -- |
 -- | `exact` is the identity at a variant output because a variant carries
--- | its one tag: `widenVariantOutput` is `rmap expand`, and
+-- | its one tag: the merge's injection is a bare `rmap expand`, and
 -- | `SharedVariantOutputs` carries no evidence. At a record output the
 -- | trim is `exactRow`, the runtime evidence `OwnedRecordOutputs` carries,
 -- | so an operand's stale runtime copy of a sibling's field never shadows
@@ -383,11 +383,11 @@
 -- | named ecosystem deviations (doc §4). See
 -- | doc/collections-profunctor-algebra.md §1.
 -- |
--- | Reshape vs focus: a reshape *drops* the complement — `atAnyRow` reads
--- | none of the row (`lcmap (const {})`, never a coercion: no stage
--- | subsumes, a stage is typed at one row), `widenVariantOutput` never
--- | emits the added cases (`expand`) — while a focus *threads* it
--- | (`Strong`/`Choice`).
+-- | Reshape vs focus: a reshape *drops* the complement — chrome placed
+-- | with `lcmap (const {})` reads none of the row, a merge operand let
+-- | into the union with `rmap expand` never emits the added cases — while
+-- | a focus *threads* it (`Strong`/`Choice`). Neither reshape is a word:
+-- | no stage subsumes, a stage is typed at one row.
 module Data.Profunctor.Row
   ( class InclusiveRows
   , class ExclusiveRows
@@ -411,8 +411,6 @@ module Data.Profunctor.Row
   , exactRow
   , fieldNames
   , rowLabels
-  , atAnyRow
-  , widenVariantOutput
   , atField
   , toField
   , atCase
@@ -429,7 +427,7 @@ import Data.Profunctor.Seeding (class Seeding, announce)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Variant (class Contractable, case_, contract, expand, inj, on)
+import Data.Variant (class Contractable, case_, contract, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Data.Variant.Internal (class VariantTags)
 import Prim.Ordering (Ordering, LT, EQ, GT)
@@ -780,20 +778,6 @@ instance
 -- =====================================================================
 -- One-sided placements: a word constraining one side lives here
 -- =====================================================================
-
--- | Place a component that reads nothing at any record input: the
--- | `{}`-input chrome — a static, a rule, an element with nothing in it —
--- | at the row of whatever it sits beside. `lcmap (const {})`: the terminal
--- | record is the one row every row maps onto, so the placement is total
--- | and needs no evidence.
-atAnyRow :: forall p r a. Profunctor p => p {} a -> p { | r } a
-atAnyRow = lcmap (const {})
-
-widenVariantOutput :: forall p a v1 v2 v.
-  Profunctor p =>
-  Row.Union v1 v2 v =>
-  p a [ | v1 ] -> p a [ | v ]
-widenVariantOutput = rmap expand
 
 -- | Dispatch a shot into the focused sub-variant or the background — a
 -- | plain row function, no profunctor in sight, which is why it sits on the

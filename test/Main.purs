@@ -27,10 +27,10 @@ import Data.Profunctor.Row.VariantToVariant (focusCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
-import Data.Profunctor.Row (atCase, atField, toCase, toField, widenVariantOutput)
+import Data.Profunctor.Row (atCase, atField, toCase, toField)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
-import Data.Variant (Variant, case_, inj, match)
+import Data.Variant (Variant, case_, expand, inj, match)
 import Data.Variant.Case (caseText)
 import Type.Proxy (Proxy(..))
 import Effect (Effect)
@@ -1846,7 +1846,7 @@ main = do
     m.toUser (.x 1)
     Ref.read outs >>= assertEqual "repetition +→+: twice is two" [ .x 1, .x 1 ]
     outs2 <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-    m2 <- unwrap (variantToVariant (widenVariantOutput identity :: PUI Effect [ x :: Int ] [ x :: Int, y :: String ]) (widenVariantOutput identity :: PUI Effect [ y :: String ] [ x :: Int, y :: String ]))
+    m2 <- unwrap (variantToVariant (rmap expand identity :: PUI Effect [ x :: Int ] [ x :: Int, y :: String ]) (rmap expand identity :: PUI Effect [ y :: String ] [ x :: Int, y :: String ]))
     m2.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs2
     m2.toUser (.x 1) *> m2.toUser (.x 1) *> m2.toUser (.y "e")
     Ref.read outs2 >>= assertEqual "repetition +→+: the merge coalesces nothing either" [ .x 1, .x 1, .y "e" ]
