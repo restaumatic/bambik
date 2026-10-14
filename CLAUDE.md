@@ -168,7 +168,9 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
 - **Holes against the real library** (guardrails L18) — every view runs with
   its logic stubbed to bare untyped `hole`s (`PUI.Web.hole`, which throws on
   every touch but the field `__bambikHole`, read by the pure `isHole` in
-  `Data.Profunctor.Seeding`), importing the real modules unchanged. What makes
+  `PUI`, beside the other development diagnostics — moved out of
+  `Data.Profunctor.Seeding` 2026-10-14, since the algebra may not know a
+  field the carrier's JavaScript invents), importing the real modules unchanged. What makes
   that possible: a stage is typed at **one row** (no `Union` subsumption —
   a business function is typed at the stage's row, its signature the
   view's hole hint verbatim — `countLine :: { counted :: Int } -> String`,

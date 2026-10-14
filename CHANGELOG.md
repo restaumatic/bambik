@@ -8,6 +8,12 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-14, latest
 
+- **`isHole` is `PUI`'s.** It read a field the carrier's JavaScript
+  invents (`__bambikHole`) from inside `Data.Profunctor.Seeding`, the
+  carrier-agnostic algebra. It now sits beside `tr` and `gateGuard` as
+  the third development diagnostic, exported from `PUI` for the
+  vocabularies; `Seeding` holds the class, its `(->)` instance and
+  `seeded`, with no `unsafeCoerce` in it.
 - **`Silencing` deleted; the algebra names no unit but `identity`.** The
   one-method class coined earlier today for the `×→+` unit is gone with
   its two instances: no shape needs a unit word of its own, the three

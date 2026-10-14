@@ -65,6 +65,7 @@ module PUI
   , setTracing
   , setDiagnostics
   , diagnosticsOn
+  , isHole
   , action
   , fold
   , reset
@@ -119,7 +120,7 @@ import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt, optioned) as Adopters
 import Data.Profunctor.Looping (class Looping)
 import Data.Profunctor.Looping (class Looping, looped) as Looping
-import Data.Profunctor.Seeding (class Seeding, isHole, seeded)
+import Data.Profunctor.Seeding (class Seeding, seeded)
 import Data.Profunctor.Seeding (class Seeding, announce, seeded) as Seeding
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
@@ -1007,6 +1008,19 @@ setTracing on = Ref.write on tracingRef
 -- | silent.
 setDiagnostics :: Boolean -> Effect Unit
 setDiagnostics on = Ref.write on diagnosticsRef
+
+-- | Whether a value is a **hole** — logic not written yet (guardrails L18):
+-- | `PUI.Web.hole` answers `true` to this one field and throws on every
+-- | other touch, and no other value has it. A word that consumes a logic
+-- | value when built rather than on data — a seed it announces, a period
+-- | it schedules — skips a hole, so a view runs before its logic exists.
+-- | Pure: a field read. A development diagnostic like `tr` and
+-- | `gateGuard`, and so the carrier's rather than the algebra's — it
+-- | names a field the carrier's JavaScript invents, which no module under
+-- | `Data.Profunctor` may know of (moved from `Data.Profunctor.Seeding`,
+-- | CHANGELOG 2026-10-14).
+isHole :: forall a. a -> Boolean
+isHole a = (unsafeCoerce a :: { "__bambikHole" :: Boolean })."__bambikHole" == true
 
 -- | Whether development diagnostics are on — for a carrier's own
 -- | dev-only annotations (`PUI.Web.text`'s comment marker).

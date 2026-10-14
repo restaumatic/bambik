@@ -603,7 +603,7 @@ code below the UI) are algebra-layer material and exempt by location.
   first, and it runs before a single business function exists.
 - `hole` (`PUI.Web`) is a value of every type that throws, and marks the
   page, on any read or call — except the field `__bambikHole`, which
-  answers `true`, so `isHole` (`Data.Profunctor.Seeding`) is a pure field
+  answers `true`, so `isHole` (`PUI`, beside the other development diagnostics) is a pure field
   read. A run that reaches no hole proves what the rule wants: **no data
   reaches logic that is not there**. A user's input stops at the
   knowledge gates (L6), which have nothing to join it with.
