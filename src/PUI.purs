@@ -75,6 +75,7 @@ module PUI
   , folding
   -- the vocabulary: what a view writes, with the words `Adopters` re-exports
   , action
+  , load
   , fold
   , reset
   , capture
@@ -103,24 +104,31 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
--- the adopter family and its companions, re-exported so demos need the row
--- modules only for the `.do` merges and the knot
--- `focusField` is deliberately absent: the leaf lift is design-system plumbing —
--- every vocabulary editor is `focusField @l`-lifted inside, the labelled group
+-- the words a view writes beside the leaves, re-exported so demos need the
+-- row modules only for the `.do` merges and the knot. `focusField` is
+-- deliberately absent: the leaf lift is design-system plumbing — every
+-- vocabulary editor is `focusField @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
--- focus itself. No placement word is here either: a stage is typed at
--- one row (the gated displays, `settled`, `acted`), so a UI component's
--- own row is always stated by a business function, never placed at
--- another row at the call site; `{}`-input chrome is placed by the
--- vocabulary's `eventLeaf` with a bare `lcmap (const {})`.
-import Data.Profunctor.Row (atCase, atField, expanded, settled, toCase, toField) as Adopters
+-- focus itself. No placement word is here either: every leaf narrows its
+-- input and widens its output itself — a status or an action owns the one
+-- case its label names, an emitter is open on its output, an action
+-- widens its declared outcomes into its block — so a stage is typed at one
+-- row (the gated displays, `settled`, `acted`) and a UI component's own
+-- row is always stated by a business function, never placed at another
+-- row at the call site. The floor's single-label adopters (`atField`/
+-- `atCase`, `toField`) stay inside the vocabularies, where a face is
+-- adopted at its label; `toCase` alone is a view's, the one shape change
+-- a business case can name (an editor's release leaving as an event).
+-- `{}`-input chrome is placed by the vocabulary's `eventLeaf` with a bare
+-- `lcmap (const {})`.
+import Data.Profunctor.Row (atCase, settled, toCase) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, kept) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt) as Adopters
@@ -138,8 +146,8 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, case_, contract, inj, on)
-import Prim.Row (class Cons)
+import Data.Variant (class Contractable, case_, contract, expand, inj, on)
+import Prim.Row (class Cons, class Union)
 import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -1212,8 +1220,8 @@ type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 -- |
 -- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, carrier
 -- | nesting). Naturality is free, so every ocular commutes with the
--- | `dimap`-only adopters (`atField`/`atCase`, `toField`/`toCase`) and
--- | the focus `focusField`.
+-- | `dimap`-only adopters (`atField`/`atCase`, `toField`/`toCase`, the
+-- | floor's) and the focus `focusField`.
 -- | Commuting with the *strengths* is the extra law, and the admission test
 -- | for anything called an ocular:
 -- |
@@ -1241,22 +1249,34 @@ type Ocular p = forall a b. Optic p a b a b
 static :: forall p r. Category p => Ocular p -> p { | r } { | r }
 static o = o identity
 
--- | An action is **opened by its progress indicator**: the slot is a
--- | `+→×` citizen of the run's two lifecycle occurrences, `started` and
--- | `ended` (`indeterminateLinearProgress # action createPerson`), and of
+-- | An action **owns its button's case and declares its outcomes**: the
+-- | `+→+` leaf of case `l` (`action @"Create" @( "Person created" :: _,
+-- | "Person not created" :: _ ) createPerson`, crud), fed the row the
+-- | button replayed, running the `Aff` on it, its outcome leaving as a
+-- | case of the row `t` the `Aff` names. Like a status it narrows its
+-- | input to its one case (`Cons l a () v`), and like an emitter it is
+-- | open on its output as far as a row a function names can be: `t` is
+-- | **declared** on the line — the labels at least, a payload the fold
+-- | after it fixes left `_` — and widened into the row its block shares
+-- | (`Union t b o`), so an action stands among emitters in a
+-- | `RecordToVariant.do` (order-form's three, each `joined` with its
+-- | button) or before its folds in the fold block without a placement
+-- | word on either. The declaration is what keeps the view running with
+-- | its logic deleted (guardrails L18): a hole names no outcome, so the
+-- | widening would have nothing to go on.
+-- |
+-- | It is **opened by its progress indicator**: the slot is a `+→×`
+-- | citizen of the run's two lifecycle occurrences, `started` and
+-- | `ended` (`indeterminateLinearProgress # action @"Create" …`), and of
 -- | nothing else — a status that tells an outcome is never the slot, and
--- | the types forbid it. The outcome leaves as the variant `[ | t ]` the
--- | `Aff` names and is folded after the action by the statuses that tell
--- | it (`snackbar @"Person created" identity`, crud), or
--- | by `capture @l` where nothing needs telling (weather). A loop's actions
--- | stand in the fold block, each with its button's case: `( Semigroupoid.do
--- | { indeterminateLinearProgress # action createPerson; VariantToRecord.do
--- | { … } } ) # atCase @"Create"`; an outcome whose fold keeps the model is
--- | `joined` with its button, so the fold has the model in hand (order-form's
--- | submit, flight-booker). The outcome row is fixed by the folds that
--- | consume it, or declared `@( … )` where nothing reads its payload. No
+-- | the types forbid it. The outcome is folded after the action by the
+-- | statuses that tell it (`snackbar @"Person created" identity`, crud),
+-- | or by `capture @l` where nothing needs telling (weather); an outcome
+-- | whose fold keeps the model is `joined` with its button, so the fold
+-- | has the model in hand (order-form's submit, flight-booker). No
 -- | application owns a "busy": the indicator shows between `started` and
--- | `ended` and, like every status, owes the channel nothing.
+-- | `ended` and, like every status, owes the channel nothing. The action
+-- | a mount runs, fed `body`'s one `{}` rather than a case, is `load`.
 -- |
 -- | A failing action is **reported, not swallowed**: `ended` is dispatched
 -- | whichever way the `Aff` ends — so a throw cannot strand the spinner —
@@ -1269,13 +1289,33 @@ static o = o identity
 -- | detached action is silent like a detached button; the slot is still
 -- | told `ended`, so a re-attached indicator is not left running.
 action
-  :: forall @t a v1 m
-   . Scoped m
+  :: forall @l @t a v v1 b o m
+   . IsSymbol l
+  => Cons l a () v
+  => Union t b o
+  => Scoped m
   => Contractable ( started :: {}, ended :: {} ) v1
   => (a -> Aff [ | t ])
   -> PUI m [ | v1 ] {}
-  -> PUI m a [ | t ]
-action arr = running \i -> if isHole arr then Nothing else Just (arr i)
+  -> PUI m [ | v ] [ | o ]
+action arr slot = Adopters.atCase @l (running (\i -> if isHole arr then Nothing else Just (arr i)) slot) # rmap expand
+
+-- | The action a **feed** runs — `×→+`, the row fed is the `Aff`'s
+-- | argument and its outcome leaves as the case the `Aff` names: the
+-- | **load** standing before the knot, run by `body`'s one feed of `{}`
+-- | (`indeterminateLinearProgress # load loadPeopleCatalogue; capture
+-- | @"People loaded"`, crud; order-form), its outcome the model the knot
+-- | declares. Opened by its progress indicator like `action`, reported
+-- | and scoped the same way; typed at exactly its outcomes, which the
+-- | capture or status after it fixes.
+load
+  :: forall @t r v1 m
+   . Scoped m
+  => Contractable ( started :: {}, ended :: {} ) v1
+  => ({ | r } -> Aff [ | t ])
+  -> PUI m [ | v1 ] {}
+  -> PUI m { | r } [ | t ]
+load arr = running \i -> if isHole arr then Nothing else Just (arr i)
 
 -- The run behind `action`: `Nothing` is a hole, which
 -- never runs (guardrails L18); otherwise `started` and `ended` are told to

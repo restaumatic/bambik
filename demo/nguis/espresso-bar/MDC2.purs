@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import EspressoBar (caffeineFraction, cupLine, espressoNoFrills, placeOrder, theUsual, usualOrder)
-import PUI (action, atCase, fold, looped, with)
+import PUI (action, fold, looped, with)
 import PUI.Web ((<+>), choice, staticText, text)
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body, body2, button', caption, checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, indeterminateLinearProgress, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
@@ -46,8 +46,8 @@ espressoBar =
         fold @"The usual" theUsual
         fold @"Espresso, no frills" espressoNoFrills
         ( Semigroupoid.do
-          indeterminateLinearProgress # action @( "Order placed" :: {} ) placeOrder
-          snackbar @"Order placed" (const usualOrder) ) # atCase @"Place order"
+          indeterminateLinearProgress # action @"Place order" @( "Order placed" :: {} ) placeOrder
+          snackbar @"Order placed" (const usualOrder) )
     # looped
       @( "Your name" :: String
        , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]

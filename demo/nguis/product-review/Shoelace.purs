@@ -4,7 +4,7 @@ import Prelude (($), (#), identity, Unit)
 
 import Effect (Effect)
 import ProductReview (freshImpression, previewLine, submitReview)
-import PUI (action, atCase, looped, with)
+import PUI (action, looped, with)
 import PUI.Web ((<+>), choice, text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, card, divider, indeterminateLinearProgress, rating, select, textArea, textField, toast, toggleSwitch)
@@ -22,7 +22,7 @@ productReview =
     textField @"Nickname"
     divider $ card $ p $ text previewLine
     button @"Submit review"
-    indeterminateLinearProgress # action submitReview # atCase @"Submit review"
+    indeterminateLinearProgress # action @"Submit review" @( "Review submitted" :: _ ) submitReview
     toast @"Review submitted" identity
   # looped
     @( "Overall rating" :: { current :: Number, max :: Int }

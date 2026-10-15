@@ -6,7 +6,7 @@ import Crud (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogu
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, capture, fold, joined, looped)
+import PUI (action, capture, fold, joined, load, looped)
 import PUI.Web (text)
 import PUI.Web.MDC3 (body, button, filledTextField, indeterminateLinearProgress, listOf', snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crud :: Effect Unit
 crud =
   body $ Semigroupoid.do
-    indeterminateLinearProgress # action loadPeopleCatalogue
+    indeterminateLinearProgress # load loadPeopleCatalogue
     capture @"People loaded"
     ( Semigroupoid.do
       filledTextField @"Filter prefix (surname)"
@@ -33,20 +33,20 @@ crud =
       VariantToRecord.do
         fold @"Person picked" pick
         ( Semigroupoid.do
-          indeterminateLinearProgress # action createPerson
+          indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson
           VariantToRecord.do
             snackbar @"Person created" identity
-            snackbar @"Person not created" identity ) # atCase @"Create"
+            snackbar @"Person not created" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action updatePerson
+          indeterminateLinearProgress # action @"Update" @( "Person updated" :: _, "Person not updated" :: _ ) updatePerson
           VariantToRecord.do
             snackbar @"Person updated" identity
-            snackbar @"Person not updated" identity ) # atCase @"Update"
+            snackbar @"Person not updated" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action deletePerson
+          indeterminateLinearProgress # action @"Delete" @( "Person deleted" :: _, "Person not deleted" :: _ ) deletePerson
           VariantToRecord.do
             snackbar @"Person deleted" identity
-            snackbar @"Person not deleted" identity ) # atCase @"Delete"
+            snackbar @"Person not deleted" identity )
     ) # looped
       @( "Filter prefix (surname)" :: String
        , "Name" :: String

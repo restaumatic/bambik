@@ -4,7 +4,7 @@ import Prelude ((#), ($), identity, Unit)
 
 import Effect (Effect)
 import Payment (amountLine, chargeFlaky, statusLine, unpaidOrder)
-import PUI (action, atCase, looped, with)
+import PUI (action, looped, with)
 import PUI.Web (text)
 import PUI.Web.MDC3 (body, bodyMedium, button', headlineSmall, indeterminateCircularProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,9 +15,8 @@ payment =
     headlineSmall $ text amountLine
     bodyMedium $ text statusLine
     button' @"Charge card" { icon: "credit_card" }
-    ( Semigroupoid.do
-      indeterminateCircularProgress # action chargeFlaky
-      snackbar @"Card charged" identity ) # atCase @"Charge card"
+    indeterminateCircularProgress # action @"Charge card" @( "Card charged" :: _ ) chargeFlaky
+    snackbar @"Card charged" identity
   # looped
     @( amount :: Number
      , approval :: [ approved :: { attempt :: Int }, pending :: {} ]

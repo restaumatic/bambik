@@ -22,7 +22,7 @@
 -- |   * **act** — `button`, with `outlinedButton` and `textButton` at the
 -- |     lower emphasis levels; `fab`; `iconButton`; `menu`/`menuItem`
 -- |   * **be told something** — `snackbar` (passing), `banner` (until
--- |     dismissed), `dialog`/`simpleDialog` (must be answered),
+-- |     dismissed), `dialog`/`confirmed` (must be answered),
 -- |     `linearProgress`, `indeterminateLinearProgress`,
 -- |     `indeterminateCircularProgress`, `tooltip`
 -- |   * **structure and surface** — `card`/`cardActions`, `list`/`listItem`,
@@ -101,7 +101,6 @@ module PUI.Web.MDC2
   , selectUnpicked
   , selectOptional
   , confirmed
-  , simpleDialog
   , slider
   , sliderLive
   , snackbar
@@ -1173,32 +1172,32 @@ dialog title content = wrap do
     _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
--- | The **witness rung** of the assurance
--- | ladder, baked in as a component. `confirmed @l title content` is a
--- | fulfillment-gated pass-through `p { | row } { | row }` over a
--- | `{}`-output display, like every content slot in the family: feeding
--- | opens the modal and feeds the content (the fed row, whole; what it
--- | reads is its read functions' footprints); the flow is **withheld until the
--- | user confirms**, then the fed row is released — the release is the
--- | read receipt. Derived entirely from existing machinery,
--- | `simpleDialog title content`: the replay-on-confirm protocol over a
--- | display, which releases the row it shows. A dismiss without
--- | confirming releases nothing:
--- | a declined reading withholds, honestly.
-confirmed :: forall row. String -> String -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
-confirmed confirmCaption title content = simpleDialog confirmCaption title content
-
--- | `dialog` with a **confirm button** built in — the confirmation step:
--- | show what is about to happen, and the button reports it. The content
--- | needs no button of its own: a display releases the row it shows, so
--- | there is something to confirm — `confirmed` is exactly that
--- | specialization.
--- | Not a full `Ocular`, deliberately: the confirm **replays** the
--- | content's last output, and replay is lawful over **records** only —
--- | an entity's last value may be re-said, a one-shot event may not (the
--- | `looped` argument) — so the content's output is row-shaped.
-simpleDialog :: forall i o. String -> String -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
-simpleDialog confirmCaption title content = wrap do
+-- | The **witness rung** of the assurance ladder, baked in as a
+-- | component: `dialog` with a **confirm button** built in. A `+→×` leaf
+-- | like a status — it owns case `l`, **tells it** as its title, verbatim,
+-- | and takes its fold: the case's payload (the row the button that
+-- | opened it replayed) is shown by the content, a display, and the flow
+-- | is **withheld until the user confirms**, then `f` of that row is
+-- | released, the release the read receipt — `confirmed @"Refund a
+-- | customer" "Refund" refundStandard $ body1 $ text refundLine` (cashbox,
+-- | in the fold block beside the other folds), `confirmed @"About this
+-- | dashboard" "Got it" identity $ …` (weather, a reading that changes
+-- | nothing). The content needs no button of its own: a display releases
+-- | the row it shows, so there is something to confirm. A dismiss without
+-- | confirming releases nothing: a declined reading withholds, honestly.
+-- | Not an `Ocular`, deliberately: the confirm **replays** the row last
+-- | shown, and replay is lawful over **records** only — an entity's last
+-- | value may be re-said, a one-shot event may not (the `looped`
+-- | argument) — so a dialog is opened by an event and shows a row.
+confirmed
+  :: forall @l r r1 v
+   . IsSymbol l
+  => Cons l { | r } () v
+  => String
+  -> ({ | r } -> { | r1 })
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] { | r1 }
+confirmed confirmCaption f content = atCase @l $ wrap do
   titleId <- liftEffect uniqueId
   contentId <- liftEffect uniqueId
   unwrap $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ wrap do
@@ -1206,9 +1205,9 @@ simpleDialog confirmCaption title content = wrap do
       div >>> cl "mdc-dialog__container" $
         div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ Semigroupoid.do
           wrap do
-            _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
+            _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText (reflectSymbol (Proxy @l)))
             unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
-          div >>> cl "mdc-dialog__actions" $ witnessed $
+          div >>> cl "mdc-dialog__actions" $ witnessed f $
             el "button" >>> "type" := "button" >>> "aria-label" := confirmCaption >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
               static (div >>> cl "mdc-button__ripple")
               span >>> cl "mdc-button__label" $ staticText confirmCaption

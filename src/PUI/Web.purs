@@ -861,7 +861,7 @@ textLeaf f = wrap do
   modify_ _ { sibling = newNode}
   node <- gets (_.sibling)
   -- the display's answer to the feed is the row it was shown, so the
-  -- stage after it is fed it (`simpleDialog`'s confirm replays what its
+  -- stage after it is fed it (`confirmed`'s confirm replays what its
   -- content last answered). Nothing at registration, since an answer
   -- needs a feed. Every display follows this protocol (`displayWiring`).
   -- a hole read renders nothing (guardrails L18): a row may reach a display
@@ -1093,7 +1093,7 @@ attrAt name = attrWith name (Record.get (Proxy @l))
 -- | `× → +` by shape as by behaviour: the click **replays** the last row
 -- | fed — replay is lawful over records only, an entity's value may be
 -- | re-said where a one-shot event may not (the `looped`/
--- | `simpleDialog` argument) — and leaves as an occurrence of `l`, so
+-- | `confirmed` argument) — and leaves as an occurrence of `l`, so
 -- | nothing record-shaped ever stands for a click. The content is fed the
 -- | row it replays; statics and chrome sit at any row, so
 -- | `clicked @l @k staticChrome` needs no adapter.
@@ -1115,14 +1115,15 @@ clickedRow :: forall @l r a b v. IsSymbol l => Cons l { | r } b v => PUI Web { |
 clickedRow w = replayed @l identity (occurrences w)
 
 -- | The **witness rung**'s button: `{}`-input chrome whose click releases
--- | the row the stage was last fed, as a row — `eventLeaf` with its one
--- | case unwrapped, so a confirmation dialog stays a `×→×` stage
--- | (`confirmed`, MDC2/MDC3), Answer refined in time: the row is released
--- | on confirmation. The one lawful record-output emitter, and
--- | vocabulary-internal like `clickedRow`: an application's emitters are
--- | its vocabulary's.
-witnessed :: forall r. PUI Web {} {} -> PUI Web { | r } { | r }
-witnessed chrome = eventLeaf @"witnessed" chrome # rmap (on (Proxy @"witnessed") identity case_)
+-- | `f` of the row the stage was last fed, as a row — `eventLeaf` with
+-- | its one case unwrapped and folded, so a confirmation dialog is a
+-- | `+→×` leaf like a status (`confirmed @l caption f content`,
+-- | MDC2/MDC3: the content shown the case's payload, the click folding
+-- | it), Answer refined in time: the row is released on confirmation.
+-- | The one lawful record-output emitter, and vocabulary-internal like
+-- | `clickedRow`: an application's emitters are its vocabulary's.
+witnessed :: forall r r1. ({ | r } -> { | r1 }) -> PUI Web {} {} -> PUI Web { | r } { | r1 }
+witnessed f chrome = eventLeaf @"witnessed" chrome # rmap (on (Proxy @"witnessed") f case_)
 
 -- `joined` at the empty payload: the click source's occurrence carries
 -- nothing, so the event is dropped, `f` is read off the row last fed and

@@ -219,7 +219,7 @@ dispatched to an indicator that owes nothing back (it was once
 One fact sits outside the table. `action` is the one `+→+` form that can be
 *misplaced*: it responds through an `AVar` inside `launchAff_`, so an `Aff`
 that completes without suspending emits within the feed — a response under
-`# atCase`, where every demo puts it, but an echo if an application placed
+its case (`action @l`), where every demo puts it, but an echo if an application placed
 it after an editor in a `Semigroupoid.do`; the guard is writing.md's rule that
 effects run on occurrences, not the type.
 

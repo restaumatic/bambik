@@ -76,7 +76,15 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   whole copy (`snackbar @"Flight booked" kept`; inside the vocabulary, the
   face over the label is adopted `# atCase @l`), and an emitter emits its
   own case. The structural adopters `atField`/`atCase`, `toField`/`toCase`
-  take no function, and there is no rename adopter: re-labelling a
+  take no function and, but for `toCase`, stay inside the vocabularies:
+  every leaf narrows its input and widens its output itself — a status
+  or an action owns the one case its label names, an emitter is open on
+  its output, an action widens its declared outcomes into its block
+  (`action @l @t`), a dialog owns the case that opens it (`confirmed
+  @l`) — so a view places nothing at a row, `PUI` re-exports no
+  adopter, and `toCase` alone is a view's, the one shape change a
+  business case can name (an editor's release leaving as an event).
+  There is no rename adopter: re-labelling a
   component built at a fixed internal label is exactly what this
   guardrail forbids, which is why `asField`/`asCase` went (CHANGELOG,
   2026-10-14), as the view-side read adopters had before
@@ -182,8 +190,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
   swap. Precedents: the statuses (`snackbar @"Flight booked" kept`,
-  replacing a per-case copy record and then the copy function), `confirmed "Refund"
-  "Refund the customer?"` and `simpleDialog`, and the one-field ocular
+  replacing a per-case copy record and then the copy function), `confirmed
+  @"Refund a customer" "Refund" refundStandard` (the caption a value, the
+  dialog telling its case as its title), and the one-field ocular
   configs made positional (`tooltip`, `dialog`, `topAppBar`, `menu`,
   `imageList`, `layoutCell`, `badge`). The vocabulary MUST
   keep every line's anchor expressible and singular: an ocular MUST NOT
@@ -230,10 +239,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   whole row (an equality), and its business functions are typed at that
   row (L18). A shared variant output is **one row** every operand is
   typed at, at `×→+` and `+→+` alike (an equality): an emitter is open
-  on its output and sits in the block's row by its label, a `+→+` stage
-  of a declared row is `expanded` into it, and a handler's row, coming
-  from a function, is the block's (an inclusive union could not be
-  split back out under holes). A handler missing for a case is a type
+  on its output and sits in the block's row by its label, an action
+  declares its outcomes (`action @l @t`) and widens them into it itself,
+  and a handler's row, coming from a function, is the block's (an
+  inclusive union could not be split back out under holes). A handler missing for a case is a type
   error either way. Variant handling and
   record production MUST be disjoint (responsibility never splits). Runtime evidence appears exactly where responsibility
   does (`DispatchableVariants`, `MergeableRecords`) and nowhere else.
@@ -531,7 +540,8 @@ The codebase is three floors, each greppable:
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
   `wrap`/`unwrap`, `PUI.Web`, FFI) plus the row vocabulary — the words
-  applications use (`atCase`, `static`) and the leaf lift `focusField`
+  applications use (`static`, `toCase`), the floor's adopter a face is
+  placed at (`atCase @l`) and the leaf lift `focusField`
   from its shape module.
   It never imports the ecosystem algebra: a design-system module proves
   the vocabulary complete by being its own first customer. `PUI.Web`
@@ -659,7 +669,10 @@ code below the UI) are algebra-layer material and exempt by location.
   hint. An emitter block's variant output
   is one row like a handler block's: an emitter's case is fixed by its
   label and its row left open, so the block's row reaches it from the
-  folds that own it; a stage of a declared row is `expanded` into it.
+  folds that own it; an action, whose row a function names, declares
+  its outcome labels on the line (`action @l @( … )`, a payload the fold
+  after it fixes left `_`) and widens them into it itself — a hole
+  names no outcome, so the declaration is what the widening goes on.
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
   a keyed collection's keys are compared **structurally**
   (`Data.Profunctor.Row.Structural`, a key read through the ecosystem's
@@ -712,7 +725,7 @@ code below the UI) are algebra-layer material and exempt by location.
   that module is designed. What it demands of the library: every word
   that introduces a row through a function or value argument MUST take
   that row as a **visible type argument after its anchor** — `looped @model` (`with
-  @model` for a flow with no loop), `action @outcome`, `listOf`/`foreach`/`acted
+  @model` for a flow with no loop), `action @case @outcomes`, `listOf`/`foreach`/`acted
   @row`, `dispatched`/`accumulated @key @value`, the panes
   `provided`/`inCase @l @s`, `toCase @payload`, `each @element`;
   a new word of that kind

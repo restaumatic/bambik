@@ -22,7 +22,7 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit)
-import PUI (action, atCase, debounced, joined, kept, looped, with)
+import PUI (action, debounced, joined, kept, looped, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
 import PUI.Web.MDC2 (body, body1, button', filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -48,15 +48,15 @@ flightBooker =
     ) # debounced itinerarySettleTime
     ( Semigroupoid.do
       button' @"Book" { icon: "flight_takeoff" }
-      indeterminateLinearProgress # action
-        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book" ) # joined @"Flight booked" # joined @"Booking rejected"
+      indeterminateLinearProgress # action @"Book"
+        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit ) # joined @"Flight booked" # joined @"Booking rejected"
     VariantToRecord.do
       snackbar @"Flight booked" kept
       snackbar @"Booking rejected" kept
 ```
 
 **The imports.** `PUI` for the words that shape data flow (`looped`, `with`,
-`debounced`, `action`, `atCase`, `joined`, `kept`); `PUI.Web` for the words every
+`debounced`, `action`, `joined`, `kept`); `PUI.Web` for the words every
 design system shares (`choice` and `<+>`, the panes `inCase` and `inCaseAt`,
 the `text` leaf); `VariantToRecord` for the fold block, the two statuses side by
 side; and `PUI.Web.MDC2` for the design system, its `body` included. The
@@ -128,8 +128,8 @@ block of their own, `( Semigroupoid.do … ) # debounced itinerarySettleTime`.
 **Stage 3 — the button and its action, `( Semigroupoid.do … ) # joined @l`, once per outcome.**
 The first shape change, `×→+`: fed the model, `button' @"Book" { icon:
 "flight_takeoff" }` emits case `"Book"` carrying the model on click (its
-case is its caption; `icon` is presentation config). `atCase @"Book"`
-takes that case, its payload goes to `submit`, and the action is opened
+case is its caption; `icon` is presentation config). `action @"Book"`
+owns that case, its payload goes to `submit`, and the action is opened
 by its progress bar — `indeterminateLinearProgress # action`, shown
 between the run's `started` and `ended`; the slot owns those two
 occurrences and nothing else, so no snackbar can stand in it. The
@@ -338,8 +338,8 @@ the view model module is the ordinary one.
   action loadPeopleCatalogue`, its outcome folded in by `capture @"People
   loaded"`, run by `body`'s one feed of
   `{}`; create/update/delete are chains in the fold block, each an action
-  followed by the folds of its two outcomes, adopted `# atCase` under its
-  button's case.
+  owning its button's case and declaring its two outcomes, followed by
+  their folds.
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
   `reset @"New game" openingPosition` the reset.
 - **order-form** — all four shapes on one screen: a `looped` form in

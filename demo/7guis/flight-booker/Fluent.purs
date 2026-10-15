@@ -5,7 +5,7 @@ import Prelude (Unit, (#), ($))
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit)
-import PUI (action, atCase, debounced, joined, kept, looped, with)
+import PUI (action, debounced, joined, kept, looped, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
 import PUI.Web.Fluent (body, body1, button, dropdown, indeterminateLinearProgress, messageBar, textField)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -31,8 +31,8 @@ flightBooker =
     ) # debounced itinerarySettleTime
     ( Semigroupoid.do
       button @"Book"
-      indeterminateLinearProgress # action
-        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book" ) # joined @"Flight booked" # joined @"Booking rejected"
+      indeterminateLinearProgress # action @"Book"
+        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit ) # joined @"Flight booked" # joined @"Booking rejected"
     VariantToRecord.do
       messageBar @"Flight booked" kept
       messageBar @"Booking rejected" kept

@@ -6,7 +6,7 @@ import Crud (createPerson, deletePerson, entries, isSelected, loadPeopleCatalogu
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, anyOf, atCase, capture, fold, joined, looped)
+import PUI (action, anyOf, capture, fold, joined, load, looped)
 import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, listGroup, listGroupItem, textField, toast)
 import PUI.Web (cl, clicked, clWhen, text, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crud :: Effect Unit
 crud =
   body $ Semigroupoid.do
-    indeterminateLinearProgress # action loadPeopleCatalogue
+    indeterminateLinearProgress # load loadPeopleCatalogue
     capture @"People loaded"
     ( Semigroupoid.do
       textField @"Filter prefix (surname)"
@@ -34,20 +34,20 @@ crud =
       VariantToRecord.do
         fold @"Person picked" pick
         ( Semigroupoid.do
-          indeterminateLinearProgress # action createPerson
+          indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson
           VariantToRecord.do
             toast @"Person created" identity
-            toast @"Person not created" identity ) # atCase @"Create"
+            toast @"Person not created" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action updatePerson
+          indeterminateLinearProgress # action @"Update" @( "Person updated" :: _, "Person not updated" :: _ ) updatePerson
           VariantToRecord.do
             toast @"Person updated" identity
-            toast @"Person not updated" identity ) # atCase @"Update"
+            toast @"Person not updated" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action deletePerson
+          indeterminateLinearProgress # action @"Delete" @( "Person deleted" :: _, "Person not deleted" :: _ ) deletePerson
           VariantToRecord.do
             toast @"Person deleted" identity
-            toast @"Person not deleted" identity ) # atCase @"Delete"
+            toast @"Person not deleted" identity )
     ) # looped
       @( "Filter prefix (surname)" :: String
        , "Name" :: String

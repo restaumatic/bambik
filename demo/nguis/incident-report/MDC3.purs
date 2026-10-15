@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import IncidentReport (clockPeriod, fileReport, reportLine)
-import PUI (action, atCase, joined, kept)
+import PUI (action, joined, kept)
 import PUI.Web (clock, geolocated, staticText, text)
 import PUI.Web.HTML (filePicked, label)
 import PUI.Web.MDC3 (body, bodyMedium, button, indeterminateLinearProgress, snackbar)
@@ -23,5 +23,5 @@ incidentReport =
     bodyMedium $ text reportLine
     ( Semigroupoid.do
       button @"File the report"
-      indeterminateLinearProgress # action @( "Report filed" :: {} ) fileReport # atCase @"File the report" ) # joined @"Report filed"
+      indeterminateLinearProgress # action @"File the report" @( "Report filed" :: {} ) fileReport ) # joined @"Report filed"
     snackbar @"Report filed" kept

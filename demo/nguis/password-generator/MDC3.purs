@@ -4,7 +4,7 @@ import Prelude (Unit, (#), ($), (>>>))
 
 import Effect (Effect)
 import PasswordGenerator (samplePassword, strengthLine, strongMixRecipe)
-import PUI (action, atCase, capture, looped, with)
+import PUI (action, capture, looped, with)
 import PUI.Web (attr, text, textAt)
 import PUI.Web.HTML (code)
 import PUI.Web.MDC3 (body, bodyMedium, button, indeterminateLinearProgress, slider, toggleSwitch)
@@ -21,7 +21,7 @@ passwordGenerator =
     bodyMedium $ text strengthLine
     code >>> attr "style" "word-break: break-all;" $ textAt @"password"
     button @"Generate"
-    indeterminateLinearProgress # action samplePassword # atCase @"Generate"
+    indeterminateLinearProgress # action @"Generate" @( "Password generated" :: _ ) samplePassword
     capture @"Password generated"
   # looped
     @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

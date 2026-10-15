@@ -139,8 +139,9 @@
 -- | model's own nesting under `group @l`, a sub-variant a case a pane
 -- | adopts. The library names no coercion at all — the one reshape it
 -- | needs is bare `lcmap (const {})` where a vocabulary places `{}`-input
--- | chrome; `expanded` (`rmap expand`, lawful by `Union`) is vocabulary,
--- | the widening of a declared-row stage into its block. A per-shape knot (a hidden seeded field, a
+-- | chrome, and `rmap expand` (lawful by `Union`) where a word whose
+-- | row a function names — `action`'s outcome — sits in the row its
+-- | block shares. A per-shape knot (a hidden seeded field, a
 -- | re-entering case, a fold's accumulator, an unfold's resume case) is
 -- | **subsumed** by a model field under `looped` — state the app needs is
 -- | a model field (guardrails L14). Each of these had a word once and
@@ -221,7 +222,7 @@
 -- | business functions are typed at that row (guardrails L18); a shared
 -- | variant output is **one row** too, every operand typed at the block's
 -- | — an emitter open on its output (`Cons l a b v`) sits in it by its
--- | label, a `+→+` stage of a declared row by `expanded`; ownership is
+-- | label, an action by its declared outcomes; ownership is
 -- | exclusive (`ExclusiveRows`) — so a merge signature is its owned side's
 -- | bundle and its shared side's one row.
 -- |
@@ -312,8 +313,8 @@
 -- | ```
 -- |
 -- | `exact` is the identity at a variant output because a variant carries
--- | its one tag: the merge forwards it as it is, and a stage of its own
--- | declared row is `expanded` into the block's. At a record output the
+-- | its one tag: the merge forwards it as it is, and an action widens its
+-- | declared outcomes into the block's row itself. At a record output the
 -- | trim is `exactRow`, the runtime evidence `OwnedRecordOutputs` carries,
 -- | so an operand's stale runtime copy of a sibling's field never shadows
 -- | the sibling. Law 2's liveness half is a **leaf** law: a stage may
@@ -380,14 +381,13 @@
 -- | doc/collections-profunctor-algebra.md §1.
 -- |
 -- | Reshape vs focus: a reshape *drops* the complement — chrome placed
--- | with `lcmap (const {})` reads none of the row, a stage `expanded`
+-- | with `lcmap (const {})` reads none of the row, an action widened
 -- | into its block never emits the added cases — while a focus *threads*
--- | it (`Strong`/`Choice`). The input reshape is no word: no stage
--- | subsumes, a stage is typed at one row; the output one is `expanded`,
--- | since a `+→+` stage beside emitters declares its own row.
+-- | it (`Strong`/`Choice`). Neither reshape is a word of the floor: no
+-- | stage subsumes, a stage is typed at one row, and the widening is the
+-- | action's own, since it alone declares a row beside emitters.
 module Data.Profunctor.Row
-  ( expanded
-  , class ExclusiveRows
+  ( class ExclusiveRows
   , splitVariant
   , class DispatchableVariants
   , class MergeableRecords
@@ -418,7 +418,7 @@ import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Variant (class Contractable, case_, contract, expand, inj, on)
+import Data.Variant (class Contractable, case_, contract, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Data.Variant.Internal (class VariantTags)
 import Prim.Ordering (Ordering, LT, EQ, GT)
@@ -569,8 +569,8 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- `+→+` output is one row for the same reason (CHANGELOG, 2026-10-07),
 -- and the `×→+` output since 2026-10-15: an emitter is open on its
 -- output (`Cons l a b v`, as an editor is `Cons l a b r`), so the
--- block's row reaches it from the folds that own it, and a `+→+` stage
--- of a declared row standing beside emitters is `expanded` into it.
+-- block's row reaches it from the folds that own it, and an action, the
+-- one stage whose row a function names, declares it and widens itself.
 -- Every shared side is thus open on the leaf and closed by the owning
 -- side, in all four shapes. (An inclusive union computed bottom-up was
 -- the `×→+` output until then; what it bought — a label-free `joined` —
@@ -786,16 +786,6 @@ toCase
   => p c a
   -> p c [ | v ]
 toCase = rmap (inj (Proxy @l))
-
--- | A stage's declared cases among a block's: a `+→+` stage typed at its
--- | own outcome row (`action @t`) standing beside emitters in a
--- | `RecordToVariant.do` has its row widened into the one the block
--- | shares — `rmap expand`, lawful by `Union` (`… # action @( "Order
--- | submitted" :: {}, "Order rejected: no total" :: {} ) submitOrder #
--- | atCase @"Submit order" # expanded`, order-form). A leaf needs none:
--- | its one case is open by its label.
-expanded :: forall p a t b o. Profunctor p => Row.Union t b o => p a [ | t ] -> p a [ | o ]
-expanded = rmap expand
 
 -- | Normalize a stage's emissions with an idempotent function over the row.
 -- | The normalizer is typed at the stage's row, its signature the view's

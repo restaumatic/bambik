@@ -8,6 +8,34 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-15, latest
 
+- **Every leaf narrows its input and widens its output itself; no
+  adopter on a view.** `action` is the `+→+` leaf of its button's case
+  and declares its outcomes: `action @l @t f` (`Cons l a () v`, `Union t
+  b o`), the labels at least — a payload the status or fold after it
+  fixes is written `_`, one nothing fixes written out — widened into the
+  row its block shares by the action itself. The `# atCase @l` after
+  every action (30 lines) and the `# expanded` beside sibling emitters
+  (order-form, ticker; 7 lines) are gone; `expanded`, one day old, is
+  deleted. Measured first: a `Union` on an undeclared outcome row is
+  stuck under a hole, and an instance chain that would equate the rows
+  when nothing is declared cannot fall through (a fundep-determined
+  mismatch is a type error, not apartness), so the declaration is the
+  price of a self-widening action — the labels, which L18 says to
+  declare where introduced anyway. The load before the knot, fed
+  `body`'s `{}` rather than a case, is the `×→+` word `load f` (crud,
+  order-form), typed at exactly its outcomes. `confirmed @l caption f
+  content` (MDC2/MDC3) is a `+→×` leaf like a status: opened by case
+  `l`, which it tells as its title verbatim, its content shown the
+  payload, the confirm folding `f` of it — cashbox's two dialogs are one
+  line each, weather's about-dialog folds `identity`; `simpleDialog`, the
+  same word at `{ | i } → { | o }`, is deleted (a dialog is opened by an
+  event, so a `×→×` form would open on every broadcast), and
+  `PUI.Web.witnessed` takes the fold. `PUI` re-exports no adopter but
+  `toCase` (the one shape change a business case names: an editor's
+  release leaving as an event, movie-browser) and `settled`; `atField`/
+  `atCase`/`toField` stay on the floor for the vocabularies, where a
+  face is adopted at its label. check-determined's message and the docs
+  follow; demo/workflow.html re-captured.
 - **The shared merge sides are rows, not classes.** `SharedRecordInputs`
   (the three-way row equality with its `fedFirst`/`fedSecond` witnesses,
   since 2026-10-11; an `InclusiveRows` bundle before L18) is deleted:

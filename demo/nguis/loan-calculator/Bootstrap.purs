@@ -4,7 +4,7 @@ import Prelude (($), (#), identity, Unit)
 
 import Effect (Effect)
 import LoanCalculator (applyForLoan, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
-import PUI (action, atCase, looped, with)
+import PUI (action, looped, with)
 import PUI.Web ((<+>), choice, staticText, text)
 import PUI.Web.Bootstrap (body, button, card, indeterminateLinearProgress, listGroup, listGroupItem, progress, select, sliderLive, textField, toast, toggleSwitch)
 import PUI.Web.HTML (div)
@@ -28,7 +28,7 @@ loanCalculator =
         staticText "Interest share of total repayment"
         progress interestShare
     button @"Apply for this loan"
-    indeterminateLinearProgress # action applyForLoan # atCase @"Apply for this loan"
+    indeterminateLinearProgress # action @"Apply for this loan" @( "Application received" :: _ ) applyForLoan
     toast @"Application received" identity
   # looped
     @( "Applicant" :: String

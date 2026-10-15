@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, anyOf, atCase, capture, fold, joined, looped)
+import PUI (action, anyOf, capture, fold, joined, load, looped)
 import PUI.Web (attrWith, clicked, staticText, text, (:=))
 import PUI.Web.HTML (body, button, div, indeterminateLinearProgress, input, label, li, output, p, ul)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,7 +15,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crud :: Effect Unit
 crud =
   body $ div $ Semigroupoid.do
-    indeterminateLinearProgress # action loadPeopleCatalogue
+    indeterminateLinearProgress # load loadPeopleCatalogue
     capture @"People loaded"
     ( Semigroupoid.do
       p $ label $ Semigroupoid.do
@@ -41,20 +41,20 @@ crud =
       VariantToRecord.do
         fold @"Person picked" pick
         ( Semigroupoid.do
-          indeterminateLinearProgress # action createPerson
+          indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson
           VariantToRecord.do
             output @"Person created" identity
-            output @"Person not created" identity ) # atCase @"Create"
+            output @"Person not created" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action updatePerson
+          indeterminateLinearProgress # action @"Update" @( "Person updated" :: _, "Person not updated" :: _ ) updatePerson
           VariantToRecord.do
             output @"Person updated" identity
-            output @"Person not updated" identity ) # atCase @"Update"
+            output @"Person not updated" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action deletePerson
+          indeterminateLinearProgress # action @"Delete" @( "Person deleted" :: _, "Person not deleted" :: _ ) deletePerson
           VariantToRecord.do
             output @"Person deleted" identity
-            output @"Person not deleted" identity ) # atCase @"Delete"
+            output @"Person not deleted" identity )
     ) # looped
       @( "Filter prefix (surname)" :: String
        , "Name" :: String

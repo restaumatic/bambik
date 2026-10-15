@@ -27,7 +27,7 @@
 -- |     `outlinedButton` and `textButton` at the lower emphasis levels;
 -- |     `fab`; `iconButton`; `menu`/`menuItem`
 -- |   * **be told something** — `snackbar` (passing),
--- |     `dialog`/`simpleDialog` (must be answered), `linearProgress`,
+-- |     `dialog`/`confirmed` (must be answered), `linearProgress`,
 -- |     `indeterminateLinearProgress`, `indeterminateCircularProgress`,
 -- |     `tooltip`
 -- |   * **structure and surface** — `card`/`cardActions`, `list`/`listItem`,
@@ -110,7 +110,6 @@ module PUI.Web.MDC3
   , selectUnpicked
   , selectOptional
   , confirmed
-  , simpleDialog
   , slider
   , sliderLive
   , snackbar
@@ -992,26 +991,23 @@ dialog title content =
     _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
     unwrap (div >>> "slot" := "content" $ content)
 
--- | The witness rung — see `PUI.Web.MDC2.confirmed`.
-confirmed :: forall row. String -> String -> PUI Web { | row } { | row } -> PUI Web { | row } { | row }
-confirmed confirmCaption title content = simpleDialog confirmCaption title content
-
--- | `dialog` with a **confirm button** built in — the confirmation step:
--- | show what is about to happen, and the button reports it. The content
--- | needs no button of its own: a display releases the row it shows, so
--- | there is something to confirm — `confirmed` is exactly that
--- | specialization.
--- | Not a full `Ocular`, deliberately: the confirm **replays** the
--- | content's last output, and replay is lawful over **records** only —
--- | an entity's last value may be re-said, a one-shot event may not (the
--- | `looped` argument) — so the content's output is row-shaped.
-simpleDialog :: forall i o. String -> String -> PUI Web { | i } { | o } -> PUI Web { | i } { | o }
-simpleDialog confirmCaption title content =
+-- | The witness rung — see `PUI.Web.MDC2.confirmed`: `dialog` with a
+-- | confirm button built in, the `+→×` leaf of case `l`, telling it as
+-- | its title and folding `f` of the row shown on confirmation.
+confirmed
+  :: forall @l r r1 v
+   . IsSymbol l
+  => Cons l { | r } () v
+  => String
+  -> ({ | r } -> { | r1 })
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] { | r1 }
+confirmed confirmCaption f content = atCase @l $
   el "md-dialog" >>> init pure showDialog closeDialog $ Semigroupoid.do
     wrap do
-      _ <- unwrap (div >>> "slot" := "headline" $ staticText title)
+      _ <- unwrap (div >>> "slot" := "headline" $ staticText (reflectSymbol (Proxy @l)))
       unwrap (div >>> "slot" := "content" $ content)
-    div >>> "slot" := "actions" $ witnessed (el "md-text-button" $ staticText confirmCaption)
+    div >>> "slot" := "actions" $ witnessed f (el "md-text-button" $ staticText confirmCaption)
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just

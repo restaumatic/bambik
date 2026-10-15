@@ -29,7 +29,7 @@ and emitters of a catalogue — are in the design-system module header
 | a display among stages | `headline4 $ text countLine` on its own line, where it sits on the screen | counter, tip-calculator, stopwatch | writing.md *The pipeline* |
 | displays and chrome one after another in an element | `div $ Semigroupoid.do …` | espresso-bar, loan-calculator, meeting-booker, shopping-cart | writing.md *The pipeline* |
 | several emitters over one record | `RecordToVariant.do` | cashbox, stopwatch, crud | `Data.Profunctor.Row.RecordToVariant` |
-| a stage on one event case | `( … ) # atCase @"Create"`, the stage owning the case in the fold block | crud, cashbox, reorder | writing.md *Stages* |
+| a stage on one event case | the leaf names it: `action @"Create" …`, `confirmed @"Refund a customer" …`, `fold @"Take a deposit" …` — no placement word | crud, cashbox, reorder | writing.md *Stages* |
 | one status per outcome case | `VariantToRecord.do` | flight-booker, order-form | `Data.Profunctor.Row.VariantToRecord` |
 | what a composition guarantees | — | — | writing.md *What the laws guarantee* |
 | a compile error between two rows | — | — | writing.md *When it does not compile* |
@@ -89,7 +89,7 @@ and emitters of a catalogue — are in the design-system module header
 | an editor that exists in one state | `# inCaseAt @"return" @"Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
 | an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |
 | a choice whose cases carry their own fields | `tabBar @"Mode" (…)`, each case's field `# inCaseAt @"Dine in" @"Mode"` | order-form | writing.md *Conditional visibility* |
-| an effect's outcome folded into the model it lands on | `( Semigroupoid.do { button …; … # action estimateDistance # atCase … } ) # joined @"Distance estimated"` | order-form | writing.md *App shape* |
+| an effect's outcome folded into the model it lands on | `( Semigroupoid.do { button …; … # action @"Estimate distance" @( … ) estimateDistance } ) # joined @"Distance estimated"` | order-form | writing.md *App shape* |
 
 ## Events into state
 
@@ -104,8 +104,7 @@ and emitters of a catalogue — are in the design-system module header
 | an event replacing the model whole | `reset @"New game" openingPosition`; on a status, `snackbar @"Order placed" (const usualOrder)` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
 | an outcome that is the model | `snackbar @"Card charged" identity`; `capture @"Forecast fetched"` where nothing needs telling | crud, order-form, payment, weather, password-generator, reorder | `PUI` |
 | two buttons stepping one field | `fold @"Next" stepOnward`, `fold @"Back" stepBack` — two cases, two folds, never one button with a caption parameter | checkout | writing.md *Components* |
-| an event case routed to its stage | `# atCase @"Create"` | crud, reorder | `PUI` |
-| an event intercepted by a dialog | `( Semigroupoid.do { confirmed "Refund" "Refund the customer?" $ …; fold @"Customer refunded" refundStandard } ) # atCase @"Refund a customer"` — the dialog owns the button's case in the fold block | cashbox | writing.md *Stages* |
+| an event intercepted by a dialog | `confirmed @"Refund a customer" "Refund" refundStandard $ body1 $ text refundLine` — the dialog owns the button's case in the fold block, tells it as its title and folds on confirm | cashbox | writing.md *Stages* |
 | an event carrying something of its own | `listOf @"Todo toggled" @"key" … # joined @"Todo toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, calculator | writing.md *Stages* |
 | a button group fed the record it replays | `RecordToVariant.do` of emitters as a stage, each button replaying the row the block is fed | order-form, espresso-bar, signup-form | writing.md *Stages* |
 | a menu of presets | `menu "Presets" ( RecordToVariant.do menuItem @"The usual" … )` | espresso-bar, inbox | the design-system module |
@@ -114,18 +113,19 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { … its outcome statuses, each with its fold } } ) # atCase @"Create"` in the fold block, the action typed at exactly its outcomes | crud, reorder | writing.md *Business functions* |
-| … whose outcomes are told | `indeterminateLinearProgress # action @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book"`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` | flight-booker | writing.md *Business functions* |
+| an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson; VariantToRecord.do { … its outcome statuses, each with its fold } } )` in the fold block, the action declaring its outcome labels | crud, reorder | writing.md *Business functions* |
+| … whose outcomes are told | `indeterminateLinearProgress # action @"Book" @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` | flight-booker | writing.md *Business functions* |
+| the load before the knot | `indeterminateLinearProgress # load loadPeopleCatalogue`, then `capture @"People loaded"` | crud, order-form | writing.md *Business functions* |
 | an outcome told, the model kept | the action `joined @l` with its button in the event ensemble, once per outcome, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form, flight-booker, incident-report | writing.md *Business functions* |
 | an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" identity` (or `capture @"People loaded"` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` and `fold @"Clock ticked" tick` | timer, stopwatch | `PUI` |
 | a status per outcome case | `snackbar @"Flight booked" kept` — the label is the copy; a reason is a sibling case, `snackbar @"Order rejected: no total" kept` | flight-booker, order-form | writing.md *Components* |
 | a message that stays while a state holds | `( banner $ staticText "Inbox zero!" ) # inCase @"empty" inboxState` — a display under a pane, not a status | inbox | writing.md *Components* |
-| confirm before the flow continues | `confirmed "Refund" "Refund the customer?" $ …` | cashbox | writing.md *Modals* |
+| confirm before the flow continues | `confirmed @"Refund a customer" "Refund" refundStandard $ …` | cashbox | writing.md *Modals* |
 | a fact the platform knows and the app cannot seed — position, connectivity, the time, the colour scheme, a chosen file | `geolocated @l`, `online @l`, `clock @l period`, `colorScheme @l` (`PUI.Web`), `filePicked @l` (`PUI.Web.HTML`), merged `RecordToRecord.do` | here-and-now, incident-report | writing.md *The pipeline*; `PUI.Web` (`source`) |
 | a dialog of choices | `dialog "Delete the last message?" $ RecordToVariant.do …` | inbox | writing.md *Modals* |
-| an informational dialog | `simpleDialog "Got it" "About this dashboard" (…)` | weather | writing.md *Modals* |
+| an informational dialog | `confirmed @"About this dashboard" "Got it" identity $ …` — a reading that changes nothing | weather | writing.md *Modals* |
 
 ## Collections
 

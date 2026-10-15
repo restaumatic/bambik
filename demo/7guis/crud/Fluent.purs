@@ -7,7 +7,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, anyOf, atCase, capture, fold, joined, looped)
+import PUI (action, anyOf, capture, fold, joined, load, looped)
 import PUI.Web.Fluent (body, button, indeterminateLinearProgress, messageBar, textField)
 import PUI.Web (attrWith, clicked, text, (:=))
 import PUI.Web.HTML (li, ul)
@@ -16,7 +16,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crud :: Effect Unit
 crud =
   body $ Semigroupoid.do
-    indeterminateLinearProgress # action loadPeopleCatalogue
+    indeterminateLinearProgress # load loadPeopleCatalogue
     capture @"People loaded"
     ( Semigroupoid.do
       textField @"Filter prefix (surname)"
@@ -36,20 +36,20 @@ crud =
       VariantToRecord.do
         fold @"Person picked" pick
         ( Semigroupoid.do
-          indeterminateLinearProgress # action createPerson
+          indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson
           VariantToRecord.do
             messageBar @"Person created" identity
-            messageBar @"Person not created" identity ) # atCase @"Create"
+            messageBar @"Person not created" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action updatePerson
+          indeterminateLinearProgress # action @"Update" @( "Person updated" :: _, "Person not updated" :: _ ) updatePerson
           VariantToRecord.do
             messageBar @"Person updated" identity
-            messageBar @"Person not updated" identity ) # atCase @"Update"
+            messageBar @"Person not updated" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action deletePerson
+          indeterminateLinearProgress # action @"Delete" @( "Person deleted" :: _, "Person not deleted" :: _ ) deletePerson
           VariantToRecord.do
             messageBar @"Person deleted" identity
-            messageBar @"Person not deleted" identity ) # atCase @"Delete"
+            messageBar @"Person not deleted" identity )
     ) # looped
       @( "Filter prefix (surname)" :: String
        , "Name" :: String

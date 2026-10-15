@@ -4,7 +4,7 @@ import Prelude (($), (#), identity, Unit)
 
 import Effect (Effect)
 import MeetingBooker (blankBooking, bookRoom, plan, planLine, roomStars, seatOccupancy, seatsInRoom)
-import PUI (action, atCase, looped, settled, with)
+import PUI (action, looped, settled, with)
 import PUI.Web ((<+>), choice, inCaseAt, provided, staticText, text)
 import PUI.Web.Fluent (body, body1, button, caption1, card, divider, dropdownOptional, dropdownUnpicked, indeterminateLinearProgress, messageBar, progressBar, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 import PUI.Web.HTML (div)
@@ -40,7 +40,7 @@ meetingBooker =
     ( card $ Semigroupoid.do
       body1 $ text planLine
       button @"Book the room" ) # provided @"complete" @( complete :: {}, incomplete :: {} ) plan
-    ( indeterminateLinearProgress # action
+    indeterminateLinearProgress # action @"Book the room"
       @( "Room booked" ::
           { "Meeting title" :: String
           , "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ]
@@ -49,5 +49,5 @@ meetingBooker =
           , "Include a Teams link" :: Boolean
           , "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ]
           }
-       ) bookRoom ) # atCase @"Book the room"
+       ) bookRoom
     messageBar @"Room booked" identity

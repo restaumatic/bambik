@@ -44,7 +44,7 @@ interruption ranking (snackbar < banner < dialog):
 | ambient | stay visible, always current | none | `text`/`textAt`, the progress bars (stages releasing the row they show); the indeterminate progress, ambient over an **occurrence** input — a status showing between `action`'s `started` and `ended` |
 | salient-transient | interrupt attention, briefly | none | `snackbar`, `toast` |
 | persistent-until-acted | remain until superseded or dismissed | the dismiss | `banner`, `output` |
-| modal-witnessed | block everything until confirmed | the confirm | `confirmed` — the witness rung, the flow withheld until the user confirms; `dialog`, `simpleDialog` — open on feed, close on emission |
+| modal-witnessed | block everything until confirmed | the confirm | `confirmed @l` — the witness rung, the `+→×` leaf opened by its case and telling it, the flow withheld until the user confirms, the confirm folding; `dialog` — open on feed, close on emission |
 
 Escalating assurance is a business decision made by **choosing the
 component**; routing by assurance is its composite form — cashbox is the

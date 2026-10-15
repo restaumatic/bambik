@@ -6,7 +6,7 @@ import Cashbox (balanceLine, openedTill, payCourier, payoutLine, refundLine, ref
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (atCase, fold, looped, toCase, with)
+import PUI (fold, looped, with)
 import PUI.Web (text)
 import PUI.Web.MDC2 (body, body1, button', headline6, confirmed)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,11 +20,7 @@ cashbox =
       button' @"Pay the courier" { icon: "local_shipping" }
       button' @"Take a deposit" { icon: "savings" }
     VariantToRecord.do
-      ( Semigroupoid.do
-        ( confirmed "Refund" "Refund the customer?" $ body1 $ text refundLine ) # toCase @"Customer refunded"
-        fold @"Customer refunded" refundStandard ) # atCase @"Refund a customer"
-      ( Semigroupoid.do
-        ( confirmed "Pay" "Pay the courier?" $ body1 $ text payoutLine ) # toCase @"Courier paid out"
-        fold @"Courier paid out" payCourier ) # atCase @"Pay the courier"
+      confirmed @"Refund a customer" "Refund" refundStandard $ body1 $ text refundLine
+      confirmed @"Pay the courier" "Pay" payCourier $ body1 $ text payoutLine
       fold @"Take a deposit" takeDeposit
   # looped @( balance :: Number ) # with openedTill

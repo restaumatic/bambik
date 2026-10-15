@@ -32,7 +32,7 @@ matches your design system.
   | ×→× | **editor**, **display**, **stage** | `filledTextField @"Email"`, `headline4 $ text countLine` |
   | ×→+ | **emitter** | `button @"Count"` |
   | +→× | **status** | `snackbar @"Flight booked" kept` |
-  | +→+ | **handler** | a backend action |
+  | +→+ | **handler** | `action @"Create" @( … ) createPerson` |
 
 - **stage** — one step of the pipeline: its output is the next step's
   input.
@@ -201,15 +201,16 @@ takes a trailing word that says what it is for:
 | a list whose elements emit | `clicked @"Key entered" @"key" ( … ) # anyOf @"key" @( key :: String ) (const keyPad)`; over a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe; cells |
 | a list element echoing the row it shows | `( listItem $ text flightLine ) # dispatched …` | departures, scoreboard |
 | a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, merged in `RecordToRecord.do` | here-and-now, incident-report |
-| content that waits for the user to confirm | `confirmed "Refund" "Refund the customer?" $ …` | cashbox |
+| content that waits for the user to confirm | `confirmed @"Refund a customer" "Refund" refundStandard $ …` — a `+→×` leaf like a status: opened by its case, which it tells as its title, the confirm folding `f` | cashbox |
 | an event folded into the model | `fold @"Add" addTodo`, one per case, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
-| an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Submit order" { icon: "save" }; indeterminateLinearProgress # action @( … ) submitOrder # atCase @"Submit order" # expanded } ) # joined @"Order submitted" # joined @"Order rejected: no total"` in the event ensemble, its statuses folding `kept` | order-form, flight-booker |
+| an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Submit order" { icon: "save" }; indeterminateLinearProgress # action @"Submit order" @( … ) submitOrder } ) # joined @"Order submitted" # joined @"Order rejected: no total"` in the event ensemble, its statuses folding `kept` | order-form, flight-booker |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @celsius # settled fromCelsius` | temperature-converter |
-| an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" identity; … } } ) # atCase @"Create"`, the pair owning the case in the fold block, the action typed at exactly its outcomes | crud |
-| an effect whose outcome is the model | `( Semigroupoid.do { indeterminateCircularProgress # action fetchReport; capture @"Forecast fetched" } ) # atCase @"Forecast requested"` | weather |
-| an effect whose outcomes are told | `indeterminateLinearProgress # action @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book"`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` in the fold block | flight-booker |
+| an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson; VariantToRecord.do { snackbar @"Person created" identity; … } } )`, the pair owning the case in the fold block, the action declaring its outcome labels and the statuses fixing the payloads | crud |
+| an effect whose outcome is the model | `( Semigroupoid.do { indeterminateCircularProgress # action @"Forecast requested" @( "Forecast fetched" :: _ ) fetchReport; capture @"Forecast fetched" } )` | weather |
+| an effect whose outcomes are told | `indeterminateLinearProgress # action @"Book" @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` in the fold block | flight-booker |
+| the load before the knot | `indeterminateLinearProgress # load loadPeopleCatalogue`, then `capture @"People loaded"` — run by `body`'s one feed of `{}` | crud, order-form |
 | a fold told by a status | `snackbar @"Person created" identity`, `snackbar @"Quote fetched" recordQuote`, `snackbar @"Order submitted" kept` — a status takes its fold like `fold @l f`, tells its case by its label, and stands only after an action whose outcome it is | crud, ticker, order-form |
 
 A pane's content, a list's element and `confirmed`'s content release
@@ -248,10 +249,10 @@ Semigroupoid.do
     fold @"Add" addTodo
     fold @"Todo toggled" toggleTodo
     ( Semigroupoid.do                         --   an effect on a case, folded by its own outcomes
-      indeterminateLinearProgress # action createPerson
+      indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson
       VariantToRecord.do
         snackbar @"Person created" identity
-        snackbar @"Person not created" identity ) # atCase @"Create"
+        snackbar @"Person not created" identity )
 # looped @( … ) # with seed
 ```
 
@@ -283,7 +284,7 @@ temperature-converter) or stands in a loop of its own: a form of several
 editors is `( … ) # looped` inside the app's loop (order-form). An event
 whose effect takes time is joined with the model when its outcome lands,
 not when it fired: `joined @l` wraps the emitter and its action together
-(`( Semigroupoid.do { button …; … # action estimateDistance # atCase … } )
+(`( Semigroupoid.do { button …; … # action @"Estimate distance" @( … ) estimateDistance } )
 # joined @"Distance estimated"`), and the fold sets only what the effect
 produced on that model (`setDistance`), so an edit made while it ran is
 kept (order-form). A drawer feeds its nav and its content the same row;
@@ -307,7 +308,7 @@ compile error at `body` naming the missing fields.
 | a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, which `body`'s one feed of `{}` runs) |
 | an action that retries until it succeeds | payment (`chargeFlaky`) |
 | a running maximum, a wizard's step, a counter: model fields | auction (`settled raiseTop`), checkout (`stepOnward`), ticket-dispenser (`issue`) |
-| a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed … # atCase`) |
+| a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed @"Refund a customer" "Refund" refundStandard $ …`) |
 | an effect's outcome folded into the model it lands on | order-form (`… # joined @"Distance estimated"`, `fold @"Distance estimated" setDistance`) |
 | keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
 
@@ -430,31 +431,38 @@ server sits behind its client library: the view model module imports it
 like any domain module, the view never does, and its module-level state
 is the one fake in the app, named as such.
 
-**An action's outcome cases are named by its `Aff`** (`createPerson ::
-model -> Aff [ "Person created" :: model, "Person not created" :: model ]`,
-crud) and **opened by its progress indicator**: the slot owns the
-run's `started` and `ended` and nothing else — a status that tells an
-outcome is never the slot, and the types forbid it. An action lives in
-the fold block, **folded by its own outcome statuses** after it, and
-that pair owns the button's case there:
+**An action owns its button's case and declares its outcomes.** Its
+outcome cases are named by its `Aff` (`createPerson :: model -> Aff [
+"Person created" :: model, "Person not created" :: model ]`, crud) and
+restated on the line after the case it handles — the labels at least,
+since a hole names none and the action widens them into the row its
+block shares; a payload a status or fold after it fixes is written `_`,
+one no fold fixes (`kept`, `const`) is written out. It is **opened by
+its progress indicator**: the slot owns the run's `started` and `ended`
+and nothing else — a status that tells an outcome is never the slot, and
+the types forbid it. An action lives in the fold block, **folded by its
+own outcome statuses** after it, the pair owning the button's case there
+through the action's label:
 
 ```purescript
 ( Semigroupoid.do
-  indeterminateLinearProgress # action createPerson
+  indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson
   VariantToRecord.do
     snackbar @"Person created" identity
-    snackbar @"Person not created" identity ) # atCase @"Create"
+    snackbar @"Person not created" identity )
 ```
 
-So **every action is typed at exactly its own outcomes**, the cases its
-folds consume fixing the row, and nothing names an outcome on an action
-line. An outcome that is told but changes nothing is `kept`: the action
-is `joined` with its button in the event ensemble, so its outcome
-arrives as `{ event, model }`, and its status folds `kept` in the fold
-block (order-form's submit and receipt, flight-booker); the outcome row
-is declared `@( … )` on the action, since `kept` fixes nothing. No
-word passes an event *around* a stage: every event reaches the fold
-block on its own.
+So the action line reads as a noun phrase like every leaf — word, case,
+outcomes, function — and nothing places it: no `atCase` under the
+button's case, no widening beside emitters. An outcome that is told but
+changes nothing is `kept`: the action is `joined` with its button in the
+event ensemble, so its outcome arrives as `{ event, model }`, and its
+status folds `kept` in the fold block (order-form's submit and receipt,
+flight-booker); there the payloads are written out, since `kept` fixes
+nothing. The load before the knot is `load` (`indeterminateLinearProgress
+# load loadPeopleCatalogue`), the `×→+` action `body`'s one feed of `{}`
+runs, typed at exactly its outcomes. No word passes an event *around* a
+stage: every event reaches the fold block on its own.
 
 Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app
@@ -504,7 +512,7 @@ arguments:
 
 ```purescript
 snackbar  @"Flight booked" kept                -- the "Flight booked" snackbar, folding kept
-confirmed "Refund" "Refund the customer?"      -- the title is static: a value
+confirmed @"Refund a customer" "Refund" refundStandard  -- the "Refund a customer" dialog, its case the title; the caption a value, the fold its argument
 button'   @"Sign up" { icon: "person_add" }    -- the record: optional presentation
 ```
 
@@ -582,9 +590,9 @@ text is computed, a chrome line nothing.
 - **The model is declared once, where it first appears; every derived
   row where it is introduced.** For a loop closed with a model that is
   the seed line (`# looped @( counted :: Int ) # with freshCount`; inbox's two
-  fields, one per line). A load action before the knot
-  emits its outcome as an event folded into the loop (`capture @"People
-  loaded"`, crud), so the
+  fields, one per line). The load before the knot
+  emits its outcome as an event folded into the loop (`load
+  loadPeopleCatalogue`, then `capture @"People loaded"`, crud), so the
   knot declares the model like any other. Every editor, selector, list and field label is checked
   against it — so a stored field is read by its label
   (`listOfAt … @"messages"`, `# providedAt @"halted" @"phase"`). A
@@ -592,7 +600,7 @@ text is computed, a chrome line nothing.
   introduces it declares it after its anchor:
   - a classifier's cases, on its first pane
     (`# provided @"onward" @( onward :: {}, last :: {} ) onwardFrom`, checkout);
-  - an action's outcome, where no status or fold fixes it (`# action @( "Flight booked" :: …, "Booking rejected" :: … ) submit`, flight-booker);
+  - an action's outcomes, always, after its case (`# action @"Book" @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit`, flight-booker) — a payload a status or fold after it fixes is `_` (`action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson`, crud), one nothing fixes is written out;
   - a projection's element row
     (`# anyOf @"name" @( name :: String, mix :: … ) (const palette)`, color-mixer;
     `# foreach @"number" @( number :: Int, tenths :: Int ) lapRows`, stopwatch);

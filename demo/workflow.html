@@ -66,9 +66,11 @@
     obligations enter as holes — the display's read, the action, the seed.
     Note what is <em>not</em> a hole: the field anchor (<code>@"Pizza"</code>),
     the case anchors (<code>@"Order"</code>, stated once on the button and once
-    on the action that takes its case; <code>@"Pizza ordered"</code>, the
-    outcome the snackbar tells — a status shows its case label and nothing
-    else, so the outcome's name <em>is</em> the words on the screen), the
+    on the action that owns its case; <code>@"Pizza ordered"</code>, the
+    outcome the action declares and the snackbar tells — a status shows its
+    case label and nothing else, so the outcome's name <em>is</em> the words
+    on the screen; its payload is left <code>_</code>, since the snackbar's
+    fold fixes it), the
     model row on the seed line (<code>@( "Pizza" :: String )</code>) and the
     chrome (<code>headlineSmall</code>) are complete as written.</p>
 
@@ -78,7 +80,7 @@
 import Prelude ((#), ($), identity, Unit)
 
 import Effect (Effect)
-import PUI (action, atCase, looped, with)
+import PUI (action, looped, with)
 import PUI.Web (text)
 import PUI.Web.MDC3 (body, button, filledTextField, headlineSmall, indeterminateLinearProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -89,7 +91,7 @@ order =
     filledTextField @"Pizza"
     headlineSmall $ text ?orderLine
     button @"Order"
-    indeterminateLinearProgress # action ?placeOrder # atCase @"Order"
+    indeterminateLinearProgress # action @"Order" @( "Pizza ordered" :: _ ) ?placeOrder
     snackbar @"Pizza ordered" identity
   # looped @( "Pizza" :: String ) # with ?start
 </code></pre>
@@ -123,7 +125,7 @@ order =
 Error 2 of 4:
 
   in module Order.MDC3
-  at src/MDC3.purs:17:42 - 17:53 (line 17, column 42 - line 17, column 53)
+  at src/MDC3.purs:17:77 - 17:88 (line 17, column 77 - line 17, column 88)
 
     Hole 'placeOrder' has the inferred type
 
@@ -204,7 +206,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 <pre class="compiler">Error 1 of 3:
 
   in module Order.MDC3
-  at src/MDC3.purs:18:42 - 18:53 (line 18, column 42 - line 18, column 53)
+  at src/MDC3.purs:18:77 - 18:88 (line 18, column 77 - line 18, column 88)
 
     Hole 'placeOrder' has the inferred type
 
@@ -244,12 +246,12 @@ Error 3 of 3:
                      }
   ⋯</pre>
 
-    <p>The action's hint has not moved: it is fixed by what consumes the
-    outcome, not by what feeds it. The button replays the row it is fed,
-    <code>atCase @"Order"</code> hands that row to the action, and the
-    snackbar's fold closes the loop with the model — so the action must
-    return <code>{ "Pizza" :: String }</code> under the case the snackbar
-    names.</p>
+    <p>The action's hint has not moved: its payload is fixed by what consumes
+    the outcome, not by what feeds it. The button replays the row it is fed,
+    <code>action @"Order"</code> owns that case and hands the row to the
+    function, and the snackbar's fold closes the loop with the model — so the
+    action must return <code>{ "Pizza" :: String }</code> under the case the
+    line declares and the snackbar names.</p>
 
     <h2>3 · The action joins — the last hole is the seed</h2>
 
@@ -305,7 +307,7 @@ import Prelude ((#), ($), identity, Unit)
 
 import Effect (Effect)
 import Order (orderLine, placeOrder, plainMargherita)
-import PUI (action, atCase, looped, with)
+import PUI (action, looped, with)
 import PUI.Web (text)
 import PUI.Web.MDC3 (body, button, filledTextField, headlineSmall, indeterminateLinearProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -316,7 +318,7 @@ order =
     filledTextField @"Pizza"
     headlineSmall $ text orderLine
     button @"Order"
-    indeterminateLinearProgress # action placeOrder # atCase @"Order"
+    indeterminateLinearProgress # action @"Order" @( "Pizza ordered" :: _ ) placeOrder
     snackbar @"Pizza ordered" identity
   # looped @( "Pizza" :: String ) # with plainMargherita
 </code></pre>
@@ -341,7 +343,7 @@ order =
 
 <pre class="compiler">Error found:
 in module Order.MDC3
-<mark>at src/MDC3.purs:18:5 - 18:70 (line 18, column 5 - line 18, column 70)</mark>
+<mark>at src/MDC3.purs:18:5 - 18:87 (line 18, column 5 - line 18, column 87)</mark>
 
   Could not match type
 
@@ -355,9 +357,9 @@ in module Order.MDC3
 while trying to match type Variant t1
   with type { "Pizza" :: String
             }
-while checking that expression (discard ((applyFlipped (...)) (atCase))) (\$__unused -&gt;
-                                                                            (snackbar) identity
-                                                                         )
+while checking that expression (discard ((applyFlipped indeterminateLinearProgress) ((...) placeOrder))) (\$__unused -&gt;
+                                                                                                            (snackbar) identity
+                                                                                                         )
   has type PUI Web
              { "Pizza" :: String
              }
@@ -368,7 +370,7 @@ in value declaration order
     <p>It points at the action line, the line after the misplaced display.
     The button turned the model into an event, the heading showed that
     event's row and passed it on — a display releases what it is fed — and
-    the action is the first line that wants the event back: <code>atCase
+    the action is the first line that wants the event back: <code>action
     @"Order"</code> expects a variant and is handed the record the display
     released. So read the two sides in the message, <code>Variant</code>
     against <code>Record</code>, and look <em>upstream</em> for the stage
