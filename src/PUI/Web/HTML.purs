@@ -255,7 +255,7 @@ outputFace caseLabel = el "output" $ statusText caseLabel
 -- | value arrived has nothing to report. Like every vocabulary's button it
 -- | stays live after a click — a request a screen must not send twice is
 -- | its action's concern, not the button's.
-button :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
+button :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } [ | v ]
 button = wrap do
   w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticText config.label)
   -- a click before any value arrived has nothing valid to emit — withheld

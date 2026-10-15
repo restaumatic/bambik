@@ -82,8 +82,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Lens.Internal.Wander (class Wander)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, rmap)
-import Data.Variant (expand)
+import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
@@ -178,8 +177,8 @@ instance VariantToVariant (Cont r) where
 
 instance Monoid r => RecordToVariant (Cont r) where
   recordToVariant p1 p2 = wrap \k i ->
-    unwrap (rmap expand p1) k i
-      <> unwrap (rmap expand p2) k i
+    unwrap p1 k i
+      <> unwrap p2 k i
 
 instance Resolving (Cont r) where
   resolve p = wrap \k (Tuple a _) -> unwrap p (k <<< Left) a

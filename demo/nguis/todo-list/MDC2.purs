@@ -26,7 +26,7 @@ todoList =
         @( id :: Int
          , title :: String
          , status :: [ active :: {}, completed :: {} ]
-         ) visibleEntries $ span >>> clWhen isCompleted "todo-done" $ textAt @"title" ) # joined
+         ) visibleEntries $ span >>> clWhen isCompleted "todo-done" $ textAt @"title" ) # joined @"Todo toggled"
       button @"Clear completed"
     VariantToRecord.do
       fold @"Add" addTodo

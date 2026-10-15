@@ -101,8 +101,8 @@
         <li>A constant replaces the model only whole, by a reset: <code>reset @"New game" openingPosition</code>.</li>
         <li>Each event case has its own fold: <code>fold @"Count" increment</code>.</li>
         <li>A status is a fold with a face, <code>snackbar @"Person created" identity</code>; it shows its case label, never the fold's result, so it stands only after an action whose outcome it is. A command straight from an emitter folds silently: <code>fold @"Todo toggled" toggleTodo</code>. What the user must keep is a model field shown by a display, never copy flashed by a status.</li>
-        <li>An action is opened by its progress indicator alone; an outcome that is told and changes nothing is <code>joined</code> with its button and folded <code>kept</code>.</li>
-        <li>An event with a payload of its own is <code># joined</code> and handled by one record: <code>toggleTodo :: { event :: Int, model :: … } -&gt; …</code>.</li>
+        <li>An action is opened by its progress indicator alone; an outcome that is told and changes nothing is <code>joined @l</code> with its button, once per outcome, and folded <code>kept</code>.</li>
+        <li>An event with a payload of its own is <code># joined @l</code> and handled by one record: <code>toggleTodo :: { event :: Int, model :: … } -&gt; …</code>.</li>
         <li>An action returns the model under its outcome case, folded by <code>identity</code>.</li>
         <li>A business function takes one record; field names carry the roles: <code>returnBetween { out, back }</code>.</li>
       </ul>

@@ -34,7 +34,7 @@ crud =
              , "Name" :: String
              , "Surname" :: String
              , status :: [ selected :: {}, unselected :: {} ]
-             ) entries ) # joined
+             ) entries ) # joined @"Person picked"
         button @"Create"
         button @"Update"
         button @"Delete"

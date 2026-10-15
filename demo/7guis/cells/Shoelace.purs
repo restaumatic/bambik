@@ -25,7 +25,7 @@ cells =
           ( clicked @"Cell picked" @"key" $ td >>> attrWith "style" cellFace $ textAt @"text" ) # anyOfAt @"key" @"cells" ) # anyOf @"rowKey"
           @( rowKey :: String
            , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
-           ) sheetRows ) # joined
+           ) sheetRows ) # joined @"Cell picked"
     fold @"Cell picked" selectCell
   # looped
     @( cells :: Object String

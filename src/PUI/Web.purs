@@ -600,7 +600,7 @@ statusWiring show = { toUser: show, fromUser: \_ -> pure unit }
 -- | the one row every row maps onto, so the placement is total), the
 -- | last-built element listening. Every vocabulary's `button` family
 -- | is this over its own chrome.
-eventLeaf :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web {} {} -> PUI Web { | r } [ | v ]
+eventLeaf :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web {} {} -> PUI Web { | r } [ | v ]
 eventLeaf chrome = clickedRow @l (lcmap (const {}) chrome)
 
 -- | A runtime string made safe to concatenate into `staticHTML` markup —
@@ -1103,7 +1103,7 @@ attrAt name = attrWith name (Record.get (Proxy @l))
 -- | held: a feed rewrites the replay slot, and a feed never fires): a click
 -- | emits field `k` of the row last fed, as case `l`; before the first feed
 -- | a click emits nothing.
-clicked :: forall @l @k r a b f v. IsSymbol l => IsSymbol k => Cons k f b r => Cons l f () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+clicked :: forall @l @k r a f b1 b2 v. IsSymbol l => IsSymbol k => Cons k f b1 r => Cons l f b2 v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
 clicked w = replayed @l (Record.get (Proxy @k)) (occurrences w)
 
 -- | `clicked` replaying the whole row it was last fed, as case `l` — the
@@ -1111,7 +1111,7 @@ clicked w = replayed @l (Record.get (Proxy @k)) (occurrences w)
 -- | row it replays). Vocabulary-internal: application code emits through
 -- | the vocabulary's emitters, or names the field a click reports with
 -- | `clicked @l @k`.
-clickedRow :: forall @l r a v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+clickedRow :: forall @l r a b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
 clickedRow w = replayed @l identity (occurrences w)
 
 -- | The **witness rung**'s button: `{}`-input chrome whose click releases
@@ -1129,8 +1129,8 @@ witnessed chrome = eventLeaf @"witnessed" chrome # rmap (on (Proxy @"witnessed")
 -- the case is renamed from the source's to `l`. Replay is `Strong`'s
 -- retention and nothing else — the primed `Strong` law: an occurrence
 -- before any feed is withheld, a feed never emits.
-replayed :: forall @l r k v. IsSymbol l => Cons l k () v => ({ | r } -> k) -> PUI Web { | r } [ occurred :: {} ] -> PUI Web { | r } [ | v ]
-replayed f src = joined src # rmap (on (Proxy @"occurred") (inj (Proxy @l) <<< f <<< _.model) case_)
+replayed :: forall @l r k b v. IsSymbol l => Cons l k b v => ({ | r } -> k) -> PUI Web { | r } [ occurred :: {} ] -> PUI Web { | r } [ | v ]
+replayed f src = joined @"occurred" src # rmap (on (Proxy @"occurred") (inj (Proxy @l) <<< f <<< _.model) case_)
 
 -- The click source `clicked` is built from: each click on the last-built
 -- element (the content's own node) leaves as an occurrence carrying nothing;
@@ -1159,7 +1159,7 @@ occurrences w = wrap do
 -- | The canvas gesture, where the place clicked *is* the interaction:
 -- | `svg >>> "viewBox" := "0 0 500 300" $ onClickedXY @"picked" $ …`. An event
 -- | source: the point leaves as an occurrence of case `l`.
-onClickedXY :: forall @l r a v. IsSymbol l => Cons l { x :: Number, y :: Number } () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+onClickedXY :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
 onClickedXY content = wrap do
   w' <- unwrap content
   node <- gets _.parent

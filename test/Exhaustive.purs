@@ -394,22 +394,22 @@ vrThree merge = do
   rig case3 (merge a.p b.p c.p) [ a.fire, b.fire, c.fire ]
 
 -- ×→+
-rvA :: Effect (Op { s :: Int } (Variant (x :: Int)))
+rvA :: Effect (Op { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)))
 rvA = armedOp \n -> .x n
 
-rvB :: Effect (Op { s :: Int } (Variant (y :: Int)))
+rvB :: Effect (Op { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)))
 rvB = armedOp \n -> .y n
 
-rvC :: Effect (Op { s :: Int } (Variant (z :: Int)))
+rvC :: Effect (Op { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)))
 rvC = armedOp \n -> .z n
 
-rvTwo :: (PUI Effect { s :: Int } (Variant (x :: Int)) -> PUI Effect { s :: Int } (Variant (y :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int))) -> Effect Rig
+rvTwo :: (PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int))) -> Effect Rig
 rvTwo merge = do
   a <- rvA
   b <- rvB
   rig recordFeed (merge a.p b.p) [ a.fire, b.fire ]
 
-rvThree :: (PUI Effect { s :: Int } (Variant (x :: Int)) -> PUI Effect { s :: Int } (Variant (y :: Int)) -> PUI Effect { s :: Int } (Variant (z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int))) -> Effect Rig
+rvThree :: (PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int))) -> Effect Rig
 rvThree merge = do
   a <- rvA
   b <- rvB
@@ -561,7 +561,7 @@ unitVR = lcmap case_ identity
 
 -- the silent component: the ×→+ unit is carrier structure no class
 -- names, so it is written here as a probe
-unitRV :: forall r. PUI Effect { | r } (Variant ())
+unitRV :: forall r v. PUI Effect { | r } (Variant v)
 unitRV = PUI (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit })
 
 laws :: Array Law

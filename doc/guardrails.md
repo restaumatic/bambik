@@ -228,12 +228,13 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 - A shared record input is **one row**: every operand is fed the merge's
   whole row (an equality), and its business functions are typed at that
-  row (L18). Emitters' cases may overlap — a `×→+` merge's
-  variant output is the inclusive union of the operands' cases, so a
-  handler missing for one of them is a type error — while a `+→+`
-  merge's variant output is **one row** every handler is typed at (an
-  equality), since a handler's row comes from a function
-  and could not be split back out of a union under holes. Variant handling and
+  row (L18). A shared variant output is **one row** every operand is
+  typed at, at `×→+` and `+→+` alike (an equality): an emitter is open
+  on its output and sits in the block's row by its label, a `+→+` stage
+  of a declared row is `expanded` into it, and a handler's row, coming
+  from a function, is the block's (an inclusive union could not be
+  split back out under holes). A handler missing for a case is a type
+  error either way. Variant handling and
   record production MUST be disjoint (responsibility never splits). Runtime evidence appears exactly where responsibility
   does (`DispatchableVariants`, `MergeableRecords`) and nowhere else.
 - Merge operands' emissions MUST be runtime-exact: trimmed to their
@@ -656,8 +657,9 @@ code below the UI) are algebra-layer material and exempt by location.
   generalized to what they share, and only then carries a `forall`;
   `npm run check-determined` checks every exported signature against its
   hint. An emitter block's variant output
-  stays an inclusive union (`InclusiveRows`): which emitter emits
-  which case is fixed by its label; a handler block's is one row.
+  is one row like a handler block's: an emitter's case is fixed by its
+  label and its row left open, so the block's row reaches it from the
+  folds that own it; a stage of a declared row is `expanded` into it.
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
   a keyed collection's keys are compared **structurally**
   (`Data.Profunctor.Row.Structural`, a key read through the ecosystem's

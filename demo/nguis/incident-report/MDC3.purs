@@ -23,5 +23,5 @@ incidentReport =
     bodyMedium $ text reportLine
     ( Semigroupoid.do
       button @"File the report"
-      indeterminateLinearProgress # action @( "Report filed" :: {} ) fileReport # atCase @"File the report" ) # joined
+      indeterminateLinearProgress # action @( "Report filed" :: {} ) fileReport # atCase @"File the report" ) # joined @"Report filed"
     snackbar @"Report filed" kept

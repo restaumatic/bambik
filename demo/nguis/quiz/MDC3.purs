@@ -19,7 +19,7 @@ quiz =
     RecordToVariant.do
       ( Semigroupoid.do
         headlineMedium $ text askedPrompt
-        listOf @"Question answered" @"key" @( key :: Int, choice :: String ) choices $ textAt @"choice" ) # provided @"asking" @( asking :: {}, finished :: {} ) quizPhase # joined
+        listOf @"Question answered" @"key" @( key :: Int, choice :: String ) choices $ textAt @"choice" ) # provided @"asking" @( asking :: {}, finished :: {} ) quizPhase # joined @"Question answered"
       ( Semigroupoid.do
         headlineSmall $ text finalScoreLine
         button' @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase

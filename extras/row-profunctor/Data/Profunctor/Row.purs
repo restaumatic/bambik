@@ -137,10 +137,10 @@
 -- | typed at one row, the row the view declares and its business function
 -- | is typed at (guardrails L18): a sub-record a stage should see is the
 -- | model's own nesting under `group @l`, a sub-variant a case a pane
--- | adopts. The library names no coercion at all — the two it needs are
--- | bare `lcmap (const {})` where a vocabulary places `{}`-input chrome
--- | and `rmap expand` where the `×→+` merge injects an operand's cases
--- | into its union. A per-shape knot (a hidden seeded field, a
+-- | adopts. The library names no coercion at all — the one reshape it
+-- | needs is bare `lcmap (const {})` where a vocabulary places `{}`-input
+-- | chrome; `expanded` (`rmap expand`, lawful by `Union`) is vocabulary,
+-- | the widening of a declared-row stage into its block. A per-shape knot (a hidden seeded field, a
 -- | re-entering case, a fold's accumulator, an unfold's resume case) is
 -- | **subsumed** by a model field under `looped` — state the app needs is
 -- | a model field (guardrails L14). Each of these had a word once and
@@ -218,11 +218,12 @@
 -- | variants own their input (each case has exactly one handler) and share
 -- | their output (any operand may emit any case). A shared record input is
 -- | **one row** — the operands' inputs are the merge's, and an operand's
--- | business functions are typed at that row (guardrails L18); a shared variant output is **inclusive**
--- | (`InclusiveRows`) at `×→+`, where each emitter's row is fixed by its
--- | label, and **one row** at `+→+`, where a handler's row comes from a
--- | function (an equality, no class); ownership is exclusive
--- | (`ExclusiveRows`) — so a merge signature is two words, one per side.
+-- | business functions are typed at that row (guardrails L18); a shared
+-- | variant output is **one row** too, every operand typed at the block's
+-- | — an emitter open on its output (`Cons l a b v`) sits in it by its
+-- | label, a `+→+` stage of a declared row by `expanded`; ownership is
+-- | exclusive (`ExclusiveRows`) — so a merge signature is its owned side's
+-- | bundle and its shared side's one row.
 -- |
 -- | `Data.Profunctor.Acting` extends the family one step past rows: rows are
 -- | the finitary μ-free fragment of the container grammar, and `Array` is
@@ -231,8 +232,7 @@
 -- | The shared floor of the row layer — what every shape's module
 -- | (`Data.Profunctor.Row.*`) stands on:
 -- |
--- |   * **row-constraint vocabulary** — `InclusiveRows` (overlapping rows,
--- |     deduped union: variant outputs), `ExclusiveRows`
+-- |   * **row-constraint vocabulary** — `ExclusiveRows`
 -- |     (disjoint partition: variant inputs, record outputs),
 -- |     `DispatchableVariants` (runtime tag evidence for variant dispatch).
 -- |     Their meanings come from the row-profunctor reading: everyone may
@@ -312,8 +312,8 @@
 -- | ```
 -- |
 -- | `exact` is the identity at a variant output because a variant carries
--- | its one tag: the merge's injection is a bare `rmap expand`, and
--- | `InclusiveRows` carries no evidence. At a record output the
+-- | its one tag: the merge forwards it as it is, and a stage of its own
+-- | declared row is `expanded` into the block's. At a record output the
 -- | trim is `exactRow`, the runtime evidence `OwnedRecordOutputs` carries,
 -- | so an operand's stale runtime copy of a sibling's field never shadows
 -- | the sibling. Law 2's liveness half is a **leaf** law: a stage may
@@ -380,12 +380,13 @@
 -- | doc/collections-profunctor-algebra.md §1.
 -- |
 -- | Reshape vs focus: a reshape *drops* the complement — chrome placed
--- | with `lcmap (const {})` reads none of the row, a merge operand let
--- | into the union with `rmap expand` never emits the added cases — while
--- | a focus *threads* it (`Strong`/`Choice`). Neither reshape is a word:
--- | no stage subsumes, a stage is typed at one row.
+-- | with `lcmap (const {})` reads none of the row, a stage `expanded`
+-- | into its block never emits the added cases — while a focus *threads*
+-- | it (`Strong`/`Choice`). The input reshape is no word: no stage
+-- | subsumes, a stage is typed at one row; the output one is `expanded`,
+-- | since a `+→+` stage beside emitters declares its own row.
 module Data.Profunctor.Row
-  ( class InclusiveRows
+  ( expanded
   , class ExclusiveRows
   , splitVariant
   , class DispatchableVariants
@@ -417,11 +418,11 @@ import Data.Profunctor (class Profunctor, lcmap, rmap)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Variant (class Contractable, case_, contract, inj, on)
+import Data.Variant (class Contractable, case_, contract, expand, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Data.Variant.Internal (class VariantTags)
 import Prim.Ordering (Ordering, LT, EQ, GT)
-import Prim.Row (class Cons, class Lacks, class Nub, class Union) as Row
+import Prim.Row (class Cons, class Lacks, class Union) as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList (Cons, Nil) as RL
 import Prim.Symbol (class Append, class Compare) as Symbol
@@ -434,23 +435,6 @@ import Type.Proxy (Proxy(..))
 -- =====================================================================
 -- Row-constraint vocabulary
 -- =====================================================================
-
--- r1 and r2 may overlap; r is their deduped union; both r1 ⊆ r and r2 ⊆ r.
--- Witness rows: r12 = r1 ∪ r2 (pre-nub), r1x = r ∖ r1, r2x = r ∖ r2.
-class InclusiveRows :: forall k. Row k -> Row k -> Row k -> Row k -> Row k -> Row k -> Constraint
-class
-  ( Row.Union r1 r2 r12
-  , Row.Nub r12 r
-  , Row.Union r1 r1x r
-  , Row.Union r2 r2x r
-  ) <= InclusiveRows r1 r2 r r12 r1x r2x
-
-instance
-  ( Row.Union r1 r2 r12
-  , Row.Nub r12 r
-  , Row.Union r1 r1x r
-  , Row.Union r2 r2x r
-  ) => InclusiveRows r1 r2 r r12 r1x r2x
 
 -- r1 and r2 are disjoint; their union is r.
 class ExclusiveRows :: forall k. Row k -> Row k -> Row k -> Constraint
@@ -566,13 +550,12 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- runtime action is label-driven (dispatch, union) rather than
 -- label-blind (broadcast, expand). Records are read-shared but
 -- write-owned; variants are emit-shared but handle-owned. A shared side
--- that is one row is written as one row variable — no class states an
--- equality — and the one shared side that is a union names its block,
--- so each merge signature is its owned side's bundle and its shared
+-- is one row, written as one row variable — no class states an equality
+-- — so each merge signature is its owned side's bundle and its shared
 -- side's row:
 --
 --   recordToRecord   : one input row `i`  + OwnedRecordOutputs
---   recordToVariant  : one input row `i`  + InclusiveRows (the union of the cases)
+--   recordToVariant  : one input row `i`  + one output row `o`
 --   variantToVariant : OwnedVariantInputs + one output row `o`
 --   variantToRecord  : OwnedVariantInputs + one output row `o`
 --
@@ -583,9 +566,15 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- hole's row undetermined. The one repeated variable carries the
 -- context's row down into every operand, so an operand's owned evidence
 -- (a whole-row editor, a collection item) never sees an open row. The
--- `+→+` output is one row for the same reason (CHANGELOG, 2026-10-07);
--- the `×→+` output stays a union because an emitter's case is fixed by
--- its own label, so nothing there is undetermined.
+-- `+→+` output is one row for the same reason (CHANGELOG, 2026-10-07),
+-- and the `×→+` output since 2026-10-15: an emitter is open on its
+-- output (`Cons l a b v`, as an editor is `Cons l a b r`), so the
+-- block's row reaches it from the folds that own it, and a `+→+` stage
+-- of a declared row standing beside emitters is `expanded` into it.
+-- Every shared side is thus open on the leaf and closed by the owning
+-- side, in all four shapes. (An inclusive union computed bottom-up was
+-- the `×→+` output until then; what it bought — a label-free `joined` —
+-- is now `joined @l`; CHANGELOG, 2026-10-15.)
 --
 -- **What a shared input side obliges.** A shared record input is a
 -- *broadcast*: one feed reaches both operands, so both may answer it. That
@@ -786,15 +775,27 @@ toField = rmap (\a -> Record.insert (Proxy @l) a {})
 atCase :: forall @l p a b v. IsSymbol l => Row.Cons l a () v => Profunctor p => p a b -> p [ | v ] b
 atCase = lcmap (on (Proxy @l) identity case_)
 
--- | Emit a component's bare output as case `l`.
+-- | Emit a component's bare output as case `l`, the rest of the row open:
+-- | the case sits in whatever row the block shares (`Cons l a b v`, as
+-- | every emitter's).
 toCase
-  :: forall @l @a p c v
+  :: forall @l @a p c b v
    . IsSymbol l
-  => Row.Cons l a () v
+  => Row.Cons l a b v
   => Profunctor p
   => p c a
   -> p c [ | v ]
 toCase = rmap (inj (Proxy @l))
+
+-- | A stage's declared cases among a block's: a `+→+` stage typed at its
+-- | own outcome row (`action @t`) standing beside emitters in a
+-- | `RecordToVariant.do` has its row widened into the one the block
+-- | shares — `rmap expand`, lawful by `Union` (`… # action @( "Order
+-- | submitted" :: {}, "Order rejected: no total" :: {} ) submitOrder #
+-- | atCase @"Submit order" # expanded`, order-form). A leaf needs none:
+-- | its one case is open by its label.
+expanded :: forall p a t b o. Profunctor p => Row.Union t b o => p a [ | t ] -> p a [ | o ]
+expanded = rmap expand
 
 -- | Normalize a stage's emissions with an idempotent function over the row.
 -- | The normalizer is typed at the stage's row, its signature the view's

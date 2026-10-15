@@ -27,7 +27,7 @@ circleDrawer =
                , y :: String
                , r :: String
                , status :: [ selected :: {}, unselected :: {} ]
-               ) canvasCircles ) ) # joined
+               ) canvasCircles ) ) # joined @"Canvas clicked"
       ( cardActions $ RecordToVariant.do
         button' @"Undo" { icon: "undo" }
         button' @"Redo" { icon: "redo" } )

@@ -26,7 +26,7 @@ crud =
            , "Name" :: String
            , "Surname" :: String
            , status :: [ selected :: {}, unselected :: {} ]
-           ) { selected: isSelected } entries $ text personLine ) # joined
+           ) { selected: isSelected } entries $ text personLine ) # joined @"Person picked"
         button @"Create"
         button @"Update"
         button @"Delete"

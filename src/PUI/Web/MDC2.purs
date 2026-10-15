@@ -226,9 +226,9 @@ import Type.Proxy (Proxy(..))
 -- | verbatim as its caption, so the case *is* the copy. `button'`
 -- | takes the face's options.
 button
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => PUI Web { | r } [ | v ]
 button = buttonOf @l (Just "mdc-button--raised") {}
 
@@ -237,9 +237,9 @@ button = buttonOf @l (Just "mdc-button--raised") {}
 -- | "local_cafe" }`), `label:` overrides the caption with copy the case
 -- | cannot be.
 button'
-  :: forall @l provided r v
+  :: forall @l provided r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
   -> PUI Web { | r } [ | v ]
@@ -248,9 +248,9 @@ button' = buttonOf @l (Just "mdc-button--raised")
 -- | `button` at medium emphasis — outlined, no fill: an important action
 -- | that is not *the* action of the screen.
 outlinedButton
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => PUI Web { | r } [ | v ]
 outlinedButton = buttonOf @l (Just "mdc-button--outlined") {}
 
@@ -258,16 +258,16 @@ outlinedButton = buttonOf @l (Just "mdc-button--outlined") {}
 -- | dismissive or tertiary action (Cancel, Learn more), and what belongs in
 -- | dialogs and cards.
 textButton
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => PUI Web { | r } [ | v ]
 textButton = buttonOf @l Nothing {}
 
 buttonOf
-  :: forall @l provided r v
+  :: forall @l provided r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => Maybe String
   -> { | provided }
@@ -299,9 +299,9 @@ buttonOf mModifier provided = eventLeaf @l $
 -- | defaults to the case label verbatim (`label: Nothing` gives
 -- | the icon-only FAB, `label:` copy overrides).
 fab
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => String
   -> PUI Web { | r } [ | v ]
 fab icon = eventLeaf @l $
@@ -325,7 +325,7 @@ fab icon = eventLeaf @l $
 -- | it is what assistive technology announces, defaulting to
 -- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
-iconButton :: forall @l r v. IsSymbol l => Cons l { | r } () v => String -> PUI Web { | r } [ | v ]
+iconButton :: forall @l r b v. IsSymbol l => Cons l { | r } b v => String -> PUI Web { | r } [ | v ]
 iconButton icon = eventLeaf @l $
   el "button" >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
     static (div >>> cl "mdc-icon-button__ripple")
@@ -337,7 +337,7 @@ iconButton icon = eventLeaf @l $
 -- | One choice in a `menu`: reports the data it was showing when picked,
 -- | and the menu closes itself. The line's text defaults to
 -- | the case label verbatim (`label:` overrides with real copy).
-menuItem :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
+menuItem :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } [ | v ]
 menuItem = eventLeaf @l $
   li >>> cl "mdc-deprecated-list-item" >>> "role" := "menuitem" >>> "tabindex" := "-1" $ Semigroupoid.do
     static (span >>> cl "mdc-deprecated-list-item__ripple")
@@ -1325,11 +1325,11 @@ listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: 
 -- | the view model each row is drawn from
 -- | (`listOf @"opened" @"id" @( id :: Int, subject :: String ) …`).
 listOf
-  :: forall @l @k @r i b o key v
+  :: forall @l @k @r i b1 b2 o key v
    . IsSymbol l
   => IsSymbol k
-  => Cons l key () v
-  => Cons k key b r
+  => Cons l key b1 v
+  => Cons k key b2 r
   => ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
@@ -1340,11 +1340,11 @@ listOf = listOf' @l @k @r {}
 -- | rows it holds take the catalogue's selected styling (`listOf'
 -- | @"Person picked" @"key" @( … ) { selected: isSelected } entries item`).
 listOf'
-  :: forall @l @k @r provided i b o key v
+  :: forall @l @k @r provided i b1 b2 o key v
    . IsSymbol l
   => IsSymbol k
-  => Cons l key () v
-  => Cons k key b r
+  => Cons l key b1 v
+  => Cons k key b2 r
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
   => { | provided }
   -> ({ | i } -> Array { | r })
@@ -1372,13 +1372,13 @@ listOf' provided f item = withStructuralOrd @key $ wrap do
 -- | (`listOfAt @"Message opened" @"id" @"messages" item`). Rows derived
 -- | from the row are a projection, `listOf`.
 listOfAt
-  :: forall @l @k @t i r b1 b2 o key v
+  :: forall @l @k @t i r b1 b2 b3 o key v
    . IsSymbol l
   => IsSymbol k
   => IsSymbol t
-  => Cons l key () v
-  => Cons k key b1 r
-  => Cons t (Array { | r }) b2 i
+  => Cons l key b1 v
+  => Cons k key b2 r
+  => Cons t (Array { | r }) b3 i
   => PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
 listOfAt = listOfAt' @l @k @t {}
@@ -1388,13 +1388,13 @@ listOfAt = listOfAt' @l @k @t {}
 -- | (`listOfAt' @"Message opened" @"id" @"messages" { selected:
 -- | highlighted } item`).
 listOfAt'
-  :: forall @l @k @t provided i r b1 b2 o key v
+  :: forall @l @k @t provided i r b1 b2 b3 o key v
    . IsSymbol l
   => IsSymbol k
   => IsSymbol t
-  => Cons l key () v
-  => Cons k key b1 r
-  => Cons t (Array { | r }) b2 i
+  => Cons l key b1 v
+  => Cons k key b2 r
+  => Cons t (Array { | r }) b3 i
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
   => { | provided }
   -> PUI Web { | r } o

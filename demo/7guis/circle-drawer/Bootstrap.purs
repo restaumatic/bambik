@@ -28,7 +28,7 @@ circleDrawer =
                , y :: String
                , r :: String
                , status :: [ selected :: {}, unselected :: {} ]
-               ) canvasCircles ) ) # joined
+               ) canvasCircles ) ) # joined @"Canvas clicked"
       ( div >>> cl "d-flex" >>> cl "gap-2" $ RecordToVariant.do
         button @"Undo"
         button @"Redo" )

@@ -34,8 +34,9 @@
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
 -- | a component `w :: p { | i } [ | o ]` is an **event source** fed a row;
 -- | the merge is `m = recordToVariant w1 w2`, inputs shared (one row
--- | `i`: both operands fed the merge's whole row), outputs shared
--- | (`InclusiveRows`: the inclusive union of their cases).
+-- | `i`: both operands fed the merge's whole row), outputs shared (one
+-- | row `o` every operand is typed at: an emitter open on its output
+-- | sits in it by its label, a stage of a declared row by `expanded`).
 -- |
 -- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`. A feed writes
 -- |      the replay slot; a second write of the same row changes nothing.
@@ -95,81 +96,80 @@ module Data.Profunctor.Row.RecordToVariant
   , recordToVariant
   , joined
   , kept
-  , class JoinedCases
   , bind
   , discard
   )
   where
 
 import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Row (class InclusiveRows)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Data.Variant.Internal (VariantRep(..))
-import Prim.RowList (class RowToList, RowList)
-import Prim.RowList (Cons, Nil) as RL
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Type.Proxy (Proxy(..))
+import Data.Eq ((==))
+import Data.Boolean (otherwise)
 import Unsafe.Coerce (unsafeCoerce)
 import Prim.Row (class Cons)
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant
-    :: forall i o1 o2 o o12 o1x o2x
-     . InclusiveRows o1 o2 o o12 o1x o2x
-    => p { | i } [ | o1 ]
-    -> p { | i } [ | o2 ]
+    :: forall i o
+     . p { | i } [ | o ]
+    -> p { | i } [ | o ]
     -> p { | i } [ | o ]
 
 bind
-  :: forall p i o1 o2 o o12 o1x o2x
+  :: forall p i o
    . RecordToVariant p
-  => InclusiveRows o1 o2 o o12 o1x o2x
-  => p { | i } [ | o1 ]
-  -> (p { | i } [ | o1 ] -> p { | i } [ | o2 ])
+  => p { | i } [ | o ]
+  -> (p { | i } [ | o ] -> p { | i } [ | o ])
   -> p { | i } [ | o ]
 bind first cont = recordToVariant first (cont first)
 
 discard
-  :: forall p i o1 o2 o o12 o1x o2x
+  :: forall p i o
    . RecordToVariant p
-  => InclusiveRows o1 o2 o o12 o1x o2x
-  => p { | i } [ | o1 ]
-  -> (Unit -> p { | i } [ | o2 ])
+  => p { | i } [ | o ]
+  -> (Unit -> p { | i } [ | o ])
   -> p { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
--- | **Every case joined with the row its emitter was fed** (`×→+`):
+-- | **Case `l` joined with the row its emitter was fed** (`×→+`):
 -- | `first` around the source, the fed row riding the state channel and
--- | leaving beside each occurrence's payload as one record, `{ event,
--- | model }`, under the same case. So a list pick, a canvas click or an
--- | action's outcome reaches the fold with the model in hand, and its
--- | handler is one function of one record (`listOf … # joined`,
+-- | leaving beside the occurrence's payload as one record, `{ event,
+-- | model }`, under the same case; every other case passes as it is. So a
+-- | list pick, a canvas click or an action's outcome reaches the fold
+-- | with the model in hand, and its handler is one function of one
+-- | record (`listOf @"Todo toggled" … # joined @"Todo toggled"`,
 -- | `fold @"Todo toggled" toggleTodo` with `toggleTodo ::
 -- | { event :: Int, model :: { … } } -> { … }`, todo-list); an outcome
 -- | whose fold keeps the model is `kept` (order-form's submit, joined with
--- | its button and action). Every case of the source is joined, so a
--- | two-outcome action needs no second word. A click is the degenerate
+-- | its button and action); a two-outcome action is joined twice. The
+-- | label is the source's own, restated: with every emitter open on its
+-- | output, the source's row is the block's, and nothing but the label
+-- | says which case is the source's (a label-free `joined` over every
+-- | case of a closed source row was the word from 2026-10-14 to
+-- | 2026-10-15; CHANGELOG). A click is the degenerate
 -- | case where the occurrence carries nothing of its own: `PUI.Web.clicked`
 -- | is this with the `{}` event dropped and the case renamed — a
 -- | derivation, so no word of its own (`Data.Profunctor.Row`, *Retention*).
-class JoinedCases (rl :: RowList Type) (r :: Row Type) (v1 :: Row Type) | rl r -> v1
-
-instance JoinedCases RL.Nil r ()
-
-instance (JoinedCases rl r v2, Cons l { event :: a, model :: { | r } } v2 v1) => JoinedCases (RL.Cons l a rl) r v1
-
 joined
-  :: forall p r v rl v1
-   . Strong p
-  => RowToList v rl
-  => JoinedCases rl r v1
+  :: forall @l p r e b v v1
+   . IsSymbol l
+  => Strong p
+  => Cons l e b v
+  => Cons l { event :: e, model :: { | r } } b v1
   => p { | r } [ | v ]
   -> p { | r } [ | v1 ]
 joined src = dimap (\r -> Tuple r r) (\(Tuple e r) -> withModel r e) (first src)
   where
   withModel :: { | r } -> [ | v ] -> [ | v1 ]
   withModel r e = case (unsafeCoerce e :: VariantRep _) of
-    VariantRep rep -> unsafeCoerce (VariantRep { type: rep.type, value: { event: rep.value, model: r } })
+    VariantRep rep
+      | rep.type == reflectSymbol (Proxy @l) -> unsafeCoerce (VariantRep { type: rep.type, value: { event: rep.value, model: r } })
+      | otherwise -> unsafeCoerce e
 
 -- | The fold that **keeps the model** a joined event arrived with:
 -- | `kept = _.model`. For an outcome that is told and changes nothing —

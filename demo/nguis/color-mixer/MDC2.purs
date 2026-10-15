@@ -24,7 +24,7 @@ colorMixer =
         ( clicked @"Preset applied" @"name" $ div >>> attrAt @"name" "title" >>> attrWith "style" chipFace $ identity ) # anyOf @"name"
           @( name :: String
            , mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
-           ) (const palette) ) # joined
+           ) (const palette) ) # joined @"Preset applied"
     fold @"Preset applied" applyPreset
   # looped
     @( "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }

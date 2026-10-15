@@ -218,9 +218,9 @@ import Type.Proxy (Proxy(..))
 -- | verbatim as its caption, so the case *is* the copy. `button'`
 -- | takes the face's options.
 button
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => PUI Web { | r } [ | v ]
 button = buttonOf @l "md-filled-button" {}
 
@@ -229,9 +229,9 @@ button = buttonOf @l "md-filled-button" {}
 -- | "local_cafe" }`), `label:` overrides the caption with copy the case
 -- | cannot be.
 button'
-  :: forall @l provided r v
+  :: forall @l provided r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
   -> PUI Web { | r } [ | v ]
@@ -241,27 +241,27 @@ button' = buttonOf @l "md-filled-button"
 -- | important action over a busy or patterned background, where a flat fill
 -- | would not separate.
 elevatedButton
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => PUI Web { | r } [ | v ]
 elevatedButton = buttonOf @l "md-elevated-button" {}
 
 -- | `button` **tonal**: a softer fill, one step below filled — the second
 -- | action next to a filled one (Save beside Publish).
 tonalButton
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => PUI Web { | r } [ | v ]
 tonalButton = buttonOf @l "md-filled-tonal-button" {}
 
 -- | `button` **outlined**: a border and no fill — an important action that
 -- | is not *the* action of the screen.
 outlinedButton
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => PUI Web { | r } [ | v ]
 outlinedButton = buttonOf @l "md-outlined-button" {}
 
@@ -269,16 +269,16 @@ outlinedButton = buttonOf @l "md-outlined-button" {}
 -- | tertiary action (Cancel, Learn more), and what belongs in dialogs and
 -- | cards.
 textButton
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => PUI Web { | r } [ | v ]
 textButton = buttonOf @l "md-text-button" {}
 
 buttonOf
-  :: forall @l provided r v
+  :: forall @l provided r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => String
   -> { | provided }
@@ -300,9 +300,9 @@ buttonOf tag provided = eventLeaf @l $ el tag $ Semigroupoid.do
 -- | defaults to the case label verbatim (`label: Nothing` gives
 -- | the icon-only FAB, `label:` copy overrides).
 fab
-  :: forall @l r v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => String
   -> PUI Web { | r } [ | v ]
 fab icon = eventLeaf @l $
@@ -319,7 +319,7 @@ fab icon = eventLeaf @l $
 -- | it is what assistive technology announces, defaulting to
 -- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
-iconButton :: forall @l r v. IsSymbol l => Cons l { | r } () v => String -> PUI Web { | r } [ | v ]
+iconButton :: forall @l r b v. IsSymbol l => Cons l { | r } b v => String -> PUI Web { | r } [ | v ]
 iconButton icon = eventLeaf @l $
   el "md-icon-button" >>> "aria-label" := config.label $
     el "md-icon" $ staticText icon
@@ -329,7 +329,7 @@ iconButton icon = eventLeaf @l $
 -- | One choice in a `menu`: reports the data it was showing when picked,
 -- | and the menu closes itself. The line's text defaults to
 -- | the case label verbatim (`label:` overrides with real copy).
-menuItem :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
+menuItem :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } [ | v ]
 menuItem = eventLeaf @l $
   el "md-menu-item" $
     div >>> "slot" := "headline" $ staticText config.label
@@ -1097,11 +1097,11 @@ listItem = el "md-list-item"
 -- | the view model each row is drawn from
 -- | (`listOf @"opened" @"id" @( id :: Int, subject :: String ) …`).
 listOf
-  :: forall @l @k @r i b o key v
+  :: forall @l @k @r i b1 b2 o key v
    . IsSymbol l
   => IsSymbol k
-  => Cons l key () v
-  => Cons k key b r
+  => Cons l key b1 v
+  => Cons k key b2 r
   => ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
@@ -1112,11 +1112,11 @@ listOf = listOf' @l @k @r {}
 -- | rows it holds take the catalogue's selected styling (`listOf'
 -- | @"Person picked" @"key" @( … ) { selected: isSelected } entries item`).
 listOf'
-  :: forall @l @k @r provided i b o key v
+  :: forall @l @k @r provided i b1 b2 o key v
    . IsSymbol l
   => IsSymbol k
-  => Cons l key () v
-  => Cons k key b r
+  => Cons l key b1 v
+  => Cons k key b2 r
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
   => { | provided }
   -> ({ | i } -> Array { | r })
@@ -1136,13 +1136,13 @@ listOf' provided f item = withStructuralOrd @key $ wrap do
 -- | (`listOfAt @"Message opened" @"id" @"messages" item`). Rows derived
 -- | from the row are a projection, `listOf`.
 listOfAt
-  :: forall @l @k @t i r b1 b2 o key v
+  :: forall @l @k @t i r b1 b2 b3 o key v
    . IsSymbol l
   => IsSymbol k
   => IsSymbol t
-  => Cons l key () v
-  => Cons k key b1 r
-  => Cons t (Array { | r }) b2 i
+  => Cons l key b1 v
+  => Cons k key b2 r
+  => Cons t (Array { | r }) b3 i
   => PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
 listOfAt = listOfAt' @l @k @t {}
@@ -1152,13 +1152,13 @@ listOfAt = listOfAt' @l @k @t {}
 -- | (`listOfAt' @"Message opened" @"id" @"messages" { selected:
 -- | highlighted } item`).
 listOfAt'
-  :: forall @l @k @t provided i r b1 b2 o key v
+  :: forall @l @k @t provided i r b1 b2 b3 o key v
    . IsSymbol l
   => IsSymbol k
   => IsSymbol t
-  => Cons l key () v
-  => Cons k key b1 r
-  => Cons t (Array { | r }) b2 i
+  => Cons l key b1 v
+  => Cons k key b2 r
+  => Cons t (Array { | r }) b3 i
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
   => { | provided }
   -> PUI Web { | r } o

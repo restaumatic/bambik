@@ -652,8 +652,8 @@ main = do
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
     m <- unwrap (recordToVariant
-      (probeIO ins1 p1Prop :: PUI Effect { a :: Int } [ x :: Int ])
-      (probeIO ins2 p2Prop :: PUI Effect { a :: Int } [ y :: String ]))
+      (probeIO ins1 p1Prop :: PUI Effect { a :: Int } [ x :: Int, y :: String ])
+      (probeIO ins2 p2Prop :: PUI Effect { a :: Int } [ x :: Int, y :: String ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { a: 1 }
     Ref.read ins1 >>= assertEqual "×→+ broadcast: left operand sees the record" [ { a: 1 } ]
@@ -668,7 +668,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int ])
-    let silent = PUI (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit }) :: PUI Effect {} (Variant ())
+    let silent = PUI (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit }) :: PUI Effect {} [ x :: Int ]
     m <- unwrap (recordToVariant silent (probe gProp :: PUI Effect {} [ x :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp (.x 1)
@@ -1473,9 +1473,9 @@ main = do
         p2Prop <- Ref.new Nothing
         p3Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ x :: Int, y :: Int, z :: Int ])
-        m <- unwrap (grouping (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int ])
-                              (probe p2Prop :: PUI Effect { s :: Int } [ y :: Int ])
-                              (probe p3Prop :: PUI Effect { s :: Int } [ z :: Int ]))
+        m <- unwrap (grouping (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ])
+                              (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ])
+                              (probe p3Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { s: 1 }
         fire p2Prop (.y 2) *> fire p1Prop (.x 1) *> fire p3Prop (.z 3)
@@ -1710,7 +1710,7 @@ main = do
         gProp <- Ref.new Nothing
         rProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-        m <- unwrap (recordToVariant (q (probe gProp :: PUI Effect { a :: Int } [ x :: Int ])) (probe rProp :: PUI Effect { a :: Int } [ y :: String ]))
+        m <- unwrap (recordToVariant (q (probe gProp :: PUI Effect { a :: Int } [ x :: Int, y :: String ])) (probe rProp :: PUI Effect { a :: Int } [ x :: Int, y :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { a: 0 }
         fire gProp (.x 1)
@@ -1865,7 +1865,7 @@ main = do
         p1Prop <- Ref.new Nothing
         p2Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-        m <- unwrap (wrapper (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int ]) (probe p2Prop :: PUI Effect { s :: Int } [ y :: String ]))
+        m <- unwrap (wrapper (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { s: 1 }
         fire p1Prop (.x 1) *> fire p2Prop (.y "e") *> fire p1Prop (.x 2)
@@ -1903,7 +1903,7 @@ main = do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-    m <- unwrap (recordToVariant (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int ]))
+    m <- unwrap (recordToVariant (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { s: 0 }
     fire p1Prop (.x 1) *> fire p2Prop (.x 2) *> fire p1Prop (.y "e")
@@ -1937,7 +1937,7 @@ main = do
     ins2 <- Ref.new ([] :: Array { s :: Int })
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
-    m <- unwrap (recordToVariant (probeIO ins1 p1Prop :: PUI Effect { s :: Int } [ x :: Int ]) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } [ y :: String ]))
+    m <- unwrap (recordToVariant (probeIO ins1 p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
     m.fromUser \_ -> pure unit
     m.toUser { s: 1 }
     fire p1Prop (.x 1) *> fire p2Prop (.y "e")

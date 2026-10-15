@@ -106,7 +106,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 -- | carrying the data it was showing, under the name the app gives the
 -- | action — `button @"Submit the review"`. The label defaults to
 -- | the case label verbatim (`label:` overrides with real copy).
-button :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
+button :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } [ | v ]
 button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String } in eventLeaf @l $
   el "sl-button" >>> "variant" := "primary" $ staticText config.label
 

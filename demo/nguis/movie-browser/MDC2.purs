@@ -30,7 +30,7 @@ movieBrowser =
          , year :: Int
          , rating :: Number
          , "Favorite" :: Boolean
-         ) visibleMovies # joined
+         ) visibleMovies # joined @"Favorite changed"
     fold @"Favorite changed" markFavorite
   # looped
     @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]

@@ -103,7 +103,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
@@ -120,7 +120,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- own row is always stated by a business function, never placed at
 -- another row at the call site; `{}`-input chrome is placed by the
 -- vocabulary's `eventLeaf` with a bare `lcmap (const {})`.
-import Data.Profunctor.Row (atCase, atField, settled, toCase, toField) as Adopters
+import Data.Profunctor.Row (atCase, atField, expanded, settled, toCase, toField) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, kept) as Adopters
 import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt) as Adopters
@@ -138,7 +138,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, case_, contract, expand, inj, on)
+import Data.Variant (class Contractable, case_, contract, inj, on)
 import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
@@ -653,8 +653,8 @@ instance Applicative m => RecordToVariant (PUI m) where
   -- the one-thing-per-feed obligation falls on the operands (the answer
   -- law at ×→+, arming); hence `Applicative m`: no state here.
   recordToVariant p1 p2 = wrap ado
-    p1' <- unwrap (rmap expand p1)
-    p2' <- unwrap (rmap expand p2)
+    p1' <- unwrap p1
+    p2' <- unwrap p2
     in
       { toUser: \new -> do
           p1'.toUser new
@@ -1173,10 +1173,10 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | loop. A tick that needs telling is told by the status that folds it
 -- | in the fold block, so the source opens with none.
 ticks
-  :: forall @l m r v
+  :: forall @l m r b v
    . Scoped m
   => IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => { ms :: Number }
   -> PUI m { | r } [ | v ]
 ticks interval = wrap do

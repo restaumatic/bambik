@@ -49,7 +49,7 @@ flightBooker =
     ( Semigroupoid.do
       button' @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress # action
-        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book" ) # joined
+        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book" ) # joined @"Flight booked" # joined @"Booking rejected"
     VariantToRecord.do
       snackbar @"Flight booked" kept
       snackbar @"Booking rejected" kept
@@ -125,7 +125,7 @@ block of their own, `( Semigroupoid.do … ) # debounced itinerarySettleTime`.
   still on screen. A display that no later line depends on needs none of
   this — it is a plain line (writing.md *The pipeline*).
 
-**Stage 3 — the button and its action, `( Semigroupoid.do … ) # joined`.**
+**Stage 3 — the button and its action, `( Semigroupoid.do … ) # joined @l`, once per outcome.**
 The first shape change, `×→+`: fed the model, `button' @"Book" { icon:
 "flight_takeoff" }` emits case `"Book"` carrying the model on click (its
 case is its caption; `icon` is presentation config). `atCase @"Book"`
@@ -136,7 +136,7 @@ occurrences and nothing else, so no snackbar can stand in it. The
 outcome row is declared `@( … )` on the action, since what folds it keeps
 the model — and its cases are written as the words the user will read,
 `"Flight booked"` and `"Booking rejected"`, because they are what the
-statuses show. `# joined` on the block pairs each outcome with the model
+statuses show. `# joined @l` on the block, once per outcome, pairs it with the model
 the button was fed, so what leaves is `{ event, model }` under the
 outcome's case.
 

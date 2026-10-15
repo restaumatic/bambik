@@ -21,6 +21,35 @@ Before 2026-07 the history is the git log.
   force. The four merges name their rows by side (`i`/`o`, numbered per
   operand, `RowList`s `i1l`/`o1l`), the one exception to the
   kind-named convention.
+- **Open on the shared side, closed on the owned side, in all four
+  shapes.** The `×→+` output is one row every operand is typed at, like
+  the other three shared sides; `InclusiveRows` is deleted (its last
+  user) and `recordToVariant` carries no constraint — the merge forwards
+  each emission as it is, the `rmap expand` it did per operand gone.
+  Every emitter is open on its output (`Cons l a b v`, as an editor is
+  `Cons l a b r`): `button` and its emphasis siblings, `fab`,
+  `iconButton`, `menuItem`, the `listOf` family in all six vocabularies,
+  `clicked`/`clickedRow`/`replayed`/`onClickedXY`/`eventLeaf`, `ticks`;
+  `toCase @l` is open again (closed 2026-10-14). The block's row reaches
+  an emitter from the folds that own it, so a hole determines as before
+  (`check-determined` 106/106, signatures verbatim; holey sweep 107/107).
+  What cannot sit in the block's row by a label is a `+→+` stage of a
+  **declared** row standing beside emitters — order-form's three
+  actions, ticker's — and these are `expanded` (`Data.Profunctor.Row`,
+  re-exported by `PUI`: `rmap expand`, lawful by `Union t b o`,
+  `… # action @( … ) submitOrder # atCase @"Submit order" # expanded`).
+  The price is `joined @l`, label-indexed again (label-free since
+  2026-10-14): with every emitter open, the source's row is the block's,
+  and nothing but the label says which case is the source's, so the
+  label is the source's own restated (`listOf @"Person picked" … #
+  joined @"Person picked"`; a two-outcome action is joined twice), 54
+  lines in 17 demos. Measured first the other way: `action` typed with
+  `Union t b o` broke every undeclared action under a hole (21 holey
+  twins), and an output-driven label-free `joined` cannot tell its
+  cases from its siblings' — the two findings that fix the design
+  (branch experiment/top-down-event-row, the same day). The `×→+` law
+  probes are typed at one shared row; the silent unit is polymorphic in
+  its row.
 
 ## 2026-10-14
 

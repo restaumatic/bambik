@@ -25,7 +25,7 @@ ticTacToe =
           @( key :: String
            , mark :: [ x :: {}, o :: {}, free :: {} ]
            , line :: [ winning :: {}, plain :: {} ]
-           ) cells ) # joined
+           ) cells ) # joined @"Cell claimed"
       button' @"New game" { icon: "replay" }
     VariantToRecord.do
       fold @"Cell claimed" claimCell

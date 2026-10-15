@@ -127,7 +127,7 @@ carries one bundle for its owned side and one row for its shared side:
 
 ```
 recordToRecord   : one input row i  + OwnedRecordOutputs
-recordToVariant  : one input row i  + InclusiveRows (the union of the cases)
+recordToVariant  : one input row i  + one output row o
 variantToVariant : OwnedVariantInputs + one output row o
 variantToRecord  : OwnedVariantInputs + one output row o
 ```

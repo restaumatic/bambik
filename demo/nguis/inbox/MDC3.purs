@@ -18,7 +18,7 @@ inbox =
     bodySmall $ text unreadLine
     ( bodyLarge $ staticText "Inbox zero!" ) # inCase @"empty" @( empty :: {}, filled :: {} ) inboxState
     RecordToVariant.do
-      ( listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } $ span $ text messageLine ) # joined
+      ( listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } $ span $ text messageLine ) # joined @"Message opened"
       ( Semigroupoid.do
         headlineSmall $ text subjectLine
         bodyMedium $ text fromLine

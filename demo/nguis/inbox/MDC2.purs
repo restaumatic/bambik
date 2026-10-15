@@ -18,7 +18,7 @@ inbox =
     caption $ text unreadLine
     ( banner $ staticText "Inbox zero!" ) # inCase @"empty" @( empty :: {}, filled :: {} ) inboxState
     RecordToVariant.do
-      ( listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } $ span $ text messageLine ) # joined
+      ( listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } $ span $ text messageLine ) # joined @"Message opened"
       ( Semigroupoid.do
         headline6 $ text subjectLine
         body2 $ text fromLine

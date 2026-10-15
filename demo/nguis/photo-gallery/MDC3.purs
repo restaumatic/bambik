@@ -15,7 +15,7 @@ photoGallery =
     topAppBar "Photo Gallery" $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
         ( Semigroupoid.do
-          ( listOf' @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices $ textAt @"name" ) # joined
+          ( listOf' @"opened" @"name" @( name :: String, state :: [ open :: {}, closed :: {} ] ) { selected: isOpen } albumChoices $ textAt @"name" ) # joined @"opened"
           fold @"opened" openAlbum
           divider $ Semigroupoid.do
             list $ Semigroupoid.do

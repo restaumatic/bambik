@@ -23,7 +23,7 @@ weather =
       ( listOf' @"Forecast requested" @"request"
         @( request :: { city :: String, sample :: Int }
          , focus :: [ current :: {}, other :: {} ]
-         ) { selected: isCurrent } forecastRequests $ text cityLine ) # joined
+         ) { selected: isCurrent } forecastRequests $ text cityLine ) # joined @"Forecast requested"
     VariantToRecord.do
       ( simpleDialog "Got it" "About this dashboard" $ bodyLarge $ text aboutLine ) # atCase @"About this dashboard"
       ( Semigroupoid.do

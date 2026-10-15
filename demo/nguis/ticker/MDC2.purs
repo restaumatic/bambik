@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (action, atCase, fold, joined, looped, ticks, with)
+import PUI (action, atCase, expanded, fold, joined, looped, ticks, with)
 import PUI.Web (providedAt, text)
 import PUI.Web.MDC2 (body, body1, button', headline6, indeterminateLinearProgress, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,7 +24,7 @@ ticker =
       ( Semigroupoid.do
         button' @"Fetch quote" { icon: "download" }
         indeterminateLinearProgress # action
-          @( "Quote fetched" :: { price :: Number } ) fetchQuote # atCase @"Fetch quote" ) # providedAt @"watching" @"phase" # joined
+          @( "Quote fetched" :: { price :: Number } ) fetchQuote # atCase @"Fetch quote" # expanded ) # providedAt @"watching" @"phase" # joined @"Quote fetched"
     VariantToRecord.do
       fold @"Watch" watch
       fold @"Step away" stepAway

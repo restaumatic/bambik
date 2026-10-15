@@ -203,8 +203,8 @@ takes a trailing word that says what it is for:
 | a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, merged in `RecordToRecord.do` | here-and-now, incident-report |
 | content that waits for the user to confirm | `confirmed "Refund" "Refund the customer?" $ …` | cashbox |
 | an event folded into the model | `fold @"Add" addTodo`, one per case, merged in `VariantToRecord.do` | todo-list |
-| an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined` | todo-list, cells, inbox |
-| an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Submit order" { icon: "save" }; indeterminateLinearProgress # action @( … ) submitOrder # atCase @"Submit order" } ) # joined` in the event ensemble, its statuses folding `kept` | order-form, flight-booker |
+| an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
+| an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Submit order" { icon: "save" }; indeterminateLinearProgress # action @( … ) submitOrder # atCase @"Submit order" # expanded } ) # joined @"Order submitted" # joined @"Order rejected: no total"` in the event ensemble, its statuses folding `kept` | order-form, flight-booker |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @celsius # settled fromCelsius` | temperature-converter |
 | an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action createPerson; VariantToRecord.do { snackbar @"Person created" identity; … } } ) # atCase @"Create"`, the pair owning the case in the fold block, the action typed at exactly its outcomes | crud |
@@ -243,7 +243,7 @@ Semigroupoid.do
   headline4 $ text countLine                  -- ×→× a display: shows the row and passes it on
   RecordToVariant.do                          -- ×→+ the event ensemble: every emitter and pane
     button @"Add"
-    listOf @"Todo toggled" … # joined                  --   an event with a payload of its own, joined with the model
+    listOf @"Todo toggled" … # joined @"Todo toggled"  --   an event with a payload of its own, joined with the model
   VariantToRecord.do                          -- +→× the folds, one per case
     fold @"Add" addTodo
     fold @"Todo toggled" toggleTodo
@@ -269,7 +269,7 @@ the status's fold is `identity`). A command straight from an
 emitter has nothing to tell that the displays do not already show, and a
 heartbeat nobody needs told about has nothing at all: both are bare
 folds (`fold @"Count" increment`, `fold @"Clock ticked" tick`). A fold is memoryless: an emitter's payload is the row it was fed, an event
-with something of its own arrives `# joined` with that row as
+with something of its own arrives `# joined @l` with that row as
 `{ event, model }`, and an effect returns the model. So every handler has
 the model in hand and the loop's memory stays at the emitters and in
 the knot. Each fold releases the whole next model, and the `+→×` merge
@@ -282,9 +282,9 @@ edit must reach its siblings keeps its own normalizer (`# settled`,
 temperature-converter) or stands in a loop of its own: a form of several
 editors is `( … ) # looped` inside the app's loop (order-form). An event
 whose effect takes time is joined with the model when its outcome lands,
-not when it fired: `joined` wraps the emitter and its action together
+not when it fired: `joined @l` wraps the emitter and its action together
 (`( Semigroupoid.do { button …; … # action estimateDistance # atCase … } )
-# joined`), and the fold sets only what the effect
+# joined @"Distance estimated"`), and the fold sets only what the effect
 produced on that model (`setDistance`), so an edit made while it ran is
 kept (order-form). A drawer feeds its nav and its content the same row;
 its nav is the list, `joined`, and its fold, a record stage of its own
@@ -308,7 +308,7 @@ compile error at `body` naming the missing fields.
 | an action that retries until it succeeds | payment (`chargeFlaky`) |
 | a running maximum, a wizard's step, a counter: model fields | auction (`settled raiseTop`), checkout (`stepOnward`), ticket-dispenser (`issue`) |
 | a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed … # atCase`) |
-| an effect's outcome folded into the model it lands on | order-form (`… # joined`, `fold @"Distance estimated" setDistance`) |
+| an effect's outcome folded into the model it lands on | order-form (`… # joined @"Distance estimated"`, `fold @"Distance estimated" setDistance`) |
 | keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
 
 ## Conditional visibility
@@ -721,7 +721,7 @@ text is computed, a chrome line nothing.
 
   A button replaying the row it is fed is handled by the row update
   itself (`"Add": addTodo`, `addTodo :: model -> model`); an event with
-  a payload of its own is `# joined` on its line and handled by one
+  a payload of its own is `# joined @l` on its line and handled by one
   function of one record (`toggleTodo :: { event :: Int, model :: … } ->
   …`); a fixed payload is baked into its handler (cashbox's
   `refundStandard`); an effect returns the model under its outcome case

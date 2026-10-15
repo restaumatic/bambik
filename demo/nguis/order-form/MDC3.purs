@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, payingLine, printReceipt, setDistance, staleDistanceForgotten, submitOrder, summaryLine)
-import PUI (action, atCase, fold, joined, kept, looped, settled)
+import PUI (action, atCase, expanded, fold, joined, kept, looped, settled)
 import PUI.Web ((<+>), choice, inCaseAt, provided, text)
 import PUI.Web.MDC3 (body, bodyLarge, button', card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -44,14 +44,14 @@ orderForm =
       RecordToVariant.do
         ( Semigroupoid.do
           button' @"Estimate distance" { icon: "near_me" } # provided @"Delivery" @( "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ) fulfillmentMode
-          indeterminateLinearProgress # action @( "Distance estimated" :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" ) # joined
+          indeterminateLinearProgress # action @( "Distance estimated" :: { km :: Int, to :: String } ) estimateDistance # atCase @"Estimate distance" # expanded ) # joined @"Distance estimated"
         ( Semigroupoid.do
           button' @"Submit order" { icon: "save" }
           indeterminateLinearProgress # action
-            @( "Order submitted" :: {}, "Order rejected: no total" :: {} ) submitOrder # atCase @"Submit order" ) # joined
+            @( "Order submitted" :: {}, "Order rejected: no total" :: {} ) submitOrder # atCase @"Submit order" # expanded ) # joined @"Order submitted" # joined @"Order rejected: no total"
         ( Semigroupoid.do
           button' @"Receipt" { icon: "file" }
-          indeterminateLinearProgress # action @( "Receipt printed" :: {} ) printReceipt # atCase @"Receipt" ) # joined
+          indeterminateLinearProgress # action @( "Receipt printed" :: {} ) printReceipt # atCase @"Receipt" # expanded ) # joined @"Receipt printed"
       VariantToRecord.do
         fold @"Distance estimated" setDistance
         snackbar @"Order submitted" kept

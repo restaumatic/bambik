@@ -37,7 +37,7 @@ flightBooker =
     ( Semigroupoid.do
       button @"Book"
       indeterminateLinearProgress # action
-        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book" ) # joined
+        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit # atCase @"Book" ) # joined @"Flight booked" # joined @"Booking rejected"
     VariantToRecord.do
       output @"Flight booked" kept
       output @"Booking rejected" kept
