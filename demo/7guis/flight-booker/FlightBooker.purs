@@ -1,12 +1,12 @@
 module FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit) where
 
-import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, const, pure, show)
+import Prelude ((&&), (*), (+), (/=), (<), (<=), (<>), (>=), (>>>), bind, const, pure, show)
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (Pattern(..), split)
-import Data.Variant (expand, match)
+import Data.Variant (match)
 import Effect.Aff (Aff)
 
 plannedTrip
@@ -125,7 +125,7 @@ submit
   -> Aff [ "Booking rejected" :: {}, "Flight booked" :: {} ]
 submit trip = case parse trip of
   Left _ -> pure (."Booking rejected" {})
-  Right itinerary -> expand <$> bookFlight itinerary
+  Right itinerary -> bookFlight itinerary
 
 bookFlight
   :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
@@ -133,7 +133,7 @@ bookFlight
                         , back :: { y :: Int, m :: Int, d :: Int }
                         }
      ]
-  -> Aff [ "Flight booked" :: {} ]
+  -> Aff [ "Booking rejected" :: {}, "Flight booked" :: {} ]
 bookFlight _ = pure (."Flight booked" {})
 
 parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
