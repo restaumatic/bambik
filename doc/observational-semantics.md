@@ -299,8 +299,8 @@ guarantee*.
   (the `+` channel) deviate nowhere.
 - **Interchange is observation-level-relative.** For the gated merges,
   `(f ⊗ g) >>> (π₁h ⊗ π₂k) = (f >>> h) ⊗ (g >>> k)` — the operands of a
-  record merge share one input row (`SharedRecordInputs` is an equality,
-  guardrails L4/L18), so the second merge's stages are fed the whole middle
+  record merge share one input row (one row variable in the merge's
+  signature, guardrails L4/L18), so the second merge's stages are fed the whole middle
   row and `π` is the projection (an `lcmap`) of the middle row onto each stage's input:
   - at the **inner surfaces** it fails on the nose — the merged-first side
     synchronizes at the middle gate, so `h` sees nothing until *every*
@@ -434,7 +434,7 @@ model does not declare, which guardrails L14 forbids; it was carried as
 facts about two diagonals. They are **one obligation, read off at two output
 shapes**, and their shared cause sits on the *input* side of the merge.
 
-A shared record input (`SharedRecordInputs`) is **one row** — every operand
+A shared record input is **one row** — every operand
 is fed the merge's whole row: one feed reaches both operands, so both may
 answer it. A merge that broadcasts owes
 the boundary at most one thing back per feed:
@@ -464,8 +464,8 @@ situation to discipline. Nothing to tear, nothing to duplicate.
 
 |  | input | broadcast? | feed law |
 | --- | --- | --- | --- |
-| `×→×` | `SharedRecordInputs` | yes | one feed, one release (`steppedFeed`) |
-| `×→+` | `SharedRecordInputs` | yes | no synchronous event echo |
+| `×→×` | one shared row | yes | one feed, one release (`steppedFeed`) |
+| `×→+` | one shared row | yes | no synchronous event echo |
 | `+→×` | `OwnedVariantInputs` | no — dispatched | none |
 | `+→+` | `OwnedVariantInputs` | no — dispatched | none |
 

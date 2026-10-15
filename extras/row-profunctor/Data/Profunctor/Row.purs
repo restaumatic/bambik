@@ -313,7 +313,7 @@
 -- |
 -- | `exact` is the identity at a variant output because a variant carries
 -- | its one tag: the merge's injection is a bare `rmap expand`, and
--- | `SharedVariantOutputs` carries no evidence. At a record output the
+-- | `InclusiveRows` carries no evidence. At a record output the
 -- | trim is `exactRow`, the runtime evidence `OwnedRecordOutputs` carries,
 -- | so an operand's stale runtime copy of a sibling's field never shadows
 -- | the sibling. Law 2's liveness half is a **leaf** law: a stage may
@@ -391,10 +391,6 @@ module Data.Profunctor.Row
   , class DispatchableVariants
   , class MergeableRecords
   , class FieldNames
-  , class SharedRecordInputs
-  , fedFirst
-  , fedSecond
-  , class SharedVariantOutputs
   , class OwnedVariantInputs
   , class OwnedRecordOutputs
   , class DisjointLabels
@@ -569,13 +565,27 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- label evidence appears only on the exclusive sides, where the merge's
 -- runtime action is label-driven (dispatch, union) rather than
 -- label-blind (broadcast, expand). Records are read-shared but
--- write-owned; variants are emit-shared but handle-owned. Each merge
--- signature is then two words, one per side:
+-- write-owned; variants are emit-shared but handle-owned. A shared side
+-- that is one row is written as one row variable — no class states an
+-- equality — and the one shared side that is a union names its block,
+-- so each merge signature is its owned side's bundle and its shared
+-- side's row:
 --
---   recordToRecord   : SharedRecordInputs  + OwnedRecordOutputs
---   recordToVariant  : SharedRecordInputs  + SharedVariantOutputs
---   variantToVariant : OwnedVariantInputs  + one output row (an equality, no class)
---   variantToRecord  : OwnedVariantInputs  + OwnedRecordOutputs
+--   recordToRecord   : one input row `i`  + OwnedRecordOutputs
+--   recordToVariant  : one input row `i`  + InclusiveRows (the union of the cases)
+--   variantToVariant : OwnedVariantInputs + one output row `o`
+--   variantToRecord  : OwnedVariantInputs + one output row `o`
+--
+-- A shared record input is one row by L18 (guardrails): a business
+-- function is typed at the stage's row, the view's hint verbatim, and
+-- checked by unification, which a bare hole never leaves stuck — an
+-- inclusive input, each operand reading its sub-row, would leave the
+-- hole's row undetermined. The one repeated variable carries the
+-- context's row down into every operand, so an operand's owned evidence
+-- (a whole-row editor, a collection item) never sees an open row. The
+-- `+→+` output is one row for the same reason (CHANGELOG, 2026-10-07);
+-- the `×→+` output stays a union because an emitter's case is fixed by
+-- its own label, so nothing there is undetermined.
 --
 -- **What a shared input side obliges.** A shared record input is a
 -- *broadcast*: one feed reaches both operands, so both may answer it. That
@@ -605,37 +615,6 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- `variantToRecord` is the case that separates them: dispatched input, so
 -- no broadcast to batch, and a record output each operand releases whole,
 -- so nothing to assemble — it neither gates nor retains.
-
--- | A merge's **record-input side**: every operand is fed the merge's whole
--- | row — the operands' input rows *are* the merge's (an equality, no
--- | `Union`). The merge action is a label-blind broadcast, so no runtime
--- | evidence is needed. An operand's business functions are typed at the row
--- | (`countLine :: { count :: Int } -> String`, the view's hint verbatim)
--- | and checked by unification, which a bare hole never leaves stuck
--- | (guardrails L18); the
--- | equality carries the context's row down into the operands. The class
--- | is that three-way equality itself — `Type.Equality.TypeEquals` at
--- | three rows, with the same functional dependencies and the one
--- | reflexive instance — and its two methods are the equality's witnesses,
--- | what each operand is fed of the merge's row, so a merge instance feeds
--- | its operands through them: a coercion the type checker has
--- | established, never an unchecked one.
-class SharedRecordInputs :: Row Type -> Row Type -> Row Type -> Constraint
-class SharedRecordInputs i1 i2 i | i1 -> i2 i, i2 -> i1 i, i -> i1 i2 where
-  fedFirst :: Record i -> Record i1
-  fedSecond :: Record i -> Record i2
-
-instance SharedRecordInputs i i i where
-  fedFirst = identity
-  fedSecond = identity
-
--- | A merge's **variant-output side**: anyone may emit a case, so operand
--- | rows may overlap. The merge action is a label-blind `expand` — no
--- | runtime evidence needed.
-class SharedVariantOutputs :: Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Row Type -> Constraint
-class InclusiveRows o1 o2 o o12 o1x o2x <= SharedVariantOutputs o1 o2 o o12 o1x o2x
-
-instance InclusiveRows o1 o2 o o12 o1x o2x => SharedVariantOutputs o1 o2 o o12 o1x o2x
 
 -- =====================================================================
 -- Custom diagnostics

@@ -127,7 +127,7 @@ import Data.Profunctor.Acting (acted, actedAt) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
-import Data.Profunctor.Row (class RowLabels, exactRow, fedFirst, fedSecond, rowLabels)
+import Data.Profunctor.Row (class RowLabels, exactRow, rowLabels)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
@@ -631,8 +631,8 @@ looped p = wrap do
 
 instance MonadEffect m => RecordToRecord (PUI m) where
   recordToRecord p1 p2 = wrap do
-    p1' <- unwrap (lcmap fedFirst p1)
-    p2' <- unwrap (lcmap fedSecond p2)
+    p1' <- unwrap p1
+    p2' <- unwrap p2
     gate <- liftEffect $ newRecordGate "×→×" labels1 labels2
     pure
       -- broadcast in, gate out, one feed one step — the shape's projection
@@ -653,8 +653,8 @@ instance Applicative m => RecordToVariant (PUI m) where
   -- the one-thing-per-feed obligation falls on the operands (the answer
   -- law at ×→+, arming); hence `Applicative m`: no state here.
   recordToVariant p1 p2 = wrap ado
-    p1' <- unwrap (rmap expand (lcmap fedFirst p1))
-    p2' <- unwrap (rmap expand (lcmap fedSecond p2))
+    p1' <- unwrap (rmap expand p1)
+    p2' <- unwrap (rmap expand p2)
     in
       { toUser: \new -> do
           p1'.toUser new

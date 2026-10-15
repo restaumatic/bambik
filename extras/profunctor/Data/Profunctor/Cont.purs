@@ -82,12 +82,12 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Lens.Internal.Wander (class Wander)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Profunctor (class Profunctor, lcmap, rmap)
+import Data.Profunctor (class Profunctor, rmap)
 import Data.Variant (expand)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
-import Data.Profunctor.Row (exactRow, fedFirst, fedSecond, splitVariant)
+import Data.Profunctor.Row (exactRow, splitVariant)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
@@ -167,8 +167,8 @@ instance Cochoice (Cont r) where
 
 instance RecordToRecord (Cont r) where
   recordToRecord p1 p2 = wrap \k i ->
-    unwrap (lcmap fedFirst p1)
-      (\o1 -> unwrap (lcmap fedSecond p2)
+    unwrap p1
+      (\o1 -> unwrap p2
         (\o2 -> k (Record.union (exactRow o1) (exactRow o2))) i) i
 
 instance VariantToVariant (Cont r) where
@@ -178,8 +178,8 @@ instance VariantToVariant (Cont r) where
 
 instance Monoid r => RecordToVariant (Cont r) where
   recordToVariant p1 p2 = wrap \k i ->
-    unwrap (rmap expand (lcmap fedFirst p1)) k i
-      <> unwrap (rmap expand (lcmap fedSecond p2)) k i
+    unwrap (rmap expand p1) k i
+      <> unwrap (rmap expand p2) k i
 
 instance Resolving (Cont r) where
   resolve p = wrap \k (Tuple a _) -> unwrap p (k <<< Left) a

@@ -6,7 +6,23 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-10-14, latest
+## 2026-10-15, latest
+
+- **The shared merge sides are rows, not classes.** `SharedRecordInputs`
+  (the three-way row equality with its `fedFirst`/`fedSecond` witnesses,
+  since 2026-10-11; an `InclusiveRows` bundle before L18) is deleted:
+  `recordToRecord` and `recordToVariant` are typed at one input row `i`,
+  as `variantToVariant` and `variantToRecord` are at one output row `o`
+  since 2026-10-07, and the three instances (`PUI`, `Cont`, `(->)`) feed
+  their operands directly. `SharedVariantOutputs`, a one-instance alias
+  of `InclusiveRows`, is deleted with it; `recordToVariant` names
+  `InclusiveRows`. The floor keeps the owned bundles and the blocks they
+  are built from; no demo changes, since the equality was already in
+  force. The four merges name their rows by side (`i`/`o`, numbered per
+  operand, `RowList`s `i1l`/`o1l`), the one exception to the
+  kind-named convention.
+
+## 2026-10-14
 
 - **Demo sweep after the day's cleanup.** Every demo read against
   writing.md; the residue fell into a few patterns, each fixed wherever it

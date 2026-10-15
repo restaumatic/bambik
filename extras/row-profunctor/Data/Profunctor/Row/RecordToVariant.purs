@@ -33,9 +33,9 @@
 -- |
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
 -- | a component `w :: p { | i } [ | o ]` is an **event source** fed a row;
--- | the merge is `m = recordToVariant w1 w2`, inputs shared
--- | (`SharedRecordInputs`: both operands fed the merge's one row), outputs
--- | shared (`SharedVariantOutputs`: the inclusive union of their cases).
+-- | the merge is `m = recordToVariant w1 w2`, inputs shared (one row
+-- | `i`: both operands fed the merge's whole row), outputs shared
+-- | (`InclusiveRows`: the inclusive union of their cases).
 -- |
 -- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`. A feed writes
 -- |      the replay slot; a second write of the same row changes nothing.
@@ -102,7 +102,7 @@ module Data.Profunctor.Row.RecordToVariant
   where
 
 import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Row (class SharedRecordInputs, class SharedVariantOutputs)
+import Data.Profunctor.Row (class InclusiveRows)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
@@ -114,29 +114,28 @@ import Prim.Row (class Cons)
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant
-    :: forall i1 o1 i2 o2 o12 o1x o2x i o
-     . SharedRecordInputs i1 i2 i
-    => SharedVariantOutputs o1 o2 o o12 o1x o2x
-    => p { | i1 } [ | o1 ]
-    -> p { | i2 } [ | o2 ]
+    :: forall i o1 o2 o o12 o1x o2x
+     . InclusiveRows o1 o2 o o12 o1x o2x
+    => p { | i } [ | o1 ]
+    -> p { | i } [ | o2 ]
     -> p { | i } [ | o ]
 
 bind
-  :: forall p v1 v2 v3 v4 v5 r v
+  :: forall p i o1 o2 o o12 o1x o2x
    . RecordToVariant p
-  => SharedVariantOutputs v1 v2 v v3 v4 v5
-  => p { | r } [ | v1 ]
-  -> (p { | r } [ | v1 ] -> p { | r } [ | v2 ])
-  -> p { | r } [ | v ]
+  => InclusiveRows o1 o2 o o12 o1x o2x
+  => p { | i } [ | o1 ]
+  -> (p { | i } [ | o1 ] -> p { | i } [ | o2 ])
+  -> p { | i } [ | o ]
 bind first cont = recordToVariant first (cont first)
 
 discard
-  :: forall p v1 v2 v3 v4 v5 r v
+  :: forall p i o1 o2 o o12 o1x o2x
    . RecordToVariant p
-  => SharedVariantOutputs v1 v2 v v3 v4 v5
-  => p { | r } [ | v1 ]
-  -> (Unit -> p { | r } [ | v2 ])
-  -> p { | r } [ | v ]
+  => InclusiveRows o1 o2 o o12 o1x o2x
+  => p { | i } [ | o1 ]
+  -> (Unit -> p { | i } [ | o2 ])
+  -> p { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
 -- | **Every case joined with the row its emitter was fed** (`×→+`):

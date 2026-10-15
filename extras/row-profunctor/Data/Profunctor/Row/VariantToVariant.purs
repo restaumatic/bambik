@@ -124,11 +124,11 @@ import Type.Proxy (Proxy(..))
 
 class Profunctor p <= VariantToVariant p where
   variantToVariant
-    :: forall v1 rl1 v2 rl2 v o
-     . OwnedVariantInputs v1 v2 v rl1 rl2
-    => p [ | v1 ] [ | o ]
-    -> p [ | v2 ] [ | o ]
-    -> p [ | v ] [ | o ]
+    :: forall i1 i2 i o i1l i2l
+     . OwnedVariantInputs i1 i2 i i1l i2l
+    => p [ | i1 ] [ | o ]
+    -> p [ | i2 ] [ | o ]
+    -> p [ | i ] [ | o ]
 
 instance VariantToVariant (->) where
   variantToVariant p1 p2 v = case splitVariant v of
@@ -136,21 +136,21 @@ instance VariantToVariant (->) where
     Right v2 -> p2 v2
 
 bind
-  :: forall p v1 rl1 v2 rl2 v3 o
+  :: forall p i1 i2 i o i1l i2l
    . VariantToVariant p
-  => OwnedVariantInputs v1 v2 v3 rl1 rl2
-  => p [ | v1 ] [ | o ]
-  -> (p [ | v1 ] [ | o ] -> p [ | v2 ] [ | o ])
-  -> p [ | v3 ] [ | o ]
+  => OwnedVariantInputs i1 i2 i i1l i2l
+  => p [ | i1 ] [ | o ]
+  -> (p [ | i1 ] [ | o ] -> p [ | i2 ] [ | o ])
+  -> p [ | i ] [ | o ]
 bind first cont = variantToVariant first (cont first)
 
 discard
-  :: forall p v1 rl1 v2 rl2 v3 o
+  :: forall p i1 i2 i o i1l i2l
    . VariantToVariant p
-  => OwnedVariantInputs v1 v2 v3 rl1 rl2
-  => p [ | v1 ] [ | o ]
-  -> (Unit -> p [ | v2 ] [ | o ])
-  -> p [ | v3 ] [ | o ]
+  => OwnedVariantInputs i1 i2 i i1l i2l
+  => p [ | i1 ] [ | o ]
+  -> (Unit -> p [ | i2 ] [ | o ])
+  -> p [ | i ] [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
 -- | The case prism: transform the payload of case `l`, passing the other cases through.

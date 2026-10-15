@@ -656,7 +656,7 @@ code below the UI) are algebra-layer material and exempt by location.
   generalized to what they share, and only then carries a `forall`;
   `npm run check-determined` checks every exported signature against its
   hint. An emitter block's variant output
-  stays an inclusive union (`SharedVariantOutputs`): which emitter emits
+  stays an inclusive union (`InclusiveRows`): which emitter emits
   which case is fixed by its label; a handler block's is one row.
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
   a keyed collection's keys are compared **structurally**

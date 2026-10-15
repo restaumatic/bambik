@@ -94,28 +94,28 @@ import Prim.Row (class Cons)
 
 class Profunctor p <= VariantToRecord p where
   variantToRecord
-    :: forall v1 rl1 v2 rl2 v r
-     . OwnedVariantInputs v1 v2 v rl1 rl2
-    => p [ | v1 ] { | r }
-    -> p [ | v2 ] { | r }
-    -> p [ | v ] { | r }
+    :: forall i1 i2 i o i1l i2l
+     . OwnedVariantInputs i1 i2 i i1l i2l
+    => p [ | i1 ] { | o }
+    -> p [ | i2 ] { | o }
+    -> p [ | i ] { | o }
 
 bind
-  :: forall p v1 rl1 v2 rl2 v r
+  :: forall p i1 i2 i o i1l i2l
    . VariantToRecord p
-  => OwnedVariantInputs v1 v2 v rl1 rl2
-  => p [ | v1 ] { | r }
-  -> (p [ | v1 ] { | r } -> p [ | v2 ] { | r })
-  -> p [ | v ] { | r }
+  => OwnedVariantInputs i1 i2 i i1l i2l
+  => p [ | i1 ] { | o }
+  -> (p [ | i1 ] { | o } -> p [ | i2 ] { | o })
+  -> p [ | i ] { | o }
 bind first cont = variantToRecord first (cont first)
 
 discard
-  :: forall p v1 rl1 v2 rl2 v r
+  :: forall p i1 i2 i o i1l i2l
    . VariantToRecord p
-  => OwnedVariantInputs v1 v2 v rl1 rl2
-  => p [ | v1 ] { | r }
-  -> (Unit -> p [ | v2 ] { | r })
-  -> p [ | v ] { | r }
+  => OwnedVariantInputs i1 i2 i i1l i2l
+  => p [ | i1 ] { | o }
+  -> (Unit -> p [ | i2 ] { | o })
+  -> p [ | i ] { | o }
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Case `l`, **unshown**: the faceless `+→×` leaf owning case `l` and

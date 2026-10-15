@@ -48,8 +48,8 @@
 -- | a component `w :: p { | i } { | o }` is an **editor** of knowledge, or
 -- | at `i = o` a **display** releasing the row it was fed; the merge is
 -- | `m = recordToRecord w1 w2`,
--- | inputs shared (`SharedRecordInputs`: both operands are fed the merge's
--- | one row), outputs owned (`OwnedRecordOutputs`).
+-- | inputs shared (one row `i`: both operands are fed the merge's whole
+-- | row), outputs owned (`OwnedRecordOutputs`).
 -- |
 -- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`.
 -- |   2. **Answer** — a row, once: every feed is answered within its step
@@ -100,7 +100,7 @@ module Data.Profunctor.Row.RecordToRecord
 
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Row (class OwnedRecordOutputs, class SharedRecordInputs, exactRow, fedFirst, fedSecond)
+import Data.Profunctor.Row (class OwnedRecordOutputs, exactRow)
 import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
@@ -110,32 +110,31 @@ import Type.Proxy (Proxy(..))
 
 class Profunctor p <= RecordToRecord p where
   recordToRecord
-    :: forall i1 o1 i2 o2 i o o1l o2l
-     . SharedRecordInputs i1 i2 i
-    => OwnedRecordOutputs o1 o2 o o1l o2l
-    => p { | i1 } { | o1 }
-    -> p { | i2 } { | o2 }
+    :: forall i o1 o2 o o1l o2l
+     . OwnedRecordOutputs o1 o2 o o1l o2l
+    => p { | i } { | o1 }
+    -> p { | i } { | o2 }
     -> p { | i } { | o }
 
 instance RecordToRecord (->) where
-  recordToRecord p1 p2 i = Record.union (exactRow (p1 (fedFirst i))) (exactRow (p2 (fedSecond i)))
+  recordToRecord p1 p2 i = Record.union (exactRow (p1 i)) (exactRow (p2 i))
 
 bind
-  :: forall p r2 r3 r1 r rl1 rl2
+  :: forall p i o1 o2 o o1l o2l
    . RecordToRecord p
-  => OwnedRecordOutputs r2 r3 r rl1 rl2
-  => p { | r1 } { | r2 }
-  -> (p { | r1 } { | r2 } -> p { | r1 } { | r3 })
-  -> p { | r1 } { | r }
+  => OwnedRecordOutputs o1 o2 o o1l o2l
+  => p { | i } { | o1 }
+  -> (p { | i } { | o1 } -> p { | i } { | o2 })
+  -> p { | i } { | o }
 bind first cont = recordToRecord first (cont first)
 
 discard
-  :: forall p r2 r3 r1 r rl1 rl2
+  :: forall p i o1 o2 o o1l o2l
    . RecordToRecord p
-  => OwnedRecordOutputs r2 r3 r rl1 rl2
-  => p { | r1 } { | r2 }
-  -> (Unit -> p { | r1 } { | r3 })
-  -> p { | r1 } { | r }
+  => OwnedRecordOutputs o1 o2 o o1l o2l
+  => p { | i } { | o1 }
+  -> (Unit -> p { | i } { | o2 })
+  -> p { | i } { | o }
 discard first cont = bind first (\_ -> cont unit)
 
 -- | The field lens: lift a component editing field `l` into a whole-row citizen that retains the rest of the row.

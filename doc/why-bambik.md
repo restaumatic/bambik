@@ -123,13 +123,13 @@ swap polarity as you cross from input to output, which is why there are
 genuinely four shapes and not two with a flip.
 
 The library's constraint vocabulary spells this out. Each merge signature
-carries exactly two constraints, one per side:
+carries one bundle for its owned side and one row for its shared side:
 
 ```
-recordToRecord   : SharedRecordInputs + OwnedRecordOutputs
-recordToVariant  : SharedRecordInputs + SharedVariantOutputs
-variantToVariant : OwnedVariantInputs + SharedVariantOutputs
-variantToRecord  : OwnedVariantInputs, one shared output row
+recordToRecord   : one input row i  + OwnedRecordOutputs
+recordToVariant  : one input row i  + InclusiveRows (the union of the cases)
+variantToVariant : OwnedVariantInputs + one output row o
+variantToRecord  : OwnedVariantInputs + one output row o
 ```
 
 The `Shared` sides need nothing beyond the type-level overlap bookkeeping —
