@@ -25,7 +25,8 @@
 -- |     clicking a row)
 -- |   * **act** — `button`, with `elevatedButton`, `tonalButton`,
 -- |     `outlinedButton` and `textButton` at the lower emphasis levels;
--- |     `fab`; `iconButton`; `menu`/`menuItem`
+-- |     `fab`; `iconButton`; `menu`/`menuItem`; `tile`, one clickable cell
+-- |     of a grid
 -- |   * **be told something** — `snackbar` (passing),
 -- |     `dialog`/`confirmed` (must be answered), `linearProgress`,
 -- |     `indeterminateLinearProgress`, `indeterminateCircularProgress`,
@@ -115,6 +116,7 @@ module PUI.Web.MDC3
   , snackbar
   , tabBar
   , textButton
+  , tile
   , titleLarge
   , titleMedium
   , titleSmall
@@ -145,7 +147,7 @@ import Effect.Ref as Ref
 import PUI (anyOf, folding, isHole, Ocular, PUI)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, OptCaption(..), OptIcon(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, clicked, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, selectedAt, selectedOptionalAt, selectedUnpickedAt, selectorWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, uniqueId, witnessed, (:=))
+import PUI.Web (Node, OptCaption(..), OptIcon(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, occurrences, onInputDebounced, removeAttribute, replayed, selectedAt, selectedOptionalAt, selectedUnpickedAt, selectorWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, uniqueId, witnessed, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1121,11 +1123,37 @@ listOf'
 listOf' provided f item = withStructuralOrd @key $ wrap do
   liftEffect $ ensureStyle "md3-list" listCss
   unwrap $ el "md-list" >>> "style" := "overflow-y: auto;" $
-    ( clicked @l @k $ clWhen config.selected "md3-list-item--selected"
+    ( replayed @l (Record.get (Proxy @k)) $ occurrences $ clWhen config.selected "md3-list-item--selected"
         $ el "md-list-item" >>> "type" := "button" $ item
     ) # anyOf @k f
   where
   config = convertOptionsWithDefaults OptSelected { selected: const false } provided
+
+-- | A **tile**: one clickable cell of a grid of them — a sheet's cell, a
+-- | keypad's key, a palette's swatch — showing the given display and
+-- | reporting, as case `l`, field `k` of the row it was shown (`tile @"Key
+-- | entered" @"key" $ textAt @"key"`, calculator; `tile @"Cell picked"
+-- | @"key" $ textAt @"text"`, cells), its face styled outside like any
+-- | leaf (`attrWith "style" keyFace $ tile …`). `listOf`'s pick at a
+-- | single cell, built the same way — replay of the row last shown,
+-- | `× → +` by shape as by behaviour — over a real `<button>`, so it has
+-- | its role, its tab stop and Enter/Space without ARIA, and its content
+-- | is its accessible name (a wordless swatch names itself with
+-- | `attrAt @"name" "aria-label"`).
+tile
+  :: forall @l @k r o b1 b2 key v
+   . IsSymbol l
+  => IsSymbol k
+  => Cons k key b1 r
+  => Cons l key b2 v
+  => PUI Web { | r } o
+  -> PUI Web { | r } [ | v ]
+tile content = wrap do
+  liftEffect $ ensureStyle "md3-tile" tileCss
+  unwrap $ replayed @l (Record.get (Proxy @k)) $ occurrences $ el "button" >>> "type" := "button" >>> cl "md3-tile" $ content
+
+tileCss :: String
+tileCss = ".md3-tile { display: block; width: 100%; border: 0; padding: 0; margin: 0; background: none; font: inherit; color: inherit; text-align: inherit; cursor: pointer; box-sizing: border-box; }"
 
 -- | `listOf` over an array the model stores: the rows are field `t` of the
 -- | fed row, named by its label after the key

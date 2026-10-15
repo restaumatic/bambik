@@ -128,8 +128,9 @@ module PUI.Web
   , clWhen
   , attrWith
   , attrAt
-  , clicked
   , clickedRow
+  , occurrences
+  , replayed
   , witnessed
   , onClickedXY
   , dynamic
@@ -1083,29 +1084,6 @@ attrWith name valueOf w = wrap do
 attrAt :: forall @l b r a. IsSymbol l => Cons l String b r => String -> PUI Web { | r } a -> PUI Web { | r } a
 attrAt name = attrWith name (Record.get (Proxy @l))
 
--- | Make any element clickable: it reports, as case `l`, field `k` of
--- | whatever it is currently showing. A grid cell, a list row, a chip, a
--- | picture — the content is the display, the click is the report, so the
--- | identity of what was picked comes from what was on screen and cannot be
--- | got wrong: `clicked @"picked" @"key" (td $ textAt @"text")`, the field
--- | named by its label as `listOf @l @k` names its key. A click before the
--- | element has been shown anything does nothing. An **event source**,
--- | `× → +` by shape as by behaviour: the click **replays** the last row
--- | fed — replay is lawful over records only, an entity's value may be
--- | re-said where a one-shot event may not (the `looped`/
--- | `confirmed` argument) — and leaves as an occurrence of `l`, so
--- | nothing record-shaped ever stands for a click. The content is fed the
--- | row it replays; statics and chrome sit at any row, so
--- | `clicked @l @k staticChrome` needs no adapter.
--- |
--- | The **replay contract**, a law of this word rather than of the shape
--- | (the shape's two are Data.Profunctor.Row's Repetition and Answer, both
--- | held: a feed rewrites the replay slot, and a feed never fires): a click
--- | emits field `k` of the row last fed, as case `l`; before the first feed
--- | a click emits nothing.
-clicked :: forall @l @k r a f b1 b2 v. IsSymbol l => IsSymbol k => Cons k f b1 r => Cons l f b2 v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
-clicked w = replayed @l (Record.get (Proxy @k)) (occurrences w)
-
 -- | `clicked` replaying the whole row it was last fed, as case `l` — the
 -- | click half of every vocabulary's emitter family (`button @l` emits the
 -- | row it replays). Vocabulary-internal: application code emits through
@@ -1125,23 +1103,28 @@ clickedRow w = replayed @l identity (occurrences w)
 witnessed :: forall r r1. ({ | r } -> { | r1 }) -> PUI Web {} {} -> PUI Web { | r } { | r1 }
 witnessed f chrome = eventLeaf @"witnessed" chrome # rmap (on (Proxy @"witnessed") f case_)
 
--- `joined` at the empty payload: the click source's occurrence carries
--- nothing, so the event is dropped, `f` is read off the row last fed and
--- the case is renamed from the source's to `l`. Replay is `Strong`'s
--- retention and nothing else — the primed `Strong` law: an occurrence
--- before any feed is withheld, a feed never emits.
+-- | `joined` at the empty payload: the click source's occurrence carries
+-- | nothing, so the event is dropped, `f` is read off the row last fed and
+-- | the case is renamed from the source's to `l`. Replay is `Strong`'s
+-- | retention and nothing else — the primed `Strong` law: an occurrence
+-- | before any feed is withheld, a feed never emits. With `occurrences`
+-- | this is how a vocabulary builds a pick that carries a field of what
+-- | it showed (`listOf @l @k`'s row, MDC3's `tile @l @k`): `replayed @l
+-- | (Record.get (Proxy @k)) (occurrences content)`. Plumbing, not
+-- | vocabulary — an application's emitters are its vocabulary's.
 replayed :: forall @l r k b v. IsSymbol l => Cons l k b v => ({ | r } -> k) -> PUI Web { | r } [ occurred :: {} ] -> PUI Web { | r } [ | v ]
 replayed f src = joined @"occurred" src # rmap (on (Proxy @"occurred") (inj (Proxy @l) <<< f <<< _.model) case_)
 
--- The click source `clicked` is built from: each click on the last-built
--- element (the content's own node) leaves as an occurrence carrying nothing;
--- the content is fed the row and its output written off. The `× → +`
--- leaf's occurrence half — at the closed empty row, `occurrences chrome ::
--- PUI Web {} [ occurred :: {} ]` is the point's dual, an occurrence out of
--- the terminal record (`ticks` is its timer sibling in `PUI`). Private, with
--- one fixed case: the business label is `clicked @l`'s to state, and
--- `replayed @l` relabels while it attaches the row — replay is `Strong`'s
--- retention, so no source keeps a copy of the row it was shown.
+-- | The click source every emitter is built from: each click on the
+-- | last-built element (the content's own node) leaves as an occurrence
+-- | carrying nothing; the content is fed the row and its output written
+-- | off. The `× → +` leaf's occurrence half — at the closed empty row,
+-- | `occurrences chrome :: PUI Web {} [ occurred :: {} ]` is the point's
+-- | dual, an occurrence out of the terminal record (`ticks` is its timer
+-- | sibling in `PUI`). One fixed case: the business label is the
+-- | vocabulary leaf's to state, and `replayed @l` relabels while it
+-- | attaches the row — replay is `Strong`'s retention, so no source keeps
+-- | a copy of the row it was shown. Plumbing, like `replayed`.
 occurrences :: forall a b. PUI Web a b -> PUI Web a [ occurred :: {} ]
 occurrences w = wrap do
   w' <- unwrap w

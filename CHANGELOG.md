@@ -8,6 +8,32 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-15, latest
 
+- **`clicked` deleted; `tile` (MDC3) and `anyEdit` added; the twin matrix
+  follows the leaves.** `clicked @l @k` made any element clickable — a
+  wrapper that was neither a leaf nor an ocular, discarded its content's
+  release, and stamped no role, name or tab stop on the `div`s and `td`s
+  it listened to. The protocol it carried stays as plumbing every emitter
+  is built from (`PUI.Web.occurrences`, `replayed @l f`, `clickedRow`,
+  `eventLeaf`), now exported to the vocabularies, which build their picks
+  on it: `listOf @l @k` (MDC2/MDC3) and the new MDC3 `tile @l @k content`
+  — one clickable cell of a grid, a real `<button>` with its role and tab
+  stop, its content its accessible name, styled outside by `attrWith`.
+  Movie-browser's `iconToggle … # toCase @"Favorite changed" # anyOf` was
+  the one application `toCase`, and an echo masquerading as an event
+  (every editor echoes its feed; the knot's re-entrancy guard was
+  swallowing them): the editing list `anyEdit @l @k proj editor` (`PUI`)
+  keeps the element an editor and emits a user's edit as case `l`,
+  dropping an element's answer inside the list's own feed, so it is
+  `×→+` by behaviour. `PUI` re-exports `settled` and nothing else of the
+  floor's single-label words. By decision, the missing leaves are not
+  added to every vocabulary: a twin exists only where its vocabulary has
+  the leaves its app needs, so crud keeps its Material twins (`listOf`),
+  cells, tic-tac-toe, calculator and color-mixer are MDC3-only (`tile`),
+  and twelve twins are deleted with their page templates and registry
+  entries (95 demos on 43 pages). Shopping-cart's remove is an
+  `iconButton @"Unit removed"` in the row, `joined`, its fold reading the
+  row's product. The HTML law bench no longer benches `clicked`; MDC3's
+  benches `tile`.
 - **Every leaf narrows its input and widens its output itself; no
   adopter on a view.** `action` is the `+→+` leaf of its button's case
   and declares its outcomes: `action @l @t f` (`Cons l a () v`, `Union t

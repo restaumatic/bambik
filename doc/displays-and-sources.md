@@ -95,7 +95,7 @@ current value can be *polled*:
 | seed | the program | t = 0 | entity | `with`/`announce` (`PUI`) |
 | sensor | a machine | t > 0 | entity | `source @l now watch` (`PUI.Web`) and the facts over it — `clock`, `online`, `colorScheme`, `geolocated`, HTML's `filePicked`: pointed (the first value announced at registration), every feed answered with the last value known, each platform change an emission; a fact the platform may withhold is a variant with named cases, never a `Maybe` |
 | editor's write half | the user | t > 0 | entity draft | fused into editors; the focus guard arbitrates between the display half and the write half |
-| emitter | the user | t > 0 | event | `button`/`clicked` — **no seed possible**: events occur, they don't pre-exist (the `×→+` unit is the silent component) |
+| emitter | the user | t > 0 | event | `button`/`tile` — **no seed possible**: events occur, they don't pre-exist (the `×→+` unit is the silent component) |
 | `action` result | an effect | t > 0 | either | the Aff adapter |
 
 The dividing law: **a record-channel source must answer "what is your
@@ -112,7 +112,7 @@ must show the partial result) — whose product reaches the model as an
 occurrence. The library encodes the commit in three forms:
 
 - **explicit** — the replay-last-value protocol: content prepares, the
-  click delivers (`clicked`, the form-then-buttons compass walk);
+  click delivers (every emitter's replay, the form-then-buttons compass walk);
 - **temporal** — quiescence: `Resolving` derives the branch from time
   (emissions loop while the component is still moving, the last resolves
   at quiescence — `coresolve (resolve g >>> seeded (Right c0)) ≈

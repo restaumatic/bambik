@@ -76,15 +76,14 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   whole copy (`snackbar @"Flight booked" kept`; inside the vocabulary, the
   face over the label is adopted `# atCase @l`), and an emitter emits its
   own case. The structural adopters `atField`/`atCase`, `toField`/`toCase`
-  take no function and, but for `toCase`, stay inside the vocabularies:
+  take no function and stay inside the vocabularies:
   every leaf narrows its input and widens its output itself — a status
   or an action owns the one case its label names, an emitter is open on
   its output, an action widens its declared outcomes into its block
   (`action @l @t`), a dialog owns the case that opens it (`confirmed
-  @l`) — so a view places nothing at a row, `PUI` re-exports no
-  adopter, and `toCase` alone is a view's, the one shape change a
-  business case can name (an editor's release leaving as an event).
-  There is no rename adopter: re-labelling a
+  @l`), an editor's release leaving as an event is the editing list's
+  to say (`anyEdit @l @k`) — so a view places nothing at a row and
+  `PUI` re-exports no adopter. There is no rename adopter: re-labelling a
   component built at a fixed internal label is exactly what this
   guardrail forbids, which is why `asField`/`asCase` went (CHANGELOG,
   2026-10-14), as the view-side read adopters had before
@@ -105,7 +104,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   | Type | Shape | Sort |
   | --- | --- | --- |
   | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`foreach`, `actedAt`), sources (`geolocated`, `clock`, `filePicked` — pointed, owning one field), stages |
-  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `clicked`, `onClickedXY`), the emitter pane `provided`, the emitting list `anyOf` |
+  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `tile`, `onClickedXY`), the emitter pane `provided`, the emitting lists `anyOf` and `anyEdit` |
   | `PUI Web [ \| a ] { \| b }` | `+→×` | the folds (`fold @l f`, `reset @l x`, `capture @l`) and the statuses, each a fold with a face (`snackbar @l line f`); the action slot (`indeterminateLinearProgress`) owns `started`/`ended` only, so a status is never the slot |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
 
@@ -439,10 +438,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   list over a stored array is the container action (`actedAt`), which
   writes its elements' releases back. Two slots discard by construction, because their
   content's release has no row to land in: `foreach` over a **derived**
-  array and `clicked`'s content (a face, not a form). An editor placed
-  in either is a mistake the type cannot catch, so `npm run
+  array and a `tile`'s or `listOf`'s content (a face, not a form). An editor
+  placed in either is a mistake the type cannot catch, so `npm run
   check-view-model` rejects an editor word inside a `foreach` element
-  or a `clicked` face in any demo view. Nothing discards deliberately
+  in any demo view; an editor whose edits must leave a projected list is
+  `anyEdit`'s element. Nothing discards deliberately
   either: there is no counit — a chain whose output is not the model
   ends the block (departures' `dispatched` stream, fed by the `clock`
   source); `muted` went with the last slot that demanded `{}`
@@ -540,7 +540,7 @@ The codebase is three floors, each greppable:
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
   `wrap`/`unwrap`, `PUI.Web`, FFI) plus the row vocabulary — the words
-  applications use (`static`, `toCase`), the floor's adopter a face is
+  applications use (`static`), the floor's adopter a face is
   placed at (`atCase @l`) and the leaf lift `focusField`
   from its shape module.
   It never imports the ecosystem algebra: a design-system module proves
@@ -560,7 +560,7 @@ The codebase is three floors, each greppable:
   building blocks (`element`, `attachable`, `runDomInNode`, `Node`, the
   DOM FFI, `staticHTML`), its **vocabulary** the element-neutral words
   every vocabulary shares (`choice`, the decorators, `text`/`staticText`,
-  `clicked`, the panes `provided`/`inCase`, the sources,
+  `onClickedXY`, the panes `provided`/`inCase`, the sources,
   `dynamic`/`each`/`el`) —
   an application imports the second and never the first.
 
@@ -713,7 +713,7 @@ code below the UI) are algebra-layer material and exempt by location.
   is *derived* — a copy function, a classifier, a projection, a read
   deeper than one field (weather's `cityLine`) — named in the view model
   module. A word whose every reach reads one field takes only the label:
-  `clicked @l @k` reports field `k` (as `listOf @l @k` does), and the
+  `listOf @l @k` and `tile @l @k` report field `k`, and the
   vocabularies' whole-row replay behind every emitter is the internal
   `clickedRow @l`. A new reading word MUST come with its label sibling
   as soon as a demo reads a stored field through it, and not before
@@ -727,7 +727,7 @@ code below the UI) are algebra-layer material and exempt by location.
   that row as a **visible type argument after its anchor** — `looped @model` (`with
   @model` for a flow with no loop), `action @case @outcomes`, `listOf`/`foreach`/`acted
   @row`, `dispatched`/`accumulated @key @value`, the panes
-  `provided`/`inCase @l @s`, `toCase @payload`, `each @element`;
+  `provided`/`inCase @l @s`, `each @element`;
   a new word of that kind
   MUST do the
   same — and an option list MUST close its row (`choice @"a" <+> choice

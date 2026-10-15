@@ -198,7 +198,8 @@ takes a trailing word that says what it is for:
 | a button that exists in one case | `button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"` | stopwatch |
 | a list of displays rendered from the row | `ul $ ( li $ text lapLine ) # foreach @"number" @( … ) lapRows` | stopwatch |
 | a list of editors over an array the model stores | `( … ) # actedAt @"id" @"Setlist"` | reorder |
-| a list whose elements emit | `clicked @"Key entered" @"key" ( … ) # anyOf @"key" @( key :: String ) (const keyPad)`; over a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe; cells |
+| a list whose elements emit | `tile @"Key entered" @"key" ( … ) # anyOf @"key" @( key :: String ) (const keyPad)`; over a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe; cells |
+| a projected list whose elements are edited | `( listItem $ … iconToggle @"Favorite" … ) # anyEdit @"Favorite changed" @"title" @( … ) visibleMovies # joined @"Favorite changed"` — the element stays an editor, a user's edit leaves as the case, the fold writes it back by key | movie-browser |
 | a list element echoing the row it shows | `( listItem $ text flightLine ) # dispatched …` | departures, scoreboard |
 | a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, merged in `RecordToRecord.do` | here-and-now, incident-report |
 | content that waits for the user to confirm | `confirmed @"Refund a customer" "Refund" refundStandard $ …` — a `+→×` leaf like a status: opened by its case, which it tells as its title, the confirm folding `f` | cashbox |
@@ -216,8 +217,9 @@ takes a trailing word that says what it is for:
 A pane's content, a list's element and `confirmed`'s content release
 the row they are fed: a display does so by itself. An editor inside a
 pane edits the model (`inCase`); an editor inside a list of displays
-(`foreach`) or inside `clicked` is a mistake — its edits go nowhere —
-and `npm run check-view-model` rejects it. Nothing is discarded: a
+(`foreach`) or inside a `tile` is a mistake — its edits go nowhere —
+and `npm run check-view-model` rejects the first; an editor whose edits
+must leave a projected list is `anyEdit`'s element. Nothing is discarded: a
 chain whose output is not the model — departures' `dispatched` stream —
 ends the block, and what feeds it is a source (`clock`), not a loop.
 
@@ -492,7 +494,7 @@ the anchor's own position, and the anchor says what the line is:
 stores names it by its label, in the word's own slot, never with an
 accessor: a display shows it (`textAt @"title"`, todo-list), a decorator
 sets it (`attrAt @"x" "cx"`, circle-drawer), a click reports it
-(`clicked @"Cell picked" @"key"`, cells), a pane is in one of its cases
+(`tile @"Cell picked" @"key"`, cells), a pane is in one of its cases
 (`# providedAt @"halted" @"phase"`, stopwatch), a collection repeats it
 (`# anyOfAt @"key" @"cells"`, cells; `listOfAt' @"Message opened"
 @"id" @"messages" { … }`, inbox). Each `…At` word is the sibling of a word

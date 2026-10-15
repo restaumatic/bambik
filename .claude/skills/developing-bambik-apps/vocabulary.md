@@ -98,7 +98,7 @@ and emitters of a catalogue — are in the design-system module header
 | a button stepping the model | `button @"Count"` and `fold @"Count" increment` | counter, todo-list | writing.md *Stages* |
 | a button with a fixed amount | `button' @"Take a deposit" { icon: "savings" }` and `fold @"Take a deposit" takeDeposit`, the amount baked into the handler | cashbox | writing.md *Business functions* |
 | an event folded into the model | `fold @"Customer refunded" refundStandard`; a status is a fold with a face and tells only what an action returned, its case label its whole copy (`snackbar @"Person created" identity`); the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
-| a clicked element naming itself | `clicked @"Cell claimed" @"key" (…)` | tic-tac-toe, calculator, cells | `PUI.Web` |
+| a clickable cell of a grid | `tile @"Cell claimed" @"key" (…)`, styled outside by `attrWith "style" cellFace` | tic-tac-toe, calculator, cells, color-mixer | `PUI.Web.MDC3` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
 | an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"finished" quizPhase` | stopwatch; quiz, inbox | writing.md *Conditional visibility* |
 | an event replacing the model whole | `reset @"New game" openingPosition`; on a status, `snackbar @"Order placed" (const usualOrder)` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
@@ -132,12 +132,12 @@ and emitters of a catalogue — are in the design-system module header
 | What comes in → what goes out | Word | Demo | Read |
 | --- | --- | --- | --- |
 | the array → each element shown, the row passing on | `# foreach @"number" lapRows`; a stored array `# actedAt @"key" @"cells"` | stopwatch; cells | writing.md *Collections* |
-| the array → each element's event | `clicked @"Key entered" @"key" ( … ) # anyOf @"key" @( key :: String ) (const keyPad)`; a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe, shopping-cart, color-mixer; cells | writing.md *Collections* |
+| the array → each element's event | `tile @"Key entered" @"key" ( … ) # anyOf @"key" @( key :: String ) (const keyPad)`; a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe, shopping-cart, color-mixer; cells | writing.md *Collections* |
+| the array → each element's edit | `( … iconToggle @"Favorite" … ) # anyEdit @"Favorite changed" @"title" @( … ) visibleMovies # joined @"Favorite changed"` | movie-browser | writing.md *Collections* |
 | the array → the array, decided jointly or edited in place | `# acted @"name"`; `# acted @"id"`; a stored array `# actedAt @"id" @"Setlist"` | potluck; reorder; reorder (HTML) | writing.md *Collections* |
 | one `{ key, value }` at a time → tagged output | `# dispatched @String @{ code :: String, status :: String } arrival` | departures | writing.md *Collections* |
 | one `{ key, value }` at a time → the array | `# accumulated @String @{ team :: String, points :: Int } goal` | scoreboard | writing.md *Collections* |
 | a selectable list (MDC2, MDC3) | `listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |
-| a selectable list elsewhere | `clicked @"Person picked" @"key" (…) # anyOf @"key" …` | crud (HTML, Bootstrap, Fluent, Shoelace) | writing.md *Collections* |
 
 ## View model not written yet
 

@@ -7,9 +7,9 @@ import Data.Variant (match)
 import Effect (Effect)
 import Foreign.Object (Object)
 import PUI (anyOf, anyOfAt, fold, foreach, joined, looped, settled, with)
-import PUI.Web (attrWith, clicked, text, textAt, (:=))
+import PUI.Web (attrWith, text, textAt, (:=))
 import PUI.Web.HTML (div, table, td, tr)
-import PUI.Web.MDC3 (body, bodyLarge, filledTextField)
+import PUI.Web.MDC3 (body, bodyLarge, filledTextField, tile)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cells :: Effect Unit
@@ -22,7 +22,7 @@ cells =
         tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) (const columnHeaders)
         ( tr $ Semigroupoid.do
           td >>> "style" := headerFace $ textAt @"rowKey"
-          ( clicked @"Cell picked" @"key" $ td >>> attrWith "style" cellFace $ textAt @"text" ) # anyOfAt @"key" @"cells" ) # anyOf @"rowKey"
+          ( td >>> "style" := "padding: 0;" $ attrWith "style" cellFace $ tile @"Cell picked" @"key" $ textAt @"text" ) # anyOfAt @"key" @"cells" ) # anyOf @"rowKey"
           @( rowKey :: String
            , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
            ) sheetRows ) # joined @"Cell picked"

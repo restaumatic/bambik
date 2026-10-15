@@ -4,7 +4,7 @@ import Prelude hiding (div)
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, clicked, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, online, provided, providedAt, staticText, text, textAt)
+import PUI.Web ((<+>), choice, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, online, provided, providedAt, staticText, text, textAt)
 import PUI.Web.HTML (body, button, div, filePicked, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
@@ -30,7 +30,6 @@ lawBenchHTML = do
     , bench "provided" "×→+" modes (provided @"on" modeOf (button @"Go"))
     , bench "providedAt" "×→+" modes (providedAt @"on" @"mode" (button @"Go"))
     , bench "button" "×→+" rows (button @"Go")
-    , bench "clicked" "×→+" rows (clicked @"Go" @"n" (div (staticText "Go")))
     , bench "onClickedXY" "×→+" units (onClickedXY @"at" (div (staticText "canvas")))
     , bench "output" "+→×" events (output @"event" (const {}))
     , bench "geolocated" "×→×" units (geolocated @"position")

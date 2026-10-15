@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import MovieBrowser (favoritesLine, markFavorite, movieCatalogue, ratingLine, visibleMovies, yearLine)
-import PUI (anyOf, fold, joined, looped, toCase, with)
+import PUI (anyEdit, fold, joined, looped, with)
 import PUI.Web ((<+>), choice, text, textAt)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, titleMedium, tabBar)
@@ -25,7 +25,7 @@ movieBrowser =
         span $ textAt @"title"
         span $ text yearLine
         span $ text ratingLine
-        iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # toCase @"Favorite changed" # anyOf @"title"
+        iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # anyEdit @"Favorite changed" @"title"
         @( title :: String
          , year :: Int
          , rating :: Number

@@ -87,6 +87,7 @@ module PUI
   , foreach
   , anyOf
   , anyOfAt
+  , anyEdit
   , with
   , looped
   , module Adopters
@@ -128,18 +129,17 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- a business case can name (an editor's release leaving as an event).
 -- `{}`-input chrome is placed by the vocabulary's `eventLeaf` with a bare
 -- `lcmap (const {})`.
-import Data.Profunctor.Row (atCase, settled, toCase) as Adopters
+import Data.Profunctor.Row (settled) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, kept) as Adopters
-import Data.Profunctor.Row.VariantToRecord (unshown) as Adopters
 import Data.Profunctor.Acting (acted, actedAt) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
-import Data.Profunctor.Row (class RowLabels, exactRow, rowLabels)
+import Data.Profunctor.Row (class RowLabels, atCase, exactRow, rowLabels)
 import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
-import Data.Profunctor.Row.VariantToRecord (class VariantToRecord)
+import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, unshown)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
 import Data.Profunctor.Strong (class Strong)
 import Data.Time.Duration (Milliseconds(..))
@@ -1298,7 +1298,7 @@ action
   => (a -> Aff [ | t ])
   -> PUI m [ | v1 ] {}
   -> PUI m [ | v ] [ | o ]
-action arr slot = Adopters.atCase @l (running (\i -> if isHole arr then Nothing else Just (arr i)) slot) # rmap expand
+action arr slot = atCase @l (running (\i -> if isHole arr then Nothing else Just (arr i)) slot) # rmap expand
 
 -- | The action a **feed** runs — `×→+`, the row fed is the `Aff`'s
 -- | argument and its outcome leaves as the case the `Aff` names: the
@@ -1374,7 +1374,7 @@ fold
   => Cons l a () v
   => (a -> { | r })
   -> PUI m [ | v ] { | r }
-fold f = folding @l f (Adopters.unshown @l)
+fold f = folding @l f (unshown @l)
 
 -- | One case folded into the record by **resetting** it to `x`
 -- | (`reset @"New game" openingPosition`, tic-tac-toe): the row released is
@@ -1599,6 +1599,45 @@ anyOf f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs =
 -- | a projection, `anyOf`.
 anyOfAt :: forall @l @t m node k b1 b2 r1 r v. Hosting m node => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => PUI m { | r1 } [ | v ] -> PUI m { | r } [ | v ]
 anyOfAt = anyOf @l @r1 (Record.get (Proxy @t))
+
+-- | The **editing collection** — `anyOf` over editors: the same keyed and
+-- | retaining reconciliation over elements that are `×→×` citizens (a row
+-- | holding a toggle, a field), a user's edit of an element leaving as
+-- | case `l` carrying the element's row, while an element's answer to the
+-- | list's own feed — every editor echoes what it is shown — is no event
+-- | and is dropped inside that feed. So the list is `×→+` by behaviour as
+-- | by shape (Answer: a feed is answered by no emission) without leaning
+-- | on the knot's re-entrancy guard, and the element stays the
+-- | checkbox-like leaf it is: `( listItem $ Semigroupoid.do { …; iconToggle
+-- | @"Favorite" … } ) # anyEdit @"Favorite changed" @"title" @( … )
+-- | visibleMovies # joined @"Favorite changed"` (movie-browser), the fold
+-- | writing the edit back into the stored collection by key. The
+-- | projection's array is a view, so nothing gathers — a stored array's
+-- | editors are `acted`.
+anyEdit
+  :: forall @l @k @r m node key b1 b2 a v
+   . Hosting m node
+  => IsSymbol l
+  => IsSymbol k
+  => Cons k key b1 r
+  => Cons l { | r } b2 v
+  => (a -> Array { | r })
+  -> PUI m { | r } { | r }
+  -> PUI m a [ | v ]
+anyEdit f editor = anyOf @k @r f $ wrap do
+  w' <- unwrap editor
+  feeding <- liftEffect $ Ref.new false
+  pure
+    { toUser: \i -> do
+        Ref.write true feeding
+        w'.toUser i
+        Ref.write false feeding
+    , fromUser: \prop -> w'.fromUser \o -> do
+        answering <- Ref.read feeding
+        if answering
+          then tr "anyEdit: an element's answer to the feed is no edit" o
+          else prop (inj (Proxy @l) o)
+    }
 
 -- | The **keyed dispatch** — the +→+ member: one runtime case at a time.
 -- | A fed `{ key, value }` reaches exactly the instance whose key matches —

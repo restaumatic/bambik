@@ -112,7 +112,7 @@ combinator laws below fail without them.
    its nav into its content instead of fanning one feed out to two echoing
    sides.
 3. **No synchronous event echo** — a *variant-shaped* citizen (an occurrence
-   source: `button`, `clicked`, `menuItem`, a status's event input) never
+   source: `button`, `tile`, `menuItem`, a status's event input) never
    emits from inside its own `toUser`. Events are occurrences, not
    responses; this is the termination argument for `Cochoice`'s re-entry
    (an event loop, not a busy loop), and what lets
@@ -125,9 +125,9 @@ combinator laws below fail without them.
    The law is about **shape**, and every published component has the
    shape of its behaviour: a variant stands at channel position only as
    an event and inside a field only as a value, and every occurrence
-   source — `clicked @l @k`, `listOf @l @k`, `onClickedXY @l`, the HTML
+   source — `tile @l @k`, `listOf @l @k`, `onClickedXY @l`, the HTML
    floor's `button @l` — emits as case `l`, so no record-shaped source
-   exists and `identity` and `clicked` share no type. (Two components once
+   exists and `identity` and an emitter share no type. (Two components once
    had the shape of something else — a variant-field editor bracket whose
    channel carried sum-typed state, and a `clicked` whose record channel
    carried clicks; both were fixed at the type, CHANGELOG 2026-09-15 and
@@ -170,7 +170,7 @@ by a feed, "release" the same act over retained state):
 | shape | on input | modality | what stays obligatory | unit |
 | --- | --- | --- | --- | --- |
 | `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | the `{}` wire at the merge's row, `lcmap (const {}) identity`; `identity` only at `{}` |
-| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (`clicked`'s protocol — `joined @l`, `first` around the source with the fed row on the state channel, so the replay is `Strong`'s retention and the protocol its primed law) or at quiescence (`resolve`) (law 3) | the carrier's silent component (`PUI`'s private `silent`) |
+| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (every emitter's replay protocol — `joined @l`, `first` around the source with the fed row on the state channel, so the replay is `Strong`'s retention and the protocol its primed law) or at quiescence (`resolve`) (law 3) | the carrier's silent component (`PUI`'s private `silent`) |
 | `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is the well-foundedness of any `unleft` re-entry | `identity`, the forward wire |
 | `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is the whole row, one operand's own — a fold's next model — so a change can never stay private; a status releases nothing and is typed at every row | `lcmap case_ identity`, the never-fed wire |
 
@@ -283,7 +283,7 @@ whole; a feed never fires a source, so re-broadcast loops settle; a
 quieter stage substituted anywhere only withholds; and a silent gate is
 either an operand breaking *Answer* (after its owned fields were fed) or
 an unprimed owned field (before), which the watchdog names. What stays
-outside: leaf conformance itself, the payload contracts of `clicked` and
+outside: leaf conformance itself, the payload contracts of `listOf`/`tile` and
 `focusField`, rendering counts (the boundary laws hold up to stutter; the step's
 one release per feed is this carrier's, §4), and a variant input's response
 policy. The application-side statement is writing.md *What the laws

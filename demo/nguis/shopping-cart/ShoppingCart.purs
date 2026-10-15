@@ -40,14 +40,14 @@ addUnit { event: product, model: cart@{ order } }
   | otherwise = cart { order = snoc order { product: { name: product.name, unitPrice: product.unitPrice }, quantity: 1 } }
 
 removeUnit
-  :: { event :: String
+  :: { event :: { product :: String, quantity :: Int, unitPrice :: Int }
      , model :: { order :: Array { product :: { name :: String, unitPrice :: Int }
                                  , quantity :: Int
                                  }
                 }
      }
   -> { order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } }
-removeUnit { event: name, model: cart } = cart { order = mapMaybe oneFewer cart.order }
+removeUnit { event: { product: name }, model: cart } = cart { order = mapMaybe oneFewer cart.order }
   where
   oneFewer l
     | l.product.name == name = if l.quantity == 1 then Nothing else Just l { quantity = l.quantity - 1 }

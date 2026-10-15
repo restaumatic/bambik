@@ -89,7 +89,7 @@
         <li>No <code>Boolean</code> unless a Boolean editor edits it: <code>status :: [ active :: {}, completed :: {} ]</code>.</li>
         <li>The model row is declared once, where the model first appears: <code># looped @( counted :: Int ) # with freshCount</code>.</li>
         <li>A derived row is declared where it is introduced: a classifier's cases on its first pane, an action's outcome, a projection's element row.</li>
-        <li>A stored field is named by its label, never picked with <code>_.</code>: <code>textAt @"title"</code>, <code>clicked @"Cell picked" @"key"</code>, <code># providedAt @"halted" @"phase"</code>, <code>listOfAt @"Message opened" @"id" @"messages"</code>.</li>
+        <li>A stored field is named by its label, never picked with <code>_.</code>: <code>textAt @"title"</code>, <code>tile @"Cell picked" @"key"</code>, <code># providedAt @"halted" @"phase"</code>, <code>listOfAt @"Message opened" @"id" @"messages"</code>.</li>
         <li>Business values are model data: a slider edits <code>{ current, min, max, step }</code> from the seed.</li>
         <li>Constants have business names (<code>tickPeriod</code>, <code>freshCount</code>), never <code>initial</code>, <code>default</code> or <code>seed</code>.</li>
       </ul>

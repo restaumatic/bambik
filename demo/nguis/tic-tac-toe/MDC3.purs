@@ -7,9 +7,9 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (anyOf, fold, joined, looped, reset, with)
-import PUI.Web (attrWith, clicked, inCase, staticText, text, (:=))
+import PUI.Web (attrWith, inCase, staticText, text, (:=))
 import PUI.Web.HTML (div)
-import PUI.Web.MDC3 (body, button', headlineSmall)
+import PUI.Web.MDC3 (body, button', headlineSmall, tile)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import TicTacToe (cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine)
 
@@ -21,7 +21,7 @@ ticTacToe =
     ( headlineSmall $ text toMoveLine ) # inCase @"toMove" gameOutcome
     RecordToVariant.do
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-        ( clicked @"Cell claimed" @"key" $ div >>> attrWith "style" cellFace $ text cellMark ) # anyOf @"key"
+        ( attrWith "style" cellFace $ tile @"Cell claimed" @"key" $ text cellMark ) # anyOf @"key"
           @( key :: String
            , mark :: [ x :: {}, o :: {}, free :: {} ]
            , line :: [ winning :: {}, plain :: {} ]
