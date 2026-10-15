@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crud :: Effect Unit
 crud =
   body $ Semigroupoid.do
-    indeterminateLinearProgress # load loadPeopleCatalogue
+    indeterminateLinearProgress # load @( "People loaded" :: _ ) loadPeopleCatalogue
     capture @"People loaded"
     ( Semigroupoid.do
       filledTextField @"Filter prefix (surname)"

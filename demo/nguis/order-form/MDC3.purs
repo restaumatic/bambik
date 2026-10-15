@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderForm :: Effect Unit
 orderForm =
   body $ Semigroupoid.do
-    indeterminateLinearProgress # load loadOrder
+    indeterminateLinearProgress # load @( "Order loaded" :: _ ) loadOrder
     snackbar @"Order loaded" identity
     ( Semigroupoid.do
       ( Semigroupoid.do

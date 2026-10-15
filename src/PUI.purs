@@ -1303,11 +1303,13 @@ action arr slot = atCase @l (running (\i -> if isHole arr then Nothing else Just
 -- | The action a **feed** runs — `×→+`, the row fed is the `Aff`'s
 -- | argument and its outcome leaves as the case the `Aff` names: the
 -- | **load** standing before the knot, run by `body`'s one feed of `{}`
--- | (`indeterminateLinearProgress # load loadPeopleCatalogue; capture
--- | @"People loaded"`, crud; order-form), its outcome the model the knot
--- | declares. Opened by its progress indicator like `action`, reported
--- | and scoped the same way; typed at exactly its outcomes, which the
--- | capture or status after it fixes.
+-- | (`indeterminateLinearProgress # load @( "People loaded" :: _ )
+-- | loadPeopleCatalogue; capture @"People loaded"`, crud; order-form), its
+-- | outcome the model the knot declares. Its outcome row `t` is **declared
+-- | on the line**, like `action`'s — the labels at least, the payloads the
+-- | capture or status after it fixes — so the case consumed below is named
+-- | where it arises. Opened by its progress indicator like `action`,
+-- | reported and scoped the same way; typed at exactly its outcomes.
 load
   :: forall @t r v1 m
    . Scoped m

@@ -211,7 +211,7 @@ takes a trailing word that says what it is for:
 | an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson; VariantToRecord.do { snackbar @"Person created" identity; … } } )`, the pair owning the case in the fold block, the action declaring its outcome labels and the statuses fixing the payloads | crud |
 | an effect whose outcome is the model | `( Semigroupoid.do { indeterminateCircularProgress # action @"Forecast requested" @( "Forecast fetched" :: _ ) fetchReport; capture @"Forecast fetched" } )` | weather |
 | an effect whose outcomes are told | `indeterminateLinearProgress # action @"Book" @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` in the fold block | flight-booker |
-| the load before the knot | `indeterminateLinearProgress # load loadPeopleCatalogue`, then `capture @"People loaded"` — run by `body`'s one feed of `{}` | crud, order-form |
+| the load before the knot | `indeterminateLinearProgress # load @( "People loaded" :: _ ) loadPeopleCatalogue`, then `capture @"People loaded"` — run by `body`'s one feed of `{}` | crud, order-form |
 | a fold told by a status | `snackbar @"Person created" identity`, `snackbar @"Quote fetched" recordQuote`, `snackbar @"Order submitted" kept` — a status takes its fold like `fold @l f`, tells its case by its label, and stands only after an action whose outcome it is | crud, ticker, order-form |
 
 A pane's content, a list's element and `confirmed`'s content release
@@ -462,8 +462,9 @@ event ensemble, so its outcome arrives as `{ event, model }`, and its
 status folds `kept` in the fold block (order-form's submit and receipt,
 flight-booker); there the payloads are written out, since `kept` fixes
 nothing. The load before the knot is `load` (`indeterminateLinearProgress
-# load loadPeopleCatalogue`), the `×→+` action `body`'s one feed of `{}`
-runs, typed at exactly its outcomes. No word passes an event *around* a
+# load @( "People loaded" :: _ ) loadPeopleCatalogue`), the `×→+` action
+`body`'s one feed of `{}` runs, its outcomes declared on its line like an
+action's, so the case the capture after it takes is named where it arises. No word passes an event *around* a
 stage: every event reaches the fold block on its own.
 
 Design-system twins are two view modules over the same view model module, so

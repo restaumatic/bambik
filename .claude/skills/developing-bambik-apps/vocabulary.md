@@ -115,7 +115,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- | --- |
 | an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson; VariantToRecord.do { … its outcome statuses, each with its fold } } )` in the fold block, the action declaring its outcome labels | crud, reorder | writing.md *Business functions* |
 | … whose outcomes are told | `indeterminateLinearProgress # action @"Book" @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` | flight-booker | writing.md *Business functions* |
-| the load before the knot | `indeterminateLinearProgress # load loadPeopleCatalogue`, then `capture @"People loaded"` | crud, order-form | writing.md *Business functions* |
+| the load before the knot | `indeterminateLinearProgress # load @( "People loaded" :: _ ) loadPeopleCatalogue`, then `capture @"People loaded"` | crud, order-form | writing.md *Business functions* |
 | an outcome told, the model kept | the action `joined @l` with its button in the event ensemble, once per outcome, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form, flight-booker, incident-report | writing.md *Business functions* |
 | an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" identity` (or `capture @"People loaded"` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |

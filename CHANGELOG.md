@@ -8,6 +8,13 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-15, latest
 
+- **`load` declares its outcomes on its line.** `capture @"People loaded"`
+  (crud) and `snackbar @"Order loaded"` (order-form) consumed a case
+  nothing in the view produced: the label arose only in the logic's `Aff`
+  type. The load line now names it, `load @( "People loaded" :: _ )
+  loadPeopleCatalogue`, exactly as `action @l @t` declares its outcomes,
+  so every case a view consumes is named where it arises in the view.
+
 - **`clicked` deleted; `tile` (MDC3) and `anyEdit` added; the twin matrix
   follows the leaves.** `clicked @l @k` made any element clickable — a
   wrapper that was neither a leaf nor an ocular, discarded its content's
