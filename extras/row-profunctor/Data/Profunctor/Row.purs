@@ -134,8 +134,8 @@
 -- | A sub-row focus (a sub-record focused with the rest escaping as a
 -- | case, or a sub-variant with the other cases retained as a field)
 -- | **narrows** a stage's input and **widens** its output, and a stage is
--- | typed at one row, the row the view declares and its business function
--- | is typed at (guardrails L18): a sub-record a stage should see is the
+-- | typed at one row, the row its business function is typed at
+-- | (guardrails L18): a sub-record a stage should see is the
 -- | model's own nesting under `group @l`, a sub-variant a case a pane
 -- | adopts. The library names no coercion at all — the one reshape it
 -- | needs is bare `lcmap (const {})` where a vocabulary places `{}`-input
@@ -156,7 +156,7 @@
 -- | citizen; `focusCase`). The one **knot** is not here but
 -- | `PUI`'s `looped` (the model re-enters whole, primed by its first
 -- | feed): an app's loop is cut at its record junction, where the model
--- | can be declared (`w # looped @( … ) # with seed`, guardrails L18).
+-- | row holds the state (`w # looped # with seed`, guardrails L18).
 -- | The one **unit** word, `unshown @l` (`lcmap (const {})
 -- | identity`), is the faceless leaf owning case `l` and showing nothing
 -- | of it — the status a silent fold opens with; the fold itself is not
@@ -560,7 +560,8 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 --   variantToRecord  : OwnedVariantInputs + one output row `o`
 --
 -- A shared record input is one row by L18 (guardrails): a business
--- function is typed at the stage's row, the view's hint verbatim, and
+-- function is typed at the stage's row, the view's hint with its tails
+-- filled, and
 -- checked by unification, which a bare hole never leaves stuck — an
 -- inclusive input, each operand reading its sub-row, would leave the
 -- hole's row undetermined. The one repeated variable carries the

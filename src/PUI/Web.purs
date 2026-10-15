@@ -768,10 +768,10 @@ separating rule w = wrap do
 -- | absent editor. What the edit does to the rest of the row is a `settled`
 -- | normalization on the same stage when it is a state invariant
 -- | (meeting-booker's `seatsInRoom`, circle-drawer's `resizeSelected`).
--- | Like the other panes, it takes the classifier's variant as a visible
--- | type argument after the case.
+-- | Like the other panes, it names only its case: the states it chooses
+-- | among are the classifier's signature (guardrails L18).
 inCase
-  :: forall @l @v r a b
+  :: forall @l v r a b
    . IsSymbol l => Cons l a b v
   => ({ | r } -> [ | v ]) -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
 inCase f w = wrap do
@@ -799,7 +799,7 @@ inCaseAt
   :: forall @c @l r a v b1 b2
    . IsSymbol c => IsSymbol l => Cons c a b1 v => Cons l [ | v ] b2 r
   => PUI Web { | r } { | r } -> PUI Web { | r } { | r }
-inCaseAt = inCase @c @v (Record.get (Proxy @l))
+inCaseAt = inCase @c (Record.get (Proxy @l))
 
 -- | Show a string that changes — a readout, a total, a sentence, a name in
 -- | a list row. (Wording that doesn't change is `staticText`.)
@@ -1009,17 +1009,17 @@ infixr 10 attrDyn as :=>
 -- | that is absent contributes nothing — so anything downstream waiting on
 -- | it waits, rather than showing a stale or invented value.
 -- |
--- | The classifier's variant is a visible type argument after the case, so
--- | the view can declare every state the pane chooses among
--- | (`# provided @"reading" @( reading :: {}, browsing :: {} ) messageView`).
+-- | The pane names only its case (`# provided @"reading" messageView`):
+-- | every state it chooses among is the classifier's signature, in the view
+-- | model module, and the view restates none of them (guardrails L18).
 -- | A variant the model stores is named by its label instead, `providedAt`.
-provided :: forall @l @v r a b v1. IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI Web { | r } [ | v1 ] -> PUI Web { | r } [ | v1 ]
+provided :: forall @l v r a b v1. IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI Web { | r } [ | v1 ] -> PUI Web { | r } [ | v1 ]
 provided = attachedOn @l
 
 -- | `provided` over a variant the model stores: the emitter exists in case
 -- | `c` of field `l`, both named by label (`# providedAt @"halted" @"phase"`).
 providedAt :: forall @c @l r a v v1 b1 b2. IsSymbol c => IsSymbol l => Cons c a b1 v => Cons l [ | v ] b2 r => PUI Web { | r } [ | v1 ] -> PUI Web { | r } [ | v1 ]
-providedAt = provided @c @v (Record.get (Proxy @l))
+providedAt = provided @c (Record.get (Proxy @l))
 
 -- The pane mechanism every pane shares, at any content output: attach and
 -- feed the row on case `l`, detach on every other case. Public only
@@ -1204,7 +1204,7 @@ dynamic build = wrap do
 -- | before any feed and whether or not one arrives, and like every static
 -- | it is the wire at its row: the elements are fed nothing, and the row
 -- | passes.
-each :: forall @a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } { | r }
+each :: forall a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } { | r }
 each items0 build = let items = if isHole items0 then [] else items0 in built do
   w <- unwrap (foreachWith build)
   liftEffect do

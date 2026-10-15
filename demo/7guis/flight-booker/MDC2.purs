@@ -18,21 +18,16 @@ flightBooker =
         (choice @"one-way" <+> choice @"return")
       filledTextField @"Start date (DD.MM.YYYY)"
       filledTextField @"Return date (DD.MM.YYYY)" # inCaseAt @"return" @"Flight type"
-    ) # looped
-      @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-       , "Start date (DD.MM.YYYY)" :: String
-       , "Return date (DD.MM.YYYY)" :: String
-       ) # with plannedTrip
+    ) # looped # with plannedTrip
     ( Semigroupoid.do
-      ( body1 $ text problemLine ) # inCase @"problem"
-        @( "one-way" :: {}, problem :: {}, return :: {} ) bookingState
+      ( body1 $ text problemLine ) # inCase @"problem" bookingState
       ( body1 $ text oneWayLine ) # inCase @"one-way" bookingState
       ( body1 $ text returnLine ) # inCase @"return" bookingState
     ) # debounced itinerarySettleTime
     ( Semigroupoid.do
       button' @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress # action @"Book"
-        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit ) # joined @"Flight booked" # joined @"Booking rejected"
+        @( "Flight booked" :: _, "Booking rejected" :: _ ) submit ) # joined @"Flight booked" # joined @"Booking rejected"
     VariantToRecord.do
       snackbar @"Flight booked" kept
       snackbar @"Booking rejected" kept

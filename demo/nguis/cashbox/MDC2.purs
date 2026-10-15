@@ -23,4 +23,4 @@ cashbox =
       confirmed @"Refund a customer" "Refund" refundStandard $ body1 $ text refundLine
       confirmed @"Pay the courier" "Pay" payCourier $ body1 $ text payoutLine
       fold @"Take a deposit" takeDeposit
-  # looped @( balance :: Number ) # with openedTill
+  # looped # with openedTill

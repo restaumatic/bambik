@@ -15,7 +15,4 @@ auction =
     bodyMedium $ text bidLine
     sliderLive @"Your bid ($)" # settled raiseTop
     headlineSmall $ text topLine
-  # looped
-    @( "Your bid ($)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-     , top :: Number
-     ) # with openingBid
+  # looped # with openingBid

@@ -1091,11 +1091,10 @@ listItem = el "md-list-item"
 -- | carry is a field of the row. Rows are keyed by it — matched keys are
 -- | updated in place, and a row's node moves with its key — so the list
 -- | can refresh under the user without flicker; keys must be unique. The
--- | row is a visible type argument after the key, so the view can declare
--- | the view model each row is drawn from
--- | (`listOf @"opened" @"id" @( id :: Int, subject :: String ) …`).
+-- | row each list item is drawn from is the projection's signature, in the
+-- | view model module (`listOf @"opened" @"id" messagesOf …`).
 listOf
-  :: forall @l @k @r i b1 b2 o key v
+  :: forall @l @k r i b1 b2 o key v
    . IsSymbol l
   => IsSymbol k
   => Cons l key b1 v
@@ -1103,14 +1102,14 @@ listOf
   => ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOf = listOf' @l @k @r {}
+listOf = listOf' @l @k {}
 
 
 -- | `listOf` with options: `selected` takes a predicate on a row, and the
 -- | rows it holds take the catalogue's selected styling (`listOf'
--- | @"Person picked" @"key" @( … ) { selected: isSelected } entries item`).
+-- | @"Person picked" @"key" { selected: isSelected } entries item`).
 listOf'
-  :: forall @l @k @r provided i b1 b2 o key v
+  :: forall @l @k r provided i b1 b2 o key v
    . IsSymbol l
   => IsSymbol k
   => Cons l key b1 v
@@ -1187,7 +1186,7 @@ listOfAt'
   => { | provided }
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOfAt' provided = listOf' @l @k @r provided (Record.get (Proxy @t))
+listOfAt' provided = listOf' @l @k provided (Record.get (Proxy @t))
 
 listCss :: String
 listCss = """

@@ -24,7 +24,4 @@ timer =
     VariantToRecord.do
       fold @"Clock ticked" tick
       fold @"Reset" restarted
-  # looped
-    @( "Duration" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-     , elapsed :: Number
-     ) # with tenSecondFreshTimer
+  # looped # with tenSecondFreshTimer

@@ -31,10 +31,7 @@ restaurantMenu =
               span >>> cl "dish-price" $ text priceLine
             p >>> cl "dish-desc" $ textAt @"description"
             span >>> cl "tags" $
-              ( span >>> cl "tag" $ textAt @"tag" ) # foreach @"tag" @( tag :: String ) dishTags ) # actedAt @"name" @"dishes" ) # foreach @"name"
-        @( name :: String
-         , dishes :: Array { name :: String, price :: String, description :: String, tags :: Array String }
-         ) (const menuCourses)
+              ( span >>> cl "tag" $ textAt @"tag" ) # foreach @"tag" dishTags ) # actedAt @"name" @"dishes" ) # foreach @"name" (const menuCourses)
     blockquote >>> cl "chef-note" $ Semigroupoid.do
       p $ staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page."
       p >>> cl "attribution" $ staticText "— from the kitchen"

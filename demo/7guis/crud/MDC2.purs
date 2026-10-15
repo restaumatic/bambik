@@ -14,19 +14,14 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crud :: Effect Unit
 crud =
   body $ Semigroupoid.do
-    indeterminateLinearProgress # load @( "People loaded" :: _ ) loadPeopleCatalogue
+    indeterminateLinearProgress # load loadPeopleCatalogue
     capture @"People loaded"
     ( Semigroupoid.do
       filledTextField @"Filter prefix (surname)"
       filledTextField @"Name"
       filledTextField @"Surname"
       RecordToVariant.do
-        ( listOf' @"Person picked" @"key"
-          @( key :: Int
-           , "Name" :: String
-           , "Surname" :: String
-           , status :: [ selected :: {}, unselected :: {} ]
-           ) { selected: isSelected } entries $ text personLine ) # joined @"Person picked"
+        ( listOf' @"Person picked" @"key" { selected: isSelected } entries $ text personLine ) # joined @"Person picked"
         button @"Create"
         button @"Update"
         button @"Delete"
@@ -48,9 +43,3 @@ crud =
             snackbar @"Person deleted" identity
             snackbar @"Person not deleted" identity )
     ) # looped
-      @( "Filter prefix (surname)" :: String
-       , "Name" :: String
-       , "Surname" :: String
-       , people :: Array { "Name" :: String, "Surname" :: String }
-       , selected :: [ none :: {}, picked :: { index :: Int } ]
-       )

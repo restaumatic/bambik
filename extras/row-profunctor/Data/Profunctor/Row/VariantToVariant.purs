@@ -14,7 +14,7 @@
 -- |   * **free functions** — over the strength: `focusCase` (one case, the
 -- |     value-level prism; the one-sided halves `atCase`/`toCase` live
 -- |     on the floor). No co-strength row form: an app's loop is cut at
--- |     its record junction, where the model can be declared
+-- |     its record junction, where the model row holds the state
 -- |     (`Data.Profunctor.Row`, *What is deliberately not here*).
 -- |
 -- | A word lives where the sides it constrains do: one constraining both

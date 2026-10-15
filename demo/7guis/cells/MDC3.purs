@@ -5,7 +5,6 @@ import Prelude (Unit, (#), ($), (<>), (>>>), const)
 import Cells (columnHeaders, commit, orderSheet, selectCell, selectedLine, sheetRows)
 import Data.Variant (match)
 import Effect (Effect)
-import Foreign.Object (Object)
 import PUI (anyOf, anyOfAt, fold, foreach, joined, looped, settled, with)
 import PUI.Web (attrWith, text, textAt, (:=))
 import PUI.Web.HTML (div, table, td, tr)
@@ -19,19 +18,12 @@ cells =
     filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
       table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
-        tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" @( key :: String, text :: String ) (const columnHeaders)
+        tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" (const columnHeaders)
         ( tr $ Semigroupoid.do
           td >>> "style" := headerFace $ textAt @"rowKey"
-          ( td >>> "style" := "padding: 0;" $ attrWith "style" cellFace $ tile @"Cell picked" @"key" $ textAt @"text" ) # anyOfAt @"key" @"cells" ) # anyOf @"rowKey"
-          @( rowKey :: String
-           , cells :: Array { key :: String, text :: String, status :: [ selected :: {}, unselected :: {} ] }
-           ) sheetRows ) # joined @"Cell picked"
+          ( td >>> "style" := "padding: 0;" $ attrWith "style" cellFace $ tile @"Cell picked" @"key" $ textAt @"text" ) # anyOfAt @"key" @"cells" ) # anyOf @"rowKey" sheetRows ) # joined @"Cell picked"
     fold @"Cell picked" selectCell
-  # looped
-    @( cells :: Object String
-     , selected :: [ picked :: { name :: String }, none :: {} ]
-     , "Formula (e.g. =SUM(A0:A5)*2)" :: String
-     ) # with orderSheet
+  # looped # with orderSheet
 
 headerFace :: String
 headerFace = "border: 1px solid #ddd; background: #f4f4f4; padding: 2px 6px; position: sticky; top: 0;"

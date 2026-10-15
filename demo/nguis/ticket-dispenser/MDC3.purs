@@ -20,7 +20,4 @@ ticketDispenser =
       text servingLine # inCaseAt @"serving" @"display"
     button @"Take a number"
     fold @"Take a number" issue
-  # looped
-    @( display :: [ waiting :: {}, serving :: { number :: Int } ]
-     , next :: Int
-     ) # with emptyQueue
+  # looped # with emptyQueue

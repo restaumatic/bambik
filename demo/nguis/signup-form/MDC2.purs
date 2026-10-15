@@ -20,18 +20,12 @@ signupForm =
       (choice @"Poland" <+> choice @"Germany" <+> choice @"France" <+> choice @"Spain")
     filledTextField @"Email"
     checkbox @"I accept the terms of service" @"accepted" @"declined" # tooltip "You must accept the terms of service to sign up"
-    ( body2 $ staticText "Pick a username to check its availability" ) # inCase @"unnamed" @( unnamed :: {}, taken :: {}, available :: {} ) usernameStatus
+    ( body2 $ staticText "Pick a username to check its availability" ) # inCase @"unnamed" usernameStatus
     ( body2 $ text takenLine ) # inCase @"taken" usernameStatus
     ( body2 $ text availableLine ) # inCase @"available" usernameStatus
-    ( subtitle2 $ text invalidLine ) # inCase @"invalid" @( invalid :: {}, ready :: {} ) validation
+    ( subtitle2 $ text invalidLine ) # inCase @"invalid" validation
     ( subtitle2 $ text readyLine ) # inCase @"ready" validation
     button' @"Sign up" { icon: "person_add" } # provided @"ready" validation
     indeterminateLinearProgress # action @"Sign up" @( "Account created" :: _ ) signUp
     snackbar @"Account created" identity
-  # looped
-    @( "Username" :: String
-     , "Email" :: String
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Country" :: [ "Poland" :: {}, "Germany" :: {}, "France" :: {}, "Spain" :: {} ]
-     , "I accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     ) # with newApplicant
+  # looped # with newApplicant

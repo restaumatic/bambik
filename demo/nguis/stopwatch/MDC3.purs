@@ -28,9 +28,5 @@ stopwatch =
       fold @"Stop" haltTiming
       fold @"Lap" recordLap
       fold @"Reset" clearStopwatch
-    ul $ ( li $ text lapLine ) # foreach @"number" @( number :: Int, tenths :: Int ) lapRows
-  # looped
-    @( phase :: [ halted :: {}, timing :: {} ]
-     , elapsedTenths :: Int
-     , laps :: Array Int
-     ) # with zeroedStopwatch
+    ul $ ( li $ text lapLine ) # foreach @"number" lapRows
+  # looped # with zeroedStopwatch

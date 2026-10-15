@@ -18,4 +18,4 @@ temperatureConverter =
     ( p $ label $ Semigroupoid.do
       staticText "°F "
       input @"fahrenheit" "text" ) # settled fromFahrenheit
-  # looped @( celsius :: String, fahrenheit :: String ) # with roomTemperature
+  # looped # with roomTemperature

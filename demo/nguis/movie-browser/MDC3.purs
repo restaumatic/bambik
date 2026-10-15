@@ -25,17 +25,6 @@ movieBrowser =
         span $ textAt @"title"
         span $ text yearLine
         span $ text ratingLine
-        iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # anyEdit @"Favorite changed" @"title"
-        @( title :: String
-         , year :: Int
-         , rating :: Number
-         , "Favorite" :: Boolean
-         ) visibleMovies # joined @"Favorite changed"
+        iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # anyEdit @"Favorite changed" @"title" visibleMovies # joined @"Favorite changed"
     fold @"Favorite changed" markFavorite
-  # looped
-    @( category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ]
-     , "Classic" :: Boolean
-     , "Cult" :: Boolean
-     , "Oscar" :: Boolean
-     , movies :: Array { title :: String, year :: Int, category :: [ "All" :: {}, "Action" :: {}, "Drama" :: {}, "Comedy" :: {} ], tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ], rating :: Number, "Favorite" :: Boolean }
-     ) # with movieCatalogue
+  # looped # with movieCatalogue

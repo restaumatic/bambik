@@ -23,11 +23,4 @@ passwordGenerator =
     button @"Generate"
     indeterminateLinearProgress # action @"Generate" @( "Password generated" :: _ ) samplePassword
     capture @"Password generated"
-  # looped
-    @( "Length" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-     , "Uppercase letters" :: Boolean
-     , "Lowercase letters" :: Boolean
-     , "Digits" :: Boolean
-     , "Symbols" :: Boolean
-     , password :: String
-     ) # with strongMixRecipe
+  # looped # with strongMixRecipe

@@ -24,14 +24,10 @@ ticker =
       ( Semigroupoid.do
         button' @"Fetch quote" { icon: "download" }
         indeterminateLinearProgress # action @"Fetch quote"
-          @( "Quote fetched" :: { price :: Number } ) fetchQuote ) # providedAt @"watching" @"phase" # joined @"Quote fetched"
+          @( "Quote fetched" :: _ ) fetchQuote ) # providedAt @"watching" @"phase" # joined @"Quote fetched"
     VariantToRecord.do
       fold @"Watch" watch
       fold @"Step away" stepAway
       fold @"Ticked" tick
       snackbar @"Quote fetched" recordQuote
-  # looped
-    @( phase :: [ away :: {}, watching :: {} ]
-     , quotes :: Array Number
-     , ticks :: Int
-     ) # with closedTicker
+  # looped # with closedTicker

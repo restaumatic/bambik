@@ -19,11 +19,11 @@ quiz =
     RecordToVariant.do
       ( Semigroupoid.do
         headlineMedium $ text askedPrompt
-        listOf @"Question answered" @"key" @( key :: Int, choice :: String ) choices $ textAt @"choice" ) # provided @"asking" @( asking :: {}, finished :: {} ) quizPhase # joined @"Question answered"
+        listOf @"Question answered" @"key" choices $ textAt @"choice" ) # provided @"asking" quizPhase # joined @"Question answered"
       ( Semigroupoid.do
         headlineSmall $ text finalScoreLine
         button' @"Restart" { icon: "replay" } ) # provided @"finished" quizPhase
     VariantToRecord.do
       fold @"Question answered" answer
       reset @"Restart" freshQuizRun
-  # looped @( question :: Int, correct :: Int ) # with freshQuizRun
+  # looped # with freshQuizRun

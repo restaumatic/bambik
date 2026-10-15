@@ -26,4 +26,4 @@ reorder =
       ( Semigroupoid.do
         indeterminateLinearProgress # action @"Shuffle" @( "Setlist shuffled" :: _ ) shuffleAction
         capture @"Setlist shuffled" )
-  # looped @( "Setlist" :: Array { id :: String, "Title" :: String } ) # with openingSetlist
+  # looped # with openingSetlist

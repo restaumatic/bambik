@@ -40,8 +40,8 @@ and emitters of a catalogue — are in the design-system module header
 | The app is | Word | Demo | Read |
 | --- | --- | --- | --- |
 | mounted | `body $ …`, imported from the design-system module | every demo | writing.md *App shape* |
-| a model edited and folded | `# looped @( counted :: Int ) # with freshCount`, the model row declared on the knot | counter | writing.md *App shape* |
-| seeded, with no loop of its own | `# with @{ … } invitation` | potluck | writing.md *App shape* |
+| a model edited and folded | `# looped # with freshCount`, the model row the seed's signature | counter | writing.md *App shape* |
+| seeded, with no loop of its own | `# with invitation` | potluck | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form | writing.md *App shape* |
 | an action that retries until it succeeds | the retry inside the action's `Aff` (`chargeFlaky`), the outcome one case | payment | writing.md *Business functions* |
 | a wizard's step, a running maximum, a counter | a model field, folded or normalized (`fold @"Next" stepOnward`, `# settled raiseTop`, `fold @"Take a number" issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |
@@ -114,10 +114,10 @@ and emitters of a catalogue — are in the design-system module header
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
 | an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson; VariantToRecord.do { … its outcome statuses, each with its fold } } )` in the fold block, the action declaring its outcome labels | crud, reorder | writing.md *Business functions* |
-| … whose outcomes are told | `indeterminateLinearProgress # action @"Book" @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` | flight-booker | writing.md *Business functions* |
-| the load before the knot | `indeterminateLinearProgress # load @( "People loaded" :: _ ) loadPeopleCatalogue`, then `capture @"People loaded"` | crud, order-form | writing.md *Business functions* |
+| … whose outcomes are told | `indeterminateLinearProgress # action @"Book" @( "Flight booked" :: _, "Booking rejected" :: _ ) submit`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` | flight-booker | writing.md *Business functions* |
+| the load before the knot | `indeterminateLinearProgress # load loadPeopleCatalogue`, then `capture @"People loaded"` | crud, order-form | writing.md *Business functions* |
 | an outcome told, the model kept | the action `joined @l` with its button in the event ensemble, once per outcome, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form, flight-booker, incident-report | writing.md *Business functions* |
-| an action at load | `indeterminateLinearProgress # action loadOrder` then `snackbar @"Order loaded" identity` (or `capture @"People loaded"` where nothing needs telling) | order-form, crud | writing.md *App shape* |
+| an action at load | `indeterminateLinearProgress # load loadOrder` then `snackbar @"Order loaded" identity` (or `capture @"People loaded"` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` and `fold @"Clock ticked" tick` | timer, stopwatch | `PUI` |
 | a status per outcome case | `snackbar @"Flight booked" kept` — the label is the copy; a reason is a sibling case, `snackbar @"Order rejected: no total" kept` | flight-booker, order-form | writing.md *Components* |
@@ -132,11 +132,11 @@ and emitters of a catalogue — are in the design-system module header
 | What comes in → what goes out | Word | Demo | Read |
 | --- | --- | --- | --- |
 | the array → each element shown, the row passing on | `# foreach @"number" lapRows`; a stored array `# actedAt @"key" @"cells"` | stopwatch; cells | writing.md *Collections* |
-| the array → each element's event | `tile @"Key entered" @"key" ( … ) # anyOf @"key" @( key :: String ) (const keyPad)`; a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe, shopping-cart, color-mixer; cells | writing.md *Collections* |
+| the array → each element's event | `tile @"Key entered" @"key" ( … ) # anyOf @"key" (const keyPad)`; a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe, shopping-cart, color-mixer; cells | writing.md *Collections* |
 | the array → each element's edit | `( … iconToggle @"Favorite" … ) # anyEdit @"Favorite changed" @"title" @( … ) visibleMovies # joined @"Favorite changed"` | movie-browser | writing.md *Collections* |
 | the array → the array, decided jointly or edited in place | `# acted @"name"`; `# acted @"id"`; a stored array `# actedAt @"id" @"Setlist"` | potluck; reorder; reorder (HTML) | writing.md *Collections* |
-| one `{ key, value }` at a time → tagged output | `# dispatched @String @{ code :: String, status :: String } arrival` | departures | writing.md *Collections* |
-| one `{ key, value }` at a time → the array | `# accumulated @String @{ team :: String, points :: Int } goal` | scoreboard | writing.md *Collections* |
+| one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
+| one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
 | a selectable list (MDC2, MDC3) | `listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |
 
 ## View model not written yet
@@ -144,8 +144,8 @@ and emitters of a catalogue — are in the design-system module header
 | You need | Word | Read |
 | --- | --- | --- |
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
-| the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, nothing unknown | writing.md *Writing order* |
-| the model row | `# looped @( … ) # with seed` (counter, inbox); `# looped @( … )` after a load action folded in (crud, order-form) | writing.md *Types and values* |
-| a derived row, where it is introduced | a classifier's first pane `# inCase @l @( … ) f` (flight-booker), `# action @( … ) f` (flight-booker), `# foreach @k @( … ) proj` (stopwatch), `# anyOf @k @( … ) proj` (color-mixer), `# with @{ … } seed` (potluck) | writing.md *Types and values* |
+| the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, the model's tails left unknown for you to fill | writing.md *Writing order* |
+| the model row | the seed's signature, `# looped # with seed` on the view (counter, inbox); the load's `Aff` when a load stands before the knot (crud, order-form) | writing.md *Types and values* |
+| a derived row | the signature of the function that brings it: a classifier's cases, a projection's element row; on the view only an action's outcome labels, `# action @l @( "…" :: _ ) f` (flight-booker) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

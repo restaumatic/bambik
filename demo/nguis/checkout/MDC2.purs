@@ -18,18 +18,12 @@ checkout =
     ( body2 $ text shippingLine ) # inCaseAt @"shipping" @"step"
     ( body2 $ text paymentLine ) # inCaseAt @"payment" @"step"
     RecordToVariant.do
-      button @"Next" # provided @"onward" @( onward :: {}, last :: {} ) onwardFrom
-      button @"Back" # provided @"back" @( back :: {}, first :: {} ) previousOf
+      button @"Next" # provided @"onward" onwardFrom
+      button @"Back" # provided @"back" previousOf
       button' @"Place order" { icon: "shopping_cart_checkout" } # providedAt @"payment" @"step"
     VariantToRecord.do
       fold @"Next" stepOnward
       fold @"Back" stepBack
       fold @"Place order" orderPlaced
     ( body2 $ text placedLine ) # inCaseAt @"placed" @"status"
-  # looped
-    @( item :: String
-     , address :: String
-     , card :: String
-     , status :: [ pending :: {}, placed :: {} ]
-     , step :: [ cart :: {}, shipping :: {}, payment :: {} ]
-     ) # with freshOrder
+  # looped # with freshOrder

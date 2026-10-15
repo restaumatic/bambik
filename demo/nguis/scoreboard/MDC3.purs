@@ -13,9 +13,5 @@ scoreboard :: Effect Unit
 scoreboard =
   body $ Semigroupoid.do
     clock @"time" tickPeriod
-    list $ ( listItem $ text scoreLine ) # accumulated @String @{ team :: String, points :: Int } goal
-    ( bodyMedium $ text summaryLine ) # foreach @"key"
-      @( key :: String
-       , teams :: Int
-       , leader :: [ led :: { team :: String, points :: Int }, unled :: {} ]
-       ) boardSummary
+    list $ ( listItem $ text scoreLine ) # accumulated goal
+    ( bodyMedium $ text summaryLine ) # foreach @"key" boardSummary

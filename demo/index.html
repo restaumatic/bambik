@@ -87,8 +87,8 @@
         <li>A row holds records, variants, <code>String</code>, <code>Number</code>, <code>Int</code> and <code>Array</code>.</li>
         <li>No <code>Maybe</code> in the model: <code>selected :: [ none :: {}, picked :: { index :: Int } ]</code>.</li>
         <li>No <code>Boolean</code> unless a Boolean editor edits it: <code>status :: [ active :: {}, completed :: {} ]</code>.</li>
-        <li>The model row is declared once, where the model first appears: <code># looped @( counted :: Int ) # with freshCount</code>.</li>
-        <li>A derived row is declared where it is introduced: a classifier's cases on its first pane, an action's outcome, a projection's element row.</li>
+        <li>The model row is stated once, by the seed's signature: <code>freshCount :: { counted :: Int }</code>, closed on the view by <code># looped # with freshCount</code>.</li>
+        <li>The view writes no row: a classifier's cases, a projection's element row and a payload are their functions' signatures. Its one row is an action's outcome labels, payloads <code>_</code>: <code>action @"Book" @( "Flight booked" :: _, "Booking rejected" :: _ ) submit</code>.</li>
         <li>A stored field is named by its label, never picked with <code>_.</code>: <code>textAt @"title"</code>, <code>tile @"Cell picked" @"key"</code>, <code># providedAt @"halted" @"phase"</code>, <code>listOfAt @"Message opened" @"id" @"messages"</code>.</li>
         <li>Business values are model data: a slider edits <code>{ current, min, max, step }</code> from the seed.</li>
         <li>Constants have business names (<code>tickPeriod</code>, <code>freshCount</code>), never <code>initial</code>, <code>default</code> or <code>seed</code>.</li>
@@ -96,7 +96,7 @@
 
       <h3>Business functions</h3>
       <ul>
-        <li>A signature is the compiler's hint verbatim: the row the stage is fed, closed. <code>countLine :: { counted :: Int } -&gt; String</code>, never narrowed, never opened with a tail.</li>
+        <li>A signature is the compiler's hint with its tails filled: the row the stage is fed, closed. <code>Record t0 -&gt; String</code> reported, <code>countLine :: { counted :: Int } -&gt; String</code> written, never narrowed, never left open.</li>
         <li>A handler updates the row it is given: <code>increment m = m { counted = m.counted + 1 }</code>.</li>
         <li>A constant replaces the model only whole, by a reset: <code>reset @"New game" openingPosition</code>.</li>
         <li>Each event case has its own fold: <code>fold @"Count" increment</code>.</li>

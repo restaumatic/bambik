@@ -23,14 +23,7 @@ meetingBooker =
         (choice @"coffee and pastries" <+> choice @"sandwich lunch")
       toggleSwitch @"Include a Teams link"
       divider $ slider @"Attendees" # inCaseAt @"chosen" @"Room"
-    ) # looped
-      @( "Meeting title" :: String
-       , "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ]
-       , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-       , "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Include a Teams link" :: Boolean
-       , "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ]
-       ) # with blankBooking
+    ) # looped # with blankBooking
     ( div $ Semigroupoid.do
       caption1 $ staticText "How attendees rated this room"
       ratingDisplay roomStars ) # inCaseAt @"chosen" @"Room"
@@ -39,15 +32,6 @@ meetingBooker =
       progressBar seatOccupancy ) # inCaseAt @"chosen" @"Room"
     ( card $ Semigroupoid.do
       body1 $ text planLine
-      button @"Book the room" ) # provided @"complete" @( complete :: {}, incomplete :: {} ) plan
-    indeterminateLinearProgress # action @"Book the room"
-      @( "Room booked" ::
-          { "Meeting title" :: String
-          , "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ], unchosen :: {} ]
-          , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-          , "Attendees" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-          , "Include a Teams link" :: Boolean
-          , "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ]
-          }
-       ) bookRoom
+      button @"Book the room" ) # provided @"complete" plan
+    indeterminateLinearProgress # action @"Book the room" @( "Room booked" :: _ ) bookRoom
     messageBar @"Room booked" identity

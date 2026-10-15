@@ -16,7 +16,7 @@ markdownPreviewer =
   body $ layoutGrid $ Semigroupoid.do
     layoutCell 6 $ filledTextArea @"Source" { columns: 60, rows: 24 }
     layoutCell 6 $ dynamic documentView
-  # looped @( "Source" :: String ) # with welcomeDocument
+  # looped # with welcomeDocument
 
 documentView :: { "Source" :: String } -> PUI Web {} {}
 documentView document = each (parseMarkdown document) blockView

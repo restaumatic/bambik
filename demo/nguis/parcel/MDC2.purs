@@ -15,7 +15,7 @@ parcel =
     filledTextField @"Recipient"
     group @"Address" addressForm
     body1 $ text parcelLine
-  # looped @( "Recipient" :: String, "Address" :: { "Street" :: String, "City" :: String } ) # with draftParcel
+  # looped # with draftParcel
 
 addressForm :: PUI Web { "Street" :: String, "City" :: String } { "Street" :: String, "City" :: String }
 addressForm = Semigroupoid.do

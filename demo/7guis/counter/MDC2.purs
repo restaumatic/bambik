@@ -15,4 +15,4 @@ counter =
     headline4 $ text countLine
     button @"Count"
     fold @"Count" increment
-  # looped @( counted :: Int ) # with freshCount
+  # looped # with freshCount

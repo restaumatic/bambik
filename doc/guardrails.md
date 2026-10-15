@@ -174,17 +174,17 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   value (`staticText "Hours"`, `topAppBar "Espresso Bar"`, `confirmed
   "Refund" "Refund the customer?"`, `columnHeader "Qty"`), and a
   quantity display takes only its read function (`linearProgress
-  elapsedFraction`). A
-  **declared row** is not an anchor either: a visible row type argument
-  by which a line states a shape the compiler could not otherwise know —
-  the model row where the model first appears (`looped @( … )`, or `with @{ … }` for a flow with no loop,
-  or a load action's outcome `action @{ … }` standing before the knot), and a derived
-  row where it is introduced: a classifier's cases on its first pane
-  (`provided`/`inCase @l @s`), an action's outcome, a
-  projection's element row (`listOf`/`foreach`/`anyOf @… @r`), a
-  payload. It names no field and no case, and
-  with it every typed hole in a view reports a concrete type with nothing
-  unknown (L18). Every leaf therefore reads as a noun phrase — word, anchor,
+  elapsedFraction`). A view
+  **writes no row**: a row a line's function or value argument brings —
+  the model's, a classifier's cases, a projection's element row, a
+  payload — is the view model's signature to state, and restated on a
+  view line it is only a second copy of that signature (L18). A
+  published word MUST NOT take such a row as a visible type argument.
+  The one row a view writes is an action's **outcome labels**
+  (`action @"Book" @( "Flight booked" :: _, "Booking rejected" :: _ )
+  submit`): cases named where they arise, which the action needs before
+  any logic exists to widen them into its block — its payloads `_`,
+  the signature's to fix. Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
@@ -332,12 +332,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   after registration (the terminal record's one value, so "closed" is
   literal; a point has answered already and by Repetition at `{}` answers
   no further). The knot MUST be closed by its seed as an
-  argument the caller cannot omit (`with`, after `looped @( … )`): a
+  argument the caller cannot omit (`with`, after `looped`): a
   model into the record junction. The knot is exactly one, `looped`,
   and a looped state is a model field: a loop is cut at its record
   junction and an event re-enters through its fold, because a variant
   knot or a per-shape knot over a hidden field was a second way of
-  writing the same loop whose model no line of the view could declare
+  writing the same loop with a state the rows did not show
   (CHANGELOG, 2026-10-06 and 2026-10-14). The point's *value* is row-forced (`announce a ≈
   lcmap (const a) identity`, `PUI`'s `announce`); what the carrier
   adds is its *earliness*, the one moment a stateful carrier has and a
@@ -461,7 +461,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
     `looped`, `Sequencing` into `Acting`, `labeled`, `constantly`,
     `humanizeLabel`; the hidden-state words of CHANGELOG 2026-10-11; the
     per-shape knots and traces, each keeping a state a model field
-    under `looped` declares, CHANGELOG 2026-10-14). Convergence is the
+    under `looped` carries, CHANGELOG 2026-10-14). Convergence is the
     health metric: a design is right when the algebra starts subsuming
     its own features. `humanizeLabel` is the sharpest case: once a
     label *is* the copy it draws, deriving copy from an identifier has
@@ -480,7 +480,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
     does not apply (CHANGELOG, 2026-10-14).
 - **State the app needs is a model field; an event folds in the app's
   loop.** A word MUST NOT keep application state the model does not
-  declare, nor fold events into a row beside the loop's `fold`. So a
+  hold, nor fold events into a row beside the loop's `fold`. So a
   choice whose cases carry fields is a selector field with those fields
   beside it, each edited in its case (order-form's Fulfillment); an
   event folds through `fold` in the app's loop, `joined` with the model
@@ -634,7 +634,7 @@ code below the UI) are algebra-layer material and exempt by location.
   testability motivation and its `settled` half); the application-side
   statement is writing.md's *copy is a function, not a field*.
 
-### L18. A view runs before its view model exists — and determines it.
+### L18. A view runs before its view model exists — and determines its interface up to the tails.
 
 - The library MUST let every application view run with its view model
   **deleted**: each view model module (the app's own module, `Counter`
@@ -657,22 +657,22 @@ code below the UI) are algebra-layer material and exempt by location.
   classifier, a normalizer, an action's function all take the row the
   stage is fed, and a shared record input is an **equality** (every
   operand is fed the merge's row, L4). A business function's signature
-  is that row, **verbatim from the view's hole hint**
-  (`countLine :: { counted :: Int } -> String`): checked by
-  unification, and never stuck on a hole, where a `Union small rest big`
-  is. An open-row footprint (`forall r. { counted :: Int | r } ->
+  is that row, **the view's hole hint with its tails filled**
+  (`countLine :: Record t0 -> String` reported, `countLine :: {
+  counted :: Int } -> String` written): checked by unification, and
+  never stuck on a hole, where a `Union small rest big` is. An open-row footprint (`forall r. { counted :: Int | r } ->
   String`, narrowed by hand from the hint) was tried and withdrawn: the
   hint never suggested the quantifier, so the view did not determine it
   (CHANGELOG, 2026-10-03). A name two lines call at different rows is
   generalized to what they share, and only then carries a `forall`;
-  `npm run check-determined` checks every exported signature against its
-  hint. An emitter block's variant output
+  `npm run check-determined` checks every exported signature is an
+  instance of its hint. An emitter block's variant output
   is one row like a handler block's: an emitter's case is fixed by its
   label and its row left open, so the block's row reaches it from the
-  folds that own it; an action, whose row a function names, declares
-  its outcome labels on the line (`action @l @( … )`, a payload the fold
-  after it fixes left `_`) and widens them into it itself — a hole
-  names no outcome, so the declaration is what the widening goes on.
+  folds that own it; an action, whose row a function names, names
+  its outcome labels on the line (`action @l @( … )`, every payload
+  `_`) and widens them into it itself — a hole names no outcome, so the
+  labels are what the widening goes on.
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
   a keyed collection's keys are compared **structurally**
   (`Data.Profunctor.Row.Structural`, a key read through the ecosystem's
@@ -718,28 +718,39 @@ code below the UI) are algebra-layer material and exempt by location.
   `clickedRow @l`. A new reading word MUST come with its label sibling
   as soon as a demo reads a stored field through it, and not before
   (L14).
-- **The view determines the view model**. The rule's converse: a view compiled with a typed
-  hole in place of every value it imports MUST report each hole at a
-  concrete type with **nothing unknown** — so the hole list *is* the view
-  model module's signatures (writing.md, *Writing order*) and nothing in
-  that module is designed. What it demands of the library: every word
-  that introduces a row through a function or value argument MUST take
-  that row as a **visible type argument after its anchor** — `looped @model` (`with
-  @model` for a flow with no loop), `action @case @outcomes`, `listOf`/`foreach`/`acted
-  @row`, `dispatched`/`accumulated @key @value`, the panes
-  `provided`/`inCase @l @s`, `each @element`;
-  a new word of that kind
-  MUST do the
-  same — and an option list MUST close its row (`choice @"a" <+> choice
-  @"b"`). What it demands of the application: the model row is declared
-  once, where the model first appears (the seed line, or the load
-  action's outcome when a load stands before the knot); a stored variant field is named by label on
-  its pane line (`providedAt`/`inCaseAt @case @field`); a derived row is declared once, where its function
-  first appears (each `?name` is its own hole, so the function's later
-  uses are typed once it is written); a view helper applies one view
-  model function per value. An unknown anywhere names a missing
-  declaration, not a design choice. The library-side face of the
-  declared row is at L3.
+- **The view determines the view model's interface up to its tails.**
+  The rule's converse: a view compiled with a typed hole in place of
+  every value it imports MUST report each hole at the type the view
+  gives it, and that type MUST be the view's alone. What the view fixes
+  is the **skeleton**: which holes share a row (a stage is typed at one
+  row, the knot re-feeds it whole), what each returns (`text` a
+  `String`, a fold the row, a pane's classifier a variant), and every
+  field and case a line names by its label, at the type its leaf gives
+  it (`filledTextField @"celsius"` puts `celsius :: String` in the
+  row, `providedAt @"confirming" @"deletion"` puts `deletion :: [
+  confirming :: t2 | t3 ]`). What it leaves is the **tails**: the
+  fields and cases only business functions reach (counter's `counted ::
+  Int`), and the payloads only they read. The tails are the model —
+  representation is the model's choice (a next id stored or derived from
+  the messages, a phase a variant or two fields), so a view does not
+  determine *the* model, and many models fit one view. The view model
+  module's signatures are the hints with the tails filled, one filling
+  per row: the compiler reports the holes `Record t0 -> String`,
+  `Record t0 -> Record t0`, `Record t0`, and the module writes `t0`
+  once, as `counted :: Int`, in each. What it demands of the library:
+  a word MUST NOT take, as a visible type argument, a row its function
+  or value argument already brings (L3) — such a row is only a second
+  copy of a signature, and declared on the view line it would make the
+  view state the model; the one exception is a row the compile needs
+  before any logic exists, an action's outcome labels (`Union t b o` is
+  stuck on a hole's `t`), whose payloads stay `_`. An option list
+  MUST close its row (`choice @"a" <+> choice @"b"`), since its options
+  are the view's. What it demands of the application: a stored variant
+  field is named by label on its pane line (`providedAt`/`inCaseAt
+  @case @field`); a view helper applies one view model function per
+  value; the view writes no row (`npm run check-view-model`). The
+  record of the change (rows once declared on the view line, `looped @(
+  … )`, so that nothing was unknown) is in CHANGELOG, 2026-10-15.
 - **Checkable form**: `node scripts/holes.mjs` stubs every demo's view
   model into `.holey/` (gitignored) and builds it under holey.dhall;
   `npm run bundle-demos` runs it, so L15's stack covers this rule
@@ -747,9 +758,13 @@ code below the UI) are algebra-layer material and exempt by location.
   and exercises every control. `npm run check-determined`
   (scripts/check-determined.mjs) compiles every demo's view with a typed
   hole for every imported value into `.determined/` and reads the hole
-  list back — one declaration per compile round, a first declaration
-  copied to the function's later occurrences — failing on any unknown
-  or on an error that is not a hole.
+  list back, one declaration per compile round; a signature is compared
+  verbatim where its hint has no unknown, and otherwise by a probe
+  module that applies a function typed at a declaration's hints, their
+  unknowns quantified, to the module's values — so the compiler decides
+  that one filling of the tails turns every hint into its signature. It
+  fails on an error that is not a hole, on a signature that is not its
+  hint's instance or that quantifies, and on an export no view imports.
 - **Rejected**, each on a measured branch (CHANGELOG, 2026-09-30): shadow `.Holey`
   modules a view imports instead (102 of 102, but a second vocabulary no
   real build checks); leaving read rows and variant outputs free (96 of

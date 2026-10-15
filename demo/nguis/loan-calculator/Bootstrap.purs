@@ -30,10 +30,4 @@ loanCalculator =
     button @"Apply for this loan"
     indeterminateLinearProgress # action @"Apply for this loan" @( "Application received" :: _ ) applyForLoan
     toast @"Application received" identity
-  # looped
-    @( "Applicant" :: String
-     , "Amount (€)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-     , "Term (years)" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-     , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
-     , "Payment protection insurance" :: Boolean
-     ) # with cityCarLoan
+  # looped # with cityCarLoan

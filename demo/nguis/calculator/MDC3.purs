@@ -17,15 +17,9 @@ calculator =
       staticText "Error" # inCaseAt @"faulty" @"condition"
       textAt @"entry" # inCaseAt @"sound" @"condition"
     ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-      ( attrWith "style" keyFace $ tile @"Key entered" @"key" $ textAt @"key" ) # anyOf @"key" @( key :: String ) (const keyPad) ) # joined @"Key entered"
+      ( attrWith "style" keyFace $ tile @"Key entered" @"key" $ textAt @"key" ) # anyOf @"key" (const keyPad) ) # joined @"Key entered"
     fold @"Key entered" pressKey
-  # looped
-    @( total :: Number
-     , operation :: [ pending :: { key :: String }, none :: {} ]
-     , entry :: String
-     , input :: [ entering :: {}, settled :: {} ]
-     , condition :: [ sound :: {}, faulty :: {} ]
-     ) # with blankTally
+  # looped # with blankTally
 
 readoutFace :: String
 readoutFace =

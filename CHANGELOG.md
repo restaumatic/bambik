@@ -8,6 +8,45 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-15, latest
 
+- **The view writes no row; L18 determines the interface up to the
+  tails.** L18's converse said a view compiled with typed holes reports
+  every hole "at a concrete type with nothing unknown", so the hole list
+  *is* the view model's signatures. It held only because the view
+  declared the model: `looped @( counted :: Int )`, `with @{ … }`, a
+  classifier's cases on its first pane (`inCase @l @( … )`), a
+  projection's element row (`foreach`/`anyOf`/`anyEdit`/`listOf @… @(
+  … )`), `dispatched`/`accumulated @k @a`, `each @a`, `load @( … )`.
+  Each repeated a signature the view model module states anyway. Without
+  them the compiler reports what the view really fixes, the
+  **skeleton** — which holes share a row, what each returns, every field
+  and case a line names at its leaf's type — and the rest of each row as
+  an unknown, the **tail** (counter: `Record t0 -> String`, `Record t0 ->
+  Record t0`, `Record t0`). The tails are the model: many models fit one
+  view (a next id stored or derived, a phase one variant or two fields),
+  so a view does not determine *the* model, and the module fills each
+  tail once. All those visible row arguments are gone from the library
+  (`looped`, `with`, `load`, `inCase`, `provided`, `foreach`, `anyOf`,
+  `anyEdit`, `acted`, `dispatched`, `accumulated`, `each`, `listOf`/
+  `listOf'` in MDC2/MDC3) and from every demo, 163 rows in all. This
+  reverses the morning's entry below for `load`: the case a capture takes
+  is named by the capture and typed by the `Aff`. The one row a view
+  still writes is an action's outcome **labels**, every payload now `_`:
+  the widening `Union t b o` is stuck on a hole's `t`, so the holey
+  build (L18's first half) needs them — tried without them, it fails. The
+  real build and the holey build both pass with no other declaration.
+  `npm run check-determined` now accepts unknowns and checks each
+  signature is an **instance** of its hint: verbatim where a hint has no
+  unknown, otherwise by a probe module that applies a function typed at a
+  declaration's hints, their unknowns quantified, to the module's values,
+  so the compiler decides that one filling of the tails fits; a
+  quantified signature still fails. `npm run check-view-model` rejects a
+  restated row in any view, an action's `_`-payload outcome labels
+  excepted. guardrails L3 and L18, writing.md (*Types and values*,
+  *Business functions*, *Writing order*), the skill's other files, the
+  module headers and demo/workflow.html follow; the workflow's compiler
+  responses are re-captured with the pinned compiler, the first now
+  showing `| t0` and the second showing it gone once one signature fills it.
+
 - **`load` declares its outcomes on its line.** `capture @"People loaded"`
   (crud) and `snackbar @"Order loaded"` (order-form) consumed a case
   nothing in the view produced: the label arose only in the logic's `Aff`

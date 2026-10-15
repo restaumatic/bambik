@@ -18,8 +18,6 @@ potluck =
         titleMedium $ textAt @"name"
         segmentedButtonUnpicked @"Dish" @"chosen"
           (choice @"Salad" <+> choice @"Lasagna" <+> choice @"Pavlova") ) # acted @"name"
-    ( headlineSmall $ text menuLine ) # inCase @"complete" @( complete :: {}, waiting :: {} ) menuState
+    ( headlineSmall $ text menuLine ) # inCase @"complete" menuState
     ( bodyMedium $ text waitingLine ) # inCase @"waiting" menuState
-  # with
-    @{ "Guests" :: Array { name :: String, "Dish" :: [ chosen :: [ "Salad" :: {}, "Lasagna" :: {}, "Pavlova" :: {} ], unchosen :: {} ] }
-     } invitation
+  # with invitation

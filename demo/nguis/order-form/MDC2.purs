@@ -14,7 +14,7 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderForm :: Effect Unit
 orderForm =
   body $ Semigroupoid.do
-    indeterminateLinearProgress # load @( "Order loaded" :: _ ) loadOrder
+    indeterminateLinearProgress # load loadOrder
     snackbar @"Order loaded" identity
     ( Semigroupoid.do
       ( Semigroupoid.do
@@ -43,23 +43,17 @@ orderForm =
       card $ body1 $ text summaryLine
       RecordToVariant.do
         ( Semigroupoid.do
-          button' @"Estimate distance" { icon: "near_me" } # provided @"Delivery" @( "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ) fulfillmentMode
-          indeterminateLinearProgress # action @"Estimate distance" @( "Distance estimated" :: { km :: Int, to :: String } ) estimateDistance ) # joined @"Distance estimated"
+          button' @"Estimate distance" { icon: "near_me" } # provided @"Delivery" fulfillmentMode
+          indeterminateLinearProgress # action @"Estimate distance" @( "Distance estimated" :: _ ) estimateDistance ) # joined @"Distance estimated"
         ( Semigroupoid.do
           button' @"Submit order" { icon: "save" }
           indeterminateLinearProgress # action @"Submit order"
-            @( "Order submitted" :: {}, "Order rejected: no total" :: {} ) submitOrder ) # joined @"Order submitted" # joined @"Order rejected: no total"
+            @( "Order submitted" :: _, "Order rejected: no total" :: _ ) submitOrder ) # joined @"Order submitted" # joined @"Order rejected: no total"
         ( Semigroupoid.do
           button' @"Receipt" { icon: "file" }
-          indeterminateLinearProgress # action @"Receipt" @( "Receipt printed" :: {} ) printReceipt ) # joined @"Receipt printed"
+          indeterminateLinearProgress # action @"Receipt" @( "Receipt printed" :: _ ) printReceipt ) # joined @"Receipt printed"
       VariantToRecord.do
         fold @"Distance estimated" setDistance
         snackbar @"Order submitted" kept
         snackbar @"Order rejected: no total" kept
         snackbar @"Receipt printed" kept ) # looped
-      @( "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
-       , "Customer" :: { "First name" :: String, "Last name" :: String }
-       , "Fulfillment" :: { "Mode" :: [ "Dine in" :: {}, "Takeaway" :: {}, "Delivery" :: {} ], "Table" :: String, "Time" :: String, "Address" :: String, distance :: [ estimated :: { km :: Int, to :: String }, unknown :: {} ] }
-       , "Payment" :: { "Total" :: String, "Method" :: [ "cash" :: {}, "card" :: {} ], "Paid" :: String }
-       , "Kitchen" :: { "Remarks" :: String }
-       )

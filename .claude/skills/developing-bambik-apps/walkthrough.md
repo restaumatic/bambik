@@ -35,21 +35,16 @@ flightBooker =
         (choice @"one-way" <+> choice @"return")
       filledTextField @"Start date (DD.MM.YYYY)"
       filledTextField @"Return date (DD.MM.YYYY)" # inCaseAt @"return" @"Flight type"
-    ) # looped
-      @( "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-       , "Start date (DD.MM.YYYY)" :: String
-       , "Return date (DD.MM.YYYY)" :: String
-       ) # with plannedTrip
+    ) # looped # with plannedTrip
     ( Semigroupoid.do
-      ( body1 $ text problemLine ) # inCase @"problem"
-        @( "one-way" :: {}, problem :: {}, return :: {} ) bookingState
+      ( body1 $ text problemLine ) # inCase @"problem" bookingState
       ( body1 $ text oneWayLine ) # inCase @"one-way" bookingState
       ( body1 $ text returnLine ) # inCase @"return" bookingState
     ) # debounced itinerarySettleTime
     ( Semigroupoid.do
       button' @"Book" { icon: "flight_takeoff" }
       indeterminateLinearProgress # action @"Book"
-        @( "Flight booked" :: {}, "Booking rejected" :: {} ) submit ) # joined @"Flight booked" # joined @"Booking rejected"
+        @( "Flight booked" :: _, "Booking rejected" :: _ ) submit ) # joined @"Flight booked" # joined @"Booking rejected"
     VariantToRecord.do
       snackbar @"Flight booked" kept
       snackbar @"Booking rejected" kept
@@ -75,7 +70,8 @@ a snackbar shows the outcome and keeps the model.
 Code order is DOM order and data order (writing.md *The pipeline*).
 
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
-with `# looped @( … ) # with plannedTrip`, the model row declared there.
+with `# looped # with plannedTrip`; the model row is `plannedTrip`'s
+signature, in the view model module.
 
 - `select @"Flight type" (choice @"one-way" <+> choice @"return")` —
   the type argument is both the caption and the model field, so this
@@ -90,12 +86,11 @@ with `# looped @( … ) # with plannedTrip`, the model row declared there.
   — the editor pane: this field exists only while the stored
   `"Flight type"` is at case `return`, and the model passes straight
   through otherwise. The pane names the case and then the field, both
-  by label; the model row on the seed line types it (writing.md *Conditional
+  by label; the model row types it (writing.md *Conditional
   visibility*).
 
 Each editor is fed the whole record and emits it with its own field
-changed. `looped @( … ) # with plannedTrip` declares the model row — the three
-fields the editors bind, written once — supplies the starting record and
+changed. `looped # with plannedTrip` supplies the starting record and
 loops each change back to the top, so all three editors see every edit;
 it also closes the app's input to `{}`, which `body` requires (writing.md
 *App shape*).
@@ -113,10 +108,9 @@ block of their own, `( Semigroupoid.do … ) # debounced itinerarySettleTime`.
   from which `oneWayLine` reads the start date. Detached, the pane is the
   wire. Three panes over one classifier make the three states exclusive,
   because the classifier returns one case (writing.md *Conditional
-  visibility*). The first of the three, `# inCase @"problem" @( … )
-  bookingState`, declares the classifier's cases — a derived row, so the
-  view states it where it is introduced; the other two name only their
-  case.
+  visibility*). Each pane names only its own case; the three
+  cases together are `bookingState`'s signature, in the view model
+  module.
 - `( Semigroupoid.do … ) # debounced itinerarySettleTime` — the block of
   panes passes the model on, and `debounced` releases it only once the
   edits pause for `itinerarySettleTime` (`{ ms: 300.0 }` in the view
@@ -133,8 +127,9 @@ owns that case, its payload goes to `submit`, and the action is opened
 by its progress bar — `indeterminateLinearProgress # action`, shown
 between the run's `started` and `ended`; the slot owns those two
 occurrences and nothing else, so no snackbar can stand in it. The
-outcome row is declared `@( … )` on the action, since what folds it keeps
-the model — and its cases are written as the words the user will read,
+outcome labels are named `@( … )` on the action, payloads `_` — the
+action widens them into its block before any logic exists — and its
+cases are written as the words the user will read,
 `"Flight booked"` and `"Booking rejected"`, because they are what the
 statuses show. `# joined @l` on the block, once per outcome, pairs it with the model
 the button was fed, so what leaves is `{ event, model }` under the
@@ -302,12 +297,14 @@ module*).
   outcome row names the two outcomes as the snackbars' words, each
   carrying `{}`, since nothing reads a payload the statuses do not show.
 
-**Three things worth noticing.** The rows are spelled out in full — the
-model row seven times, the itinerary variant four — because
+**Three things worth noticing.** The rows are spelled out in full in the
+view model module — the model row seven times, the itinerary variant
+four — because
 application code declares no `type` synonyms: the shape is the interface
 (writing.md *Code style* → *Types and values*). Every exported function
-carries the signature the view reported for it, verbatim — the model row
-its line is fed, closed, its fields in the compiler's alphabetical
+carries the signature the view reported for it with its tails filled —
+the view named the three fields its editors bind and left the rest
+unknown, and the signature closes the row: the model row its line is fed, its fields in the compiler's alphabetical
 order — so the pane copy functions take the whole model and derive what
 they show from it (`oneWayLine` parses the start date again), while the
 private helpers (`parse`, `returnBetween`, `formatDate`, `dateKey`) keep
@@ -335,10 +332,10 @@ the view model module is the ordinary one.
   pane `# inCaseAt @c @"step"`, Next and Back each a button shown by its
   own classifier and folded by its own handler (`stepOnward`, `stepBack`).
 - **crud** — a load action before the knot, `indeterminateLinearProgress #
-  action loadPeopleCatalogue`, its outcome folded in by `capture @"People
+  load loadPeopleCatalogue`, its outcome folded in by `capture @"People
   loaded"`, run by `body`'s one feed of
   `{}`; create/update/delete are chains in the fold block, each an action
-  owning its button's case and declaring its two outcomes, followed by
+  owning its button's case and naming its two outcomes, followed by
   their folds.
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
   `reset @"New game" openingPosition` the reset.

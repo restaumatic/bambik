@@ -16,7 +16,7 @@ shoppingCart =
   body $ Semigroupoid.do
     bodyLarge $ text totalLine
     RecordToVariant.do
-      ( listOf @"Unit added" @"product" @( product :: { name :: String, unitPrice :: Int } ) (const productCatalogue) $ text catalogueLine ) # joined @"Unit added"
+      ( listOf @"Unit added" @"product" (const productCatalogue) $ text catalogueLine ) # joined @"Unit added"
       dataTable "Cart"
         ( Semigroupoid.do
           columnHeader "Product"
@@ -27,10 +27,10 @@ shoppingCart =
           dataCell $ textAt @"product"
           dataCell $ text quantityLine
           dataCell $ text lineTotalLine
-          dataCell $ iconButton @"Unit removed" "remove" ) # anyOf @"product" @( product :: String, unitPrice :: Int, quantity :: Int ) cartLines ) # joined @"Unit removed"
+          dataCell $ iconButton @"Unit removed" "remove" ) # anyOf @"product" cartLines ) # joined @"Unit removed"
       button @"Empty cart"
     VariantToRecord.do
       fold @"Unit added" addUnit
       fold @"Unit removed" removeUnit
       reset @"Empty cart" emptyCart
-  # looped @( order :: Array { product :: { name :: String, unitPrice :: Int }, quantity :: Int } ) # with emptyCart
+  # looped # with emptyCart

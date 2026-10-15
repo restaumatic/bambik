@@ -13,4 +13,4 @@ temperatureConverter =
   body $ Semigroupoid.do
     textField @"celsius" # settled fromCelsius
     textField @"fahrenheit" # settled fromFahrenheit
-  # looped @( celsius :: String, fahrenheit :: String ) # with roomTemperature
+  # looped # with roomTemperature

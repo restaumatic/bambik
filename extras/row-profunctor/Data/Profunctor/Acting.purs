@@ -94,7 +94,7 @@ instance Acting (->) where
 -- | state channel (`second`) and is written over each emission
 -- | (`Record.set`). An element's functions are typed at its row
 -- | (guardrails L18).
-acted :: forall @l @r p k b1 b2 r1 . Acting p => Strong p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
+acted :: forall @l r p k b1 b2 r1 . Acting p => Strong p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
 acted w = withStructuralOrd @k (actedBy (Record.get prox)
   (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.set prox k out) (second w)))
   where
@@ -106,5 +106,5 @@ acted w = withStructuralOrd @k (actedBy (Record.get prox)
 -- | MDC vocabularies' `group @t` does the same lift with its card and
 -- | heading; the plain-HTML floor names the field here (reorder-html).
 actedAt :: forall @l @t p k b1 b2 r1 r. Acting p => Strong p => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => p { | r1 } { | r1 } -> p { | r } { | r }
-actedAt w = focusField @t (acted @l @r1 w)
+actedAt w = focusField @t (acted @l w)
 

@@ -36,7 +36,7 @@
     line, an <em>Order</em> button that places the order, a snackbar telling
     the outcome — in the two-module
     layout every bambik app ships with (a view module and, beside it, the
-    view model module the view determines), and every compiler response is verbatim output of bambik's pinned
+    view model module the view determines up to its tails), and every compiler response is verbatim output of bambik's pinned
     PureScript compiler (0.15.16-variant.9, the variant fork), captured by
     replaying the session. The screenshots at the end are the
     session's own app, running.</p>
@@ -52,11 +52,12 @@
     compiler must type rather than resolve) standing in for the functions and
     actions that do not exist yet, and the view model module is written second, to the names
     and types the view demanded: the compiler's last message lists every hole
-    with its type, and that list <em>is</em> the module's signatures, with
-    nothing unknown. The model row is declared once, on the seed line, and a
-    row no model field holds — a classifier's cases, an action's outcome —
-    where it is introduced (see the code style note); that is what keeps the
-    list concrete.</p>
+    with its type, and that list <em>is</em> the module's signatures up to
+    their <em>tails</em>. The view fixes which holes share a row, what each
+    returns and every field and case its lines name; the rest of each row it
+    leaves unknown, and the module fills it — the view writes no row of its
+    own, so many models fit one view, and the module is where one is
+    chosen.</p>
 
     <h2>1 · The view, whole, before any logic exists</h2>
 
@@ -67,12 +68,12 @@
     Note what is <em>not</em> a hole: the field anchor (<code>@"Pizza"</code>),
     the case anchors (<code>@"Order"</code>, stated once on the button and once
     on the action that owns its case; <code>@"Pizza ordered"</code>, the
-    outcome the action declares and the snackbar tells — a status shows its
+    outcome the action names and the snackbar tells — a status shows its
     case label and nothing else, so the outcome's name <em>is</em> the words
-    on the screen; its payload is left <code>_</code>, since the snackbar's
-    fold fixes it), the
-    model row on the seed line (<code>@( "Pizza" :: String )</code>) and the
-    chrome (<code>headlineSmall</code>) are complete as written.</p>
+    on the screen; its payload is left <code>_</code>, the action's signature
+    to fix) and the chrome (<code>headlineSmall</code>) are complete as
+    written. The model row is not written at all: it is the seed's
+    signature, still a hole.</p>
 
     <h3>src/MDC3.purs</h3>
 <pre><code class="language-haskell">module Order.MDC3 (order) where
@@ -93,18 +94,19 @@ order =
     button @"Order"
     indeterminateLinearProgress # action @"Order" @( "Pizza ordered" :: _ ) ?placeOrder
     snackbar @"Pizza ordered" identity
-  # looped @( "Pizza" :: String ) # with ?start
+  # looped # with ?start
 </code></pre>
 
     <p>The compiler answers with a message per hole and a last one listing
     them together, and none of them is a refusal: every hole comes back typed.
-    The display read reports <code>{ "Pizza" :: String } -&gt; String</code>,
-    the seed exactly that row — the editor's field anchor and the model row
-    declared on the seed line fixed the model before any logic exists — and
-    the action reports its whole contract, <code>{ "Pizza" :: String } -&gt;
-    Aff [ "Pizza ordered" :: { "Pizza" :: String } ]</code>: the snackbar
-    folds its outcome with <code>identity</code> back into the loop, so the
-    outcome must be the model, and the status's case names it:</p>
+    The display read reports <code>{ "Pizza" :: String | t0 } -&gt;
+    String</code>: the editor's field anchor put <code>"Pizza"</code> in the
+    row, and <code>t0</code> is the rest of it, which only the model knows.
+    The seed is that row, and the action reports its whole contract over it,
+    <code>{ "Pizza" :: String | t0 } -&gt; Aff [ "Pizza ordered" :: {
+    "Pizza" :: String | t0 } ]</code>: the snackbar folds its outcome with
+    <code>identity</code> back into the loop, so the outcome must be the
+    model, and the status's case names it:</p>
 
 <pre class="compiler">Error 1 of 4:
 
@@ -114,12 +116,15 @@ order =
     Hole 'orderLine' has the inferred type
 
       { "Pizza" :: String
+      | t0
       }
       -&gt; String
 
     You could substitute the hole with one of these values:
 
       _."Pizza"  :: String
+
+  where t0 is an unknown type
   ⋯
 
 Error 2 of 4:
@@ -130,22 +135,29 @@ Error 2 of 4:
     Hole 'placeOrder' has the inferred type
 
       { "Pizza" :: String
+      | t0
       }
       -&gt; Aff
            [ "Pizza ordered" :: { "Pizza" :: String
+                                | t0
                                 }
            ]
+
+  where t0 is an unknown type
   ⋯
 
 Error 3 of 4:
 
   in module Order.MDC3
-  at src/MDC3.purs:19:42 - 19:48 (line 19, column 42 - line 19, column 48)
+  at src/MDC3.purs:19:19 - 19:25 (line 19, column 19 - line 19, column 25)
 
     Hole 'start' has the inferred type
 
       { "Pizza" :: String
+      | t0
       }
+
+  where t0 is an unknown type
   ⋯
 
 Error 4 of 4:
@@ -156,30 +168,40 @@ Error 4 of 4:
     The 3 holes in this declaration, with one numbering of unknowns across them:
 
       orderLine   :: { "Pizza" :: String
+                     | t0
                      }
                      -&gt; String
       placeOrder  :: { "Pizza" :: String
+                     | t0
                      }
                      -&gt; Aff
                           [ "Pizza ordered" :: { "Pizza" :: String
+                                               | t0
                                                }
                           ]
       start       :: { "Pizza" :: String
+                     | t0
                      }
+
+  where t0 is an unknown type
   ⋯</pre>
 
     <p>Two things to read here. First, the last message is the one to read
-    when there are many holes: it lists every hole with its type, and nothing
-    in it is unknown — the model row on the seed line and the fold that
-    closes the loop saw to that. And holes
+    when there are many holes: it lists every hole with its type, with one
+    numbering of unknowns across them — <code>t0</code> is one tail, the
+    same in all three, because the knot loops one row through every stage.
+    Everything else in it the view decided. And holes
     need not stop you from seeing the view: import <code>hole</code> from
     <code>PUI.Web</code> and substitute it for every hole, and the view
     compiles and <em>runs</em> — the field, the button and an empty line on
     screen, no data flowing, before a single business function exists
-    (guardrails L18). Second, the reported type <em>is</em> the signature: the row the
-    seed line declared is what the function is given, so write the hint down
-    as it stands. Which of the row's fields the body reads is the body's
-    business, not the signature's. This line shows the pizza.</p>
+    (guardrails L18). Second, the reported type <em>is</em> the signature
+    with its tail filled. Here the order is just the pizza, so the tail is
+    empty: write the hint down with <code>| t0</code> gone and the row
+    closed. A model holding more — a size, a note no line shows — would
+    fill <code>t0</code> with those fields instead, and the view would not
+    change. Which of the row's fields the body reads is the body's business,
+    not the signature's. This line shows the pizza.</p>
 
     <h2>2 · One decision in — one hole gone</h2>
 
@@ -199,9 +221,10 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
   button @"Order"
 </code></pre>
 
-    <p>One signature in, verbatim from its hint: its hole is gone, the
-    compiler now checks the function against the row the stage is fed, and
-    the other two holes are as they were:</p>
+    <p>One signature in, its hint with the tail filled: its hole is gone,
+    the compiler now checks the function against the row the stage is fed,
+    and the other two holes have lost their <code>t0</code> — the tail is
+    one row's, so filling it once filled it everywhere:</p>
 
 <pre class="compiler">Error 1 of 3:
 
@@ -221,7 +244,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 Error 2 of 3:
 
   in module Order.MDC3
-  at src/MDC3.purs:20:42 - 20:48 (line 20, column 42 - line 20, column 48)
+  at src/MDC3.purs:20:19 - 20:25 (line 20, column 19 - line 20, column 25)
 
     Hole 'start' has the inferred type
 
@@ -246,12 +269,12 @@ Error 3 of 3:
                      }
   ⋯</pre>
 
-    <p>The action's hint has not moved: its payload is fixed by what consumes
-    the outcome, not by what feeds it. The button replays the row it is fed,
+    <p>The action's payload is the model row too: it is fixed by what
+    consumes the outcome, not by what feeds it. The button replays the row it is fed,
     <code>action @"Order"</code> owns that case and hands the row to the
     function, and the snackbar's fold closes the loop with the model — so the
     action must return <code>{ "Pizza" :: String }</code> under the case the
-    line declares and the snackbar names.</p>
+    line names and the snackbar tells.</p>
 
     <h2>3 · The action joins — the last hole is the seed</h2>
 
@@ -264,7 +287,7 @@ placeOrder pizza = do
 
 <pre class="compiler">Error found:
 in module Order.MDC3
-at src/MDC3.purs:20:42 - 20:48 (line 20, column 42 - line 20, column 48)
+at src/MDC3.purs:20:19 - 20:25 (line 20, column 19 - line 20, column 25)
 
   Hole 'start' has the inferred type
 
@@ -272,10 +295,10 @@ at src/MDC3.purs:20:42 - 20:48 (line 20, column 42 - line 20, column 48)
     }
   ⋯</pre>
 
-    <p>Both carry the signatures the compiler reported, verbatim — the
-    action's outcome row included, its one case spelled as the snackbar will
-    show it. The model itself was declared on the seed line, so the seed's
-    type was never in doubt: exactly <code>{ "Pizza" :: String }</code>. The
+    <p>Both carry the signatures the compiler reported — the action's
+    outcome row included, its one case spelled as the snackbar will show
+    it. The tail was filled by the first signature, so the seed's type is no
+    longer in doubt: exactly <code>{ "Pizza" :: String }</code>. The
     seed is the model's value at t=0 — business data under a business name,
     never <code>initial</code>.</p>
 
@@ -320,7 +343,7 @@ order =
     button @"Order"
     indeterminateLinearProgress # action @"Order" @( "Pizza ordered" :: _ ) placeOrder
     snackbar @"Pizza ordered" identity
-  # looped @( "Pizza" :: String ) # with plainMargherita
+  # looped # with plainMargherita
 </code></pre>
 
 <pre class="compiler">[1 of 2] Compiling Order
@@ -328,7 +351,8 @@ order =
 
     <p>Every anchor resolved: <code>orderLine</code> is a pure function under
     unit test in the view model module and <code>placeOrder</code> the
-    <code>Aff</code> beside it, each typed exactly as the view reported it;
+    <code>Aff</code> beside it, each typed as the view reported it, the tail
+    filled;
     <code>@"Pizza"</code> is both the field's caption and its name in the
     model, <code>@"Order"</code> both the button's caption and the case the
     action takes, <code>@"Pizza ordered"</code> both the outcome the action

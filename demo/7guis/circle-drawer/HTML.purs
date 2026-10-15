@@ -23,13 +23,7 @@ circleDrawer =
       ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
         ( onClickedXY @"Canvas clicked" $
           ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
-            >>> attrWith "fill" circleFill $ identity ) # foreach @"key"
-              @( key :: String
-               , x :: String
-               , y :: String
-               , r :: String
-               , status :: [ selected :: {}, unselected :: {} ]
-               ) canvasCircles ) ) # joined @"Canvas clicked"
+            >>> attrWith "fill" circleFill $ identity ) # foreach @"key" canvasCircles ) ) # joined @"Canvas clicked"
       ( div $ RecordToVariant.do
         button @"Undo"
         button @"Redo" )
@@ -37,14 +31,7 @@ circleDrawer =
       fold @"Canvas clicked" selectOrAddCircle
       fold @"Undo" undo
       fold @"Redo" redo
-  # looped
-    @( circles :: Array { x :: Number, y :: Number, r :: Number }
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , "Diameter" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , undoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
-     , redoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
-     ) # with emptyCanvas
+  # looped # with emptyCanvas
 
 circleFill :: { key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
 circleFill { status } = match { selected: \_ -> "#ddd", unselected: \_ -> "transparent" } status

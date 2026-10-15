@@ -17,7 +17,4 @@ payment =
     button' @"Charge card" { icon: "credit_card" }
     indeterminateCircularProgress # action @"Charge card" @( "Card charged" :: _ ) chargeFlaky
     snackbar @"Card charged" identity
-  # looped
-    @( amount :: Number
-     , approval :: [ approved :: { attempt :: Int }, pending :: {} ]
-     ) # with unpaidOrder
+  # looped # with unpaidOrder

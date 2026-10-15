@@ -20,16 +20,10 @@ weather =
     caption $ text servedLine
     RecordToVariant.do
       iconButton @"About this dashboard" "info"
-      ( listOf' @"Forecast requested" @"request"
-        @( request :: { city :: String, sample :: Int }
-         , focus :: [ current :: {}, other :: {} ]
-         ) { selected: isCurrent } forecastRequests $ text cityLine ) # joined @"Forecast requested"
+      ( listOf' @"Forecast requested" @"request" { selected: isCurrent } forecastRequests $ text cityLine ) # joined @"Forecast requested"
     VariantToRecord.do
       confirmed @"About this dashboard" "Got it" identity $ body1 $ text aboutLine
       ( Semigroupoid.do
         indeterminateCircularProgress # action @"Forecast requested" @( "Forecast fetched" :: _ ) fetchReport
         capture @"Forecast fetched" )
-  # looped
-    @( report :: { city :: String, temperature :: Number, condition :: String, humidity :: Int, wind :: Number }
-     , servedReports :: Int
-     ) # with warsawBulletin
+  # looped # with warsawBulletin

@@ -521,15 +521,16 @@ seeded a = dimap Right (either identity identity) (left (announce a))
 
 -- | Discharge a chain's initial obligation by announcing its t=0 value.
 -- | The seed is whatever the chain's first stage takes: a model row into
--- | the knot (`w # looped @( … ) # with seed`, the app shape) or into a
--- | knotless flow (`# with @{ … } invitation`, potluck). Never `{}`: `body`
+-- | the knot (`w # looped # with seed`, the app shape) or into a
+-- | knotless flow (`# with invitation`, potluck), the seed's signature
+-- | stating the row. Never `{}`: `body`
 -- | feeds the terminal record once itself, so a load action standing
 -- | before the knot runs on that feed with no seed written. Its own input
 -- | is ignored, so it sits at any row; a seed that is a hole is never
 -- | announced (`announce`, guardrails L18). A pipeline's residual input row
 -- | *is* its initial-state obligation, discharged by `with` down to `{}`,
 -- | the one self-pointed record, which `body` demands.
-with :: forall @a m b r. MonadEffect m => a -> PUI m a b -> PUI m { | r } b
+with :: forall a m b r. MonadEffect m => a -> PUI m a b -> PUI m { | r } b
 with a w = lcmap (const {}) (announce a >>> w)
 
 -- | **Self-reference as carrier structure** — the point's sibling: the
@@ -547,10 +548,10 @@ with a w = lcmap (const {}) (announce a >>> w)
 -- | emission before the first input — the gate deadlocks), so the
 -- | self-feeding special case is carrier structure, not a derivation.
 -- | Row-shaped in the word itself: the looped value is an entity (a model
--- | row), declared as the visible argument, `looped @( count :: Int ) w`.
--- | It is the app's knot, and the only knot: a loop through the four
--- | shapes is cut at its record junction, where the model can be declared,
--- | and an event re-enters through its fold. (The variant side would need
+-- | row), stated by the seed's signature, not on the knot (`w # looped #
+-- | with freshCount`, `freshCount :: { counted :: Int }`). It is the app's
+-- | knot, and the only knot: a loop through the four shapes is cut at its
+-- | record junction, where the model row holds the state, and an event re-enters through its fold. (The variant side would need
 -- | no primitive — `Cochoice`'s `unleft` holds raw here, the carrier being
 -- | traced over `+` and pointed-traced over `×` — and a one-field `×`-knot
 -- | would be seeded through `PointedCostrong`; neither has a word,
@@ -596,7 +597,7 @@ with a w = lcmap (const {}) (announce a >>> w)
 -- | sibling for longer than the turn in flight — which is why editor
 -- | ensembles live inside `looped`, and a loop-free
 -- | flow wraps its editor window in `looped` (order-form).
-looped :: forall @r m. MonadEffect m => PUI m { | r } { | r } -> PUI m { | r } { | r }
+looped :: forall r m. MonadEffect m => PUI m { | r } { | r } -> PUI m { | r } { | r }
 looped p = wrap do
     p' <- unwrap p
     busyRef <- liftEffect $ Ref.new false
@@ -1249,15 +1250,16 @@ type Ocular p = forall a b. Optic p a b a b
 static :: forall p r. Category p => Ocular p -> p { | r } { | r }
 static o = o identity
 
--- | An action **owns its button's case and declares its outcomes**: the
+-- | An action **owns its button's case and names its outcomes**: the
 -- | `+→+` leaf of case `l` (`action @"Create" @( "Person created" :: _,
 -- | "Person not created" :: _ ) createPerson`, crud), fed the row the
 -- | button replayed, running the `Aff` on it, its outcome leaving as a
 -- | case of the row `t` the `Aff` names. Like a status it narrows its
 -- | input to its one case (`Cons l a () v`), and like an emitter it is
--- | open on its output as far as a row a function names can be: `t` is
--- | **declared** on the line — the labels at least, a payload the fold
--- | after it fixes left `_` — and widened into the row its block shares
+-- | open on its output as far as a row a function names can be: `t`'s
+-- | labels are **named** on the line, every payload `_` — the one row a
+-- | view writes (guardrails L18), since the widening is stuck on a hole's
+-- | `t` and the `Aff`'s signature fixes the payloads — and widened into the row its block shares
 -- | (`Union t b o`), so an action stands among emitters in a
 -- | `RecordToVariant.do` (order-form's three, each `joined` with its
 -- | button) or before its folds in the fold block without a placement
@@ -1303,15 +1305,14 @@ action arr slot = atCase @l (running (\i -> if isHole arr then Nothing else Just
 -- | The action a **feed** runs — `×→+`, the row fed is the `Aff`'s
 -- | argument and its outcome leaves as the case the `Aff` names: the
 -- | **load** standing before the knot, run by `body`'s one feed of `{}`
--- | (`indeterminateLinearProgress # load @( "People loaded" :: _ )
--- | loadPeopleCatalogue; capture @"People loaded"`, crud; order-form), its
--- | outcome the model the knot declares. Its outcome row `t` is **declared
--- | on the line**, like `action`'s — the labels at least, the payloads the
--- | capture or status after it fixes — so the case consumed below is named
--- | where it arises. Opened by its progress indicator like `action`,
+-- | (`indeterminateLinearProgress # load loadPeopleCatalogue; capture
+-- | @"People loaded"`, crud; order-form), its outcome the model the knot
+-- | loops. Its outcome row `t` is the `Aff`'s signature: unlike `action`
+-- | it widens nothing, so the case the capture or status after it takes
+-- | needs no line of its own (guardrails L18). Opened by its progress indicator like `action`,
 -- | reported and scoped the same way; typed at exactly its outcomes.
 load
-  :: forall @t r v1 m
+  :: forall t r v1 m
    . Scoped m
   => Contractable ( started :: {}, ended :: {} ) v1
   => ({ | r } -> Aff [ | t ])
@@ -1570,7 +1571,7 @@ instance Hosting m node => Acting (PUI m) where
 -- | the container action, which writes the elements' releases back; a
 -- | list whose elements **emit** is `anyOf`. Both share this keyed
 -- | reconciler.
-foreach :: forall @l @r m node k b a. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } { | r } -> PUI m a a
+foreach :: forall @l r m node k b a. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } { | r } -> PUI m a a
 foreach f w = withStructuralOrd @k $ wrap do
   hooks <- hosting w
   liftEffect do
@@ -1590,7 +1591,7 @@ foreach f w = withStructuralOrd @k $ wrap do
 -- | shared channel as it happens, ungated and lawfully **silent on an empty
 -- | array** (no event to fabricate):
 -- | `clicked @"Key entered" @"key" cell # anyOf @"key" keyPad`.
-anyOf :: forall @l @r m node k b a v. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } [ | v ] -> PUI m a [ | v ]
+anyOf :: forall @l r m node k b a v. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } [ | v ] -> PUI m a [ | v ]
 anyOf f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs = f r in if isHole xs then [] else xs) $ wrap do
   hooks <- hosting w
   liftEffect $ collapsedWith (Record.get (Proxy @l)) hooks)
@@ -1600,7 +1601,7 @@ anyOf f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs =
 -- | (`# anyOfAt @"key" @"cells"`, cells). An array derived from the row is
 -- | a projection, `anyOf`.
 anyOfAt :: forall @l @t m node k b1 b2 r1 r v. Hosting m node => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => PUI m { | r1 } [ | v ] -> PUI m { | r } [ | v ]
-anyOfAt = anyOf @l @r1 (Record.get (Proxy @t))
+anyOfAt = anyOf @l (Record.get (Proxy @t))
 
 -- | The **editing collection** — `anyOf` over editors: the same keyed and
 -- | retaining reconciliation over elements that are `×→×` citizens (a row
@@ -1611,13 +1612,13 @@ anyOfAt = anyOf @l @r1 (Record.get (Proxy @t))
 -- | by shape (Answer: a feed is answered by no emission) without leaning
 -- | on the knot's re-entrancy guard, and the element stays the
 -- | checkbox-like leaf it is: `( listItem $ Semigroupoid.do { …; iconToggle
--- | @"Favorite" … } ) # anyEdit @"Favorite changed" @"title" @( … )
+-- | @"Favorite" … } ) # anyEdit @"Favorite changed" @"title"
 -- | visibleMovies # joined @"Favorite changed"` (movie-browser), the fold
 -- | writing the edit back into the stored collection by key. The
 -- | projection's array is a view, so nothing gathers — a stored array's
 -- | editors are `acted`.
 anyEdit
-  :: forall @l @k @r m node key b1 b2 a v
+  :: forall @l @k r m node key b1 b2 a v
    . Hosting m node
   => IsSymbol l
   => IsSymbol k
@@ -1626,7 +1627,7 @@ anyEdit
   => (a -> Array { | r })
   -> PUI m { | r } { | r }
   -> PUI m a [ | v ]
-anyEdit f editor = anyOf @k @r f $ wrap do
+anyEdit f editor = anyOf @k f $ wrap do
   w' <- unwrap editor
   feeding <- liftEffect $ Ref.new false
   pure
@@ -1649,7 +1650,7 @@ anyEdit f editor = anyOf @k @r f $ wrap do
 -- | shape for streams/pushes that arrive one entity at a time. No key
 -- | function: the runtime variant input carries its tag, as a variant case
 -- | carries its label.
-dispatched :: forall @k @a m node i b. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }
+dispatched :: forall k a m node i b. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }
 dispatched f w = withStructuralOrd @k (wrap do
   hooks <- hosting w
   liftEffect do
@@ -1677,7 +1678,7 @@ dispatched f w = withStructuralOrd @k (wrap do
 -- | for keyed streams: the aggregate as running state, built one entity at a
 -- | time. Emits `[]` for no keys yet only in the sense that nothing has been
 -- | fed; order is first-appearance order.
-accumulated :: forall @k @a m node i. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a a -> PUI m i (Array a)
+accumulated :: forall k a m node i. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a a -> PUI m i (Array a)
 accumulated f w = withStructuralOrd @k (wrap do
   hooks <- hosting w
   liftEffect do

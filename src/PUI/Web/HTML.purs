@@ -450,7 +450,7 @@ h6 :: Ocular (PUI Web)
 h6 = el "h6"
 
 -- | Mount the app in the page's `<body>` — the one call an application
--- | makes: `body $ with initialOrder $ …` or `body $ … $ screen # looped @( … )
+-- | makes: `body $ with initialOrder $ …` or `body $ … $ screen # looped
 -- | # with initialGame`. This is the plain-HTML floor's entry; every design-system
 -- | module exports a `body` of the same signature that first dresses the
 -- | page for its catalogue (MDC2's typography baseline, MDC3's typescale

@@ -16,14 +16,14 @@ inbox :: Effect Unit
 inbox =
   body $ Semigroupoid.do
     caption $ text unreadLine
-    ( banner $ staticText "Inbox zero!" ) # inCase @"empty" @( empty :: {}, filled :: {} ) inboxState
+    ( banner $ staticText "Inbox zero!" ) # inCase @"empty" inboxState
     RecordToVariant.do
       ( listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } $ span $ text messageLine ) # joined @"Message opened"
       ( Semigroupoid.do
         headline6 $ text subjectLine
         body2 $ text fromLine
         body1 $ text bodyText
-        iconButton @"Delete message" "delete" ) # provided @"reading" @( reading :: {}, browsing :: {} ) messageView
+        iconButton @"Delete message" "delete" ) # provided @"reading" messageView
       ( dialog "Delete the last message?" $ RecordToVariant.do
         button @"Delete"
         button @"Keep" ) # providedAt @"confirming" @"deletion"
@@ -41,7 +41,4 @@ inbox =
       fold @"By sender" sortBySender
       fold @"By subject" sortBySubject
       fold @"Unread first" sortUnreadFirst
-  # looped
-    @( messages :: Array { id :: Int, sender :: String, subject :: String, body :: String, status :: [ unread :: {}, read :: {}, open :: {} ] }
-     , deletion :: [ silent :: {}, confirming :: {} ]
-     ) # with mondayMail
+  # looped # with mondayMail

@@ -16,21 +16,17 @@ import TicTacToe (cellMark, cells, claimCell, gameOutcome, openingPosition, toMo
 ticTacToe :: Effect Unit
 ticTacToe =
   body $ Semigroupoid.do
-    ( headlineSmall $ text wonLine ) # inCase @"won" @( won :: {}, drawn :: {}, toMove :: {} ) gameOutcome
+    ( headlineSmall $ text wonLine ) # inCase @"won" gameOutcome
     ( headlineSmall $ staticText "Draw" ) # inCase @"drawn" gameOutcome
     ( headlineSmall $ text toMoveLine ) # inCase @"toMove" gameOutcome
     RecordToVariant.do
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-        ( attrWith "style" cellFace $ tile @"Cell claimed" @"key" $ text cellMark ) # anyOf @"key"
-          @( key :: String
-           , mark :: [ x :: {}, o :: {}, free :: {} ]
-           , line :: [ winning :: {}, plain :: {} ]
-           ) cells ) # joined @"Cell claimed"
+        ( attrWith "style" cellFace $ tile @"Cell claimed" @"key" $ text cellMark ) # anyOf @"key" cells ) # joined @"Cell claimed"
       button' @"New game" { icon: "replay" }
     VariantToRecord.do
       fold @"Cell claimed" claimCell
       reset @"New game" openingPosition
-  # looped @( board :: Array [ x :: {}, o :: {}, free :: {} ] ) # with openingPosition
+  # looped # with openingPosition
 
 cellFace :: { key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String
 cellFace { line } = cellStyle <> match { winning: \_ -> "background: #a5d6a7;", plain: \_ -> "background: #eceff1;" } line

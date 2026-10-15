@@ -46,18 +46,6 @@ espressoBar =
         fold @"The usual" theUsual
         fold @"Espresso, no frills" espressoNoFrills
         ( Semigroupoid.do
-          indeterminateLinearProgress # action @"Place order" @( "Order placed" :: {} ) placeOrder
+          indeterminateLinearProgress # action @"Place order" @( "Order placed" :: _ ) placeOrder
           snackbar @"Order placed" (const usualOrder) )
-    # looped
-      @( "Your name" :: String
-       , "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]
-       , "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ]
-       , "Milk" :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ]
-       , "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ]
-       , "Sugar" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-       , "Extra shot" :: Boolean
-       , "Decaf" :: Boolean
-       , "Takeaway cup" :: Boolean
-       , "Mark as favorite" :: Boolean
-       , "Loyalty member" :: [ member :: {}, guest :: {} ]
-       ) # with usualOrder
+    # looped # with usualOrder
