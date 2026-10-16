@@ -281,6 +281,18 @@
 -- |      renderings rather than up to stutter, exactly one;
 -- |      at `×→+` by nothing — a feed arms a source and never fires it.
 -- |
+-- | The two halves of law 2 differ in **reach**. The `×→+` half is a law
+-- | of every `×→+` stage however it is built: `>>>` keeps it, since a
+-- | `+→+` never originates an occurrence and a `×→×` stage before the
+-- | emitter only feeds it. The `×→×` half is a **leaf** law, kept by the
+-- | merges (5), by `>>>` of answering stages and by the `×→×` words, and
+-- | **lost where the route passes through a variant**: `emitter >>> fold`
+-- | is `×→×` by type and releases on occurrences, never on a feed. Every
+-- | app's loop body is that stage, and it is lawful — as a knot's body,
+-- | and anywhere after what must show at mount — owing only that whatever
+-- | it releases is a whole row. So the type says a stage's shape, not
+-- | whether it answers: a stage answers iff its route stays at `×`.
+-- |
 -- | **Merge laws** — for each of the four merge classes, `m = merge w1 w2`,
 -- | `u` the shape's unit and `π_k` the projection of the merge's input onto
 -- | operand `k`: the whole row at a record input, the occurrences of `k`'s
@@ -317,10 +329,13 @@
 -- | action's exact outcomes into the block's row. At a record output the
 -- | trim is `exactRow`, the runtime evidence `OwnedRecordOutputs` carries,
 -- | so an operand's stale runtime copy of a sibling's field never shadows
--- | the sibling. Law 2's liveness half is a **leaf** law: a stage may
--- | refine it in time (`confirmed` releases on confirmation, the gather
--- | gate once every element has spoken), and by 6 the merge refines with
--- | it. `{}` is always known, so a `{}`-input component counts registration
+-- | the sibling. Law 2's liveness half is a **leaf** law (above): a stage
+-- | may refine it in time (`confirmed` releases on confirmation, the gather
+-- | gate once every element has spoken), by 6 the merge refines with
+-- | it, and a route through a variant does not owe it. 5 is conditional
+-- | on its operands for the same reason: a merge of answering operands
+-- | answers; one with an event-driven operand releases on that operand's
+-- | occurrences. `{}` is always known, so a `{}`-input component counts registration
 -- | as its feed (`announce`, the point), and a display is a stage that
 -- | answers with the row it shows. The `×→×` unit is the `{}` wire at
 -- | the merge's own input, `lcmap (const {}) identity`: the

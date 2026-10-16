@@ -88,7 +88,7 @@ combinator laws below fail without them.
    (its `coresolve` re-feeds the last input on every emission), and
    `seeded a >>> seeded a ≈ seeded a`. The focus-guarded text fields and
    `settled`'s idempotence contract are both instances of this law.
-2. **Record-echo totality** — a *record-shaped* citizen answers every
+2. **Record-echo totality** — a *record-shaped* **leaf** answers every
    feed with one emission of the **whole** fed row (displays release it,
    editors echo it with the background re-attached, `identity` is the echo
    wire — every record-shaped leaf). What keeps the gated merges live
@@ -96,10 +96,19 @@ combinator laws below fail without them.
    halves of different strength: **row totality** — whatever is
    released is the whole fed row — holds on the nose for every published
    stage; **feed liveness** — every feed is answered, once — holds for
-   every leaf and the instant rungs and is *refined*, not broken, at
+   every leaf and the instant rungs, is kept by the merges, by `>>>` of
+   answering stages and by the `×→×` words, is *refined*, not broken, at
    exactly two sorts of place: in **time** by the witness rung
    (`confirmed` releases on confirmation; a declined reading withholds) and
-   the gather gate (`acted` releases once every element has spoken). There
+   the gather gate (`acted` releases once every element has spoken) —
+   and is **not owed** by a `×→×` stage whose route passes through a
+   variant. `emitter >>> fold` is `×→×` by type and releases on
+   occurrences, never on a feed: it is every app's loop body, lawful as
+   the knot's body and after what must show at mount, and it owes
+   only row totality. Liveness is therefore a property of a stage's
+   *route*, not its type: a stage answers iff its route stays at `×`,
+   and `>>>` preserves liveness only there. (Its sibling, law 3, has no
+   such limit — §3.1.) There
    is no refinement in **value**: the selectors are plain editors,
    `{ l :: f | r } → { l :: f | r }`, answering every feed with the row,
    the unmade state a value of `f` rather than a missing one (`f` a
@@ -120,7 +129,10 @@ combinator laws below fail without them.
    Forwarding an occurrence that *arrived* — `identity` at
    `+→+` emits inside `toUser` — is a response to an input event, not
    an echo of a feed, and is not what this law forbids; the law is about
-   sources (§3.1).
+   sources (§3.1). Unlike law 2's liveness, this law is **closed under
+   `>>>`**: a `×→×` stage before a source only feeds it, and a `+→+`
+   after it never originates, so every `×→+` stage, however built,
+   emits nothing on a feed. It is the half that keeps a loop settling.
 
    The law is about **shape**, and every published component has the
    shape of its behaviour: a variant stands at channel position only as
@@ -159,7 +171,7 @@ channel, so it cannot count. What `≈` states is that every feed is
 answered and every emission of its step equals the step's last (no torn
 row); "exactly once" is the renderings-level guarantee of the step (§4),
 and the liveness half is a leaf law a stage may refine in time (`confirmed`,
-the gather gate).
+the gather gate) and a route through a variant does not owe.
 
 ### 3.1 Echo by shape: must, must not, may, may
 
@@ -169,8 +181,8 @@ by a feed, "release" the same act over retained state):
 
 | shape | on input | modality | what stays obligatory | unit |
 | --- | --- | --- | --- | --- |
-| `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) | the `{}` wire at the merge's row, `lcmap (const {}) identity`; `identity` only at `{}` |
-| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (every emitter's replay protocol — `joined @l`, `first` around the source with the fed row on the state channel, so the replay is `Strong`'s retention and the protocol its primed law) or at quiescence (`resolve`) (law 3) | the carrier's silent component (`PUI`'s private `silent`) |
+| `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) — a **leaf** law, kept along a route that stays at `×`; a route through a variant (`emitter >>> fold`, every loop's body) owes only wholeness | the `{}` wire at the merge's row, `lcmap (const {}) identity`; `identity` only at `{}` |
+| `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (every emitter's replay protocol — `joined @l`, `first` around the source with the fed row on the state channel, so the replay is `Strong`'s retention and the protocol its primed law) or at quiescence (`resolve`) (law 3) — a law of **every** `×→+` stage, `>>>`-closed | the carrier's silent component (`PUI`'s private `silent`) |
 | `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is the well-foundedness of any `unleft` re-entry | `identity`, the forward wire |
 | `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is the whole row, one operand's own — a fold's next model — so a change can never stay private; a status releases nothing and is typed at every row | `lcmap case_ identity`, the never-fed wire |
 
@@ -188,6 +200,14 @@ a fabricated event, forbidden; from an occurrence it is a response,
 permitted. The two off-diagonal "wires", replay and retention, are carrier
 structure rather than `Category`'s — one needs time, the other a `Ref` —
 which is §5's asymmetry seen from the components.
+
+The two "must" rows differ in reach. "Must not" is closed under
+composition, so it is read off the type: any `×→+` stage obeys it. "Must"
+is a leaf obligation the type does not carry: `>>>` keeps it only while
+the route stays at `×`, and a `×→×` stage routed through a variant answers
+on occurrences instead. The type therefore says a stage's shape, and the
+route says whether it answers — which is why what must show at mount
+stands before a loop's emitters and folds, never after them.
 
 The two record-output rows differ in modality for one reason. At `×→×` the
 input *is* the state, so an unanswered feed is state hidden from downstream
@@ -276,18 +296,23 @@ Read as a contract: the provider owes §3's protocol at every leaf (the
 headers' *Repetition* and *Answer*), the carrier owes the four merge laws
 (monoid, projection, preservation, monotonicity — `Data.Profunctor.Row`,
 "The laws"), and the application gets, for free and at every depth:
-a merge is again a lawful component; operand order and nesting are not
-boundary-observable; an operand is fed exactly its projection of the input
-and never a sibling's emission; a multi-field feed is released once and
-whole; a feed never fires a source, so re-broadcast loops settle; a
-quieter stage substituted anywhere only withholds; and a silent gate is
-either an operand breaking *Answer* (after its owned fields were fed) or
-an unprimed owned field (before), which the watchdog names. What stays
-outside: leaf conformance itself, the payload contracts of `listOf`/`tile` and
-`focusField`, rendering counts (the boundary laws hold up to stutter; the step's
-one release per feed is this carrier's, §4), and a variant input's response
-policy. The application-side statement is writing.md *What the laws
-guarantee*.
+a merge of answering operands is again an answering component, and a
+merge is a lawful component of its shape either way; operand order and
+nesting are not boundary-observable; an operand is fed exactly its
+projection of the input and never a sibling's emission; a multi-field
+feed is released once and never torn; a feed never fires a source — any
+`×→+` stage, however built — so re-broadcast loops settle; a quieter
+stage substituted anywhere only withholds; and a silent gate is either
+an operand that did not answer (after its owned fields were fed: a leaf
+breaking *Answer*, or an event-driven stage — a route through a variant
+— placed where an answering operand was needed) or an unprimed owned
+field (before), which the watchdog names. What stays outside: leaf
+conformance itself, the payload contracts of `listOf`/`tile` and
+`focusField`, rendering counts (the boundary laws hold up to stutter; the
+step's one release per feed is this carrier's, §4), whether a `×→×` stage
+answers at all (a property of its route, not its type — law 2), and a
+variant input's response policy. The application-side statement is
+writing.md *What the laws guarantee*.
 
 ## 4. Named deviations from ecosystem laws
 

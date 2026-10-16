@@ -8,6 +8,32 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-16, latest
 
+- **Answer's `×→×` half is a leaf law; its `×→+` half is a law of every
+  stage.** The headers and doc §3 stated Answer per shape, as if any
+  `×→×`-typed stage answered its feeds, and listed `confirmed` and the
+  gather gate as the only two places liveness is refined. But
+  `emitter >>> fold` — every app's loop body — is `×→×` by type and
+  releases on occurrences only, so it contradicted every such statement
+  while being exactly what `looped` is for. Audited what the
+  stage-level reading had been carrying: transport and gate priming
+  need only leaves to answer (demos already order what must show at
+  mount before the loop's emitters); "every field fresh" was already
+  false for sources, which answer with the platform's value, not the
+  feed's; the denotational claim rested on Repetition, not Answer; and
+  "loops settle" was owed to the `×→+` half (a feed never fires an
+  emitter), not the `×→×` one. So the law is now stated with its reach:
+  the `×→+` half is `>>>`-closed and read off the type, the `×→×` half is
+  owed by leaves, kept by the merges, by `>>>` of answering stages and
+  by the `×→×` words, and not owed by a route through a variant, which
+  owes only row totality — a stage answers iff its route stays at `×`.
+  Preservation at `×→×` is conditional on its operands answering (the
+  no-torn clause is not). Restated in `Data.Profunctor.Row` "The laws",
+  `RecordToRecord`'s laws, doc §3 law 2 and 3, §3.1 and §3.3,
+  writing.md *What the laws guarantee* ("a change arrives whole" keeps
+  once-and-untorn and drops "every field fresh"; "a blank pane" gains
+  the line-after-an-event case) and CLAUDE.md. No code or test changed:
+  the tests exercise leaves and merges of leaves, where the law reads as
+  before.
 - **`action @l f`: an action takes one label; its outcomes are closed by
   what tells them.** `action @l @t` was the one word taking a visible
   row, the outcome labels it needed to widen itself into its block

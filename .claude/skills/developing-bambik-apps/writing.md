@@ -899,18 +899,21 @@ give you while writing:
   value and never a sibling's emission, so a misbehaving line is found
   by reading that line. Lines influence each other only through a loop
   you wrote (`looped`).
-- **A change arrives whole.** A change to several fields renders once,
-  every field fresh — never a half-updated row. Business functions read
-  consistent state.
+- **A change arrives whole.** A change to several fields is released
+  once, never as a half-updated row. Business functions read consistent
+  state.
 - **Showing state never fires an event.** Feeding a button, a list or a
   selector the model does not make it emit; only the user does. So the
   loop can feed its emitters freely, and settles instead of spinning.
 - **Waiting is safe.** Putting a stage that holds things back —
   `confirmed`, `acted`, a debounce — anywhere only delays what flows; it
   never produces a new or inconsistent value.
-- **A blank pane is a missing seed.** A merge that shows nothing is
-  waiting for a field nobody has given a value; the watchdog names it
-  (below).
+- **A blank pane is a missing seed — or a line after an event.** A
+  merge that shows nothing is waiting for a field nobody has given a
+  value; the watchdog names it (below). A line that shows nothing until
+  the first click stands after the loop's emitters and folds: that pair
+  is one stage that releases on events, not on the seed, so what must
+  show at mount stands before it ([App shape](#app-shape)).
 - **Design systems are interchangeable.** The laws are about shapes, so
   a twin over another design system behaves the same.
 

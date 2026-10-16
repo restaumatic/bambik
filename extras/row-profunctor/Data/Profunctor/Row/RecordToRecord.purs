@@ -54,10 +54,17 @@
 -- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`.
 -- |   2. **Answer** — a row, once: every feed is answered within its step
 -- |      by at least one emission, all equal to the step's last; counting
--- |      renderings, exactly one. Leaves answer on the nose (`identity` is
--- |      the echo wire, `focusField @l` the echo with its background); a stage
--- |      may refine the liveness half in time (`confirmed`, the gather
--- |      gate). A display answers with the row it shows.
+-- |      renderings, exactly one. A **leaf** law: leaves answer on the nose
+-- |      (`identity` is the echo wire, `focusField @l` the echo with its
+-- |      background), a display answers with the row it shows, and a stage
+-- |      built from them without a variant keeps it — by `>>>`, by 5, by
+-- |      the `×→×` words — refining the liveness half at most in time
+-- |      (`confirmed`, the gather gate). A route through a variant,
+-- |      `emitter >>> fold`, is `×→×` by type and answers no feed: it
+-- |      releases on occurrences, owing only that each release is a
+-- |      whole row. That stage is every loop's body and is lawful as
+-- |      such; it is only no answering operand, so what must show at
+-- |      mount stands before it, never after.
 -- |   3. **Monoid** — unit the `{}` wire at the merge's row,
 -- |      `e = lcmap (const {}) identity`, exact:
 -- |      `recordToRecord e g = g = recordToRecord g e`;
@@ -71,10 +78,12 @@
 -- |      emission never reaches it; cross-feed is `looped`'s, and only
 -- |      there. `exact` trims:
 -- |      `recordToRecord w1 w2 ≈ recordToRecord (rmap exactRow w1) w2`.
--- |   5. **Preservation** — `m` obeys 1 and 2: one release per feed, the
--- |      union of both answers, so a feed changing several fields never
--- |      emits a torn row; a one-sided emission is completed from the
--- |      sibling's last contribution.
+-- |   5. **Preservation** — if `w1` and `w2` obey 1 and 2, `m` does: one
+-- |      release per feed, the union of both answers, so a feed changing
+-- |      several fields never emits a torn row; a one-sided emission is
+-- |      completed from the sibling's last contribution. The no-torn
+-- |      clause holds of every operand; the one-release clause needs
+-- |      both to answer.
 -- |   6. **Monotonicity** — `w1 ⊑ w1'` implies
 -- |      `recordToRecord w1 w2 ⊑ recordToRecord w1' w2`.
 -- |
@@ -83,7 +92,10 @@
 -- | value; the merge releases once every owned field is known, withholds
 -- | and drops before. An operand owning no field enrols nothing, so it is
 -- | born satisfied and never starves its sibling. A merge silent after its
--- | first feed has an operand breaking 2; one silent before any feed is
+-- | first feed has an operand that did not answer — a leaf breaking 2, or
+-- | an event-driven stage (a route through a variant) owning fields,
+-- | which answers on its occurrence and which the watchdog cannot tell
+-- | from a breach; one silent before any feed is
 -- | unprimed (`with`, `seeded`, or a source, pointed by construction — the
 -- | merge's application use, sources each owning its field and released
 -- | together at registration). Probes carry law and shape in test/Main.purs;

@@ -132,7 +132,11 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   writing.md *What the laws guarantee*, doc §3.3 for the semantics) with
   their per-shape modalities (§3.1: `×→×` **must** echo, `×→+` **must not**,
   `+→+` and `+→×` **may** — output shape decides whether an echo is owed,
-  input shape how it is discharged), §3.2's account of what a `×→×` gate
+  input shape how it is discharged; the two musts differ in reach: "must
+  not" is `>>>`-closed and read off the type, "must" is a leaf law kept
+  only along a route that stays at `×` — `emitter >>> fold`, every loop's
+  body, is `×→×` by type and answers no feed, owing only wholeness, so a
+  stage answers iff its route has no variant), §3.2's account of what a `×→×` gate
   waits for (**owned fields only** — a display never enters it, its `{}`
   per feed being the feed's answer, inert to gates and real only to
   sequencing; starvation is always a priming failure of an owned field,
