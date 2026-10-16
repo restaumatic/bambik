@@ -541,7 +541,7 @@ The codebase is three floors, each greppable:
   target `import Data.Profunctor (`/`.Strong`/... exactly.)
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:
-  `wrap`/`unwrap`, `PUI.Web`, FFI) plus the row vocabulary — the words
+  `fromHandles`/`handles`, `PUI.Web`, FFI) plus the row vocabulary — the words
   applications use (`static`), the floor's adopter a face is
   placed at (`atCase @l`) and the leaf lift `focusField`
   from its shape module.

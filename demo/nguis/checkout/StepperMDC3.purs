@@ -7,7 +7,6 @@ import Data.Array (length, (!!))
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.Structural (withStructuralEq)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (for)
@@ -15,7 +14,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
-import PUI (PUI)
+import PUI (PUI, fromHandles, handles)
 import PUI.Web (Node, Web, addClass, appendChild, clazz, createTextNode, element, ensureStyle, escaped, listenNode, removeAttribute, removeClass, selectedAt, selectorWiring, setAttribute, setTextNodeValue, staticHTML, (:=))
 import PUI.Web.HTML (div)
 import Type.Proxy (Proxy(..))
@@ -25,14 +24,14 @@ stepper steps = withStructuralEq @a (selectedAt @l $ "name" := reflectSymbol (Pr
 
 stepperLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
 stepperLeaf steps =
-  div >>> "class" := "md3-stepper" >>> "role" := "group" $ wrap do
+  div >>> "class" := "md3-stepper" >>> "role" := "group" $ fromHandles do
     liftEffect $ ensureStyle "md3-stepper" stepperCss
     back <- navButton "chevron_left" "Back"
     { dots, caption } <- element "div" do
-      dots <- element "div" (for steps \_ -> unwrap (staticHTML "<span class=\"md3-stepper__dot\" aria-hidden=\"true\"></span>") *> lastBuilt)
+      dots <- element "div" (for steps \_ -> handles (staticHTML "<span class=\"md3-stepper__dot\" aria-hidden=\"true\"></span>") *> lastBuilt)
       clazz "md3-stepper__dots"
       caption <- liftEffect $ createTextNode ""
-      _ <- unwrap (staticHTML "<span class=\"md3-stepper__caption\" aria-live=\"polite\"></span>")
+      _ <- handles (staticHTML "<span class=\"md3-stepper__caption\" aria-live=\"polite\"></span>")
       lastBuilt >>= \span -> liftEffect $ appendChild caption span
       pure { dots, caption }
     clazz "md3-stepper__progress"
@@ -63,7 +62,7 @@ stepperLeaf steps =
 
 navButton :: String -> String -> Web Node
 navButton icon caption = do
-  _ <- unwrap (staticHTML ("<md-text-button><md-icon slot=\"icon\">" <> escaped icon <> "</md-icon>" <> escaped caption <> "</md-text-button>"))
+  _ <- handles (staticHTML ("<md-text-button><md-icon slot=\"icon\">" <> escaped icon <> "</md-icon>" <> escaped caption <> "</md-text-button>"))
   lastBuilt
 
 lastBuilt :: Web Node
