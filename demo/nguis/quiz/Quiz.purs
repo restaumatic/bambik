@@ -1,4 +1,4 @@
-module Quiz (answer, askedPrompt, choices, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
+module Quiz (QuizRun, answer, askedPrompt, choices, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
 
 import Prelude (show, (+), (/), (<>), (==), min)
 
@@ -6,13 +6,15 @@ import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..), maybe)
 
-freshQuizRun :: { correct :: Int, question :: Int }
+type QuizRun = { correct :: Int, question :: Int }
+
+freshQuizRun :: QuizRun
 freshQuizRun = { question: 0, correct: 0 }
 
-quizProgress :: { correct :: Int, question :: Int } -> Number
+quizProgress :: QuizRun -> Number
 quizProgress { question } = toNumber question / toNumber (length questionCatalogue)
 
-questionLine :: { correct :: Int, question :: Int } -> String
+questionLine :: QuizRun -> String
 questionLine { question, correct } = "Question " <> show (min (question + 1) (length questionCatalogue)) <> " of " <> show (length questionCatalogue) <> " · Score " <> show correct
 
 questionCatalogue :: Array { prompt :: String, choices :: Array String, answer :: Int }
@@ -24,23 +26,21 @@ questionCatalogue =
   , { prompt: "How many continents are there?", choices: [ "five", "six", "seven", "eight" ], answer: 2 }
   ]
 
-answer
-  :: { event :: Int, model :: { correct :: Int, question :: Int } }
-  -> { correct :: Int, question :: Int }
+answer :: { event :: Int, model :: QuizRun } -> QuizRun
 answer { event: choice, model: run@{ question, correct } } = case index questionCatalogue question of
   Just q -> run { question = question + 1, correct = correct + if choice == q.answer then 1 else 0 }
   Nothing -> run
 
-quizPhase :: { correct :: Int, question :: Int } -> [ asking :: {}, finished :: {} ]
+quizPhase :: QuizRun -> [ asking :: {}, finished :: {} ]
 quizPhase { question } = case index questionCatalogue question of
   Just _ -> .asking {}
   Nothing -> .finished {}
 
-askedPrompt :: { correct :: Int, question :: Int } -> String
+askedPrompt :: QuizRun -> String
 askedPrompt { question } = maybe "" _.prompt (index questionCatalogue question)
 
-choices :: { correct :: Int, question :: Int } -> Array { choice :: String, key :: Int }
+choices :: QuizRun -> Array { choice :: String, key :: Int }
 choices { question } = maybe [] (\q -> mapWithIndex (\i choice -> { key: i, choice }) q.choices) (index questionCatalogue question)
 
-finalScoreLine :: { correct :: Int, question :: Int } -> String
+finalScoreLine :: QuizRun -> String
 finalScoreLine { correct } = "Final score: " <> show correct <> " / " <> show (length questionCatalogue)

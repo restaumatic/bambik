@@ -1,4 +1,4 @@
-module Stopwatch (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch) where
+module Stopwatch (Lap, Stopwatch, beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch) where
 
 import Prelude ((<>), (+), (<), show)
 
@@ -6,50 +6,43 @@ import Data.Array (mapWithIndex, snoc)
 import Data.Int (quot, rem)
 import Data.Variant (match)
 
-zeroedStopwatch
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+type Stopwatch =
+  { elapsedTenths :: Int
+  , laps :: Array Int
+  , phase :: [ halted :: {}, timing :: {} ]
+  }
+
+type Lap = { number :: Int, tenths :: Int }
+
+zeroedStopwatch :: Stopwatch
 zeroedStopwatch = { phase: .halted {}, elapsedTenths: 0, laps: [] }
 
-elapsedText
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> String
+elapsedText :: Stopwatch -> String
 elapsedText { elapsedTenths } = formatTime elapsedTenths
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 100.0 }
 
-beginTiming
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+beginTiming :: Stopwatch -> Stopwatch
 beginTiming sw = sw { phase = .timing {} }
 
-haltTiming
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+haltTiming :: Stopwatch -> Stopwatch
 haltTiming sw = sw { phase = .halted {} }
 
-recordLap
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+recordLap :: Stopwatch -> Stopwatch
 recordLap sw@{ laps, elapsedTenths } = sw { laps = snoc laps elapsedTenths }
 
-clearStopwatch
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+clearStopwatch :: Stopwatch -> Stopwatch
 clearStopwatch sw = sw { elapsedTenths = 0, laps = [] }
 
-tick
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
+tick :: Stopwatch -> Stopwatch
 tick sw@{ phase, elapsedTenths } =
   match { timing: \_ -> sw { elapsedTenths = elapsedTenths + 1 }, halted: \_ -> sw } phase
 
-lapRows
-  :: { elapsedTenths :: Int, laps :: Array Int, phase :: [ halted :: {}, timing :: {} ] }
-  -> Array { number :: Int, tenths :: Int }
+lapRows :: Stopwatch -> Array Lap
 lapRows { laps } = mapWithIndex (\i t -> { number: i + 1, tenths: t }) laps
 
-lapLine :: { number :: Int, tenths :: Int } -> String
+lapLine :: Lap -> String
 lapLine { number, tenths } = "Lap " <> show number <> " — " <> formatTime tenths
 
 formatTime :: Int -> String

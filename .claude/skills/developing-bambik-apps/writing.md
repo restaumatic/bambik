@@ -604,11 +604,13 @@ text is computed, a chrome line nothing.
 ### Types and values
 
 - **The model is stated once, in the view model module.** The seed's
-  signature is the model row (`freshCount :: { counted :: Int }`), and
+  signature is the model row (`freshCount :: Count`, `type Count =
+  { counted :: Int }`), and
   every other row is the signature of the function that brings it: a
   classifier's cases (`quizPhase :: … -> [ asking :: {}, finished :: {} ]`,
   quiz), an action's outcomes, a projection's element row
-  (`lapRows :: … -> Array { number :: Int, tenths :: Int }`, stopwatch).
+  (`lapRows :: … -> Array Lap`, `type Lap = { number :: Int, tenths ::
+  Int }`, stopwatch).
   The view writes none of them (`# looped # with freshCount`, `# provided
   @"asking" quizPhase`, `# foreach @"number" lapRows`), and every
   editor, selector, list and field label it names is checked against
@@ -666,7 +668,8 @@ text is computed, a chrome line nothing.
   headlineSmall $ text balanceLine
   ```
 
-  with `balanceLine :: { balance :: Number } -> String`. A
+  with `balanceLine :: Till -> String`, `type Till = { balance ::
+  Number }`. A
   display that shows one field as it is stored names the field
   (`textAt @"title"`). A number drawn as a bar is a function too — a
   fraction is derived from state, like a sentence. A model field exists
@@ -716,8 +719,8 @@ text is computed, a chrome line nothing.
 - **The signature is the hint with its tails filled.** Every business
   function is typed as the view reports it, each unknown filled once
   and the same everywhere it appears: the row the stage is fed, closed
-  (`Record t0 -> String` reported, `countLine :: { counted :: Int } ->
-  String` written). Never narrowed to the
+  (`Record t0 -> String` reported, `countLine :: Count -> String`
+  written, `type Count = { counted :: Int }`). Never narrowed to the
   fields the body reads, never opened with a tail, never coerced at the
   call site. Which fields the body uses is the body's business; the
   compiler checks the body against the row it is given. A name two lines
@@ -861,9 +864,10 @@ the watch build running ([building.md](building.md)):
    because `providedAt @"confirming" @"deletion"` says so.
 3. **Write the signatures down: the hint with its tails filled.** Fill
    each unknown once, and the same everywhere it appears: counter's `t0`
-   is `counted :: Int`, so `countLine :: { counted :: Int } -> String`,
-   `increment :: { counted :: Int } -> { counted :: Int }`, `freshCount ::
-   { counted :: Int }`. Close every row: a filled tail adds the fields
+   is `counted :: Int`, so the model is `{ counted :: Int }` — named
+   once, `type Count = { counted :: Int }` — and `countLine :: Count ->
+   String`, `increment :: Count -> Count`, `freshCount :: Count`. Close
+   every row: a filled tail adds the fields
    and cases only business functions reach, and the result is the row
    the stage is fed, its fields in the compiler's order. Do not narrow it
    to the fields the body reads and do not leave a tail open: which

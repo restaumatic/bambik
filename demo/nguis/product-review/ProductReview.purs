@@ -1,4 +1,4 @@
-module ProductReview (freshImpression, previewLine, submitReview) where
+module ProductReview (Review, freshImpression, previewLine, submitReview) where
 
 import Prelude (discard, pure, (<>), (-))
 
@@ -8,17 +8,16 @@ import Data.String (toLower, trim)
 import Data.Variant.Case (caseText)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
-freshImpression
-  :: { "Headline" :: String
-     , "Owned for" :: [ "Up to a year" :: {}
-                                        , "Under a month" :: {}
-                                        , "Over a year" :: {}
-                                        ]
-     , "Recommend to a friend" :: Boolean
-     , "Nickname" :: String
-     , "Overall rating" :: { current :: Number, max :: Int }
-     , "Review" :: String
-     }
+type Review =
+  { "Headline" :: String
+  , "Owned for" :: [ "Up to a year" :: {}, "Under a month" :: {}, "Over a year" :: {} ]
+  , "Recommend to a friend" :: Boolean
+  , "Nickname" :: String
+  , "Overall rating" :: { current :: Number, max :: Int }
+  , "Review" :: String
+  }
+
+freshImpression :: Review
 freshImpression =
   { "Overall rating": { current: 0.0, max: maxStars }
   , "Headline": ""
@@ -28,43 +27,11 @@ freshImpression =
   , "Nickname": ""
   }
 
-previewLine
-  :: { "Headline" :: String
-     , "Owned for" :: [ "Up to a year" :: {}
-                                        , "Under a month" :: {}
-                                        , "Over a year" :: {}
-                                        ]
-     , "Recommend to a friend" :: Boolean
-     , "Nickname" :: String
-     , "Overall rating" :: { current :: Number, max :: Int }
-     , "Review" :: String
-     }
-  -> String
+previewLine :: Review -> String
 previewLine r =
   "Preview: " <> starGlyphs r."Overall rating" <> headlineQuote r."Headline" <> " · owned for " <> toLower (caseText r."Owned for") <> recommendNote r."Recommend to a friend"
 
-submitReview
-  :: { "Headline" :: String
-     , "Owned for" :: [ "Up to a year" :: {}
-                                        , "Under a month" :: {}
-                                        , "Over a year" :: {}
-                                        ]
-     , "Recommend to a friend" :: Boolean
-     , "Nickname" :: String
-     , "Overall rating" :: { current :: Number, max :: Int }
-     , "Review" :: String
-     }
-  -> Aff [ "Review submitted" :: { "Headline" :: String
-                                 , "Owned for" :: [ "Up to a year" :: {}
-                                                                    , "Under a month" :: {}
-                                                                    , "Over a year" :: {}
-                                                                    ]
-                                 , "Recommend to a friend" :: Boolean
-                                 , "Nickname" :: String
-                                 , "Overall rating" :: { current :: Number, max :: Int }
-                                 , "Review" :: String
-                                 }
-         ]
+submitReview :: Review -> Aff [ "Review submitted" :: Review ]
 submitReview review = do
   delay (Milliseconds submissionDelay.ms)
   pure (."Review submitted" review)

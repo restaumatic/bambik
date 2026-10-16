@@ -1,4 +1,4 @@
-module Potluck (guestCountLine, invitation, menuLine, menuState, waitingLine) where
+module Potluck (Dish, Guest, Invitation, guestCountLine, invitation, menuLine, menuState, waitingLine) where
 
 import Prelude ((#), (<>), map, show)
 
@@ -7,13 +7,13 @@ import Data.String (joinWith)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 
-invitation
-  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
-                                     , unchosen :: {}
-                                     ]
-                         , name :: String
-                         }
-     }
+type Dish = [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
+
+type Guest = { "Dish" :: [ chosen :: Dish, unchosen :: {} ], name :: String }
+
+type Invitation = { "Guests" :: Array Guest }
+
+invitation :: Invitation
 invitation =
   { "Guests":
     [ { name: "Ada", "Dish": .unchosen {} }
@@ -23,60 +23,23 @@ invitation =
     ]
   }
 
-guestCountLine
-  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
-                                     , unchosen :: {}
-                                     ]
-                         , name :: String
-                         }
-     }
-  -> String
+guestCountLine :: Invitation -> String
 guestCountLine { "Guests": guests } = show (length guests) <> " guests invited — everyone picks one dish; the menu prints once the table is complete."
 
-menuState
-  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
-                                     , unchosen :: {}
-                                     ]
-                         , name :: String
-                         }
-     }
-  -> [ complete :: {}, waiting :: {} ]
+menuState :: Invitation -> [ complete :: {}, waiting :: {} ]
 menuState invited = case table invited of
   { remaining: [] } -> .complete {}
   _ -> .waiting {}
 
-menuLine
-  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
-                                     , unchosen :: {}
-                                     ]
-                         , name :: String
-                         }
-     }
-  -> String
+menuLine :: Invitation -> String
 menuLine invited = "On the table: " <> joinWith ", " (map (\d -> d.name <> "’s " <> caseText d.dish) (table invited).dishes)
 
-waitingLine
-  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
-                                     , unchosen :: {}
-                                     ]
-                         , name :: String
-                         }
-     }
-  -> String
+waitingLine :: Invitation -> String
 waitingLine invited = "Still choosing: " <> joinWith ", " (table invited).remaining
 
 table
-  :: { "Guests" :: Array { "Dish" :: [ chosen :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
-                                     , unchosen :: {}
-                                     ]
-                         , name :: String
-                         }
-     }
-  -> { dishes :: Array { dish :: [ "Lasagna" :: {}, "Pavlova" :: {}, "Salad" :: {} ]
-                       , name :: String
-                       }
-     , remaining :: Array String
-     }
+  :: Invitation
+  -> { dishes :: Array { dish :: Dish, name :: String }, remaining :: Array String }
 table { "Guests": guests } = foldr sorted { dishes: [], remaining: [] } guests
   where
   sorted guest t = guest."Dish" # match

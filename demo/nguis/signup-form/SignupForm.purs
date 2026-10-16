@@ -1,4 +1,4 @@
-module SignupForm (availableLine, invalidLine, newApplicant, readyLine, signUp, takenLine, usernameSettleTime, usernameStatus, validation) where
+module SignupForm (Applicant, Consent, availableLine, invalidLine, newApplicant, readyLine, signUp, takenLine, usernameSettleTime, usernameStatus, validation) where
 
 import Prelude (const, discard, not, pure, (<>), (==))
 
@@ -8,13 +8,24 @@ import Data.String (Pattern(..), contains, trim)
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
-newApplicant
-  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
-     , "Email" :: String
-     , "Accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Username" :: String
-     }
+type Applicant =
+  { "Username" :: String
+  , "Email" :: String
+  , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+  , "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+  , "Accept the terms of service" :: Consent
+  }
+
+type Consent = [ accepted :: {}, declined :: {} ]
+
+type Refusal =
+  [ unnamed :: {}
+  , taken :: { "Username" :: String }
+  , badEmail :: {}
+  , termsUnaccepted :: {}
+  ]
+
+newApplicant :: Applicant
 newApplicant =
   { "Username": ""
   , "Email": ""
@@ -26,9 +37,7 @@ newApplicant =
 usernameSettleTime :: { ms :: Number }
 usernameSettleTime = { ms: 300.0 }
 
-refusalText
-  :: [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ]
-  -> String
+refusalText :: Refusal -> String
 refusalText = match
   { unnamed: const "choose a username"
   , taken: \{ "Username": username } -> "username " <> username <> " is taken"
@@ -38,14 +47,8 @@ refusalText = match
 
 validate
   :: forall r1.
-     { "Username" :: String
-     , "Email" :: String
-     , "Accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     | r1
-     }
-  -> Either
-       [ unnamed :: {}, taken :: { "Username" :: String }, badEmail :: {}, termsUnaccepted :: {} ]
-       String
+     { "Username" :: String, "Email" :: String, "Accept the terms of service" :: Consent | r1 }
+  -> Either Refusal String
 validate applicant@{ "Email": email, "Accept the terms of service": terms } =
   let username = trim applicant."Username"
   in
@@ -55,26 +58,7 @@ validate applicant@{ "Email": email, "Accept the terms of service": terms } =
     else if declined terms then Left (.termsUnaccepted {})
     else Right username
 
-signUp
-  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
-     , "Email" :: String
-     , "Accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Username" :: String
-     }
-  -> Aff [ "Account created" :: { "Country" :: [ "France" :: {}
-                                               , "Germany" :: {}
-                                               , "Poland" :: {}
-                                               , "Spain" :: {}
-                                               ]
-                                , "Email" :: String
-                                , "Accept the terms of service" :: [ accepted :: {}
-                                                                     , declined :: {}
-                                                                     ]
-                                , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-                                , "Username" :: String
-                                }
-         ]
+signUp :: Applicant -> Aff [ "Account created" :: Applicant ]
 signUp applicant = do
   delay (Milliseconds signupDelay.ms)
   pure (."Account created" applicant)
@@ -82,67 +66,25 @@ signUp applicant = do
 signupDelay :: { ms :: Number }
 signupDelay = { ms: 800.0 }
 
-validation
-  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
-     , "Email" :: String
-     , "Accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Username" :: String
-     }
-  -> [ invalid :: {}, ready :: {} ]
+validation :: Applicant -> [ invalid :: {}, ready :: {} ]
 validation applicant = either (const (.invalid {})) (const (.ready {})) (validate applicant)
 
-invalidLine
-  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
-     , "Email" :: String
-     , "Accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Username" :: String
-     }
-  -> String
+invalidLine :: Applicant -> String
 invalidLine applicant = either (\reason -> "⚠ " <> refusalText reason) (const "") (validate applicant)
 
-readyLine
-  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
-     , "Email" :: String
-     , "Accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Username" :: String
-     }
-  -> String
+readyLine :: Applicant -> String
 readyLine applicant = either (const "") (\name -> "Ready to sign up as " <> name) (validate applicant)
 
-usernameStatus
-  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
-     , "Email" :: String
-     , "Accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Username" :: String
-     }
-  -> [ available :: {}, taken :: {}, unnamed :: {} ]
+usernameStatus :: Applicant -> [ available :: {}, taken :: {}, unnamed :: {} ]
 usernameStatus { "Username": username } = case trim username of
   "" -> .unnamed {}
   name | usernameTaken name -> .taken {}
   _ -> .available {}
 
-takenLine
-  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
-     , "Email" :: String
-     , "Accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Username" :: String
-     }
-  -> String
+takenLine :: Applicant -> String
 takenLine { "Username": username } = "✗ " <> trim username <> " is already taken"
 
-availableLine
-  :: { "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
-     , "Email" :: String
-     , "Accept the terms of service" :: [ accepted :: {}, declined :: {} ]
-     , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-     , "Username" :: String
-     }
-  -> String
+availableLine :: Applicant -> String
 availableLine { "Username": username } = "✓ " <> trim username <> " is available"
 
 usernameTaken :: String -> Boolean
@@ -151,6 +93,6 @@ usernameTaken username = username `elem` takenUsernames
 takenUsernames :: Array String
 takenUsernames = [ "admin", "root", "guest", "eryk", "bambik" ]
 
-declined :: [ accepted :: {}, declined :: {} ] -> Boolean
+declined :: Consent -> Boolean
 declined = match { accepted: const false, declined: const true }
 

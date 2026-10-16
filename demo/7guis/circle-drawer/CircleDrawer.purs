@@ -1,4 +1,4 @@
-module CircleDrawer (canvasCircles, emptyCanvas, redo, resizeSelected, selectOrAddCircle, undo) where
+module CircleDrawer (Canvas, Circle, canvasCircles, emptyCanvas, redo, resizeSelected, selectOrAddCircle, undo) where
 
 import Prelude (show, (*), (+), (-), (/), (/=), (<$>), (<=), (==))
 
@@ -7,18 +7,23 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (sqrt)
 import Data.Variant (match)
 
-emptyCanvas
-  :: { "Diameter" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , circles :: Array { r :: Number, x :: Number, y :: Number }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     }
+type Canvas =
+  { "Diameter" ::
+    { current :: Number
+    , max :: Number
+    , min :: Number
+    , step :: [ continuous :: {}, discrete :: Number ]
+    }
+  , circles :: Array Circle
+  , drag :: [ adjusting :: {}, settled :: {} ]
+  , redoStack :: Array (Array Circle)
+  , selected :: [ chosen :: { index :: Int }, none :: {} ]
+  , undoStack :: Array (Array Circle)
+  }
+
+type Circle = { r :: Number, x :: Number, y :: Number }
+
+emptyCanvas :: Canvas
 emptyCanvas =
   { circles: []
   , selected: .none {}
@@ -38,137 +43,38 @@ freshCircleRadius :: Number
 freshCircleRadius = 20.0
 
 canvasCircles
-  :: { "Diameter" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , circles :: Array { r :: Number, x :: Number, y :: Number }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     }
-  -> Array { key :: String
-           , r :: String
-           , status :: [ selected :: {}, unselected :: {} ]
-           , x :: String
-           , y :: String
-           }
+  :: Canvas
+  -> Array
+       { key :: String
+       , r :: String
+       , status :: [ selected :: {}, unselected :: {} ]
+       , x :: String
+       , y :: String
+       }
 canvasCircles { circles, selected } = mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, status: statusOf i }) circles
   where
   statusOf i = match { chosen: \s -> if s.index == i then .selected {} else .unselected {}, none: \_ -> .unselected {} } selected
 
-selectOrAddCircle
-  :: { event :: { x :: Number, y :: Number }
-     , model :: { "Diameter" :: { current :: Number
-                                , max :: Number
-                                , min :: Number
-                                , step :: [ continuous :: {}, discrete :: Number ]
-                                }
-                , circles :: Array { r :: Number, x :: Number, y :: Number }
-                , drag :: [ adjusting :: {}, settled :: {} ]
-                , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-                , selected :: [ chosen :: { index :: Int }, none :: {} ]
-                , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-                }
-     }
-  -> { "Diameter" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , circles :: Array { r :: Number, x :: Number, y :: Number }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     }
+selectOrAddCircle :: { event :: { x :: Number, y :: Number }, model :: Canvas } -> Canvas
 selectOrAddCircle { event: { x, y }, model: m@{ circles, "Diameter": diameter, undoStack, redoStack } } = case findIndex (\c -> dist c x y <= c.r) circles of
   Just i -> m { selected = .chosen { index: i }, "Diameter" = diameter { current = fromMaybe diameter.current ((\c -> 2.0 * c.r) <$> index circles i) }, drag = .settled {} }
   Nothing ->
     let stacks = pushUndo { circles, undoStack, redoStack }
     in m { circles = snoc circles { x, y, r: freshCircleRadius }, selected = .none {}, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
 
-undo
-  :: { "Diameter" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , circles :: Array { r :: Number, x :: Number, y :: Number }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     }
-  -> { "Diameter" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , circles :: Array { r :: Number, x :: Number, y :: Number }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     }
+undo :: Canvas -> Canvas
 undo m@{ undoStack, redoStack, circles } = case unsnoc undoStack of
   Just { init: rest, last: prev } ->
     m { circles = prev, undoStack = rest, redoStack = snoc redoStack circles, selected = .none {}, drag = .settled {} }
   Nothing -> m
 
-redo
-  :: { "Diameter" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , circles :: Array { r :: Number, x :: Number, y :: Number }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     }
-  -> { "Diameter" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , circles :: Array { r :: Number, x :: Number, y :: Number }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     }
+redo :: Canvas -> Canvas
 redo m@{ redoStack, undoStack, circles } = case unsnoc redoStack of
   Just { init: rest, last: next } ->
     m { circles = next, redoStack = rest, undoStack = snoc undoStack circles, selected = .none {}, drag = .settled {} }
   Nothing -> m
 
-resizeSelected
-  :: { "Diameter" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , circles :: Array { r :: Number, x :: Number, y :: Number }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     }
-  -> { "Diameter" :: { current :: Number
-                     , max :: Number
-                     , min :: Number
-                     , step :: [ continuous :: {}, discrete :: Number ]
-                     }
-     , circles :: Array { r :: Number, x :: Number, y :: Number }
-     , drag :: [ adjusting :: {}, settled :: {} ]
-     , redoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     , selected :: [ chosen :: { index :: Int }, none :: {} ]
-     , undoStack :: Array (Array { r :: Number, x :: Number, y :: Number } )
-     }
+resizeSelected :: Canvas -> Canvas
 resizeSelected m@{ "Diameter": diameter, circles, selected, drag, undoStack, redoStack } = match
   { chosen: \s -> case index circles s.index of
     Just c | c.r /= diameter.current / 2.0 ->
@@ -180,14 +86,12 @@ resizeSelected m@{ "Diameter": diameter, circles, selected, drag, undoStack, red
 
 pushUndo
   :: forall r1.
-     { circles :: Array { x :: Number, y :: Number, r :: Number }
-     , undoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
-     , redoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
+     { circles :: Array Circle
+     , undoStack :: Array (Array Circle)
+     , redoStack :: Array (Array Circle)
      | r1
      }
-  -> { undoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
-     , redoStack :: Array (Array { x :: Number, y :: Number, r :: Number })
-     }
+  -> { undoStack :: Array (Array Circle), redoStack :: Array (Array Circle) }
 pushUndo { undoStack, circles } = { undoStack: take 100 (snoc undoStack circles), redoStack: [] }
 
 dist :: forall r1. { x :: Number, y :: Number, r :: Number | r1 } -> Number -> Number -> Number

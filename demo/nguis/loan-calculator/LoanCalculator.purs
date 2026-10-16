@@ -1,4 +1,4 @@
-module LoanCalculator (applyForLoan, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine) where
+module LoanCalculator (Loan, Purpose, Quantity, applyForLoan, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine) where
 
 import Prelude (const, discard, negate, pure, (*), (+), (-), (/), (<>))
 
@@ -7,21 +7,24 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
-cityCarLoan
-  :: { "Amount" :: { current :: Number
-                       , max :: Number
-                       , min :: Number
-                       , step :: [ continuous :: {}, discrete :: Number ]
-                       }
-     , "Applicant" :: String
-     , "Payment protection insurance" :: Boolean
-     , "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ]
-     , "Term" :: { current :: Number
-                         , max :: Number
-                         , min :: Number
-                         , step :: [ continuous :: {}, discrete :: Number ]
-                         }
-     }
+type Loan =
+  { "Amount" :: Quantity
+  , "Applicant" :: String
+  , "Payment protection insurance" :: Boolean
+  , "Purpose" :: Purpose
+  , "Term" :: Quantity
+  }
+
+type Quantity =
+  { current :: Number
+  , max :: Number
+  , min :: Number
+  , step :: [ continuous :: {}, discrete :: Number ]
+  }
+
+type Purpose = [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ]
+
+cityCarLoan :: Loan
 cityCarLoan =
   { "Applicant": ""
   , "Amount": { current: 12000.0, min: smallestLoan, max: largestLoan, step: .discrete loanIncrement }
@@ -30,97 +33,16 @@ cityCarLoan =
   , "Payment protection insurance": false
   }
 
-rateLine
-  :: { "Amount" :: { current :: Number
-                       , max :: Number
-                       , min :: Number
-                       , step :: [ continuous :: {}, discrete :: Number ]
-                       }
-     , "Applicant" :: String
-     , "Payment protection insurance" :: Boolean
-     , "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ]
-     , "Term" :: { current :: Number
-                         , max :: Number
-                         , min :: Number
-                         , step :: [ continuous :: {}, discrete :: Number ]
-                         }
-     }
-  -> String
+rateLine :: Loan -> String
 rateLine r = "Interest rate " <> toStringWith (fixed 1) (annualRate r) <> "% p.a."
 
-monthlyLine
-  :: { "Amount" :: { current :: Number
-                       , max :: Number
-                       , min :: Number
-                       , step :: [ continuous :: {}, discrete :: Number ]
-                       }
-     , "Applicant" :: String
-     , "Payment protection insurance" :: Boolean
-     , "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ]
-     , "Term" :: { current :: Number
-                         , max :: Number
-                         , min :: Number
-                         , step :: [ continuous :: {}, discrete :: Number ]
-                         }
-     }
-  -> String
+monthlyLine :: Loan -> String
 monthlyLine loan = "Monthly payment " <> monthlyText loan
 
-totalInterestLine
-  :: { "Amount" :: { current :: Number
-                       , max :: Number
-                       , min :: Number
-                       , step :: [ continuous :: {}, discrete :: Number ]
-                       }
-     , "Applicant" :: String
-     , "Payment protection insurance" :: Boolean
-     , "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ]
-     , "Term" :: { current :: Number
-                         , max :: Number
-                         , min :: Number
-                         , step :: [ continuous :: {}, discrete :: Number ]
-                         }
-     }
-  -> String
+totalInterestLine :: Loan -> String
 totalInterestLine loan = "Total interest €" <> toStringWith (fixed 2) (totalInterest loan)
 
-applyForLoan
-  :: { "Amount" :: { current :: Number
-                       , max :: Number
-                       , min :: Number
-                       , step :: [ continuous :: {}, discrete :: Number ]
-                       }
-     , "Applicant" :: String
-     , "Payment protection insurance" :: Boolean
-     , "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ]
-     , "Term" :: { current :: Number
-                         , max :: Number
-                         , min :: Number
-                         , step :: [ continuous :: {}, discrete :: Number ]
-                         }
-     }
-  -> Aff [ "Application received" :: { "Amount" :: { current :: Number
-                                                       , max :: Number
-                                                       , min :: Number
-                                                       , step :: [ continuous :: {}
-                                                                 , discrete :: Number
-                                                                 ]
-                                                       }
-                                     , "Applicant" :: String
-                                     , "Payment protection insurance" :: Boolean
-                                     , "Purpose" :: [ "Car" :: {}
-                                                    , "Holiday" :: {}
-                                                    , "Home improvement" :: {}
-                                                    ]
-                                     , "Term" :: { current :: Number
-                                                         , max :: Number
-                                                         , min :: Number
-                                                         , step :: [ continuous :: {}
-                                                                   , discrete :: Number
-                                                                   ]
-                                                         }
-                                     }
-         ]
+applyForLoan :: Loan -> Aff [ "Application received" :: Loan ]
 applyForLoan loan = do
   delay (Milliseconds applicationDelay.ms)
   pure (."Application received" loan)
@@ -130,17 +52,9 @@ applicationDelay = { ms: 800.0 }
 
 monthlyText
   :: forall r1.
-     { "Amount" :: { current :: Number
-                          , min :: Number
-                          , max :: Number
-                          , step :: [ discrete :: Number, continuous :: {} ]
-                          }
-     , "Term" :: { current :: Number
-                        , min :: Number
-                        , max :: Number
-                        , step :: [ discrete :: Number, continuous :: {} ]
-                        }
-     , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
+     { "Amount" :: Quantity
+     , "Term" :: Quantity
+     , "Purpose" :: Purpose
      , "Payment protection insurance" :: Boolean
      | r1
      }
@@ -149,17 +63,9 @@ monthlyText loan = "€" <> toStringWith (fixed 2) (monthlyPayment loan)
 
 monthlyPayment
   :: forall r1.
-     { "Amount" :: { current :: Number
-                          , min :: Number
-                          , max :: Number
-                          , step :: [ discrete :: Number, continuous :: {} ]
-                          }
-     , "Term" :: { current :: Number
-                        , min :: Number
-                        , max :: Number
-                        , step :: [ discrete :: Number, continuous :: {} ]
-                        }
-     , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
+     { "Amount" :: Quantity
+     , "Term" :: Quantity
+     , "Purpose" :: Purpose
      , "Payment protection insurance" :: Boolean
      | r1
      }
@@ -171,51 +77,24 @@ monthlyPayment { "Amount": amount, "Term": years, "Purpose": purpose, "Payment p
 
 totalInterest
   :: forall r1.
-     { "Amount" :: { current :: Number
-                          , min :: Number
-                          , max :: Number
-                          , step :: [ discrete :: Number, continuous :: {} ]
-                          }
-     , "Term" :: { current :: Number
-                        , min :: Number
-                        , max :: Number
-                        , step :: [ discrete :: Number, continuous :: {} ]
-                        }
-     , "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
+     { "Amount" :: Quantity
+     , "Term" :: Quantity
+     , "Purpose" :: Purpose
      , "Payment protection insurance" :: Boolean
      | r1
      }
   -> Number
 totalInterest loan = monthlyPayment loan * loan."Term".current * 12.0 - loan."Amount".current
 
-interestShare
-  :: { "Amount" :: { current :: Number
-                       , max :: Number
-                       , min :: Number
-                       , step :: [ continuous :: {}, discrete :: Number ]
-                       }
-     , "Applicant" :: String
-     , "Payment protection insurance" :: Boolean
-     , "Purpose" :: [ "Car" :: {}, "Holiday" :: {}, "Home improvement" :: {} ]
-     , "Term" :: { current :: Number
-                         , max :: Number
-                         , min :: Number
-                         , step :: [ continuous :: {}, discrete :: Number ]
-                         }
-     }
-  -> Number
+interestShare :: Loan -> Number
 interestShare loan = totalInterest loan / (monthlyPayment loan * loan."Term".current * 12.0)
 
 annualRate
-  :: forall r1.
-     { "Purpose" :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ]
-     , "Payment protection insurance" :: Boolean
-     | r1
-     }
+  :: forall r1. { "Purpose" :: Purpose, "Payment protection insurance" :: Boolean | r1 }
   -> Number
 annualRate { "Purpose": purpose, "Payment protection insurance": insured } = basePurposeRate purpose + (if insured then -0.3 else 0.0)
 
-basePurposeRate :: [ "Car" :: {}, "Home improvement" :: {}, "Holiday" :: {} ] -> Number
+basePurposeRate :: Purpose -> Number
 basePurposeRate = match { "Car": const 7.4, "Home improvement": const 4.9, "Holiday": const 9.9 }
 
 smallestLoan :: Number

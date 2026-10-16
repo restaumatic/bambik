@@ -1,4 +1,4 @@
-module Ticker (closedTicker, fetchQuote, phaseLine, quoteLine, recordQuote, stepAway, tick, tickLine, tickPeriod, watch) where
+module Ticker (Quote, Ticker, closedTicker, fetchQuote, phaseLine, quoteLine, recordQuote, stepAway, tick, tickLine, tickPeriod, watch) where
 
 import Prelude ((<>), (+), (/), ($), bind, discard, pure, show)
 
@@ -10,7 +10,11 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 
-closedTicker :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+type Ticker = { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+
+type Quote = { price :: Number }
+
+closedTicker :: Ticker
 closedTicker = { phase: .away {}, quotes: [], ticks: 0 }
 
 tickPeriod :: { ms :: Number }
@@ -19,51 +23,33 @@ tickPeriod = { ms: 250.0 }
 quoteDelay :: { ms :: Number }
 quoteDelay = { ms: 800.0 }
 
-phaseLine
-  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-  -> String
+phaseLine :: Ticker -> String
 phaseLine { phase } = match
   { away: \_ -> "Away from the desk: the board is parked"
   , watching: \_ -> "Watching the market"
   } phase
 
-tickLine
-  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-  -> String
+tickLine :: Ticker -> String
 tickLine { ticks } = show ticks <> " ticks while watching"
 
-quoteLine
-  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-  -> String
+quoteLine :: Ticker -> String
 quoteLine { quotes } = show (length quotes) <> " quotes received" <> maybe "" (\p -> ", last " <> show p) (last quotes)
 
-watch
-  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-  -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+watch :: Ticker -> Ticker
 watch model = model { phase = .watching {} }
 
-stepAway
-  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-  -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+stepAway :: Ticker -> Ticker
 stepAway model = model { phase = .away {} }
 
-tick
-  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-  -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+tick :: Ticker -> Ticker
 tick model = model { ticks = model.ticks + 1 }
 
-fetchQuote
-  :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-  -> Aff [ "Quote fetched" :: { price :: Number } ]
+fetchQuote :: Ticker -> Aff [ "Quote fetched" :: Quote ]
 fetchQuote _ = do
   delay (Milliseconds quoteDelay.ms)
   cents <- liftEffect $ randomInt 9000 11000
   pure $ ."Quote fetched" { price: toNumber cents / 100.0 }
 
-recordQuote
-  :: { event :: { price :: Number }
-     , model :: { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
-     }
-  -> { phase :: [ away :: {}, watching :: {} ], quotes :: Array Number, ticks :: Int }
+recordQuote :: { event :: Quote, model :: Ticker } -> Ticker
 recordQuote { event: { price }, model } = model { quotes = snoc model.quotes price }
 

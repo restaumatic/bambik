@@ -748,8 +748,9 @@ code below the UI) are algebra-layer material and exempt by location.
   determine *the* model, and many models fit one view. The view model
   module's signatures are the hints with the tails filled, one filling
   per row: the compiler reports the holes `Record t0 -> String`,
-  `Record t0 -> Record t0`, `Record t0`, and the module writes `t0`
-  once, as `counted :: Int`, in each. What it demands of the library:
+  `Record t0 -> Record t0`, `Record t0`, and the module fills `t0`
+  as `counted :: Int`, written once (`type Count = { counted :: Int }`)
+  and named by each. What it demands of the library:
   a word MUST NOT take, as a visible type argument, a row its function
   or value argument already brings (L3) — such a row is only a second
   copy of a signature, and declared on the view line it would make the

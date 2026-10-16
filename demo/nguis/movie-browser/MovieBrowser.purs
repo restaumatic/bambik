@@ -1,4 +1,4 @@
-module MovieBrowser (favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, visibleMovies, yearLine) where
+module MovieBrowser (Catalogue, Category, Listing, Movie, favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, visibleMovies, yearLine) where
 
 import Prelude ((&&), (||), (==), (<>), const, map, not, show)
 
@@ -6,19 +6,28 @@ import Data.Array (any, filter, length)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 
-movieCatalogue
-  :: { "Classic" :: Boolean
-     , "Cult" :: Boolean
-     , "Oscar" :: Boolean
-     , category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
-     , movies :: Array { "Favorite" :: Boolean
-                       , category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
-                       , rating :: Number
-                       , tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ]
-                       , title :: String
-                       , year :: Int
-                       }
-     }
+type Catalogue =
+  { "Classic" :: Boolean
+  , "Cult" :: Boolean
+  , "Oscar" :: Boolean
+  , category :: Category
+  , movies :: Array Movie
+  }
+
+type Movie =
+  { "Favorite" :: Boolean
+  , category :: Category
+  , rating :: Number
+  , tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ]
+  , title :: String
+  , year :: Int
+  }
+
+type Category = [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
+
+type Listing = { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int }
+
+movieCatalogue :: Catalogue
 movieCatalogue =
   { category: ."All" {}
   , "Classic": false
@@ -40,20 +49,7 @@ movieCatalogue =
     ]
   }
 
-visibleMovies
-  :: { "Classic" :: Boolean
-     , "Cult" :: Boolean
-     , "Oscar" :: Boolean
-     , category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
-     , movies :: Array { "Favorite" :: Boolean
-                       , category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
-                       , rating :: Number
-                       , tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ]
-                       , title :: String
-                       , year :: Int
-                       }
-     }
-  -> Array { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int }
+visibleMovies :: Catalogue -> Array Listing
 visibleMovies { category, "Classic": classic, "Cult": cult, "Oscar": oscar, movies } = map listing (filter (\movie -> inCategory movie && taggedAsChosen movie) movies)
   where
   inCategory movie = category == ."All" {} || movie.category == category
@@ -61,62 +57,19 @@ visibleMovies { category, "Classic": classic, "Cult": cult, "Oscar": oscar, movi
   chosenTag = match { "Classic": const classic, "Cult": const cult, "Oscar": const oscar }
   listing { title, year, rating, "Favorite": favorite } = { title, year, rating, "Favorite": favorite }
 
-markFavorite
-  :: { event :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int }
-     , model :: { "Classic" :: Boolean
-                , "Cult" :: Boolean
-                , "Oscar" :: Boolean
-                , category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
-                , movies :: Array { "Favorite" :: Boolean
-                                  , category :: [ "Action" :: {}
-                                                , "All" :: {}
-                                                , "Comedy" :: {}
-                                                , "Drama" :: {}
-                                                ]
-                                  , rating :: Number
-                                  , tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ]
-                                  , title :: String
-                                  , year :: Int
-                                  }
-                }
-     }
-  -> { "Classic" :: Boolean
-     , "Cult" :: Boolean
-     , "Oscar" :: Boolean
-     , category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
-     , movies :: Array { "Favorite" :: Boolean
-                       , category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
-                       , rating :: Number
-                       , tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ]
-                       , title :: String
-                       , year :: Int
-                       }
-     }
+markFavorite :: { event :: Listing, model :: Catalogue } -> Catalogue
 markFavorite { event: { title, "Favorite": favorite }, model: catalogue } = catalogue { movies = map (\movie -> if movie.title == title then movie { "Favorite" = favorite } else movie) catalogue.movies }
 
-isFavorite :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> Boolean
+isFavorite :: Listing -> Boolean
 isFavorite { "Favorite": favorite } = favorite
 
-yearLine :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> String
+yearLine :: Listing -> String
 yearLine { year } = show year
 
-ratingLine :: { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int } -> String
+ratingLine :: Listing -> String
 ratingLine { rating } = "★ " <> toStringWith (fixed 1) rating
 
-favoritesLine
-  :: { "Classic" :: Boolean
-     , "Cult" :: Boolean
-     , "Oscar" :: Boolean
-     , category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
-     , movies :: Array { "Favorite" :: Boolean
-                       , category :: [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
-                       , rating :: Number
-                       , tags :: Array [ "Classic" :: {}, "Cult" :: {}, "Oscar" :: {} ]
-                       , title :: String
-                       , year :: Int
-                       }
-     }
-  -> String
+favoritesLine :: Catalogue -> String
 favoritesLine { movies } =
   let count = length (filter _."Favorite" movies)
   in if count == 1 then "1 favorite" else show count <> " favorites"

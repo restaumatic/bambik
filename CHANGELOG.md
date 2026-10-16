@@ -8,6 +8,14 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-16, latest
 
+- **Every demo names its shared rows.** With the synonym ban lifted
+  (flight-booker first), every view model module now writes its model
+  row once as a `type` synonym in business language (`Count`, `Booking`,
+  `Order`, `Inbox`, `Stopwatch`, …) and names repeated sub-rows likewise
+  (option variants, bounded quantities, element rows, payloads), each
+  exported where an exported signature uses it; signatures shrank to
+  one line where they fit (about 1900 lines fewer). Views unchanged.
+
 - **A label is only the name.** Labels carried the copy whole, format
   hints and units included (`@"Start date (DD.MM.YYYY)"`, `@"Amount
   (€)"`, decided 2026-10-07 when a `hint:` option was reverted), so a

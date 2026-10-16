@@ -1,4 +1,4 @@
-module MarkdownPreviewer (parseMarkdown, welcomeDocument) where
+module MarkdownPreviewer (Block, Document, Inline, parseMarkdown, welcomeDocument) where
 
 import Prelude (not, otherwise, (&&), (+), (/=), (<#>), (<<<), (<>), (==), (>), (||))
 
@@ -8,7 +8,18 @@ import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
 
-welcomeDocument :: { "Source" :: String }
+type Document = { "Source" :: String }
+
+type Block =
+  [ bullets :: Array (Array Inline)
+  , heading :: { inlines :: Array Inline, level :: Int }
+  , paragraph :: Array Inline
+  , quote :: Array Inline
+  ]
+
+type Inline = [ bold :: String, code :: String, italic :: String, plain :: String ]
+
+welcomeDocument :: Document
 welcomeDocument =
   { "Source": """# Markdown Previewer
 
@@ -28,24 +39,10 @@ This paragraph shows **bold**, *italic* and `inline code` text.
 """
   }
 
-parseMarkdown
-  :: { "Source" :: String }
-  -> Array
-    [ bullets :: Array (Array [ bold :: String, code :: String, italic :: String, plain :: String ] )
-    , heading :: { inlines :: Array [ bold :: String, code :: String, italic :: String, plain :: String ], level :: Int }
-    , paragraph :: Array [ bold :: String, code :: String, italic :: String, plain :: String ]
-    , quote :: Array [ bold :: String, code :: String, italic :: String, plain :: String ]
-    ]
+parseMarkdown :: Document -> Array Block
 parseMarkdown document = blocks (split (Pattern "\n") document."Source")
 
-blocks
-  :: Array String
-  -> Array
-    [ heading :: { level :: Int, inlines :: Array [ plain :: String, bold :: String, italic :: String, code :: String ] }
-    , paragraph :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
-    , bullets :: Array (Array [ plain :: String, bold :: String, italic :: String, code :: String ])
-    , quote :: Array [ plain :: String, bold :: String, italic :: String, code :: String ]
-    ]
+blocks :: Array String -> Array Block
 blocks ls = case uncons ls of
   Nothing -> []
   Just { head: l, tail }
@@ -75,9 +72,7 @@ dropMarker = drop 2
 isPlainLine :: String -> Boolean
 isPlainLine l = trim l /= "" && isNothing (stripPrefix (Pattern "#") l) && not (isBullet l || isQuote l)
 
-parseInlines
-  :: String
-  -> Array [ plain :: String, bold :: String, italic :: String, code :: String ]
+parseInlines :: String -> Array Inline
 parseInlines s
   | s == "" = []
   | otherwise = case earliestSpan s of
@@ -93,12 +88,7 @@ parseInlines s
 
 earliestSpan
   :: String
-  -> Maybe
-    { at :: Int
-    , open :: String
-    , close :: String
-    , make :: String -> [ plain :: String, bold :: String, italic :: String, code :: String ]
-    }
+  -> Maybe { at :: Int, open :: String, close :: String, make :: String -> Inline }
 earliestSpan s = pick (candidate "**" "**" (.bold)) (pick (candidate "*" "*" (.italic)) (candidate "`" "`" (.code)))
   where
   candidate open close make = indexOf (Pattern open) s <#> \at -> { at, open, close, make }

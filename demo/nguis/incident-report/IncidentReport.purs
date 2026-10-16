@@ -1,4 +1,4 @@
-module IncidentReport (clockPeriod, fileReport, reportLine) where
+module IncidentReport (Incident, clockPeriod, fileReport, reportLine) where
 
 import Prelude (const, discard, pure, show, (/), (<), (<>))
 
@@ -7,15 +7,16 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
+type Incident =
+  { "Photo" :: [ none :: {}, picked :: { mime :: String, name :: String, size :: Number } ]
+  , position :: [ denied :: {}, located :: { lat :: Number, lng :: Number }, unknown :: {} ]
+  , time :: { hours :: Int, minutes :: Int, seconds :: Int }
+  }
+
 clockPeriod :: { ms :: Number }
 clockPeriod = { ms: 1000.0 }
 
-reportLine
-  :: { "Photo" :: [ none :: {}, picked :: { mime :: String, name :: String, size :: Number } ]
-     , position :: [ denied :: {}, located :: { lat :: Number, lng :: Number }, unknown :: {} ]
-     , time :: { hours :: Int, minutes :: Int, seconds :: Int }
-     }
-  -> String
+reportLine :: Incident -> String
 reportLine { "Photo": photo, position, time } =
   "Reporting " <> whereabouts <> " at " <> padded time.hours <> ":" <> padded time.minutes <> ":" <> padded time.seconds <> attachment <> "."
   where
@@ -29,12 +30,7 @@ reportLine { "Photo": photo, position, time } =
     , none: const ", no photo attached"
     } photo
 
-fileReport
-  :: { "Photo" :: [ none :: {}, picked :: { mime :: String, name :: String, size :: Number } ]
-     , position :: [ denied :: {}, located :: { lat :: Number, lng :: Number }, unknown :: {} ]
-     , time :: { hours :: Int, minutes :: Int, seconds :: Int }
-     }
-  -> Aff [ "Report filed" :: {} ]
+fileReport :: Incident -> Aff [ "Report filed" :: {} ]
 fileReport _ = do
   delay (Milliseconds filingDelay.ms)
   pure (."Report filed" {})

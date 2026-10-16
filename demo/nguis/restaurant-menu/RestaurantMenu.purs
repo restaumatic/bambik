@@ -1,15 +1,10 @@
-module RestaurantMenu (dishTags, menuCourses, priceLine) where
+module RestaurantMenu (Dish, dishTags, menuCourses, priceLine) where
 
 import Prelude ((<>), map)
 
-menuCourses
-  :: Array { dishes :: Array { description :: String
-                             , name :: String
-                             , price :: String
-                             , tags :: Array String
-                             }
-           , name :: String
-           }
+type Dish = { description :: String, name :: String, price :: String, tags :: Array String }
+
+menuCourses :: Array { dishes :: Array Dish, name :: String }
 menuCourses =
   [ { name: "Antipasti"
     , dishes:
@@ -34,12 +29,8 @@ menuCourses =
     }
   ]
 
-priceLine
-  :: { description :: String, name :: String, price :: String, tags :: Array String }
-  -> String
+priceLine :: Dish -> String
 priceLine { price } = "€" <> price
 
-dishTags
-  :: { description :: String, name :: String, price :: String, tags :: Array String }
-  -> Array { tag :: String }
+dishTags :: Dish -> Array { tag :: String }
 dishTags { tags } = map { tag: _ } tags

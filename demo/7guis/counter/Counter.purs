@@ -1,12 +1,14 @@
-module Counter (countLine, freshCount, increment) where
+module Counter (Count, countLine, freshCount, increment) where
 
 import Prelude ((+), show)
 
-freshCount :: { counted :: Int }
+type Count = { counted :: Int }
+
+freshCount :: Count
 freshCount = { counted: 0 }
 
-countLine :: { counted :: Int } -> String
+countLine :: Count -> String
 countLine { counted } = show counted
 
-increment :: { counted :: Int } -> { counted :: Int }
+increment :: Count -> Count
 increment m = m { counted = m.counted + 1 }

@@ -193,7 +193,7 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   that possible: a stage is typed at **one row** (no `Union` subsumption —
   a business function is typed at the stage's row, its signature the
   view's hole hint with its tails filled — `Record t0 -> String` reported,
-  `countLine :: { counted :: Int } -> String` written — checked by
+  `countLine :: Count -> String` written over `type Count = { counted :: Int }` — checked by
   unification), a shared record input is one row variable
   (no class states an equality), keyed collections compare
   structurally (`Data.Profunctor.Row.Structural`, a key read through the
@@ -210,8 +210,8 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   every field and case a line names by label at its leaf's type — and
   leaves the rest of each row unknown: the tail, the model's to fill
   (counter's view reports `Record t0 -> String`, `Record t0 -> Record
-  t0`, `Record t0`, and the module writes `t0` once, as `counted ::
-  Int`, in each). So a view does not determine *the* model — many fit
+  t0`, `Record t0`, and the module fills `t0` as `counted :: Int`,
+  written once as `type Count` and named by each). So a view does not determine *the* model — many fit
   one view, representation being the model's choice — and the view
   **writes no row**: the model's, a classifier's cases, a projection's
   element row and a payload are the signatures', and no word takes them

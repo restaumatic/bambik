@@ -1,4 +1,4 @@
-module TodoList (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, toggleTodo, visibleEntries) where
+module TodoList (Status, Todo, Todos, addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, toggleTodo, visibleEntries) where
 
 import Prelude ((+), (<), (<<<), (<>), (==), const, map, not, show)
 
@@ -6,109 +6,59 @@ import Data.Array (filter, foldl, length, snoc)
 import Data.String (trim)
 import Data.Variant (match)
 
-emptyTodoList
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
+type Todos =
+  { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
+  , "Todo" :: String
+  , todos :: Array Todo
+  }
+
+type Todo = { id :: Int, status :: Status, title :: String }
+
+type Status = [ active :: {}, completed :: {} ]
+
+emptyTodoList :: Todos
 emptyTodoList = { "Todo": "", todos: [], "Visibility": ."All" {} }
 
-addTodo
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
-  -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
+addTodo :: Todos -> Todos
 addTodo m@{ "Todo": entry, todos } =
   if trim entry == "" then m
   else m { todos = snoc todos { id: nextId todos, title: trim entry, status: .active {} }, "Todo" = "" }
 
-toggleTodo
-  :: { event :: Int
-     , model :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-                , "Todo" :: String
-                , todos :: Array { id :: Int
-                                 , status :: [ active :: {}, completed :: {} ]
-                                 , title :: String
-                                 }
-                }
-     }
-  -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
+toggleTodo :: { event :: Int, model :: Todos } -> Todos
 toggleTodo { event: id, model: m@{ todos } } = m { todos = map (\t -> if t.id == id then t { status = flipped t.status } else t) todos }
 
-clearCompleted
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
-  -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
+clearCompleted :: Todos -> Todos
 clearCompleted m@{ todos } = m { todos = filter (isActive <<< _.status) todos }
 
-itemsLeft
-  :: forall r1.
-     { todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     | r1
-     }
-  -> Int
+itemsLeft :: forall r1. { todos :: Array Todo | r1 } -> Int
 itemsLeft { todos } = length (filter (isActive <<< _.status) todos)
 
-remainingItems
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
-  -> [ several :: {}, sole :: {} ]
+remainingItems :: Todos -> [ several :: {}, sole :: {} ]
 remainingItems { todos } = if itemsLeft { todos } == 1 then .sole {} else .several {}
 
-soleLine
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
-  -> String
+soleLine :: Todos -> String
 soleLine { todos } = show (itemsLeft { todos }) <> " item left"
 
-severalLine
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
-  -> String
+severalLine :: Todos -> String
 severalLine { todos } = show (itemsLeft { todos }) <> " items left"
 
-visibleEntries
-  :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "Todo" :: String
-     , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-     }
-  -> Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
+visibleEntries :: Todos -> Array Todo
 visibleEntries { todos, "Visibility": visibility } = filter (matches visibility) todos
   where
   matches v t = match { "All": const true, "Active": const (isActive t.status), "Completed": const (completed t.status) } v
 
-completed :: [ active :: {}, completed :: {} ] -> Boolean
+completed :: Status -> Boolean
 completed = match { active: const false, completed: const true }
 
-isActive :: [ active :: {}, completed :: {} ] -> Boolean
+isActive :: Status -> Boolean
 isActive = not <<< completed
 
-flipped :: [ active :: {}, completed :: {} ] -> [ active :: {}, completed :: {} ]
+flipped :: Status -> Status
 flipped = match { active: const (.completed {}), completed: const (.active {}) }
 
-isCompleted
-  :: { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
-  -> Boolean
+isCompleted :: Todo -> Boolean
 isCompleted { status } = completed status
 
-nextId :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String } -> Int
+nextId :: Array Todo -> Int
 nextId = foldl (\n t -> if t.id < n then n else t.id + 1) 0
 

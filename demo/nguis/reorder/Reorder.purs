@@ -1,4 +1,4 @@
-module Reorder (openingSetlist, rotateSetlist, shuffleAction) where
+module Reorder (Setlist, Track, openingSetlist, rotateSetlist, shuffleAction) where
 
 import Prelude (bind, compare, map, pure, (<$>))
 
@@ -11,7 +11,11 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Random (randomInt)
 
-openingSetlist :: { "Setlist" :: Array { "Title" :: String, id :: String } }
+type Setlist = { "Setlist" :: Array Track }
+
+type Track = { "Title" :: String, id :: String }
+
+openingSetlist :: Setlist
 openingSetlist =
   { "Setlist":
     [ { id: "t1", "Title": "Track 1" }
@@ -21,22 +25,16 @@ openingSetlist =
     ]
   }
 
-rotateSetlist
-  :: { "Setlist" :: Array { "Title" :: String, id :: String } }
-  -> { "Setlist" :: Array { "Title" :: String, id :: String } }
+rotateSetlist :: Setlist -> Setlist
 rotateSetlist pl@{ "Setlist": tracks } = pl { "Setlist" = rotate tracks }
 
-shuffleAction
-  :: { "Setlist" :: Array { "Title" :: String, id :: String } }
-  -> Aff [ "Setlist shuffled" :: { "Setlist" :: Array { "Title" :: String, id :: String } } ]
+shuffleAction :: Setlist -> Aff [ "Setlist shuffled" :: Setlist ]
 shuffleAction pl@{ "Setlist": tracks } = (\ts -> ."Setlist shuffled" (pl { "Setlist" = ts })) <$> liftEffect (shuffleOrder tracks)
 
-rotate :: Array { id :: String, "Title" :: String } -> Array { id :: String, "Title" :: String }
+rotate :: Array Track -> Array Track
 rotate tracks = maybe tracks (\{ head, tail } -> snoc tail head) (uncons tracks)
 
-shuffleOrder
-  :: Array { id :: String, "Title" :: String }
-  -> Effect (Array { id :: String, "Title" :: String })
+shuffleOrder :: Array Track -> Effect (Array Track)
 shuffleOrder tracks = do
   keyed <- traverse withKey tracks
   pure (map snd (sortBy (\a b -> compare (fst a) (fst b)) keyed))

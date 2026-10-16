@@ -1,4 +1,4 @@
-module PhotoGallery (albumChoices, albumShots, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum) where
+module PhotoGallery (AlbumChoice, Gallery, Photo, Shot, albumChoices, albumShots, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum) where
 
 import Prelude (($), (*), (+), (<#>), (<>), (==), mod, show)
 
@@ -10,7 +10,15 @@ import Data.String (joinWith)
 import Data.String.CodeUnits (toCharArray)
 import Data.Variant (match)
 
-landscapesOpen :: { album :: String }
+type Gallery = { album :: String }
+
+type AlbumChoice = { name :: String, state :: [ closed :: {}, open :: {} ] }
+
+type Shot = { shot :: String }
+
+type Photo = { alt :: String, src :: String }
+
+landscapesOpen :: Gallery
 landscapesOpen = { album: "Landscapes" }
 
 albumCatalogue :: Array { name :: String, shots :: Array String }
@@ -36,26 +44,24 @@ albumCatalogue =
     }
   ]
 
-albumChoices
-  :: { album :: String }
-  -> Array { name :: String, state :: [ closed :: {}, open :: {} ] }
+albumChoices :: Gallery -> Array AlbumChoice
 albumChoices { album } = albumCatalogue <#> \a -> { name: a.name, state: if a.name == album then .open {} else .closed {} }
 
-isOpen :: { name :: String, state :: [ closed :: {}, open :: {} ] } -> Boolean
+isOpen :: AlbumChoice -> Boolean
 isOpen { state } = match { open: \_ -> true, closed: \_ -> false } state
 
-openAlbum :: { event :: String, model :: { album :: String } } -> { album :: String }
+openAlbum :: { event :: String, model :: Gallery } -> Gallery
 openAlbum { event: album, model: gallery } = gallery { album = album }
 
-favoriteShots :: Array { alt :: String, src :: String }
+favoriteShots :: Array Photo
 favoriteShots = [ "Dawn Ridge", "Half Smile", "Orbit Study", "Quiet Lake" ] <#> \shot -> developedShot { shot }
 
-albumShots :: { album :: String } -> Array { shot :: String }
+albumShots :: Gallery -> Array Shot
 albumShots { album } =
   maybe [] (\a -> a.shots <#> \shot -> { shot })
     (find (\a -> a.name == album) albumCatalogue)
 
-developedShot :: { shot :: String } -> { alt :: String, src :: String }
+developedShot :: Shot -> Photo
 developedShot { shot } = { src: developedPhoto shot, alt: shot }
 
 developedPhoto :: String -> String

@@ -1,29 +1,31 @@
-module Cashbox (balanceLine, openedTill, payCourier, payoutLine, refundLine, refundStandard, takeDeposit) where
+module Cashbox (Till, balanceLine, openedTill, payCourier, payoutLine, refundLine, refundStandard, takeDeposit) where
 
 import Prelude ((+), (-), (<>), show)
 
 import Data.Maybe (fromMaybe)
 import Data.String (Pattern(..), stripSuffix)
 
-openedTill :: { balance :: Number }
+type Till = { balance :: Number }
+
+openedTill :: Till
 openedTill = { balance: 200.0 }
 
-balanceLine :: { balance :: Number } -> String
+balanceLine :: Till -> String
 balanceLine { balance } = "Till balance: €" <> euros balance
 
-refundLine :: { balance :: Number } -> String
+refundLine :: Till -> String
 refundLine _ = "Hand €" <> euros standardRefund <> " back to the customer."
 
-payoutLine :: { balance :: Number } -> String
+payoutLine :: Till -> String
 payoutLine _ = "Hand €" <> euros courierFee <> " to the courier."
 
-refundStandard :: { balance :: Number } -> { balance :: Number }
+refundStandard :: Till -> Till
 refundStandard till = till { balance = till.balance - standardRefund }
 
-payCourier :: { balance :: Number } -> { balance :: Number }
+payCourier :: Till -> Till
 payCourier till = till { balance = till.balance - courierFee }
 
-takeDeposit :: { balance :: Number } -> { balance :: Number }
+takeDeposit :: Till -> Till
 takeDeposit till = till { balance = till.balance + customerDeposit }
 
 standardRefund :: Number

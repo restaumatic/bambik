@@ -1,4 +1,4 @@
-module Cells (columnHeaders, commit, orderSheet, selectCell, selectedLine, sheetRows) where
+module Cells (Sheet, columnHeaders, commit, orderSheet, selectCell, selectedLine, sheetRows) where
 
 import Prelude ((<>), bind, identity, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
 
@@ -14,11 +14,13 @@ import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhil
 import Data.Variant (match)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 
-orderSheet
-  :: { "Formula" :: String
-     , cells :: Object String
-     , selected :: [ none :: {}, picked :: { name :: String } ]
-     }
+type Sheet =
+  { "Formula" :: String
+  , cells :: Object String
+  , selected :: [ none :: {}, picked :: { name :: String } ]
+  }
+
+orderSheet :: Sheet
 orderSheet =
   { cells: fromHomogeneous
     { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
@@ -30,12 +32,7 @@ orderSheet =
   , "Formula": ""
   }
 
-selectedLine
-  :: { "Formula" :: String
-     , cells :: Object String
-     , selected :: [ none :: {}, picked :: { name :: String } ]
-     }
-  -> String
+selectedLine :: Sheet -> String
 selectedLine { selected } = "Cell " <> match { picked: _.name, none: \_ -> "—" } selected
 
 cols :: Int
@@ -54,16 +51,15 @@ columnHeaders :: Array { key :: String, text :: String }
 columnHeaders = [ { key: "corner", text: "" } ] <> (range 0 (cols - 1) <#> \c -> { key: colName c, text: colName c })
 
 sheetRows
-  :: { "Formula" :: String
-     , cells :: Object String
-     , selected :: [ none :: {}, picked :: { name :: String } ]
-     }
-  -> Array { cells :: Array { key :: String
-                            , status :: [ selected :: {}, unselected :: {} ]
-                            , text :: String
-                            }
-           , rowKey :: String
-           }
+  :: Sheet
+  -> Array
+    { cells :: Array
+        { key :: String
+        , status :: [ selected :: {}, unselected :: {} ]
+        , text :: String
+        }
+    , rowKey :: String
+    }
 sheetRows m =
   let
     values = evalSheet m.cells
@@ -71,28 +67,10 @@ sheetRows m =
     statusOf key = match { picked: \p -> if p.name == key then .selected {} else .unselected {}, none: \_ -> .unselected {} } m.selected
   in
     range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: cellsOfRow r }
-selectCell
-  :: { event :: String
-     , model :: { "Formula" :: String
-                , cells :: Object String
-                , selected :: [ none :: {}, picked :: { name :: String } ]
-                }
-     }
-  -> { "Formula" :: String
-     , cells :: Object String
-     , selected :: [ none :: {}, picked :: { name :: String } ]
-     }
+selectCell :: { event :: String, model :: Sheet } -> Sheet
 selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula" = fromMaybe "" (lookup key m.cells) }
 
-commit
-  :: { "Formula" :: String
-     , cells :: Object String
-     , selected :: [ none :: {}, picked :: { name :: String } ]
-     }
-  -> { "Formula" :: String
-     , cells :: Object String
-     , selected :: [ none :: {}, picked :: { name :: String } ]
-     }
+commit :: Sheet -> Sheet
 commit m@{ selected, "Formula": formula } = match
   { picked: \p ->
     if lookup p.name m.cells /= Just formula then m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells } else m
@@ -110,7 +88,9 @@ evalSheet cells = foldl insertVal empty keys
     Nothing -> acc
     Just _ -> insert key (display (evalCell cells Nil key)) acc
 
-display :: [ numV :: Number, textV :: String, errV :: String ] -> String
+type Value = [ numV :: Number, textV :: String, errV :: String ]
+
+display :: Value -> String
 display = match { numV: formatNum, textV: identity, errV: identity }
 
 formatNum :: Number -> String
@@ -120,11 +100,7 @@ formatNum n =
     then show (scaled / 100)
     else show (Int.toNumber scaled / 100.0)
 
-evalCell
-  :: Object String
-  -> List String
-  -> String
-  -> [ numV :: Number, textV :: String, errV :: String ]
+evalCell :: Object String -> List String -> String -> Value
 evalCell cells visiting key =
   if key `elem` visiting then .errV "#CYCLE"
   else case lookup key cells of
@@ -145,16 +121,20 @@ numAt cells visiting key = case evalCell cells visiting key of
   .errV e -> Left e
   _ -> Left "#REF!"
 
+type Coord = { c :: Int, r :: Int }
+
+type Parsed = { val :: Expr, rest :: String }
+
 data Expr
   = Num Number
   | Ref String
   | Bin Char Expr Expr
-  | Sum { from :: { c :: Int, r :: Int }, to :: { c :: Int, r :: Int } }
+  | Sum { from :: Coord, to :: Coord }
 
 skipSpace :: String -> String
 skipSpace = dropWhile (_ == ' ')
 
-parseExpr :: String -> Maybe { val :: Expr, rest :: String }
+parseExpr :: String -> Maybe Parsed
 parseExpr s0 = do
   { val: t, rest } <- parseTerm (skipSpace s0)
   chain t rest
@@ -165,7 +145,7 @@ parseExpr s0 = do
       Nothing -> Nothing
     _ -> Just { val: acc, rest: s }
 
-parseTerm :: String -> Maybe { val :: Expr, rest :: String }
+parseTerm :: String -> Maybe Parsed
 parseTerm s0 = do
   { val: f, rest } <- parseFactor (skipSpace s0)
   chain f rest
@@ -176,7 +156,7 @@ parseTerm s0 = do
       Nothing -> Nothing
     _ -> Just { val: acc, rest: s }
 
-parseFactor :: String -> Maybe { val :: Expr, rest :: String }
+parseFactor :: String -> Maybe Parsed
 parseFactor s0 =
   let s = skipSpace s0
   in case charAt 0 s of
@@ -205,14 +185,14 @@ isDigit c = c >= '0' && c <= '9'
 isUpper :: Char -> Boolean
 isUpper c = c >= 'A' && c <= 'Z'
 
-parseNumber :: String -> Maybe { val :: Expr, rest :: String }
+parseNumber :: String -> Maybe Parsed
 parseNumber s =
   let digits = takeWhile (\c -> isDigit c || c == '.') s
   in case fromString digits of
     Just n -> Just { val: Num n, rest: drop (length digits) s }
     Nothing -> Nothing
 
-parseRef :: String -> Maybe { val :: { c :: Int, r :: Int }, rest :: String }
+parseRef :: String -> Maybe { val :: Coord, rest :: String }
 parseRef s = case charAt 0 s of
   Just col | isUpper col ->
     let digits = takeWhile isDigit (drop 1 s)
@@ -221,11 +201,7 @@ parseRef s = case charAt 0 s of
       Nothing -> Nothing
   _ -> Nothing
 
-evalExpr
-  :: Object String
-  -> List String
-  -> Expr
-  -> [ numV :: Number, textV :: String, errV :: String ]
+evalExpr :: Object String -> List String -> Expr -> Value
 evalExpr cells visiting = go
   where
   go (Num n) = .numV n

@@ -1,4 +1,4 @@
-module Calculator (blankTally, isFunctionKey, isOperatorKey, keyPad, pressKey) where
+module Calculator (Condition, Input, Key, Operation, Tally, blankTally, isFunctionKey, isOperatorKey, keyPad, pressKey) where
 
 import Prelude ((&&), (<$>), (<>), (==), (/=), (+), (-), (*), (/), otherwise, show)
 
@@ -8,16 +8,26 @@ import Data.Number (fromString)
 import Data.String (Pattern(..), contains, stripPrefix, stripSuffix)
 import Data.Variant (match)
 
-blankTally
-  :: { condition :: [ faulty :: {}, sound :: {} ]
-     , entry :: String
-     , input :: [ entering :: {}, settled :: {} ]
-     , operation :: [ none :: {}, pending :: { key :: String } ]
-     , total :: Number
-     }
+type Tally =
+  { condition :: Condition
+  , entry :: String
+  , input :: Input
+  , operation :: Operation
+  , total :: Number
+  }
+
+type Condition = [ faulty :: {}, sound :: {} ]
+
+type Input = [ entering :: {}, settled :: {} ]
+
+type Operation = [ none :: {}, pending :: Key ]
+
+type Key = { key :: String }
+
+blankTally :: Tally
 blankTally = { total: 0.0, operation: .none {}, entry: "0", input: .settled {}, condition: .sound {} }
 
-keyPad :: Array { key :: String }
+keyPad :: Array Key
 keyPad = { key: _ } <$>
   [ "C", "±", "÷", "×"
   , "7", "8", "9", "−"
@@ -26,10 +36,10 @@ keyPad = { key: _ } <$>
   , "0", "."
   ]
 
-isOperatorKey :: { key :: String } -> Boolean
+isOperatorKey :: Key -> Boolean
 isOperatorKey { key } = key `elem` operatorKeys
 
-isFunctionKey :: { key :: String } -> Boolean
+isFunctionKey :: Key -> Boolean
 isFunctionKey { key } = key `elem` functionKeys
 
 operatorKeys :: Array String
@@ -38,21 +48,7 @@ operatorKeys = [ "÷", "×", "−", "+", "=" ]
 functionKeys :: Array String
 functionKeys = [ "C", "±" ]
 
-pressKey
-  :: { event :: String
-     , model :: { condition :: [ faulty :: {}, sound :: {} ]
-                , entry :: String
-                , input :: [ entering :: {}, settled :: {} ]
-                , operation :: [ none :: {}, pending :: { key :: String } ]
-                , total :: Number
-                }
-     }
-  -> { condition :: [ faulty :: {}, sound :: {} ]
-     , entry :: String
-     , input :: [ entering :: {}, settled :: {} ]
-     , operation :: [ none :: {}, pending :: { key :: String } ]
-     , total :: Number
-     }
+pressKey :: { event :: String, model :: Tally } -> Tally
 pressKey { event: key, model: tally@{ entry, operation, input } }
   | match { faulty: \_ -> key /= "C", sound: \_ -> false } tally.condition = pressKey { event: key, model: cleared tally }
   | key == "C" = cleared tally
@@ -71,35 +67,14 @@ pressKey { event: key, model: tally@{ entry, operation, input } }
   | typing input = tally { entry = if entry == "0" then key else entry <> key }
   | otherwise = tally { entry = key, input = .entering {} }
 
-cleared
-  :: forall r.
-     { total :: Number
-     , operation :: [ pending :: { key :: String }, none :: {} ]
-     , entry :: String
-     , input :: [ entering :: {}, settled :: {} ]
-     , condition :: [ sound :: {}, faulty :: {} ]
-     | r
-     }
-  -> { total :: Number
-     , operation :: [ pending :: { key :: String }, none :: {} ]
-     , entry :: String
-     , input :: [ entering :: {}, settled :: {} ]
-     , condition :: [ sound :: {}, faulty :: {} ]
-     | r
-     }
+cleared :: Tally -> Tally
 cleared t = t { total = blankTally.total, operation = blankTally.operation, entry = blankTally.entry, input = blankTally.input, condition = blankTally.condition }
 
-typing :: [ entering :: {}, settled :: {} ] -> Boolean
+typing :: Input -> Boolean
 typing = match { entering: \_ -> true, settled: \_ -> false }
 
 settle
-  :: forall r1.
-     { total :: Number
-     , operation :: [ pending :: { key :: String }, none :: {} ]
-     , entry :: String
-     , input :: [ entering :: {}, settled :: {} ]
-     | r1
-     }
+  :: forall r1. { total :: Number, operation :: Operation, entry :: String, input :: Input | r1 }
   -> Maybe Number
 settle { operation, input, total, entry } = match
   { pending: \p -> if typing input then compute p.key total (entryValue { entry }) else Just (entryValue { entry })
