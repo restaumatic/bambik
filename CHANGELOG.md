@@ -8,6 +8,25 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-16, latest
 
+- **Registration returns the input leg; routing needs no state.** The
+  carrier was `m { toUser, fromUser }`: two closures made apart, so even
+  `identity` had to hold the continuation in a `Ref` for `toUser` to
+  find, and `Category` demanded `MonadEffect`. It is now
+  `PUI m i o = PUI (m ((o -> Effect Unit) -> Effect (i -> Effect Unit)))`:
+  registering hands the continuation over and returns the input leg, so
+  a feed cannot precede registration. `identity` is `PUI $ pure pure`
+  (`Applicative`), `compose` `Apply`, `Profunctor`/`Choice`/`Cochoice`/
+  `looped`/`Strong` `Functor` (`Strong`'s pair state and the knot's
+  re-entry cell are allocated at registration, once per instantiation),
+  `announce`/`seeded`/`with` and the three ungated merges `Applicative`.
+  The gated trace instances, the gated merge and the collections keep
+  `MonadEffect`. Leaves written as two legs adapt through `fromHandles`;
+  `handles` gives a component's two legs back, registering on the first
+  leg used — a child a leaf feeds but never subscribes to (the HTML
+  button's caption) works unsubscribed, as before. Verified beyond the
+  stack by a main-vs-branch click walk over all 95 pages; the smoke
+  suite alone passed while every HTML button was disabled in an
+  intermediate version, since nothing in it clicks through an app.
 - **checkout's wizard is a packaged `stepper`.** Its Next and Back were
   two emitters behind two classifiers (`onwardFrom`, `previousOf`)
   folded by two handlers (`stepOnward`, `stepBack`) — four functions

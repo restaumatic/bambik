@@ -9,7 +9,7 @@ import Prelude
 import Data.Foldable (for_)
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import PUI (fromHandles, handles, PUI)
+import PUI (PUI, handles)
 import PUI.Web (Node, Web, runDomInNode)
 import Unsafe.Coerce (unsafeCoerce)
 

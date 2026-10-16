@@ -157,10 +157,11 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   enforce is that a `×→+` leaf never emits inside its own feed, which is
   the vocabulary provider's conformance.
   **Stateful
-  instances require `MonadEffect m`** — `Strong`, the gated trace
-  quartet, the gated merges and the stateful combinators allocate their
-  `Ref`s in the construction monad at instantiation, the phase state
-  belongs to. Registration hands the continuation over and returns the
+  instances require `MonadEffect m`** — the gated trace quartet, the
+  gated merges and the stateful combinators allocate their `Ref`s in the
+  construction monad at instantiation, the phase state belongs to;
+  `Strong` allocates its pair state at registration instead, once per
+  instantiation, so it needs only `Functor`. Registration hands the continuation over and returns the
   input leg (`PUI m i o = PUI (m ((o -> Effect Unit) -> Effect (i -> Effect Unit)))`),
   so a feed cannot precede it and the routing stages need no state:
   `Profunctor`, `Choice`, `Cochoice` and `looped` keep `Functor`,

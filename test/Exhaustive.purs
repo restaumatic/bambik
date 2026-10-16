@@ -40,7 +40,7 @@ import Effect (Effect, foreachE)
 import Effect.Class.Console (log)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, PUI(..), acted)
+import PUI (PUI, acted, fromHandles, handles)
 import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
 import Unsafe.Coerce (unsafeCoerce)
 

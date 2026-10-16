@@ -110,7 +110,7 @@ import Data.Either (Either(..), either)
 import Data.Foldable (elem, foldl, for_)
 import Data.Lens (Optic)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Newtype (class Newtype)
 import Data.Map as Map
 import Data.Set as Set
 import Data.Profunctor (class Profunctor, dimap, lcmap)
@@ -250,46 +250,28 @@ instance Functor m => Profunctor (PUI m) where
 -- holds only as primed equivalence — a pre-feed emission is dropped, not
 -- delayed (a permanent prefix difference, tested as such in test/Main.purs;
 -- doc/observational-semantics.md).
-instance MonadEffect m => Strong (PUI m) where
-  first p = fromHandles do
-    p' <- handles p
-    -- state is allocated in the construction monad, per instantiation — the
-    -- phase it belongs to (doc/observational-semantics.md §1), which is also
-    -- what keeps every `foreach` row on its own ref
-    lastab <- liftEffect $ Ref.new Nothing
-    guard <- liftEffect gateGuard
-    pure
-      { toUser: \ab -> do
-          guard.fed
-          Ref.write (Just ab) lastab
-          p'.toUser $ fst ab
-      , fromUser: \prop ->
-          p'.fromUser \b -> do
-            mab <- Ref.read lastab
-            case mab of
-              Nothing -> do
-                guard.blocked "Strong.first: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value." []
-                tr "Strong.first: emission withheld (pair state unknown)" b
-              Just prevab -> prop (Tuple b (snd prevab))
-      }
-  second p = fromHandles do
-    p' <- handles p
-    lastab <- liftEffect $ Ref.new Nothing
-    guard <- liftEffect gateGuard
-    pure
-      { toUser: \ab -> do
-          guard.fed
-          Ref.write (Just ab) lastab
-          p'.toUser $ snd ab
-      , fromUser: \prop ->
-          p'.fromUser \b -> do
-            mab <- Ref.read lastab
-            case mab of
-              Nothing -> do
-                guard.blocked "Strong.second: emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value." []
-                tr "Strong.second: emission withheld (pair state unknown)" b
-              Just prevab -> prop (Tuple (fst prevab) b)
-      }
+instance Functor m => Strong (PUI m) where
+  first (PUI p) = PUI $ retainingPair "Strong.first" fst (\b ab -> Tuple b (snd ab)) <$> p
+  second (PUI p) = PUI $ retainingPair "Strong.second" snd (\b ab -> Tuple (fst ab) b) <$> p
+
+-- The pair state is allocated at registration, once per instantiation —
+-- the phase it belongs to (doc/observational-semantics.md §1), which is
+-- also what keeps every `foreach` row on its own ref: the last pair fed,
+-- the inner leg shown its focus, an emission completed with the retained
+-- side or withheld before any pair arrived.
+retainingPair :: forall a b x y. String -> (x -> a) -> (b -> x -> y) -> Registration a b -> Registration x y
+retainingPair name focus completed reg prop = do
+  lastRef <- Ref.new Nothing
+  guard <- gateGuard
+  leg <- reg \b -> Ref.read lastRef >>= case _ of
+    Nothing -> do
+      guard.blocked (name <> ": emissions dropped for 3s — the pair state was never fed (no input arrived), so the gate cannot complete a Tuple. Feed the stage a first value.") []
+      tr (name <> ": emission withheld (pair state unknown)") b
+    Just x -> prop (completed b x)
+  pure \x -> do
+    guard.fed
+    Ref.write (Just x) lastRef
+    leg (focus x)
 
 instance Functor m => Choice (PUI m) where
   left (PUI p) = PUI $ p <#> \reg prop -> reg (prop <<< Left) <#> \leg -> either leg (prop <<< Right)

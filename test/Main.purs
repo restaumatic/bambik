@@ -36,7 +36,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, cancelScope, capture, dispatched, fold, folding, foreach, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
+import PUI (fromHandles, handles, PUI, ScopeState(..), accumulated, acted, announce, anyOf, cancelScope, capture, dispatched, fold, folding, foreach, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
