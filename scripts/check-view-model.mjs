@@ -16,8 +16,8 @@ const walk = (dir) => readdirSync(dir).flatMap((n) => {
 // Boolean fields edited by a Boolean editor.
 const allow = new Set([
   ...['"Favorite"', '"Payment protection insurance"', '"Extra shot"', '"Decaf"', '"Uppercase letters"',
-      '"Symbols"', '"Lowercase letters"', '"Include a Teams link"', '"Digits"', '"Takeaway cup"',
-      "\"I'd recommend it to a friend\"", '"Oscar"', '"Mark as favorite"', '"Cult"', '"Classic"']
+      '"Symbols"', '"Lowercase letters"', '"Teams link"', '"Digits"', '"Takeaway cup"',
+      '"Recommend to a friend"', '"Oscar"', '"Mark as favorite"', '"Cult"', '"Classic"']
     .map((l) => `${l} :: Boolean`),
 ]);
 

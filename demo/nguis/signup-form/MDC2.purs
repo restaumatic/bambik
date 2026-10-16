@@ -19,7 +19,7 @@ signupForm =
     select @"Country"
       (choice @"Poland" <+> choice @"Germany" <+> choice @"France" <+> choice @"Spain")
     filledTextField @"Email"
-    checkbox @"I accept the terms of service" @"accepted" @"declined" # tooltip "You must accept the terms of service to sign up"
+    checkbox @"Accept the terms of service" @"accepted" @"declined" # tooltip "You must accept the terms of service to sign up"
     ( body2 $ staticText "Pick a username to check its availability" ) # inCase @"unnamed" usernameStatus
     ( body2 $ text takenLine ) # inCase @"taken" usernameStatus
     ( body2 $ text availableLine ) # inCase @"available" usernameStatus

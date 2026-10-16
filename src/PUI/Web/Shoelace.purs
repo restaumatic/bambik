@@ -29,8 +29,10 @@ module PUI.Web.Shoelace
   , selectUnpicked
   , selectOptional
   , sliderLive
+  , sliderLive'
   , textArea
   , textField
+  , textField'
   , toast
   , toggleSwitch
   ) where
@@ -114,11 +116,21 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- | arriving from elsewhere. A whole-row citizen: fed the wide row, it
 -- | edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+textField = focusField @l $ "name" := reflectSymbol (Proxy @l) $ inputLeaf (reflectSymbol (Proxy @l)) ""
+
+-- | `textField` with a `hint` under it — a format or an example the label
+-- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
+-- | label stays the field's name. Shown as Shoelace's help text.
+textField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
+textField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ inputLeaf (reflectSymbol (Proxy @l)) hint
+
+inputLeaf :: String -> String -> PUI Web String String
+inputLeaf lbl hint = fromHandles do
   -- the shadow input keeps the host as `activeElement`, so the focus guard
   -- reads the host
   element "sl-input" (pure unit)
-  attribute "label" config.label
+  attribute "label" lbl
+  when (hint /= "") $ attribute "help-text" hint
   node <- gets _.sibling
   liftEffect $ editorWiring
     { show: setValue node
@@ -181,11 +193,21 @@ rating = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "na
 -- | drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number shows in the control's own tooltip while dragging.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+sliderLive = focusField @l $ "name" := reflectSymbol (Proxy @l) $ rangeLeaf (reflectSymbol (Proxy @l)) ""
+
+-- | `sliderLive` whose value is read in a `unit` (`sliderLive' @"Amount"
+-- | { unit: "€" }`), shown after the number in the control's tooltip, so
+-- | the label stays the quantity's name.
+sliderLive' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
+sliderLive' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ rangeLeaf (reflectSymbol (Proxy @l)) config.unit
+
+rangeLeaf :: String -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+rangeLeaf lbl measure = fromHandles do
   element "sl-range" (pure unit)
-  attribute "label" config.label
+  attribute "label" lbl
   attribute "style" "width: 100%; min-width: 240px;"
   node <- gets _.sibling
+  liftEffect $ when (measure /= "") $ setTooltipUnit node measure
   liftEffect $ editorWiring
     { show: \q -> do
         setAttribute node "min" (show q.min)
@@ -322,6 +344,7 @@ divider = separating dividerExact
 -- Private
 
 foreign import setNumberProp :: String -> Node -> Number -> Effect Unit
+foreign import setTooltipUnit :: Node -> String -> Effect Unit
 foreign import getNumberProp :: String -> Node -> Effect Number
 foreign import showAlert :: Node -> Effect Unit
 

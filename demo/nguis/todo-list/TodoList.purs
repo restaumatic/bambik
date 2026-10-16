@@ -8,28 +8,28 @@ import Data.Variant (match)
 
 emptyTodoList
   :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
-emptyTodoList = { "What needs to be done?": "", todos: [], "Visibility": ."All" {} }
+emptyTodoList = { "Todo": "", todos: [], "Visibility": ."All" {} }
 
 addTodo
   :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
-addTodo m@{ "What needs to be done?": entry, todos } =
+addTodo m@{ "Todo": entry, todos } =
   if trim entry == "" then m
-  else m { todos = snoc todos { id: nextId todos, title: trim entry, status: .active {} }, "What needs to be done?" = "" }
+  else m { todos = snoc todos { id: nextId todos, title: trim entry, status: .active {} }, "Todo" = "" }
 
 toggleTodo
   :: { event :: Int
      , model :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-                , "What needs to be done?" :: String
+                , "Todo" :: String
                 , todos :: Array { id :: Int
                                  , status :: [ active :: {}, completed :: {} ]
                                  , title :: String
@@ -37,18 +37,18 @@ toggleTodo
                 }
      }
   -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
 toggleTodo { event: id, model: m@{ todos } } = m { todos = map (\t -> if t.id == id then t { status = flipped t.status } else t) todos }
 
 clearCompleted
   :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
 clearCompleted m@{ todos } = m { todos = filter (isActive <<< _.status) todos }
@@ -63,7 +63,7 @@ itemsLeft { todos } = length (filter (isActive <<< _.status) todos)
 
 remainingItems
   :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> [ several :: {}, sole :: {} ]
@@ -71,7 +71,7 @@ remainingItems { todos } = if itemsLeft { todos } == 1 then .sole {} else .sever
 
 soleLine
   :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> String
@@ -79,7 +79,7 @@ soleLine { todos } = show (itemsLeft { todos }) <> " item left"
 
 severalLine
   :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> String
@@ -87,7 +87,7 @@ severalLine { todos } = show (itemsLeft { todos }) <> " items left"
 
 visibleEntries
   :: { "Visibility" :: [ "Active" :: {}, "All" :: {}, "Completed" :: {} ]
-     , "What needs to be done?" :: String
+     , "Todo" :: String
      , todos :: Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }
      }
   -> Array { id :: Int, status :: [ active :: {}, completed :: {} ], title :: String }

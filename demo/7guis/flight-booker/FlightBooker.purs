@@ -11,8 +11,8 @@ import Effect.Aff (Aff)
 
 type Trip =
   { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-  , "Return date (DD.MM.YYYY)" :: String
-  , "Start date (DD.MM.YYYY)" :: String
+  , "Return date" :: String
+  , "Start date" :: String
   }
 
 type Date = { y :: Int, m :: Int, d :: Int }
@@ -26,7 +26,7 @@ type Problem =
 type Itinerary = [ oneWayOn :: Date, returnBetween :: { out :: Date, back :: Date } ]
 
 plannedTrip :: Trip
-plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.2026", "Return date (DD.MM.YYYY)": "27.03.2026" }
+plannedTrip = { "Flight type": ."one-way" {}, "Start date": "27.03.2026", "Return date": "27.03.2026" }
 
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
@@ -39,12 +39,12 @@ returnBetween { out, back } =
 parse
   :: forall r1.
      { "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-     , "Start date (DD.MM.YYYY)" :: String
-     , "Return date (DD.MM.YYYY)" :: String
+     , "Start date" :: String
+     , "Return date" :: String
      | r1
      }
   -> Either Problem Itinerary
-parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } = case parseDate startInput of
+parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } = case parseDate startInput of
   Nothing -> Left (.unreadableStart { input: startInput })
   Just start ->
     if flightType /= ."return" {} then Right (.oneWayOn start)
@@ -72,11 +72,11 @@ problemText = match
   }
 
 oneWayLine :: Trip -> String
-oneWayLine { "Start date (DD.MM.YYYY)": startInput } =
+oneWayLine { "Start date": startInput } =
   maybe "" (\out -> summary (.oneWayOn out)) (parseDate startInput)
 
 returnLine :: Trip -> String
-returnLine { "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } =
+returnLine { "Start date": startInput, "Return date": returnInput } =
   case parseDate startInput, parseDate returnInput of
     Just out, Just back -> summary (.returnBetween { out, back })
     _, _ -> ""

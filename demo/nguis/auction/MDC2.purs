@@ -13,6 +13,6 @@ auction :: Effect Unit
 auction =
   body $ Semigroupoid.do
     body2 $ text bidLine
-    sliderLive @"Your bid ($)" # settled raiseTop
+    sliderLive @"Bid" # settled raiseTop
     headline6 $ text topLine
   # looped # with openingBid

@@ -73,6 +73,7 @@ module PUI.Web.MDC3
   , fab
   , filledTextArea
   , filledTextField
+  , filledTextField'
   , filterChip
   , group
   , headlineLarge
@@ -101,6 +102,7 @@ module PUI.Web.MDC3
   , menuItem
   , outlinedButton
   , outlinedTextField
+  , outlinedTextField'
   , radioButton
   , radioButtonUnpicked
   , radioButtonOptional
@@ -112,7 +114,9 @@ module PUI.Web.MDC3
   , selectOptional
   , confirmed
   , slider
+  , slider'
   , sliderLive
+  , sliderLive'
   , snackbar
   , tabBar
   , tabBar'
@@ -137,6 +141,7 @@ import Data.Array (findIndex, (!!))
 import Data.Foldable (foldMap, for_, traverse_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
 import Data.Traversable (for)
@@ -346,18 +351,28 @@ menuItem = eventLeaf @l $
 -- | interrupted by values arriving from elsewhere. A whole-row citizen:
 -- | fed the wide row, it edits field `l` and carries the rest.
 filledTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel)
+filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel "")
+
+-- | `filledTextField` with a `hint` under it — a format or an example the
+-- | label is not (`filledTextField' @"Start date" { hint: "DD.MM.YYYY" }`),
+-- | so the label stays the field's name. Shown as MD3's supporting text.
+filledTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
+filledTextField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing (reflectSymbol (Proxy @l)) hint)
 
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.
 outlinedTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel)
+outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel "")
+
+-- | `outlinedTextField` with a `hint` under it, as `filledTextField'`.
+outlinedTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
+outlinedTextField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing (reflectSymbol (Proxy @l)) hint)
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
 debouncedTextField :: forall @l r b. IsSymbol l => Cons l String b r => { ms :: Number } -> PUI Web { | r } { | r }
-debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel)
+debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel "")
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
@@ -366,10 +381,11 @@ debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Pro
 -- activeElement), but still echo so the channel stays live. Debouncing
 -- sits at the DOM boundary (`Web.onInputDebounced`), in front of the wire
 -- rather than on it, so the field stays loop-safe.
-textFieldLeaf :: String -> Maybe Number -> String -> PUI Web String String
-textFieldLeaf tag mDebounce floatingLabel = fromHandles do
+textFieldLeaf :: String -> Maybe Number -> String -> String -> PUI Web String String
+textFieldLeaf tag mDebounce floatingLabel hint = fromHandles do
   element tag (pure unit)
   attribute "label" floatingLabel
+  when (hint /= "") $ attribute "supporting-text" hint
   node <- gets _.sibling
   liftEffect $ editorWiring
     { show: setValue node
@@ -539,39 +555,56 @@ switchLeaf lbl =
 -- | entry in the history — one undo step, one audit line. For a readout
 -- | that follows the thumb, use `sliderLive`.
 slider :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-slider = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label)
+slider = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label "")
+
+-- | `slider` whose value is read in a `unit` (`slider' @"Amount" { unit:
+-- | "€" }`), shown after the number on the handle's value label, so the
+-- | label stays the quantity's name.
+slider' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
+slider' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false (reflectSymbol (Proxy @l)) config.unit)
 
 -- | `slider` reporting continuously while the thumb moves — for a live
 -- | readout or preview that has to follow the drag. Whatever it drives
 -- | should be cheap to redo; a drag that should land in the history as one
 -- | change needs the plain `slider`, or a `debounced` stage downstream.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label)
+sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label "")
+
+-- | `sliderLive` whose value is read in a `unit`, as `slider'`.
+sliderLive' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
+sliderLive' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true (reflectSymbol (Proxy @l)) config.unit)
 
 -- `<md-slider>` ships no text label of its own (`labeled` is the handle's
 -- value indicator), so a non-empty config label renders visibly above the
 -- slider, like a text field's floating label.
-sliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-sliderLeaf live label
-  | label == "" = bareSliderLeaf live label
+sliderLeaf :: Boolean -> String -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+sliderLeaf live label measure
+  | label == "" = bareSliderLeaf live label measure
   | otherwise =
       div >>> "style" := "display: inline-flex; flex-direction: column; align-items: flex-start;" $ fromHandles do
         _ <- handles (span >>> cl "md-typescale-label-medium" >>> "style" := "color: var(--md-sys-color-on-surface-variant, #49454f); margin-left: 8px;" $ staticText label)
-        handles (bareSliderLeaf live label)
+        handles (bareSliderLeaf live label measure)
 
-bareSliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-bareSliderLeaf live label = fromHandles do
+bareSliderLeaf :: Boolean -> String -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+bareSliderLeaf live label measure = fromHandles do
   element "md-slider" (pure unit)
   attribute "labeled" ""
   attribute "aria-label" label
   attribute "style" "min-width: 200px;"
   node <- gets _.sibling
+  -- the handle's value label reads the number in its unit; `valueLabel`
+  -- is a plain property, so it follows the thumb by listening to it
+  let measured = when (measure /= "") do
+        v <- getNumberProp "value" node
+        setStringProp "valueLabel" node (toString v <> " " <> measure)
+  liftEffect $ when (measure /= "") $ listenNode node "input" measured
   liftEffect $ editorWiring
     { show: \q -> do
         setNumberProp "min" node q.min
         setNumberProp "max" node q.max
         Variant.match { discrete: \s -> setNumberProp "step" node s, continuous: \_ -> removeAttribute node "step" } q.step
         setNumberProp "value" node q.current
+        measured
     , held: pure false
     , reports: \report -> do
         when live $ listenNode node "input" report
@@ -1375,6 +1408,7 @@ imagePaneFace picture = fromHandles do
 -- Private
 
 foreign import setNumberProp :: String -> Node -> Number -> Effect Unit
+foreign import setStringProp :: String -> Node -> String -> Effect Unit
 foreign import getNumberProp :: String -> Node -> Effect Number
 foreign import setIntProp :: String -> Node -> Int -> Effect Unit
 foreign import getIntProp :: String -> Node -> Effect Int

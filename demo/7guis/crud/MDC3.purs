@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (action, capture, fold, joined, load, looped)
 import PUI.Web (text)
-import PUI.Web.MDC3 (body, button, filledTextField, indeterminateLinearProgress, listOf', snackbar)
+import PUI.Web.MDC3 (body, button, filledTextField, filledTextField', indeterminateLinearProgress, listOf', snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crud :: Effect Unit
@@ -17,7 +17,7 @@ crud =
     indeterminateLinearProgress # load loadPeopleCatalogue
     capture @"People loaded"
     ( Semigroupoid.do
-      filledTextField @"Filter prefix (surname)"
+      filledTextField' @"Filter" { hint: "Surname prefix" }
       filledTextField @"Name"
       filledTextField @"Surname"
       RecordToVariant.do

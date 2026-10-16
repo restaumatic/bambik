@@ -19,10 +19,10 @@ flightBooker =
         select @"Flight type" (choice @"one-way" <+> choice @"return")
       p $ label $ Semigroupoid.do
         staticText "Start date (DD.MM.YYYY) "
-        input @"Start date (DD.MM.YYYY)" "text"
+        input @"Start date" "text"
       ( p $ label $ Semigroupoid.do
         staticText "Return date (DD.MM.YYYY) "
-        input @"Return date (DD.MM.YYYY)" "text" ) # inCaseAt @"return" @"Flight type"
+        input @"Return date" "text" ) # inCaseAt @"return" @"Flight type"
     ) # looped # with plannedTrip
     ( Semigroupoid.do
       ( p $ text problemLine ) # inCase @"problem" bookingState

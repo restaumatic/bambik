@@ -24,7 +24,7 @@ import Effect (Effect)
 import FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit)
 import PUI (action, debounced, looped, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
-import PUI.Web.MDC2 (body, body1, button', filledTextField, indeterminateLinearProgress, select, snackbar)
+import PUI.Web.MDC2 (body, body1, button', filledTextField', indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
@@ -33,8 +33,8 @@ flightBooker =
     ( Semigroupoid.do
       select @"Flight type"
         (choice @"one-way" <+> choice @"return")
-      filledTextField @"Start date (DD.MM.YYYY)"
-      filledTextField @"Return date (DD.MM.YYYY)" # inCaseAt @"return" @"Flight type"
+      filledTextField' @"Start date" { hint: "DD.MM.YYYY" }
+      filledTextField' @"Return date" { hint: "DD.MM.YYYY" } # inCaseAt @"return" @"Flight type"
     ) # looped # with plannedTrip
     ( Semigroupoid.do
       ( body1 $ text problemLine ) # inCase @"problem" bookingState
@@ -78,9 +78,10 @@ signature, in the view model module.
   the options in writing order while closing their row. A trip always
   has a type, so the plain `select` fits: the field holds the variant
   itself.
-- `filledTextField @"Start date (DD.MM.YYYY)"` — the label carries the
-  whole copy, format hint included; a leaf takes no options record.
-- `filledTextField @"Return date (DD.MM.YYYY)" # inCaseAt @"return" @"Flight type"`
+- `filledTextField' @"Start date" { hint: "DD.MM.YYYY" }` — the label is
+  the field's name, drawn as its caption; the format is not the name, so
+  it rides the primed sibling's `hint`, drawn under the field.
+- `filledTextField' @"Return date" { hint: "DD.MM.YYYY" } # inCaseAt @"return" @"Flight type"`
   — the editor pane: this field exists only while the stored
   `"Flight type"` is at case `return`, and the model passes straight
   through otherwise. The pane names the case and then the field, both
@@ -158,8 +159,8 @@ import Effect.Aff (Aff)
 
 type Trip =
   { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-  , "Return date (DD.MM.YYYY)" :: String
-  , "Start date (DD.MM.YYYY)" :: String
+  , "Return date" :: String
+  , "Start date" :: String
   }
 
 type Date = { y :: Int, m :: Int, d :: Int }
@@ -173,7 +174,7 @@ type Problem =
 type Itinerary = [ oneWayOn :: Date, returnBetween :: { out :: Date, back :: Date } ]
 
 plannedTrip :: Trip
-plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.2026", "Return date (DD.MM.YYYY)": "27.03.2026" }
+plannedTrip = { "Flight type": ."one-way" {}, "Start date": "27.03.2026", "Return date": "27.03.2026" }
 
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
@@ -186,12 +187,12 @@ returnBetween { out, back } =
 parse
   :: forall r1.
      { "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-     , "Start date (DD.MM.YYYY)" :: String
-     , "Return date (DD.MM.YYYY)" :: String
+     , "Start date" :: String
+     , "Return date" :: String
      | r1
      }
   -> Either Problem Itinerary
-parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } = case parseDate startInput of
+parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } = case parseDate startInput of
   Nothing -> Left (.unreadableStart { input: startInput })
   Just start ->
     if flightType /= ."return" {} then Right (.oneWayOn start)
@@ -219,11 +220,11 @@ problemText = match
   }
 
 oneWayLine :: Trip -> String
-oneWayLine { "Start date (DD.MM.YYYY)": startInput } =
+oneWayLine { "Start date": startInput } =
   maybe "" (\out -> summary (.oneWayOn out)) (parseDate startInput)
 
 returnLine :: Trip -> String
-returnLine { "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } =
+returnLine { "Start date": startInput, "Return date": returnInput } =
   case parseDate startInput, parseDate returnInput of
     Just out, Just back -> summary (.returnBetween { out, back })
     _, _ -> ""
@@ -268,7 +269,7 @@ module*).
 **The exports, in the order the view uses them.**
 
 - `plannedTrip` — the starting record `with` feeds the loop. Its keys are the leaves'
-  labels, quoted because they are copy (`"Start date (DD.MM.YYYY)"`), and
+  labels, quoted because they are copy (`"Start date"`), and
   its variant field is written with the constructor sugar `."one-way" {}`
   (the type `[ … ]` is the matching type sugar).
 - `Trip` — the model row, exported because the exported signatures use

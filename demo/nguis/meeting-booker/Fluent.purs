@@ -16,12 +16,12 @@ meetingBooker =
     ( Semigroupoid.do
       textField @"Meeting title"
       dropdownUnpicked @"Room" @"chosen"
-        (choice @"Focus pod (4 seats)" <+> choice @"Boardroom (12 seats)" <+> choice @"Auditorium (40 seats)") # settled seatsInRoom
-      radioGroupUnpicked @"Duration (min)" @"chosen"
-        (choice @"15" <+> choice @"30" <+> choice @"60")
+        (choice @"Focus pod" <+> choice @"Boardroom" <+> choice @"Auditorium") # settled seatsInRoom
+      radioGroupUnpicked @"Duration" @"chosen"
+        (choice @"15 min" <+> choice @"30 min" <+> choice @"60 min")
       dropdownOptional @"Catering" @"ordered" @"none"
-        (choice @"coffee and pastries" <+> choice @"sandwich lunch")
-      toggleSwitch @"Include a Teams link"
+        (choice @"Coffee and pastries" <+> choice @"Sandwich lunch")
+      toggleSwitch @"Teams link"
       divider $ slider @"Attendees" # inCaseAt @"chosen" @"Room"
     ) # looped # with blankBooking
     ( div $ Semigroupoid.do

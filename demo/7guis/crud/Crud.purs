@@ -11,7 +11,7 @@ import Effect.Aff (Aff)
 
 loadPeopleCatalogue
   :: {}
-  -> Aff [ "People loaded" :: { "Filter prefix (surname)" :: String
+  -> Aff [ "People loaded" :: { "Filter" :: String
                               , "Name" :: String
                               , "Surname" :: String
                               , people :: Array { "Name" :: String, "Surname" :: String }
@@ -20,18 +20,18 @@ loadPeopleCatalogue
          ]
 loadPeopleCatalogue _ = do
   people <- fetchPeople
-  pure (."People loaded" { "Filter prefix (surname)": "", "Name": "", "Surname": "", people, selected: .none {} })
+  pure (."People loaded" { "Filter": "", "Name": "", "Surname": "", people, selected: .none {} })
 
 pick
   :: { event :: Int
-     , model :: { "Filter prefix (surname)" :: String
+     , model :: { "Filter" :: String
                 , "Name" :: String
                 , "Surname" :: String
                 , people :: Array { "Name" :: String, "Surname" :: String }
                 , selected :: [ none :: {}, picked :: { index :: Int } ]
                 }
      }
-  -> { "Filter prefix (surname)" :: String
+  -> { "Filter" :: String
      , "Name" :: String
      , "Surname" :: String
      , people :: Array { "Name" :: String, "Surname" :: String }
@@ -42,19 +42,19 @@ pick { event: i, model: m@{ people } } = case index people i of
   Nothing -> m
 
 createPerson
-  :: { "Filter prefix (surname)" :: String
+  :: { "Filter" :: String
      , "Name" :: String
      , "Surname" :: String
      , people :: Array { "Name" :: String, "Surname" :: String }
      , selected :: [ none :: {}, picked :: { index :: Int } ]
      }
-  -> Aff [ "Person created" :: { "Filter prefix (surname)" :: String
+  -> Aff [ "Person created" :: { "Filter" :: String
                                , "Name" :: String
                                , "Surname" :: String
                                , people :: Array { "Name" :: String, "Surname" :: String }
                                , selected :: [ none :: {}, picked :: { index :: Int } ]
                                }
-         , "Person not created" :: { "Filter prefix (surname)" :: String
+         , "Person not created" :: { "Filter" :: String
                                    , "Name" :: String
                                    , "Surname" :: String
                                    , people :: Array { "Name" :: String, "Surname" :: String }
@@ -66,19 +66,19 @@ createPerson m@{ "Name": name, "Surname": surname, people }
   | otherwise = (\ps -> ."Person created" (refreshPeople ps m)) <$> storePeople (snoc people { "Name": name, "Surname": surname })
 
 updatePerson
-  :: { "Filter prefix (surname)" :: String
+  :: { "Filter" :: String
      , "Name" :: String
      , "Surname" :: String
      , people :: Array { "Name" :: String, "Surname" :: String }
      , selected :: [ none :: {}, picked :: { index :: Int } ]
      }
-  -> Aff [ "Person not updated" :: { "Filter prefix (surname)" :: String
+  -> Aff [ "Person not updated" :: { "Filter" :: String
                                    , "Name" :: String
                                    , "Surname" :: String
                                    , people :: Array { "Name" :: String, "Surname" :: String }
                                    , selected :: [ none :: {}, picked :: { index :: Int } ]
                                    }
-         , "Person updated" :: { "Filter prefix (surname)" :: String
+         , "Person updated" :: { "Filter" :: String
                                , "Name" :: String
                                , "Surname" :: String
                                , people :: Array { "Name" :: String, "Surname" :: String }
@@ -91,19 +91,19 @@ updatePerson m@{ "Name": name, "Surname": surname, people, selected } = match
   } selected
 
 deletePerson
-  :: { "Filter prefix (surname)" :: String
+  :: { "Filter" :: String
      , "Name" :: String
      , "Surname" :: String
      , people :: Array { "Name" :: String, "Surname" :: String }
      , selected :: [ none :: {}, picked :: { index :: Int } ]
      }
-  -> Aff [ "Person deleted" :: { "Filter prefix (surname)" :: String
+  -> Aff [ "Person deleted" :: { "Filter" :: String
                                , "Name" :: String
                                , "Surname" :: String
                                , people :: Array { "Name" :: String, "Surname" :: String }
                                , selected :: [ none :: {}, picked :: { index :: Int } ]
                                }
-         , "Person not deleted" :: { "Filter prefix (surname)" :: String
+         , "Person not deleted" :: { "Filter" :: String
                                    , "Name" :: String
                                    , "Surname" :: String
                                    , people :: Array { "Name" :: String, "Surname" :: String }
@@ -117,13 +117,13 @@ deletePerson m@{ people, selected } = match
 
 refreshPeople
   :: Array { "Name" :: String, "Surname" :: String }
-  -> { "Filter prefix (surname)" :: String
+  -> { "Filter" :: String
      , "Name" :: String
      , "Surname" :: String
      , people :: Array { "Name" :: String, "Surname" :: String }
      , selected :: [ none :: {}, picked :: { index :: Int } ]
      }
-  -> { "Filter prefix (surname)" :: String
+  -> { "Filter" :: String
      , "Name" :: String
      , "Surname" :: String
      , people :: Array { "Name" :: String, "Surname" :: String }
@@ -133,13 +133,13 @@ refreshPeople people m = m { people = people }
 
 peopleDeleted
   :: Array { "Name" :: String, "Surname" :: String }
-  -> { "Filter prefix (surname)" :: String
+  -> { "Filter" :: String
      , "Name" :: String
      , "Surname" :: String
      , people :: Array { "Name" :: String, "Surname" :: String }
      , selected :: [ none :: {}, picked :: { index :: Int } ]
      }
-  -> { "Filter prefix (surname)" :: String
+  -> { "Filter" :: String
      , "Name" :: String
      , "Surname" :: String
      , people :: Array { "Name" :: String, "Surname" :: String }
@@ -148,7 +148,7 @@ peopleDeleted
 peopleDeleted people m = m { people = people, selected = .none {} }
 
 entries
-  :: { "Filter prefix (surname)" :: String
+  :: { "Filter" :: String
      , "Name" :: String
      , "Surname" :: String
      , people :: Array { "Name" :: String, "Surname" :: String }
@@ -159,7 +159,7 @@ entries
            , key :: Int
            , status :: [ selected :: {}, unselected :: {} ]
            }
-entries { "Filter prefix (surname)": prefix, selected, people } =
+entries { "Filter": prefix, selected, people } =
   (\{ i, p } -> { key: i, "Name": p."Name", "Surname": p."Surname", status: statusOf i })
     <$> filter (\{ p } -> hasPrefix prefix p."Surname") (mapWithIndex (\i p -> { i, p }) people)
   where

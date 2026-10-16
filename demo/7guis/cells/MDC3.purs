@@ -8,14 +8,14 @@ import Effect (Effect)
 import PUI (anyOf, anyOfAt, fold, foreach, joined, looped, settled, with)
 import PUI.Web (attrWith, text, textAt, (:=))
 import PUI.Web.HTML (div, table, td, tr)
-import PUI.Web.MDC3 (body, bodyLarge, filledTextField, tile)
+import PUI.Web.MDC3 (body, bodyLarge, filledTextField', tile)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cells :: Effect Unit
 cells =
   body $ Semigroupoid.do
     bodyLarge $ text selectedLine
-    filledTextField @"Formula (e.g. =SUM(A0:A5)*2)" # settled commit
+    filledTextField' @"Formula" { hint: "e.g. =SUM(A0:A5)*2" } # settled commit
     ( div >>> "style" := "overflow: auto; max-height: 420px;" $
       table >>> "style" := "border-collapse: collapse; font-size: 13px;" $ Semigroupoid.do
         tr $ ( td >>> "style" := headerFace $ textAt @"text" ) # foreach @"key" (const columnHeaders)

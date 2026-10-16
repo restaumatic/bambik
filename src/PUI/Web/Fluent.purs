@@ -33,7 +33,9 @@ module PUI.Web.Fluent
   , radioGroupOptional
   , ratingDisplay
   , slider
+  , slider'
   , textField
+  , textField'
   , title3
   , toggleSwitch
   ) where
@@ -130,18 +132,34 @@ fieldWith position lbl editor = el "fluent-field" >>> "label-position" := positi
 -- | arriving from elsewhere. A whole-row citizen: fed the wide row, it
 -- | edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
-  -- Fluent keeps the real `<input>` in the light DOM, so the focus guard
-  -- checks containment
-  element "fluent-text-input" (pure unit)
-  attribute "slot" "input"
-  node <- gets _.sibling
-  liftEffect $ editorWiring
-    { show: setValue node
-    , held: containsFocus node
-    , reports: listenNode node "input"
-    , read: \_ -> getValue node
-    }
+textField = focusField @l $ "name" := reflectSymbol (Proxy @l) $ textInputLeaf (reflectSymbol (Proxy @l)) ""
+
+-- | `textField` with a `hint` under it — a format or an example the label
+-- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
+-- | label stays the field's name. Shown as the field's message.
+textField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
+textField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ textInputLeaf (reflectSymbol (Proxy @l)) hint
+
+textInputLeaf :: String -> String -> PUI Web String String
+textInputLeaf lbl hint = el "fluent-field" >>> "label-position" := "above" $ fromHandles do
+  _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText lbl)
+  editor <- textInput
+  when (hint /= "") $
+    void $ handles (el "fluent-text" >>> "slot" := "message" >>> "size" := "200" $ staticText hint)
+  pure editor
+  where
+  textInput = do
+    -- Fluent keeps the real `<input>` in the light DOM, so the focus guard
+    -- checks containment
+    element "fluent-text-input" (pure unit)
+    attribute "slot" "input"
+    node <- gets _.sibling
+    liftEffect $ editorWiring
+      { show: setValue node
+      , held: containsFocus node
+      , reports: listenNode node "input"
+      , read: \_ -> getValue node
+      }
 
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | Its label sits after the control, in Fluent's manner.
@@ -172,9 +190,18 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
 -- | be `debounced` downstream. The current number is shown at the end of
 -- | the label line, since the control has no readout of its own.
 slider :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-slider = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ el "fluent-field" >>> "label-position" := "above" $ fromHandles do
+slider = focusField @l $ "name" := reflectSymbol (Proxy @l) $ sliderLeaf (reflectSymbol (Proxy @l)) ""
+
+-- | `slider` whose value is read in a `unit` (`slider' @"Amount" { unit:
+-- | "€" }`), shown after the number in the label line's readout, so the
+-- | label stays the quantity's name.
+slider' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
+slider' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ sliderLeaf (reflectSymbol (Proxy @l)) config.unit
+
+sliderLeaf :: String -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+sliderLeaf lbl measure = el "fluent-field" >>> "label-position" := "above" $ fromHandles do
   readout <- handles $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ fromHandles do
-      _ <- handles (staticText config.label)
+      _ <- handles (staticText lbl)
       handles (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text _.readout))
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
@@ -187,11 +214,13 @@ slider = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "na
         setAttribute node "max" (show q.max)
         Variant.match { discrete: \s -> setAttribute node "step" (show s), continuous: \_ -> removeAttribute node "step" } q.step
         setNumberProp "valueAsNumber" node q.current
-        readout.toUser { readout: toString q.current }
+        readout.toUser { readout: measured q.current }
     , held: pure false
     , reports: listenNode node "change"
     , read: \q -> getNumberProp "valueAsNumber" node <#> \v -> q { current = v }
     }
+  where
+  measured n = if measure == "" then toString n else toString n <> " " <> measure
 
 -- | The **dropdown**: one choice out of a list too long to lay out in the
 -- | open.

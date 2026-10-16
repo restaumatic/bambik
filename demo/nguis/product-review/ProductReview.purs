@@ -4,65 +4,65 @@ import Prelude (discard, pure, (<>), (-))
 
 import Data.Int (round)
 import Data.Monoid (power)
-import Data.String (trim)
+import Data.String (toLower, trim)
 import Data.Variant.Case (caseText)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
 freshImpression
   :: { "Headline" :: String
-     , "How long have you owned it?" :: [ "1–12 months" :: {}
-                                        , "less than a month" :: {}
-                                        , "more than a year" :: {}
+     , "Owned for" :: [ "Up to a year" :: {}
+                                        , "Under a month" :: {}
+                                        , "Over a year" :: {}
                                         ]
-     , "I\'d recommend it to a friend" :: Boolean
+     , "Recommend to a friend" :: Boolean
      , "Nickname" :: String
      , "Overall rating" :: { current :: Number, max :: Int }
-     , "Your review" :: String
+     , "Review" :: String
      }
 freshImpression =
   { "Overall rating": { current: 0.0, max: maxStars }
   , "Headline": ""
-  , "Your review": ""
-  , "How long have you owned it?": ."less than a month" {}
-  , "I'd recommend it to a friend": false
+  , "Review": ""
+  , "Owned for": ."Under a month" {}
+  , "Recommend to a friend": false
   , "Nickname": ""
   }
 
 previewLine
   :: { "Headline" :: String
-     , "How long have you owned it?" :: [ "1–12 months" :: {}
-                                        , "less than a month" :: {}
-                                        , "more than a year" :: {}
+     , "Owned for" :: [ "Up to a year" :: {}
+                                        , "Under a month" :: {}
+                                        , "Over a year" :: {}
                                         ]
-     , "I\'d recommend it to a friend" :: Boolean
+     , "Recommend to a friend" :: Boolean
      , "Nickname" :: String
      , "Overall rating" :: { current :: Number, max :: Int }
-     , "Your review" :: String
+     , "Review" :: String
      }
   -> String
 previewLine r =
-  "Preview: " <> starGlyphs r."Overall rating" <> headlineQuote r."Headline" <> " · owned " <> caseText r."How long have you owned it?" <> recommendNote r."I'd recommend it to a friend"
+  "Preview: " <> starGlyphs r."Overall rating" <> headlineQuote r."Headline" <> " · owned for " <> toLower (caseText r."Owned for") <> recommendNote r."Recommend to a friend"
 
 submitReview
   :: { "Headline" :: String
-     , "How long have you owned it?" :: [ "1–12 months" :: {}
-                                        , "less than a month" :: {}
-                                        , "more than a year" :: {}
+     , "Owned for" :: [ "Up to a year" :: {}
+                                        , "Under a month" :: {}
+                                        , "Over a year" :: {}
                                         ]
-     , "I\'d recommend it to a friend" :: Boolean
+     , "Recommend to a friend" :: Boolean
      , "Nickname" :: String
      , "Overall rating" :: { current :: Number, max :: Int }
-     , "Your review" :: String
+     , "Review" :: String
      }
   -> Aff [ "Review submitted" :: { "Headline" :: String
-                                 , "How long have you owned it?" :: [ "1–12 months" :: {}
-                                                                    , "less than a month" :: {}
-                                                                    , "more than a year" :: {}
+                                 , "Owned for" :: [ "Up to a year" :: {}
+                                                                    , "Under a month" :: {}
+                                                                    , "Over a year" :: {}
                                                                     ]
-                                 , "I\'d recommend it to a friend" :: Boolean
+                                 , "Recommend to a friend" :: Boolean
                                  , "Nickname" :: String
                                  , "Overall rating" :: { current :: Number, max :: Int }
-                                 , "Your review" :: String
+                                 , "Review" :: String
                                  }
          ]
 submitReview review = do

@@ -15,7 +15,7 @@ import Data.Variant (match)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 
 orderSheet
-  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+  :: { "Formula" :: String
      , cells :: Object String
      , selected :: [ none :: {}, picked :: { name :: String } ]
      }
@@ -27,11 +27,11 @@ orderSheet =
     , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
     }
   , selected: .none {}
-  , "Formula (e.g. =SUM(A0:A5)*2)": ""
+  , "Formula": ""
   }
 
 selectedLine
-  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+  :: { "Formula" :: String
      , cells :: Object String
      , selected :: [ none :: {}, picked :: { name :: String } ]
      }
@@ -54,7 +54,7 @@ columnHeaders :: Array { key :: String, text :: String }
 columnHeaders = [ { key: "corner", text: "" } ] <> (range 0 (cols - 1) <#> \c -> { key: colName c, text: colName c })
 
 sheetRows
-  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+  :: { "Formula" :: String
      , cells :: Object String
      , selected :: [ none :: {}, picked :: { name :: String } ]
      }
@@ -73,27 +73,27 @@ sheetRows m =
     range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: cellsOfRow r }
 selectCell
   :: { event :: String
-     , model :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+     , model :: { "Formula" :: String
                 , cells :: Object String
                 , selected :: [ none :: {}, picked :: { name :: String } ]
                 }
      }
-  -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+  -> { "Formula" :: String
      , cells :: Object String
      , selected :: [ none :: {}, picked :: { name :: String } ]
      }
-selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula (e.g. =SUM(A0:A5)*2)" = fromMaybe "" (lookup key m.cells) }
+selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula" = fromMaybe "" (lookup key m.cells) }
 
 commit
-  :: { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+  :: { "Formula" :: String
      , cells :: Object String
      , selected :: [ none :: {}, picked :: { name :: String } ]
      }
-  -> { "Formula (e.g. =SUM(A0:A5)*2)" :: String
+  -> { "Formula" :: String
      , cells :: Object String
      , selected :: [ none :: {}, picked :: { name :: String } ]
      }
-commit m@{ selected, "Formula (e.g. =SUM(A0:A5)*2)": formula } = match
+commit m@{ selected, "Formula": formula } = match
   { picked: \p ->
     if lookup p.name m.cells /= Just formula then m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells } else m
   , none: \_ -> m

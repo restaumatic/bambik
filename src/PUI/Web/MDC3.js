@@ -52,6 +52,16 @@ export function setNumberProp(name) {
   };
 }
 
+export function setStringProp(name) {
+  return function (node) {
+    return function (value) {
+      return function () {
+        node[name] = value;
+      };
+    };
+  };
+}
+
 export function getNumberProp(name) {
   return function (node) {
     return function () {

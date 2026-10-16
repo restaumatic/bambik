@@ -2,6 +2,7 @@ module OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, or
 
 import Prelude ((<>), ($), (==), (/=), bind, const, discard, pure, show)
 
+import Data.String (toLower)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 import Effect.Aff (Aff, Milliseconds(..), delay)
@@ -19,7 +20,7 @@ estimateDistance
                         }
      , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
      , "Kitchen" :: { "Remarks" :: String }
-     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     , "Payment" :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ], "Paid" :: String, "Total" :: String }
      }
   -> Aff [ "Distance estimated" :: { km :: Int, to :: String } ]
 estimateDistance { "Fulfillment": { "Address": address } } = do
@@ -45,7 +46,7 @@ setDistance
                                    }
                 , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
                 , "Kitchen" :: { "Remarks" :: String }
-                , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ]
+                , "Payment" :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ]
                                , "Paid" :: String
                                , "Total" :: String
                                }
@@ -60,7 +61,7 @@ setDistance
                         }
      , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
      , "Kitchen" :: { "Remarks" :: String }
-     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     , "Payment" :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ], "Paid" :: String, "Total" :: String }
      }
 setDistance { event, model: order } = order { "Fulfillment" = order."Fulfillment" { distance = .estimated event } }
 
@@ -74,7 +75,7 @@ fulfillmentMode
                         }
      , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
      , "Kitchen" :: { "Remarks" :: String }
-     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     , "Payment" :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ], "Paid" :: String, "Total" :: String }
      }
   -> [ "Delivery" :: {}, "Dine in" :: {}, "Takeaway" :: {} ]
 fulfillmentMode order = order."Fulfillment"."Mode"
@@ -117,7 +118,7 @@ orderLine
                         }
      , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
      , "Kitchen" :: { "Remarks" :: String }
-     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     , "Payment" :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ], "Paid" :: String, "Total" :: String }
      }
   -> String
 orderLine r = "Order " <> r."Identifier"."Short ID"
@@ -132,10 +133,10 @@ summaryLine
                         }
      , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
      , "Kitchen" :: { "Remarks" :: String }
-     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     , "Payment" :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ], "Paid" :: String, "Total" :: String }
      }
   -> String
-summaryLine r = "Summary: Order " <> r."Identifier"."Short ID" <> " (uniquely " <> r."Identifier"."Unique ID" <> ") for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name" <> ", fulfilled as " <> fulfillmentText r."Fulfillment" <> ", paid " <> r."Payment"."Paid" <> " by " <> caseText r."Payment"."Method"
+summaryLine r = "Summary: Order " <> r."Identifier"."Short ID" <> " (uniquely " <> r."Identifier"."Unique ID" <> ") for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name" <> ", fulfilled as " <> fulfillmentText r."Fulfillment" <> ", paid " <> r."Payment"."Paid" <> " by " <> toLower (caseText r."Payment"."Method")
 
 fulfillmentText
   :: { "Address" :: String
@@ -158,9 +159,9 @@ awayText = match
   }
 
 payingLine
-  :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+  :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ], "Paid" :: String, "Total" :: String }
   -> String
-payingLine r = "Paying by " <> caseText r."Method"
+payingLine r = "Paying by " <> toLower (caseText r."Method")
 
 loadOrder
   :: {}
@@ -180,7 +181,7 @@ loadOrder
                                                 }
                              , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
                              , "Kitchen" :: { "Remarks" :: String }
-                             , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ]
+                             , "Payment" :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ]
                                             , "Paid" :: String
                                             , "Total" :: String
                                             }
@@ -200,7 +201,7 @@ loadOrder _ = do
       , "Last name": "Doe"
       }
     , "Fulfillment": { "Mode": ."Takeaway" {}, "Table": "1", "Time": "8:30", "Address": "", distance: .unknown {} }
-    , "Payment": { "Total": "12.30", "Method": ."cash" {}, "Paid": "0.00" }
+    , "Payment": { "Total": "12.30", "Method": ."Cash" {}, "Paid": "0.00" }
     , "Kitchen": { "Remarks": "Very spicy, please!" }
     }
 
@@ -214,16 +215,16 @@ submitOrder
                         }
      , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
      , "Kitchen" :: { "Remarks" :: String }
-     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     , "Payment" :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ], "Paid" :: String, "Total" :: String }
      }
-  -> Aff [ "Order rejected: no total" :: {}, "Order submitted" :: {} ]
+  -> Aff [ "Total missing" :: {}, "Order submitted" :: {} ]
 submitOrder { "Identifier": { "Unique ID": orderId }, "Payment": { "Total": total } } = do
   liftEffect $ log $ "submitting order " <> orderId
   delay (Milliseconds 1000.0)
   if total == ""
     then do
       liftEffect $ log "order submission failed"
-      pure $ ."Order rejected: no total" {}
+      pure $ ."Total missing" {}
     else do
       liftEffect $ log "submitted order"
       pure $ ."Order submitted" {}
@@ -238,7 +239,7 @@ printReceipt
                         }
      , "Identifier" :: { "Short ID" :: String, "Unique ID" :: String }
      , "Kitchen" :: { "Remarks" :: String }
-     , "Payment" :: { "Method" :: [ card :: {}, cash :: {} ], "Paid" :: String, "Total" :: String }
+     , "Payment" :: { "Method" :: [ "Card" :: {}, "Cash" :: {} ], "Paid" :: String, "Total" :: String }
      }
   -> Aff [ "Receipt printed" :: {} ]
 printReceipt { "Identifier": { "Unique ID": orderId } } = do

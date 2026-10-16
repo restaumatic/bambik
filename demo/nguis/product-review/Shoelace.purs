@@ -15,10 +15,10 @@ productReview =
   body $ Semigroupoid.do
     rating @"Overall rating"
     textField @"Headline"
-    textArea @"Your review" { rows: 4 }
-    select @"How long have you owned it?"
-      (choice @"less than a month" <+> choice @"1–12 months" <+> choice @"more than a year")
-    toggleSwitch @"I'd recommend it to a friend"
+    textArea @"Review" { rows: 4 }
+    select @"Owned for"
+      (choice @"Under a month" <+> choice @"Up to a year" <+> choice @"Over a year")
+    toggleSwitch @"Recommend to a friend"
     textField @"Nickname"
     divider $ card $ p $ text previewLine
     button @"Submit review"

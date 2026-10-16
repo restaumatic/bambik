@@ -153,11 +153,17 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   share one handler under different words, they are two business actions
   — each emits its own case and the fold block applies the one handler to
   both (checkout's `stepTo`). An editor takes no caption config at all:
-  the label carries the copy whole — punctuation, format hints and units
-  included (`@"Start date (DD.MM.YYYY)"`, `@"Amount (€)"`). A leaf takes
-  no options record unless one is genuinely needed; a word with optional
-  presentation has a primed sibling (`button'`, `listOf'`), so no call
-  site writes `{}`. A selector's **options** are its ordered case labels
+  the label is its caption and MUST be only the field's name — a format,
+  an example or a unit is not the name and rides the primed sibling
+  (`filledTextField' @"Start date" { hint: "DD.MM.YYYY" }`,
+  `sliderLive' @"Amount" { unit: "€" }`), a question or a sentence is cut
+  to the name it asks for (`@"Todo"`, `@"Teams link"`), a fact about an
+  option is model data (`choice @"Focus pod"`, its seats in the model),
+  and a case label is never shaped to fit a sentence elsewhere (`"Oat
+  milk"`, not `"with oat milk"`). A leaf takes no options record unless
+  one is genuinely needed; a word with optional presentation has a
+  primed sibling (`button'`, `listOf'`, the hinted text fields, the
+  sliders with a unit), so no call site writes `{}`. A selector's **options** are its ordered case labels
   (`choice @l` per option, joined by `<+>` into `Choices w`, whose
   constructor is not exported — a choice is its tag, nothing beside it);
   the order MUST be the order written, never the variant row's, which the
@@ -623,7 +629,7 @@ code below the UI) are algebra-layer material and exempt by location.
   which is a sibling case told by its own status. Mutually exclusive
   outcomes are sibling statuses, each owning its case, so an action's
   outcome row names its outcomes as the words the user reads
-  (`Aff [ "Order rejected: no total" :: {}, "Order submitted" :: {} ]`),
+  (`Aff [ "Order submitted" :: {}, "Total missing" :: {} ]`),
   and a command straight from an emitter, whose case is the button's
   caption, folds silently. Its face is private to the vocabulary — the
   label rendered per occurrence — adopted as its case by `atCase @l`, as

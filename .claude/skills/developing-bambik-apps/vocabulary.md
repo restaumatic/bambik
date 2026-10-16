@@ -76,13 +76,15 @@ and emitters of a catalogue — are in the design-system module header
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
 | a text field | `filledTextField @"First name"` | order-form | writing.md *Components* |
+| a text field with a format or an example under it | `filledTextField' @"Start date" { hint: "DD.MM.YYYY" }` | flight-booker, cells, crud, todo-list | writing.md *Components* |
 | a text field checked as the user pauses | `debouncedTextField @"Username" usernameSettleTime` | signup-form | the design-system module |
-| a yes/no over a two-case field | `checkbox @"I accept the terms of service" @"accepted" @"declined"` | signup-form, espresso-bar | the design-system module |
+| a yes/no over a two-case field | `checkbox @"Accept the terms of service" @"accepted" @"declined"` | signup-form, espresso-bar | the design-system module |
 | a switch | `toggleSwitch @"Takeaway cup"` | espresso-bar | the design-system module |
 | a selection that always has a value | `select @"Flight type" (choice @"one-way" <+> choice @"return")` | flight-booker | writing.md *Components* |
 | a selection owed but not yet made | `dropdownUnpicked @"Room" @"chosen" […]`; `segmentedButtonUnpicked @"Dish" @"chosen"` | meeting-booker; potluck | writing.md *Components* |
 | a selection the user may leave unmade | `dropdownOptional @"Catering" @"ordered" @"none" […]` | meeting-booker | writing.md *Components* |
 | a bounded quantity | `sliderLive @"Duration"`; `slider @"Split between"` | timer; tip-calculator | writing.md *Code style* → *Types and values* |
+| a bounded quantity read in a unit | `sliderLive' @"Amount" { unit: "€" }` | loan-calculator, auction | writing.md *Components* |
 | two controls on one field | `slider @"Tip percentage"` then `rangeInput @"Tip percentage"` | tip-calculator | writing.md *Components* |
 | a labelled group over a sub-record | `group @"Customer" $ Semigroupoid.do …` | order-form, potluck, reorder | writing.md *Components* |
 | a reusable sub-form over a sub-record | `group @"Address" addressForm` | parcel | writing.md *Components* |
@@ -120,7 +122,7 @@ and emitters of a catalogue — are in the design-system module header
 | an action at load | `indeterminateLinearProgress # load loadOrder` then `snackbar @"Order loaded" identity` (or `capture @"People loaded"` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` and `fold @"Clock ticked" tick` | timer, stopwatch | `PUI` |
-| a status per outcome case | `snackbar @"Flight booked" identity` — the label is the copy; a reason is a sibling case, `snackbar @"Order rejected: no total" kept` | flight-booker, order-form | writing.md *Components* |
+| a status per outcome case | `snackbar @"Flight booked" identity` — the label is the copy; a reason is a sibling case, `snackbar @"Total missing" kept` | flight-booker, order-form | writing.md *Components* |
 | a message that stays while a state holds | `( banner $ staticText "Inbox zero!" ) # inCase @"empty" inboxState` — a display under a pane, not a status | inbox | writing.md *Components* |
 | confirm before the flow continues | `confirmed @"Refund a customer" "Refund" refundStandard $ …` | cashbox | writing.md *Modals* |
 | a fact the platform knows and the app cannot seed — position, connectivity, the time, the colour scheme, a chosen file | `geolocated @l`, `online @l`, `clock @l period`, `colorScheme @l` (`PUI.Web`), `filePicked @l` (`PUI.Web.HTML`), merged `RecordToRecord.do` | here-and-now, incident-report | writing.md *The pipeline*; `PUI.Web` (`source`) |

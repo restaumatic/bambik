@@ -3,9 +3,11 @@ module EspressoBar (caffeineFraction, cupLine, espressoNoFrills, placeOrder, the
 import Prelude (discard, min, otherwise, pure, ($), (*), (+), (-), (<>), (==))
 
 import Data.Number.Format (fixed, toStringWith)
-import Data.Variant (match)
+import Data.String (toLower)
+import Data.Variant (match, on)
 import Data.Variant.Case (caseText)
 import Effect.Aff (Aff, Milliseconds(..), delay)
+import Type.Proxy (Proxy(..))
 
 usualOrder
   :: { "Decaf" :: Boolean
@@ -13,10 +15,10 @@ usualOrder
      , "Extra shot" :: Boolean
      , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
+     , "Milk" :: [ "No milk" :: {}
+                 , "Almond milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Whole milk" :: {}
                  ]
      , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
      , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
@@ -26,13 +28,13 @@ usualOrder
                   , step :: [ continuous :: {}, discrete :: Number ]
                   }
      , "Takeaway cup" :: Boolean
-     , "Your name" :: String
+     , "Name" :: String
      }
 usualOrder =
-  { "Your name": ""
+  { "Name": ""
   , "Drink": ."Cappuccino" {}
   , "Size": ."Medium" {}
-  , "Milk": ."with whole milk" {}
+  , "Milk": ."Whole milk" {}
   , "Roast": ."Medium" {}
   , "Sugar": sugars 1.0
   , "Extra shot": false
@@ -48,10 +50,10 @@ theUsual
      , "Extra shot" :: Boolean
      , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
+     , "Milk" :: [ "No milk" :: {}
+                 , "Almond milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Whole milk" :: {}
                  ]
      , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
      , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
@@ -61,17 +63,17 @@ theUsual
                   , step :: [ continuous :: {}, discrete :: Number ]
                   }
      , "Takeaway cup" :: Boolean
-     , "Your name" :: String
+     , "Name" :: String
      }
   -> { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
      , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
+     , "Milk" :: [ "No milk" :: {}
+                 , "Almond milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Whole milk" :: {}
                  ]
      , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
      , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
@@ -81,9 +83,9 @@ theUsual
                   , step :: [ continuous :: {}, discrete :: Number ]
                   }
      , "Takeaway cup" :: Boolean
-     , "Your name" :: String
+     , "Name" :: String
      }
-theUsual order = order { "Drink" = ."Cappuccino" {}, "Size" = ."Medium" {}, "Milk" = ."with whole milk" {}, "Roast" = ."Medium" {}, "Sugar" = sugars 1.0, "Extra shot" = false, "Decaf" = false }
+theUsual order = order { "Drink" = ."Cappuccino" {}, "Size" = ."Medium" {}, "Milk" = ."Whole milk" {}, "Roast" = ."Medium" {}, "Sugar" = sugars 1.0, "Extra shot" = false, "Decaf" = false }
 
 espressoNoFrills
   :: { "Decaf" :: Boolean
@@ -91,10 +93,10 @@ espressoNoFrills
      , "Extra shot" :: Boolean
      , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
+     , "Milk" :: [ "No milk" :: {}
+                 , "Almond milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Whole milk" :: {}
                  ]
      , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
      , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
@@ -104,17 +106,17 @@ espressoNoFrills
                   , step :: [ continuous :: {}, discrete :: Number ]
                   }
      , "Takeaway cup" :: Boolean
-     , "Your name" :: String
+     , "Name" :: String
      }
   -> { "Decaf" :: Boolean
      , "Drink" :: [ "Cappuccino" :: {}, "Espresso" :: {}, "Latte" :: {} ]
      , "Extra shot" :: Boolean
      , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
+     , "Milk" :: [ "No milk" :: {}
+                 , "Almond milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Whole milk" :: {}
                  ]
      , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
      , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
@@ -124,9 +126,9 @@ espressoNoFrills
                   , step :: [ continuous :: {}, discrete :: Number ]
                   }
      , "Takeaway cup" :: Boolean
-     , "Your name" :: String
+     , "Name" :: String
      }
-espressoNoFrills order = order { "Drink" = ."Espresso" {}, "Size" = ."Small" {}, "Milk" = ."no milk" {}, "Sugar" = sugars 0.0, "Extra shot" = false, "Decaf" = false }
+espressoNoFrills order = order { "Drink" = ."Espresso" {}, "Size" = ."Small" {}, "Milk" = ."No milk" {}, "Sugar" = sugars 0.0, "Extra shot" = false, "Decaf" = false }
 
 cupLine
   :: { "Decaf" :: Boolean
@@ -134,10 +136,10 @@ cupLine
      , "Extra shot" :: Boolean
      , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
+     , "Milk" :: [ "No milk" :: {}
+                 , "Almond milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Whole milk" :: {}
                  ]
      , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
      , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
@@ -147,7 +149,7 @@ cupLine
                   , step :: [ continuous :: {}, discrete :: Number ]
                   }
      , "Takeaway cup" :: Boolean
-     , "Your name" :: String
+     , "Name" :: String
      }
   -> String
 cupLine order = "Your cup: " <> summaryText order
@@ -156,10 +158,10 @@ summaryText
   :: forall r1.
      { "Drink" :: [ "Espresso" :: {}, "Cappuccino" :: {}, "Latte" :: {} ]
      , "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ]
-     , "Milk" :: [ "with whole milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with almond milk" :: {}
-                 , "no milk" :: {}
+     , "Milk" :: [ "Whole milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Almond milk" :: {}
+                 , "No milk" :: {}
                  ]
      , "Roast" :: [ "Light" :: {}, "Medium" :: {}, "Dark" :: {} ]
      , "Sugar" :: { current :: Number
@@ -176,13 +178,22 @@ summaryText
   -> String
 summaryText { "Drink": drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty member": loyalty } =
   caseText size <> " " <> caseText drink
-    <> " " <> caseText milk
+    <> milkText milk
     <> ", " <> caseText roast <> " roast"
     <> (if extraShot then ", extra shot" else "")
     <> (if decaf then ", decaf" else "")
     <> sugarsText sugar.current
     <> (if takeaway then ", to go" else "")
     <> " — " <> money (price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty member": loyalty })
+
+milkText
+  :: [ "Whole milk" :: {}
+     , "Oat milk" :: {}
+     , "Almond milk" :: {}
+     , "No milk" :: {}
+     ]
+  -> String
+milkText = on (Proxy @"No milk") (\_ -> " no milk") (\milk -> " with " <> toLower (caseText milk))
 
 sugarsText :: Number -> String
 sugarsText n
@@ -193,10 +204,10 @@ sugarsText n
 price
   :: forall r1.
      { "Size" :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ]
-     , "Milk" :: [ "with whole milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with almond milk" :: {}
-                 , "no milk" :: {}
+     , "Milk" :: [ "Whole milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Almond milk" :: {}
+                 , "No milk" :: {}
                  ]
      , "Extra shot" :: Boolean
      , "Loyalty member" :: [ member :: {}, guest :: {} ]
@@ -215,9 +226,9 @@ sizePrice :: [ "Small" :: {}, "Medium" :: {}, "Large" :: {} ] -> Number
 sizePrice = match { "Small": \_ -> 3.0, "Medium": \_ -> 3.5, "Large": \_ -> 4.0 }
 
 milkPrice
-  :: [ "with whole milk" :: {}, "with oat milk" :: {}, "with almond milk" :: {}, "no milk" :: {} ]
+  :: [ "Whole milk" :: {}, "Oat milk" :: {}, "Almond milk" :: {}, "No milk" :: {} ]
   -> Number
-milkPrice = match { "with whole milk": \_ -> 0.0, "with oat milk": \_ -> 0.4, "with almond milk": \_ -> 0.4, "no milk": \_ -> 0.0 }
+milkPrice = match { "Whole milk": \_ -> 0.0, "Oat milk": \_ -> 0.4, "Almond milk": \_ -> 0.4, "No milk": \_ -> 0.0 }
 
 money :: Number -> String
 money n = "€" <> toStringWith (fixed 2) n
@@ -228,10 +239,10 @@ caffeineFraction
      , "Extra shot" :: Boolean
      , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
+     , "Milk" :: [ "No milk" :: {}
+                 , "Almond milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Whole milk" :: {}
                  ]
      , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
      , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
@@ -241,7 +252,7 @@ caffeineFraction
                   , step :: [ continuous :: {}, discrete :: Number ]
                   }
      , "Takeaway cup" :: Boolean
-     , "Your name" :: String
+     , "Name" :: String
      }
   -> Number
 caffeineFraction { "Drink": drink, "Extra shot": extraShot, "Decaf": decaf }
@@ -272,10 +283,10 @@ placeOrder
      , "Extra shot" :: Boolean
      , "Loyalty member" :: [ guest :: {}, member :: {} ]
      , "Mark as favorite" :: Boolean
-     , "Milk" :: [ "no milk" :: {}
-                 , "with almond milk" :: {}
-                 , "with oat milk" :: {}
-                 , "with whole milk" :: {}
+     , "Milk" :: [ "No milk" :: {}
+                 , "Almond milk" :: {}
+                 , "Oat milk" :: {}
+                 , "Whole milk" :: {}
                  ]
      , "Roast" :: [ "Dark" :: {}, "Light" :: {}, "Medium" :: {} ]
      , "Size" :: [ "Large" :: {}, "Medium" :: {}, "Small" :: {} ]
@@ -285,7 +296,7 @@ placeOrder
                   , step :: [ continuous :: {}, discrete :: Number ]
                   }
      , "Takeaway cup" :: Boolean
-     , "Your name" :: String
+     , "Name" :: String
      }
   -> Aff [ "Order placed" :: {} ]
 placeOrder _ = do

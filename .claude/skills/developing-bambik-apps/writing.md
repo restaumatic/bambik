@@ -118,13 +118,20 @@ createPerson { "Name": name, "Surname": surname, people } = …
 In the view model module, field access (`r."Name"`), accessor sections
 (`_."Name"`) and update syntax (`r { "Name" = … }`) work as usual; a
 view names a field only by its label (see
-[The anchor invariant](#code-style)). Put punctuation and units on
-the label (`filledTextField @"Start date (DD.MM.YYYY)"`,
-`sliderLive @"Amount (€)"`); where a symbol is the conventional
-caption, write the symbol (`@celsius`). A leaf takes no options record:
-the label is its caption. The few words with optional presentation have
-a primed sibling taking it (`button' @"Place order" { icon:
-"local_cafe" }`, `listOf' … { selected: isSelected } …`).
+[The anchor invariant](#code-style)). The label is the name the
+screen shows and nothing more, so the developer thinks the word the
+user reads: a format, an example or a unit is not the name and goes to
+the editor's primed sibling (`filledTextField' @"Start date" { hint:
+"DD.MM.YYYY" }`, `sliderLive' @"Amount" { unit: "€" }`), and a
+question or a sentence is cut to the name it asks for
+(`filledTextField' @"Todo" { hint: "What needs to be done?" }`,
+`toggleSwitch @"Teams link"`, `checkbox @"Accept the terms of
+service"`, never `"I accept…"` or `"Your name"`). Where a symbol is the
+conventional caption, write the symbol (`@celsius`). A leaf takes no
+options record: the label is its caption. The few words with optional
+presentation have a primed sibling taking it (`button' @"Place order" {
+icon: "local_cafe" }`, `listOf' … { selected: isSelected } …`, the
+hint and the unit).
 
 How each kind takes its business meaning:
 
@@ -141,7 +148,9 @@ How each kind takes its business meaning:
   `…Unpicked` word when a choice is owed but not yet made; the
   `…Optional` word when the user may leave it unmade. Options are
   `choice @"…"` values in the order written (meeting-booker:
-  `dropdownUnpicked @"Room" @"chosen" (choice @"Focus pod (4 seats)" <+> …)`).
+  `dropdownUnpicked @"Room" @"chosen" (choice @"Focus pod" <+> …)`). A
+  fact about an option (a room's seats) is model data, never part of
+  its name.
 - **Displays** take a copy function, not a label:
   `headline4 $ text countLine` (counter). A number shown as a
   bar or gauge takes a function too, and keeps its label only as the
@@ -160,7 +169,7 @@ How each kind takes its business meaning:
   is a model field shown by a display. Mutually exclusive outcomes
   are sibling statuses in one `VariantToRecord.do`, each owning its
   case, so an action names its outcomes as the words the user reads
-  (`Aff [ "Order rejected: no total" :: {}, "Order submitted" :: {} ]`);
+  (`Aff [ "Order submitted" :: {}, "Total missing" :: {} ]`);
   a run in progress is shown by the action's indicator, never by
   a status. A message that stays while a state holds is a display
   under a pane (`( banner $ staticText "Inbox zero!" ) # inCase @"empty"
@@ -464,7 +473,7 @@ no widening beside emitters. An outcome that is told but changes nothing
 is `kept`: the action is `joined` with its button in the event
 ensemble, so its outcome arrives as `{ event, model }`, and its status
 folds `kept` in the fold block (order-form's receipt; its submit, of two
-outcomes, `# joined2 @"Order submitted" @"Order rejected: no total"`).
+outcomes, `# joined2 @"Order submitted" @"Total missing"`).
 Where nothing loops after the action, it needs no join: its `Aff`
 returns the model under each outcome and the statuses fold `identity`
 (flight-booker). The load before the knot is `load`
@@ -629,7 +638,7 @@ text is computed, a chrome line nothing.
   uses: `selected :: [ picked :: { index :: Int }, none :: {} ]`,
   `approval :: [ approved :: { attempt :: Int }, pending :: {} ]`.
 - **No `Boolean` unless a Boolean editor edits it** (a `toggleSwitch`
-  over `"Include a Teams link"`). A flag nobody edits is a phase with
+  over `"Teams link"`). A flag nobody edits is a phase with
   two states — `status :: [ active :: {}, completed :: {} ]`,
   `drag :: [ adjusting :: {}, settled :: {} ]` — and a styling test over
   it is a named predicate (`clWhen isCompleted "todo-done"`).
@@ -686,16 +695,18 @@ text is computed, a chrome line nothing.
   refundLine`, cashbox: the refund amount belongs to the view model, not
   the view). Text that *is* data (a parsed markdown run) is
   `staticText` too.
-- **A label is read back, never restated.** A case label is the copy it
-  draws, so write it as the exact copy the line needs
-  (`choice @"with oat milk"`, `choice @"cash"`) and read it back with
-  `caseText` from `Data.Variant.Case` (order-form's
-  `payingLine r = "Paying by " <> caseText r."Method"`). A `match` that
-  only echoes its case labels is the label restated. A map that does
-  real work — shortening, glyphs, per-case sentences — stays a named
-  copy function. An affix shared by every case is not part of the copy:
-  put it in the caption (`@"Duration (min)"` over `choice @"15"`) or in
-  the line's glue.
+- **A label is read back, never restated.** A case label is the copy
+  its option draws (`choice @"Oat milk"`, `choice @"Cash"`); a line
+  that shows it reads it back with `caseText` from `Data.Variant.Case`,
+  adapting at most its letter case (order-form's `payingLine r =
+  "Paying by " <> toLower (caseText r."Method")`). A label is never
+  shaped to fit a sentence elsewhere — `"with oat milk"`, `"cash"` in
+  lower case for one line — since a second sentence could not share
+  it: grammar a sentence needs lives in its copy function
+  (espresso-bar's `milkText`). A `match` that only echoes its case
+  labels is the label restated. A map that does real work —
+  shortening, glyphs, per-case sentences — stays a named copy function.
+  An affix the option shows is part of its copy (`choice @"15 min"`).
 - **Events carry data, never UI copy.** An emission carries the order,
   the outcome, the reason — a reason as a case of its own, since the
   status telling it shows its label and nothing else.
@@ -759,7 +770,7 @@ text is computed, a chrome line nothing.
   toggleTodo`. What a status would compute from its payload is not
   copy: a value the user must keep is a model field shown by a display
   (payment's `text statusLine` carries the attempt), a reason is a
-  sibling case (`"Order rejected: no total"`).
+  sibling case (`"Total missing"`).
 - **A handler carries no field it does not touch.** Group buttons into
   stages by the fields their handlers touch (circle-drawer keeps undo and
   redo apart from the canvas click). An identity handler means the

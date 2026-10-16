@@ -8,7 +8,7 @@ import FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip,
 import PUI (action, debounced, looped, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
 import PUI.Web.HTML (p)
-import PUI.Web.Shoelace (body, button, indeterminateLinearProgress, select, textField, toast)
+import PUI.Web.Shoelace (body, button, indeterminateLinearProgress, select, textField', toast)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
@@ -17,8 +17,8 @@ flightBooker =
     ( Semigroupoid.do
       select @"Flight type"
         (choice @"one-way" <+> choice @"return")
-      textField @"Start date (DD.MM.YYYY)"
-      textField @"Return date (DD.MM.YYYY)" # inCaseAt @"return" @"Flight type"
+      textField' @"Start date" { hint: "DD.MM.YYYY" }
+      textField' @"Return date" { hint: "DD.MM.YYYY" } # inCaseAt @"return" @"Flight type"
     ) # looped # with plannedTrip
     ( Semigroupoid.do
       ( p $ text problemLine ) # inCase @"problem" bookingState

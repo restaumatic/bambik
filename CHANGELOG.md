@@ -8,6 +8,30 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-16, latest
 
+- **A label is only the name.** Labels carried the copy whole, format
+  hints and units included (`@"Start date (DD.MM.YYYY)"`, `@"Amount
+  (€)"`, decided 2026-10-07 when a `hint:` option was reverted), so a
+  developer naming the field in the logic had to recall its
+  presentation verbatim (`r."I'd recommend it to a friend"`). A label is
+  still the caption it draws (no mapping between copy and identifier),
+  but now only the name: a format or an example rides `hint` and a unit
+  rides `unit`, on primed siblings — `filledTextField'`/
+  `outlinedTextField'` (MDC2, MDC3), `textField'` (Fluent, Shoelace,
+  Bootstrap), `slider'`/`sliderLive'` (MDC3; Fluent `slider'`, Shoelace
+  and Bootstrap `sliderLive'`; MDC2's slider draws no number, so none).
+  Questions and sentences are cut to the name they ask for (`"Todo"`,
+  `"Owned for"`, `"Teams link"`, `"Recommend to a friend"`, `"Accept the
+  terms of service"`, `"Name"` for `"Your name"`), a fact inside an
+  option moved to the model it was already duplicated in (meeting-booker's
+  rooms lose their `(4 seats)`, `roomCapacity` keeping the count), a
+  reason inside a case became the case (`"Total missing"` for `"Order
+  rejected: no total"`), and option labels stopped being shaped for
+  one sentence (`"Oat milk"` for `"with oat milk"`, `"Cash"` for
+  `"cash"`, `"15 min"` for `"15"` under `"Duration (min)"`), the grammar
+  moving to the copy function (espresso-bar's `milkText`, `toLower` on
+  read-backs). The plain-HTML flight-booker keeps its hint in its static
+  caption, where plain HTML puts captions.
+
 - **A choice is its tag.** Selector options were
   `Array { value :: a, label :: String }`, and every one in the demos was
   built by `choice @l`, whose label was always the case's — the record

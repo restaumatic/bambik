@@ -632,7 +632,7 @@ newtype Choices w = Choices (Array String)
 -- | once — exactly as a captioned leaf does:
 -- |
 -- | ```
--- | dropdown @"Room" (choice @"Focus pod (4 seats)" <+> choice @"Boardroom (12 seats)")
+-- | dropdown @"Room" (choice @"Focus pod" <+> choice @"Boardroom")
 -- | ```
 -- |
 -- | A choice is one option over the **closed** singleton row of its case,

@@ -167,7 +167,7 @@ joined = joinedEvery
 -- | **Both cases of a two-outcome source joined** with the row it was fed:
 -- | `joined` for a source emitting exactly `l1` and `l2`, the action of
 -- | two outcomes (`… # action @"Submit order" submitOrder ) # joined2
--- | @"Order submitted" @"Order rejected: no total"`, order-form). Its own
+-- | @"Order submitted" @"Total missing"`, order-form). Its own
 -- | word because one label closes one case: two `joined`s would leave the
 -- | source's rest open to the block's other cases, and only both labels
 -- | at once say the source has these two and no others.

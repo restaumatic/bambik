@@ -18,11 +18,11 @@ espressoBar =
     topAppBar "Espresso Bar" $ Semigroupoid.do
       tabBar @"Drink"
         (choice @"Espresso" <+> choice @"Cappuccino" <+> choice @"Latte")
-      filledTextField @"Your name"
+      filledTextField @"Name"
       segmentedButton @"Size"
         (choice @"Small" <+> choice @"Medium" <+> choice @"Large")
       select @"Milk"
-        (choice @"with whole milk" <+> choice @"with oat milk" <+> choice @"with almond milk" <+> choice @"no milk")
+        (choice @"Whole milk" <+> choice @"Oat milk" <+> choice @"Almond milk" <+> choice @"No milk")
       radioButton @"Roast"
         (choice @"Light" <+> choice @"Medium" <+> choice @"Dark")
       sliderLive @"Sugar"
@@ -40,11 +40,11 @@ espressoBar =
       RecordToVariant.do
         menu "Presets" $ RecordToVariant.do
           menuItem @"The usual"
-          menuItem @"Espresso, no frills"
+          menuItem @"Plain espresso"
         button' @"Place order" { icon: "local_cafe" }
       VariantToRecord.do
         fold @"The usual" theUsual
-        fold @"Espresso, no frills" espressoNoFrills
+        fold @"Plain espresso" espressoNoFrills
         ( Semigroupoid.do
           indeterminateLinearProgress # action @"Place order" placeOrder
           snackbar @"Order placed" (const usualOrder) )

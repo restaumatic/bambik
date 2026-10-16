@@ -6,13 +6,13 @@ import Auction (bidLine, openingBid, raiseTop, topLine)
 import Effect (Effect)
 import PUI (looped, settled, with)
 import PUI.Web (text)
-import PUI.Web.MDC3 (body, bodyMedium, headlineSmall, sliderLive)
+import PUI.Web.MDC3 (body, bodyMedium, headlineSmall, sliderLive')
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 auction :: Effect Unit
 auction =
   body $ Semigroupoid.do
     bodyMedium $ text bidLine
-    sliderLive @"Your bid ($)" # settled raiseTop
+    sliderLive' @"Bid" { unit: "USD" } # settled raiseTop
     headlineSmall $ text topLine
   # looped # with openingBid

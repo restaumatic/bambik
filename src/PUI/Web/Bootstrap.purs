@@ -30,7 +30,9 @@ module PUI.Web.Bootstrap
   , selectUnpicked
   , selectOptional
   , sliderLive
+  , sliderLive'
   , textField
+  , textField'
   , toast
   , toggleSwitch
   ) where
@@ -116,18 +118,33 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- | by values arriving from elsewhere. A whole-row citizen: fed the wide
 -- | row, it edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ fromHandles do
-  _ <- handles ((label $ staticText config.label) # cl "form-label")
+textField = focusField @l $ "name" := reflectSymbol (Proxy @l) $ inputLeaf (reflectSymbol (Proxy @l)) ""
+
+-- | `textField` with a `hint` under it — a format or an example the label
+-- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
+-- | label stays the field's name. Shown as Bootstrap's form text, which
+-- | describes the input.
+textField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
+textField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ inputLeaf (reflectSymbol (Proxy @l)) hint
+
+inputLeaf :: String -> String -> PUI Web String String
+inputLeaf lbl hint = div >>> "style" := "width: 100%;" $ fromHandles do
+  hintId <- liftEffect uniqueId
+  _ <- handles ((label $ staticText lbl) # cl "form-label")
   element "input" (pure unit)
   attribute "type" "text"
   attribute "class" "form-control"
+  when (hint /= "") $ attribute "aria-describedby" hintId
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  wiring <- liftEffect $ editorWiring
     { show: setValue node
     , held: isFocused node
     , reports: listenNode node "input"
     , read: \_ -> getValue node
     }
+  when (hint /= "") $
+    void $ handles ((div >>> "id" := hintId $ staticText hint) # cl "form-text")
+  pure wiring
 
 -- | The **slider**: a quantity chosen by feel, where the range matters more
 -- | than the exact number — a rate, a term, an amount.
@@ -145,9 +162,18 @@ textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ 
 -- | current number is shown at the end of the label line, since the control
 -- | has no readout of its own.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ fromHandles do
+sliderLive = focusField @l $ "name" := reflectSymbol (Proxy @l) $ rangeLeaf (reflectSymbol (Proxy @l)) ""
+
+-- | `sliderLive` whose value is read in a `unit` (`sliderLive' @"Amount"
+-- | { unit: "€" }`), shown after the number in the label line's readout,
+-- | so the label stays the quantity's name.
+sliderLive' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
+sliderLive' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ rangeLeaf (reflectSymbol (Proxy @l)) config.unit
+
+rangeLeaf :: String -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+rangeLeaf lbl measure = div >>> "style" := "width: 100%;" $ fromHandles do
   readout <- handles $ (label $ fromHandles do
-      _ <- handles (span $ staticText config.label)
+      _ <- handles (span $ staticText lbl)
       handles ((span $ text _.readout) # cl "text-body-secondary")
     ) # cl "form-label" # cl "d-flex" # cl "justify-content-between"
   -- the readout is written, never listened to; text's echo needs a listener
@@ -162,11 +188,13 @@ sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $
         setAttribute node "max" (show q.max)
         setAttribute node "step" (Variant.match { discrete: show, continuous: \_ -> "any" } q.step)
         setValue node (show q.current)
-        readout.toUser { readout: toString q.current }
+        readout.toUser { readout: measured q.current }
     , held: pure false
     , reports: listenNode node "input"
     , read: \q -> getValue node <#> \value -> q { current = fromMaybe q.current (Number.fromString value) }
     }
+  where
+  measured n = if measure == "" then toString n else toString n <> " " <> measure
 
 -- | The **select**: one choice out of a list, under its label.
 -- | The field holds the option itself, so the model always has one.

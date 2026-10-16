@@ -5,7 +5,7 @@ import Prelude (discard, pure, (<>), show, (/), ($))
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Data.Int (round)
 import Data.Ord (clamp)
-import Data.String (trim)
+import Data.String (toLower, trim)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 
@@ -16,19 +16,19 @@ blankBooking
                       , step :: [ continuous :: {}, discrete :: Number ]
                       }
      , "Catering" :: [ none :: {}
-                     , ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+                     , ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                      ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-     , "Include a Teams link" :: Boolean
+     , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], unchosen :: {} ]
+     , "Teams link" :: Boolean
      , "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Focus pod (4 seats)" :: {}
+     , "Room" :: [ chosen :: [ "Auditorium" :: {}
+                             , "Boardroom" :: {}
+                             , "Focus pod" :: {}
                              ]
                  , unchosen :: {}
                  ]
      }
-blankBooking = { "Meeting title": "", "Room": .unchosen {}, "Duration (min)": .unchosen {}, "Attendees": { current: justTheOrganizer, min: justTheOrganizer, max: justTheOrganizer, step: .discrete 1.0 }, "Include a Teams link": false, "Catering": .none {} }
+blankBooking = { "Meeting title": "", "Room": .unchosen {}, "Duration": .unchosen {}, "Attendees": { current: justTheOrganizer, min: justTheOrganizer, max: justTheOrganizer, step: .discrete 1.0 }, "Teams link": false, "Catering": .none {} }
 
 seatsInRoom
   :: { "Attendees" :: { current :: Number
@@ -37,14 +37,14 @@ seatsInRoom
                       , step :: [ continuous :: {}, discrete :: Number ]
                       }
      , "Catering" :: [ none :: {}
-                     , ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+                     , ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                      ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-     , "Include a Teams link" :: Boolean
+     , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], unchosen :: {} ]
+     , "Teams link" :: Boolean
      , "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Focus pod (4 seats)" :: {}
+     , "Room" :: [ chosen :: [ "Auditorium" :: {}
+                             , "Boardroom" :: {}
+                             , "Focus pod" :: {}
                              ]
                  , unchosen :: {}
                  ]
@@ -55,14 +55,14 @@ seatsInRoom
                       , step :: [ continuous :: {}, discrete :: Number ]
                       }
      , "Catering" :: [ none :: {}
-                     , ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+                     , ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                      ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-     , "Include a Teams link" :: Boolean
+     , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], unchosen :: {} ]
+     , "Teams link" :: Boolean
      , "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Focus pod (4 seats)" :: {}
+     , "Room" :: [ chosen :: [ "Auditorium" :: {}
+                             , "Boardroom" :: {}
+                             , "Focus pod" :: {}
                              ]
                  , unchosen :: {}
                  ]
@@ -73,7 +73,7 @@ seatsInRoom booking@{ "Room": room, "Attendees": seats } = match
   } room
 
 seatedIn
-  :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ]
+  :: [ "Focus pod" :: {}, "Boardroom" :: {}, "Auditorium" :: {} ]
   -> Number
   -> Number
 seatedIn room n = clamp justTheOrganizer (roomCapacity room) n
@@ -85,14 +85,14 @@ plan
                       , step :: [ continuous :: {}, discrete :: Number ]
                       }
      , "Catering" :: [ none :: {}
-                     , ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+                     , ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                      ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-     , "Include a Teams link" :: Boolean
+     , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], unchosen :: {} ]
+     , "Teams link" :: Boolean
      , "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Focus pod (4 seats)" :: {}
+     , "Room" :: [ chosen :: [ "Auditorium" :: {}
+                             , "Boardroom" :: {}
+                             , "Focus pod" :: {}
                              ]
                  , unchosen :: {}
                  ]
@@ -103,43 +103,43 @@ plan booking = match { complete: \_ -> .complete {}, incomplete: \_ -> .incomple
 planned
   :: forall r1.
      { "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Focus pod (4 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Auditorium (40 seats)" :: {}
+     , "Room" :: [ chosen :: [ "Focus pod" :: {}
+                             , "Boardroom" :: {}
+                             , "Auditorium" :: {}
                              ]
                  , unchosen :: {}
                  ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
+     , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], unchosen :: {} ]
      , "Attendees" :: { current :: Number
                       , min :: Number
                       , max :: Number
                       , step :: [ discrete :: Number, continuous :: {} ]
                       }
-     , "Include a Teams link" :: Boolean
-     , "Catering" :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+     , "Teams link" :: Boolean
+     , "Catering" :: [ ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                      , none :: {}
                      ]
      | r1
      }
   -> [ complete :: { "Meeting title" :: String
-                   , room :: [ "Focus pod (4 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Auditorium (40 seats)" :: {}
+                   , room :: [ "Focus pod" :: {}
+                             , "Boardroom" :: {}
+                             , "Auditorium" :: {}
                              ]
-                   , duration :: [ "15" :: {}, "30" :: {}, "60" :: {} ]
+                   , duration :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ]
                    , attendees :: Number
-                   , "Include a Teams link" :: Boolean
-                   , catering :: [ ordered :: [ "coffee and pastries" :: {}
-                                              , "sandwich lunch" :: {}
+                   , "Teams link" :: Boolean
+                   , catering :: [ ordered :: [ "Coffee and pastries" :: {}
+                                              , "Sandwich lunch" :: {}
                                               ]
                                  , none :: {}
                                  ]
                    }
      , incomplete :: {}
      ]
-planned { "Meeting title": title, "Room": room, "Duration (min)": duration, "Attendees": seats, "Include a Teams link": online, "Catering": catering } = match
+planned { "Meeting title": title, "Room": room, "Duration": duration, "Attendees": seats, "Teams link": online, "Catering": catering } = match
   { chosen: \r -> match
-    { chosen: \d -> .complete { "Meeting title": title, room: r, duration: d, attendees: seats.current, "Include a Teams link": online, catering }
+    { chosen: \d -> .complete { "Meeting title": title, room: r, duration: d, attendees: seats.current, "Teams link": online, catering }
     , unchosen: \_ -> .incomplete {}
     } duration
   , unchosen: \_ -> .incomplete {}
@@ -152,14 +152,14 @@ planLine
                       , step :: [ continuous :: {}, discrete :: Number ]
                       }
      , "Catering" :: [ none :: {}
-                     , ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+                     , ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                      ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-     , "Include a Teams link" :: Boolean
+     , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], unchosen :: {} ]
+     , "Teams link" :: Boolean
      , "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Focus pod (4 seats)" :: {}
+     , "Room" :: [ chosen :: [ "Auditorium" :: {}
+                             , "Boardroom" :: {}
+                             , "Focus pod" :: {}
                              ]
                  , unchosen :: {}
                  ]
@@ -169,20 +169,20 @@ planLine booking = match { complete: \p -> "Plan: " <> planText p, incomplete: \
 
 planText
   :: { "Meeting title" :: String
-     , room :: [ "Focus pod (4 seats)" :: {}
-               , "Boardroom (12 seats)" :: {}
-               , "Auditorium (40 seats)" :: {}
+     , room :: [ "Focus pod" :: {}
+               , "Boardroom" :: {}
+               , "Auditorium" :: {}
                ]
-     , duration :: [ "15" :: {}, "30" :: {}, "60" :: {} ]
+     , duration :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ]
      , attendees :: Number
-     , "Include a Teams link" :: Boolean
-     , catering :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+     , "Teams link" :: Boolean
+     , catering :: [ ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                    , none :: {}
                    ]
      }
   -> String
 planText p =
-  titleText p."Meeting title" <> " in the " <> roomText p.room <> ", " <> caseText p.duration <> " min, " <> headcount p.attendees <> " attendees" <> onlineNote p."Include a Teams link" <> cateringNote p.catering
+  titleText p."Meeting title" <> " in the " <> roomText p.room <> ", " <> caseText p.duration <> ", " <> headcount p.attendees <> " attendees" <> onlineNote p."Teams link" <> cateringNote p.catering
 
 headcount :: Number -> String
 headcount attendees = show (round attendees)
@@ -191,9 +191,9 @@ onlineNote :: Boolean -> String
 onlineNote online = if online then ", with a Teams link" else ""
 
 cateringNote
-  :: [ ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ], none :: {} ]
+  :: [ ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ], none :: {} ]
   -> String
-cateringNote = match { ordered: \c -> ", " <> caseText c, none: \_ -> "" }
+cateringNote = match { ordered: \c -> ", " <> toLower (caseText c), none: \_ -> "" }
 
 titleText :: String -> String
 titleText title = case trim title of
@@ -201,21 +201,21 @@ titleText title = case trim title of
   name -> name
 
 roomText
-  :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ]
+  :: [ "Focus pod" :: {}, "Boardroom" :: {}, "Auditorium" :: {} ]
   -> String
-roomText = match { "Focus pod (4 seats)": \_ -> "focus pod", "Boardroom (12 seats)": \_ -> "boardroom", "Auditorium (40 seats)": \_ -> "auditorium" }
+roomText room = toLower (caseText room)
 
 
 roomRating
-  :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ]
+  :: [ "Focus pod" :: {}, "Boardroom" :: {}, "Auditorium" :: {} ]
   -> Number
-roomRating = match { "Focus pod (4 seats)": \_ -> 4.5, "Boardroom (12 seats)": \_ -> 3.5, "Auditorium (40 seats)": \_ -> 4.0 }
+roomRating = match { "Focus pod": \_ -> 4.5, "Boardroom": \_ -> 3.5, "Auditorium": \_ -> 4.0 }
 
 
 roomCapacity
-  :: [ "Focus pod (4 seats)" :: {}, "Boardroom (12 seats)" :: {}, "Auditorium (40 seats)" :: {} ]
+  :: [ "Focus pod" :: {}, "Boardroom" :: {}, "Auditorium" :: {} ]
   -> Number
-roomCapacity = match { "Focus pod (4 seats)": \_ -> 4.0, "Boardroom (12 seats)": \_ -> 12.0, "Auditorium (40 seats)": \_ -> 40.0 }
+roomCapacity = match { "Focus pod": \_ -> 4.0, "Boardroom": \_ -> 12.0, "Auditorium": \_ -> 40.0 }
 
 justTheOrganizer :: Number
 justTheOrganizer = 1.0
@@ -227,14 +227,14 @@ roomStars
                       , step :: [ continuous :: {}, discrete :: Number ]
                       }
      , "Catering" :: [ none :: {}
-                     , ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+                     , ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                      ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-     , "Include a Teams link" :: Boolean
+     , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], unchosen :: {} ]
+     , "Teams link" :: Boolean
      , "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Focus pod (4 seats)" :: {}
+     , "Room" :: [ chosen :: [ "Auditorium" :: {}
+                             , "Boardroom" :: {}
+                             , "Focus pod" :: {}
                              ]
                  , unchosen :: {}
                  ]
@@ -249,14 +249,14 @@ seatOccupancy
                       , step :: [ continuous :: {}, discrete :: Number ]
                       }
      , "Catering" :: [ none :: {}
-                     , ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+                     , ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                      ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-     , "Include a Teams link" :: Boolean
+     , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], unchosen :: {} ]
+     , "Teams link" :: Boolean
      , "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Focus pod (4 seats)" :: {}
+     , "Room" :: [ chosen :: [ "Auditorium" :: {}
+                             , "Boardroom" :: {}
+                             , "Focus pod" :: {}
                              ]
                  , unchosen :: {}
                  ]
@@ -271,14 +271,14 @@ bookRoom
                       , step :: [ continuous :: {}, discrete :: Number ]
                       }
      , "Catering" :: [ none :: {}
-                     , ordered :: [ "coffee and pastries" :: {}, "sandwich lunch" :: {} ]
+                     , ordered :: [ "Coffee and pastries" :: {}, "Sandwich lunch" :: {} ]
                      ]
-     , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ], unchosen :: {} ]
-     , "Include a Teams link" :: Boolean
+     , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ], unchosen :: {} ]
+     , "Teams link" :: Boolean
      , "Meeting title" :: String
-     , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                             , "Boardroom (12 seats)" :: {}
-                             , "Focus pod (4 seats)" :: {}
+     , "Room" :: [ chosen :: [ "Auditorium" :: {}
+                             , "Boardroom" :: {}
+                             , "Focus pod" :: {}
                              ]
                  , unchosen :: {}
                  ]
@@ -289,18 +289,18 @@ bookRoom
                                         , step :: [ continuous :: {}, discrete :: Number ]
                                         }
                        , "Catering" :: [ none :: {}
-                                       , ordered :: [ "coffee and pastries" :: {}
-                                                    , "sandwich lunch" :: {}
+                                       , ordered :: [ "Coffee and pastries" :: {}
+                                                    , "Sandwich lunch" :: {}
                                                     ]
                                        ]
-                       , "Duration (min)" :: [ chosen :: [ "15" :: {}, "30" :: {}, "60" :: {} ]
+                       , "Duration" :: [ chosen :: [ "15 min" :: {}, "30 min" :: {}, "60 min" :: {} ]
                                              , unchosen :: {}
                                              ]
-                       , "Include a Teams link" :: Boolean
+                       , "Teams link" :: Boolean
                        , "Meeting title" :: String
-                       , "Room" :: [ chosen :: [ "Auditorium (40 seats)" :: {}
-                                               , "Boardroom (12 seats)" :: {}
-                                               , "Focus pod (4 seats)" :: {}
+                       , "Room" :: [ chosen :: [ "Auditorium" :: {}
+                                               , "Boardroom" :: {}
+                                               , "Focus pod" :: {}
                                                ]
                                    , unchosen :: {}
                                    ]

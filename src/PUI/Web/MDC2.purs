@@ -62,6 +62,7 @@ module PUI.Web.MDC2
   , fab
   , filledTextArea
   , filledTextField
+  , filledTextField'
   , filterChip
   , group
   , headline1
@@ -90,6 +91,7 @@ module PUI.Web.MDC2
   , menuItem
   , outlinedButton
   , outlinedTextField
+  , outlinedTextField'
   , overline
   , radioButton
   , radioButtonUnpicked
@@ -354,18 +356,34 @@ menuItem = eventLeaf @l $
 -- | interrupted by values arriving from elsewhere. A whole-row citizen:
 -- | fed the wide row, it edits field `l` and carries the rest.
 filledTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "filled" Nothing config.floatingLabel)
+filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "filled" Nothing config.floatingLabel "")
+
+-- | `filledTextField` with a `hint` under it — a format or an example the
+-- | label is not (`filledTextField' @"Start date" { hint: "DD.MM.YYYY" }`),
+-- | so the label stays the field's name. Shown as MD2's persistent helper
+-- | text, which describes the input.
+filledTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
+filledTextField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ hinted $ (textFieldLeaf "filled" Nothing (reflectSymbol (Proxy @l)) hint)
 
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.
 outlinedTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "outlined" Nothing config.floatingLabel)
+outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "outlined" Nothing config.floatingLabel "")
+
+-- | `outlinedTextField` with a `hint` under it, as `filledTextField'`.
+outlinedTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
+outlinedTextField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ hinted $ (textFieldLeaf "outlined" Nothing (reflectSymbol (Proxy @l)) hint)
+
+-- the field and its helper line are siblings in MD2's markup, so a hinted
+-- field is wrapped to stay one element under the label's stamp
+hinted :: Ocular (PUI Web)
+hinted = el "div" >>> "style" := "display: inline-flex; flex-direction: column;"
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
 debouncedTextField :: forall @l r b. IsSymbol l => Cons l String b r => { ms :: Number } -> PUI Web { | r } { | r }
-debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "filled" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel)
+debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "filled" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel "")
 
 -- the raw MD2 text field — scalar, so private; the documented markup per
 -- variant plus an `MDCTextField` foundation, values written through the
@@ -374,9 +392,10 @@ debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Pro
 -- clobber the field being typed in, but still echo so the channel stays
 -- live. Debouncing sits at the DOM boundary (`Web.onInputDebounced`),
 -- in front of the wire rather than on it, so the field stays loop-safe.
-textFieldLeaf :: String -> Maybe Number -> String -> PUI Web String String
-textFieldLeaf variant mDebounce floatingLabel = fromHandles do
+textFieldLeaf :: String -> Maybe Number -> String -> String -> PUI Web String String
+textFieldLeaf variant mDebounce floatingLabel hint = fromHandles do
   labelId <- liftEffect uniqueId
+  hintId <- liftEffect uniqueId
   inputNode <- element "label" do
     if variant == "outlined"
       then void $ handles $ span >>> cl "mdc-notched-outline" $ Semigroupoid.do
@@ -391,6 +410,7 @@ textFieldLeaf variant mDebounce floatingLabel = fromHandles do
     clazz "mdc-text-field__input"
     attribute "type" "text"
     attribute "aria-labelledby" labelId
+    when (hint /= "") $ attribute "aria-describedby" hintId
     node <- gets _.sibling
     when (variant == "filled") $
       void $ handles (static (span >>> cl "mdc-line-ripple"))
@@ -399,6 +419,8 @@ textFieldLeaf variant mDebounce floatingLabel = fromHandles do
   clazz ("mdc-text-field--" <> variant)
   fieldNode <- gets _.sibling
   comp <- liftEffect $ newComponent material.textField."MDCTextField" fieldNode
+  when (hint /= "") $
+    void $ handles (div >>> cl "mdc-text-field-helper-line" $ div >>> cl "mdc-text-field-helper-text" >>> cl "mdc-text-field-helper-text--persistent" >>> "id" := hintId $ staticText hint)
   liftEffect $ textFieldWiring comp inputNode mDebounce
 
 -- the shared text-field/text-area wiring: write through the foundation's

@@ -34,6 +34,15 @@ export function setNumberProp(name) {
   };
 }
 
+// the range's tooltip reads the number in its unit
+export function setTooltipUnit(node) {
+  return function (unit) {
+    return function () {
+      node.tooltipFormatter = (value) => `${value} ${unit}`;
+    };
+  };
+}
+
 export function getNumberProp(name) {
   return function (node) {
     return function () {

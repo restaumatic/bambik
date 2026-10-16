@@ -36,7 +36,7 @@ orderForm =
         group @"Payment" $ Semigroupoid.do
           filledTextField @"Total"
           segmentedButton @"Method"
-            (choice @"cash" <+> choice @"card")
+            (choice @"Cash" <+> choice @"Card")
           filledTextField @"Paid"
           bodyLarge $ text payingLine
         group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
@@ -47,12 +47,12 @@ orderForm =
           indeterminateLinearProgress # action @"Estimate distance" estimateDistance ) # joined @"Distance estimated"
         ( Semigroupoid.do
           button' @"Submit order" { icon: "save" }
-          indeterminateLinearProgress # action @"Submit order" submitOrder ) # joined2 @"Order submitted" @"Order rejected: no total"
+          indeterminateLinearProgress # action @"Submit order" submitOrder ) # joined2 @"Order submitted" @"Total missing"
         ( Semigroupoid.do
           button' @"Receipt" { icon: "file" }
           indeterminateLinearProgress # action @"Receipt" printReceipt ) # joined @"Receipt printed"
       VariantToRecord.do
         fold @"Distance estimated" setDistance
         snackbar @"Order submitted" kept
-        snackbar @"Order rejected: no total" kept
+        snackbar @"Total missing" kept
         snackbar @"Receipt printed" kept ) # looped
