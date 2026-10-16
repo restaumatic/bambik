@@ -8,7 +8,6 @@ import Data.Either (Either(..))
 import Data.Foldable (foldl, for_)
 import Data.Lens (over, set, view)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap)
 import Data.Profunctor.Choice (left, right)
 import Data.Profunctor.Cochoice (unleft, unright)
 import Data.Profunctor.Costrong (unfirst)
@@ -37,7 +36,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, cancelScope, capture, dispatched, fold, folding, foreach, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
+import PUI (fromHandles, handles, PUI(..), ScopeState(..), accumulated, acted, announce, anyOf, cancelScope, capture, dispatched, fold, folding, foreach, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -49,7 +48,7 @@ assertEqual msg expected actual =
 -- A PUI Effect operand whose user-output leg the test fires by hand: it ignores
 -- toUser and stores the callback the merge registers via fromUser.
 probe :: forall i o. Ref.Ref (Maybe (o -> Effect Unit)) -> PUI Effect i o
-probe propRef = PUI $ pure
+probe propRef = fromHandles $ pure
   { toUser: \_ -> pure unit
   , fromUser: \prop -> Ref.write (Just prop) propRef
   }
@@ -61,7 +60,7 @@ fire propRef o = do
 
 -- A probe that additionally records what its user-input leg receives.
 probeIO :: forall i o. Ref.Ref (Array i) -> Ref.Ref (Maybe (o -> Effect Unit)) -> PUI Effect i o
-probeIO insRef propRef = PUI $ pure
+probeIO insRef propRef = fromHandles $ pure
   { toUser: \i -> Ref.modify_ (_ <> [ i ]) insRef
   , fromUser: \prop -> Ref.write (Just prop) propRef
   }
@@ -69,7 +68,7 @@ probeIO insRef propRef = PUI $ pure
 -- A probe that logs each feed under a tag into a shared log (so the order of
 -- feeds across operands is observable) and can be fired by hand.
 logged :: forall i o. Show i => String -> Ref.Ref (Array String) -> Ref.Ref (Maybe (o -> Effect Unit)) -> PUI Effect i o
-logged tag logRef propRef = PUI $ pure
+logged tag logRef propRef = fromHandles $ pure
   { toUser: \i -> Ref.modify_ (_ <> [ tag <> show i ]) logRef
   , fromUser: \prop -> Ref.write (Just prop) propRef
   }
@@ -78,7 +77,7 @@ logged tag logRef propRef = PUI $ pure
 -- protocol: every feed echoes) and can also be fired by hand — the `g` the
 -- seeded ×-retraction law quantifies over.
 echoProbe :: forall i o. (i -> o) -> Ref.Ref (Array i) -> Ref.Ref (Maybe (o -> Effect Unit)) -> PUI Effect i o
-echoProbe f insRef propRef = PUI $ pure
+echoProbe f insRef propRef = fromHandles $ pure
   { toUser: \i -> do
       Ref.modify_ (_ <> [ i ]) insRef
       mProp <- Ref.read propRef
@@ -98,8 +97,8 @@ dedupConsecutive = foldl (\acc x -> if last acc == Just x then acc else acc <> [
 -- A refinement of its argument: the same component minus its first
 -- emission — the `p ⊑ p'` witness at the shapes where no gate supplies one.
 quieter :: forall i o. PUI Effect i o -> PUI Effect i o
-quieter g = PUI do
-  inner <- unwrap g
+quieter g = fromHandles do
+  inner <- handles g
   spoken <- Ref.new false
   pure
     { toUser: inner.toUser
@@ -112,7 +111,7 @@ quieter g = PUI do
 -- a feed arms (stored, never emitted), a click replays the whole row last
 -- fed as case `clicked`, and a click before any feed does nothing.
 replaySource :: forall i. Ref.Ref (Maybe (Effect Unit)) -> PUI Effect i [ clicked :: i ]
-replaySource trigger = PUI do
+replaySource trigger = fromHandles do
   slot <- Ref.new Nothing
   pure
     { toUser: \i -> Ref.write (Just i) slot
@@ -133,17 +132,17 @@ isSubsequence xs ys = case uncons xs, uncons ys of
 -- admission law `ocular (first w) = first (ocular w)` holds for exactly this
 -- shape.
 wrappingOcular :: forall a b. Ref.Ref Int -> PUI Effect a b -> PUI Effect a b
-wrappingOcular builds w = PUI do
+wrappingOcular builds w = fromHandles do
   Ref.modify_ (_ + 1) builds
-  unwrap w
+  handles w
 
 -- A **capturing** decorator: observes the emission channel (here, counts it).
 -- Still a natural transformation, but not an ocular — it sees what a gate
 -- drops, so the admission law fails before priming (the module header's
 -- "a decorator that captures … breaks these").
 capturingDecorator :: forall a b. Ref.Ref Int -> PUI Effect a b -> PUI Effect a b
-capturingDecorator seen w = PUI do
-  w' <- unwrap w
+capturingDecorator seen w = fromHandles do
+  w' <- handles w
   pure { toUser: w'.toUser, fromUser: \prop -> w'.fromUser \b -> Ref.modify_ (_ + 1) seen *> prop b }
 
 -- An element probe for the container action: `acted` instantiates the wrapped
@@ -153,7 +152,7 @@ capturingDecorator seen w = PUI do
 type ElemHandle i o = { ins :: Ref.Ref (Array i), prop :: Ref.Ref (Maybe (o -> Effect Unit)) }
 
 elemProbe :: forall i o. Ref.Ref Int -> Ref.Ref (Array (ElemHandle i o)) -> PUI Effect i o
-elemProbe builds roster = PUI do
+elemProbe builds roster = fromHandles do
   Ref.modify_ (_ + 1) builds
   ins <- Ref.new []
   propR <- Ref.new Nothing
@@ -208,7 +207,7 @@ main = do
   -- its row, an iso with toCase @l identity both ways
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (fold @"Count" (\r -> r { count = r.count + 1 }) :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m <- handles (fold @"Count" (\r -> r { count = r.count + 1 }) :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 3 })
     Ref.read outs >>= assertEqual "fold: f of the payload is the released row" [ { count: 4 } ]
@@ -216,25 +215,25 @@ main = do
   do
     ins <- Ref.new ([] :: Array [ "Count" :: { count :: Int } ])
     propRef <- Ref.new Nothing
-    m <- unwrap (folding @"Count" (\r -> r { count = r.count + 1 }) (probeIO ins propRef) :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m <- handles (folding @"Count" (\r -> r { count = r.count + 1 }) (probeIO ins propRef) :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
     m.fromUser \_ -> pure unit
     m.toUser (."Count" { count: 3 })
     Ref.read ins >>= assertEqual "fold: the status is fed the event" [ ."Count" { count: 3 } ]
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (capture @"Count" :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
+    m <- handles (capture @"Count" :: PUI Effect [ "Count" :: { count :: Int } ] { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 5 })
     Ref.read outs >>= assertEqual "fold/identity: the closed singleton unwrapped to its row" [ { count: 5 } ]
   do
     outs <- Ref.new ([] :: Array { count :: Int })
-    m <- unwrap (toCase @"Count" identity >>> capture @"Count" :: PUI Effect { count :: Int } { count :: Int })
+    m <- handles (toCase @"Count" identity >>> capture @"Count" :: PUI Effect { count :: Int } { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { count: 5 }
     Ref.read outs >>= assertEqual "fold/section" [ { count: 5 } ]
   do
     outs <- Ref.new ([] :: Array [ "Count" :: { count :: Int } ])
-    m <- unwrap (capture @"Count" >>> toCase @"Count" identity :: PUI Effect [ "Count" :: { count :: Int } ] [ "Count" :: { count :: Int } ])
+    m <- handles (capture @"Count" >>> toCase @"Count" identity :: PUI Effect [ "Count" :: { count :: Int } ] [ "Count" :: { count :: Int } ])
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."Count" { count: 5 })
     Ref.read outs >>= assertEqual "fold/retraction" [ ."Count" { count: 5 } ]
@@ -242,7 +241,7 @@ main = do
   -- latest contribution winning (the copairing of the coproduct)
   do
     outs <- Ref.new ([] :: Array { n :: Int })
-    m <- unwrap (variantToRecord
+    m <- handles (variantToRecord
       (fold @"A" (\r -> r { n = r.n + 1 }) :: PUI Effect [ "A" :: { n :: Int } ] { n :: Int })
       (fold @"B" (\r -> r { n = r.n * 2 }) :: PUI Effect [ "B" :: { n :: Int } ] { n :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -255,7 +254,7 @@ main = do
     outs <- Ref.new ([] :: Array { count :: Int })
     ins <- Ref.new ([] :: Array [ "New game" :: { count :: Int } ])
     propRef <- Ref.new Nothing
-    m <- unwrap (folding @"New game" (const { count: 0 }) (probeIO ins propRef) :: PUI Effect [ "New game" :: { count :: Int } ] { count :: Int })
+    m <- handles (folding @"New game" (const { count: 0 }) (probeIO ins propRef) :: PUI Effect [ "New game" :: { count :: Int } ] { count :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (."New game" { count: 7 })
     Ref.read outs >>= assertEqual "folding/const: x is the released row" [ { count: 0 } ]
@@ -277,7 +276,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (recordToRecord unitWire (probe gProp :: PUI Effect {} { a :: Int }))
+    m <- handles (recordToRecord unitWire (probe gProp :: PUI Effect {} { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 1 }
     Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord identity g = g" [ { a: 1 } ]
@@ -286,7 +285,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (recordToRecord (probe gProp :: PUI Effect {} { a :: Int }) unitWire)
+    m <- handles (recordToRecord (probe gProp :: PUI Effect {} { a :: Int }) unitWire)
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 2 }
     Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord g identity = g" [ { a: 2 } ]
@@ -301,7 +300,7 @@ main = do
     gProp <- Ref.new Nothing
     silentProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (recordToRecord (probe silentProp :: PUI Effect {} {}) (probe gProp :: PUI Effect {} { a :: Int }))
+    m <- handles (recordToRecord (probe silentProp :: PUI Effect {} {}) (probe gProp :: PUI Effect {} { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 3 }
     Ref.read outs >>= assertEqual "zero-field law ×→×: a zero-field operand never starves the gate" [ { a: 3 } ]
@@ -315,7 +314,7 @@ main = do
     let
       zeroFieldMerge :: PUI Effect { a :: Int } {} -> PUI Effect { a :: Int } {} -> Effect { registered :: Array {}, fed :: Array {} }
       zeroFieldMerge l r = do
-        m <- unwrap (recordToRecord l r :: PUI Effect { a :: Int } {})
+        m <- handles (recordToRecord l r :: PUI Effect { a :: Int } {})
         outs <- Ref.new ([] :: Array {})
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         registered <- Ref.read outs
@@ -337,7 +336,7 @@ main = do
     p1 <- Ref.new Nothing
     p2 <- Ref.new Nothing
     outs <- Ref.new ([] :: Array {})
-    m <- unwrap (variantToRecord (probe p1 :: PUI Effect [ x :: Unit ] {}) (probe p2 :: PUI Effect [ y :: Unit ] {}))
+    m <- handles (variantToRecord (probe p1 :: PUI Effect [ x :: Unit ] {}) (probe p2 :: PUI Effect [ y :: Unit ] {}))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (.x unit)
     m.toUser (.y unit)
@@ -354,7 +353,7 @@ main = do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-    m <- unwrap (recordToRecord
+    m <- handles (recordToRecord
       (probe p1Prop :: PUI Effect {} { a :: Int })
       (probe p2Prop :: PUI Effect {} { b :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -368,7 +367,7 @@ main = do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-    m <- unwrap (variantToRecord
+    m <- handles (variantToRecord
       (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int, b :: String })
       (probe p2Prop :: PUI Effect [ y :: Unit ] { a :: Int, b :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -380,7 +379,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (variantToRecord (lcmap case_ identity :: PUI Effect (Variant ()) { a :: Int }) (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }))
+    m <- handles (variantToRecord (lcmap case_ identity :: PUI Effect (Variant ()) { a :: Int }) (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 3 }
     Ref.read outs >>= assertEqual "unit law +→×: variantToRecord (lcmap case_ identity) g = g" [ { a: 3 } ]
@@ -393,7 +392,7 @@ main = do
     ins <- Ref.new ([] :: Array (Tuple Int Boolean))
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (unfirst (probeIO ins gProp :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+    m <- handles (unfirst (probeIO ins gProp :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 1
     Ref.read ins >>= assertEqual "unfirst: gated before state exists" []
@@ -408,7 +407,7 @@ main = do
     ins <- Ref.new ([] :: Array (Either Int Int))
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (unleft (probeIO ins gProp :: PUI Effect (Either Int Int) (Either String Int)))
+    m <- handles (unleft (probeIO ins gProp :: PUI Effect (Either Int Int) (Either String Int)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 5
     Ref.read ins >>= assertEqual "unleft: input enters Left" [ Left 5 ]
@@ -424,7 +423,7 @@ main = do
     ins <- Ref.new ([] :: Array (Tuple Int Boolean))
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coresolve (probeIO ins gProp :: PUI Effect (Tuple Int Boolean) (Either String Boolean)))
+    m <- handles (coresolve (probeIO ins gProp :: PUI Effect (Tuple Int Boolean) (Either String Boolean)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 1
     Ref.read ins >>= assertEqual "coresolve: gated before state" []
@@ -442,7 +441,7 @@ main = do
     ins <- Ref.new ([] :: Array (Either Int Boolean))
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coretain (probeIO ins gProp :: PUI Effect (Either Int Boolean) (Tuple String Boolean)))
+    m <- handles (coretain (probeIO ins gProp :: PUI Effect (Either Int Boolean) (Tuple String Boolean)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 1
     Ref.read ins >>= assertEqual "coretain: input enters fresh" [ Left 1 ]
@@ -456,7 +455,7 @@ main = do
     ins <- Ref.new ([] :: Array { n :: Int })
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { n :: Int })
-    m <- unwrap (looped (probeIO ins gProp :: PUI Effect { n :: Int } { n :: Int }))
+    m <- handles (looped (probeIO ins gProp :: PUI Effect { n :: Int } { n :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { n: 5 }
     Ref.read ins >>= assertEqual "looped: input feeds through" [ { n: 5 } ]
@@ -477,7 +476,7 @@ main = do
     ins <- Ref.new ([] :: Array (Tuple Int Int))
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (unfirstFrom 0 (probeIO ins gProp :: PUI Effect (Tuple Int Int) (Tuple String Int)))
+    m <- handles (unfirstFrom 0 (probeIO ins gProp :: PUI Effect (Tuple Int Int) (Tuple String Int)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 1
     Ref.read ins >>= assertEqual "unfirstFrom: the first input joins the starting state" [ Tuple 1 0 ]
@@ -493,7 +492,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array (Either String Int))
-    m <- unwrap (resolveFor { ms: 40.0 } (probe gProp :: PUI Effect Int String))
+    m <- handles (resolveFor { ms: 40.0 } (probe gProp :: PUI Effect Int String))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp "burst1"
     Ref.read outs >>= assertEqual "resolveFor: loop withheld before state" []
@@ -514,7 +513,7 @@ main = do
     ins <- Ref.new ([] :: Array String)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array Int)
-    m <- unwrap (colens (\s b -> s <> show b) (_ * 10) (probeIO ins gProp :: PUI Effect String Int))
+    m <- handles (colens (\s b -> s <> show b) (_ * 10) (probeIO ins gProp :: PUI Effect String Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser "x"
     Ref.read ins >>= assertEqual "colens: gated before first emission" []
@@ -529,7 +528,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coprism identity (\b -> if b > 10 then Left (show b) else Right (b + 1)) (probeIO ins gProp :: PUI Effect Int Int))
+    m <- handles (coprism identity (\b -> if b > 10 then Left (show b) else Right (b + 1)) (probeIO ins gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 3
     Ref.read ins >>= assertEqual "coprism: input embeds as focus" [ 3 ]
@@ -546,7 +545,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coshutter (\b -> if b >= 100 then Left (show b) else Right (_ + b)) (probeIO ins gProp :: PUI Effect Int Int))
+    m <- handles (coshutter (\b -> if b >= 100 then Left (show b) else Right (_ + b)) (probeIO ins gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 1
     Ref.read ins >>= assertEqual "coshutter: gated before a first reader" []
@@ -563,7 +562,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coreel identity show (_ + 1) (probeIO ins gProp :: PUI Effect Int Int))
+    m <- handles (coreel identity show (_ + 1) (probeIO ins gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 5
     Ref.read ins >>= assertEqual "coreel: input embeds" [ 5 ]
@@ -578,7 +577,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-    m <- unwrap (focusField @"a" (probe gProp :: PUI Effect Int Int))
+    m <- handles (focusField @"a" (probe gProp :: PUI Effect Int Int))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp 1
     Ref.read outs >>= assertEqual "focusField: gated before input" []
@@ -596,7 +595,7 @@ main = do
   do
     ins <- Ref.new ([] :: Array { n :: Int })
     gProp <- Ref.new Nothing
-    m <- unwrap (with { n: 1 } (probeIO ins gProp :: PUI Effect { n :: Int } { n :: Int }))
+    m <- handles (with { n: 1 } (probeIO ins gProp :: PUI Effect { n :: Int } { n :: Int }))
     m.fromUser \_ -> pure unit
     Ref.read ins >>= assertEqual "with: seed fed at registration" [ { n: 1 } ]
     m.toUser {}
@@ -606,7 +605,7 @@ main = do
   -- registration, then a plain wire
   do
     outs <- Ref.new ([] :: Array Int)
-    m <- unwrap (seeded 1 :: PUI Effect Int Int)
+    m <- handles (seeded 1 :: PUI Effect Int Int)
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     Ref.read outs >>= assertEqual "seeded: point — the seed emits once at registration" [ 1 ]
     m.toUser 2
@@ -623,7 +622,7 @@ main = do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-    m <- unwrap (recordToRecord
+    m <- handles (recordToRecord
       (probe p1Prop :: PUI Effect {} { a :: Int })
       (probe p2Prop :: PUI Effect {} { b :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -638,7 +637,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (variantToRecord (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }) (lcmap case_ identity :: PUI Effect (Variant ()) { a :: Int }))
+    m <- handles (variantToRecord (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }) (lcmap case_ identity :: PUI Effect (Variant ()) { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp { a: 3 }
     Ref.read outs >>= assertEqual "unit law +→×: variantToRecord g (lcmap case_ identity) = g" [ { a: 3 } ]
@@ -651,7 +650,7 @@ main = do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-    m <- unwrap (recordToVariant
+    m <- handles (recordToVariant
       (probeIO ins1 p1Prop :: PUI Effect { a :: Int } [ x :: Int, y :: String ])
       (probeIO ins2 p2Prop :: PUI Effect { a :: Int } [ x :: Int, y :: String ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -668,8 +667,8 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int ])
-    let silent = PUI (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit }) :: PUI Effect {} [ x :: Int ]
-    m <- unwrap (recordToVariant silent (probe gProp :: PUI Effect {} [ x :: Int ]))
+    let silent = fromHandles (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit }) :: PUI Effect {} [ x :: Int ]
+    m <- handles (recordToVariant silent (probe gProp :: PUI Effect {} [ x :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp (.x 1)
     Ref.read outs >>= assertEqual "unit law ×→+: recordToVariant silence g = g" [ .x 1 ]
@@ -682,7 +681,7 @@ main = do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ ok :: Int, err :: String ])
-    m <- unwrap (variantToVariant
+    m <- handles (variantToVariant
       (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int, err :: String ])
       (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ ok :: Int, err :: String ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -701,7 +700,7 @@ main = do
     ins <- Ref.new ([] :: Array [ x :: Unit ])
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ ok :: Int ])
-    m <- unwrap (variantToVariant (lcmap case_ identity :: PUI Effect (Variant ()) [ ok :: Int ]) (probeIO ins gProp :: PUI Effect [ x :: Unit ] [ ok :: Int ]))
+    m <- handles (variantToVariant (lcmap case_ identity :: PUI Effect (Variant ()) [ ok :: Int ]) (probeIO ins gProp :: PUI Effect [ x :: Unit ] [ ok :: Int ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (.x unit)
     Ref.read ins >>= assertEqual "unit law +→+: input reaches g" [ .x unit ]
@@ -717,7 +716,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array (Tuple String Boolean))
-    m <- unwrap (first (probe gProp :: PUI Effect Int String))
+    m <- handles (first (probe gProp :: PUI Effect Int String))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp "early"
     Ref.read outs >>= assertEqual "Strong.first: emission withheld before pair state" []
@@ -731,7 +730,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array (Either String Boolean))
-    m <- unwrap (left (probeIO ins gProp :: PUI Effect Int String))
+    m <- handles (left (probeIO ins gProp :: PUI Effect Int String))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (Left 1)
     Ref.read ins >>= assertEqual "Choice.left: Left feeds the UI component" [ 1 ]
@@ -747,7 +746,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (unleft (left (probeIO ins gProp :: PUI Effect Int String)))
+    m <- handles (unleft (left (probeIO ins gProp :: PUI Effect Int String)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 5
     Ref.read ins >>= assertEqual "unleft (left g) = g: input reaches g" [ 5 ]
@@ -759,7 +758,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (unright (right (probeIO ins gProp :: PUI Effect Int String)))
+    m <- handles (unright (right (probeIO ins gProp :: PUI Effect Int String)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 6
     Ref.read ins >>= assertEqual "unright (right g) = g: input reaches g" [ 6 ]
@@ -772,7 +771,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coresolve (resolveFor { ms: 40.0 } (probe gProp :: PUI Effect Int String)))
+    m <- handles (coresolve (resolveFor { ms: 40.0 } (probe gProp :: PUI Effect Int String)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     fire gProp "burst1"
     fire gProp "burst2"
@@ -798,7 +797,7 @@ main = do
   -- announce: exactly one registration-time emission, then silence.
   do
     outs <- Ref.new ([] :: Array { n :: Int })
-    m <- unwrap (announce { n: 42 } :: PUI Effect {} { n :: Int })
+    m <- handles (announce { n: 42 } :: PUI Effect {} { n :: Int })
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser {}
     Ref.read outs >>= assertEqual "announce: exactly one registration emission" [ { n: 42 } ]
@@ -812,7 +811,7 @@ main = do
       stream :: PUI Effect {} { n :: Int } -> Effect (Array { n :: Int })
       stream w = do
         outs <- Ref.new []
-        m <- unwrap w
+        m <- handles w
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser {}
         m.toUser {}
@@ -829,14 +828,14 @@ main = do
   do
     ins <- Ref.new ([] :: Array { n :: Int })
     gProp <- Ref.new Nothing
-    m <- unwrap ((announce { n: 5 } :: PUI Effect {} { n :: Int }) >>> probeIO ins gProp)
+    m <- handles ((announce { n: 5 } :: PUI Effect {} { n :: Int }) >>> probeIO ins gProp)
     m.fromUser \_ -> pure unit
     Ref.read ins >>= assertEqual "compose: registration announcement reaches downstream" [ { n: 5 } ]
 
   -- identity: the echo wire — whatever comes in goes straight back out.
   do
     outs <- Ref.new ([] :: Array Int)
-    m <- unwrap (identity :: PUI Effect Int Int)
+    m <- handles (identity :: PUI Effect Int Int)
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 3
     Ref.read outs >>= assertEqual "identity: the echo wire" [ 3 ]
@@ -855,8 +854,8 @@ main = do
     lProp <- Ref.new Nothing
     outsG <- Ref.new ([] :: Array String)
     outsL <- Ref.new ([] :: Array String)
-    g <- unwrap (probeIO insG gProp :: PUI Effect Int String)
-    l <- unwrap (identity >>> probeIO insL lProp :: PUI Effect Int String)
+    g <- handles (probeIO insG gProp :: PUI Effect Int String)
+    l <- handles (identity >>> probeIO insL lProp :: PUI Effect Int String)
     g.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsG
     l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
     g.toUser 1 *> g.toUser 2
@@ -876,8 +875,8 @@ main = do
     rProp <- Ref.new Nothing
     outsG <- Ref.new ([] :: Array String)
     outsR <- Ref.new ([] :: Array String)
-    g <- unwrap (probeIO insG gProp :: PUI Effect Int String)
-    r <- unwrap (probeIO insR rProp >>> identity :: PUI Effect Int String)
+    g <- handles (probeIO insG gProp :: PUI Effect Int String)
+    r <- handles (probeIO insR rProp >>> identity :: PUI Effect Int String)
     g.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsG
     r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
     g.toUser 1 *> g.toUser 2
@@ -902,7 +901,7 @@ main = do
         gProp <- Ref.new Nothing
         hProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array Number)
-        m <- unwrap (grouping (probeIO fIns fProp) (probeIO gIns gProp) (probeIO hIns hProp) :: PUI Effect Int Number)
+        m <- handles (grouping (probeIO fIns fProp) (probeIO gIns gProp) (probeIO hIns hProp) :: PUI Effect Int Number)
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser 1 *> m.toUser 2
         fire fProp "f1" *> fire fProp "f2"
@@ -927,7 +926,7 @@ main = do
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { v :: Int })
-    m <- unwrap (recordToRecord (probe gProp :: PUI Effect { v :: Int } {}) identity)
+    m <- handles (recordToRecord (probe gProp :: PUI Effect { v :: Int } {}) identity)
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { v: 1 }
     Ref.read outs >>= assertEqual "display beside the wire: every value forwarded, no echo needed" [ { v: 1 } ]
@@ -946,7 +945,7 @@ main = do
         ins <- Ref.new ([] :: Array { a :: Int })
         gProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int })
-        m <- unwrap (wrapper (probeIO ins gProp :: PUI Effect { a :: Int } { a :: Int }))
+        m <- handles (wrapper (probeIO ins gProp :: PUI Effect { a :: Int } { a :: Int }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { a: 1 } *> m.toUser { a: 2 }
         fire gProp { a: 3 } *> fire gProp { a: 4 }
@@ -967,7 +966,7 @@ main = do
         ins <- Ref.new ([] :: Array [ x :: Int ])
         gProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ ok :: Int ])
-        m <- unwrap (wrapper (probeIO ins gProp :: PUI Effect [ x :: Int ] [ ok :: Int ]))
+        m <- handles (wrapper (probeIO ins gProp :: PUI Effect [ x :: Int ] [ ok :: Int ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser (.x 1) *> m.toUser (.x 2)
         fire gProp (.ok 3) *> fire gProp (.ok 4)
@@ -993,7 +992,7 @@ main = do
         bProp <- Ref.new Nothing
         cProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int, b :: String, c :: Boolean })
-        m <- unwrap (grouping (probeIO aIns aProp :: PUI Effect { s :: Int } { a :: Int }) (probeIO bIns bProp :: PUI Effect { s :: Int } { b :: String }) (probeIO cIns cProp :: PUI Effect { s :: Int } { c :: Boolean }))
+        m <- handles (grouping (probeIO aIns aProp :: PUI Effect { s :: Int } { a :: Int }) (probeIO bIns bProp :: PUI Effect { s :: Int } { b :: String }) (probeIO cIns cProp :: PUI Effect { s :: Int } { c :: Boolean }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { s: 1 } *> m.toUser { s: 2 }
         fire cProp { c: true } *> fire aProp { a: 1 } *> fire bProp { b: "x" } *> fire aProp { a: 2 } *> fire cProp { c: false }
@@ -1020,7 +1019,7 @@ main = do
         bProp <- Ref.new Nothing
         cProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ ok :: String ])
-        m <- unwrap (grouping (probeIO aIns aProp :: PUI Effect [ x :: Int ] [ ok :: String ]) (probeIO bIns bProp :: PUI Effect [ y :: Int ] [ ok :: String ]) (probeIO cIns cProp :: PUI Effect [ z :: Int ] [ ok :: String ]))
+        m <- handles (grouping (probeIO aIns aProp :: PUI Effect [ x :: Int ] [ ok :: String ]) (probeIO bIns bProp :: PUI Effect [ y :: Int ] [ ok :: String ]) (probeIO cIns cProp :: PUI Effect [ z :: Int ] [ ok :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser (.y 1) *> m.toUser (.x 2) *> m.toUser (.z 3) *> m.toUser (.x 4)
         fire cProp (.ok "c") *> fire aProp (.ok "a") *> fire bProp (.ok "b")
@@ -1047,7 +1046,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { txt :: String }))
     outs <- Ref.new ([] :: Array (Array { k :: String, txt :: String }))
-    m <- unwrap (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
+    m <- handles (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     Ref.read outs >>= assertEqual "acted: registration announces nothing" []
     m.toUser []
@@ -1059,7 +1058,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { txt :: String }))
     outs <- Ref.new ([] :: Array (Array { k :: String, txt :: String }))
-    m <- unwrap (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
+    m <- handles (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 } ]
     handles <- Ref.read roster
@@ -1074,7 +1073,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { txt :: String }))
     outs <- Ref.new ([] :: Array (Array { k :: String, txt :: String }))
-    m <- unwrap (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
+    m <- handles (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     fireElem roster 0 { txt: "x" }
@@ -1091,7 +1090,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { txt :: String }))
     outs <- Ref.new ([] :: Array (Array { k :: String, txt :: String }))
-    m <- unwrap (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
+    m <- handles (acted @"k" (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     Ref.read builds >>= assertEqual "acted/keys: two entrants built" 2
@@ -1114,7 +1113,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } [ z :: String ]))
     outs <- Ref.new ([] :: Array [ z :: String ])
-    m <- unwrap (anyOf @"k" identity (elemProbe builds roster))
+    m <- handles (anyOf @"k" identity (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser []
     Ref.read outs >>= assertEqual "anyOf: silent on empty" []
@@ -1129,7 +1128,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
     outs <- Ref.new ([] :: Array { rows :: Array { k :: String, v :: Int } })
-    m <- unwrap (foreach @"k" _.rows (elemProbe builds roster))
+    m <- handles (foreach @"k" _.rows (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { rows: [] }
     Ref.read outs >>= assertEqual "foreach: the fed row passes, empty array included" [ { rows: [] } ]
@@ -1148,7 +1147,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle Int String))
     outs <- Ref.new ([] :: Array { key :: String, value :: String })
-    m <- unwrap (dispatched identity (elemProbe builds roster))
+    m <- handles (dispatched identity (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { key: "a", value: 1 }
     Ref.read builds >>= assertEqual "dispatched: first case instantiates" 1
@@ -1169,7 +1168,7 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle Int Int))
     outs <- Ref.new ([] :: Array (Array Int))
-    m <- unwrap (accumulated identity (elemProbe builds roster))
+    m <- handles (accumulated identity (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { key: "a", value: 1 }
     Ref.read outs >>= assertEqual "accumulated: first case emits the singleton immediately" [ [ 1 ] ]
@@ -1193,12 +1192,12 @@ main = do
     insL <- Ref.new ([] :: Array Int)
     lProp <- Ref.new Nothing
     outsL <- Ref.new ([] :: Array String)
-    l <- unwrap (unfirst (seeded (Tuple 0 true) >>> first (echoProbe show insL lProp)))
+    l <- handles (unfirst (seeded (Tuple 0 true) >>> first (echoProbe show insL lProp)))
     l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
     insR <- Ref.new ([] :: Array Int)
     rProp <- Ref.new Nothing
     outsR <- Ref.new ([] :: Array String)
-    r <- unwrap (seeded 0 >>> echoProbe show insR rProp)
+    r <- handles (seeded 0 >>> echoProbe show insR rProp)
     r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
     l.toUser 1 *> r.toUser 1
     fire lProp "manual" *> fire rProp "manual"
@@ -1213,7 +1212,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (unfirst (first (probeIO ins gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+    m <- handles (unfirst (first (probeIO ins gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 1
     fire gProp "x"
@@ -1226,12 +1225,12 @@ main = do
     insL <- Ref.new ([] :: Array Int)
     lProp <- Ref.new Nothing
     outsL <- Ref.new ([] :: Array String)
-    l <- unwrap (coretain (seeded (Right true) >>> retain (probeIO insL lProp :: PUI Effect Int String)))
+    l <- handles (coretain (seeded (Right true) >>> retain (probeIO insL lProp :: PUI Effect Int String)))
     l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
     insR <- Ref.new ([] :: Array Int)
     rProp <- Ref.new Nothing
     outsR <- Ref.new ([] :: Array String)
-    r <- unwrap (probeIO insR rProp :: PUI Effect Int String)
+    r <- handles (probeIO insR rProp :: PUI Effect Int String)
     r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
     l.toUser 1 *> r.toUser 1
     fire lProp "out" *> fire rProp "out"
@@ -1247,7 +1246,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coretain (retain (probeIO ins gProp :: PUI Effect Int String) :: PUI Effect (Either Int Boolean) (Tuple String Boolean)))
+    m <- handles (coretain (retain (probeIO ins gProp :: PUI Effect Int String) :: PUI Effect (Either Int Boolean) (Tuple String Boolean)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 1
     fire gProp "x"
@@ -1262,7 +1261,7 @@ main = do
     ins <- Ref.new ([] :: Array Int)
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array String)
-    m <- unwrap (coresolve (resolveFor { ms: 20.0 } (probeIO ins gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Either String Boolean)))
+    m <- handles (coresolve (resolveFor { ms: 20.0 } (probeIO ins gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Either String Boolean)))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser 1
     Ref.read ins >>= assertEqual "raw coresolve∘resolve: inputs never reach g" []
@@ -1274,7 +1273,7 @@ main = do
   -- yanking: looped identity = identity.
   do
     outs <- Ref.new ([] :: Array { n :: Int })
-    m <- unwrap (looped (identity :: PUI Effect { n :: Int } { n :: Int }))
+    m <- handles (looped (identity :: PUI Effect { n :: Int } { n :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { n: 3 } *> m.toUser { n: 4 }
     Ref.read outs >>= assertEqual "looped yanking: looped identity = identity" [ { n: 3 }, { n: 4 } ]
@@ -1290,7 +1289,7 @@ main = do
         ins <- Ref.new ([] :: Array { n :: Int })
         gProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { n :: Int })
-        m <- unwrap (w ins gProp)
+        m <- handles (w ins gProp)
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { n: 0 }
         Ref.read ins >>= \is -> for_ (last is) \v -> fire gProp { n: v.n * 10 }
@@ -1320,7 +1319,7 @@ main = do
         ins <- Ref.new ([] :: Array { n :: Int })
         gProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { n :: Int })
-        m <- unwrap (w ins gProp)
+        m <- handles (w ins gProp)
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { n: 5 }
         fire gProp { n: 7 }
@@ -1345,11 +1344,11 @@ main = do
   do
     lProp <- Ref.new Nothing
     outsL <- Ref.new ([] :: Array String)
-    l <- unwrap (lcmap (fst :: Tuple Int Boolean -> Int) (probe lProp :: PUI Effect Int String))
+    l <- handles (lcmap (fst :: Tuple Int Boolean -> Int) (probe lProp :: PUI Effect Int String))
     l.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsL
     rProp <- Ref.new Nothing
     outsR <- Ref.new ([] :: Array String)
-    r <- unwrap (rmap fst (first (probe rProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+    r <- handles (rmap fst (first (probe rProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
     r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsR
     fire lProp "early" *> fire rProp "early"
     Ref.read outsL >>= assertEqual "Strong deviation: lmap fst passes the pre-feed emission" [ "early" ]
@@ -1375,7 +1374,7 @@ main = do
         kIns <- Ref.new ([] :: Array { b :: Int })
         kProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { c :: Int, d :: Int })
-        m <- unwrap (grouping (probeIO fIns fProp :: PUI Effect { s :: Int } { a :: Int })
+        m <- handles (grouping (probeIO fIns fProp :: PUI Effect { s :: Int } { a :: Int })
                               (probeIO gIns gProp :: PUI Effect { s :: Int } { b :: Int })
                               (probeIO hIns hProp :: PUI Effect { a :: Int } { c :: Int })
                               (probeIO kIns kProp :: PUI Effect { b :: Int } { d :: Int }))
@@ -1408,7 +1407,7 @@ main = do
         p1Prop <- Ref.new Nothing
         p2Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-        m <- unwrap (wrapper (probe p1Prop :: PUI Effect { s :: Int } { a :: Int }) (probe p2Prop :: PUI Effect { s :: Int } { b :: String }))
+        m <- handles (wrapper (probe p1Prop :: PUI Effect { s :: Int } { a :: Int }) (probe p2Prop :: PUI Effect { s :: Int } { b :: String }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { s: 1 }
         fire p1Prop { a: 1 } *> fire p2Prop { b: "x" } *> fire p1Prop { a: 2 }
@@ -1425,7 +1424,7 @@ main = do
         p1Prop <- Ref.new Nothing
         p2Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-        m <- unwrap (wrapper (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int, b :: String }) (probe p2Prop :: PUI Effect [ y :: Unit ] { a :: Int, b :: String }))
+        m <- handles (wrapper (probe p1Prop :: PUI Effect [ x :: Unit ] { a :: Int, b :: String }) (probe p2Prop :: PUI Effect [ y :: Unit ] { a :: Int, b :: String }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         fire p1Prop { a: 1, b: "s" } *> fire p2Prop { a: 1, b: "t" } *> fire p1Prop { a: 2, b: "t" }
         Ref.read outs
@@ -1446,7 +1445,7 @@ main = do
         cIns <- Ref.new ([] :: Array [ z :: Int ])
         cProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int, b :: Int, c :: Int })
-        m <- unwrap (grouping (probeIO aIns aProp :: PUI Effect [ x :: Int ] { a :: Int, b :: Int, c :: Int })
+        m <- handles (grouping (probeIO aIns aProp :: PUI Effect [ x :: Int ] { a :: Int, b :: Int, c :: Int })
                               (probeIO bIns bProp :: PUI Effect [ y :: Int ] { a :: Int, b :: Int, c :: Int })
                               (probeIO cIns cProp :: PUI Effect [ z :: Int ] { a :: Int, b :: Int, c :: Int }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -1473,7 +1472,7 @@ main = do
         p2Prop <- Ref.new Nothing
         p3Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ x :: Int, y :: Int, z :: Int ])
-        m <- unwrap (grouping (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ])
+        m <- handles (grouping (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ])
                               (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ])
                               (probe p3Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -1491,7 +1490,7 @@ main = do
   -- == (the guarded onEmit). ==
   do
     outs <- Ref.new ([] :: Array (Array { k :: String, v :: Int }))
-    m <- unwrap (actedBy _.k (identity :: PUI Effect { k :: String, v :: Int } { k :: String, v :: Int }))
+    m <- handles (actedBy _.k (identity :: PUI Effect { k :: String, v :: Int } { k :: String, v :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     Ref.read outs >>= assertEqual "actedBy identity: the fed array echoes whole, once — no torn mid-reconcile gather"
@@ -1571,7 +1570,7 @@ main = do
         kIns <- Ref.new ([] :: Array { b :: Int })
         kProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { c :: Int, d :: Int })
-        m <- unwrap (grouping (echoProbe (\r -> { a: r.s }) fIns fProp)
+        m <- handles (grouping (echoProbe (\r -> { a: r.s }) fIns fProp)
                               (echoProbe (\r -> { b: r.s + 100 }) gIns gProp)
                               (echoProbe (\r -> { c: r.a * 10 }) hIns hProp)
                               (echoProbe (\r -> { d: r.b }) kIns kProp))
@@ -1598,7 +1597,7 @@ main = do
     bIns <- Ref.new ([] :: Array { s :: Int })
     bProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
-    m <- unwrap (recordToRecord (echoProbe (\r -> { a: r.s }) aIns aProp) (echoProbe (\r -> { b: r.s + 100 }) bIns bProp))
+    m <- handles (recordToRecord (echoProbe (\r -> { a: r.s }) aIns aProp) (echoProbe (\r -> { b: r.s + 100 }) bIns bProp))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { s: 1 } *> m.toUser { s: 2 }
     Ref.read outs >>= assertEqual "one feed, one release: each broadcast releases once, both fields fresh (no torn { a: 2, b: 101 })"
@@ -1618,7 +1617,7 @@ main = do
     cIns <- Ref.new ([] :: Array { s :: Int })
     cProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int, b :: Int, c :: Int })
-    m <- unwrap (recordToRecord (recordToRecord (echoProbe (\r -> { a: r.s }) aIns aProp) (echoProbe (\r -> { b: r.s + 100 }) bIns bProp)) (echoProbe (\r -> { c: r.s + 1000 }) cIns cProp))
+    m <- handles (recordToRecord (recordToRecord (echoProbe (\r -> { a: r.s }) aIns aProp) (echoProbe (\r -> { b: r.s + 100 }) bIns bProp)) (echoProbe (\r -> { c: r.s + 1000 }) cIns cProp))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { s: 1 }
     Ref.read outs >>= assertEqual "one feed, one release: nested merges release once" [ { a: 1, b: 101, c: 1001 } ]
@@ -1633,7 +1632,7 @@ main = do
     bIns <- Ref.new ([] :: Array [ r :: Int ])
     bProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (variantToRecord
+    m <- handles (variantToRecord
       (echoProbe (\v -> { a: match { l: identity } v }) aIns aProp)
       (echoProbe (\v -> { a: match { r: (_ * 100) } v }) bIns bProp))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -1657,7 +1656,7 @@ main = do
         qIns <- Ref.new ([] :: Array String)
         qProp <- Ref.new Nothing
         gProp <- Ref.new Nothing
-        m <- unwrap (p gProp >>> probeIO qIns qProp)
+        m <- handles (p gProp >>> probeIO qIns qProp)
         m.fromUser \_ -> pure unit
         fire gProp "early"
         m.toUser (Tuple 1 true)
@@ -1685,7 +1684,7 @@ main = do
       gProp <- Ref.new Nothing
       rProp <- Ref.new Nothing
       outs <- Ref.new ([] :: Array { a :: Int, b :: String, c :: Boolean })
-      m <- unwrap (recordToRecord (focusField @"a" (probe gProp :: PUI Effect Int Int)) (probe rProp :: PUI Effect { a :: Int, b :: String } { c :: Boolean }))
+      m <- handles (recordToRecord (focusField @"a" (probe gProp :: PUI Effect Int Int)) (probe rProp :: PUI Effect { a :: Int, b :: String } { c :: Boolean }))
       m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
       script m (\n _ -> fire gProp n) rProp
       Ref.read outs
@@ -1693,7 +1692,7 @@ main = do
       gProp <- Ref.new Nothing
       rProp <- Ref.new Nothing
       outs <- Ref.new ([] :: Array { a :: Int, b :: String, c :: Boolean })
-      m <- unwrap (recordToRecord (probe gProp :: PUI Effect { a :: Int, b :: String } { a :: Int, b :: String }) (probe rProp :: PUI Effect { a :: Int, b :: String } { c :: Boolean }))
+      m <- handles (recordToRecord (probe gProp :: PUI Effect { a :: Int, b :: String } { a :: Int, b :: String }) (probe rProp :: PUI Effect { a :: Int, b :: String } { c :: Boolean }))
       m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
       script m (\n b -> fire gProp { a: n, b }) rProp
       Ref.read outs
@@ -1710,7 +1709,7 @@ main = do
         gProp <- Ref.new Nothing
         rProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-        m <- unwrap (recordToVariant (q (probe gProp :: PUI Effect { a :: Int } [ x :: Int, y :: String ])) (probe rProp :: PUI Effect { a :: Int } [ x :: Int, y :: String ]))
+        m <- handles (recordToVariant (q (probe gProp :: PUI Effect { a :: Int } [ x :: Int, y :: String ])) (probe rProp :: PUI Effect { a :: Int } [ x :: Int, y :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { a: 0 }
         fire gProp (.x 1)
@@ -1728,7 +1727,7 @@ main = do
         gProp <- Ref.new Nothing
         rProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ ok :: Int, err :: String ])
-        m <- unwrap (variantToVariant (q (probe gProp :: PUI Effect [ a :: Int ] [ ok :: Int, err :: String ])) (probe rProp :: PUI Effect [ b :: String ] [ ok :: Int, err :: String ]))
+        m <- handles (variantToVariant (q (probe gProp :: PUI Effect [ a :: Int ] [ ok :: Int, err :: String ])) (probe rProp :: PUI Effect [ b :: String ] [ ok :: Int, err :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser (.a 0)
         fire gProp (.ok 1)
@@ -1751,7 +1750,7 @@ main = do
         bIns <- Ref.new ([] :: Array [ y :: String ])
         bProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int })
-        m <- unwrap (variantToRecord
+        m <- handles (variantToRecord
           (q (echoProbe (match { x: \n -> { a: n } }) aIns aProp :: PUI Effect [ x :: Int ] { a :: Int }))
           (echoProbe (match { y: \t -> { a: String.length t } }) bIns bProp :: PUI Effect [ y :: String ] { a :: Int }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -1778,7 +1777,7 @@ main = do
       run feeds = do
         pProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array { a :: Int, b :: String })
-        m <- unwrap (recordToRecord (identity :: PUI Effect { a :: Int } { a :: Int }) (probe pProp :: PUI Effect { a :: Int } { b :: String }))
+        m <- handles (recordToRecord (identity :: PUI Effect { a :: Int } { a :: Int }) (probe pProp :: PUI Effect { a :: Int } { b :: String }))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         fire pProp { b: "x" }
         for_ feeds m.toUser
@@ -1796,7 +1795,7 @@ main = do
   do
     trigger <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ clicked :: { a :: Int, b :: String } ])
-    m <- unwrap (replaySource trigger :: PUI Effect { a :: Int, b :: String } [ clicked :: { a :: Int, b :: String } ])
+    m <- handles (replaySource trigger :: PUI Effect { a :: Int, b :: String } [ clicked :: { a :: Int, b :: String } ])
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     click trigger
     Ref.read outs >>= assertEqual "emission ×→+: a click before any feed does nothing" []
@@ -1814,7 +1813,7 @@ main = do
   -- forwarded as two.
   do
     outs <- Ref.new ([] :: Array [ x :: Int ])
-    m <- unwrap (identity :: PUI Effect [ x :: Int ] [ x :: Int ])
+    m <- handles (identity :: PUI Effect [ x :: Int ] [ x :: Int ])
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     Ref.read outs >>= assertEqual "emission +→+: nothing at registration" []
     m.toUser (.x 1)
@@ -1822,7 +1821,7 @@ main = do
     m.toUser (.x 1)
     Ref.read outs >>= assertEqual "repetition +→+: twice is two" [ .x 1, .x 1 ]
     outs2 <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-    m2 <- unwrap (variantToVariant (rmap expand identity :: PUI Effect [ x :: Int ] [ x :: Int, y :: String ]) (rmap expand identity :: PUI Effect [ y :: String ] [ x :: Int, y :: String ]))
+    m2 <- handles (variantToVariant (rmap expand identity :: PUI Effect [ x :: Int ] [ x :: Int, y :: String ]) (rmap expand identity :: PUI Effect [ y :: String ] [ x :: Int, y :: String ]))
     m2.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs2
     m2.toUser (.x 1) *> m2.toUser (.x 1) *> m2.toUser (.y "e")
     Ref.read outs2 >>= assertEqual "repetition +→+: the merge coalesces nothing either" [ .x 1, .x 1, .y "e" ]
@@ -1837,7 +1836,7 @@ main = do
     bIns <- Ref.new ([] :: Array [ y :: String ])
     bProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { a :: Int })
-    m <- unwrap (variantToRecord
+    m <- handles (variantToRecord
       (echoProbe (match { x: \n -> { a: n } }) aIns aProp :: PUI Effect [ x :: Int ] { a :: Int })
       (echoProbe (match { y: \t -> { a: String.length t } }) bIns bProp :: PUI Effect [ y :: String ] { a :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -1851,7 +1850,7 @@ main = do
     Ref.read aIns >>= assertEqual "repetition +→×: the owner was stepped twice" [ .x 1, .x 1 ]
     sProp <- Ref.new Nothing
     outsS <- Ref.new ([] :: Array { a :: Int })
-    mS <- unwrap (variantToRecord
+    mS <- handles (variantToRecord
       (probe sProp :: PUI Effect [ z :: Unit ] { a :: Int })
       (echoProbe (match { y: \t -> { a: String.length t } }) bIns bProp :: PUI Effect [ y :: String ] { a :: Int }))
     mS.fromUser \o -> Ref.modify_ (_ <> [ o ]) outsS
@@ -1865,7 +1864,7 @@ main = do
         p1Prop <- Ref.new Nothing
         p2Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-        m <- unwrap (wrapper (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
+        m <- handles (wrapper (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { s: 1 }
         fire p1Prop (.x 1) *> fire p2Prop (.y "e") *> fire p1Prop (.x 2)
@@ -1884,7 +1883,7 @@ main = do
         p1Prop <- Ref.new Nothing
         p2Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ ok :: Int, err :: String ])
-        m <- unwrap (wrapper (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int, err :: String ]) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ ok :: Int, err :: String ]))
+        m <- handles (wrapper (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int, err :: String ]) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ ok :: Int, err :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser (.x 1) *> m.toUser (.y "b")
         fire p1Prop (.ok 1) *> fire p2Prop (.err "e") *> fire p1Prop (.ok 2)
@@ -1903,7 +1902,7 @@ main = do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-    m <- unwrap (recordToVariant (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
+    m <- handles (recordToVariant (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { s: 0 }
     fire p1Prop (.x 1) *> fire p2Prop (.x 2) *> fire p1Prop (.y "e")
@@ -1917,7 +1916,7 @@ main = do
     ins2 <- Ref.new ([] :: Array { s :: Int })
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
-    m <- unwrap (recordToRecord (probeIO ins1 p1Prop :: PUI Effect { s :: Int } { a :: Int }) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } { b :: String }))
+    m <- handles (recordToRecord (probeIO ins1 p1Prop :: PUI Effect { s :: Int } { a :: Int }) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } { b :: String }))
     m.fromUser \_ -> pure unit
     m.toUser { s: 1 }
     fire p1Prop { a: 1 } *> fire p2Prop { b: "x" } *> fire p1Prop { a: 2 }
@@ -1927,7 +1926,7 @@ main = do
     lIns2 <- Ref.new ([] :: Array { a :: Int, b :: String })
     l1Prop <- Ref.new Nothing
     l2Prop <- Ref.new Nothing
-    l <- unwrap (looped (recordToRecord (probeIO lIns1 l1Prop :: PUI Effect { a :: Int, b :: String } { a :: Int }) (probeIO lIns2 l2Prop :: PUI Effect { a :: Int, b :: String } { b :: String })))
+    l <- handles (looped (recordToRecord (probeIO lIns1 l1Prop :: PUI Effect { a :: Int, b :: String } { a :: Int }) (probeIO lIns2 l2Prop :: PUI Effect { a :: Int, b :: String } { b :: String })))
     l.fromUser \_ -> pure unit
     l.toUser { a: 0, b: "x" }
     fire l1Prop { a: 1 } *> fire l2Prop { b: "y" } *> fire l1Prop { a: 2 }
@@ -1937,7 +1936,7 @@ main = do
     ins2 <- Ref.new ([] :: Array { s :: Int })
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
-    m <- unwrap (recordToVariant (probeIO ins1 p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
+    m <- handles (recordToVariant (probeIO ins1 p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
     m.fromUser \_ -> pure unit
     m.toUser { s: 1 }
     fire p1Prop (.x 1) *> fire p2Prop (.y "e")
@@ -1948,7 +1947,7 @@ main = do
     ins2 <- Ref.new ([] :: Array [ y :: String ])
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
-    m <- unwrap (variantToVariant (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int ]) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ ok :: Int ]))
+    m <- handles (variantToVariant (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] [ ok :: Int ]) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] [ ok :: Int ]))
     m.fromUser \_ -> pure unit
     m.toUser (.x 1) *> m.toUser (.y "b")
     fire p1Prop (.ok 1) *> fire p2Prop (.ok 2)
@@ -1959,7 +1958,7 @@ main = do
     ins2 <- Ref.new ([] :: Array [ y :: String ])
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
-    m <- unwrap (variantToRecord (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] { a :: Int }) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] { a :: Int }))
+    m <- handles (variantToRecord (probeIO ins1 p1Prop :: PUI Effect [ x :: Int ] { a :: Int }) (probeIO ins2 p2Prop :: PUI Effect [ y :: String ] { a :: Int }))
     m.fromUser \_ -> pure unit
     m.toUser (.x 1) *> m.toUser (.y "b")
     fire p1Prop { a: 1 } *> fire p2Prop { a: 3 } *> fire p1Prop { a: 2 }
@@ -1978,7 +1977,7 @@ main = do
         qBuilds <- Ref.new 0
         qRoster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
         outs <- Ref.new ([] :: Array (Array { k :: String, v :: Int }))
-        m <- unwrap (lifted (elemProbe pBuilds pRoster) (elemProbe qBuilds qRoster))
+        m <- handles (lifted (elemProbe pBuilds pRoster) (elemProbe qBuilds qRoster))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
         fireElem pRoster 0 { k: "a", v: 10 }
@@ -2016,7 +2015,7 @@ main = do
       builds <- Ref.new 0
       gProp <- Ref.new Nothing
       outs <- Ref.new ([] :: Array (Tuple String Boolean))
-      m <- unwrap (first (wrappingOcular builds (probe gProp :: PUI Effect Int String)) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean))
+      m <- handles (first (wrappingOcular builds (probe gProp :: PUI Effect Int String)) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean))
       m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
       script m gProp
       os <- Ref.read outs
@@ -2026,7 +2025,7 @@ main = do
       builds <- Ref.new 0
       gProp <- Ref.new Nothing
       outs <- Ref.new ([] :: Array (Tuple String Boolean))
-      m <- unwrap (wrappingOcular builds (first (probe gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+      m <- handles (wrappingOcular builds (first (probe gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
       m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
       script m gProp
       os <- Ref.read outs
@@ -2043,14 +2042,14 @@ main = do
     inside <- do
       seen <- Ref.new 0
       gProp <- Ref.new Nothing
-      m <- unwrap (first (capturingDecorator seen (probe gProp :: PUI Effect Int String)) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean))
+      m <- handles (first (capturingDecorator seen (probe gProp :: PUI Effect Int String)) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean))
       m.fromUser \_ -> pure unit
       script m gProp
       Ref.read seen
     outside <- do
       seen <- Ref.new 0
       gProp <- Ref.new Nothing
-      m <- unwrap (capturingDecorator seen (first (probe gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
+      m <- handles (capturingDecorator seen (first (probe gProp :: PUI Effect Int String) :: PUI Effect (Tuple Int Boolean) (Tuple String Boolean)))
       m.fromUser \_ -> pure unit
       script m gProp
       Ref.read seen
@@ -2062,7 +2061,7 @@ main = do
     let
       run w = do
         outs <- Ref.new ([] :: Array String)
-        m <- unwrap (w :: PUI Effect {} String)
+        m <- handles (w :: PUI Effect {} String)
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         Ref.read outs
     l <- run (rmap show (announce 42))
@@ -2083,7 +2082,7 @@ main = do
     -- instance, at any annotation. That is why this law is pinned by probes
     -- and not by a demo: the shape is unreachable from application code.
     outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
-    m <- unwrap disjointOperands
+    m <- handles disjointOperands
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { s: 5 }
     Ref.read outs >>= assertEqual "disjoint operands are the merge's reachable shape, and release once" [ { a: 5, b: 105 } ]
@@ -2096,7 +2095,7 @@ main = do
   do
     sc <- newScope Nothing Active
     beats <- Ref.new 0
-    t <- inScope sc (unwrap (ticks @"tick" { ms: 10.0 } :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
+    t <- inScope sc (handles (ticks @"tick" { ms: 10.0 } :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
     t.fromUser \_ -> Ref.modify_ (_ + 1) beats
     t.toUser { n: 1 }
     launchAff_ do
@@ -2126,7 +2125,7 @@ main = do
     parent <- newScope Nothing Active
     child <- newScope (Just parent) Active
     beats <- Ref.new 0
-    t <- inScope child (unwrap (ticks @"tick" { ms: 10.0 } :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
+    t <- inScope child (handles (ticks @"tick" { ms: 10.0 } :: PUI Effect { n :: Int } [ tick :: { n :: Int } ]))
     t.fromUser \_ -> Ref.modify_ (_ + 1) beats
     t.toUser { n: 1 }
     launchAff_ do

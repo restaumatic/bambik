@@ -13,7 +13,7 @@ module PUI.Web.SVG
   , text
   ) where
 
-import PUI (PUI, Ocular)
+import PUI (fromHandles, handles, PUI, Ocular)
 
 import PUI.Web (Web, el)
 

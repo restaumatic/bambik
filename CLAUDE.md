@@ -157,12 +157,18 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   enforce is that a `×→+` leaf never emits inside its own feed, which is
   the vocabulary provider's conformance.
   **Stateful
-  instances require `MonadEffect m`** — `Strong`, `Choice`, the trace
-  quartet, `Category`'s wire, the point and the knot, the gated merges and
-  the stateful combinators allocate their `Ref`s in the construction monad
-  at instantiation, the phase state belongs to; the stateless ones
-  (`Profunctor`, `Semigroupoid`, `Cochoice`, the ungated merges) keep
-  `Functor`/`Apply`, and the only `unsafePerformEffect`s left in the
+  instances require `MonadEffect m`** — `Strong`, the gated trace
+  quartet, the gated merges and the stateful combinators allocate their
+  `Ref`s in the construction monad at instantiation, the phase state
+  belongs to. Registration hands the continuation over and returns the
+  input leg (`PUI m i o = PUI (m ((o -> Effect Unit) -> Effect (i -> Effect Unit)))`),
+  so a feed cannot precede it and the routing stages need no state:
+  `Profunctor`, `Choice`, `Cochoice` and `looped` keep `Functor`,
+  `Semigroupoid` `Apply`, `Category` (the wire is the continuation
+  itself), the point and the ungated merges `Applicative` — the knot and
+  `Cochoice` keep their re-entry cell in the registration `Effect`;
+  old-style leaves are written as two legs and adapted by
+  `fromHandles`/`handles`, and the only `unsafePerformEffect`s left in the
   algebra are the three module-level diagnostics switches. Also `Hosting` and
   the generic `Acting (PUI m)` instance (see the collection bullet), and the
   **development diagnostics** — the private `tr` (emission trace) and

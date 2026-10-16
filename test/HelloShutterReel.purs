@@ -19,7 +19,7 @@ import Data.Lens.Shutter (shutter)
 import Effect (Effect)
 import PUI.Web.MDC2 (filledTextField) as MDC
 import QualifiedDo.Semigroupoid as Semigroupoid
-import PUI (PUI(..), announce)
+import PUI (PUI, announce, fromHandles)
 import PUI.Web.HTML (body, button)
 import PUI.Web (Web, text)
 
@@ -61,4 +61,4 @@ main = body $ announce "Hello, " >>> Semigroupoid.do
   greet
   confirm
   lcmap (\v -> { greeting: v }) (text _.greeting)
-  PUI (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit })
+  fromHandles (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit })

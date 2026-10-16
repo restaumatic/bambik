@@ -47,7 +47,6 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Foldable (for_, traverse_)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
@@ -56,7 +55,7 @@ import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (folding, Ocular, PUI)
+import PUI (fromHandles, handles, folding, Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, separating, (:=))
@@ -122,8 +121,8 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- a `<fluent-field>` associating a label with the editor its builder
 -- appends (Fluent's label protocol: both are slotted children of the field)
 fieldWith :: forall i o. String -> String -> Web { toUser :: i -> Effect Unit, fromUser :: (o -> Effect Unit) -> Effect Unit } -> PUI Web i o
-fieldWith position lbl editor = el "fluent-field" >>> "label-position" := position $ wrap do
-  _ <- unwrap (el "fluent-label" >>> "slot" := "label" $ staticText lbl)
+fieldWith position lbl editor = el "fluent-field" >>> "label-position" := position $ fromHandles do
+  _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText lbl)
   editor
 
 -- | The **text field**: a labelled single-line input. Shows the string it
@@ -173,10 +172,10 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
 -- | be `debounced` downstream. The current number is shown at the end of
 -- | the label line, since the control has no readout of its own.
 slider :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-slider = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ el "fluent-field" >>> "label-position" := "above" $ wrap do
-  readout <- unwrap $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ wrap do
-      _ <- unwrap (staticText config.label)
-      unwrap (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text _.readout))
+slider = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ el "fluent-field" >>> "label-position" := "above" $ fromHandles do
+  readout <- handles $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ fromHandles do
+      _ <- handles (staticText config.label)
+      handles (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text _.readout))
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
   element "fluent-slider" (pure unit)
@@ -219,7 +218,7 @@ dropdownOptional options = withStructuralEq @a (dropdownOf @l true (selectedOpti
 
 dropdownOf :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
 dropdownOf clearable lift options = let config = { label: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
-  element "fluent-dropdown" (void $ unwrap (staticHTML optionsMarkup))
+  element "fluent-dropdown" (void $ handles (staticHTML optionsMarkup))
   attribute "slot" "input"
   node <- gets _.sibling
   liftEffect $ selectorWiring options
@@ -254,7 +253,7 @@ radioGroupOf clearable lift options = let config = { label: reflectSymbol (Proxy
   members <- element "fluent-radio-group" do
     forWithIndex options \idx o -> do
       member <- element "fluent-field" do
-        _ <- unwrap (el "fluent-label" >>> "slot" := "label" $ staticText o.label)
+        _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText o.label)
         element "fluent-radio" (pure unit)
         radioNode <- gets _.sibling
         liftEffect do
@@ -301,7 +300,7 @@ radioGroupOf clearable lift options = let config = { label: reflectSymbol (Proxy
 progressBar
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
-progressBar f = wrap do
+progressBar f = fromHandles do
   element "fluent-progress-bar" (pure unit)
   attribute "max" "1"
   attribute "style" "min-width: 200px;"
@@ -315,7 +314,7 @@ progressBar f = wrap do
 ratingDisplay
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
-ratingDisplay f = wrap do
+ratingDisplay f = fromHandles do
   element "fluent-rating-display" (pure unit)
   node <- gets _.sibling
   liftEffect $ displayWiring \r -> setNumberProp "value" node (f r)
@@ -337,9 +336,9 @@ messageBar
 messageBar f = messageBarFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
 messageBarFace :: forall a r. String -> PUI Web a { | r }
-messageBarFace caseLabel = wrap do
+messageBarFace caseLabel = fromHandles do
   liftEffect $ ensureStyle "fluent-toast" toastCss
-  w <- unwrap $ (el "fluent-message-bar" >>> "intent" := "success" $
+  w <- handles $ (el "fluent-message-bar" >>> "intent" := "success" $
     statusText caseLabel) # cl "fluent-toast"
   node <- gets _.sibling
   pure
@@ -381,9 +380,9 @@ caption1 w = el "fluent-text" >>> "size" := "200" >>> "block" := "" $ w
 -- | heading of its own is ordinary typography placed in its content
 -- | (`title3`, `body1`).
 card :: Ocular (PUI Web)
-card content = wrap do
+card content = fromHandles do
   liftEffect $ ensureStyle "fluent-card" cardCss
-  unwrap $ div >>> "class" := "fluent-card" $ content
+  handles $ div >>> "class" := "fluent-card" $ content
 
 cardCss :: String
 cardCss = """
@@ -430,7 +429,7 @@ foreign import adoptTheme :: Effect Unit
 -- | (`indeterminateLinearProgress # action submit`). No label: it names no
 -- | field and no case.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
-indeterminateLinearProgress = wrap do
+indeterminateLinearProgress = fromHandles do
   element "fluent-progress-bar" (pure unit)
   attribute "style" hiddenStyle
   node <- gets _.sibling

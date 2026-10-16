@@ -43,7 +43,6 @@ import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (fromString) as Int
 import Data.Int (round)
 import Data.Maybe (Maybe, fromMaybe, maybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
@@ -51,7 +50,7 @@ import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import PUI (folding, Ocular, PUI)
+import PUI (fromHandles, handles, folding, Ocular, PUI)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, selectorWiring, setAttribute, setChecked, setValue, staticText, statusWiring, text, statusText, uniqueId, (:=))
@@ -117,8 +116,8 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- | by values arriving from elsewhere. A whole-row citizen: fed the wide
 -- | row, it edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
-  _ <- unwrap ((label $ staticText config.label) # cl "form-label")
+textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ fromHandles do
+  _ <- handles ((label $ staticText config.label) # cl "form-label")
   element "input" (pure unit)
   attribute "type" "text"
   attribute "class" "form-control"
@@ -146,10 +145,10 @@ textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ 
 -- | current number is shown at the end of the label line, since the control
 -- | has no readout of its own.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
-  readout <- unwrap $ (label $ wrap do
-      _ <- unwrap (span $ staticText config.label)
-      unwrap ((span $ text _.readout) # cl "text-body-secondary")
+sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ fromHandles do
+  readout <- handles $ (label $ fromHandles do
+      _ <- handles (span $ staticText config.label)
+      handles ((span $ text _.readout) # cl "text-body-secondary")
     ) # cl "form-label" # cl "d-flex" # cl "justify-content-between"
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
@@ -192,9 +191,9 @@ selectOptional :: forall @l @c @n a b1 t v b2 r. IsSymbol l => IsSymbol c => IsS
 selectOptional options = withStructuralEq @a (selectOf @l true (selectedOptionalAt @l @c @n) options)
 
 selectOf :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
-selectOf clearable lift options = let config = { label: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ wrap do
-  _ <- unwrap ((label $ staticText config.label) # cl "form-label")
-  element "select" (void $ unwrap (optionLeaves))
+selectOf clearable lift options = let config = { label: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ fromHandles do
+  _ <- handles ((label $ staticText config.label) # cl "form-label")
+  element "select" (void $ handles (optionLeaves))
   node <- gets _.sibling
   liftEffect $ setAttribute node "class" "form-select"
   liftEffect $ selectorWiring options
@@ -204,13 +203,13 @@ selectOf clearable lift options = let config = { label: reflectSymbol (Proxy @l)
     }
   where
   optionLeaves :: PUI Web {} {}
-  optionLeaves = wrap do
+  optionLeaves = fromHandles do
     when clearable do
       element "option" (pure unit)
       noneNode <- gets _.sibling
       liftEffect $ setAttribute noneNode "value" ""
     forWithIndex_ options \idx o -> do
-      element "option" (void $ unwrap (staticText o.label))
+      element "option" (void $ handles (staticText o.label))
       optionNode <- gets _.sibling
       liftEffect $ setAttribute optionNode "value" (show idx)
     pure { toUser: mempty, fromUser: \prop -> prop {} }
@@ -218,7 +217,7 @@ selectOf clearable lift options = let config = { label: reflectSymbol (Proxy @l)
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label is part of the target, so clicking the words toggles it too.
 toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
-toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (div $ wrap do
+toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (div $ fromHandles do
   inputId <- liftEffect uniqueId
   element "input" (pure unit)
   node <- gets _.sibling
@@ -227,7 +226,7 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
     setAttribute node "type" "checkbox"
     setAttribute node "role" "switch"
     setAttribute node "id" inputId
-  _ <- unwrap ((label >>> "for" := inputId $ staticText config.label) # cl "form-check-label")
+  _ <- handles ((label >>> "for" := inputId $ staticText config.label) # cl "form-check-label")
   liftEffect $ editorWiring
     { show: setChecked node
     , held: pure false
@@ -243,7 +242,7 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
 progress
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
-progress f = wrap do
+progress f = fromHandles do
   barNode <- element "div" do
     element "div" (pure unit)
     bar <- gets _.sibling
@@ -273,8 +272,8 @@ toast
 toast f = toastFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
 toastFace :: forall a r. String -> PUI Web a { | r }
-toastFace caseLabel = wrap do
-  w <- unwrap $ (el "div" >>> "role" := "status"
+toastFace caseLabel = fromHandles do
+  w <- handles $ (el "div" >>> "role" := "status"
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;" $
       (div $ statusText caseLabel) # cl "toast-body")
     # cl "toast" # cl "text-bg-primary" # cl "border-0"
@@ -332,7 +331,7 @@ body = HTML.body
 -- | (`indeterminateLinearProgress # action submit`). No label: it names no
 -- | field and no case.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
-indeterminateLinearProgress = wrap do
+indeterminateLinearProgress = fromHandles do
   _ <- element "div" do
     element "div" (pure unit)
     bar <- gets _.sibling
