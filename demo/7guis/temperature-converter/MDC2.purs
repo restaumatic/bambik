@@ -11,6 +11,6 @@ import TemperatureConverter (fromCelsius, fromFahrenheit, roomTemperature)
 temperatureConverter :: Effect Unit
 temperatureConverter =
   body $ Semigroupoid.do
-    filledTextField @"celsius" # settled fromCelsius
-    filledTextField @"fahrenheit" # settled fromFahrenheit
+    filledTextField @"Celsius" # settled fromCelsius
+    filledTextField @"Fahrenheit" # settled fromFahrenheit
   # looped # with roomTemperature

@@ -738,7 +738,7 @@ code below the UI) are algebra-layer material and exempt by location.
   row, the knot re-feeds it whole), what each returns (`text` a
   `String`, a fold the row, a pane's classifier a variant), and every
   field and case a line names by its label, at the type its leaf gives
-  it (`filledTextField @"celsius"` puts `celsius :: String` in the
+  it (`filledTextField @"Celsius"` puts `"Celsius" :: String` in the
   row, `providedAt @"confirming" @"deletion"` puts `deletion :: [
   confirming :: t2 | t3 ]`). What it leaves is the **tails**: the
   fields and cases only business functions reach (counter's `counted ::

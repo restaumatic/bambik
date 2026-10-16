@@ -126,8 +126,7 @@ the editor's primed sibling (`filledTextField' @"Start date" { hint:
 question or a sentence is cut to the name it asks for
 (`filledTextField' @"Todo" { hint: "What needs to be done?" }`,
 `toggleSwitch @"Teams link"`, `checkbox @"Accept the terms of
-service"`, never `"I accept…"` or `"Your name"`). Where a symbol is the
-conventional caption, write the symbol (`@celsius`). A leaf takes no
+service"`, never `"I accept…"` or `"Your name"`). A leaf takes no
 options record: the label is its caption. The few words with optional
 presentation have a primed sibling taking it (`button' @"Place order" {
 icon: "local_cafe" }`, `listOf' … { selected: isSelected } …`, the
@@ -217,7 +216,7 @@ takes a trailing word that says what it is for:
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
 | an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Receipt" { icon: "file" }; indeterminateLinearProgress # action @"Receipt" printReceipt } ) # joined @"Receipt printed"` in the event ensemble, its status folding `kept`; two outcomes `# joined2 @"Order submitted" @"Order rejected: no total"` | order-form |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | stopwatch, timer |
-| an invariant between edited fields | `filledTextField @celsius # settled fromCelsius` | temperature-converter |
+| an invariant between edited fields | `filledTextField @"Celsius" # settled fromCelsius` | temperature-converter |
 | an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" createPerson; VariantToRecord.do { snackbar @"Person created" identity; … } } )`, the pair owning the case in the fold block, the statuses owning the action's outcomes | crud |
 | an effect whose outcome is the model | `( Semigroupoid.do { indeterminateCircularProgress # action @"Forecast requested" fetchReport; capture @"Forecast fetched" } )` | weather |
 | an effect whose outcomes are told | `indeterminateLinearProgress # action @"Book" submit`, then `snackbar @"Flight booked" identity` and `snackbar @"Booking rejected" identity` | flight-booker |
@@ -682,7 +681,7 @@ text is computed, a chrome line nothing.
   heading over its section, a caption before its field — is written
   first, a line like any display (signup-form's `headline4 $ staticText
   "Create account"`; inside one element, a block of two lines: `label $
-  Semigroupoid.do { staticText "°C "; input @"celsius" "text" }`,
+  Semigroupoid.do { staticText "°C "; input @"Celsius" "text" }`,
   temperature-converter-html). A **separator** is written the same way,
   leading over what it introduces (`divider $ slider @"Attendees" #
   inCaseAt @"chosen" @"Room"`, meeting-booker), and shows itself only
@@ -851,7 +850,7 @@ the watch build running ([building.md](building.md)):
    the copy function returns a `String` and the fold the row; it named
    no field, so the whole row is the tail. A label on a line puts its
    field in the row: temperature-converter's two editors make every
-   hint `{ celsius :: String, fahrenheit :: String | t0 }`. Inbox's,
+   hint `{ "Celsius" :: String, "Fahrenheit" :: String | t0 }`. Inbox's,
    abridged:
 
    ```

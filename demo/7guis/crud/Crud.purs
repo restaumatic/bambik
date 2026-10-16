@@ -10,7 +10,7 @@ import Data.Variant (match)
 import Effect.Aff (Aff)
 
 type Catalogue =
-  { "Filter" :: String
+  { "Surname prefix" :: String
   , "Name" :: String
   , "Surname" :: String
   , people :: Array Person
@@ -27,7 +27,7 @@ type Entry =
 loadPeopleCatalogue :: {} -> Aff [ "People loaded" :: Catalogue ]
 loadPeopleCatalogue _ = do
   people <- fetchPeople
-  pure (."People loaded" { "Filter": "", "Name": "", "Surname": "", people, selected: .none {} })
+  pure (."People loaded" { "Surname prefix": "", "Name": "", "Surname": "", people, selected: .none {} })
 
 pick :: { event :: Int, model :: Catalogue } -> Catalogue
 pick { event: i, model: m@{ people } } = case index people i of
@@ -64,7 +64,7 @@ peopleDeleted :: Array Person -> Catalogue -> Catalogue
 peopleDeleted people m = m { people = people, selected = .none {} }
 
 entries :: Catalogue -> Array Entry
-entries { "Filter": prefix, selected, people } =
+entries { "Surname prefix": prefix, selected, people } =
   (\{ i, p } -> { key: i, "Name": p."Name", "Surname": p."Surname", status: statusOf i })
     <$> filter (\{ p } -> hasPrefix prefix p."Surname") (mapWithIndex (\i p -> { i, p }) people)
   where

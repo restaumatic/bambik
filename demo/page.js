@@ -107,7 +107,26 @@ const surfaceStyles = {
 `],
 }
 
+// Every surface is a flex column the page caps at the viewport's height and
+// scrolls; its children keep their own height, or a tall demo would squash
+// its fields instead of scrolling.
+const unshrunk = (surface) => {
+  if (!document.getElementById("demo-surface")) {
+    const style = document.createElement("style")
+    style.id = "demo-surface"
+    style.textContent = ".demo-surface > * { flex-shrink: 0; }"
+    document.head.append(style)
+  }
+  surface.inner.classList.add("demo-surface")
+  return surface
+}
+
 const demoSurface = () => {
+  const surface = variantSurface()
+  return surface && unshrunk(surface)
+}
+
+const variantSurface = () => {
   const suffix = currentVariant
   const div = (className, style) => {
     const d = document.createElement("div")

@@ -55,7 +55,7 @@ and emitters of a catalogue — are in the design-system module header
 | a sentence composed from several fields | `headline6 $ text balanceLine` | cashbox | writing.md *Code style* → *Types and values* |
 | a case label read as copy | `caseText` (`Data.Variant.Case`), in the view model module | order-form, potluck, espresso-bar | writing.md *Code style* → *Types and values* |
 | a number as a bar, gauge or stars | `linearProgress elapsedFraction`; `progressBar seatOccupancy` | timer; meeting-booker | the design-system module |
-| fixed copy introducing what follows — a heading, a caption | `headline4 $ staticText "Create account"` as a block line; inside one element, `label $ Semigroupoid.do { staticText "°C "; input @"celsius" "text" }` | signup-form; temperature-converter (HTML) | writing.md *Code style* → *Types and values*; `PUI.Web` |
+| fixed copy introducing what follows — a heading, a caption | `headline4 $ staticText "Create account"` as a block line; inside one element, `label $ Semigroupoid.do { staticText "°C "; input @"Celsius" "text" }` | signup-form; temperature-converter (HTML) | writing.md *Code style* → *Types and values*; `PUI.Web` |
 | fixed copy on its own — a note | `listItem $ staticText "…"` | photo-gallery | writing.md *Components* |
 | a rule between things | `divider $ …`, `hr $ …` — shown only while both sides render something | meeting-booker, photo-gallery, restaurant-menu | writing.md *Code style* → *Types and values*; `PUI.Web` |
 | a pane for one state of the model | `# inCase @"problem" bookingState`; `# inCaseAt @"serving" @"display"` — displays and editors alike | flight-booker, potluck; ticket-dispenser, checkout, calculator | writing.md *Conditional visibility* |
@@ -76,7 +76,7 @@ and emitters of a catalogue — are in the design-system module header
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
 | a text field | `filledTextField @"First name"` | order-form | writing.md *Components* |
-| a text field with a format or an example under it | `filledTextField' @"Start date" { hint: "DD.MM.YYYY" }` | flight-booker, cells, crud, todo-list | writing.md *Components* |
+| a text field with a format or an example under it | `filledTextField' @"Start date" { hint: "DD.MM.YYYY" }` | flight-booker, cells, todo-list | writing.md *Components* |
 | a text field checked as the user pauses | `debouncedTextField @"Username" usernameSettleTime` | signup-form | the design-system module |
 | a yes/no over a two-case field | `checkbox @"Accept the terms of service" @"accepted" @"declined"` | signup-form, espresso-bar | the design-system module |
 | a switch | `toggleSwitch @"Takeaway cup"` | espresso-bar | the design-system module |

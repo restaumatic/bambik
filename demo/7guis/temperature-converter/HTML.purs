@@ -14,8 +14,8 @@ temperatureConverter =
   body $ div $ Semigroupoid.do
     ( p $ label $ Semigroupoid.do
       staticText "°C "
-      input @"celsius" "text" ) # settled fromCelsius
+      input @"Celsius" "text" ) # settled fromCelsius
     ( p $ label $ Semigroupoid.do
       staticText "°F "
-      input @"fahrenheit" "text" ) # settled fromFahrenheit
+      input @"Fahrenheit" "text" ) # settled fromFahrenheit
   # looped # with roomTemperature
