@@ -15,15 +15,16 @@
 -- | doc/collections-profunctor-algebra.md §0.
 -- |
 -- | **The carrier contract.** A `PUI` value denotes, per instantiation, one
--- | process reached in three phases: constructed in `m`, where every
--- | stateful instance allocates its state — hence `MonadEffect m` on
--- | exactly those instances, and `Functor`/`Apply`/`Applicative` on the
--- | rest saying *no state here* — then registered once, which hands the
--- | downstream continuation over and returns the input leg, then feeds and
--- | emissions interleaving. Since a feed cannot precede registration, the
--- | stages that only route (the wire, composition, `Choice`, the ungated
--- | merges, the point) need no state at all; `looped` and `Cochoice`
--- | keep theirs in the registration `Effect`. The protocol, `≈`, `⊑` and the component laws every
+-- | process reached in three phases: constructed in `m`, then registered
+-- | once, which hands the downstream continuation over and returns the
+-- | input leg, then feeds and emissions interleaving. A feed cannot precede
+-- | registration, so every instance keeps its state — a gate, a retained
+-- | pair, a re-entry cell — in the registration `Effect`, allocated once per
+-- | instantiation, and asks of `m` only the structure it composes with:
+-- | `Functor` for one operand, `Apply` for two, `Applicative` for none.
+-- | `MonadEffect m` is left to what genuinely builds in `m` — the scope a
+-- | word reads (`Scoped`), the host placing collection elements
+-- | (`Hosting`) — and to `handles`, the two-leg bridge. The protocol, `≈`, `⊑` and the component laws every
 -- | instance below is stated against are doc/observational-semantics.md
 -- | §1–3; the six laws — two on components, four on merges — are stated
 -- | once in `Data.Profunctor.Row` ("The laws") and read per shape in the
@@ -202,17 +203,28 @@ handles :: forall m i o. MonadEffect m => PUI m i o -> m (Handles i o)
 handles (PUI mreg) = do
   reg <- mreg
   propRef <- liftEffect $ Ref.new Nothing
+  -- Nothing: not registered; Left: registering, feeds held (a component
+  -- re-feeding itself from an emission inside its own registration);
+  -- Right: the input leg
   legRef <- liftEffect $ Ref.new Nothing
   let
-    registered = Ref.read legRef >>= case _ of
-      Just leg -> pure leg
-      Nothing -> do
-        leg <- reg \o -> Ref.read propRef >>= traverse_ (_ $ o)
-        Ref.write (Just leg) legRef
-        pure leg
+    registered = do
+      Ref.write (Just (Left [])) legRef
+      leg <- reg \o -> Ref.read propRef >>= traverse_ (_ $ o)
+      held <- Ref.read legRef
+      Ref.write (Just (Right leg)) legRef
+      for_ held (either (traverse_ leg) (const (pure unit)))
+    fed i = Ref.read legRef >>= case _ of
+      Nothing -> registered *> fed i
+      Just (Left held) -> Ref.write (Just (Left (held <> [ i ]))) legRef
+      Just (Right leg) -> leg i
   pure
-    { toUser: \i -> registered >>= (_ $ i)
-    , fromUser: \prop -> Ref.write (Just prop) propRef *> void registered
+    { toUser: fed
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        Ref.read legRef >>= case _ of
+          Nothing -> registered
+          _ -> pure unit
     }
 
 -- | Register with the input leg in scope of the continuation: a feedback
@@ -299,68 +311,50 @@ instance Functor m => Choice (PUI m) where
 -- | this class. Contrast `Cochoice` below,
 -- | whose retraction holds raw: this carrier is genuinely traced over `+`
 -- | and only pointed-traced over `×` (doc/observational-semantics.md).
-instance MonadEffect m => Costrong (PUI m) where
-  unfirst p = fromHandles do
-    p' <- handles p
-    cRef <- liftEffect $ Ref.new Nothing
-    guard <- liftEffect gateGuard
-    pure
-      { toUser: \a -> do
-          mc <- Ref.read cRef
-          case mc of
-            Nothing -> do
-              guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `with`), or seed a raw `unfirst`/`colens` chain from inside (`seeded`)." []
-              tr "Costrong.unfirst: input withheld (state unprimed)" a
-            Just c -> p'.toUser $ Tuple a c
-      , fromUser: \prop ->
-          p'.fromUser \(Tuple b c) -> do
-            guard.fed
-            Ref.write (Just c) cRef
-            prop b
-      }
-  unsecond p = fromHandles do
-    p' <- handles p
-    aRef <- liftEffect $ Ref.new Nothing
-    guard <- liftEffect gateGuard
-    pure
-      { toUser: \b -> do
-          ma <- Ref.read aRef
-          case ma of
-            Nothing -> do
-              guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `with`), or seed a raw chain from inside (`seeded`)." []
-              tr "Costrong.unsecond: input withheld (state unprimed)" b
-            Just a -> p'.toUser $ Tuple a b
-      , fromUser: \prop ->
-          p'.fromUser \(Tuple a c) -> do
-            guard.fed
-            Ref.write (Just a) aRef
-            prop c
-      }
+instance Functor m => Costrong (PUI m) where
+  unfirst (PUI p) = PUI $ p <#> \reg prop -> do
+    cRef <- Ref.new Nothing
+    guard <- gateGuard
+    leg <- reg \(Tuple b c) -> do
+      guard.fed
+      Ref.write (Just c) cRef
+      prop b
+    pure \a -> Ref.read cRef >>= case _ of
+      Nothing -> do
+        guard.blocked "Costrong.unfirst: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `with`), or seed a raw `unfirst`/`colens` chain from inside (`seeded`)." []
+        tr "Costrong.unfirst: input withheld (state unprimed)" a
+      Just c -> leg $ Tuple a c
+  unsecond (PUI p) = PUI $ p <#> \reg prop -> do
+    aRef <- Ref.new Nothing
+    guard <- gateGuard
+    leg <- reg \(Tuple a c) -> do
+      guard.fed
+      Ref.write (Just a) aRef
+      prop c
+    pure \b -> Ref.read aRef >>= case _ of
+      Nothing -> do
+        guard.blocked "Costrong.unsecond: inputs dropped for 3s — the state feedback channel was never primed (the traced UI component never emitted). Loop state through the model instead (`looped`, closed by `with`), or seed a raw chain from inside (`seeded`)." []
+        tr "Costrong.unsecond: input withheld (state unprimed)" b
+      Just a -> leg $ Tuple a b
 
 -- | The **pointed** `×`-trace: `unfirst` with its state `Ref` starting at
 -- | `c0`, so the first input joins the starting state instead of waiting on
 -- | an emission. The pointed trace at the value level; a row form gave
 -- | way to looping the state through the model, so no library word stands
 -- | on it now.
-instance MonadEffect m => PointedCostrong (PUI m) where
+instance Functor m => PointedCostrong (PUI m) where
   -- a hole start (guardrails L18) is absent: the state channel is unprimed
   -- and every input is withheld, as under the gated `unfirst` — so a chain
   -- whose seed is not written yet lets nothing through to the handlers that
   -- are not written yet either
-  unfirstFrom c0 p = fromHandles do
-    p' <- handles p
-    cRef <- liftEffect $ Ref.new (if isHole c0 then Nothing else Just c0)
-    pure
-      { toUser: \a -> do
-          mc <- Ref.read cRef
-          case mc of
-            Nothing -> tr "PointedCostrong.unfirstFrom: input withheld (the start is a hole)" a
-            Just c -> p'.toUser $ Tuple a c
-      , fromUser: \prop ->
-          p'.fromUser \(Tuple b c) -> do
-            Ref.write (Just c) cRef
-            prop b
-      }
+  unfirstFrom c0 (PUI p) = PUI $ p <#> \reg prop -> do
+    cRef <- Ref.new (if isHole c0 then Nothing else Just c0)
+    leg <- reg \(Tuple b c) -> do
+      Ref.write (Just c) cRef
+      prop b
+    pure \a -> Ref.read cRef >>= case _ of
+      Nothing -> tr "PointedCostrong.unfirstFrom: input withheld (the start is a hole)" a
+      Just c -> leg $ Tuple a c
 
 -- | The `+`-diagonal **trace** (dual of `Choice`): a looped-branch emission
 -- | re-enters the UI component as input — feedback of **control**, i.e. iteration —
@@ -392,35 +386,30 @@ instance Functor m => Cochoice (PUI m) where
 -- | input-dead (each gate waits on the other), so the retraction is stated
 -- | seeded — and the seeded composite IS `debounced`:
 -- | `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g`.
-instance MonadEffect m => Coresolving (PUI m) where
-  coresolve p = fromHandles do
-    p' <- handles p
-    aRef <- liftEffect $ Ref.new Nothing
-    cRef <- liftEffect $ Ref.new Nothing
-    busyRef <- liftEffect $ Ref.new false
-    guard <- liftEffect gateGuard
-    pure
-      { toUser: \a -> do
-          Ref.write (Just a) aRef
-          mc <- Ref.read cRef
-          case mc of
-            Nothing -> do
-              guard.blocked "Coresolving.coresolve: inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Seed the loop branch (`seeded`, as `debounced` does); an application loop closes at its record junction instead (`looped`)." []
-              tr "Coresolving.coresolve: input withheld (fold state unprimed)" a
-            Just c -> p'.toUser $ Tuple a c
-      , fromUser: \prop -> p'.fromUser case _ of
-          Left b -> prop b
-          Right c -> do
-            guard.fed
-            tr "Coresolving.coresolve: fold step, re-feeding" c
-            Ref.write (Just c) cRef
-            busy <- Ref.read busyRef
-            unless busy do
-              Ref.write true busyRef
-              ma <- Ref.read aRef
-              for_ ma \a -> p'.toUser $ Tuple a c
-              Ref.write false busyRef
-      }
+instance Functor m => Coresolving (PUI m) where
+  coresolve (PUI p) = PUI $ p <#> \reg prop -> do
+    aRef <- Ref.new Nothing
+    cRef <- Ref.new Nothing
+    busyRef <- Ref.new false
+    guard <- gateGuard
+    leg <- registeredSelf reg \self -> case _ of
+      Left b -> prop b
+      Right c -> do
+        guard.fed
+        tr "Coresolving.coresolve: fold step, re-feeding" c
+        Ref.write (Just c) cRef
+        busy <- Ref.read busyRef
+        unless busy do
+          Ref.write true busyRef
+          Ref.read aRef >>= traverse_ \a -> self $ Tuple a c
+          Ref.write false busyRef
+    pure \a -> do
+      Ref.write (Just a) aRef
+      Ref.read cRef >>= case _ of
+        Nothing -> do
+          guard.blocked "Coresolving.coresolve: inputs dropped for 3s — the fold state was never primed (no loop-branch emission arrived). Seed the loop branch (`seeded`, as `debounced` does); an application loop closes at its record junction instead (`looped`)." []
+          tr "Coresolving.coresolve: input withheld (fold state unprimed)" a
+        Just c -> leg $ Tuple a c
 
 -- | The `+ → ×` **co-strength** (retraction of `Retaining`): every emission
 -- | `Tuple b c` yields `b` and immediately re-enters the UI component as a
@@ -428,23 +417,20 @@ instance MonadEffect m => Coresolving (PUI m) where
 -- | The raw composite `coretain (retain g)` is output-dead (`retain`'s gate
 -- | waits on a resume only emissions can trigger), so the retraction is
 -- | stated seeded: `coretain (seeded (Right c0) >>> retain g) ≈ g`.
-instance MonadEffect m => Coretaining (PUI m) where
-  coretain p = fromHandles do
-    p' <- handles p
+instance Functor m => Coretaining (PUI m) where
+  coretain (PUI p) = PUI $ p <#> \reg prop -> do
     -- the resume re-entry is guarded: a record-output UI component echoes on
-    -- `toUser`, and an unguarded re-feed would loop on its own echo
-    busyRef <- liftEffect $ Ref.new false
-    pure
-      { toUser: \a -> p'.toUser $ Left a
-      , fromUser: \prop -> p'.fromUser \(Tuple b c) -> do
-          prop b
-          busy <- Ref.read busyRef
-          unless busy do
-            tr "Coretaining.coretain: resuming with state" c
-            Ref.write true busyRef
-            p'.toUser $ Right c
-            Ref.write false busyRef
-      }
+    -- its input, and an unguarded re-feed would loop on its own echo
+    busyRef <- Ref.new false
+    leg <- registeredSelf reg \self (Tuple b c) -> do
+      prop b
+      busy <- Ref.read busyRef
+      unless busy do
+        tr "Coretaining.coretain: resuming with state" c
+        Ref.write true busyRef
+        self $ Right c
+        Ref.write false busyRef
+    pure \a -> leg $ Left a
 
 instance Apply m => Semigroupoid (PUI m) where
   -- downstream registers first: emissions fired during upstream's
@@ -630,20 +616,19 @@ looped (PUI p) = PUI $ p <#> \reg prop -> do
 -- gates — the machinery that follows the block, shared with the container
 -- action; the other three are routing (+→× the copairing).
 
-instance MonadEffect m => RecordToRecord (PUI m) where
-  recordToRecord p1 p2 = fromHandles do
-    p1' <- handles p1
-    p2' <- handles p2
-    gate <- liftEffect $ newRecordGate "×→×" labels1 labels2
-    pure
+instance Apply m => RecordToRecord (PUI m) where
+  recordToRecord p1@(PUI q1) p2@(PUI q2) = PUI ado
+    reg1 <- q1
+    reg2 <- q2
+    in \prop -> do
+      gate <- newRecordGate "×→×" labels1 labels2
       -- broadcast in, gate out, one feed one step — the shape's projection
       -- and preservation laws; the carrier's part is `steppedFeed`, the
       -- batched broadcast
-      { toUser: \new -> steppedRecordFeed Shared gate do
-            p1'.toUser new
-            p2'.toUser new
-      , fromUser: gatedRecordOutputs gate exactRow exactRow p1'.fromUser p2'.fromUser
-      }
+      Tuple leg1 leg2 <- gatedRecordOutputs gate exactRow exactRow reg1 reg2 prop
+      pure \new -> steppedRecordFeed Shared gate do
+        leg1 new
+        leg2 new
     where
     labels1 = labelsOf p1
     labels2 = labelsOf p2
@@ -775,21 +760,21 @@ newRecordGate shape labels1 labels2 = do
   guard2 <- gateGuard
   pure { gate, shape, labels1, labels2, guard1, guard2 }
 
--- | The streaming-phase subscription of a record merge's gate. Each operand
+-- | The registration of a record merge's operands at its gate. Each operand
 -- | emission, trimmed to its declared row by `exact1`/`exact2` (the type
 -- | says exactly what the machine may see), contributes its fields under
 -- | their labels; a release is assembled back into the merged row, `Union
 -- | o1 o2 o` witnessing that the assembled fields are exactly `o`'s.
 gatedRecordOutputs
-  :: forall e1 e2 r1 r2 r
+  :: forall i1 i2 e1 e2 r1 r2 r
    . RecordGate
   -> (e1 -> { | r1 })
   -> (e2 -> { | r2 })
-  -> ((e1 -> Effect Unit) -> Effect Unit)
-  -> ((e2 -> Effect Unit) -> Effect Unit)
+  -> Registration i1 e1
+  -> Registration i2 e2
   -> ({ | r } -> Effect Unit)
-  -> Effect Unit
-gatedRecordOutputs rg exact1 exact2 sub1 sub2 prop = do
+  -> Effect (Tuple (i1 -> Effect Unit) (i2 -> Effect Unit))
+gatedRecordOutputs rg exact1 exact2 reg1 reg2 prop = do
   -- the release reads the downstream continuation from the gate, so it is
   -- written before the operands subscribe: a registration-time announcement
   -- releases into a listening channel
@@ -798,8 +783,9 @@ gatedRecordOutputs rg exact1 exact2 sub1 sub2 prop = do
   -- emission is the informationless {}, which fills no participant, so it
   -- neither opens the gate nor re-fires it — `identity @{}`, a silent
   -- display and an announcing one are indistinguishable as operands
-  sub1 \partial -> contributed rg (fieldsOf rg.labels1 (exact1 partial))
-  sub2 \partial -> contributed rg (fieldsOf rg.labels2 (exact2 partial))
+  leg1 <- reg1 \partial -> contributed rg (fieldsOf rg.labels1 (exact1 partial))
+  leg2 <- reg2 \partial -> contributed rg (fieldsOf rg.labels2 (exact2 partial))
+  pure $ Tuple leg1 leg2
   where
   assembled :: Array (Tuple String Field) -> { | r }
   assembled = unsafeCoerce <<< foldl (\r (Tuple l v) -> unsafeSet l v r) {}
@@ -848,68 +834,57 @@ reported rg = case _ of
 -- | instance fixes the carrier's **quiescence quantum**, 300ms — a semantic
 -- | constant of this instance, not of the class (`resolveFor` re-scopes it
 -- | per stage).
-instance MonadEffect m => Resolving (PUI m) where
+instance Functor m => Resolving (PUI m) where
   resolve = resolveFor { ms: 300.0 }
 
 -- | `resolve` with an explicit quiescence window — see the `Resolving`
 -- | instance. `Done` needs no state and fires (after the window) even
 -- | unprimed; only the `Loop` branch is gated on a first `c`.
-resolveFor :: forall m a b c. MonadEffect m => { ms :: Number } -> PUI m a b -> PUI m (Tuple a c) (Either b c)
-resolveFor millis p = fromHandles do
-  p' <- handles p
-  cRef <- liftEffect $ Ref.new Nothing
-  mFiberRef <- liftEffect $ Ref.new Nothing
-  guard <- liftEffect gateGuard
-  pure
-    { toUser: \(Tuple a c) -> do
-        guard.fed
-        Ref.write (Just c) cRef
-        p'.toUser a
-    , fromUser: \prop ->
-        p'.fromUser \b -> do
-          -- (re)arm the quiescence timer: a newer emission supersedes the
-          -- pending Done, so only the last value of a burst resolves
-          launchAff_ do
-            mFiber <- liftEffect $ Ref.read mFiberRef
-            for_ mFiber $ killFiber (error "Superseded by a newer emission")
-            newFiber <- forkAff do
-              delay (Milliseconds millis.ms)
-              liftEffect $ prop $ Left b
-            liftEffect $ Ref.write (Just newFiber) mFiberRef
-          -- loop immediately with the retained state
-          mc <- Ref.read cRef
-          case mc of
-            Nothing -> do
-              guard.blocked "Resolving.resolve: loop-branch emissions dropped for 3s — no input has primed the retained state (only quiescence resolutions pass). Feed the stage a first value." []
-              tr "Resolving.resolve: loop branch withheld (state unprimed)" b
-            Just c -> prop $ Right c
-    }
+resolveFor :: forall m a b c. Functor m => { ms :: Number } -> PUI m a b -> PUI m (Tuple a c) (Either b c)
+resolveFor millis (PUI p) = PUI $ p <#> \reg prop -> do
+  cRef <- Ref.new Nothing
+  mFiberRef <- Ref.new Nothing
+  guard <- gateGuard
+  leg <- reg \b -> do
+    -- (re)arm the quiescence timer: a newer emission supersedes the
+    -- pending Done, so only the last value of a burst resolves
+    launchAff_ do
+      mFiber <- liftEffect $ Ref.read mFiberRef
+      for_ mFiber $ killFiber (error "Superseded by a newer emission")
+      newFiber <- forkAff do
+        delay (Milliseconds millis.ms)
+        liftEffect $ prop $ Left b
+      liftEffect $ Ref.write (Just newFiber) mFiberRef
+    -- loop immediately with the retained state
+    Ref.read cRef >>= case _ of
+      Nothing -> do
+        guard.blocked "Resolving.resolve: loop-branch emissions dropped for 3s — no input has primed the retained state (only quiescence resolutions pass). Feed the stage a first value." []
+        tr "Resolving.resolve: loop branch withheld (state unprimed)" b
+      Just c -> prop $ Right c
+  pure \(Tuple a c) -> do
+    guard.fed
+    Ref.write (Just c) cRef
+    leg a
 
 -- | The Mealy step: a fresh `Left a` feeds the inner UI component, a `Right c`
 -- | (re)places the retained state. When the inner UI component emits `b`, the
 -- | output pairs it with the retained `c` — and is **withheld until a `c`
 -- | has arrived** (a `Tuple b c` with unknown `c` would be a fabrication),
 -- | mirroring the knowledge-gated record merges.
-instance MonadEffect m => Retaining (PUI m) where
-  retain p = fromHandles do
-    p' <- handles p
-    cRef <- liftEffect $ Ref.new Nothing
-    guard <- liftEffect gateGuard
-    pure
-      { toUser: case _ of
-          Left a -> p'.toUser a
-          Right c -> do
-            guard.fed
-            Ref.write (Just c) cRef
-      , fromUser: \prop ->
-          p'.fromUser \b -> do
-            mc <- Ref.read cRef
-            case mc of
-              Nothing -> do
-                guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: seed the state case (`seeded`); an application loop closes at its record junction instead (`looped`)." []
-                tr "Retaining.retain: emission withheld (state unprimed)" b
-              Just c -> prop $ Tuple b c
-      }
+instance Functor m => Retaining (PUI m) where
+  retain (PUI p) = PUI $ p <#> \reg prop -> do
+    cRef <- Ref.new Nothing
+    guard <- gateGuard
+    leg <- reg \b -> Ref.read cRef >>= case _ of
+      Nothing -> do
+        guard.blocked "Retaining.retain: emissions dropped for 3s — the retained state was never fed (no state-case input arrived), so the gate cannot complete a Tuple. Prime the state channel: seed the state case (`seeded`); an application loop closes at its record junction instead (`looped`)." []
+        tr "Retaining.retain: emission withheld (state unprimed)" b
+      Just c -> prop $ Tuple b c
+    pure case _ of
+      Left a -> leg a
+      Right c -> do
+        guard.fed
+        Ref.write (Just c) cRef
 
 
 --------------------------------------------------------------------------------
@@ -1353,7 +1328,7 @@ running run w = action'
 -- | each told by a sibling status.
 fold
   :: forall @l m a v r
-   . MonadEffect m
+   . Applicative m
   => IsSymbol l
   => Cons l a () v
   => (a -> { | r })
@@ -1367,7 +1342,7 @@ fold f = folding @l f (unshown @l)
 -- | usualOrder)` (espresso-bar).
 reset
   :: forall @l m a v r
-   . MonadEffect m
+   . Applicative m
   => IsSymbol l
   => Cons l a () v
   => { | r }
@@ -1382,7 +1357,7 @@ reset x = fold @l (const x)
 -- | order-form).
 capture
   :: forall @l m v r
-   . MonadEffect m
+   . Applicative m
   => IsSymbol l
   => Cons l { | r } () v
   => PUI m [ | v ] { | r }
@@ -1406,7 +1381,7 @@ capture = fold @l identity
 -- | 2026-10-07.)
 folding
   :: forall @l m a v r
-   . MonadEffect m
+   . Applicative m
   => IsSymbol l
   => Cons l a () v
   => (a -> { | r })
@@ -1446,7 +1421,7 @@ action' arr w = fromHandles do
 -- | `coresolve (resolve g) = debounced g` made the body: the quiescence
 -- | step composed with its retraction, the loop channel primed by a
 -- | `seeded` wire, the one place a seeded `×`-side trace survives.
-debounced :: forall m. MonadEffect m => { ms :: Number } -> Ocular (PUI m)
+debounced :: forall m. Applicative m => { ms :: Number } -> Ocular (PUI m)
 debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 
 -- The container action on PUI (class in Data.Profunctor.Acting — the pure

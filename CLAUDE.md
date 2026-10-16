@@ -156,19 +156,20 @@ The rows a pipeline operates over hold **state, not copy** (guardrails L17): **c
   case `l`, so no record-shaped source exists; what the type still cannot
   enforce is that a `×→+` leaf never emits inside its own feed, which is
   the vocabulary provider's conformance.
-  **Stateful
-  instances require `MonadEffect m`** — the gated trace quartet, the
-  gated merges and the stateful combinators allocate their `Ref`s in the
-  construction monad at instantiation, the phase state belongs to;
-  `Strong` allocates its pair state at registration instead, once per
-  instantiation, so it needs only `Functor`. Registration hands the continuation over and returns the
-  input leg (`PUI m i o = PUI (m ((o -> Effect Unit) -> Effect (i -> Effect Unit)))`),
-  so a feed cannot precede it and the routing stages need no state:
-  `Profunctor`, `Choice`, `Cochoice` and `looped` keep `Functor`,
-  `Semigroupoid` `Apply`, `Category` (the wire is the continuation
-  itself), the point and the ungated merges `Applicative` — the knot and
-  `Cochoice` keep their re-entry cell in the registration `Effect`;
-  old-style leaves are written as two legs and adapted by
+  **State lives in registration, not in `m`**: registration hands the
+  continuation over and returns the input leg
+  (`PUI m i o = PUI (m ((o -> Effect Unit) -> Effect (i -> Effect Unit)))`),
+  so a feed cannot precede it, and every instance — the strengths, the
+  trace quartet, the gated `×→×` merge, the knot — allocates its cells in
+  the registration `Effect`, once per instantiation. The algebra asks of
+  `m` only what it composes: `Functor` for one operand (`Profunctor`,
+  `Strong`, `Choice`, the trace quartet, `Resolving`, `Retaining`,
+  `looped`), `Apply` for two (`Semigroupoid`, the `×→×` merge), and
+  `Applicative` for none (`Category` — the wire is the continuation
+  itself — the point, the ungated merges, `fold`). `MonadEffect m` is
+  left to what builds in `m`: `Scoped` (the scope a word reads — `ticks`,
+  `action`), `Hosting` (collection placement) and `handles`; two-leg
+  leaves are written as `{ toUser, fromUser }` and adapted by
   `fromHandles`/`handles`, and the only `unsafePerformEffect`s left in the
   algebra are the three module-level diagnostics switches. Also `Hosting` and
   the generic `Acting (PUI m)` instance (see the collection bullet), and the

@@ -19,8 +19,11 @@ Before 2026-07 the history is the git log.
   `looped`/`Strong` `Functor` (`Strong`'s pair state and the knot's
   re-entry cell are allocated at registration, once per instantiation),
   `announce`/`seeded`/`with` and the three ungated merges `Applicative`.
-  The gated trace instances, the gated merge and the collections keep
-  `MonadEffect`. Leaves written as two legs adapt through `fromHandles`;
+  The rest followed the same day: the trace quartet, `Resolving`/
+  `resolveFor` and `Retaining` allocate at registration (`Functor`), the
+  `×→×` merge's gate too (`Apply`), so `fold`/`reset`/`capture`/`folding`
+  and `debounced` are `Applicative`. `MonadEffect` is left to `Scoped`,
+  `Hosting` and `handles`, which genuinely build in `m`. Leaves written as two legs adapt through `fromHandles`;
   `handles` gives a component's two legs back, registering on the first
   leg used — a child a leaf feeds but never subscribes to (the HTML
   button's caption) works unsubscribed, as before. Verified beyond the
