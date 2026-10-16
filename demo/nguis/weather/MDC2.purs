@@ -24,6 +24,6 @@ weather =
     VariantToRecord.do
       confirmed @"About this dashboard" "Got it" identity $ body1 $ text aboutLine
       ( Semigroupoid.do
-        indeterminateCircularProgress # action @"Forecast requested" @( "Forecast fetched" :: _ ) fetchReport
+        indeterminateCircularProgress # action @"Forecast requested" fetchReport
         capture @"Forecast fetched" )
   # looped # with warsawBulletin

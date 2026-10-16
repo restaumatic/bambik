@@ -17,12 +17,12 @@ are under `.spago/bambik/<tag>/`. The rules the lines follow are in
 ```purescript
 module FlightBooker.MDC2 (flightBooker) where
 
-import Prelude (Unit, (#), ($))
+import Prelude (Unit, (#), identity, ($))
 
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit)
-import PUI (action, debounced, joined, kept, looped, with)
+import PUI (action, debounced, looped, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
 import PUI.Web.MDC2 (body, body1, button', filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -41,17 +41,15 @@ flightBooker =
       ( body1 $ text oneWayLine ) # inCase @"one-way" bookingState
       ( body1 $ text returnLine ) # inCase @"return" bookingState
     ) # debounced itinerarySettleTime
-    ( Semigroupoid.do
-      button' @"Book" { icon: "flight_takeoff" }
-      indeterminateLinearProgress # action @"Book"
-        @( "Flight booked" :: _, "Booking rejected" :: _ ) submit ) # joined @"Flight booked" # joined @"Booking rejected"
+    button' @"Book" { icon: "flight_takeoff" }
+    indeterminateLinearProgress # action @"Book" submit
     VariantToRecord.do
-      snackbar @"Flight booked" kept
-      snackbar @"Booking rejected" kept
+      snackbar @"Flight booked" identity
+      snackbar @"Booking rejected" identity
 ```
 
 **The imports.** `PUI` for the words that shape data flow (`looped`, `with`,
-`debounced`, `action`, `joined`, `kept`); `PUI.Web` for the words every
+`debounced`, `action`); `PUI.Web` for the words every
 design system shares (`choice` and `<+>`, the panes `inCase` and `inCaseAt`,
 the `text` leaf); `VariantToRecord` for the fold block, the two statuses side by
 side; and `PUI.Web.MDC2` for the design system, its `body` included. The
@@ -62,11 +60,11 @@ module is shared verbatim. `QualifiedDo.Semigroupoid as Semigroupoid` gives
 
 **`body $ Semigroupoid.do`.** Mount at the document body, dressed for
 Material 2, applied with `$` (layout), never `#` (data flow). The outer
-`Semigroupoid.do` has four stages, and data flows top to bottom as the code
+`Semigroupoid.do` has five stages, and data flows top to bottom as the code
 reads: the form emits the model on every edit → the itinerary line shows it
 and passes it on once it has settled → the button turns it into an event
-and the action turns the event into an outcome, joined with the model →
-a snackbar shows the outcome and keeps the model.
+→ the action turns the event into an outcome → a snackbar shows the
+outcome.
 Code order is DOM order and data order (writing.md *The pipeline*).
 
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
@@ -119,43 +117,43 @@ block of their own, `( Semigroupoid.do … ) # debounced itinerarySettleTime`.
   still on screen. A display that no later line depends on needs none of
   this — it is a plain line (writing.md *The pipeline*).
 
-**Stage 3 — the button and its action, `( Semigroupoid.do … ) # joined @l`, once per outcome.**
-The first shape change, `×→+`: fed the model, `button' @"Book" { icon:
-"flight_takeoff" }` emits case `"Book"` carrying the model on click (its
-case is its caption; `icon` is presentation config). `action @"Book"`
-owns that case, its payload goes to `submit`, and the action is opened
-by its progress bar — `indeterminateLinearProgress # action`, shown
+**Stage 3 — the button, `button' @"Book" { icon: "flight_takeoff" }`.**
+The first shape change, `×→+`: fed the model, the button emits case
+`"Book"` carrying the model on click (its case is its caption; `icon` is
+presentation config).
+
+**Stage 4 — the action, `indeterminateLinearProgress # action @"Book"
+submit`.** `+→+`: `action @"Book"` owns the button's case, its payload
+goes to `submit`, and the action is opened by its progress bar, shown
 between the run's `started` and `ended`; the slot owns those two
 occurrences and nothing else, so no snackbar can stand in it. The
-outcome labels are named `@( … )` on the action, payloads `_` — the
-action widens them into its block before any logic exists — and its
-cases are written as the words the user will read,
-`"Flight booked"` and `"Booking rejected"`, because they are what the
-statuses show. `# joined @l` on the block, once per outcome, pairs it with the model
-the button was fed, so what leaves is `{ event, model }` under the
-outcome's case.
+outcomes are `submit`'s: its signature names them as the words the user
+will read, `"Flight booked"` and `"Booking rejected"`, because they are
+what the statuses show. The line writes none of them — the statuses
+after it own exactly those two cases, and that is what closes the
+action's row (with `submit` still a hole, it is what types it).
 
-**Stage 4 — the statuses, `VariantToRecord.do`.** `+→×`: `snackbar
-@"Flight booked" kept` and `snackbar @"Booking rejected" kept`, each
-owning one outcome case and telling it by its label — a status takes no
+**Stage 5 — the statuses, `VariantToRecord.do`.** `+→×`: `snackbar
+@"Flight booked" identity` and `snackbar @"Booking rejected" identity`,
+each owning one outcome case and telling it by its label — a status takes no
 copy function: it is ephemeral, so its case label is its whole copy, and
 what the user must keep is a model field shown by a display — and each
-a fold, as every status is: `kept` releases the model unchanged, so the
-pipeline ends with the itinerary it began with (writing.md
-*Components*).
+a fold, as every status is: `submit` returns the trip under either case,
+and `identity` releases it, so the pipeline ends with the itinerary it
+was booked with (writing.md *Components*).
 
 ## The view model
 
 ```purescript
 module FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit) where
 
-import Prelude ((&&), (*), (+), (/=), (<), (<$>), (<=), (<>), (>=), (>>>), bind, const, pure, show)
+import Prelude ((&&), (*), (+), (/=), (<), (<=), (<>), (>=), (>>>), bind, const, pure, show)
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (Pattern(..), split)
-import Data.Variant (expand, match)
+import Data.Variant (match)
 import Effect.Aff (Aff)
 
 plannedTrip
@@ -168,12 +166,30 @@ plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
 
-returnBetween :: forall r1. { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 } -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+returnBetween
+  :: forall r1.
+     { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 }
+  -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
+           , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }
+                              , back :: { y :: Int, m :: Int, d :: Int }
+                              }
+           ]
 returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
 
-parse :: forall r1. { "Flight type" :: [ "one-way" :: {}, "return" :: {} ], "Start date (DD.MM.YYYY)" :: String, "Return date (DD.MM.YYYY)" :: String | r1 } -> Either [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ]
+parse
+  :: forall r1.
+     { "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
+     , "Start date (DD.MM.YYYY)" :: String
+     , "Return date (DD.MM.YYYY)" :: String
+     | r1
+     }
+  -> Either
+       [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ]
+       [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
+       , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
+       ]
 parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } = case parseDate startInput of
   Nothing -> Left (.unreadableStart { input: startInput })
   Just start ->
@@ -204,7 +220,12 @@ problemLine
   -> String
 problemLine = parse >>> either (\problem -> "⚠ " <> problemText problem) (const "")
 
-problemText :: [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ] -> String
+problemText
+  :: [ returnBeforeStart :: {}
+     , unreadableReturn :: { input :: String }
+     , unreadableStart :: { input :: String }
+     ]
+  -> String
 problemText = match
   { unreadableStart: \{ input } -> "start date " <> show input <> " is not a valid DD.MM.YYYY date"
   , unreadableReturn: \{ input } -> "return date " <> show input <> " is not a valid DD.MM.YYYY date"
@@ -231,7 +252,13 @@ returnLine { "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": 
     Just out, Just back -> summary (.returnBetween { out, back })
     _, _ -> ""
 
-summary :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> String
+summary
+  :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
+     , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }
+                        , back :: { y :: Int, m :: Int, d :: Int }
+                        }
+     ]
+  -> String
 summary = match
   { oneWayOn: \out -> "A one-way flight on " <> formatDate out
   , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
@@ -242,13 +269,21 @@ submit
      , "Return date (DD.MM.YYYY)" :: String
      , "Start date (DD.MM.YYYY)" :: String
      }
-  -> Aff [ "Booking rejected" :: {}, "Flight booked" :: {} ]
+  -> Aff
+       [ "Booking rejected" ::
+           { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+           , "Return date (DD.MM.YYYY)" :: String
+           , "Start date (DD.MM.YYYY)" :: String
+           }
+       , "Flight booked" ::
+           { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+           , "Return date (DD.MM.YYYY)" :: String
+           , "Start date (DD.MM.YYYY)" :: String
+           }
+       ]
 submit trip = case parse trip of
-  Left _ -> pure (."Booking rejected" {})
-  Right itinerary -> expand <$> bookFlight itinerary
-
-bookFlight :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }, returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } } ] -> Aff [ "Flight booked" :: {} ]
-bookFlight _ = pure (."Flight booked" {})
+  Left _ -> pure (."Booking rejected" trip)
+  Right _ -> pure (."Flight booked" trip)
 
 parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
 parseDate s = case split (Pattern ".") s of
@@ -295,11 +330,12 @@ module*).
 - `submit` — the `Aff` boundary. It shares `parse` with `bookingState`, so
   what the live line calls a problem is precisely what Book refuses; its
   outcome row names the two outcomes as the snackbars' words, each
-  carrying `{}`, since nothing reads a payload the statuses do not show.
+  carrying the trip it was given, which the statuses fold back as the
+  model — an effect returns the model.
 
 **Three things worth noticing.** The rows are spelled out in full in the
-view model module — the model row seven times, the itinerary variant
-four — because
+view model module — the model row nine times, the itinerary variant
+three — because
 application code declares no `type` synonyms: the shape is the interface
 (writing.md *Code style* → *Types and values*). Every exported function
 carries the signature the view reported for it with its tails filled —
@@ -335,8 +371,8 @@ the view model module is the ordinary one.
   load loadPeopleCatalogue`, its outcome folded in by `capture @"People
   loaded"`, run by `body`'s one feed of
   `{}`; create/update/delete are chains in the fold block, each an action
-  owning its button's case and naming its two outcomes, followed by
-  their folds.
+  owning its button's case, followed by the statuses that own its
+  two outcomes.
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
   `reset @"New game" openingPosition` the reset.
 - **order-form** — all four shapes on one screen: a `looped` form in

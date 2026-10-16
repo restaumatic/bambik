@@ -122,19 +122,21 @@ submit
      , "Return date (DD.MM.YYYY)" :: String
      , "Start date (DD.MM.YYYY)" :: String
      }
-  -> Aff [ "Booking rejected" :: {}, "Flight booked" :: {} ]
+  -> Aff
+       [ "Booking rejected" ::
+           { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+           , "Return date (DD.MM.YYYY)" :: String
+           , "Start date (DD.MM.YYYY)" :: String
+           }
+       , "Flight booked" ::
+           { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+           , "Return date (DD.MM.YYYY)" :: String
+           , "Start date (DD.MM.YYYY)" :: String
+           }
+       ]
 submit trip = case parse trip of
-  Left _ -> pure (."Booking rejected" {})
-  Right itinerary -> bookFlight itinerary
-
-bookFlight
-  :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
-     , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }
-                        , back :: { y :: Int, m :: Int, d :: Int }
-                        }
-     ]
-  -> Aff [ "Booking rejected" :: {}, "Flight booked" :: {} ]
-bookFlight _ = pure (."Flight booked" {})
+  Left _ -> pure (."Booking rejected" trip)
+  Right _ -> pure (."Flight booked" trip)
 
 parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
 parseDate s = case split (Pattern ".") s of

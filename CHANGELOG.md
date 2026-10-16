@@ -6,7 +6,32 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-10-15, latest
+## 2026-10-16, latest
+
+- **`action @l f`: an action takes one label; its outcomes are closed by
+  what tells them.** `action @l @t` was the one word taking a visible
+  row, the outcome labels it needed to widen itself into its block
+  (`Union t b o`, stuck on a hole's `t`). Measured: the widening is
+  needed only where an action stands among emitters in a
+  `RecordToVariant.do`; everywhere else the statuses or capture after it
+  own exactly its cases and close its row. So `action` is typed at
+  exactly its outcomes, like `load`, and the widening moved to the word
+  that already names the labels: `joined @l` now **closes its source**
+  to case `l` (`Cons l e () v`) and widens the joined case into the
+  block's row — before, it passed the source's other cases through,
+  which left the rest of an exact action's row open to its siblings.
+  One label closes one case, so a chain of `joined`s cannot close a
+  two-outcome source; that is `joined2 @l1 @l2` (order-form's submit).
+  flight-booker, whose two outcomes were `joined` only so their statuses
+  could fold `kept`, now has `submit` return the trip under each case,
+  folded `identity` — no join, its statuses closing the row
+  (`bookFlight`, a stub that always booked, is inlined). The view writes
+  no row at all now, and `check-view-model` admits no `@( … )`. Real
+  build, holey sweep and `check-determined` green on every demo; the
+  hole hints are unchanged (demo/workflow.html's re-captured responses
+  differ only in columns).
+
+## 2026-10-15
 
 - **The view writes no row; L18 determines the interface up to the
   tails.** L18's converse said a view compiled with typed holes reports

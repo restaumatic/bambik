@@ -73,14 +73,15 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   label (`value`/`clicked`/`event`) appears in application code: business
   functions are arguments of leaves, never adopters — a display takes its
   read function, a status its business case and fold, its case label its
-  whole copy (`snackbar @"Flight booked" kept`; inside the vocabulary, the
+  whole copy (`snackbar @"Flight booked" identity`; inside the vocabulary, the
   face over the label is adopted `# atCase @l`), and an emitter emits its
   own case. The structural adopters `atField`/`atCase`, `toField`/`toCase`
   take no function and stay inside the vocabularies:
   every leaf narrows its input and widens its output itself — a status
   or an action owns the one case its label names, an emitter is open on
-  its output, an action widens its declared outcomes into its block
-  (`action @l @t`), a dialog owns the case that opens it (`confirmed
+  its output, an action is typed at exactly its outcomes (`action @l f`)
+  and the `joined @l` that joins it among emitters closes and widens
+  it, a dialog owns the case that opens it (`confirmed
   @l`), an editor's release leaving as an event is the editing list's
   to say (`anyEdit @l @k`) — so a view places nothing at a row and
   `PUI` re-exports no adopter. There is no rename adopter: re-labelling a
@@ -180,15 +181,15 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   payload — is the view model's signature to state, and restated on a
   view line it is only a second copy of that signature (L18). A
   published word MUST NOT take such a row as a visible type argument.
-  The one row a view writes is an action's **outcome labels**
-  (`action @"Book" @( "Flight booked" :: _, "Booking rejected" :: _ )
-  submit`): cases named where they arise, which the action needs before
-  any logic exists to widen them into its block — its payloads `_`,
-  the signature's to fix. Every leaf therefore reads as a noun phrase — word, anchor,
+  It writes no row for an action either: `action @"Book" submit` is
+  typed at exactly the outcomes `submit` names, and what tells them
+  closes them — the statuses owning its cases, or among emitters the
+  `joined @l` / `joined2 @l1 @l2` naming its outcome labels (until
+  2026-10-16 the action declared them as a row, CHANGELOG). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
-  swap. Precedents: the statuses (`snackbar @"Flight booked" kept`,
+  swap. Precedents: the statuses (`snackbar @"Flight booked" identity`,
   replacing a per-case copy record and then the copy function), `confirmed
   @"Refund a customer" "Refund" refundStandard` (the caption a value, the
   dialog telling its case as its title), and the one-field ocular
@@ -239,7 +240,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   row (L18). A shared variant output is **one row** every operand is
   typed at, at `×→+` and `+→+` alike (an equality): an emitter is open
   on its output and sits in the block's row by its label, an action
-  declares its outcomes (`action @l @t`) and widens them into it itself,
+  is typed at exactly its outcomes and sits in it by the `joined @l`
+  (`joined2 @l1 @l2`) that closes it to those labels and widens it,
   and a handler's row, coming from a function, is the block's (an
   inclusive union could not be split back out under holes). A handler missing for a case is a type
   error either way. Variant handling and
@@ -568,7 +570,7 @@ The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf @l @k
 rowsOf item`, `dispatched envelopeOf`, a status's fold
-(`snackbar @"Flight booked" kept`), `settled normalize` (`identity` says
+(`snackbar @"Flight booked" identity`), `settled normalize` (`identity` says
 verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next word waiting to be coined — never a reason to import the
@@ -613,7 +615,7 @@ code below the UI) are algebra-layer material and exempt by location.
   adopters anywhere in `demo/` and any lambda in a `text` read.
 - A status is label-indexed at its business case and **tells its case**:
   it takes no copy function, its case label is its whole copy
-  (`snackbar @"Flight booked" kept`, `toast @"Review submitted"
+  (`snackbar @"Flight booked" identity`, `toast @"Review submitted"
   identity`) — a status is ephemeral, and copy a status would compute
   from its payload is either data the user must keep (a reference, an
   order number), which is a model field shown by a display, or a reason,
@@ -669,10 +671,13 @@ code below the UI) are algebra-layer material and exempt by location.
   instance of its hint. An emitter block's variant output
   is one row like a handler block's: an emitter's case is fixed by its
   label and its row left open, so the block's row reaches it from the
-  folds that own it; an action, whose row a function names, names
-  its outcome labels on the line (`action @l @( … )`, every payload
-  `_`) and widens them into it itself — a hole names no outcome, so the
-  labels are what the widening goes on.
+  folds that own it; an action, whose row a function names, widens
+  nothing: after it, the statuses owning its cases close its row; among
+  emitters, `joined @l` closes its source to case `l` and widens it —
+  a hole names no outcome, so the labels on its followers are what the
+  row goes on, and a two-outcome source is `joined2 @l1 @l2`, since one
+  label closes one case (two `joined`s leave the source's rest open to
+  the block's siblings).
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
   a keyed collection's keys are compared **structurally**
   (`Data.Profunctor.Row.Structural`, a key read through the ecosystem's
@@ -741,9 +746,10 @@ code below the UI) are algebra-layer material and exempt by location.
   a word MUST NOT take, as a visible type argument, a row its function
   or value argument already brings (L3) — such a row is only a second
   copy of a signature, and declared on the view line it would make the
-  view state the model; the one exception is a row the compile needs
-  before any logic exists, an action's outcome labels (`Union t b o` is
-  stuck on a hole's `t`), whose payloads stay `_`. An option list
+  view state the model; there is no exception (an action's outcome
+  labels were one until 2026-10-16: its own widening, `Union t b o`,
+  was stuck on a hole's `t`, so the widening moved to the `joined` that
+  names the labels anyway). An option list
   MUST close its row (`choice @"a" <+> choice @"b"`), since its options
   are the view's. What it demands of the application: a stored variant
   field is named by label on its pane line (`providedAt`/`inCaseAt

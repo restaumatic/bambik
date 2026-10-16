@@ -1,11 +1,11 @@
 module FlightBooker.Bootstrap (flightBooker) where
 
-import Prelude (Unit, (#), ($))
+import Prelude (Unit, (#), identity, ($))
 
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit)
-import PUI (action, debounced, joined, kept, looped, with)
+import PUI (action, debounced, looped, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
 import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, select, textField, toast)
 import PUI.Web.HTML (p)
@@ -25,10 +25,8 @@ flightBooker =
       ( p $ text oneWayLine ) # inCase @"one-way" bookingState
       ( p $ text returnLine ) # inCase @"return" bookingState
     ) # debounced itinerarySettleTime
-    ( Semigroupoid.do
-      button @"Book"
-      indeterminateLinearProgress # action @"Book"
-        @( "Flight booked" :: _, "Booking rejected" :: _ ) submit ) # joined @"Flight booked" # joined @"Booking rejected"
+    button @"Book"
+    indeterminateLinearProgress # action @"Book" submit
     VariantToRecord.do
-      toast @"Flight booked" kept
-      toast @"Booking rejected" kept
+      toast @"Flight booked" identity
+      toast @"Booking rejected" identity

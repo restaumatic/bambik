@@ -13,7 +13,7 @@
 -- |     classes; theirs is `Category`'s `identity`, and this one, which no
 -- |     wire reaches, is the carrier's silent component (`PUI`, `Cont`),
 -- |     named by no class.
--- |   * **free functions** — over `Strong`: `joined` (every case joined
+-- |   * **free functions** — over `Strong`: `joined`/`joined2` (a source's case joined
 -- |     with the row its emitter was fed — replay is this at the empty
 -- |     payload, `PUI.Web`'s click source dropping the `{}` event). No strength or co-strength row form: a
 -- |     stage is typed at one row, so no word narrows it to a sub-record
@@ -36,7 +36,7 @@
 -- | the merge is `m = recordToVariant w1 w2`, inputs shared (one row
 -- | `i`: both operands fed the merge's whole row), outputs shared (one
 -- | row `o` every operand is typed at: an emitter open on its output
--- | sits in it by its label, an action by its declared outcomes).
+-- | sits in it by its label, an action by the `joined` that closes it).
 -- |
 -- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`. A feed writes
 -- |      the replay slot; a second write of the same row changes nothing.
@@ -95,6 +95,7 @@ module Data.Profunctor.Row.RecordToVariant
   ( class RecordToVariant
   , recordToVariant
   , joined
+  , joined2
   , kept
   , bind
   , discard
@@ -106,10 +107,6 @@ import Data.Profunctor.Strong (class Strong, first)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Data.Variant.Internal (VariantRep(..))
-import Data.Symbol (class IsSymbol, reflectSymbol)
-import Type.Proxy (Proxy(..))
-import Data.Eq ((==))
-import Data.Boolean (otherwise)
 import Unsafe.Coerce (unsafeCoerce)
 import Prim.Row (class Cons)
 
@@ -139,37 +136,58 @@ discard first cont = bind first (\_ -> cont unit)
 -- | **Case `l` joined with the row its emitter was fed** (`×→+`):
 -- | `first` around the source, the fed row riding the state channel and
 -- | leaving beside the occurrence's payload as one record, `{ event,
--- | model }`, under the same case; every other case passes as it is. So a
+-- | model }`, under the same case. So a
 -- | list pick, a canvas click or an action's outcome reaches the fold
 -- | with the model in hand, and its handler is one function of one
 -- | record (`listOf @"Todo toggled" … # joined @"Todo toggled"`,
 -- | `fold @"Todo toggled" toggleTodo` with `toggleTodo ::
 -- | { event :: Int, model :: { … } } -> { … }`, todo-list); an outcome
 -- | whose fold keeps the model is `kept` (order-form's submit, joined with
--- | its button and action); a two-outcome action is joined twice. The
--- | label is the source's own, restated: with every emitter open on its
--- | output, the source's row is the block's, and nothing but the label
--- | says which case is the source's (a label-free `joined` over every
--- | case of a closed source row was the word from 2026-10-14 to
--- | 2026-10-15; CHANGELOG). A click is the degenerate
+-- | its button and action). The label **closes the source** to case `l`
+-- | and widens the joined case into the row the block shares: with every
+-- | emitter open on its output, nothing but the label says which case is
+-- | the source's, and an action, typed at exactly its outcomes, has its
+-- | row closed here and nowhere else in an emitter block (a label-free
+-- | `joined` over every case of a closed source row was the word from
+-- | 2026-10-14 to 2026-10-15; until 2026-10-16 the label left the
+-- | source's other cases passing, and the action declared its outcome
+-- | row on its line; CHANGELOG). A two-outcome source is `joined2`. A click is the degenerate
 -- | case where the occurrence carries nothing of its own: `PUI.Web.clicked`
 -- | is this with the `{}` event dropped and the case renamed — a
 -- | derivation, so no word of its own (`Data.Profunctor.Row`, *Retention*).
 joined
   :: forall @l p r e b v v1
-   . IsSymbol l
-  => Strong p
-  => Cons l e b v
+   . Strong p
+  => Cons l e () v
   => Cons l { event :: e, model :: { | r } } b v1
   => p { | r } [ | v ]
   -> p { | r } [ | v1 ]
-joined src = dimap (\r -> Tuple r r) (\(Tuple e r) -> withModel r e) (first src)
+joined = joinedEvery
+
+-- | **Both cases of a two-outcome source joined** with the row it was fed:
+-- | `joined` for a source emitting exactly `l1` and `l2`, the action of
+-- | two outcomes (`… # action @"Submit order" submitOrder ) # joined2
+-- | @"Order submitted" @"Order rejected: no total"`, order-form). Its own
+-- | word because one label closes one case: two `joined`s would leave the
+-- | source's rest open to the block's other cases, and only both labels
+-- | at once say the source has these two and no others.
+joined2
+  :: forall @l1 @l2 p r e1 e2 b v0 v v1 v2
+   . Strong p
+  => Cons l2 e2 () v0
+  => Cons l1 e1 v0 v
+  => Cons l2 { event :: e2, model :: { | r } } b v1
+  => Cons l1 { event :: e1, model :: { | r } } v1 v2
+  => p { | r } [ | v ]
+  -> p { | r } [ | v2 ]
+joined2 = joinedEvery
+
+joinedEvery :: forall p r v v1. Strong p => p { | r } [ | v ] -> p { | r } [ | v1 ]
+joinedEvery src = dimap (\r -> Tuple r r) (\(Tuple e r) -> withModel r e) (first src)
   where
   withModel :: { | r } -> [ | v ] -> [ | v1 ]
   withModel r e = case (unsafeCoerce e :: VariantRep _) of
-    VariantRep rep
-      | rep.type == reflectSymbol (Proxy @l) -> unsafeCoerce (VariantRep { type: rep.type, value: { event: rep.value, model: r } })
-      | otherwise -> unsafeCoerce e
+    VariantRep rep -> unsafeCoerce (VariantRep { type: rep.type, value: { event: rep.value, model: r } })
 
 -- | The fold that **keeps the model** a joined event arrived with:
 -- | `kept = _.model`. For an outcome that is told and changes nothing —

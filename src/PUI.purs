@@ -105,7 +105,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
@@ -119,8 +119,8 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself. No placement word is here either: every leaf narrows its
 -- input and widens its output itself — a status or an action owns the one
--- case its label names, an emitter is open on its output, an action
--- widens its declared outcomes into its block — so a stage is typed at one
+-- case its label names, an emitter is open on its output, an action is
+-- typed at exactly its outcomes and `joined` widens it into its block — so a stage is typed at one
 -- row (the gated displays, `settled`, `acted`) and a UI component's own
 -- row is always stated by a business function, never placed at another
 -- row at the call site. The floor's single-label adopters (`atField`/
@@ -130,7 +130,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- `{}`-input chrome is placed by the vocabulary's `eventLeaf` with a bare
 -- `lcmap (const {})`.
 import Data.Profunctor.Row (settled) as Adopters
-import Data.Profunctor.Row.RecordToVariant (joined, kept) as Adopters
+import Data.Profunctor.Row.RecordToVariant (joined, joined2, kept) as Adopters
 import Data.Profunctor.Acting (acted, actedAt) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
@@ -146,8 +146,8 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, case_, contract, expand, inj, on)
-import Prim.Row (class Cons, class Union)
+import Data.Variant (class Contractable, case_, contract, inj, on)
+import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -1250,22 +1250,20 @@ type Ocular p = forall a b. Optic p a b a b
 static :: forall p r. Category p => Ocular p -> p { | r } { | r }
 static o = o identity
 
--- | An action **owns its button's case and names its outcomes**: the
--- | `+→+` leaf of case `l` (`action @"Create" @( "Person created" :: _,
--- | "Person not created" :: _ ) createPerson`, crud), fed the row the
--- | button replayed, running the `Aff` on it, its outcome leaving as a
--- | case of the row `t` the `Aff` names. Like a status it narrows its
--- | input to its one case (`Cons l a () v`), and like an emitter it is
--- | open on its output as far as a row a function names can be: `t`'s
--- | labels are **named** on the line, every payload `_` — the one row a
--- | view writes (guardrails L18), since the widening is stuck on a hole's
--- | `t` and the `Aff`'s signature fixes the payloads — and widened into the row its block shares
--- | (`Union t b o`), so an action stands among emitters in a
--- | `RecordToVariant.do` (order-form's three, each `joined` with its
--- | button) or before its folds in the fold block without a placement
--- | word on either. The declaration is what keeps the view running with
--- | its logic deleted (guardrails L18): a hole names no outcome, so the
--- | widening would have nothing to go on.
+-- | An action **owns its button's case**: the `+→+` leaf of case `l`
+-- | (`action @"Create" createPerson`, crud), fed the row the button
+-- | replayed, running the `Aff` on it, its outcome leaving as a case of
+-- | the row `t` the `Aff`'s signature names. Like a status it narrows its
+-- | input to its one case (`Cons l a () v`); its output is **exactly** its
+-- | outcomes, like `load`'s, so it widens nothing and the view writes no
+-- | row for it (guardrails L18): what tells the outcomes closes `t` —
+-- | the statuses or capture after it, which own their cases (crud,
+-- | flight-booker, weather), or, standing among emitters in a
+-- | `RecordToVariant.do`, the `joined @l` (one outcome) or `joined2 @l1
+-- | @l2` (two) it is joined by, which close its source to the labels
+-- | they name and widen it into the block's row (order-form, ticker).
+-- | With its logic deleted the hole is typed by those followers, so the
+-- | view still compiles and the hint carries the outcome labels.
 -- |
 -- | It is **opened by its progress indicator**: the slot is a `+→×`
 -- | citizen of the run's two lifecycle occurrences, `started` and
@@ -1275,7 +1273,7 @@ static o = o identity
 -- | statuses that tell it (`snackbar @"Person created" identity`, crud),
 -- | or by `capture @l` where nothing needs telling (weather); an outcome
 -- | whose fold keeps the model is `joined` with its button, so the fold
--- | has the model in hand (order-form's submit, flight-booker). No
+-- | has the model in hand (order-form's submit). No
 -- | application owns a "busy": the indicator shows between `started` and
 -- | `ended` and, like every status, owes the channel nothing. The action
 -- | a mount runs, fed `body`'s one `{}` rather than a case, is `load`.
@@ -1291,16 +1289,15 @@ static o = o identity
 -- | detached action is silent like a detached button; the slot is still
 -- | told `ended`, so a re-attached indicator is not left running.
 action
-  :: forall @l @t a v v1 b o m
+  :: forall @l t a v v1 m
    . IsSymbol l
   => Cons l a () v
-  => Union t b o
   => Scoped m
   => Contractable ( started :: {}, ended :: {} ) v1
   => (a -> Aff [ | t ])
   -> PUI m [ | v1 ] {}
-  -> PUI m [ | v ] [ | o ]
-action arr slot = atCase @l (running (\i -> if isHole arr then Nothing else Just (arr i)) slot) # rmap expand
+  -> PUI m [ | v ] [ | t ]
+action arr slot = atCase @l (running (\i -> if isHole arr then Nothing else Just (arr i)) slot)
 
 -- | The action a **feed** runs — `×→+`, the row fed is the `Aff`'s
 -- | argument and its outcome leaves as the case the `Aff` names: the

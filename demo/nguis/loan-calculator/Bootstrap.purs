@@ -28,6 +28,6 @@ loanCalculator =
         staticText "Interest share of total repayment"
         progress interestShare
     button @"Apply for this loan"
-    indeterminateLinearProgress # action @"Apply for this loan" @( "Application received" :: _ ) applyForLoan
+    indeterminateLinearProgress # action @"Apply for this loan" applyForLoan
     toast @"Application received" identity
   # looped # with cityCarLoan

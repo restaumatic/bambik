@@ -60,7 +60,7 @@
         <li><b>Every line names exactly one anchor:</b>
           <ul>
             <li>a model field, as the type argument of an editor, selector or group: <code>filledTextField @"First name"</code>, <code>group @"Customer" $ …</code>;</li>
-            <li>a business case, as the type argument of an emitter, pane or status: <code>button @"Submit order"</code>, <code>snackbar @"Flight booked" kept</code>;</li>
+            <li>a business case, as the type argument of an emitter, pane or status: <code>button @"Submit order"</code>, <code>snackbar @"Flight booked" identity</code>;</li>
             <li>a copy function, as a display's positional argument: <code>text balanceLine</code>;</li>
             <li>nothing, for chrome: <code>card</code>, <code>staticText "Hours"</code>.</li>
           </ul>
@@ -88,7 +88,7 @@
         <li>No <code>Maybe</code> in the model: <code>selected :: [ none :: {}, picked :: { index :: Int } ]</code>.</li>
         <li>No <code>Boolean</code> unless a Boolean editor edits it: <code>status :: [ active :: {}, completed :: {} ]</code>.</li>
         <li>The model row is stated once, by the seed's signature: <code>freshCount :: { counted :: Int }</code>, closed on the view by <code># looped # with freshCount</code>.</li>
-        <li>The view writes no row: a classifier's cases, a projection's element row and a payload are their functions' signatures. Its one row is an action's outcome labels, payloads <code>_</code>: <code>action @"Book" @( "Flight booked" :: _, "Booking rejected" :: _ ) submit</code>.</li>
+        <li>The view writes no row: a classifier's cases, a projection's element row, a payload and an action's outcomes are their functions' signatures — <code>action @"Book" submit</code>, its outcomes closed by the statuses that tell them.</li>
         <li>A stored field is named by its label, never picked with <code>_.</code>: <code>textAt @"title"</code>, <code>tile @"Cell picked" @"key"</code>, <code># providedAt @"halted" @"phase"</code>, <code>listOfAt @"Message opened" @"id" @"messages"</code>.</li>
         <li>Business values are model data: a slider edits <code>{ current, min, max, step }</code> from the seed.</li>
         <li>Constants have business names (<code>tickPeriod</code>, <code>freshCount</code>), never <code>initial</code>, <code>default</code> or <code>seed</code>.</li>

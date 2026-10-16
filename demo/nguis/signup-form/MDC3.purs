@@ -26,6 +26,6 @@ signupForm =
     ( titleSmall $ text invalidLine ) # inCase @"invalid" validation
     ( titleSmall $ text readyLine ) # inCase @"ready" validation
     button' @"Sign up" { icon: "person_add" } # provided @"ready" validation
-    indeterminateLinearProgress # action @"Sign up" @( "Account created" :: _ ) signUp
+    indeterminateLinearProgress # action @"Sign up" signUp
     snackbar @"Account created" identity
   # looped # with newApplicant

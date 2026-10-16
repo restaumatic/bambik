@@ -21,6 +21,6 @@ passwordGenerator =
     body2 $ text strengthLine
     code >>> attr "style" "word-break: break-all;" $ textAt @"password"
     button @"Generate"
-    indeterminateLinearProgress # action @"Generate" @( "Password generated" :: _ ) samplePassword
+    indeterminateLinearProgress # action @"Generate" samplePassword
     capture @"Password generated"
   # looped # with strongMixRecipe

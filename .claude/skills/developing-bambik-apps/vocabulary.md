@@ -89,7 +89,7 @@ and emitters of a catalogue — are in the design-system module header
 | an editor that exists in one state | `# inCaseAt @"return" @"Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
 | an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |
 | a choice whose cases carry their own fields | `tabBar @"Mode" (…)`, each case's field `# inCaseAt @"Dine in" @"Mode"` | order-form | writing.md *Conditional visibility* |
-| an effect's outcome folded into the model it lands on | `( Semigroupoid.do { button …; … # action @"Estimate distance" @( … ) estimateDistance } ) # joined @"Distance estimated"` | order-form | writing.md *App shape* |
+| an effect's outcome folded into the model it lands on | `( Semigroupoid.do { button …; … # action @"Estimate distance" estimateDistance } ) # joined @"Distance estimated"`; two outcomes `# joined2 @"Order submitted" @"Order rejected: no total"` | order-form | writing.md *App shape* |
 
 ## Events into state
 
@@ -113,14 +113,14 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson; VariantToRecord.do { … its outcome statuses, each with its fold } } )` in the fold block, the action declaring its outcome labels | crud, reorder | writing.md *Business functions* |
-| … whose outcomes are told | `indeterminateLinearProgress # action @"Book" @( "Flight booked" :: _, "Booking rejected" :: _ ) submit`, then `snackbar @"Flight booked" kept` and `snackbar @"Booking rejected" kept` | flight-booker | writing.md *Business functions* |
+| an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" createPerson; VariantToRecord.do { … its outcome statuses, each with its fold } } )` in the fold block, the statuses owning the action's outcomes | crud, reorder | writing.md *Business functions* |
+| … whose outcomes are told | `indeterminateLinearProgress # action @"Book" submit`, then `snackbar @"Flight booked" identity` and `snackbar @"Booking rejected" identity` | flight-booker | writing.md *Business functions* |
 | the load before the knot | `indeterminateLinearProgress # load loadPeopleCatalogue`, then `capture @"People loaded"` | crud, order-form | writing.md *Business functions* |
 | an outcome told, the model kept | the action `joined @l` with its button in the event ensemble, once per outcome, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form, flight-booker, incident-report | writing.md *Business functions* |
 | an action at load | `indeterminateLinearProgress # load loadOrder` then `snackbar @"Order loaded" identity` (or `capture @"People loaded"` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` and `fold @"Clock ticked" tick` | timer, stopwatch | `PUI` |
-| a status per outcome case | `snackbar @"Flight booked" kept` — the label is the copy; a reason is a sibling case, `snackbar @"Order rejected: no total" kept` | flight-booker, order-form | writing.md *Components* |
+| a status per outcome case | `snackbar @"Flight booked" identity` — the label is the copy; a reason is a sibling case, `snackbar @"Order rejected: no total" kept` | flight-booker, order-form | writing.md *Components* |
 | a message that stays while a state holds | `( banner $ staticText "Inbox zero!" ) # inCase @"empty" inboxState` — a display under a pane, not a status | inbox | writing.md *Components* |
 | confirm before the flow continues | `confirmed @"Refund a customer" "Refund" refundStandard $ …` | cashbox | writing.md *Modals* |
 | a fact the platform knows and the app cannot seed — position, connectivity, the time, the colour scheme, a chosen file | `geolocated @l`, `online @l`, `clock @l period`, `colorScheme @l` (`PUI.Web`), `filePicked @l` (`PUI.Web.HTML`), merged `RecordToRecord.do` | here-and-now, incident-report | writing.md *The pipeline*; `PUI.Web` (`source`) |
@@ -146,6 +146,6 @@ and emitters of a catalogue — are in the design-system module header
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
 | the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, the model's tails left unknown for you to fill | writing.md *Writing order* |
 | the model row | the seed's signature, `# looped # with seed` on the view (counter, inbox); the load's `Aff` when a load stands before the knot (crud, order-form) | writing.md *Types and values* |
-| a derived row | the signature of the function that brings it: a classifier's cases, a projection's element row; on the view only an action's outcome labels, `# action @l @( "…" :: _ ) f` (flight-booker) | writing.md *Types and values* |
+| a derived row | the signature of the function that brings it: a classifier's cases, a projection's element row, an action's outcomes (`# action @l f`, closed by the statuses or `joined` after it — flight-booker) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
 | to know the app is finished | no hole left | writing.md *Writing order* |

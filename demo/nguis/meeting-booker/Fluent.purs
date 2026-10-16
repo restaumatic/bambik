@@ -33,5 +33,5 @@ meetingBooker =
     ( card $ Semigroupoid.do
       body1 $ text planLine
       button @"Book the room" ) # provided @"complete" plan
-    indeterminateLinearProgress # action @"Book the room" @( "Room booked" :: _ ) bookRoom
+    indeterminateLinearProgress # action @"Book the room" bookRoom
     messageBar @"Room booked" identity

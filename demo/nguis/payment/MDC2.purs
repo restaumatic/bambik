@@ -15,6 +15,6 @@ payment =
     headline6 $ text amountLine
     body2 $ text statusLine
     button' @"Charge card" { icon: "credit_card" }
-    indeterminateCircularProgress # action @"Charge card" @( "Card charged" :: _ ) chargeFlaky
+    indeterminateCircularProgress # action @"Charge card" chargeFlaky
     snackbar @"Card charged" identity
   # looped # with unpaidOrder

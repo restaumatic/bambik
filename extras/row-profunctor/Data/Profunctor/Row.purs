@@ -222,7 +222,7 @@
 -- | business functions are typed at that row (guardrails L18); a shared
 -- | variant output is **one row** too, every operand typed at the block's
 -- | — an emitter open on its output (`Cons l a b v`) sits in it by its
--- | label, an action by its declared outcomes; ownership is
+-- | label, an action by the `joined` that closes it; ownership is
 -- | exclusive (`ExclusiveRows`) — so a merge signature is its owned side's
 -- | bundle and its shared side's one row.
 -- |
@@ -313,8 +313,8 @@
 -- | ```
 -- |
 -- | `exact` is the identity at a variant output because a variant carries
--- | its one tag: the merge forwards it as it is, and an action widens its
--- | declared outcomes into the block's row itself. At a record output the
+-- | its one tag: the merge forwards it as it is, and `joined` widens an
+-- | action's exact outcomes into the block's row. At a record output the
 -- | trim is `exactRow`, the runtime evidence `OwnedRecordOutputs` carries,
 -- | so an operand's stale runtime copy of a sibling's field never shadows
 -- | the sibling. Law 2's liveness half is a **leaf** law: a stage may

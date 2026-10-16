@@ -29,6 +29,6 @@ reorder =
     VariantToRecord.do
       fold @"Rotate" rotateSetlist
       ( Semigroupoid.do
-        indeterminateLinearProgress # action @"Shuffle" @( "Setlist shuffled" :: _ ) shuffleAction
+        indeterminateLinearProgress # action @"Shuffle" shuffleAction
         capture @"Setlist shuffled" )
   # looped # with openingSetlist

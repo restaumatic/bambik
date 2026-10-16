@@ -23,8 +23,7 @@ ticker =
       ticks @"Ticked" tickPeriod # providedAt @"watching" @"phase"
       ( Semigroupoid.do
         button' @"Fetch quote" { icon: "download" }
-        indeterminateLinearProgress # action @"Fetch quote"
-          @( "Quote fetched" :: _ ) fetchQuote ) # providedAt @"watching" @"phase" # joined @"Quote fetched"
+        indeterminateLinearProgress # action @"Fetch quote" fetchQuote ) # providedAt @"watching" @"phase" # joined @"Quote fetched"
     VariantToRecord.do
       fold @"Watch" watch
       fold @"Step away" stepAway

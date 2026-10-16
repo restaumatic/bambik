@@ -1,11 +1,11 @@
 module FlightBooker.MDC3 (flightBooker) where
 
-import Prelude (Unit, (#), ($))
+import Prelude (Unit, (#), identity, ($))
 
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit)
-import PUI (action, debounced, joined, kept, looped, with)
+import PUI (action, debounced, looped, with)
 import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
 import PUI.Web.MDC3 (body, bodyLarge, button', filledTextField, indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -24,10 +24,8 @@ flightBooker =
       ( bodyLarge $ text oneWayLine ) # inCase @"one-way" bookingState
       ( bodyLarge $ text returnLine ) # inCase @"return" bookingState
     ) # debounced itinerarySettleTime
-    ( Semigroupoid.do
-      button' @"Book" { icon: "flight_takeoff" }
-      indeterminateLinearProgress # action @"Book"
-        @( "Flight booked" :: _, "Booking rejected" :: _ ) submit ) # joined @"Flight booked" # joined @"Booking rejected"
+    button' @"Book" { icon: "flight_takeoff" }
+    indeterminateLinearProgress # action @"Book" submit
     VariantToRecord.do
-      snackbar @"Flight booked" kept
-      snackbar @"Booking rejected" kept
+      snackbar @"Flight booked" identity
+      snackbar @"Booking rejected" identity

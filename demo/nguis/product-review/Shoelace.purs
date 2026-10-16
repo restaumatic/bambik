@@ -22,6 +22,6 @@ productReview =
     textField @"Nickname"
     divider $ card $ p $ text previewLine
     button @"Submit review"
-    indeterminateLinearProgress # action @"Submit review" @( "Review submitted" :: _ ) submitReview
+    indeterminateLinearProgress # action @"Submit review" submitReview
     toast @"Review submitted" identity
   # looped # with freshImpression

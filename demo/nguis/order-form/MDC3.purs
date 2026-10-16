@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, payingLine, printReceipt, setDistance, staleDistanceForgotten, submitOrder, summaryLine)
-import PUI (action, fold, joined, kept, load, looped, settled)
+import PUI (action, fold, joined, joined2, kept, load, looped, settled)
 import PUI.Web ((<+>), choice, inCaseAt, provided, text)
 import PUI.Web.MDC3 (body, bodyLarge, button', card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -44,14 +44,13 @@ orderForm =
       RecordToVariant.do
         ( Semigroupoid.do
           button' @"Estimate distance" { icon: "near_me" } # provided @"Delivery" fulfillmentMode
-          indeterminateLinearProgress # action @"Estimate distance" @( "Distance estimated" :: _ ) estimateDistance ) # joined @"Distance estimated"
+          indeterminateLinearProgress # action @"Estimate distance" estimateDistance ) # joined @"Distance estimated"
         ( Semigroupoid.do
           button' @"Submit order" { icon: "save" }
-          indeterminateLinearProgress # action @"Submit order"
-            @( "Order submitted" :: _, "Order rejected: no total" :: _ ) submitOrder ) # joined @"Order submitted" # joined @"Order rejected: no total"
+          indeterminateLinearProgress # action @"Submit order" submitOrder ) # joined2 @"Order submitted" @"Order rejected: no total"
         ( Semigroupoid.do
           button' @"Receipt" { icon: "file" }
-          indeterminateLinearProgress # action @"Receipt" @( "Receipt printed" :: _ ) printReceipt ) # joined @"Receipt printed"
+          indeterminateLinearProgress # action @"Receipt" printReceipt ) # joined @"Receipt printed"
       VariantToRecord.do
         fold @"Distance estimated" setDistance
         snackbar @"Order submitted" kept

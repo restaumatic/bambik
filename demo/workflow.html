@@ -68,10 +68,10 @@
     Note what is <em>not</em> a hole: the field anchor (<code>@"Pizza"</code>),
     the case anchors (<code>@"Order"</code>, stated once on the button and once
     on the action that owns its case; <code>@"Pizza ordered"</code>, the
-    outcome the action names and the snackbar tells — a status shows its
-    case label and nothing else, so the outcome's name <em>is</em> the words
-    on the screen; its payload is left <code>_</code>, the action's signature
-    to fix) and the chrome (<code>headlineSmall</code>) are complete as
+    outcome the snackbar tells — a status shows its case label and nothing
+    else, so the outcome's name <em>is</em> the words on the screen, and the
+    snackbar owning that case is what names the action's outcome) and the
+    chrome (<code>headlineSmall</code>) are complete as
     written. The model row is not written at all: it is the seed's
     signature, still a hole.</p>
 
@@ -92,7 +92,7 @@ order =
     filledTextField @"Pizza"
     headlineSmall $ text ?orderLine
     button @"Order"
-    indeterminateLinearProgress # action @"Order" @( "Pizza ordered" :: _ ) ?placeOrder
+    indeterminateLinearProgress # action @"Order" ?placeOrder
     snackbar @"Pizza ordered" identity
   # looped # with ?start
 </code></pre>
@@ -130,7 +130,7 @@ order =
 Error 2 of 4:
 
   in module Order.MDC3
-  at src/MDC3.purs:17:77 - 17:88 (line 17, column 77 - line 17, column 88)
+  at src/MDC3.purs:17:51 - 17:62 (line 17, column 51 - line 17, column 62)
 
     Hole 'placeOrder' has the inferred type
 
@@ -229,7 +229,7 @@ orderLine r = "In the oven: " &lt;&gt; r."Pizza"
 <pre class="compiler">Error 1 of 3:
 
   in module Order.MDC3
-  at src/MDC3.purs:18:77 - 18:88 (line 18, column 77 - line 18, column 88)
+  at src/MDC3.purs:18:51 - 18:62 (line 18, column 51 - line 18, column 62)
 
     Hole 'placeOrder' has the inferred type
 
@@ -341,7 +341,7 @@ order =
     filledTextField @"Pizza"
     headlineSmall $ text orderLine
     button @"Order"
-    indeterminateLinearProgress # action @"Order" @( "Pizza ordered" :: _ ) placeOrder
+    indeterminateLinearProgress # action @"Order" placeOrder
     snackbar @"Pizza ordered" identity
   # looped # with plainMargherita
 </code></pre>
@@ -367,7 +367,7 @@ order =
 
 <pre class="compiler">Error found:
 in module Order.MDC3
-<mark>at src/MDC3.purs:18:5 - 18:87 (line 18, column 5 - line 18, column 87)</mark>
+<mark>at src/MDC3.purs:18:5 - 18:61 (line 18, column 5 - line 18, column 61)</mark>
 
   Could not match type
 

@@ -28,17 +28,17 @@ crud =
       VariantToRecord.do
         fold @"Person picked" pick
         ( Semigroupoid.do
-          indeterminateLinearProgress # action @"Create" @( "Person created" :: _, "Person not created" :: _ ) createPerson
+          indeterminateLinearProgress # action @"Create" createPerson
           VariantToRecord.do
             snackbar @"Person created" identity
             snackbar @"Person not created" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action @"Update" @( "Person updated" :: _, "Person not updated" :: _ ) updatePerson
+          indeterminateLinearProgress # action @"Update" updatePerson
           VariantToRecord.do
             snackbar @"Person updated" identity
             snackbar @"Person not updated" identity )
         ( Semigroupoid.do
-          indeterminateLinearProgress # action @"Delete" @( "Person deleted" :: _, "Person not deleted" :: _ ) deletePerson
+          indeterminateLinearProgress # action @"Delete" deletePerson
           VariantToRecord.do
             snackbar @"Person deleted" identity
             snackbar @"Person not deleted" identity )
