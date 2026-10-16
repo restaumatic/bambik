@@ -54,7 +54,6 @@ module PUI.Web
   , OptCaption(..)
   , OptLabelIcon(..)
   , OptSelected(..)
-  , OptIcon(..)
   , Wiring
   , editorWiring
   , selectorWiring
@@ -145,7 +144,7 @@ import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
-import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Symbol (class IsSymbol)
 import Data.Array (concat, findIndex, (!!))
 import Data.String (replaceAll, Pattern(..), Replacement(..))
 import Data.Variant (Variant, case_, expand, inj, on, prj)
@@ -477,15 +476,6 @@ data OptSelected = OptSelected
 instance ConvertOption OptSelected sym a a where
   convertOption _ _ = identity
 
--- | Marks the `icon` of a tab as optional — tabs may be labelled, iconed or
--- | both.
-data OptIcon = OptIcon
-
-instance ConvertOption OptIcon "icon" String (Maybe String) where
-  convertOption _ _ = Just
-else instance ConvertOption OptIcon sym a a where
-  convertOption _ _ = identity
-
 -- The leaf protocol, as functions (see the module header): every leaf of
 -- every vocabulary is one of these four wirings over its own element, so
 -- the echo a gate depends on, the busy guard around a programmatic write
@@ -546,21 +536,21 @@ editorWiring leaf = do
 -- | programmatic selection is in progress is that selection's own event
 -- | and is dropped.
 selectorWiring
-  :: forall a
-   . Eq a
-  => Array { value :: a, label :: String }
+  :: forall w
+   . Eq (Variant w)
+  => Array (Variant w)
   -> { show :: Maybe Int -> Effect Unit
      , reports :: Effect Unit -> Effect Unit
      , read :: Effect (Maybe Int)
      }
-  -> Effect (Wiring (Maybe a) (Maybe a))
+  -> Effect (Wiring (Maybe (Variant w)) (Maybe (Variant w)))
 selectorWiring options leaf = do
   propRef <- Ref.new Nothing
   busyRef <- Ref.new false
   pure
     { toUser: \ma -> do
         Ref.write true busyRef
-        leaf.show (ma >>= \a -> findIndex (\o -> o.value == a) options)
+        leaf.show (ma >>= \a -> findIndex (\o -> o == a) options)
         Ref.write false busyRef
     , fromUser: \prop -> do
         Ref.write (Just prop) propRef
@@ -568,7 +558,7 @@ selectorWiring options leaf = do
           busy <- Ref.read busyRef
           unless busy do
             mi <- leaf.read
-            Ref.read propRef >>= traverse_ (_ $ (mi >>= (options !! _) <#> _.value))
+            Ref.read propRef >>= traverse_ (_ $ (mi >>= (options !! _)))
     }
 
 -- | A **display leaf**'s wiring: `show` renders each fed value, and the
@@ -635,8 +625,8 @@ listenNode node event handler = void $ addEventListener event node (const handle
 -- | sorts alphabetically — while the row the selector's field holds is
 -- | closed by the list itself, with no case left open for a typed hole to
 -- | report.
-choice :: forall @l r. IsSymbol l => Row.Cons l {} () r => Array { value :: Variant r, label :: String }
-choice = [ { value: inj (Proxy :: Proxy l) {}, label: reflectSymbol (Proxy :: Proxy l) } ]
+choice :: forall @l r. IsSymbol l => Row.Cons l {} () r => Array (Variant r)
+choice = [ inj (Proxy :: Proxy l) {} ]
 
 -- | Join two option lists in writing order, their variant rows united — so
 -- | `choice @"one-way" <+> choice @"return"` is the **closed** row
@@ -644,8 +634,8 @@ choice = [ { value: inj (Proxy :: Proxy l) {}, label: reflectSymbol (Proxy :: Pr
 -- | it leaves no option case open for a typed hole to report (guardrails
 -- | L18, the determination half). Option order stays the order written,
 -- | never the row's alphabetical one.
-andChoice :: forall v1 v2 v. Row.Union v1 v2 v => Row.Union v2 v1 v => Array { value :: Variant v1, label :: String } -> Array { value :: Variant v2, label :: String } -> Array { value :: Variant v, label :: String }
-andChoice xs ys = map (\o -> o { value = expand o.value }) xs <> map (\o -> o { value = expand o.value }) ys
+andChoice :: forall v1 v2 v. Row.Union v1 v2 v => Row.Union v2 v1 v => Array (Variant v1) -> Array (Variant v2) -> Array (Variant v)
+andChoice xs ys = map expand xs <> map expand ys
 
 infixr 5 andChoice as <+>
 

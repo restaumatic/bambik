@@ -53,6 +53,8 @@ import PUI.Web.HTML (body) as HTML
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, attribute, displayWiring, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, isFocused, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, statusText, separating, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
+import Data.Variant (Variant)
+import Data.Variant.Case (caseText)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
@@ -219,22 +221,22 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-select :: forall @l a b r. IsSymbol l => Cons l a b r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-select options = withStructuralEq @a (selectOf @l false (selectedAt @l) options)
+select :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
+select options = withStructuralEq @(Variant w) (selectOf @l false (selectedAt @l) options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c a b1 v b2 r. IsSymbol l => IsSymbol c => Cons c a b1 v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectUnpicked options = withStructuralEq @a (selectOf @l false (selectedUnpickedAt @l @c) options)
+selectUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
+selectUnpicked options = withStructuralEq @(Variant w) (selectOf @l false (selectedUnpickedAt @l @c) options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | its clear button clears it, storing `n` again.
-selectOptional :: forall @l @c @n a b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectOptional options = withStructuralEq @a (selectOf @l true (selectedOptionalAt @l @c @n) options)
+selectOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
+selectOptional options = withStructuralEq @(Variant w) (selectOf @l true (selectedOptionalAt @l @c @n) options)
 
-selectOf :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
+selectOf :: forall @l w i o. IsSymbol l => Eq (Variant w) => Boolean -> (PUI Web (Maybe (Variant w)) (Maybe (Variant w)) -> PUI Web i o) -> Array (Variant w) -> PUI Web i o
 selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   _ <- handles (staticHTML markup)
   node <- gets _.sibling
@@ -249,7 +251,7 @@ selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ fr
     "<sl-select label=\"" <> escaped config.label <> "\"" <> (if clearable then " clearable" else "") <> " style=\"min-width: 240px;\">"
       <> foldMapWithIndex optionMarkup options
       <> "</sl-select>"
-  optionMarkup idx o = "<sl-option value=\"" <> show idx <> "\">" <> escaped o.label <> "</sl-option>"
+  optionMarkup idx o = "<sl-option value=\"" <> show idx <> "\">" <> escaped (caseText o) <> "</sl-option>"
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a

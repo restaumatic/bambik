@@ -10,6 +10,8 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor.Row.Structural (withStructuralEq)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Traversable (for)
+import Data.Variant (Variant)
+import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
@@ -19,10 +21,10 @@ import PUI.Web (Node, Web, addClass, appendChild, clazz, createTextNode, element
 import PUI.Web.HTML (div)
 import Type.Proxy (Proxy(..))
 
-stepper :: forall @l a b r. IsSymbol l => Cons l a b r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-stepper steps = withStructuralEq @a (selectedAt @l $ "name" := reflectSymbol (Proxy @l) >>> "aria-label" := reflectSymbol (Proxy @l) $ stepperLeaf steps)
+stepper :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
+stepper steps = withStructuralEq @(Variant w) (selectedAt @l $ "name" := reflectSymbol (Proxy @l) >>> "aria-label" := reflectSymbol (Proxy @l) $ stepperLeaf steps)
 
-stepperLeaf :: forall a. Eq a => Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
+stepperLeaf :: forall w. Eq (Variant w) => Array (Variant w) -> PUI Web (Maybe (Variant w)) (Maybe (Variant w))
 stepperLeaf steps =
   div >>> "class" := "md3-stepper" >>> "role" := "group" $ fromHandles do
     liftEffect $ ensureStyle "md3-stepper" stepperCss
@@ -42,7 +44,7 @@ stepperLeaf steps =
       render mi = do
         Ref.write mi idxRef
         forWithIndex_ dots \i dot -> classIf dot "md3-stepper__dot--current" (mi == Just i)
-        setTextNodeValue caption $ maybe "" (\i -> "Step " <> show (i + 1) <> " of " <> show count <> " · " <> maybe "" stepLabel (steps !! i)) mi
+        setTextNodeValue caption $ maybe "" (\i -> "Step " <> show (i + 1) <> " of " <> show count <> " · " <> maybe "" caseText (steps !! i)) mi
         disabledIf back (maybe true (_ < 1) mi)
         disabledIf next (maybe true (\i -> i > count - 2) mi)
       moved step reported = do
@@ -67,9 +69,6 @@ navButton icon caption = do
 
 lastBuilt :: Web Node
 lastBuilt = gets \{ sibling } -> sibling
-
-stepLabel :: forall a. { value :: a, label :: String } -> String
-stepLabel { label } = label
 
 classIf :: Node -> String -> Boolean -> Effect Unit
 classIf node name on = if on then addClass node name else removeClass node name

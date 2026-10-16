@@ -21,7 +21,7 @@ lawBenchMDC2 = do
     , bench "iconToggle" "×→×" flags (iconToggle @"On" { onIcon: "star", offIcon: "star_border" })
     , bench "slider" "×→×" quantities (slider @"Amount")
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount")
-    , bench "tabBar" "×→×" tabs (tabBar @"Tab" [ { value: tabA, label: "A" }, { value: tabB, label: "B" } ])
+    , bench "tabBar" "×→×" tabs (tabBar @"Tab" (choice @"a" <+> choice @"b"))
     , bench "linearProgress" "×→×" fractions (linearProgress fractionOf)
     , bench "imagePane" "×→×" images (imagePane identity)
     , bench "group" "×→×" grouped (group @"Customer" (filledTextField @"Name"))
@@ -60,7 +60,7 @@ lawBenchMDC2 = do
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   images = [ { src: "a.png", alt: "A" }, { src: "b.png", alt: "B" } ]
   grouped = [ { "Customer": { "Name": "alpha" }, other: 1 }, { "Customer": { "Name": "beta" }, other: 2 } ]
-  options = (choice @"one" <+> choice @"two") :: Array { value :: [ one :: {}, two :: {} ], label :: String }
+  options = (choice @"one" <+> choice @"two") :: Array [ one :: {}, two :: {} ]
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]

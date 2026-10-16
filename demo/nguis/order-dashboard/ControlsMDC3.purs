@@ -14,6 +14,7 @@ import Data.Int (round, toNumber)
 import Data.Number (max)
 import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Variant (Variant)
 import Prim.Row (class Cons)
 import PUI (foreach, Ocular, PUI)
 import PUI.Web (Web, attrWith, staticText, text, (:=))
@@ -59,10 +60,10 @@ leaderboard l f =
     list $ ( listItem $ text entryLine ) # foreach @"name" f
 
 rangePicker
-  :: forall @l a rest r
+  :: forall @l w rest r
    . IsSymbol l
-  => Cons l a rest r
-  => Array { value :: a, label :: String }
+  => Cons l (Variant w) rest r
+  => Array (Variant w)
   -> PUI Web { | r } { | r }
 rangePicker options =
   div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Semigroupoid.do

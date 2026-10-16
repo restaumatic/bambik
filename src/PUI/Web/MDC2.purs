@@ -133,9 +133,11 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, anyOf, folding, isHole, Ocular, PUI, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (witnessed, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, occurrences, onInputDebounced, replayed, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, statusText, uniqueId, separating, (:=))
+import PUI.Web (witnessed, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, occurrences, onInputDebounced, replayed, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, statusText, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
+import Data.Variant (Variant)
+import Data.Variant.Case (caseText)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Record as Record
 import Type.Proxy (Proxy(..))
@@ -506,31 +508,31 @@ checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
 -- | answered with the row, every pick stored.
 -- | The options — the value and the words shown for it — belong to the
 -- | control, not to the model.
-radioButton :: forall @l a b r. IsSymbol l => Cons l a b r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioButton options = withStructuralEq @a (radioButtonWith @l false (selectedAt @l) options)
+radioButton :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
+radioButton options = withStructuralEq @(Variant w) (radioButtonWith @l false (selectedAt @l) options)
 
 -- | `radioButton` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-radioButtonUnpicked :: forall @l @c a b1 v b2 r. IsSymbol l => IsSymbol c => Cons c a b1 v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioButtonUnpicked options = withStructuralEq @a (radioButtonWith @l false (selectedUnpickedAt @l @c) options)
+radioButtonUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
+radioButtonUnpicked options = withStructuralEq @(Variant w) (radioButtonWith @l false (selectedUnpickedAt @l @c) options)
 
 -- | `radioButton` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | pressing the checked option again clears it, storing `n` again.
-radioButtonOptional :: forall @l @c @n a b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-radioButtonOptional options = withStructuralEq @a (radioButtonWith @l true (selectedOptionalAt @l @c @n) options)
+radioButtonOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
+radioButtonOptional options = withStructuralEq @(Variant w) (radioButtonWith @l true (selectedOptionalAt @l @c @n) options)
 
-radioButtonWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
+radioButtonWith :: forall @l w i o. IsSymbol l => Eq (Variant w) => Boolean -> (PUI Web (Maybe (Variant w)) (Maybe (Variant w)) -> PUI Web i o) -> Array (Variant w) -> PUI Web i o
 radioButtonWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ (radioLeaf clearable options)
 
-radioLeaf :: forall a. Eq a => Boolean -> Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
+radioLeaf :: forall w. Eq (Variant w) => Boolean -> Array (Variant w) -> PUI Web (Maybe (Variant w)) (Maybe (Variant w))
 radioLeaf clearable options =
   div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start;" $ fromHandles do
     groupName <- liftEffect uniqueId
     members <- for options \o -> do
       uid <- liftEffect uniqueId
-      _ <- handles (staticHTML (optionMarkup groupName uid o.label))
+      _ <- handles (staticHTML (optionMarkup groupName uid (caseText o)))
       root <- gets _.sibling
       inputNode <- liftEffect $ querySelectorIn root "input"
       liftEffect do
@@ -538,7 +540,7 @@ radioLeaf clearable options =
         radioComp <- newComponent material.radio."MDCRadio" radioNode
         ffComp <- newComponent material.formField."MDCFormField" root
         setFormFieldInput ffComp radioComp
-      pure { press: root, click: inputNode, inputNode, value: o.value }
+      pure { press: root, click: inputNode, inputNode, value: o }
     mPropRef <- liftEffect $ Ref.new Nothing
     selRef <- liftEffect $ Ref.new Nothing
     let
@@ -701,25 +703,25 @@ sliderLeaf live label = fromHandles do
 -- | Same selection contract as `radioButton`, with the same two siblings
 -- | (`selectUnpicked`, `selectOptional`); the options are part of the
 -- | control, not of the model.
-select :: forall @l a b r. IsSymbol l => Cons l a b r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-select options = withStructuralEq @a (selectOf @l false (selectedAt @l) options)
+select :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
+select options = withStructuralEq @(Variant w) (selectOf @l false (selectedAt @l) options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c a b1 v b2 r. IsSymbol l => IsSymbol c => Cons c a b1 v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectUnpicked options = withStructuralEq @a (selectOf @l false (selectedUnpickedAt @l @c) options)
+selectUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
+selectUnpicked options = withStructuralEq @(Variant w) (selectOf @l false (selectedUnpickedAt @l @c) options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-selectOptional :: forall @l @c @n a b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-selectOptional options = withStructuralEq @a (selectOf @l true (selectedOptionalAt @l @c @n) options)
+selectOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
+selectOptional options = withStructuralEq @(Variant w) (selectOf @l true (selectedOptionalAt @l @c @n) options)
 
-selectOf :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
+selectOf :: forall @l w i o. IsSymbol l => Eq (Variant w) => Boolean -> (PUI Web (Maybe (Variant w)) (Maybe (Variant w)) -> PUI Web i o) -> Array (Variant w) -> PUI Web i o
 selectOf clearable lift options = let config = { floatingLabel: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf clearable config options)
 
-selectLeaf :: forall a. Eq a => Boolean -> { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
+selectLeaf :: forall w. Eq (Variant w) => Boolean -> { floatingLabel :: String } -> Array (Variant w) -> PUI Web (Maybe (Variant w)) (Maybe (Variant w))
 selectLeaf clearable config options = fromHandles do
   labelId <- liftEffect uniqueId
   textId <- liftEffect uniqueId
@@ -759,40 +761,40 @@ selectLeaf clearable config options = fromHandles do
   optionMarkup idx o =
     "<li class=\"mdc-deprecated-list-item\" data-value=\"" <> show idx <> "\" role=\"option\" aria-selected=\"false\">"
       <> "<span class=\"mdc-deprecated-list-item__ripple\"></span>"
-      <> "<span class=\"mdc-deprecated-list-item__text\">" <> escaped o.label <> "</span>"
+      <> "<span class=\"mdc-deprecated-list-item__text\">" <> escaped (caseText o) <> "</span>"
       <> "</li>"
 
 -- | The Material **segmented button**: two to five options joined in one
 -- | control, all visible, one selected — a filter row, a view switch, a
 -- | size. Compact where a radio group would be airy and a dropdown would
 -- | hide the alternatives. Same selection contract as `select`.
-segmentedButton :: forall @l a b r. IsSymbol l => Cons l a b r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-segmentedButton options = withStructuralEq @a (segmentedButtonWith @l false (selectedAt @l) options)
+segmentedButton :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
+segmentedButton options = withStructuralEq @(Variant w) (segmentedButtonWith @l false (selectedAt @l) options)
 
 -- | `segmentedButton` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-segmentedButtonUnpicked :: forall @l @c a b1 v b2 r. IsSymbol l => IsSymbol c => Cons c a b1 v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-segmentedButtonUnpicked options = withStructuralEq @a (segmentedButtonWith @l false (selectedUnpickedAt @l @c) options)
+segmentedButtonUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
+segmentedButtonUnpicked options = withStructuralEq @(Variant w) (segmentedButtonWith @l false (selectedUnpickedAt @l @c) options)
 
 -- | `segmentedButton` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | clicking the selected segment again clears it, storing `n` again.
-segmentedButtonOptional :: forall @l @c @n a b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array { value :: a, label :: String } -> PUI Web { | r } { | r }
-segmentedButtonOptional options = withStructuralEq @a (segmentedButtonWith @l true (selectedOptionalAt @l @c @n) options)
+segmentedButtonOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
+segmentedButtonOptional options = withStructuralEq @(Variant w) (segmentedButtonWith @l true (selectedOptionalAt @l @c @n) options)
 
-segmentedButtonWith :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
+segmentedButtonWith :: forall @l w i o. IsSymbol l => Eq (Variant w) => Boolean -> (PUI Web (Maybe (Variant w)) (Maybe (Variant w)) -> PUI Web i o) -> Array (Variant w) -> PUI Web i o
 segmentedButtonWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ (segmentedLeaf clearable options)
 
-segmentedLeaf :: forall a. Eq a => Boolean -> Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
+segmentedLeaf :: forall w. Eq (Variant w) => Boolean -> Array (Variant w) -> PUI Web (Maybe (Variant w)) (Maybe (Variant w))
 segmentedLeaf clearable options =
   div >>> cl "mdc-segmented-button" >>> cl "mdc-segmented-button--single-select" >>> "role" := "radiogroup" $ fromHandles do
     segments <- for options \o -> do
       -- aria-label = the choice label verbatim (MD2 uppercases the rendered
       -- segment text; the stamp keeps the computed name the label exactly)
-      _ <- handles (staticHTML ("<button class=\"mdc-segmented-button__segment\" role=\"radio\" aria-checked=\"false\" aria-label=\"" <> escaped o.label <> "\"><div class=\"mdc-segmented-button__ripple\"></div><div class=\"mdc-segmented-button__label\">" <> escaped o.label <> "</div></button>"))
+      _ <- handles (staticHTML ("<button class=\"mdc-segmented-button__segment\" role=\"radio\" aria-checked=\"false\" aria-label=\"" <> escaped (caseText o) <> "\"><div class=\"mdc-segmented-button__ripple\"></div><div class=\"mdc-segmented-button__label\">" <> escaped (caseText o) <> "</div></button>"))
       node <- gets _.sibling
-      pure { node, value: o.value }
+      pure { node, value: o }
     mPropRef <- liftEffect $ Ref.new Nothing
     selRef <- liftEffect $ Ref.new Nothing
     let render msel = do
@@ -893,10 +895,10 @@ iconToggleLeaf config = fromHandles do
 -- | selector to build a sectioned editor around: the tab bar beside one
 -- | `inCase @l` editor pane per section, each pane editing its own part of
 -- | the model.
-tabBar :: forall @l provided a r b . IsSymbol l => Cons l a b r => ConvertOptionsWithDefaults OptIcon { icon :: Maybe String } { | provided } { value :: a, label :: String, icon :: Maybe String } => Array { | provided } -> PUI Web { | r } { | r }
-tabBar options = withStructuralEq @a (focusField @l $ "name" := reflectSymbol (Proxy @l) $ (tabBarLeaf (convertOptionsWithDefaults OptIcon { icon: Nothing } <$> options)))
+tabBar :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
+tabBar options = withStructuralEq @(Variant w) (focusField @l $ "name" := reflectSymbol (Proxy @l) $ (tabBarLeaf options))
 
-tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web a a
+tabBarLeaf :: forall w. Eq (Variant w) => Array (Variant w) -> PUI Web (Variant w) (Variant w)
 tabBarLeaf options = fromHandles do
   _ <- handles $ div >>> cl "mdc-tab-bar" >>> "role" := "tablist" $
     div >>> cl "mdc-tab-scroller" $
@@ -909,21 +911,18 @@ tabBarLeaf options = fromHandles do
   -- programmatic `activateTab` fires it too, which the wiring's busy guard drops
   activatedRef <- liftEffect $ Ref.new Nothing
   liftEffect $ editorWiring
-    { show: \a -> for_ (findIndex (\o -> o.value == a) options) (activateTab comp)
+    { show: \a -> for_ (findIndex (\o -> o == a) options) (activateTab comp)
     , held: pure false
     , reports: \report -> onTabBarActivated comp \idx -> Ref.write (Just idx) activatedRef *> report
-    , read: \a -> Ref.read activatedRef <#> \mi -> maybe a _.value (mi >>= (options !! _))
+    , read: \a -> Ref.read activatedRef <#> \mi -> maybe a identity (mi >>= (options !! _))
     }
   where
   tabMarkup o =
     -- aria-label = the choice label verbatim: MD2 uppercases the rendered
     -- tab text, and the computed name follows rendering without the stamp
-    "<button class=\"mdc-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\" aria-label=\"" <> escaped o.label <> "\">"
+    "<button class=\"mdc-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\" aria-label=\"" <> escaped (caseText o) <> "\">"
       <> "<span class=\"mdc-tab__content\">"
-      <> (case o.icon of
-            Just icon' -> "<span class=\"mdc-tab__icon material-icons\" aria-hidden=\"true\">" <> escaped icon' <> "</span>"
-            Nothing -> "")
-      <> "<span class=\"mdc-tab__text-label\">" <> escaped o.label <> "</span>"
+      <> "<span class=\"mdc-tab__text-label\">" <> escaped (caseText o) <> "</span>"
       <> "</span>"
       <> "<span class=\"mdc-tab-indicator\"><span class=\"mdc-tab-indicator__content mdc-tab-indicator__content--underline\"></span></span>"
       <> "<span class=\"mdc-tab__ripple\"></span>"
