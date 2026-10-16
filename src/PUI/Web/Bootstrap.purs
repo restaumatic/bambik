@@ -35,7 +35,6 @@ module PUI.Web.Bootstrap
   , toggleSwitch
   ) where
 
-import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
@@ -53,11 +52,10 @@ import Effect.Class (liftEffect)
 import PUI (fromHandles, handles, folding, Ocular, PUI)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, selectorWiring, setAttribute, setChecked, setValue, staticText, statusWiring, text, statusText, uniqueId, (:=))
+import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, selectorWiring, setAttribute, setChecked, setValue, staticText, statusWiring, text, statusText, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (Variant)
-import Data.Variant.Case (caseText)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 
 -- Implementation notes — the reference above is the contract.
@@ -177,22 +175,22 @@ sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-select :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
-select options = withStructuralEq @(Variant w) (selectOf @l false (selectedAt @l) options)
+select :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Choices w -> PUI Web { | r } { | r }
+select options = selectOf @l false (selectedAt @l <<< tagged) (choiceTags options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
-selectUnpicked options = withStructuralEq @(Variant w) (selectOf @l false (selectedUnpickedAt @l @c) options)
+selectUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
+selectUnpicked options = selectOf @l false (selectedUnpickedAt @l @c <<< tagged) (choiceTags options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-selectOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
-selectOptional options = withStructuralEq @(Variant w) (selectOf @l true (selectedOptionalAt @l @c @n) options)
+selectOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
+selectOptional options = selectOf @l true (selectedOptionalAt @l @c @n <<< tagged) (choiceTags options)
 
-selectOf :: forall @l w i o. IsSymbol l => Eq (Variant w) => Boolean -> (PUI Web (Maybe (Variant w)) (Maybe (Variant w)) -> PUI Web i o) -> Array (Variant w) -> PUI Web i o
+selectOf :: forall @l i o. IsSymbol l => Boolean -> (PUI Web (Maybe String) (Maybe String) -> PUI Web i o) -> Array String -> PUI Web i o
 selectOf clearable lift options = let config = { label: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ fromHandles do
   _ <- handles ((label $ staticText config.label) # cl "form-label")
   element "select" (void $ handles (optionLeaves))
@@ -211,7 +209,7 @@ selectOf clearable lift options = let config = { label: reflectSymbol (Proxy @l)
       noneNode <- gets _.sibling
       liftEffect $ setAttribute noneNode "value" ""
     forWithIndex_ options \idx o -> do
-      element "option" (void $ handles (staticText (caseText o)))
+      element "option" (void $ handles (staticText (o)))
       optionNode <- gets _.sibling
       liftEffect $ setAttribute optionNode "value" (show idx)
     pure { toUser: mempty, fromUser: \prop -> prop {} }

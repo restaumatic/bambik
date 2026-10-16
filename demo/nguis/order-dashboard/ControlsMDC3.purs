@@ -17,7 +17,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (Variant)
 import Prim.Row (class Cons)
 import PUI (foreach, Ocular, PUI)
-import PUI.Web (Web, attrWith, staticText, text, (:=))
+import PUI.Web (Choices, Web, attrWith, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
 import PUI.Web.SVG as SVG
@@ -63,7 +63,7 @@ rangePicker
   :: forall @l w rest r
    . IsSymbol l
   => Cons l (Variant w) rest r
-  => Array (Variant w)
+  => Choices w
   -> PUI Web { | r } { | r }
 rangePicker options =
   div >>> "style" := "display: flex; flex-direction: column; gap: 8px;" $ Semigroupoid.do

@@ -66,7 +66,6 @@ module PUI.Web.HTML
   )
   where
 
-import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude
 
 import Control.Monad.State (gets, modify_)
@@ -77,7 +76,6 @@ import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
-import Data.Variant.Case (caseText)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (Variant, inj, match)
 import Effect (Effect)
@@ -86,7 +84,7 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import PUI (fromHandles, handles, folding, Ocular, PUI)
-import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, statusText, separating, (:=), (:=>))
+import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, statusText, separating, (:=), (:=>))
 
 -- UIs
 
@@ -149,22 +147,22 @@ textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-select :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
-select options = withStructuralEq @(Variant w) (selectOf @l false (selectedAt @l) options)
+select :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Choices w -> PUI Web { | r } { | r }
+select options = selectOf @l false (selectedAt @l <<< tagged) (choiceTags options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
-selectUnpicked options = withStructuralEq @(Variant w) (selectOf @l false (selectedUnpickedAt @l @c) options)
+selectUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
+selectUnpicked options = selectOf @l false (selectedUnpickedAt @l @c <<< tagged) (choiceTags options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-selectOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
-selectOptional options = withStructuralEq @(Variant w) (selectOf @l true (selectedOptionalAt @l @c @n) options)
+selectOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
+selectOptional options = selectOf @l true (selectedOptionalAt @l @c @n <<< tagged) (choiceTags options)
 
-selectOf :: forall @l w i o. IsSymbol l => Eq (Variant w) => Boolean -> (PUI Web (Maybe (Variant w)) (Maybe (Variant w)) -> PUI Web i o) -> Array (Variant w) -> PUI Web i o
+selectOf :: forall @l i o. IsSymbol l => Boolean -> (PUI Web (Maybe String) (Maybe String) -> PUI Web i o) -> Array String -> PUI Web i o
 selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   element "select" (void $ handles optionLeaves)
   node <- gets _.sibling
@@ -181,7 +179,7 @@ selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ fr
       noneNode <- gets _.sibling
       liftEffect $ setAttribute noneNode "value" ""
     forWithIndex_ options \idx o -> do
-      element "option" (void $ handles (staticText (caseText o)))
+      element "option" (void $ handles (staticText (o)))
       optionNode <- gets _.sibling
       liftEffect $ setAttribute optionNode "value" (show idx)
     pure { toUser: mempty, fromUser: \prop -> prop {} }

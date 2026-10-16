@@ -38,7 +38,6 @@ module PUI.Web.Fluent
   , toggleSwitch
   ) where
 
-import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
@@ -58,11 +57,10 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, folding, Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, separating, (:=))
+import PUI.Web (Choices, choiceTags, tagged, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, separating, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (Variant)
-import Data.Variant.Case (caseText)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 
 -- Implementation notes — the reference above is the contract.
@@ -203,22 +201,22 @@ slider = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "na
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-dropdown :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
-dropdown options = withStructuralEq @(Variant w) (dropdownOf @l false (selectedAt @l) options)
+dropdown :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Choices w -> PUI Web { | r } { | r }
+dropdown options = dropdownOf @l false (selectedAt @l <<< tagged) (choiceTags options)
 
 -- | `dropdown` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-dropdownUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
-dropdownUnpicked options = withStructuralEq @(Variant w) (dropdownOf @l false (selectedUnpickedAt @l @c) options)
+dropdownUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
+dropdownUnpicked options = dropdownOf @l false (selectedUnpickedAt @l @c <<< tagged) (choiceTags options)
 
 -- | `dropdown` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-dropdownOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
-dropdownOptional options = withStructuralEq @(Variant w) (dropdownOf @l true (selectedOptionalAt @l @c @n) options)
+dropdownOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
+dropdownOptional options = dropdownOf @l true (selectedOptionalAt @l @c @n <<< tagged) (choiceTags options)
 
-dropdownOf :: forall @l w i o. IsSymbol l => Eq (Variant w) => Boolean -> (PUI Web (Maybe (Variant w)) (Maybe (Variant w)) -> PUI Web i o) -> Array (Variant w) -> PUI Web i o
+dropdownOf :: forall @l i o. IsSymbol l => Boolean -> (PUI Web (Maybe String) (Maybe String) -> PUI Web i o) -> Array String -> PUI Web i o
 dropdownOf clearable lift options = let config = { label: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   element "fluent-dropdown" (void $ handles (staticHTML optionsMarkup))
   attribute "slot" "input"
@@ -230,32 +228,32 @@ dropdownOf clearable lift options = let config = { label: reflectSymbol (Proxy @
     }
   where
   optionsMarkup = "<fluent-listbox>" <> (if clearable then "<fluent-option value=\"\"></fluent-option>" else "") <> foldMapWithIndex optionMarkup options <> "</fluent-listbox>"
-  optionMarkup idx o = "<fluent-option value=\"" <> show idx <> "\">" <> escaped (caseText o) <> "</fluent-option>"
+  optionMarkup idx o = "<fluent-option value=\"" <> show idx <> "\">" <> escaped (o) <> "</fluent-option>"
 
 -- | The **radio group**: one choice among a handful, every option visible
 -- | and comparable at a glance. Beyond about five options use `dropdown`.
 -- | Same selection contract as `dropdown`.
-radioGroup :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Array (Variant w) -> PUI Web { | r } { | r }
-radioGroup options = withStructuralEq @(Variant w) (radioGroupOf @l false (selectedAt @l) options)
+radioGroup :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Choices w -> PUI Web { | r } { | r }
+radioGroup options = radioGroupOf @l false (selectedAt @l <<< tagged) (choiceTags options)
 
 -- | `radioGroup` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-radioGroupUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
-radioGroupUnpicked options = withStructuralEq @(Variant w) (radioGroupOf @l false (selectedUnpickedAt @l @c) options)
+radioGroupUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
+radioGroupUnpicked options = radioGroupOf @l false (selectedUnpickedAt @l @c <<< tagged) (choiceTags options)
 
 -- | `radioGroup` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | pressing the checked option again clears it, storing `n` again.
-radioGroupOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Array (Variant w) -> PUI Web { | r } { | r }
-radioGroupOptional options = withStructuralEq @(Variant w) (radioGroupOf @l true (selectedOptionalAt @l @c @n) options)
+radioGroupOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
+radioGroupOptional options = radioGroupOf @l true (selectedOptionalAt @l @c @n <<< tagged) (choiceTags options)
 
-radioGroupOf :: forall @l w i o. IsSymbol l => Eq (Variant w) => Boolean -> (PUI Web (Maybe (Variant w)) (Maybe (Variant w)) -> PUI Web i o) -> Array (Variant w) -> PUI Web i o
+radioGroupOf :: forall @l i o. IsSymbol l => Boolean -> (PUI Web (Maybe String) (Maybe String) -> PUI Web i o) -> Array String -> PUI Web i o
 radioGroupOf clearable lift options = let config = { label: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
   members <- element "fluent-radio-group" do
     forWithIndex options \idx o -> do
       member <- element "fluent-field" do
-        _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText (caseText o))
+        _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText (o))
         element "fluent-radio" (pure unit)
         radioNode <- gets _.sibling
         liftEffect do

@@ -65,8 +65,12 @@ module PUI.Web
   , listenNodeDeferred
   , ensureStyle
   , autoDismiss
+  , Choices
   , choice
   , andChoice
+  , choiceTags
+  , tagged
+  , taggedTotal
   , (<+>)
   , selectedAt
   , clearedOnRepress
@@ -139,12 +143,15 @@ module PUI.Web
   where
 
 import Data.Profunctor.Row.Structural (withStructuralEq)
-import Data.Profunctor (lcmap, rmap)
+import Data.Profunctor (dimap, lcmap, rmap)
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Variant.Case (caseText)
+import Data.Variant.Internal (VariantRep(..))
+import Unsafe.Coerce (unsafeCoerce)
 import Data.Array (concat, findIndex, (!!))
 import Data.String (replaceAll, Pattern(..), Replacement(..))
 import Data.Variant (Variant, case_, expand, inj, on, prj)
@@ -536,14 +543,12 @@ editorWiring leaf = do
 -- | programmatic selection is in progress is that selection's own event
 -- | and is dropped.
 selectorWiring
-  :: forall w
-   . Eq (Variant w)
-  => Array (Variant w)
+  :: Array String
   -> { show :: Maybe Int -> Effect Unit
      , reports :: Effect Unit -> Effect Unit
      , read :: Effect (Maybe Int)
      }
-  -> Effect (Wiring (Maybe (Variant w)) (Maybe (Variant w)))
+  -> Effect (Wiring (Maybe String) (Maybe String))
 selectorWiring options leaf = do
   propRef <- Ref.new Nothing
   busyRef <- Ref.new false
@@ -609,24 +614,32 @@ escaped = replaceAll (Pattern "&") (Replacement "&amp;")
 listenNode :: Node -> String -> Effect Unit -> Effect Unit
 listenNode node event handler = void $ addEventListener event node (const handler)
 
--- | One selector **option**, named by its case: `choice @"Boardroom"` both
--- | injects that case and draws its label, so a choice states its copy once
--- | — exactly as a captioned leaf does:
+-- | A selector's **options**: tags in the order written, over the closed
+-- | row `w` of the cases they name, each carrying `{}`. A choice is its tag
+-- | — the case it stores and the copy it draws — so nothing else rides
+-- | along, and a selector compares picks by tag. Built only by `choice` and
+-- | `<+>` (the constructor is not exported), which is what makes every case
+-- | of `w` a `{}` and so a tag the whole value.
+newtype Choices :: Row Type -> Type
+newtype Choices w = Choices (Array String)
+
+-- | One selector **option**, named by its case: `choice @"Boardroom"` is
+-- | the case it stores and the label it draws, so a choice states its copy
+-- | once — exactly as a captioned leaf does:
 -- |
 -- | ```
 -- | dropdown @"Room" (choice @"Focus pod (4 seats)" <+> choice @"Boardroom (12 seats)")
 -- | ```
 -- |
--- | A choice is a one-option array over the **closed** singleton row of its
--- | case, and `<+>` joins option lists uniting their rows, so the options
--- | stay a plain array in the order they are written — a selector's option
--- | order is a design decision (rooms by size, durations by length) and
--- | deliberately does **not** come from the variant row, which the compiler
--- | sorts alphabetically — while the row the selector's field holds is
--- | closed by the list itself, with no case left open for a typed hole to
--- | report.
-choice :: forall @l r. IsSymbol l => Row.Cons l {} () r => Array (Variant r)
-choice = [ inj (Proxy :: Proxy l) {} ]
+-- | A choice is one option over the **closed** singleton row of its case,
+-- | and `<+>` joins option lists uniting their rows, so the options keep
+-- | the order they are written — a selector's option order is a design
+-- | decision (rooms by size, durations by length) and deliberately does
+-- | **not** come from the variant row, which the compiler sorts
+-- | alphabetically — while the row the selector's field holds is closed by
+-- | the list itself, with no case left open for a typed hole to report.
+choice :: forall @l w. IsSymbol l => Row.Cons l {} () w => Choices w
+choice = Choices [ reflectSymbol (Proxy @l) ]
 
 -- | Join two option lists in writing order, their variant rows united — so
 -- | `choice @"one-way" <+> choice @"return"` is the **closed** row
@@ -634,10 +647,29 @@ choice = [ inj (Proxy :: Proxy l) {} ]
 -- | it leaves no option case open for a typed hole to report (guardrails
 -- | L18, the determination half). Option order stays the order written,
 -- | never the row's alphabetical one.
-andChoice :: forall v1 v2 v. Row.Union v1 v2 v => Row.Union v2 v1 v => Array (Variant v1) -> Array (Variant v2) -> Array (Variant v)
-andChoice xs ys = map expand xs <> map expand ys
+andChoice :: forall w1 w2 w. Row.Union w1 w2 w => Row.Union w2 w1 w => Choices w1 -> Choices w2 -> Choices w
+andChoice (Choices xs) (Choices ys) = Choices (xs <> ys)
 
 infixr 5 andChoice as <+>
+
+-- | The options' tags in writing order — what a selector face draws and
+-- | indexes. Vocabulary plumbing, with `tagged`.
+choiceTags :: forall w. Choices w -> Array String
+choiceTags (Choices tags) = tags
+
+-- | A selector leaf over its options' tags lifted to the variant its
+-- | field holds: a picked tag becomes its case, a fed case its tag. Total
+-- | because a `Choices w` is built only by `choice` and `<+>`, so every
+-- | case of `w` carries `{}` and its tag is the whole value.
+tagged :: forall w. PUI Web (Maybe String) (Maybe String) -> PUI Web (Maybe (Variant w)) (Maybe (Variant w))
+tagged = dimap (map caseText) (map caseOf)
+
+-- | `tagged` for a leaf that always has a pick (the tab bar).
+taggedTotal :: forall w. PUI Web String String -> PUI Web (Variant w) (Variant w)
+taggedTotal = dimap caseText caseOf
+
+caseOf :: forall w. String -> Variant w
+caseOf tag = unsafeCoerce (VariantRep { type: tag, value: {} })
 
 -- | Lift a bare selection leaf — the option to check in (`Nothing`: none),
 -- | the option the user checked out (`Nothing`: cleared) — to the
