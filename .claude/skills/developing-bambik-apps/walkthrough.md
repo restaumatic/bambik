@@ -321,8 +321,9 @@ the view model module is the ordinary one.
 - **todo-list** — a selectable list, `listOf @"Todo toggled" @"key"`, a filter
   selector, and panes over `remainingItems`.
 - **checkout** — a wizard: the step is a model field, each step's line a
-  pane `# inCaseAt @c @"step"`, Next and Back each a button shown by its
-  own classifier and folded by its own handler (`stepOnward`, `stepBack`).
+  pane `# inCaseAt @c @"step"`, and Back and Next are the face of a
+  selector the app packages itself, `stepper @"step" (choice @"Cart" <+>
+  …)`, editing that field in the order its options are written.
 - **crud** — a load action before the knot, `indeterminateLinearProgress #
   load loadPeopleCatalogue`, its outcome folded in by `capture @"People
   loaded"`, run by `body`'s one feed of

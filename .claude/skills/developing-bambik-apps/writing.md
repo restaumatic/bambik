@@ -150,8 +150,8 @@ How each kind takes its business meaning:
 - **Emitters** emit their own case. Whatever the business decides about
   it is decided where the case is consumed — the fold's handler, the
   action's outcome row. Two buttons are two business cases, each
-  with its own fold (checkout's `fold @"Next" stepOnward`,
-  `fold @"Back" stepBack`); no emitter takes a caption
+  with its own fold (stopwatch's `fold @"Start" beginTiming`,
+  `fold @"Stop" haltTiming`); no emitter takes a caption
   parameter to stand for two.
 - **Statuses** are labelled with the case they tell, and the label is
   their whole copy: `snackbar @"Flight booked" identity` shows the words
@@ -175,7 +175,8 @@ How each kind takes its business meaning:
 
 **A component's type is its shape, and so is every component the app
 packages itself** (order-dashboard's `statTile "Orders placed"
-ordersCount`). A signature with a bare `String`, `Maybe a` or `a` on
+ordersCount`; checkout's `stepper @"step"`, a selector editing the
+stored step through Back and Next). A signature with a bare `String`, `Maybe a` or `a` on
 either side is a smell: that value belongs in a field of the row, read
 by a business function.
 
@@ -309,7 +310,7 @@ compile error at `body` naming the missing fields.
 | no design system at all | restaurant-menu, hello-world |
 | a knot fed from upstream, no seed of its own | order-form and crud (`looped` after the load action, which `body`'s one feed of `{}` runs) |
 | an action that retries until it succeeds | payment (`chargeFlaky`) |
-| a running maximum, a wizard's step, a counter: model fields | auction (`settled raiseTop`), checkout (`stepOnward`), ticket-dispenser (`issue`) |
+| a running maximum, a wizard's step, a counter: model fields | auction (`settled raiseTop`), checkout (`stepper @"step"`, its own selector), ticket-dispenser (`issue`) |
 | a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed @"Refund a customer" "Refund" refundStandard $ …`) |
 | an effect's outcome folded into the model it lands on | order-form (`… # joined @"Distance estimated"`, `fold @"Distance estimated" setDistance`) |
 | keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
@@ -330,7 +331,7 @@ case and then the field, both by label — `providedAt`, `inCaseAt`
 `# inCaseAt @"return" @"Flight type"`) — typed by the model row the seed's
 signature states. When it is derived, one classifier derives it, its
 signature naming every case — flight-booker's `bookingState`, potluck's
-`menuState`, inbox's `messageView`, checkout's `onwardFrom` — and each
+`menuState`, inbox's `messageView`, quiz's `quizPhase` — and each
 pane names only its own case (`# provided @"reading" messageView`). Two panes over one classifier
 can never both be on screen. A case carries a payload only where the
 business needs one; what a pane shows, its read functions read from the
@@ -596,11 +597,11 @@ text is computed, a chrome line nothing.
 - **The model is stated once, in the view model module.** The seed's
   signature is the model row (`freshCount :: { counted :: Int }`), and
   every other row is the signature of the function that brings it: a
-  classifier's cases (`onwardFrom :: … -> [ onward :: {}, last :: {} ]`,
-  checkout), an action's outcomes, a projection's element row
+  classifier's cases (`quizPhase :: … -> [ asking :: {}, finished :: {} ]`,
+  quiz), an action's outcomes, a projection's element row
   (`lapRows :: … -> Array { number :: Int, tenths :: Int }`, stopwatch).
   The view writes none of them (`# looped # with freshCount`, `# provided
-  @"onward" onwardFrom`, `# foreach @"number" lapRows`), and every
+  @"asking" quizPhase`, `# foreach @"number" lapRows`), and every
   editor, selector, list and field label it names is checked against
   them — so a stored field is read by its label (`listOfAt … @"messages"`,
   `# providedAt @"halted" @"phase"`). The view states only what is its

@@ -8,6 +8,19 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-16, latest
 
+- **checkout's wizard is a packaged `stepper`.** Its Next and Back were
+  two emitters behind two classifiers (`onwardFrom`, `previousOf`)
+  folded by two handlers (`stepOnward`, `stepBack`) — four functions
+  stating only the order of the steps. They are one selector the demo
+  ships beside its views, `Checkout.StepperMDC2`/`StepperMDC3`:
+  `stepper @"step" (choice @"Cart" <+> choice @"Shipping" <+> choice
+  @"Payment")`, the step order the option list's, built like
+  `segmentedButton` (`selectedAt @l` over `selectorWiring`) with a
+  Back · dots · Next face. None of the five catalogues has a stepper,
+  so it stays app-packaged, not vocabulary. The step cases are their
+  copy (`"Cart"`, `"Shipping"`, `"Payment"`); writing.md, vocabulary.md
+  and the walkthrough take their two-folds and classifier examples from
+  stopwatch and quiz instead.
 - **`type` synonyms are allowed in view model modules.** The ban on them
   (filed under "no nominal types") cost every app with a shared row its
   repetition — flight-booker spelled its model row nine times — and

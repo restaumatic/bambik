@@ -44,7 +44,7 @@ and emitters of a catalogue — are in the design-system module header
 | seeded, with no loop of its own | `# with invitation` | potluck | writing.md *App shape* |
 | a form section looping inside it | `# looped` | order-form | writing.md *App shape* |
 | an action that retries until it succeeds | the retry inside the action's `Aff` (`chargeFlaky`), the outcome one case | payment | writing.md *Business functions* |
-| a wizard's step, a running maximum, a counter | a model field, folded or normalized (`fold @"Next" stepOnward`, `# settled raiseTop`, `fold @"Take a number" issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |
+| a wizard's step, a running maximum, a counter | a model field, edited, folded or normalized (`stepper @"step" …`, checkout's own selector, `# settled raiseTop`, `fold @"Take a number" issue`) | checkout, auction, ticket-dispenser | writing.md *Types and values* |
 
 ## Showing data
 
@@ -103,7 +103,7 @@ and emitters of a catalogue — are in the design-system module header
 | an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"finished" quizPhase` | stopwatch; quiz, inbox | writing.md *Conditional visibility* |
 | an event replacing the model whole | `reset @"New game" openingPosition`; on a status, `snackbar @"Order placed" (const usualOrder)` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
 | an outcome that is the model | `snackbar @"Card charged" identity`; `capture @"Forecast fetched"` where nothing needs telling | crud, order-form, payment, weather, password-generator, reorder | `PUI` |
-| two buttons stepping one field | `fold @"Next" stepOnward`, `fold @"Back" stepBack` — two cases, two folds, never one button with a caption parameter | checkout | writing.md *Components* |
+| two buttons changing one field | `fold @"Start" beginTiming`, `fold @"Stop" haltTiming` — two cases, two folds, never one button with a caption parameter | stopwatch | writing.md *Components* |
 | an event intercepted by a dialog | `confirmed @"Refund a customer" "Refund" refundStandard $ body1 $ text refundLine` — the dialog owns the button's case in the fold block, tells it as its title and folds on confirm | cashbox | writing.md *Stages* |
 | an event carrying something of its own | `listOf @"Todo toggled" @"key" … # joined @"Todo toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, calculator | writing.md *Stages* |
 | a button group fed the record it replays | `RecordToVariant.do` of emitters as a stage, each button replaying the row the block is fed | order-form, espresso-bar, signup-form | writing.md *Stages* |
