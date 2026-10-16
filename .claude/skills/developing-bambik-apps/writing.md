@@ -580,7 +580,8 @@ text is computed, a chrome line nothing.
   100 columns puts the name on a line of its own, `::` and each `->`
   leading a line beneath it, and a record or variant too long for its
   line one field per line under its opening bracket (crud). Only the
-  whitespace differs from the hint with its tails filled.
+  whitespace, and the synonyms naming its rows, differ from the hint
+  with its tails filled.
 - **Two-space indentation.** A block's lines sit two columns deeper
   than its opener, `( Semigroupoid.do` included; a closer returns to its
   opener's column. No four-space steps, no alignment to a token
@@ -612,10 +613,17 @@ text is computed, a chrome line nothing.
   needs is derived (inbox computes the next message id from
   `messages`) or stored like any other field (circle-drawer's undo
   stacks are state, so they are in its seed's row).
-- **No nominal types in UI.** No `data`, `newtype` or `type` synonym for
-  anything a component shows, emits or is configured with. A view-model
-  row holds records, variants, `String`/`Number`/`Int` and `Array` —
-  nothing else; `{}` for an empty payload, never `Unit`.
+- **No nominal types in UI.** No `data` or `newtype` for anything a
+  component shows, emits or is configured with. A view-model row holds
+  records, variants, `String`/`Number`/`Int` and `Array` — nothing
+  else; `{}` for an empty payload, never `Unit`.
+- **Name a shared row with a `type` synonym.** A synonym is a name for a
+  structure, not a new type, so it keeps the row structural: flight-booker
+  writes its model row once, `type Trip = { … }`, and every signature
+  says `Trip`. Export a synonym an exported signature uses (the compiler
+  requires it); no view imports it, since the view writes no row. Name
+  it in business language (`Trip`, `Itinerary`), never by its role
+  (`Model`, `State`).
 - **No `Maybe` in the model.** Name the two cases the business already
   uses: `selected :: [ picked :: { index :: Int }, none :: {} ]`,
   `approval :: [ approved :: { attempt :: Int }, pending :: {} ]`.
@@ -626,9 +634,7 @@ text is computed, a chrome line nothing.
   it is a named predicate (`clWhen isCompleted "todo-done"`).
 - **Nominal types live below the UI**: a recursive type (cells' formula
   AST) or an ecosystem API (`Aff`, `Either`), entering the UI only
-  through business functions. The price is spelling a shared row out in
-  every signature that uses it (flight-booker's itinerary); pay it — the
-  shape is the interface.
+  through business functions.
 - **Names say what, in business language.** Role names sit on values
   and functions, never on types (`with plannedTrip`, `with emptyCanvas`).
   Never lifecycle words: no `initial`, `default` or `seed` as a name, no
@@ -704,7 +710,9 @@ text is computed, a chrome line nothing.
   call site. Which fields the body uses is the body's business; the
   compiler checks the body against the row it is given. A name two lines
   call at different rows gets two hints, and that is the one case for a
-  `forall`: generalize to the fields both rows share, with a tail.
+  `forall`: generalize to the fields both rows share, with a tail. A
+  row the signature names through a `type` synonym is the same row
+  (`problemLine :: Trip -> String`, flight-booker): the check expands it.
   Private helpers no view line types are free to be as general as they
   like (flight-booker's `parse`, `formatDate`).
 - **Update the row you are given.** A function returning the row it
@@ -850,7 +858,9 @@ the watch build running ([building.md](building.md)):
    fields the body uses is the body's business, and the compiler checks
    the body against the row it is given. A name reported at two
    different rows, because two lines call it, is the one case for a
-   `forall`: generalize to the fields both rows share, with a tail. The
+   `forall`: generalize to the fields both rows share, with a tail. A
+  row the signature names through a `type` synonym is the same row
+  (`problemLine :: Trip -> String`, flight-booker): the check expands it. The
    hole's message goes away, and from then on the compiler checks the
    view against the signatures.
 4. **Fill the holes in any order.** The compiler reports one

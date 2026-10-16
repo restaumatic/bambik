@@ -8,6 +8,18 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-16, latest
 
+- **`type` synonyms are allowed in view model modules.** The ban on them
+  (filed under "no nominal types") cost every app with a shared row its
+  repetition — flight-booker spelled its model row nine times — and
+  bought nothing: a synonym is a name for a structure, not a new type,
+  so the row stays structural and the view still writes none. `data`
+  and `newtype` stay out. scripts/check-determined.mjs now lets the
+  compiler decide a closed hint against a signature written through
+  the module's synonyms (the verbatim compare stays for the rest, and
+  `--write` leaves such a signature alone); scripts/holes.mjs stubs
+  values only. flight-booker names `Trip`, `Itinerary`, `Problem`,
+  `Date`; writing.md *Types and values*, the walkthrough and the
+  `#code-style` note say so.
 - **Answer's `×→×` half is a leaf law; its `×→+` half is a law of every
   stage.** The headers and doc §3 stated Answer per shape, as if any
   `×→×`-typed stage answered its feeds, and listed `confirmed` and the

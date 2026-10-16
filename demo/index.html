@@ -83,7 +83,7 @@
 
       <h3>Types and values</h3>
       <ul>
-        <li>No <code>data</code>, <code>newtype</code> or <code>type</code> declarations in UI code.</li>
+        <li>No <code>data</code> or <code>newtype</code> declarations in UI code; a shared row is named by a <code>type</code> synonym, a name for the structure (<code>type Trip = { … }</code>).</li>
         <li>A row holds records, variants, <code>String</code>, <code>Number</code>, <code>Int</code> and <code>Array</code>.</li>
         <li>No <code>Maybe</code> in the model: <code>selected :: [ none :: {}, picked :: { index :: Int } ]</code>.</li>
         <li>No <code>Boolean</code> unless a Boolean editor edits it: <code>status :: [ active :: {}, completed :: {} ]</code>.</li>

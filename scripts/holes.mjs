@@ -35,7 +35,8 @@ const isLogic = mod => viewModelModules.has(mod)
 
 const stub = src => {
   const [, mod, exports] = src.match(/^module\s+([\w.]+)\s*\(([\s\S]*?)\)\s*where/m)
-  const names = exports.split(',').map(s => s.trim()).filter(Boolean)
+  // a type synonym (capitalized) is dropped: a hole stands for a value, and no view names a type
+  const names = exports.split(',').map(s => s.trim()).filter(n => /^[a-z_]/.test(n))
   return [`module Holey.${mod} (${names.join(', ')}) where`, '', 'import PUI.Web (hole)', '',
     ...names.map(n => `${n} = hole`), ''].join('\n')
 }

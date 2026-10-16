@@ -145,7 +145,7 @@ was booked with (writing.md *Components*).
 ## The view model
 
 ```purescript
-module FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit) where
+module FlightBooker (Trip, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit) where
 
 import Prelude ((&&), (*), (+), (/=), (<), (<=), (<>), (>=), (>>>), bind, const, pure, show)
 
@@ -156,24 +156,29 @@ import Data.String (Pattern(..), split)
 import Data.Variant (match)
 import Effect.Aff (Aff)
 
-plannedTrip
-  :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date (DD.MM.YYYY)" :: String
-     , "Start date (DD.MM.YYYY)" :: String
-     }
+type Trip =
+  { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+  , "Return date (DD.MM.YYYY)" :: String
+  , "Start date (DD.MM.YYYY)" :: String
+  }
+
+type Date = { y :: Int, m :: Int, d :: Int }
+
+type Problem =
+  [ returnBeforeStart :: {}
+  , unreadableReturn :: { input :: String }
+  , unreadableStart :: { input :: String }
+  ]
+
+type Itinerary = [ oneWayOn :: Date, returnBetween :: { out :: Date, back :: Date } ]
+
+plannedTrip :: Trip
 plannedTrip = { "Flight type": ."one-way" {}, "Start date (DD.MM.YYYY)": "27.03.2026", "Return date (DD.MM.YYYY)": "27.03.2026" }
 
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
 
-returnBetween
-  :: forall r1.
-     { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } | r1 }
-  -> Maybe [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
-           , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }
-                              , back :: { y :: Int, m :: Int, d :: Int }
-                              }
-           ]
+returnBetween :: forall r1. { out :: Date, back :: Date | r1 } -> Maybe Itinerary
 returnBetween { out, back } =
   if dateKey back >= dateKey out then Just (.returnBetween { out, back })
   else Nothing
@@ -185,11 +190,7 @@ parse
      , "Return date (DD.MM.YYYY)" :: String
      | r1
      }
-  -> Either
-       [ returnBeforeStart :: {}, unreadableReturn :: { input :: String }, unreadableStart :: { input :: String } ]
-       [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
-       , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }, back :: { y :: Int, m :: Int, d :: Int } }
-       ]
+  -> Either Problem Itinerary
 parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } = case parseDate startInput of
   Nothing -> Left (.unreadableStart { input: startInput })
   Just start ->
@@ -200,92 +201,45 @@ parse { "Flight type": flightType, "Start date (DD.MM.YYYY)": startInput, "Retur
         Nothing -> Left (.returnBeforeStart {})
         Just itinerary -> Right itinerary
 
-bookingState
-  :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date (DD.MM.YYYY)" :: String
-     , "Start date (DD.MM.YYYY)" :: String
-     }
-  -> [ "one-way" :: {}, problem :: {}, return :: {} ]
+bookingState :: Trip -> [ "one-way" :: {}, problem :: {}, return :: {} ]
 bookingState = parse >>> either (const (.problem {}))
   (match
     { oneWayOn: \_ -> ."one-way" {}
     , returnBetween: \_ -> .return {}
     })
 
-problemLine
-  :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date (DD.MM.YYYY)" :: String
-     , "Start date (DD.MM.YYYY)" :: String
-     }
-  -> String
+problemLine :: Trip -> String
 problemLine = parse >>> either (\problem -> "⚠ " <> problemText problem) (const "")
 
-problemText
-  :: [ returnBeforeStart :: {}
-     , unreadableReturn :: { input :: String }
-     , unreadableStart :: { input :: String }
-     ]
-  -> String
+problemText :: Problem -> String
 problemText = match
   { unreadableStart: \{ input } -> "start date " <> show input <> " is not a valid DD.MM.YYYY date"
   , unreadableReturn: \{ input } -> "return date " <> show input <> " is not a valid DD.MM.YYYY date"
   , returnBeforeStart: \_ -> "the return date is before the start date"
   }
 
-oneWayLine
-  :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date (DD.MM.YYYY)" :: String
-     , "Start date (DD.MM.YYYY)" :: String
-     }
-  -> String
+oneWayLine :: Trip -> String
 oneWayLine { "Start date (DD.MM.YYYY)": startInput } =
   maybe "" (\out -> summary (.oneWayOn out)) (parseDate startInput)
 
-returnLine
-  :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date (DD.MM.YYYY)" :: String
-     , "Start date (DD.MM.YYYY)" :: String
-     }
-  -> String
+returnLine :: Trip -> String
 returnLine { "Start date (DD.MM.YYYY)": startInput, "Return date (DD.MM.YYYY)": returnInput } =
   case parseDate startInput, parseDate returnInput of
     Just out, Just back -> summary (.returnBetween { out, back })
     _, _ -> ""
 
-summary
-  :: [ oneWayOn :: { y :: Int, m :: Int, d :: Int }
-     , returnBetween :: { out :: { y :: Int, m :: Int, d :: Int }
-                        , back :: { y :: Int, m :: Int, d :: Int }
-                        }
-     ]
-  -> String
+summary :: Itinerary -> String
 summary = match
   { oneWayOn: \out -> "A one-way flight on " <> formatDate out
   , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
   }
 
-submit
-  :: { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-     , "Return date (DD.MM.YYYY)" :: String
-     , "Start date (DD.MM.YYYY)" :: String
-     }
-  -> Aff
-       [ "Booking rejected" ::
-           { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-           , "Return date (DD.MM.YYYY)" :: String
-           , "Start date (DD.MM.YYYY)" :: String
-           }
-       , "Flight booked" ::
-           { "Flight type" :: [ "one-way" :: {}, return :: {} ]
-           , "Return date (DD.MM.YYYY)" :: String
-           , "Start date (DD.MM.YYYY)" :: String
-           }
-       ]
+submit :: Trip -> Aff [ "Booking rejected" :: Trip, "Flight booked" :: Trip ]
 submit trip = case parse trip of
   Left _ -> pure (."Booking rejected" trip)
   Right _ -> pure (."Flight booked" trip)
 
-parseDate :: String -> Maybe { y :: Int, m :: Int, d :: Int }
+parseDate :: String -> Maybe Date
 parseDate s = case split (Pattern ".") s of
   [ dd, mm, yyyy ] -> do
     d <- fromString dd
@@ -317,6 +271,8 @@ module*).
   labels, quoted because they are copy (`"Start date (DD.MM.YYYY)"`), and
   its variant field is written with the constructor sugar `."one-way" {}`
   (the type `[ … ]` is the matching type sugar).
+- `Trip` — the model row, exported because the exported signatures use
+  it; no view imports it, since the view writes no row.
 - `itinerarySettleTime` — a duration, `{ ms :: Number }`.
 - `bookingState` — the classifier behind the three panes: one of
   three exclusive states, the cases bare since the panes show the
@@ -333,10 +289,10 @@ module*).
   carrying the trip it was given, which the statuses fold back as the
   model — an effect returns the model.
 
-**Three things worth noticing.** The rows are spelled out in full in the
-view model module — the model row nine times, the itinerary variant
-three — because
-application code declares no `type` synonyms: the shape is the interface
+**Three things worth noticing.** The rows the signatures share are
+named once, as `type` synonyms — `Trip` the model row, `Itinerary` and
+`Problem` what `parse` finds, `Date` inside them: a synonym is a name for
+a structure, not a new type, so the shape is still the interface
 (writing.md *Code style* → *Types and values*). Every exported function
 carries the signature the view reported for it with its tails filled —
 the view named the three fields its editors bind and left the rest

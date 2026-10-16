@@ -5,7 +5,8 @@
 // returns, every field and case a leaf names — and the rest of each row as an
 // unknown, the **tail** only the model fills. The view model module's
 // exported signatures must be those hints with the tails filled: verbatim
-// where the view leaves nothing unknown, otherwise an instance of the hint,
+// where the view leaves nothing unknown (or, written through the module's
+// type synonyms, equal to it as the compiler decides), otherwise an instance of the hint,
 // one filling for every unknown across a declaration's holes. This rewrites
 // each chosen demo's view that way — the import dropped, every imported name
 // a `?name`, the module renamed under `Determined.` — into .determined/
@@ -66,7 +67,10 @@ for (const d of demos) {
   if (!importedBy.has(m[1])) importedBy.set(m[1], new Set())
   for (const n of m[2].split(',').map(s => s.trim()).filter(Boolean)) importedBy.get(m[1]).add(n)
 }
-const exportsOf = src => src.match(/^module [\w.]+ \(([\s\S]*?)\) where/)?.[1].split(',').map(s => s.trim()).filter(Boolean) ?? []
+// values only: a type synonym the signatures share is exported for them, not for a view
+const exportsOf = src => src.match(/^module [\w.]+ \(([\s\S]*?)\) where/)?.[1].split(',').map(s => s.trim()).filter(n => /^[a-z_]/.test(n)) ?? []
+const synonymsOf = src => [...src.matchAll(/^type (\w+)/gm)].map(m => m[1])
+const usesSynonym = (src, sig) => synonymsOf(src).some(t => new RegExp(`\\b${t}\\b`).test(sig))
 
 const bin = n => `node_modules/.bin/${n}`
 const globs = spawnSync(bin('spago'), ['sources'], { encoding: 'utf8' }).stdout.trim().split('\n')
@@ -179,11 +183,15 @@ for (const d of holed) {
     `import ${d.module}`, `import ${d.module} as ProbeM`, 'import Data.Tuple as ProbeT', 'import Data.Unit as ProbeU', '']
   let n = 0
   for (const group of r.groups) {
-    const names = [...group.keys()].filter(name => r.hints.get(name)?.size === 1 && unknownsOf(group.get(name)).length)
+    // a closed hint is compared verbatim, unless its signature is written
+    // through a synonym: then the compiler decides, as for an open one
+    const names = [...group.keys()].filter(name => r.hints.get(name)?.size === 1
+      && (unknownsOf(group.get(name)).length || usesSynonym(src, signatureOf(src, name) ?? '')))
     if (!names.length) continue
     const us = [...new Set(names.flatMap(name => unknownsOf(group.get(name))))]
+    const quantified = us.length ? `forall ${us.join(' ')}. ` : ''
     const tuple = (xs, unit) => xs.reduceRight((acc, x) => `(ProbeT.Tuple (${x}) ${acc})`, unit)
-    lines.push(`probe${n} :: forall ${us.join(' ')}. ${tuple(names.map(name => group.get(name)), 'ProbeU.Unit')} -> ProbeU.Unit`,
+    lines.push(`probe${n} :: ${quantified}${tuple(names.map(name => group.get(name)), 'ProbeU.Unit')} -> ProbeU.Unit`,
       `probe${n} _ = ProbeU.unit`, '',
       `checked${n} :: ProbeU.Unit`, `checked${n} = probe${n} ${tuple(names.map(name => `ProbeM.${name}`), 'ProbeU.unit')}`, '')
     n++
@@ -214,11 +222,12 @@ for (const d of holed) {
         if (!hints || hints.size !== 1) continue
         const [h] = hints.values()
         const open = unknownsOf(h).length > 0
-        if (write && !open) { if (writeSignature(d.viewModel, name, h)) r.written.push(name); continue }
         const sig = signatureOf(src, name)
+        const aliased = sig !== null && usesSynonym(src, sig)
+        if (write && !open && !aliased) { if (writeSignature(d.viewModel, name, h)) r.written.push(name); continue }
         if (sig === null) r.problems.push(`${name}: no signature in ${d.viewModel}; the view reports ${h}${open ? ', its unknowns the model\'s to fill' : ''}`)
         else if (/\bforall\b/.test(sig)) r.problems.push(`${name}: declared\n      ${sig}\n    quantified, but the view reports one type\n      ${h}`)
-        else if (!open && sig !== h) r.problems.push(`${name}: declared\n      ${sig}\n    but the view reports\n      ${h}`)
+        else if (!open && !aliased && sig !== h) r.problems.push(`${name}: declared\n      ${sig}\n    but the view reports\n      ${h}`)
       }
     }
   }

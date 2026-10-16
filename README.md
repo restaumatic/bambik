@@ -52,7 +52,7 @@ In order to run the demo:
 $ npm install
 ```
 
-Demo of [Material Design Component-based UI](demo/nguis/order-form/OrderFormMDC2.purs):
+Demo of [Material Design Component-based UI](demo/nguis/order-form/MDC2.purs):
 
 ```bash
 $ npm run dev order-form
