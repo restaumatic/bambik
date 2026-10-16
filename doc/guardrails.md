@@ -158,7 +158,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   no options record unless one is genuinely needed; a word with optional
   presentation has a primed sibling (`button'`, `listOf'`), so no call
   site writes `{}`. A selector's **options** are its ordered case labels
-  (`choice @l` per option), never a hand-written `{ value, label }` array;
+  (`choice @l` per option, joined by `<+>` into `Choices w`, whose
+  constructor is not exported — a choice is its tag, nothing beside it);
   the order MUST be the order written, never the variant row's, which the
   compiler sorts alphabetically.
 - The closure of the discipline is the **anchor invariant**

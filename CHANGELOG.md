@@ -8,6 +8,24 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-16, latest
 
+- **A choice is its tag.** Selector options were
+  `Array { value :: a, label :: String }`, and every one in the demos was
+  built by `choice @l`, whose label was always the case's — the record
+  carried the same tag twice, and a hand-written one could caption a
+  case with other copy, which L3 forbids. Options are now `Choices w`
+  (constructor unexported): the tags in the order written over the
+  closed row `w` of `{}` cases, built only by `choice` and `<+>`, so a
+  choice's tag is its whole value. Every selector face runs over the
+  tags (`Array String`, picks `Maybe String`) and `tagged`/`taggedTotal`
+  lift it to the field's variant, so no selector needs `Eq` or
+  `withStructuralEq` any more (`clearedOnRepress` neither). The tab
+  bar's per-option `icon` (`OptIcon`, unreached) went with the record and
+  came back as the primed sibling `tabBar' { icons }` (MDC2/MDC3), the
+  icons a record labelled by exactly the choices' cases (`PerChoice`), so
+  a missing or extra icon is a compile error. Demo views unchanged; the
+  checkout steppers, order-dashboard's `rangePicker` and the law benches
+  restate the option type.
+
 - **Registration returns the input leg; routing needs no state.** The
   carrier was `m { toUser, fromUser }`: two closures made apart, so even
   `identity` had to hold the continuation in a `Ref` for `toUser` to

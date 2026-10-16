@@ -71,6 +71,9 @@ module PUI.Web
   , choiceTags
   , tagged
   , taggedTotal
+  , class PerChoice
+  , class PerChoiceRL
+  , perChoice
   , (<+>)
   , selectedAt
   , clearedOnRepress
@@ -142,7 +145,6 @@ module PUI.Web
   )
   where
 
-import Data.Profunctor.Row.Structural (withStructuralEq)
 import Data.Profunctor (dimap, lcmap, rmap)
 import Prelude
 
@@ -154,8 +156,10 @@ import Data.Variant.Internal (VariantRep(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Data.Array (concat, findIndex, (!!))
 import Data.String (replaceAll, Pattern(..), Replacement(..))
-import Data.Variant (Variant, case_, expand, inj, on, prj)
+import Data.Variant (Variant, case_, inj, on, prj)
 import Prim.Row as Row
+import Prim.RowList as RL
+import Record.Unsafe (unsafeGet)
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..), isNothing, maybe)
@@ -671,6 +675,25 @@ taggedTotal = dimap caseText caseOf
 caseOf :: forall w. String -> Variant w
 caseOf tag = unsafeCoerce (VariantRep { type: tag, value: {} })
 
+-- | A record holding one `a` per choice of `w`, labelled by the choices'
+-- | cases — exactly those, so a missing or extra label is a compile error
+-- | (`tabBar' { icons: { "Espresso": "local_cafe", "Tea": "emoji_food_beverage" } }`).
+-- | Presentation a face draws beside a choice's tag; read by `perChoice`.
+class PerChoice :: Row Type -> Type -> Row Type -> Constraint
+class PerChoice w a r | w a -> r
+
+instance (RL.RowToList w wl, PerChoiceRL wl a r) => PerChoice w a r
+
+class PerChoiceRL :: RL.RowList Type -> Type -> Row Type -> Constraint
+class PerChoiceRL wl a r | wl a -> r
+
+instance PerChoiceRL RL.Nil a ()
+instance (PerChoiceRL wl a r0, Row.Cons l a r0 r) => PerChoiceRL (RL.Cons l p wl) a r
+
+-- | The value a `PerChoice` record holds for a choice's tag.
+perChoice :: forall w a r. PerChoice w a r => Choices w -> { | r } -> String -> a
+perChoice _ record tag = unsafeGet tag record
+
 -- | Lift a bare selection leaf — the option to check in (`Nothing`: none),
 -- | the option the user checked out (`Nothing`: cleared) — to the
 -- | **selection editor** of field `l`, a whole-row citizen
@@ -706,8 +729,8 @@ selectedOptionalAt = selectedWith @l (prj (Proxy @c)) (Just <<< maybe (inj (Prox
 -- | an arrow-key move to another member never clears; the clear runs after
 -- | the element's own click handling, which re-checks it. Vocabulary plumbing
 -- | for the `…Optional` radio leaves.
-clearedOnRepress :: forall a m. Ref.Ref (Maybe a) -> Array { press :: Node, click :: Node, value :: a | m } -> Effect Unit -> Effect Unit
-clearedOnRepress selRef members clear = withStructuralEq @a (do
+clearedOnRepress :: forall m. Ref.Ref (Maybe String) -> Array { press :: Node, click :: Node, value :: String | m } -> Effect Unit -> Effect Unit
+clearedOnRepress selRef members clear = do
   pressedRef <- Ref.new Nothing
   for_ members \m -> do
     let
@@ -720,7 +743,7 @@ clearedOnRepress selRef members clear = withStructuralEq @a (do
       pressed <- Ref.read pressedRef
       Ref.write Nothing pressedRef
       -- after the element's own click handling, which re-checks it
-      when (pressed == Just m.value) (afterTask clear))
+      when (pressed == Just m.value) (afterTask clear)
 
 -- checkedOf: the option the field shows checked; stored: what a pick (`Just`)
 -- or a clear (`Nothing`) stores, if anything; `checkedOf <=< stored` must give

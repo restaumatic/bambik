@@ -115,6 +115,7 @@ module PUI.Web.MDC3
   , sliderLive
   , snackbar
   , tabBar
+  , tabBar'
   , textButton
   , tile
   , titleLarge
@@ -146,7 +147,7 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, anyOf, folding, isHole, Ocular, PUI)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, choiceTags, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, occurrences, onInputDebounced, removeAttribute, replayed, selectedAt, selectedOptionalAt, selectedUnpickedAt, selectorWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, uniqueId, witnessed, (:=))
+import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, occurrences, onInputDebounced, removeAttribute, replayed, selectedAt, selectedOptionalAt, selectedUnpickedAt, selectorWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, uniqueId, witnessed, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Variant (Variant)
@@ -738,10 +739,16 @@ iconToggleLeaf config = fromHandles do
 -- | `inCase @l` editor pane per section, each pane editing its own part of
 -- | the model.
 tabBar :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Choices w -> PUI Web { | r } { | r }
-tabBar options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ taggedTotal (tabBarLeaf (choiceTags options))
+tabBar options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ taggedTotal (tabBarLeaf (const Nothing) (choiceTags options))
 
-tabBarLeaf :: Array String -> PUI Web String String
-tabBarLeaf options = fromHandles do
+-- | `tabBar` with an icon on every tab, one per case: `icons` is labelled by
+-- | the choices' cases, exactly those (`PerChoice`), each a Material Symbols
+-- | name drawn beside the tab's label.
+tabBar' :: forall @l w b r i. IsSymbol l => Cons l (Variant w) b r => PerChoice w String i => { icons :: { | i } } -> Choices w -> PUI Web { | r } { | r }
+tabBar' { icons } options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ taggedTotal (tabBarLeaf (Just <<< perChoice options icons) (choiceTags options))
+
+tabBarLeaf :: (String -> Maybe String) -> Array String -> PUI Web String String
+tabBarLeaf iconOf options = fromHandles do
   _ <- handles (staticHTML ("<md-tabs>" <> foldMap tabMarkup options <> "</md-tabs>"))
   node <- gets _.sibling
   -- programmatic activation fires change too; the wiring's busy guard drops it
@@ -754,6 +761,7 @@ tabBarLeaf options = fromHandles do
   where
   tabMarkup o =
     "<md-primary-tab>"
+      <> maybe "" (\icon' -> "<md-icon slot=\"icon\">" <> escaped icon' <> "</md-icon>") (iconOf o)
       <> escaped (o)
       <> "</md-primary-tab>"
 

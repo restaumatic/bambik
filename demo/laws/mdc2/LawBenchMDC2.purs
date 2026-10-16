@@ -5,7 +5,7 @@ import Prelude
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI.Web ((<+>), choice, staticText, textAt)
-import PUI.Web.MDC2 (body, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, textButton, toggleSwitch)
+import PUI.Web.MDC2 (body, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, tabBar', textButton, toggleSwitch)
 
 lawBenchMDC2 :: Effect Unit
 lawBenchMDC2 = do
@@ -22,6 +22,7 @@ lawBenchMDC2 = do
     , bench "slider" "×→×" quantities (slider @"Amount")
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount")
     , bench "tabBar" "×→×" tabs (tabBar @"Tab" (choice @"a" <+> choice @"b"))
+    , bench "tabBar'" "×→×" tabs (tabBar' @"Tab" { icons: { a: "star", b: "home" } } (choice @"a" <+> choice @"b"))
     , bench "linearProgress" "×→×" fractions (linearProgress fractionOf)
     , bench "imagePane" "×→×" images (imagePane identity)
     , bench "group" "×→×" grouped (group @"Customer" (filledTextField @"Name"))
