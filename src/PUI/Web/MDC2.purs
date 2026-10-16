@@ -123,7 +123,6 @@ import Data.Array (findIndex, (!!))
 import Data.Foldable (foldMap, for_, traverse_)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
 import Data.Traversable (for)
@@ -131,7 +130,7 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (anyOf, folding, isHole, Ocular, PUI, static)
+import PUI (fromHandles, handles, anyOf, folding, isHole, Ocular, PUI, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (witnessed, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), OptIcon(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, occurrences, onInputDebounced, replayed, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, statusText, uniqueId, separating, (:=))
@@ -374,25 +373,25 @@ debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Pro
 -- live. Debouncing sits at the DOM boundary (`Web.onInputDebounced`),
 -- in front of the wire rather than on it, so the field stays loop-safe.
 textFieldLeaf :: String -> Maybe Number -> String -> PUI Web String String
-textFieldLeaf variant mDebounce floatingLabel = wrap do
+textFieldLeaf variant mDebounce floatingLabel = fromHandles do
   labelId <- liftEffect uniqueId
   inputNode <- element "label" do
     if variant == "outlined"
-      then void $ unwrap $ span >>> cl "mdc-notched-outline" $ Semigroupoid.do
+      then void $ handles $ span >>> cl "mdc-notched-outline" $ Semigroupoid.do
         static (span >>> cl "mdc-notched-outline__leading")
         span >>> cl "mdc-notched-outline__notch" $
           span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel
         static (span >>> cl "mdc-notched-outline__trailing")
       else do
-        _ <- unwrap (static (span >>> cl "mdc-text-field__ripple"))
-        void $ unwrap (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel)
+        _ <- handles (static (span >>> cl "mdc-text-field__ripple"))
+        void $ handles (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel)
     element "input" (pure unit)
     clazz "mdc-text-field__input"
     attribute "type" "text"
     attribute "aria-labelledby" labelId
     node <- gets _.sibling
     when (variant == "filled") $
-      void $ unwrap (static (span >>> cl "mdc-line-ripple"))
+      void $ handles (static (span >>> cl "mdc-line-ripple"))
     pure node
   clazz "mdc-text-field"
   clazz ("mdc-text-field--" <> variant)
@@ -417,11 +416,11 @@ textFieldWiring comp inputNode mDebounce = editorWiring
 -- | floats (`floatingLabel` overrides it for real copy), shows a string,
 -- | reports each edit, never interrupts typing.
 filledTextArea :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String, columns :: Int, rows :: Int } { | provided } { floatingLabel :: String, columns :: Int, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
-filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), columns: 40, rows: 4 } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), columns: 40, rows: 4 } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   labelId <- liftEffect uniqueId
   inputNode <- element "label" do
-    _ <- unwrap (static (span >>> cl "mdc-text-field__ripple"))
-    _ <- unwrap (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText config.floatingLabel)
+    _ <- handles (static (span >>> cl "mdc-text-field__ripple"))
+    _ <- handles (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText config.floatingLabel)
     node <- element "span" do
       element "textarea" (pure unit)
       clazz "mdc-text-field__input"
@@ -430,7 +429,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
       attribute "aria-labelledby" labelId
       gets _.sibling
     clazz "mdc-text-field__resizer"
-    _ <- unwrap (static (span >>> cl "mdc-line-ripple"))
+    _ <- handles (static (span >>> cl "mdc-line-ripple"))
     pure node
   clazz "mdc-text-field"
   clazz "mdc-text-field--filled"
@@ -452,7 +451,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | states as part of a form; use `toggleSwitch` for a setting that takes
 -- | effect at once.
 checkbox :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => PUI Web { | r } { | r }
-checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   checkboxId <- liftEffect uniqueId
   aRef <- liftEffect $ Ref.new {}
   parts <- element "div" do
@@ -462,19 +461,19 @@ checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
       attribute "type" "checkbox"
       attribute "id" checkboxId
       node <- gets _.sibling
-      _ <- unwrap $ div >>> cl "mdc-checkbox__background" $ Semigroupoid.do
+      _ <- handles $ div >>> cl "mdc-checkbox__background" $ Semigroupoid.do
         staticHTML """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
         static (div >>> cl "mdc-checkbox__mixedmark")
-      _ <- unwrap (static (div >>> cl "mdc-checkbox__ripple"))
-      _ <- unwrap (static (div >>> cl "mdc-checkbox__focus-ring"))
+      _ <- handles (static (div >>> cl "mdc-checkbox__ripple"))
+      _ <- handles (static (div >>> cl "mdc-checkbox__focus-ring"))
       pure node
     clazz "mdc-checkbox"
     cbNode <- gets _.sibling
     cbComp <- liftEffect $ newComponent material.checkbox."MDCCheckbox" cbNode
-    lbl <- unwrap (label >>> "for" := checkboxId $ staticText (reflectSymbol (Proxy @l)))
+    lbl <- handles (label >>> "for" := checkboxId $ staticText (reflectSymbol (Proxy @l)))
     pure { inputNode, cbComp, lbl }
   clazz "mdc-form-field"
   ffNode <- gets _.sibling
@@ -527,11 +526,11 @@ radioButtonWith clearable lift options = lift $ "name" := reflectSymbol (Proxy @
 
 radioLeaf :: forall a. Eq a => Boolean -> Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
 radioLeaf clearable options =
-  div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start;" $ wrap do
+  div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start;" $ fromHandles do
     groupName <- liftEffect uniqueId
     members <- for options \o -> do
       uid <- liftEffect uniqueId
-      _ <- unwrap (staticHTML (optionMarkup groupName uid o.label))
+      _ <- handles (staticHTML (optionMarkup groupName uid o.label))
       root <- gets _.sibling
       inputNode <- liftEffect $ querySelectorIn root "input"
       liftEffect do
@@ -578,12 +577,12 @@ toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r
 toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (switchLeaf config.label)
 
 switchLeaf :: String -> PUI Web Boolean Boolean
-switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8px;" $ wrap do
+switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8px;" $ fromHandles do
   switchId <- liftEffect uniqueId
-  _ <- unwrap (staticHTML (switchMarkup switchId))
+  _ <- handles (staticHTML (switchMarkup switchId))
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.switchControl."MDCSwitch" node
-  _ <- unwrap (staticHTML ("<label for=\"" <> switchId <> "\">" <> escaped lbl <> "</label>"))
+  _ <- handles (staticHTML ("<label for=\"" <> switchId <> "\">" <> escaped lbl <> "</label>"))
   -- MDCSwitch toggles itself on click; read the post-toggle state
   liftEffect $ editorWiring
     { show: setBoolProp "selected" comp
@@ -638,8 +637,8 @@ sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $
 -- read from the DOM at construction only, so a bounds change rewrites the
 -- input attributes and constructs a fresh foundation over the same markup
 sliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
-sliderLeaf live label = wrap do
-  _ <- unwrap (staticHTML markup)
+sliderLeaf live label = fromHandles do
+  _ <- handles (staticHTML markup)
   node <- gets _.sibling
   stateRef <- liftEffect $ Ref.new Nothing
   let
@@ -721,10 +720,10 @@ selectOf :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a)
 selectOf clearable lift options = let config = { floatingLabel: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ (selectLeaf clearable config options)
 
 selectLeaf :: forall a. Eq a => Boolean -> { floatingLabel :: String } -> Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
-selectLeaf clearable config options = wrap do
+selectLeaf clearable config options = fromHandles do
   labelId <- liftEffect uniqueId
   textId <- liftEffect uniqueId
-  _ <- unwrap (staticHTML (markup labelId textId))
+  _ <- handles (staticHTML (markup labelId textId))
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.select."MDCSelect" node
   -- programmatic selection fires MDCSelect:change too; the wiring's busy
@@ -787,11 +786,11 @@ segmentedButtonWith clearable lift options = lift $ "name" := reflectSymbol (Pro
 
 segmentedLeaf :: forall a. Eq a => Boolean -> Array { value :: a, label :: String } -> PUI Web (Maybe a) (Maybe a)
 segmentedLeaf clearable options =
-  div >>> cl "mdc-segmented-button" >>> cl "mdc-segmented-button--single-select" >>> "role" := "radiogroup" $ wrap do
+  div >>> cl "mdc-segmented-button" >>> cl "mdc-segmented-button--single-select" >>> "role" := "radiogroup" $ fromHandles do
     segments <- for options \o -> do
       -- aria-label = the choice label verbatim (MD2 uppercases the rendered
       -- segment text; the stamp keeps the computed name the label exactly)
-      _ <- unwrap (staticHTML ("<button class=\"mdc-segmented-button__segment\" role=\"radio\" aria-checked=\"false\" aria-label=\"" <> escaped o.label <> "\"><div class=\"mdc-segmented-button__ripple\"></div><div class=\"mdc-segmented-button__label\">" <> escaped o.label <> "</div></button>"))
+      _ <- handles (staticHTML ("<button class=\"mdc-segmented-button__segment\" role=\"radio\" aria-checked=\"false\" aria-label=\"" <> escaped o.label <> "\"><div class=\"mdc-segmented-button__ripple\"></div><div class=\"mdc-segmented-button__label\">" <> escaped o.label <> "</div></button>"))
       node <- gets _.sibling
       pure { node, value: o.value }
     mPropRef <- liftEffect $ Ref.new Nothing
@@ -823,8 +822,8 @@ filterChip = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $
 -- deprecated `mdc-chip` markup on purpose: the prebuilt v14 CSS bundle has
 -- no `mdc-evolution-chip` rules at all
 chipLeaf :: String -> PUI Web Boolean Boolean
-chipLeaf lbl = wrap do
-  _ <- unwrap (staticHTML markup)
+chipLeaf lbl = fromHandles do
+  _ <- handles (staticHTML markup)
   node <- gets _.sibling
   actionNode <- liftEffect $ querySelectorIn node ".mdc-chip__primary-action"
   stateRef <- liftEffect $ Ref.new false
@@ -866,8 +865,8 @@ iconToggle :: forall @l r b provided. IsSymbol l => Cons l Boolean b r => Conver
 iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (iconToggleLeaf config)
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
-iconToggleLeaf config = wrap do
-  _ <- unwrap (staticHTML markup)
+iconToggleLeaf config = fromHandles do
+  _ <- handles (staticHTML markup)
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.iconButton."MDCIconButtonToggle" node
   liftEffect $ editorWiring
@@ -898,8 +897,8 @@ tabBar :: forall @l provided a r b . IsSymbol l => Cons l a b r => ConvertOption
 tabBar options = withStructuralEq @a (focusField @l $ "name" := reflectSymbol (Proxy @l) $ (tabBarLeaf (convertOptionsWithDefaults OptIcon { icon: Nothing } <$> options)))
 
 tabBarLeaf :: forall a. Eq a => Array { value :: a, label :: String, icon :: Maybe String } -> PUI Web a a
-tabBarLeaf options = wrap do
-  _ <- unwrap $ div >>> cl "mdc-tab-bar" >>> "role" := "tablist" $
+tabBarLeaf options = fromHandles do
+  _ <- handles $ div >>> cl "mdc-tab-bar" >>> "role" := "tablist" $
     div >>> cl "mdc-tab-scroller" $
       div >>> cl "mdc-tab-scroller__scroll-area" $
         div >>> cl "mdc-tab-scroller__scroll-content" $
@@ -939,8 +938,8 @@ tabBarLeaf options = wrap do
 -- | it carries no label: it names no field and no case, and a caption is
 -- | copy, which is a function, not a label.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
-indeterminateLinearProgress = wrap do
-  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
+indeterminateLinearProgress = fromHandles do
+  _ <- handles $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   liftEffect $ close comp
@@ -955,8 +954,8 @@ indeterminateLinearProgress = wrap do
 linearProgress
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
-linearProgress f = wrap do
-  _ <- unwrap $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
+linearProgress f = fromHandles do
+  _ <- handles $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   liftEffect $ displayWiring \r -> setNumberProp "progress" comp (f r)
@@ -976,8 +975,8 @@ linearProgressInnards = Semigroupoid.do
 -- | inline and compact places (a button, a card corner) where a bar across
 -- | the width would be too much.
 indeterminateCircularProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
-indeterminateCircularProgress = wrap do
-  _ <- unwrap $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
+indeterminateCircularProgress = fromHandles do
+  _ <- handles $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.circularProgress."MDCCircularProgress" node
   liftEffect $ close comp
@@ -1145,9 +1144,9 @@ group
   => Cons l f' b t
   => PUI Web f f'
   -> PUI Web { | s } { | t }
-group w = wrap do
+group w = fromHandles do
   headingId <- liftEffect uniqueId
-  unwrap $ "role" := "group" $ "aria-labelledby" := headingId $ card $
+  handles $ "role" := "group" $ "aria-labelledby" := headingId $ card $
     ("id" := headingId $ subtitle1 $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
 
 -- | A **modal dialog** — dimmed backdrop, trapped focus, Esc to leave — for
@@ -1160,16 +1159,16 @@ group w = wrap do
 -- | deciding controls at the end of its content — something that reports
 -- | without the user deciding would dismiss the dialog as it opens.
 dialog :: String -> Ocular (PUI Web)
-dialog title content = wrap do
+dialog title content = fromHandles do
   titleId <- liftEffect uniqueId
   contentId <- liftEffect uniqueId
-  unwrap $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ wrap do
-    result <- unwrap $
+  handles $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ fromHandles do
+    result <- handles $
       div >>> cl "mdc-dialog__container" $
-        div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ wrap do
-          _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
-          unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
-    _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
+        div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ fromHandles do
+          _ <- handles (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
+          handles (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
+    _ <- handles (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
 -- | The **witness rung** of the assurance ladder, baked in as a
@@ -1197,21 +1196,21 @@ confirmed
   -> ({ | r } -> { | r1 })
   -> PUI Web { | r } { | r }
   -> PUI Web [ | v ] { | r1 }
-confirmed confirmCaption f content = atCase @l $ wrap do
+confirmed confirmCaption f content = atCase @l $ fromHandles do
   titleId <- liftEffect uniqueId
   contentId <- liftEffect uniqueId
-  unwrap $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ wrap do
-    result <- unwrap $
+  handles $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ fromHandles do
+    result <- handles $
       div >>> cl "mdc-dialog__container" $
         div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ Semigroupoid.do
-          wrap do
-            _ <- unwrap (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText (reflectSymbol (Proxy @l)))
-            unwrap (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
+          fromHandles do
+            _ <- handles (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText (reflectSymbol (Proxy @l)))
+            handles (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
           div >>> cl "mdc-dialog__actions" $ witnessed f $
             el "button" >>> "type" := "button" >>> "aria-label" := confirmCaption >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
               static (div >>> cl "mdc-button__ripple")
               span >>> cl "mdc-button__label" $ staticText confirmCaption
-    _ <- unwrap (static (div >>> cl "mdc-dialog__scrim"))
+    _ <- handles (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
 -- | The **snackbar**: a brief message at the bottom of the screen,
@@ -1271,11 +1270,11 @@ banner content =
 -- | actions and closes again when one is picked. For actions; for choosing
 -- | a value the model keeps, use `select`.
 menu :: String -> Ocular (PUI Web)
-menu anchorCaption content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ wrap do
-  _ <- unwrap (staticHTML ("<button class=\"mdc-button mdc-button--outlined\" aria-label=\"" <> escaped anchorCaption <> "\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> escaped anchorCaption <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
+menu anchorCaption content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ fromHandles do
+  _ <- handles (staticHTML ("<button class=\"mdc-button mdc-button--outlined\" aria-label=\"" <> escaped anchorCaption <> "\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> escaped anchorCaption <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
   anchorNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.ripple."MDCRipple" anchorNode
-  w <- unwrap (div >>> cl "mdc-menu" >>> cl "mdc-menu-surface" $ ul >>> cl "mdc-deprecated-list" >>> "role" := "menu" >>> "aria-hidden" := "true" >>> "aria-orientation" := "vertical" $ content)
+  w <- handles (div >>> cl "mdc-menu" >>> cl "mdc-menu-surface" $ ul >>> cl "mdc-deprecated-list" >>> "role" := "menu" >>> "aria-hidden" := "true" >>> "aria-orientation" := "vertical" $ content)
   menuNode <- gets _.sibling
   comp <- liftEffect $ newComponent material.menu."MDCMenu" menuNode
   liftEffect $ listenNode anchorNode "click" (setBoolProp "open" comp true)
@@ -1290,8 +1289,8 @@ chipSet content =
 -- | A **list**: rows of `listItem`s, with Material's row rhythm and keyboard
 -- | navigation. For a list built from data, and clickable, use `listOf`.
 list :: Ocular (PUI Web)
-list content = wrap do
-  w <- unwrap (ul >>> cl "mdc-deprecated-list" $ content)
+list content = fromHandles do
+  w <- handles (ul >>> cl "mdc-deprecated-list" $ content)
   node <- gets _.sibling
   _ <- liftEffect $ newComponent material.list."MDCList" node
   liftEffect $ fixListTabIndexes node
@@ -1304,9 +1303,9 @@ list content = wrap do
 -- | segmented button sits side by side unclipped, while a plain text row
 -- | looks exactly as before.
 listItem :: Ocular (PUI Web)
-listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: auto; min-height: 48px;" $ wrap do
-  _ <- unwrap (static (span >>> cl "mdc-deprecated-list-item__ripple"))
-  unwrap (span >>> cl "mdc-deprecated-list-item__text" >>> "style" := "display: flex; align-items: center; gap: 16px; width: 100%; white-space: normal; overflow: visible;" $ content)
+listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: auto; min-height: 48px;" $ fromHandles do
+  _ <- handles (static (span >>> cl "mdc-deprecated-list-item__ripple"))
+  handles (span >>> cl "mdc-deprecated-list-item__text" >>> "style" := "display: flex; align-items: center; gap: 16px; width: 100%; white-space: normal; overflow: visible;" $ content)
 
 -- | A **list built from data**: one row per element of the collection the
 -- | projection names, each row drawn by the given UI component. Rows matching
@@ -1348,8 +1347,8 @@ listOf'
   -> ({ | i } -> Array { | r })
   -> PUI Web { | r } o
   -> PUI Web { | i } [ | v ]
-listOf' provided f item = withStructuralOrd @key $ wrap do
-  w <- unwrap $ ul >>> cl "mdc-deprecated-list" >>> "style" := "overflow-y: auto;" $
+listOf' provided f item = withStructuralOrd @key $ fromHandles do
+  w <- handles $ ul >>> cl "mdc-deprecated-list" >>> "style" := "overflow-y: auto;" $
     ( replayed @l (Record.get (Proxy @k)) $ occurrences $ clWhen config.selected "mdc-deprecated-list-item--selected"
         $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
     ) # anyOf @k f
@@ -1409,9 +1408,9 @@ dataTable :: String -> PUI Web {} {} -> Ocular (PUI Web)
 dataTable tableName headerCells content =
   div >>> cl "mdc-data-table" $
     div >>> cl "mdc-data-table__table-container" $
-      table >>> cl "mdc-data-table__table" >>> "aria-label" := tableName $ wrap do
-        _ <- unwrap (thead $ tr >>> cl "mdc-data-table__header-row" $ headerCells)
-        unwrap (tbody >>> cl "mdc-data-table__content" $ content)
+      table >>> cl "mdc-data-table__table" >>> "aria-label" := tableName $ fromHandles do
+        _ <- handles (thead $ tr >>> cl "mdc-data-table__header-row" $ headerCells)
+        handles (tbody >>> cl "mdc-data-table__content" $ content)
 
 -- | One **column header** of a `dataTable` — static copy naming the column,
 -- | its text a value like every static: `columnHeader "Qty"`.
@@ -1447,11 +1446,11 @@ layoutCell cellSpan content = div >>> cl "mdc-layout-grid__cell" >>> cl ("mdc-la
 -- | The **top app bar**: the band carrying the screen's title, with the
 -- | content laid out beneath it and clear of it.
 topAppBar :: String -> Ocular (PUI Web)
-topAppBar title content = wrap do
-  _ <- unwrap (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> escaped title <> "</span></section></div></header>"))
+topAppBar title content = fromHandles do
+  _ <- handles (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> escaped title <> "</span></section></div></header>"))
   headerNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.topAppBar."MDCTopAppBar" headerNode
-  unwrap (div >>> cl "mdc-top-app-bar--fixed-adjust" $ content)
+  handles (div >>> cl "mdc-top-app-bar--fixed-adjust" $ content)
 
 -- | The permanent **navigation drawer**: a titled nav panel pinned beside
 -- | the content, both fed what the drawer is fed. The nav is live, not a
@@ -1461,11 +1460,11 @@ topAppBar title content = wrap do
 -- | the drawer again, and the content shows that model beside it
 -- | (photo-gallery).
 drawer :: forall r o. { title :: String, subtitle :: String } -> PUI Web { | r } o -> PUI Web { | r } { | r } -> PUI Web { | r } o
-drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
-  nav' <- unwrap $ aside >>> cl "mdc-drawer" $ wrap do
-    _ <- unwrap (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
-    unwrap (div >>> cl "mdc-drawer__content" $ nav)
-  content' <- unwrap (div >>> cl "mdc-drawer-app-content" >>> "style" := "flex: 1; padding: 16px;" $ content)
+drawer config nav content = div >>> "style" := "display: flex;" $ fromHandles do
+  nav' <- handles $ aside >>> cl "mdc-drawer" $ fromHandles do
+    _ <- handles (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
+    handles (div >>> cl "mdc-drawer__content" $ nav)
+  content' <- handles (div >>> cl "mdc-drawer-app-content" >>> "style" := "flex: 1; padding: 16px;" $ content)
   -- the content is a display: its echoes are the row the nav already has
   liftEffect $ content'.fromUser \_ -> pure unit
   pure { toUser: \r -> nav'.toUser r *> content'.toUser r, fromUser: nav'.fromUser }
@@ -1478,10 +1477,10 @@ drawer config nav content = div >>> "style" := "display: flex;" $ wrap do
 -- | trailing so the control still reads first:
 -- | `checkbox @"Loyalty member" @"member" @"guest" # tooltip "Members get 10% off"`.
 tooltip :: String -> Ocular (PUI Web)
-tooltip tipText content = wrap do
+tooltip tipText content = fromHandles do
   tipId <- liftEffect uniqueId
-  w <- unwrap ("aria-describedby" := tipId $ content)
-  _ <- unwrap (staticHTML ("<div id=\"" <> tipId <> "\" class=\"mdc-tooltip\" role=\"tooltip\" aria-hidden=\"true\"><div class=\"mdc-tooltip__surface mdc-tooltip__surface-animation\">" <> escaped tipText <> "</div></div>"))
+  w <- handles ("aria-describedby" := tipId $ content)
+  _ <- handles (staticHTML ("<div id=\"" <> tipId <> "\" class=\"mdc-tooltip\" role=\"tooltip\" aria-hidden=\"true\"><div class=\"mdc-tooltip__surface mdc-tooltip__surface-animation\">" <> escaped tipText <> "</div></div>"))
   tipNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.tooltip."MDCTooltip" tipNode
   pure w

@@ -7,10 +7,9 @@ module LawBench
 import Prelude
 
 import Data.Foldable (for_)
-import Data.Newtype (unwrap)
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import PUI (PUI)
+import PUI (fromHandles, handles, PUI)
 import PUI.Web (Node, Web, runDomInNode)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -26,7 +25,7 @@ bench name shape samples ui = Bench { name, mount }
   where
   mount node = runDomInNode node (wire :: Web Unit)
   wire = do
-    { toUser, fromUser } <- unwrap ui
+    { toUser, fromUser } <- handles ui
     liftEffect do
       emit <- register name shape (map unsafeCoerce samples) (map toUser samples)
       fromUser \o -> emit (unsafeCoerce o)

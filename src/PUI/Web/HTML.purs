@@ -74,7 +74,6 @@ import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (fromString) as Int
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Number (fromString) as Number
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
@@ -85,7 +84,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
-import PUI (folding, Ocular, PUI)
+import PUI (fromHandles, handles, folding, Ocular, PUI)
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, statusText, separating, (:=), (:=>))
 
 -- UIs
@@ -103,7 +102,7 @@ import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, a
 -- | swallow a half-typed word; the field picks the model up again the
 -- | moment it loses focus.
 input :: forall @l r b. IsSymbol l => Cons l String b r => String -> PUI Web { | r } { | r }
-input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ wrap do
+input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ fromHandles do
   element "input" (pure unit)
   node <- gets _.sibling
   liftEffect $ editorWiring
@@ -122,16 +121,16 @@ filePicked
    . IsSymbol l
   => Cons l [ picked :: { name :: String, size :: Number, mime :: String }, none :: {} ] () r1
   => PUI Web { | r } { | r1 }
-filePicked = "name" := reflectSymbol (Proxy @l) $ "type" := "file" $ wrap do
+filePicked = "name" := reflectSymbol (Proxy @l) $ "type" := "file" $ fromHandles do
   element "input" (pure unit)
   node <- gets _.sibling
-  unwrap (source @l (pure (inj (Proxy @"none") {})) \tell -> onFilePicked node (tell <<< inj (Proxy @"picked")))
+  handles (source @l (pure (inj (Proxy @"none") {})) \tell -> onFilePicked node (tell <<< inj (Proxy @"picked")))
 
 -- | The multi-line `input` — same citizenship (label-indexed, `name`
 -- | stamped) and same guarantee: typing is never interrupted by values
 -- | arriving from elsewhere.
 textArea :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   element "textArea" (pure unit)
   node <- gets _.sibling
   liftEffect $ editorWiring
@@ -165,8 +164,8 @@ selectOptional :: forall @l @c @n a b1 t v b2 r. IsSymbol l => IsSymbol c => IsS
 selectOptional options = withStructuralEq @a (selectOf @l true (selectedOptionalAt @l @c @n) options)
 
 selectOf :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
-selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wrap do
-  element "select" (void $ unwrap optionLeaves)
+selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+  element "select" (void $ handles optionLeaves)
   node <- gets _.sibling
   liftEffect $ selectorWiring options
     { show: setValue node <<< maybe "" show
@@ -175,13 +174,13 @@ selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wr
     }
   where
   optionLeaves :: PUI Web {} {}
-  optionLeaves = wrap do
+  optionLeaves = fromHandles do
     when clearable do
       element "option" (pure unit)
       noneNode <- gets _.sibling
       liftEffect $ setAttribute noneNode "value" ""
     forWithIndex_ options \idx o -> do
-      element "option" (void $ unwrap (staticText o.label))
+      element "option" (void $ handles (staticText o.label))
       optionNode <- gets _.sibling
       liftEffect $ setAttribute optionNode "value" (show idx)
     pure { toUser: mempty, fromUser: \prop -> prop {} }
@@ -196,7 +195,7 @@ selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wr
 -- | compile error rather than a wrong screen. `step` is `.discrete n`
 -- | or `.continuous {}`, named like every other two-state field.
 rangeInput :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ wrap do
+rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ fromHandles do
   element "input" (pure unit)
   node <- gets _.sibling
   liftEffect $ editorWiring
@@ -218,7 +217,7 @@ rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "ran
 progress
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
-progress f = wrap do
+progress f = fromHandles do
   element "progress" (pure unit)
   attribute "max" "1"
   node <- gets _.sibling
@@ -256,8 +255,8 @@ outputFace caseLabel = el "output" $ statusText caseLabel
 -- | stays live after a click — a request a screen must not send twice is
 -- | its action's concern, not the button's.
 button :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } [ | v ]
-button = wrap do
-  w' <- unwrap (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticText config.label)
+button = fromHandles do
+  w' <- handles (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticText config.label)
   -- a click before any value arrived has nothing valid to emit — withheld
   mARef <- liftEffect $ Ref.new Nothing
   node <- gets _.sibling
@@ -277,7 +276,7 @@ button = wrap do
 -- | element with nothing inside it, so it is written as a leaf rather than
 -- | wrapped around content.
 hrExact :: PUI Web {} {}
-hrExact = wrap do
+hrExact = fromHandles do
   parent <- gets _.parent
   newNode <- liftEffect $ do
     node <- createElementNS htmlNS "hr"
@@ -474,7 +473,7 @@ body ui = do
   adoptHostDiagnostics
   node <- documentBody
   runDomInNode node do
-    { toUser, fromUser } <- unwrap ui
+    { toUser, fromUser } <- handles ui
     liftEffect do
       fromUser \_ -> pure unit
       toUser {}
@@ -486,7 +485,7 @@ runComponentInNode :: forall a b. Node -> a -> (b -> Effect Unit) -> PUI Web a b
 runComponentInNode node initial callback ui = do
   adoptHostDiagnostics
   runDomInNode node do
-    { toUser, fromUser } <- unwrap ui
+    { toUser, fromUser } <- handles ui
     liftEffect $ fromUser callback
     void $ liftEffect $ toUser initial
 
@@ -495,7 +494,7 @@ runComponentInNode node initial callback ui = do
 -- | (`indeterminateLinearProgress # action submit`). No label: it names no
 -- | field and no case.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
-indeterminateLinearProgress = wrap do
+indeterminateLinearProgress = fromHandles do
   element "progress" (pure unit)
   attribute "style" hiddenStyle
   node <- gets _.sibling

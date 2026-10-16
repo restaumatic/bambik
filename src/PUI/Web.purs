@@ -153,13 +153,12 @@ import Prim.Row as Row
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..), isNothing, maybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import PUI (class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, isHole, joined, newScope, onCancel, resumeScope, scopeActive, setDiagnostics, setSink, setTracing, suspendScope)
+import PUI (fromHandles, handles, class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, isHole, joined, newScope, onCancel, resumeScope, scopeActive, setDiagnostics, setSink, setTracing, suspendScope)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Prim.Row (class Cons)
 import Record as Record
@@ -385,7 +384,7 @@ instance Hosting Web (Array Node) where
           -- an element is the run of nodes its builder appended — one for a
           -- wrapped item, several for a bare group of siblings, none for `blank`
           before <- childCount parent
-          inst <- runDomInScope child parent (unwrap w)
+          inst <- runDomInScope child parent (handles w)
           nodes <- childrenFrom before parent
           pure { feed: inst.toUser, subscribe: inst.fromUser, node: nodes, cancel: cancelScope child }
       , detach: \nodes -> for_ nodes \node -> removeChild node parent
@@ -402,7 +401,7 @@ instance Hosting Web (Array Node) where
 -- | not be part of the public vocabulary an application composes from. The
 -- | design-system modules reach it; application code does not.
 staticHTMLExact :: String -> PUI Web {} {}
-staticHTMLExact html = wrap do
+staticHTMLExact html = fromHandles do
   parent <- gets _.parent
   newNode <- liftEffect $ appendRawHtml html parent
   modify_ _ { sibling = newNode}
@@ -412,7 +411,7 @@ staticHTMLExact html = wrap do
     }
 
 staticHTML :: forall r. String -> PUI Web { | r } { | r }
-staticHTML = built <<< unwrap <<< staticHTMLExact
+staticHTML = built <<< handles <<< staticHTMLExact
 
 slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
@@ -705,8 +704,8 @@ clearedOnRepress selRef members clear = withStructuralEq @a (do
 -- or a clear (`Nothing`) stores, if anything; `checkedOf <=< stored` must give
 -- back the pick, so a pick's echo is the pick
 selectedWith :: forall @l f a b r. IsSymbol l => Row.Cons l f b r => (f -> Maybe a) -> (Maybe a -> Maybe f) -> PUI Web (Maybe a) (Maybe a) -> PUI Web { | r } { | r }
-selectedWith checkedOf stored w = focusField @l $ wrap do
-  w' <- unwrap w
+selectedWith checkedOf stored w = focusField @l $ fromHandles do
+  w' <- handles w
   mPropRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \v -> do
@@ -733,14 +732,14 @@ selectedWith checkedOf stored w = focusField @l $ wrap do
 -- | (meeting-booker: no rule above an absent slider). Every vocabulary's
 -- | `divider`, and HTML's `hr`, is `separating` over its own rule.
 separating :: forall a b. PUI Web {} {} -> PUI Web a b -> PUI Web a b
-separating rule w = wrap do
+separating rule w = fromHandles do
   parentNode <- gets _.parent
   sc <- gets _.scope
   start <- liftEffect $ createCommentNode "separator"
   liftEffect $ appendChild start parentNode
-  _ <- unwrap rule
+  _ <- handles rule
   ruleEnd <- liftEffect $ lastChild parentNode
-  w' <- unwrap w
+  w' <- handles w
   end <- liftEffect $ createCommentNode "/separator"
   liftEffect $ appendChild end parentNode
   disconnect <- liftEffect $ separatorRule start ruleEnd end
@@ -774,8 +773,8 @@ inCase
   :: forall @l v r a b
    . IsSymbol l => Cons l a b v
   => ({ | r } -> [ | v ]) -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
-inCase f w = wrap do
-  { result: editor, ensureAttached, ensureDetached } <- attachable $ unwrap w
+inCase f w = fromHandles do
+  { result: editor, ensureAttached, ensureDetached } <- attachable $ handles w
   propRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \row -> do
@@ -842,12 +841,12 @@ textAt = text (Record.get (Proxy @l))
 -- | row, so the leaf's echo is swallowed here and the output is typed at
 -- | every row, as the silent component's is.
 statusText :: forall a r. String -> PUI Web a { | r }
-statusText caption = wrap do
-  leaf <- unwrap (textLeaf (const caption))
+statusText caption = fromHandles do
+  leaf <- handles (textLeaf (const caption))
   pure { toUser: leaf.toUser, fromUser: \_ -> leaf.fromUser \_ -> pure unit }
 
 textLeaf :: forall a. (a -> String) -> PUI Web a a
-textLeaf f = wrap do
+textLeaf f = fromHandles do
   parentNode <- gets _.parent
   newNode <- liftEffect $ do
     -- a text node carries no attributes, so under host diagnostics a bare
@@ -886,7 +885,7 @@ textLeaf f = wrap do
 -- | from its configuration, and for closure-known text that is data (a
 -- | parsed markdown run). Application copy that is static is `staticText (reflectSymbol (Proxy @s))`.
 staticTextExact :: String -> PUI Web {} {}
-staticTextExact content = wrap do
+staticTextExact content = fromHandles do
   -- the `{}` it announces at registration is the point's answer to the
   -- terminal record: at `{}` chrome is complete as built
   parentNode <- gets _.parent
@@ -901,15 +900,15 @@ staticTextExact content = wrap do
     }
 
 staticText :: forall r. String -> PUI Web { | r } { | r }
-staticText = built <<< unwrap <<< staticTextExact
+staticText = built <<< handles <<< staticTextExact
 
 -- | Set a fixed attribute on the element being decorated, written infix as
 -- | `:=`: `"placeholder" := "you@example.com" $ input "email" $ …`. For an
 -- | attribute that follows the data (a colour, a coordinate, a width), use
 -- | `attrWith`.
 attr :: String -> String -> Ocular (PUI Web)
-attr name value w = wrap do
-  w' <- unwrap w
+attr name value w = fromHandles do
+  w' <- handles w
   attribute name value
   pure w'
 
@@ -920,8 +919,8 @@ infixr 10 attr as :=
 -- | system's stylesheet is applied. For a class that comes and goes with the
 -- | data, use `clWhen`.
 cl :: String -> Ocular (PUI Web)
-cl name w = wrap do
-  w' <- unwrap w
+cl name w = fromHandles do
+  w' <- handles w
   clazz name
   pure
     { toUser: w'.toUser
@@ -935,8 +934,8 @@ cl name w = wrap do
 -- | design-system vocabulary attaches an off-the-shelf component — a
 -- | dialog's show and close, a ripple. Application code has no use for it.
 init :: forall a. (Node -> Effect a) -> (a -> Effect Unit) -> (a -> Effect Unit) -> Ocular (PUI Web)
-init nodeInitializer pre post w = wrap do
-  w' <- unwrap w
+init nodeInitializer pre post w = fromHandles do
+  w' <- handles w
   node <- gets _.sibling
   ctx <- liftEffect $ nodeInitializer node
   pure
@@ -955,8 +954,8 @@ init nodeInitializer pre post w = wrap do
 -- | until its data arrives. Written infix as `:=>`. For an attribute
 -- | computed from the data itself, use `attrWith`.
 attrDyn :: String -> (Maybe {} -> Maybe String) -> Ocular (PUI Web)
-attrDyn name valueFunction w = wrap do
-  w' <- unwrap w
+attrDyn name valueFunction w = fromHandles do
+  w' <- handles w
   node <- gets _.sibling
   liftEffect $ updateAttribute node Nothing
   pure
@@ -1027,8 +1026,8 @@ providedAt = provided @c (Record.get (Proxy @l))
 -- detached pane's silence is `×→+`'s Answer (`inCase` answers for a
 -- detached content itself).
 attachedOn :: forall @l @v r a b c. IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI Web { | r } c -> PUI Web { | r } c
-attachedOn f w = wrap do
-  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ unwrap w
+attachedOn f w = fromHandles do
+  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ handles w
   pure
     { toUser: \fed -> case prj (Proxy @l) (f fed) of
       Nothing -> ensureDetached
@@ -1050,8 +1049,8 @@ attachedOn f w = wrap do
 -- | leaving it on the page in a different colour. Applies to the last
 -- | element built, not to a group of siblings.
 clWhen :: forall r a. ({ | r } -> Boolean) -> String -> PUI Web { | r } a -> PUI Web { | r } a
-clWhen pred name w = wrap do
-  w' <- unwrap w
+clWhen pred name w = fromHandles do
+  w' <- handles w
   node <- gets _.sibling
   pure
     { toUser: \fed -> do
@@ -1069,8 +1068,8 @@ clWhen pred name w = wrap do
 -- | selection, focus and scrolling survive every update. Pair it with
 -- | `foreach` for a collection whose elements are never torn down.
 attrWith :: forall r a. String -> ({ | r } -> String) -> PUI Web { | r } a -> PUI Web { | r } a
-attrWith name valueOf w = wrap do
-  w' <- unwrap w
+attrWith name valueOf w = fromHandles do
+  w' <- handles w
   node <- gets _.sibling
   pure
     { toUser: \fed -> do
@@ -1126,8 +1125,8 @@ replayed f src = joined @"occurred" src # rmap (on (Proxy @"occurred") (inj (Pro
 -- | attaches the row — replay is `Strong`'s retention, so no source keeps
 -- | a copy of the row it was shown. Plumbing, like `replayed`.
 occurrences :: forall a b. PUI Web a b -> PUI Web a [ occurred :: {} ]
-occurrences w = wrap do
-  w' <- unwrap w
+occurrences w = fromHandles do
+  w' <- handles w
   node <- gets _.sibling
   pure
     { toUser: w'.toUser
@@ -1144,8 +1143,8 @@ occurrences w = wrap do
 -- | `svg >>> "viewBox" := "0 0 500 300" $ onClickedXY @"picked" $ …`. An event
 -- | source: the point leaves as an occurrence of case `l`.
 onClickedXY :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
-onClickedXY content = wrap do
-  w' <- unwrap content
+onClickedXY content = fromHandles do
+  w' <- handles content
   node <- gets _.parent
   pure
     { toUser: w'.toUser
@@ -1165,7 +1164,7 @@ onClickedXY content = wrap do
 -- | place instead — no flicker, nothing losing focus. It owns the element it
 -- | sits in, so give it its own container rather than a shared one.
 foreachWith :: forall a b. (a -> PUI Web {} b) -> PUI Web (Array a) b
-foreachWith build = wrap do
+foreachWith build = fromHandles do
   parent <- gets _.parent
   outer <- gets _.scope
   propRef <- liftEffect $ Ref.new Nothing
@@ -1179,7 +1178,7 @@ foreachWith build = wrap do
         Ref.write (Just child) builtRef
         removeAllChildren parent
         for_ items \item -> do
-          w' <- runDomInScope child parent (unwrap (build item))
+          w' <- runDomInScope child parent (handles (build item))
           mProp <- Ref.read propRef
           for_ mProp \prop -> w'.fromUser prop
           void $ w'.toUser {}
@@ -1191,8 +1190,8 @@ foreachWith build = wrap do
 -- | depends on the data. `div $ dynamic renderSwatch`. Owns the element it
 -- | sits in.
 dynamic :: forall r. ({ | r } -> PUI Web {} {}) -> PUI Web { | r } { | r }
-dynamic build = wrap do
-  w <- unwrap (foreachWith build)
+dynamic build = fromHandles do
+  w <- handles (foreachWith build)
   liftEffect $ w.fromUser \_ -> pure unit
   liftEffect $ displayWiring \value -> w.toUser [ value ]
 
@@ -1206,7 +1205,7 @@ dynamic build = wrap do
 -- | passes.
 each :: forall a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } { | r }
 each items0 build = let items = if isHole items0 then [] else items0 in built do
-  w <- unwrap (foreachWith build)
+  w <- handles (foreachWith build)
   liftEffect do
     w.fromUser \_ -> pure unit
     w.toUser items
@@ -1214,7 +1213,7 @@ each items0 build = let items = if isHole items0 then [] else items0 in built do
 -- A static is the wire with something built at registration: what `built`
 -- builds is on screen before any feed, and every feed passes through it.
 built :: forall a r. Web a -> PUI Web { | r } { | r }
-built build = wrap (build *> unwrap (identity :: PUI Web { | r } { | r }))
+built build = fromHandles (build *> handles (identity :: PUI Web { | r } { | r }))
 
 -- Sources
 
@@ -1240,7 +1239,7 @@ source
   => Effect a
   -> ((a -> Effect Unit) -> Effect (Effect Unit))
   -> PUI Web { | r } { | r1 }
-source now watch = wrap do
+source now watch = fromHandles do
   sc <- gets _.scope
   first <- liftEffect now
   lastRef <- liftEffect $ Ref.new first
@@ -1310,4 +1309,4 @@ colorScheme = source @l (schemeCase <$> prefersDark) \tell -> watchColorScheme (
 -- | for a tag computed at runtime (`el ("h" <> show level)`). The named
 -- | oculars above are all `el` at a fixed tag.
 el :: String -> Ocular (PUI Web)
-el tagName = wrap <<< element tagName <<< unwrap
+el tagName = fromHandles <<< element tagName <<< handles

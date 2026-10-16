@@ -28,7 +28,6 @@ import Data.Array as Array
 import Data.Foldable (foldl, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (unwrap)
 import Data.Profunctor (lcmap)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Row.RecordToRecord (recordToRecord)
@@ -41,7 +40,7 @@ import Effect (Effect, foreachE)
 import Effect.Class.Console (log)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (PUI(..), acted)
+import PUI (fromHandles, handles, PUI(..), acted)
 import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -107,26 +106,26 @@ emitter = do
 echoOp :: forall o. (Int -> { | o }) -> Effect (Op { s :: Int } { | o })
 echoOp f = do
   e <- emitter
-  pure { p: PUI (pure { toUser: \r -> e.emit (f r.s), fromUser: e.register }), fire: e.emit <<< f }
+  pure { p: fromHandles (pure { toUser: \r -> e.emit (f r.s), fromUser: e.register }), fire: e.emit <<< f }
 
 -- ×→+ citizen: a feed arms and never emits; a fire emits `f` of the token.
 armedOp :: forall o. (Int -> Variant o) -> Effect (Op { s :: Int } (Variant o))
 armedOp f = do
   e <- emitter
-  pure { p: PUI (pure { toUser: \_ -> pure unit, fromUser: e.register }), fire: e.emit <<< f }
+  pure { p: fromHandles (pure { toUser: \_ -> pure unit, fromUser: e.register }), fire: e.emit <<< f }
 
 -- +→+ citizen: forwards each occurrence through `g`, and can be fired.
 forwardOp :: forall i o. (Variant i -> Variant o) -> (Int -> Variant o) -> Effect (Op (Variant i) (Variant o))
 forwardOp g f = do
   e <- emitter
-  pure { p: PUI (pure { toUser: e.emit <<< g, fromUser: e.register }), fire: e.emit <<< f }
+  pure { p: fromHandles (pure { toUser: e.emit <<< g, fromUser: e.register }), fire: e.emit <<< f }
 
 -- +→× citizen: folds each occurrence through `g` into a whole row, and can
 -- be fired.
 foldOp :: forall i o. (Variant i -> { | o }) -> (Int -> { | o }) -> Effect (Op (Variant i) { | o })
 foldOp g f = do
   e <- emitter
-  pure { p: PUI (pure { toUser: e.emit <<< g, fromUser: e.register }), fire: e.emit <<< f }
+  pure { p: fromHandles (pure { toUser: e.emit <<< g, fromUser: e.register }), fire: e.emit <<< f }
 
 -- The refinement witness: the operand minus its first emission.
 quieter :: forall i o. Op i o -> Effect (Op i o)
@@ -135,8 +134,8 @@ quieter op = pure { p: quieterP op.p, fire: op.fire }
 -- The same on a bare component, per instance — so a collection element
 -- lifted with it drops the first emission of each of its instances.
 quieterP :: forall i o. PUI Effect i o -> PUI Effect i o
-quieterP w = PUI do
-  inner <- unwrap w
+quieterP w = fromHandles do
+  inner <- handles w
   spoken <- Ref.new false
   pure
     { toUser: inner.toUser
@@ -152,8 +151,8 @@ traced :: forall i o. (i -> Int) -> Op i o -> Effect (Traced i o)
 traced token op = do
   ins <- Ref.new []
   let
-    p = PUI do
-      inner <- unwrap op.p
+    p = fromHandles do
+      inner <- handles op.p
       pure { toUser: \i -> Ref.modify_ (_ <> [ token i ]) ins *> inner.toUser i, fromUser: inner.fromUser }
   pure { p, fire: op.fire, ins }
 
@@ -165,7 +164,7 @@ fatA n = unsafeCoerce { a: n, b: 999 }
 
 rig :: forall i o. Show o => (Int -> i) -> PUI Effect i o -> Array (Int -> Effect Unit) -> Effect Rig
 rig mkFeed m fires = do
-  m' <- unwrap m
+  m' <- handles m
   outs <- Ref.new []
   m'.fromUser \o -> Ref.modify_ (_ <> [ show o ]) outs
   pure { feed: \_ n -> m'.toUser (mkFeed n), fires, outs }
@@ -468,7 +467,7 @@ echoElem :: Effect Elem
 echoElem = do
   registry <- Ref.new Map.empty
   let
-    p = PUI do
+    p = fromHandles do
       e <- emitter
       pure
         { toUser: \r -> Ref.modify_ (Map.insert r.k e.emit) registry *> e.emit { v: r.s }
@@ -479,11 +478,11 @@ echoElem = do
 -- `acted @"k"` over the element (wrapped by `wrap`: identity, or the
 -- refinement witness), fed arrays by shape, firing elements 1 and 2.
 actedRig :: (PUI Effect Item { v :: Int } -> PUI Effect Item { v :: Int }) -> Effect Rig
-actedRig wrap = do
+actedRig fromHandles = do
   el <- echoElem
   -- holey-weak-types: an item is typed at its whole row, key included, and the
   -- carrier sets the key on each emission; this element emits `{ v }` only
-  m' <- unwrap (acted @"k" (unsafeCoerce (wrap el.p) :: PUI Effect Item { k :: Int, v :: Int }) :: PUI Effect (Array Item) (Array { k :: Int, v :: Int }))
+  m' <- handles (acted @"k" (unsafeCoerce (fromHandles el.p) :: PUI Effect Item { k :: Int, v :: Int }) :: PUI Effect (Array Item) (Array { k :: Int, v :: Int }))
   outs <- Ref.new []
   m'.fromUser \o -> Ref.modify_ (_ <> [ show o ]) outs
   pure { feed: \shape n -> m'.toUser (arrayOf shape n), fires: [ el.fire 1, el.fire 2 ], outs }
@@ -516,7 +515,7 @@ pureGather = do
 -- A term over the fed array itself, no elements to fire: the wire law's rig.
 arrayRig :: forall o. Show o => PUI Effect (Array Item) o -> Effect Rig
 arrayRig m = do
-  m' <- unwrap m
+  m' <- handles m
   outs <- Ref.new []
   m'.fromUser \o -> Ref.modify_ (_ <> [ show o ]) outs
   pure { feed: \shape n -> m'.toUser (arrayOf shape n), fires: [], outs }
@@ -562,7 +561,7 @@ unitVR = lcmap case_ identity
 -- the silent component: the ×→+ unit is carrier structure no class
 -- names, so it is written here as a probe
 unitRV :: forall r v. PUI Effect { | r } (Variant v)
-unitRV = PUI (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit })
+unitRV = fromHandles (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit })
 
 laws :: Array Law
 laws =

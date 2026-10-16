@@ -42,13 +42,12 @@ import Control.Monad.State (gets)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Int (fromString)
 import Data.Maybe (Maybe, maybe)
-import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import PUI (folding, Ocular, PUI)
+import PUI (fromHandles, handles, folding, Ocular, PUI)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, attribute, displayWiring, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, isFocused, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, statusText, separating, (:=))
@@ -115,7 +114,7 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- | arriving from elsewhere. A whole-row citizen: fed the wide row, it
 -- | edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   -- the shadow input keeps the host as `activeElement`, so the focus guard
   -- reads the host
   element "sl-input" (pure unit)
@@ -131,7 +130,7 @@ textField = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ 
 -- | The **multi-line text field**, `rows` lines tall — a note, a review, a
 -- | message. Otherwise `textField`.
 textArea :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
-textArea provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+textArea provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   element "sl-textarea" (pure unit)
   attribute "label" config.label
   attribute "rows" (show config.rows)
@@ -154,8 +153,8 @@ textArea provided = let config = convertOptionsWithDefaults OptCaption { label: 
 -- | screen. The label is drawn above the stars.
 rating :: forall @l r b. IsSymbol l => Cons l { current :: Number, max :: Int } b r => PUI Web { | r } { | r }
 rating = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $
-  div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ wrap do
-    _ <- unwrap (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
+  div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ fromHandles do
+    _ <- handles (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
     element "sl-rating" (pure unit)
     attribute "label" config.label
     node <- gets _.sibling
@@ -182,7 +181,7 @@ rating = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "na
 -- | drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number shows in the control's own tooltip while dragging.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
+sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   element "sl-range" (pure unit)
   attribute "label" config.label
   attribute "style" "width: 100%; min-width: 240px;"
@@ -202,8 +201,8 @@ sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $
 -- | The label sits beside it and is part of the target, so clicking the
 -- | words toggles it too.
 toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
-toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ wrap do
-  element "sl-switch" (void $ unwrap (staticText config.label))
+toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+  element "sl-switch" (void $ handles (staticText config.label))
   node <- gets _.sibling
   liftEffect $ editorWiring
     { show: setChecked node
@@ -236,8 +235,8 @@ selectOptional :: forall @l @c @n a b1 t v b2 r. IsSymbol l => IsSymbol c => IsS
 selectOptional options = withStructuralEq @a (selectOf @l true (selectedOptionalAt @l @c @n) options)
 
 selectOf :: forall @l a i o. IsSymbol l => Eq a => Boolean -> (PUI Web (Maybe a) (Maybe a) -> PUI Web i o) -> Array { value :: a, label :: String } -> PUI Web i o
-selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wrap do
-  _ <- unwrap (staticHTML markup)
+selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+  _ <- handles (staticHTML markup)
   node <- gets _.sibling
   liftEffect $ selectorWiring options
     { show: setValue node <<< maybe "" show
@@ -260,7 +259,7 @@ selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ wr
 progressBar
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
-progressBar f = wrap do
+progressBar f = fromHandles do
   element "sl-progress-bar" (pure unit)
   attribute "style" "width: 100%; min-width: 200px;"
   node <- gets _.sibling
@@ -284,11 +283,11 @@ toast
 toast f = toastFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
 toastFace :: forall a r. String -> PUI Web a { | r }
-toastFace caseLabel = wrap do
-  w <- unwrap $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
-    >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ wrap do
-    _ <- unwrap (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
-    unwrap (statusText caseLabel)
+toastFace caseLabel = fromHandles do
+  w <- handles $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
+    >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ fromHandles do
+    _ <- handles (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
+    handles (statusText caseLabel)
   node <- gets _.sibling
   pure
     { toUser: \i -> do
@@ -348,7 +347,7 @@ foreign import adoptIconBasePath :: Effect Unit
 -- | (`indeterminateLinearProgress # action submit`). No label: it names no
 -- | field and no case.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
-indeterminateLinearProgress = wrap do
+indeterminateLinearProgress = fromHandles do
   element "sl-progress-bar" (pure unit)
   attribute "indeterminate" ""
   attribute "style" hiddenStyle
