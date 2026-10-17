@@ -21,9 +21,9 @@ the previous comparison (deleted 2026-10 as rotted; its history is in git).
 ## In one paragraph
 
 Bambik's 7GUIs is **9 329 tokens** — level with React+MobX (9 510), 2.2×
-smaller than Elm (20 672), 3.7× larger than Vue (2 537) and 5.6× larger than
-official Svelte on the six tasks it has. It meets **22 of 23** spec
-requirements, ahead of Elm (21.5), React+MobX (17), Vue (14) and both
+smaller than Elm (20 672), 3.7× larger than Vue (2 537), and 3.5× larger
+than official Svelte on the six tasks both have (5 849 against 1 654). It
+meets **22 of 23** spec requirements, ahead of Elm (21.5), React+MobX (17), Vue (14) and both
 Svelte corpora (12.5 each). Its wiring is the smallest
 part of it: the seven views' bodies are **1 347 tokens**, less than the
 official Svelte corpus whole; 76% of the corpus is business logic in view
@@ -181,8 +181,10 @@ generation cost.
 | Circle drawer | 2 453 | 2 474 | 4 558 | 3 075 | 599 | 510 | 541 |
 | Cells | 3 480 | — | 7 964 | 3 323 | 590 | — | 846 |
 | **Total** | **9 329** | — | **20 672** | **9 510** | **2 537** | **1 654** | **2 697** |
-| Total without cells | 5 849 | 4 837 | 12 708 | 6 187 | 1 947 | 1 654 | 1 851 |
+| Total without cells | 5 849 | 4 837¹ | 12 708 | 6 187 | 1 947 | 1 654 | 1 851 |
 | Characters, total | 31 990 | — | 98 224 | 36 785 | 9 192 | 5 733 | 8 919 |
+
+¹ five tasks: crud has no plain-HTML twin either.
 
 The third-party figures match the previous comparison's July measurement
 to within a few percent (Vue identically, 2 537), so the counting rules
