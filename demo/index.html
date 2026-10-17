@@ -78,7 +78,7 @@
         <li>A case label is read back with <code>caseText</code>, never restated in a <code>match</code>.</li>
         <li>A display's text is a named copy function in the view model, whole line including glue: <code>balanceLine :: { balance :: Number } -&gt; String</code>.</li>
         <li>Static copy (a heading, a note) is a literal in the view: <code>staticText "Hours"</code>.</li>
-        <li>Events and outcomes carry data, never copy: flight-booker's problems are reasons, phrased by <code>problemLine</code>. A status tells its case and the case label is its whole copy, so an action names its outcomes as the words the user reads: <code>Aff [ "Order rejected: no total" :: {}, "Order submitted" :: {} ]</code>.</li>
+        <li>Events and outcomes carry data, never copy: flight-booker's problems are reasons, phrased by <code>bookingLine</code>. A status tells its case and the case label is its whole copy, so an action names its outcomes as the words the user reads: <code>Aff [ "Total missing" :: {}, "Order submitted" :: {} ]</code>.</li>
       </ul>
 
       <h3>Types and values</h3>

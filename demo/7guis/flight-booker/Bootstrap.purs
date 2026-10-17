@@ -1,12 +1,11 @@
 module FlightBooker.Bootstrap (flightBooker) where
 
-import Prelude (Unit, (#), identity, ($))
+import Prelude (Unit, (#), ($), identity)
 
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit)
+import FlightBooker (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit)
 import PUI (action, debounced, looped, with)
-import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
+import PUI.Web ((<+>), choice, inCaseAt, provided, text)
 import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, select, textField', toast)
 import PUI.Web.HTML (p)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,18 +14,11 @@ flightBooker :: Effect Unit
 flightBooker =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      select @"Flight type"
-        (choice @"one-way" <+> choice @"return")
+      select @"Flight type" (choice @"one-way" <+> choice @"return")
       textField' @"Start date" { hint: "DD.MM.YYYY" }
       textField' @"Return date" { hint: "DD.MM.YYYY" } # inCaseAt @"return" @"Flight type"
     ) # looped # with plannedTrip
-    ( Semigroupoid.do
-      ( p $ text problemLine ) # inCase @"problem" bookingState
-      ( p $ text oneWayLine ) # inCase @"one-way" bookingState
-      ( p $ text returnLine ) # inCase @"return" bookingState
-    ) # debounced itinerarySettleTime
-    button @"Book"
+    ( p $ text bookingLine ) # debounced itinerarySettleTime
+    button @"Book" # provided @"bookable" bookingState
     indeterminateLinearProgress # action @"Book" submit
-    VariantToRecord.do
-      toast @"Flight booked" identity
-      toast @"Booking rejected" identity
+    toast @"Flight booked" identity

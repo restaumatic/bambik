@@ -1,13 +1,13 @@
-module FlightBooker (Trip, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit) where
+module FlightBooker (Trip, bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit) where
 
-import Prelude ((&&), (*), (+), (/=), (<), (<=), (<>), (>=), (>>>), bind, const, pure, show)
+import Prelude (bind, const, discard, otherwise, pure, show, (#), (&&), (*), (+), (<), (<=), (<>), (>=), (>>>))
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split)
 import Data.Variant (match)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, Milliseconds(..), delay)
 
 type Trip =
   { "Flight type" :: [ "one-way" :: {}, return :: {} ]
@@ -31,38 +31,29 @@ plannedTrip = { "Flight type": ."one-way" {}, "Start date": "27.03.2026", "Retur
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
 
-returnBetween :: forall r1. { out :: Date, back :: Date | r1 } -> Maybe Itinerary
-returnBetween { out, back } =
-  if dateKey back >= dateKey out then Just (.returnBetween { out, back })
-  else Nothing
+bookingLine :: Trip -> String
+bookingLine = parse >>> either (\problem -> "⚠ " <> problemText problem) itineraryText
 
-parse
-  :: forall r1.
-     { "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-     , "Start date" :: String
-     , "Return date" :: String
-     | r1
-     }
-  -> Either Problem Itinerary
-parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } = case parseDate startInput of
-  Nothing -> Left (.unreadableStart { input: startInput })
-  Just start ->
-    if flightType /= ."return" {} then Right (.oneWayOn start)
-    else case parseDate returnInput of
-      Nothing -> Left (.unreadableReturn { input: returnInput })
-      Just back -> case returnBetween { out: start, back } of
-        Nothing -> Left (.returnBeforeStart {})
-        Just itinerary -> Right itinerary
+bookingState :: Trip -> [ bookable :: {}, problem :: {} ]
+bookingState = parse >>> either (const (.problem {})) (const (.bookable {}))
 
-bookingState :: Trip -> [ "one-way" :: {}, problem :: {}, return :: {} ]
-bookingState = parse >>> either (const (.problem {}))
-  (match
-    { oneWayOn: \_ -> ."one-way" {}
-    , returnBetween: \_ -> .return {}
-    })
+submit :: Trip -> Aff [ "Flight booked" :: Trip ]
+submit trip = do
+  delay (Milliseconds 600.0)
+  pure (."Flight booked" trip)
 
-problemLine :: Trip -> String
-problemLine = parse >>> either (\problem -> "⚠ " <> problemText problem) (const "")
+parse :: Trip -> Either Problem Itinerary
+parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } =
+  case parseDate startInput of
+    Nothing -> Left (.unreadableStart { input: startInput })
+    Just out -> flightType # match
+      { "one-way": \_ -> Right (.oneWayOn out)
+      , return: \_ -> case parseDate returnInput of
+          Nothing -> Left (.unreadableReturn { input: returnInput })
+          Just back
+            | dateKey back < dateKey out -> Left (.returnBeforeStart {})
+            | otherwise -> Right (.returnBetween { out, back })
+      }
 
 problemText :: Problem -> String
 problemText = match
@@ -71,26 +62,11 @@ problemText = match
   , returnBeforeStart: \_ -> "the return date is before the start date"
   }
 
-oneWayLine :: Trip -> String
-oneWayLine { "Start date": startInput } =
-  maybe "" (\out -> summary (.oneWayOn out)) (parseDate startInput)
-
-returnLine :: Trip -> String
-returnLine { "Start date": startInput, "Return date": returnInput } =
-  case parseDate startInput, parseDate returnInput of
-    Just out, Just back -> summary (.returnBetween { out, back })
-    _, _ -> ""
-
-summary :: Itinerary -> String
-summary = match
+itineraryText :: Itinerary -> String
+itineraryText = match
   { oneWayOn: \out -> "A one-way flight on " <> formatDate out
-  , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
+  , returnBetween: \{ out, back } -> "A return flight: out " <> formatDate out <> ", back " <> formatDate back
   }
-
-submit :: Trip -> Aff [ "Booking rejected" :: Trip, "Flight booked" :: Trip ]
-submit trip = case parse trip of
-  Left _ -> pure (."Booking rejected" trip)
-  Right _ -> pure (."Flight booked" trip)
 
 parseDate :: String -> Maybe Date
 parseDate s = case split (Pattern ".") s of

@@ -8,6 +8,26 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-17, latest
 
+- **The 7GUIs demos reviewed as the showcase.** Flight-booker had three
+  panes over a three-case `bookingState`, each holding the same display
+  over its own copy function (`problemLine`, `oneWayLine`, `returnLine`),
+  two of which re-parsed the dates and returned `""` in states their
+  pane never showed. The states differed in words, not in what is on
+  screen, so they are one line, `text bookingLine`, debounced as before.
+  The classifier moved to where structure does differ: the Book button
+  is an emitter pane, `# provided @"bookable" bookingState` — the 7GUIs
+  task's disabled button by construction — so `submit` is handed only a
+  bookable trip, its `"Booking rejected"` outcome and its status are
+  gone, and it waits a moment like a real airline so its progress bar
+  shows; walkthrough.md reads the new code. Timer ticks every tenth of a
+  second (`elapsedTenths`), so its gauge moves rather than jumps.
+  Circle-drawer's undo push is a row update (`snapshot`) instead of a
+  partial record re-plumbed by hand, crud's two one-line update helpers
+  are inlined, cells' and the rest's layout follows the code style
+  (signatures, import order). Stale citations went with it:
+  `"Order rejected: no total"` (order-form says `"Total missing"`), the
+  rule for an action's outcome row on a view line (views write none),
+  and counter's MDC3 comments (it has none).
 - **The wirings are named by shape.** `editorWiring`, `displayWiring`,
   `selectorWiring` and `statusWiring` (2026-10-11) were named by leaf
   kind while the library already names the shapes. They are now

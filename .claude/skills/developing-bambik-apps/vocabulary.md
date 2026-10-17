@@ -30,7 +30,7 @@ and emitters of a catalogue — are in the design-system module header
 | displays and chrome one after another in an element | `div $ Semigroupoid.do …` | espresso-bar, loan-calculator, meeting-booker, shopping-cart | writing.md *The pipeline* |
 | several emitters over one record | `RecordToVariant.do` | cashbox, stopwatch, crud | `Data.Profunctor.Row.RecordToVariant` |
 | a stage on one event case | the leaf names it: `action @"Create" …`, `confirmed @"Refund a customer" …`, `fold @"Take a deposit" …` — no placement word | crud, cashbox, reorder | writing.md *Stages* |
-| one status per outcome case | `VariantToRecord.do` | flight-booker, order-form | `Data.Profunctor.Row.VariantToRecord` |
+| one status per outcome case | `VariantToRecord.do` | crud, order-form | `Data.Profunctor.Row.VariantToRecord` |
 | what a composition guarantees | — | — | writing.md *What the laws guarantee* |
 | a compile error between two rows | — | — | writing.md *When it does not compile* |
 | a pane stays blank | — | — | writing.md *When it does not propagate* |
@@ -58,7 +58,7 @@ and emitters of a catalogue — are in the design-system module header
 | fixed copy introducing what follows — a heading, a caption | `headline4 $ staticText "Create account"` as a block line; inside one element, `label $ Semigroupoid.do { staticText "°C "; input @"Celsius" "text" }` | signup-form; temperature-converter (HTML) | writing.md *Code style* → *Types and values*; `PUI.Web` |
 | fixed copy on its own — a note | `listItem $ staticText "…"` | photo-gallery | writing.md *Components* |
 | a rule between things | `divider $ …`, `hr $ …` — shown only while both sides render something | meeting-booker, photo-gallery, restaurant-menu | writing.md *Code style* → *Types and values*; `PUI.Web` |
-| a pane for one state of the model | `# inCase @"problem" bookingState`; `# inCaseAt @"serving" @"display"` — displays and editors alike | flight-booker, potluck; ticket-dispenser, checkout, calculator | writing.md *Conditional visibility* |
+| a pane for one state of the model | `# inCase @"won" gameOutcome`; `# inCaseAt @"serving" @"display"` — displays and editors alike | tic-tac-toe, potluck; ticket-dispenser, checkout, calculator | writing.md *Conditional visibility* |
 | a list, displayed | `ul $ ( li $ text lapLine ) # foreach @"number" lapRows` | stopwatch | writing.md *Collections* |
 | a card that edits nothing | `card $ body1 $ text summaryLine` | order-form, product-review | writing.md *Components* |
 | a readout that settles before it redraws | `# debounced itinerarySettleTime` | flight-booker | `PUI` |
@@ -91,7 +91,7 @@ and emitters of a catalogue — are in the design-system module header
 | an editor that exists in one state | `# inCaseAt @"return" @"Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
 | an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |
 | a choice whose cases carry their own fields | `tabBar @"Mode" (…)`, each case's field `# inCaseAt @"Dine in" @"Mode"` | order-form | writing.md *Conditional visibility* |
-| an effect's outcome folded into the model it lands on | `( Semigroupoid.do { button …; … # action @"Estimate distance" estimateDistance } ) # joined @"Distance estimated"`; two outcomes `# joined2 @"Order submitted" @"Order rejected: no total"` | order-form | writing.md *App shape* |
+| an effect's outcome folded into the model it lands on | `( Semigroupoid.do { button …; … # action @"Estimate distance" estimateDistance } ) # joined @"Distance estimated"`; two outcomes `# joined2 @"Order submitted" @"Total missing"` | order-form | writing.md *App shape* |
 
 ## Events into state
 
@@ -102,7 +102,7 @@ and emitters of a catalogue — are in the design-system module header
 | an event folded into the model | `fold @"Customer refunded" refundStandard`; a status is a fold with a face and tells only what an action returned, its case label its whole copy (`snackbar @"Person created" identity`); the loop's folds merged in `VariantToRecord.do` | cashbox, crud | writing.md *Code style* → *Business functions* |
 | a clickable cell of a grid | `tile @"Cell claimed" @"key" (…)`, styled outside by `attrWith "style" cellFace` | tic-tac-toe, calculator, cells, color-mixer | `PUI.Web.MDC3` |
 | a click position on a canvas | `onClickedXY @"picked"` | circle-drawer | `PUI.Web` |
-| an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"finished" quizPhase` | stopwatch; quiz, inbox | writing.md *Conditional visibility* |
+| an emitter shown in one state | `# providedAt @"halted" @"phase"`; `# provided @"bookable" bookingState` | stopwatch; flight-booker, quiz, inbox | writing.md *Conditional visibility* |
 | an event replacing the model whole | `reset @"New game" openingPosition`; on a status, `snackbar @"Order placed" (const usualOrder)` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
 | an outcome that is the model | `snackbar @"Card charged" identity`; `capture @"Forecast fetched"` where nothing needs telling | crud, order-form, payment, weather, password-generator, reorder | `PUI` |
 | two buttons changing one field | `fold @"Start" beginTiming`, `fold @"Stop" haltTiming` — two cases, two folds, never one button with a caption parameter | stopwatch | writing.md *Components* |
@@ -116,9 +116,9 @@ and emitters of a catalogue — are in the design-system module header
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
 | an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" createPerson; VariantToRecord.do { … its outcome statuses, each with its fold } } )` in the fold block, the statuses owning the action's outcomes | crud, reorder | writing.md *Business functions* |
-| … whose outcomes are told | `indeterminateLinearProgress # action @"Book" submit`, then `snackbar @"Flight booked" identity` and `snackbar @"Booking rejected" identity` | flight-booker | writing.md *Business functions* |
+| … whose outcomes are told | `indeterminateLinearProgress # action @"Book" submit`, then `snackbar @"Flight booked" identity`; one status per outcome where there are several | flight-booker; crud | writing.md *Business functions* |
 | the load before the knot | `indeterminateLinearProgress # load loadPeopleCatalogue`, then `capture @"People loaded"` | crud, order-form | writing.md *Business functions* |
-| an outcome told, the model kept | the action `joined @l` with its button in the event ensemble, once per outcome, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form, flight-booker, incident-report | writing.md *Business functions* |
+| an outcome told, the model kept | the action `joined @l` with its button in the event ensemble, once per outcome, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form, incident-report | writing.md *Business functions* |
 | an action at load | `indeterminateLinearProgress # load loadOrder` then `snackbar @"Order loaded" identity` (or `capture @"People loaded"` where nothing needs telling) | order-form, crud | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Person created" :: model, "Person not created" :: model ]`), each folded by its status | crud | writing.md *Business functions* |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` and `fold @"Clock ticked" tick` | timer, stopwatch | `PUI` |

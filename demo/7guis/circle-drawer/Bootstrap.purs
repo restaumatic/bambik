@@ -4,12 +4,12 @@ import Prelude ((#), ($), (>>>), Unit, identity)
 
 import CircleDrawer (canvasCircles, emptyCanvas, redo, resizeSelected, selectOrAddCircle, undo)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Variant (match)
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Variant (match)
 import Effect (Effect)
 import PUI (fold, foreach, joined, looped, settled, with)
-import PUI.Web.Bootstrap (body, button, sliderLive)
 import PUI.Web (attrAt, attrWith, cl, inCaseAt, onClickedXY, (:=))
+import PUI.Web.Bootstrap (body, button, sliderLive)
 import PUI.Web.HTML (div)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -32,5 +32,7 @@ circleDrawer =
       fold @"Redo" redo
   # looped # with emptyCanvas
 
-circleFill :: { key :: String, x :: String, y :: String, r :: String, status :: [ selected :: {}, unselected :: {} ] } -> String
+circleFill
+  :: { key :: String, r :: String, status :: [ selected :: {}, unselected :: {} ], x :: String, y :: String }
+  -> String
 circleFill { status } = match { selected: \_ -> "#ddd", unselected: \_ -> "transparent" } status

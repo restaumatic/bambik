@@ -1,6 +1,8 @@
-module Timer (Timer, elapsedFraction, restarted, progressLine, tenSecondFreshTimer, tick, tickPeriod) where
+module Timer (Timer, elapsedFraction, progressLine, restarted, tenSecondFreshTimer, tick, tickPeriod) where
 
-import Prelude ((/), (+), (<), (<=), (<>), min, show)
+import Prelude ((*), (+), (/), (<), (<=), (<>), min, show)
+
+import Data.Int (toNumber)
 
 type Timer =
   { "Duration" ::
@@ -9,25 +11,31 @@ type Timer =
       , min :: Number
       , step :: [ continuous :: {}, discrete :: Number ]
       }
-  , elapsed :: Number
+  , elapsedTenths :: Int
   }
 
 tenSecondFreshTimer :: Timer
-tenSecondFreshTimer = { "Duration": { current: 10.0, min: 0.0, max: 60.0, step: .discrete 1.0 }, elapsed: 0.0 }
+tenSecondFreshTimer =
+  { "Duration": { current: 10.0, min: 0.0, max: 60.0, step: .discrete 1.0 }
+  , elapsedTenths: 0
+  }
 
 tickPeriod :: { ms :: Number }
-tickPeriod = { ms: 1000.0 }
+tickPeriod = { ms: 100.0 }
 
 restarted :: Timer -> Timer
-restarted t = t { elapsed = 0.0 }
+restarted t = t { elapsedTenths = 0 }
 
 tick :: Timer -> Timer
-tick t@{ "Duration": duration, elapsed } =
-  if elapsed < duration.current then t { elapsed = min duration.current (elapsed + 1.0) } else t
+tick t@{ "Duration": duration, elapsedTenths } =
+  if toNumber elapsedTenths < 10.0 * duration.current then t { elapsedTenths = elapsedTenths + 1 } else t
 
 elapsedFraction :: Timer -> Number
-elapsedFraction { "Duration": duration, elapsed } =
-  if duration.current <= 0.0 then 1.0 else min 1.0 (elapsed / duration.current)
+elapsedFraction t@{ "Duration": duration } =
+  if duration.current <= 0.0 then 1.0 else min 1.0 (elapsedSeconds t / duration.current)
 
 progressLine :: Timer -> String
-progressLine { "Duration": duration, elapsed } = show elapsed <> "s / " <> show duration.current <> "s"
+progressLine t@{ "Duration": duration } = show (elapsedSeconds t) <> "s / " <> show duration.current <> "s"
+
+elapsedSeconds :: Timer -> Number
+elapsedSeconds { elapsedTenths } = toNumber elapsedTenths / 10.0

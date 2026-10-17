@@ -5,8 +5,8 @@ import Prelude ((#), ($), Unit)
 import Counter (countLine, freshCount, increment)
 import Effect (Effect)
 import PUI (fold, looped, with)
-import PUI.Web.Fluent (body, button, title3)
 import PUI.Web (text)
+import PUI.Web.Fluent (body, button, title3)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 counter :: Effect Unit

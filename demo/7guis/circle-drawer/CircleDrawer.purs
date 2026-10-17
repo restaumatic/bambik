@@ -1,9 +1,9 @@
 module CircleDrawer (Canvas, Circle, canvasCircles, emptyCanvas, redo, resizeSelected, selectOrAddCircle, undo) where
 
-import Prelude (show, (*), (+), (-), (/), (/=), (<$>), (<=), (==))
+import Prelude (show, (*), (+), (-), (/), (/=), (<=), (==))
 
 import Data.Array (findIndex, index, mapWithIndex, snoc, take, unsnoc, updateAt)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Number (sqrt)
 import Data.Variant (match)
 
@@ -51,16 +51,23 @@ canvasCircles
        , x :: String
        , y :: String
        }
-canvasCircles { circles, selected } = mapWithIndex (\i c -> { key: show i, x: show c.x, y: show c.y, r: show c.r, status: statusOf i }) circles
+canvasCircles { circles, selected } = mapWithIndex shape circles
   where
-  statusOf i = match { chosen: \s -> if s.index == i then .selected {} else .unselected {}, none: \_ -> .unselected {} } selected
+  shape i c = { key: show i, x: show c.x, y: show c.y, r: show c.r, status: statusOf i }
+  statusOf i = match
+    { chosen: \s -> if s.index == i then .selected {} else .unselected {}
+    , none: \_ -> .unselected {}
+    } selected
 
 selectOrAddCircle :: { event :: { x :: Number, y :: Number }, model :: Canvas } -> Canvas
-selectOrAddCircle { event: { x, y }, model: m@{ circles, "Diameter": diameter, undoStack, redoStack } } = case findIndex (\c -> dist c x y <= c.r) circles of
-  Just i -> m { selected = .chosen { index: i }, "Diameter" = diameter { current = fromMaybe diameter.current ((\c -> 2.0 * c.r) <$> index circles i) }, drag = .settled {} }
-  Nothing ->
-    let stacks = pushUndo { circles, undoStack, redoStack }
-    in m { circles = snoc circles { x, y, r: freshCircleRadius }, selected = .none {}, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
+selectOrAddCircle { event: { x, y }, model: m@{ circles, "Diameter": diameter } } =
+  case findIndex (\c -> dist c x y <= c.r) circles of
+    Just i -> m
+      { selected = .chosen { index: i }
+      , "Diameter" = diameter { current = maybe diameter.current (\c -> 2.0 * c.r) (index circles i) }
+      , drag = .settled {}
+      }
+    Nothing -> (snapshot m) { circles = snoc circles { x, y, r: freshCircleRadius }, selected = .none {} }
 
 undo :: Canvas -> Canvas
 undo m@{ undoStack, redoStack, circles } = case unsnoc undoStack of
@@ -75,24 +82,19 @@ redo m@{ redoStack, undoStack, circles } = case unsnoc redoStack of
   Nothing -> m
 
 resizeSelected :: Canvas -> Canvas
-resizeSelected m@{ "Diameter": diameter, circles, selected, drag, undoStack, redoStack } = match
-  { chosen: \s -> case index circles s.index of
-    Just c | c.r /= diameter.current / 2.0 ->
-      let stacks = match { adjusting: \_ -> { undoStack, redoStack }, settled: \_ -> pushUndo { circles, undoStack, redoStack } } drag
-      in m { circles = fromMaybe circles (updateAt s.index (c { r = diameter.current / 2.0 }) circles), drag = .adjusting {}, undoStack = stacks.undoStack, redoStack = stacks.redoStack }
-    _ -> m
+resizeSelected m@{ "Diameter": diameter, circles, selected, drag } = match
+  { chosen: \{ index: i } -> case index circles i of
+      Just c | c.r /= radius ->
+        (match { adjusting: \_ -> m, settled: \_ -> snapshot m } drag)
+          { circles = fromMaybe circles (updateAt i (c { r = radius }) circles), drag = .adjusting {} }
+      _ -> m
   , none: \_ -> m
   } selected
+  where
+  radius = diameter.current / 2.0
 
-pushUndo
-  :: forall r1.
-     { circles :: Array Circle
-     , undoStack :: Array (Array Circle)
-     , redoStack :: Array (Array Circle)
-     | r1
-     }
-  -> { undoStack :: Array (Array Circle), redoStack :: Array (Array Circle) }
-pushUndo { undoStack, circles } = { undoStack: take 100 (snoc undoStack circles), redoStack: [] }
+snapshot :: Canvas -> Canvas
+snapshot m@{ circles, undoStack } = m { undoStack = take 100 (snoc undoStack circles), redoStack = [] }
 
-dist :: forall r1. { x :: Number, y :: Number, r :: Number | r1 } -> Number -> Number -> Number
+dist :: Circle -> Number -> Number -> Number
 dist c x y = sqrt ((c.x - x) * (c.x - x) + (c.y - y) * (c.y - y))

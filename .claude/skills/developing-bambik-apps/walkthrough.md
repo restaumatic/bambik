@@ -2,10 +2,10 @@
 
 The 7GUIs flight booker: a one-way/return selector, one or two date fields,
 a live line describing the itinerary (or what is wrong with it), a Book
-button, and a confirmation. It is a small demo that uses all four shapes —
-editors (`×→×`), an emitter (`×→+`), an action (`+→+`) and statuses
-(`+→×`) — so once it reads plainly, the larger demos are the same moves
-repeated. The view is `demo/7guis/flight-booker/MDC2.purs` (module
+button there only for a bookable trip, and a confirmation. It is a small
+demo that uses all four shapes — editors (`×→×`), an emitter (`×→+`), an
+action (`+→+`) and a status (`+→×`) — so once it reads plainly, the larger
+demos are the same moves repeated. The view is `demo/7guis/flight-booker/MDC2.purs` (module
 `FlightBooker.MDC2`), the view model module
 `demo/7guis/flight-booker/FlightBooker.purs`; in an app both
 are under `.spago/bambik/<tag>/`. The rules the lines follow are in
@@ -17,13 +17,12 @@ are under `.spago/bambik/<tag>/`. The rules the lines follow are in
 ```purescript
 module FlightBooker.MDC2 (flightBooker) where
 
-import Prelude (Unit, (#), identity, ($))
+import Prelude (Unit, (#), ($), identity)
 
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import FlightBooker (bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit)
+import FlightBooker (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit)
 import PUI (action, debounced, looped, with)
-import PUI.Web ((<+>), choice, inCase, inCaseAt, text)
+import PUI.Web ((<+>), choice, inCaseAt, provided, text)
 import PUI.Web.MDC2 (body, body1, button', filledTextField', indeterminateLinearProgress, select, snackbar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -31,40 +30,33 @@ flightBooker :: Effect Unit
 flightBooker =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      select @"Flight type"
-        (choice @"one-way" <+> choice @"return")
+      select @"Flight type" (choice @"one-way" <+> choice @"return")
       filledTextField' @"Start date" { hint: "DD.MM.YYYY" }
       filledTextField' @"Return date" { hint: "DD.MM.YYYY" } # inCaseAt @"return" @"Flight type"
     ) # looped # with plannedTrip
-    ( Semigroupoid.do
-      ( body1 $ text problemLine ) # inCase @"problem" bookingState
-      ( body1 $ text oneWayLine ) # inCase @"one-way" bookingState
-      ( body1 $ text returnLine ) # inCase @"return" bookingState
-    ) # debounced itinerarySettleTime
-    button' @"Book" { icon: "flight_takeoff" }
+    ( body1 $ text bookingLine ) # debounced itinerarySettleTime
+    button' @"Book" { icon: "flight_takeoff" } # provided @"bookable" bookingState
     indeterminateLinearProgress # action @"Book" submit
-    VariantToRecord.do
-      snackbar @"Flight booked" identity
-      snackbar @"Booking rejected" identity
+    snackbar @"Flight booked" identity
 ```
 
 **The imports.** `PUI` for the words that shape data flow (`looped`, `with`,
 `debounced`, `action`); `PUI.Web` for the words every
-design system shares (`choice` and `<+>`, the panes `inCase` and `inCaseAt`,
-the `text` leaf); `VariantToRecord` for the fold block, the two statuses side by
-side; and `PUI.Web.MDC2` for the design system, its `body` included. The
-MDC3 twin differs in its module and entry name, that one vocabulary import,
-and the typography it pulls from it (`bodyLarge` for `body1`); the view model
-module is shared verbatim. `QualifiedDo.Semigroupoid as Semigroupoid` gives
-`Semigroupoid.do`: stages in sequence, not a monad.
+design system shares (`choice` and `<+>`, the panes `inCaseAt` and
+`provided`, the `text` leaf); and `PUI.Web.MDC2` for the design system,
+its `body` included. The MDC3 twin differs in its module and entry name,
+that one vocabulary import, and the typography it pulls from it
+(`bodyLarge` for `body1`); the view model module is shared verbatim.
+`QualifiedDo.Semigroupoid as Semigroupoid` gives `Semigroupoid.do`:
+stages in sequence, not a monad.
 
 **`body $ Semigroupoid.do`.** Mount at the document body, dressed for
 Material 2, applied with `$` (layout), never `#` (data flow). The outer
 `Semigroupoid.do` has five stages, and data flows top to bottom as the code
 reads: the form emits the model on every edit → the itinerary line shows it
-and passes it on once it has settled → the button turns it into an event
-→ the action turns the event into an outcome → a snackbar shows the
-outcome.
+and passes it on once it has settled → the button, there only for a
+bookable trip, turns it into an event → the action turns the event into
+an outcome → a snackbar tells the outcome.
 Code order is DOM order and data order (writing.md *The pipeline*).
 
 **Stage 1 — the form.** An inner `Semigroupoid.do` of three editors, closed
@@ -94,68 +86,67 @@ loops each change back to the top, so all three editors see every edit;
 it also closes the app's input to `{}`, which `body` requires (writing.md
 *App shape*).
 
-**Stage 2 — the itinerary line.** Three panes over one classifier, in a
-block of their own, `( Semigroupoid.do … ) # debounced itinerarySettleTime`.
+**Stage 2 — the itinerary line, `( body1 $ text bookingLine ) # debounced
+itinerarySettleTime`.**
 
-- `body1 $ text oneWayLine` — the `text` leaf takes a **read function**:
-  the whole sentence ("A one-way flight on 27.03.2026") is `oneWayLine`,
-  one pure function in the view model module. The view holds no glue, and the
-  line names its own copy function. A display is a stage: it shows the
-  model and releases it, so the next line is fed what it shows.
-- `# inCase @"one-way" bookingState` — the pane is shown while
-  `bookingState` yields case `one-way`, and its content is fed the model,
-  from which `oneWayLine` reads the start date. Detached, the pane is the
-  wire. Three panes over one classifier make the three states exclusive,
-  because the classifier returns one case (writing.md *Conditional
-  visibility*). Each pane names only its own case; the three
-  cases together are `bookingState`'s signature, in the view model
-  module.
-- `( Semigroupoid.do … ) # debounced itinerarySettleTime` — the block of
-  panes passes the model on, and `debounced` releases it only once the
-  edits pause for `itinerarySettleTime` (`{ ms: 300.0 }` in the view
-  model module, so the view carries no literal): the line redraws live,
-  but the Book button is handed the itinerary only after it has stood
-  still on screen. A display that no later line depends on needs none of
-  this — it is a plain line (writing.md *The pipeline*).
+- `body1 $ text bookingLine` — the `text` leaf takes a **read function**:
+  the whole sentence, "A one-way flight on 27.03.2026" or "⚠ the return
+  date is before the start date", is `bookingLine`, one pure function in
+  the view model module. The view holds no glue, and the line names its
+  own copy function. One line, not a pane per state: the states differ
+  in their words, not in what is on screen, and words are the copy
+  function's. A display is a stage: it shows the model and releases it,
+  so the next line is fed what it shows.
+- `# debounced itinerarySettleTime` — `debounced` releases the model
+  only once the edits pause for `itinerarySettleTime` (`{ ms: 300.0 }` in
+  the view model module, so the view carries no literal): the line does
+  not flash a problem at every keystroke of a half-typed date, and the
+  Book button below is handed the trip only after it has stood still on
+  screen.
 
-**Stage 3 — the button, `button' @"Book" { icon: "flight_takeoff" }`.**
-The first shape change, `×→+`: fed the model, the button emits case
-`"Book"` carrying the model on click (its case is its caption; `icon` is
-presentation config).
+**Stage 3 — the button, `button' @"Book" { icon: "flight_takeoff" } #
+provided @"bookable" bookingState`.** The first shape change, `×→+`: fed
+the model, the button emits case `"Book"` carrying the model on click
+(its case is its caption; `icon` is presentation config). `provided` is
+the emitter pane: the button exists only while the classifier
+`bookingState` yields case `bookable`, so a trip with a problem cannot
+be booked — the 7GUIs task's disabled button, by construction rather
+than by a flag. The pane names only its case; the classifier's
+signature states the rest (writing.md *Conditional visibility*).
 
 **Stage 4 — the action, `indeterminateLinearProgress # action @"Book"
 submit`.** `+→+`: `action @"Book"` owns the button's case, its payload
 goes to `submit`, and the action is opened by its progress bar, shown
 between the run's `started` and `ended`; the slot owns those two
 occurrences and nothing else, so no snackbar can stand in it. The
-outcomes are `submit`'s: its signature names them as the words the user
-will read, `"Flight booked"` and `"Booking rejected"`, because they are
-what the statuses show. The line writes none of them — the statuses
-after it own exactly those two cases, and that is what closes the
-action's row (with `submit` still a hole, it is what types it).
+outcome is `submit`'s: its signature names it as the words the user
+will read, `"Flight booked"`, because that is what the status shows.
+The line writes no outcome — the status after it owns that case, and
+that is what closes the action's row (with `submit` still a hole, it is
+what types it).
 
-**Stage 5 — the statuses, `VariantToRecord.do`.** `+→×`: `snackbar
-@"Flight booked" identity` and `snackbar @"Booking rejected" identity`,
-each owning one outcome case and telling it by its label — a status takes no
-copy function: it is ephemeral, so its case label is its whole copy, and
-what the user must keep is a model field shown by a display — and each
-a fold, as every status is: `submit` returns the trip under either case,
+**Stage 5 — the status, `snackbar @"Flight booked" identity`.** `+→×`:
+owning the outcome case and telling it by its label — a status takes no
+copy function: it is ephemeral, so its case label is its whole copy,
+and what the user must keep is a model field shown by a display — and
+a fold, as every status is: `submit` returns the trip under its case,
 and `identity` releases it, so the pipeline ends with the itinerary it
-was booked with (writing.md *Components*).
+was booked with (writing.md *Components*). An action with several
+outcomes puts one status per case in a `VariantToRecord.do` (crud).
 
 ## The view model
 
 ```purescript
-module FlightBooker (Trip, bookingState, itinerarySettleTime, oneWayLine, plannedTrip, problemLine, returnLine, submit) where
+module FlightBooker (Trip, bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit) where
 
-import Prelude ((&&), (*), (+), (/=), (<), (<=), (<>), (>=), (>>>), bind, const, pure, show)
+import Prelude (bind, const, discard, otherwise, pure, show, (#), (&&), (*), (+), (<), (<=), (<>), (>=), (>>>))
 
 import Data.Either (Either(..), either)
 import Data.Int (fromString)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split)
 import Data.Variant (match)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, Milliseconds(..), delay)
 
 type Trip =
   { "Flight type" :: [ "one-way" :: {}, return :: {} ]
@@ -179,38 +170,29 @@ plannedTrip = { "Flight type": ."one-way" {}, "Start date": "27.03.2026", "Retur
 itinerarySettleTime :: { ms :: Number }
 itinerarySettleTime = { ms: 300.0 }
 
-returnBetween :: forall r1. { out :: Date, back :: Date | r1 } -> Maybe Itinerary
-returnBetween { out, back } =
-  if dateKey back >= dateKey out then Just (.returnBetween { out, back })
-  else Nothing
+bookingLine :: Trip -> String
+bookingLine = parse >>> either (\problem -> "⚠ " <> problemText problem) itineraryText
 
-parse
-  :: forall r1.
-     { "Flight type" :: [ "one-way" :: {}, "return" :: {} ]
-     , "Start date" :: String
-     , "Return date" :: String
-     | r1
-     }
-  -> Either Problem Itinerary
-parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } = case parseDate startInput of
-  Nothing -> Left (.unreadableStart { input: startInput })
-  Just start ->
-    if flightType /= ."return" {} then Right (.oneWayOn start)
-    else case parseDate returnInput of
-      Nothing -> Left (.unreadableReturn { input: returnInput })
-      Just back -> case returnBetween { out: start, back } of
-        Nothing -> Left (.returnBeforeStart {})
-        Just itinerary -> Right itinerary
+bookingState :: Trip -> [ bookable :: {}, problem :: {} ]
+bookingState = parse >>> either (const (.problem {})) (const (.bookable {}))
 
-bookingState :: Trip -> [ "one-way" :: {}, problem :: {}, return :: {} ]
-bookingState = parse >>> either (const (.problem {}))
-  (match
-    { oneWayOn: \_ -> ."one-way" {}
-    , returnBetween: \_ -> .return {}
-    })
+submit :: Trip -> Aff [ "Flight booked" :: Trip ]
+submit trip = do
+  delay (Milliseconds 600.0)
+  pure (."Flight booked" trip)
 
-problemLine :: Trip -> String
-problemLine = parse >>> either (\problem -> "⚠ " <> problemText problem) (const "")
+parse :: Trip -> Either Problem Itinerary
+parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } =
+  case parseDate startInput of
+    Nothing -> Left (.unreadableStart { input: startInput })
+    Just out -> flightType # match
+      { "one-way": \_ -> Right (.oneWayOn out)
+      , return: \_ -> case parseDate returnInput of
+          Nothing -> Left (.unreadableReturn { input: returnInput })
+          Just back
+            | dateKey back < dateKey out -> Left (.returnBeforeStart {})
+            | otherwise -> Right (.returnBetween { out, back })
+      }
 
 problemText :: Problem -> String
 problemText = match
@@ -219,26 +201,11 @@ problemText = match
   , returnBeforeStart: \_ -> "the return date is before the start date"
   }
 
-oneWayLine :: Trip -> String
-oneWayLine { "Start date": startInput } =
-  maybe "" (\out -> summary (.oneWayOn out)) (parseDate startInput)
-
-returnLine :: Trip -> String
-returnLine { "Start date": startInput, "Return date": returnInput } =
-  case parseDate startInput, parseDate returnInput of
-    Just out, Just back -> summary (.returnBetween { out, back })
-    _, _ -> ""
-
-summary :: Itinerary -> String
-summary = match
+itineraryText :: Itinerary -> String
+itineraryText = match
   { oneWayOn: \out -> "A one-way flight on " <> formatDate out
-  , returnBetween: \r -> "A return flight: out " <> formatDate r.out <> ", back " <> formatDate r.back
+  , returnBetween: \{ out, back } -> "A return flight: out " <> formatDate out <> ", back " <> formatDate back
   }
-
-submit :: Trip -> Aff [ "Booking rejected" :: Trip, "Flight booked" :: Trip ]
-submit trip = case parse trip of
-  Left _ -> pure (."Booking rejected" trip)
-  Right _ -> pure (."Flight booked" trip)
 
 parseDate :: String -> Maybe Date
 parseDate s = case split (Pattern ".") s of
@@ -275,19 +242,18 @@ module*).
 - `Trip` — the model row, exported because the exported signatures use
   it; no view imports it, since the view writes no row.
 - `itinerarySettleTime` — a duration, `{ ms :: Number }`.
-- `bookingState` — the classifier behind the three panes: one of
-  three exclusive states, the cases bare since the panes show the
-  model itself. A problem is a reason (`.returnBeforeStart {}`,
-  `.unreadableStart { input }`) `parse` finds, never a sentence: the
-  copy functions spell it out.
-- `problemLine`/`oneWayLine`/`returnLine` — the panes' copy functions,
-  each reading the model, glue and warning glyph included;
-  `problemLine` shares `parse` with the classifier, so what it says is
-  exactly what the pane was shown for.
-- `submit` — the `Aff` boundary. It shares `parse` with `bookingState`, so
-  what the live line calls a problem is precisely what Book refuses; its
-  outcome row names the two outcomes as the snackbars' words, each
-  carrying the trip it was given, which the statuses fold back as the
+- `bookingLine` — the line's copy function: what `parse` finds, spelled
+  out. A problem is a reason (`.returnBeforeStart {}`,
+  `.unreadableStart { input }`), never a sentence, so `problemText`
+  phrases it and `itineraryText` phrases an itinerary.
+- `bookingState` — the classifier behind the Book pane: one of two
+  exclusive states, the cases bare since the pane shows the model
+  itself. It shares `parse` with `bookingLine`, so the button is there
+  exactly when the line describes a trip rather than a problem.
+- `submit` — the `Aff` boundary, standing in for the airline with a
+  short delay so the progress bar shows. It is handed only a bookable
+  trip, so its outcome row has one case, named as the snackbar's words,
+  carrying the trip it was given, which the status folds back as the
   model — an effect returns the model.
 
 **Three things worth noticing.** The rows the signatures share are
@@ -297,14 +263,13 @@ a structure, not a new type, so the shape is still the interface
 (writing.md *Code style* → *Types and values*). Every exported function
 carries the signature the view reported for it with its tails filled —
 the view named the three fields its editors bind and left the rest
-unknown, and the signature closes the row: the model row its line is fed, its fields in the compiler's alphabetical
-order — so the pane copy functions take the whole model and derive what
-they show from it (`oneWayLine` parses the start date again), while the
-private helpers (`parse`, `returnBetween`, `formatDate`, `dateKey`) keep
-open rows of their own, since no view line types them (writing.md *Code
-style* → *Business functions*). And `parseDate` has a real `do` —
-`Maybe`'s monad: `Semigroupoid.do` in the view composes stages, `do` in
-the view model module is the ordinary one.
+unknown, and the signature closes the row: the model row its line is
+fed, its fields in the compiler's alphabetical order — while the private
+helpers `formatDate` and `dateKey` keep open rows of their own, since no
+view line types them (writing.md *Code style* → *Business functions*).
+And `parseDate` has a real `do` — `Maybe`'s monad: `Semigroupoid.do` in
+the view composes stages, `do` in the view model module is the ordinary
+one.
 
 ## What to read next
 
@@ -319,7 +284,7 @@ the view model module is the ordinary one.
   ticked" tick`.
 - **temperature-converter** — two editors kept consistent with
   `# settled fromCelsius` / `# settled fromFahrenheit`.
-- **todo-list** — a selectable list, `listOf @"Todo toggled" @"key"`, a filter
+- **todo-list** — a selectable list, `listOf @"Todo toggled" @"id"`, a filter
   selector, and panes over `remainingItems`.
 - **checkout** — a wizard: the step is a model field, each step's line a
   pane `# inCaseAt @c @"step"`, and Back and Next are the face of a

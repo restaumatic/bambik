@@ -1,6 +1,6 @@
 module Cells (Sheet, columnHeaders, commit, orderSheet, selectCell, selectedLine, sheetRows) where
 
-import Prelude ((<>), bind, identity, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (/=), (<#>), (<$>), (<=), (==), (>=), (||))
+import Prelude ((<>), bind, identity, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (<#>), (<$>), (<=), (==), (>=), (||))
 
 import Data.Array (range)
 import Data.Char (fromCharCode, toCharCode)
@@ -10,7 +10,7 @@ import Data.Int (fromString, round, toNumber) as Int
 import Data.List (List(..), elem, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number (fromString)
-import Data.String.CodeUnits (charAt, drop, singleton, take, takeWhile, dropWhile, length)
+import Data.String.CodeUnits (charAt, drop, dropWhile, length, singleton, take, takeWhile)
 import Data.Variant (match)
 import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
 
@@ -53,27 +53,32 @@ columnHeaders = [ { key: "corner", text: "" } ] <> (range 0 (cols - 1) <#> \c ->
 sheetRows
   :: Sheet
   -> Array
-    { cells :: Array
-        { key :: String
-        , status :: [ selected :: {}, unselected :: {} ]
-        , text :: String
-        }
-    , rowKey :: String
-    }
-sheetRows m =
-  let
-    values = evalSheet m.cells
-    cellsOfRow r = range 0 (cols - 1) <#> \c -> let key = refKey { c, r } in { key, text: fromMaybe "" (lookup key values), status: statusOf key }
-    statusOf key = match { picked: \p -> if p.name == key then .selected {} else .unselected {}, none: \_ -> .unselected {} } m.selected
-  in
-    range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: cellsOfRow r }
+       { cells ::
+           Array
+             { key :: String
+             , status :: [ selected :: {}, unselected :: {} ]
+             , text :: String
+             }
+       , rowKey :: String
+       }
+sheetRows { cells, selected } = range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: cellsOfRow r }
+  where
+  values = evalSheet cells
+  cellsOfRow r = range 0 (cols - 1) <#> \c -> cellAt (refKey { c, r })
+  cellAt key = { key, text: fromMaybe "" (lookup key values), status: statusOf key }
+  statusOf key = match
+    { picked: \p -> if p.name == key then .selected {} else .unselected {}
+    , none: \_ -> .unselected {}
+    } selected
+
 selectCell :: { event :: String, model :: Sheet } -> Sheet
 selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula" = fromMaybe "" (lookup key m.cells) }
 
 commit :: Sheet -> Sheet
 commit m@{ selected, "Formula": formula } = match
   { picked: \p ->
-    if lookup p.name m.cells /= Just formula then m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells } else m
+    if lookup p.name m.cells == Just formula then m
+    else m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells }
   , none: \_ -> m
   } selected
 

@@ -43,7 +43,7 @@ matches your design system.
   stays blank until the fields it waits for have values; a seed gives
   them one.
 - **pane** — a component that exists only while the model is in one
-  case (`# inCase @"problem" bookingState`).
+  case (`# provided @"bookable" bookingState`).
 - **anchor** — the one model symbol a view line names: a field, a case,
   a copy function, or nothing (see [Code style](#code-style)).
 - **view model module** — the module beside the view holding the seed
@@ -85,7 +85,7 @@ one value, one per shape:
   needs the block: an action handles its button's case inside the fold
   block ([Business functions](#business-functions)).
 - `VariantToRecord.do` (+→×) — one fold or status per case (crud's
-  folds; flight-booker's two snackbars).
+  folds; its statuses, one per outcome of each action).
 
 Import the four from `Data.Profunctor.Row.RecordToRecord` and its
 siblings (`import Data.Profunctor.Row.RecordToRecord as
@@ -204,7 +204,7 @@ takes a trailing word that says what it is for:
 | an element whose whole face is its decorators | `circle >>> attrAt @"x" "cx" >>> attrWith "fill" circleFill $ identity` — the wire, decorated | circle-drawer, color-mixer |
 | a display shown in one case | `text ticketLine # inCaseAt @"serving" @"display"` | ticket-dispenser |
 | an editor that exists in one case | `filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"` | order-form |
-| a button that exists in one case | `button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"` | stopwatch |
+| a button that exists in one case | `button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"`; in a derived state, `button' @"Book" { icon: "flight_takeoff" } # provided @"bookable" bookingState` | stopwatch; flight-booker |
 | a list of displays rendered from the row | `ul $ ( li $ text lapLine ) # foreach @"number" lapRows` | stopwatch |
 | a list of editors over an array the model stores | `( … ) # actedAt @"id" @"Setlist"` | reorder |
 | a list whose elements emit | `tile @"Key entered" @"key" ( … ) # anyOf @"key" (const keyPad)`; over a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe; cells |
@@ -215,12 +215,12 @@ takes a trailing word that says what it is for:
 | a message the user must close | `acknowledged @"About this dashboard" "Got it" $ …` — the `+→+` stage consuming its case: the row less it goes on to the folds | weather |
 | an event folded into the model | `fold @"Add" addTodo`, one per case, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
-| an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Receipt" { icon: "file" }; indeterminateLinearProgress # action @"Receipt" printReceipt } ) # joined @"Receipt printed"` in the event ensemble, its status folding `kept`; two outcomes `# joined2 @"Order submitted" @"Order rejected: no total"` | order-form |
+| an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Receipt" { icon: "file" }; indeterminateLinearProgress # action @"Receipt" printReceipt } ) # joined @"Receipt printed"` in the event ensemble, its status folding `kept`; two outcomes `# joined2 @"Order submitted" @"Total missing"` | order-form |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"Celsius" # settled fromCelsius` | temperature-converter |
 | an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action @"Create" createPerson; VariantToRecord.do { snackbar @"Person created" identity; … } } )`, the pair owning the case in the fold block, the statuses owning the action's outcomes | crud |
 | an effect whose outcome is the model | `( Semigroupoid.do { indeterminateCircularProgress # action @"Forecast requested" fetchReport; capture @"Forecast fetched" } )` | weather |
-| an effect whose outcomes are told | `indeterminateLinearProgress # action @"Book" submit`, then `snackbar @"Flight booked" identity` and `snackbar @"Booking rejected" identity` | flight-booker |
+| an effect whose outcome is told | `indeterminateLinearProgress # action @"Book" submit`, then `snackbar @"Flight booked" identity`; several outcomes, one status each in a `VariantToRecord.do` | flight-booker; crud |
 | the load before the knot | `indeterminateLinearProgress # load loadPeopleCatalogue`, then `capture @"People loaded"` — run by `body`'s one feed of `{}` | crud, order-form |
 | a fold told by a status | `snackbar @"Person created" identity`, `snackbar @"Quote fetched" recordQuote`, `snackbar @"Order submitted" kept` — a status takes its fold like `fold @l f`, tells its case by its label, and stands only after an action whose outcome it is | crud, ticker, order-form |
 
@@ -321,12 +321,11 @@ compile error at `body` naming the missing fields.
 | Shape | Demos |
 | --- | --- |
 | the smallest loop: display, button, fold | counter |
-| the loop with each stage's shape spelled out in comments | counter (MDC3) |
 | a load action feeding a looped form, events, actions, statuses | order-form (all four shapes), crud |
 | a loop plus fixed payloads | cashbox, inbox, tic-tac-toe, shopping-cart |
 | a fixed grid or canvas fed as data, updated in place | cells, circle-drawer, tic-tac-toe, calculator |
 | collections | todo-list, shopping-cart, reorder, potluck |
-| panes over one classifier | quiz, flight-booker, potluck |
+| panes over one classifier | quiz, tic-tac-toe, potluck |
 | effects and time | password-generator, stopwatch, timer, weather |
 | structure that varies with the data | markdown-previewer |
 | no design system at all | restaurant-menu, hello-world |
@@ -520,7 +519,7 @@ the anchor's own position, and the anchor says what the line is:
   label is the model field the line edits (`filledTextField @"First
   name"`, `group @"Customer" $ …`);
 - a **case** — the type argument of an emitter, pane or status
-  (`button @"Submit order"`, `# inCase @"problem" bookingState`,
+  (`button @"Submit order"`, `# provided @"bookable" bookingState`,
   `snackbar @"Flight booked" identity`);
 - a **copy function** — the positional argument of a display
   (`text balanceLine`, `imagePane developedShot`);
@@ -601,10 +600,7 @@ text is computed, a chrome line nothing.
   nested closers cascade onto that same line, each spaced from the chain
   it closes over: `… choice @"Pavlova") ) # acted @"name"` (potluck). The
   exception is a seed closer, `) # looped # with seed` / `) # with seed`,
-  on its own line. An action's outcome row too long for its line
-  starts a line of its own, two columns deeper than the line it belongs
-  to, and its closer carries the rest of the line (flight-booker's
-  action).
+  on its own line.
   `#` binds tighter than `$`: where a chain must apply to a whole
   wrapped element (a `foreach` multiplying a card), open the paren
   before the wrapper.
@@ -749,9 +745,9 @@ text is computed, a chrome line nothing.
   call at different rows gets two hints, and that is the one case for a
   `forall`: generalize to the fields both rows share, with a tail. A
   row the signature names through a `type` synonym is the same row
-  (`problemLine :: Trip -> String`, flight-booker): the check expands it.
+  (`bookingLine :: Trip -> String`, flight-booker): the check expands it.
   Private helpers no view line types are free to be as general as they
-  like (flight-booker's `parse`, `formatDate`).
+  like (flight-booker's `formatDate`, `dateKey`).
 - **Update the row you are given.** A function returning the row it
   takes — a handler, a `settled` normalizer, a periodic step — updates
   it (`increment m = m { counted = m.counted + 1 }`), never builds a
@@ -900,7 +896,7 @@ the watch build running ([building.md](building.md)):
    different rows, because two lines call it, is the one case for a
    `forall`: generalize to the fields both rows share, with a tail. A
   row the signature names through a `type` synonym is the same row
-  (`problemLine :: Trip -> String`, flight-booker): the check expands it. The
+  (`bookingLine :: Trip -> String`, flight-booker): the check expands it. The
    hole's message goes away, and from then on the compiler checks the
    view against the signatures.
 4. **Fill the holes in any order.** The compiler reports one

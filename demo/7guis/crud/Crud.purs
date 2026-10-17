@@ -1,6 +1,6 @@
 module Crud (Catalogue, Entry, createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personLine, pick, updatePerson) where
 
-import Prelude (bind, otherwise, pure, (<$>), (<>), (==), (||))
+import Prelude (bind, otherwise, pure, (<#>), (<$>), (<>), (==), (||))
 
 import Crud.PeopleServer (Person, fetchPeople, storePeople)
 import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
@@ -39,13 +39,17 @@ createPerson
   -> Aff [ "Person created" :: Catalogue, "Person not created" :: Catalogue ]
 createPerson m@{ "Name": name, "Surname": surname, people }
   | name == "" || surname == "" = pure (."Person not created" m)
-  | otherwise = (\ps -> ."Person created" (refreshPeople ps m)) <$> storePeople (snoc people { "Name": name, "Surname": surname })
+  | otherwise =
+      storePeople (snoc people { "Name": name, "Surname": surname })
+        <#> \ps -> ."Person created" m { people = ps }
 
 updatePerson
   :: Catalogue
   -> Aff [ "Person not updated" :: Catalogue, "Person updated" :: Catalogue ]
 updatePerson m@{ "Name": name, "Surname": surname, people, selected } = match
-  { picked: \p -> (\ps -> ."Person updated" (refreshPeople ps m)) <$> storePeople (fromMaybe people (updateAt p.index { "Name": name, "Surname": surname } people))
+  { picked: \{ index: i } ->
+      storePeople (fromMaybe people (updateAt i { "Name": name, "Surname": surname } people))
+        <#> \ps -> ."Person updated" m { people = ps }
   , none: \_ -> pure (."Person not updated" m)
   } selected
 
@@ -53,22 +57,21 @@ deletePerson
   :: Catalogue
   -> Aff [ "Person deleted" :: Catalogue, "Person not deleted" :: Catalogue ]
 deletePerson m@{ people, selected } = match
-  { picked: \p -> (\ps -> ."Person deleted" (peopleDeleted ps m)) <$> storePeople (fromMaybe people (deleteAt p.index people))
+  { picked: \{ index: i } ->
+      storePeople (fromMaybe people (deleteAt i people))
+        <#> \ps -> ."Person deleted" m { people = ps, selected = .none {} }
   , none: \_ -> pure (."Person not deleted" m)
   } selected
-
-refreshPeople :: Array Person -> Catalogue -> Catalogue
-refreshPeople people m = m { people = people }
-
-peopleDeleted :: Array Person -> Catalogue -> Catalogue
-peopleDeleted people m = m { people = people, selected = .none {} }
 
 entries :: Catalogue -> Array Entry
 entries { "Surname prefix": prefix, selected, people } =
   (\{ i, p } -> { key: i, "Name": p."Name", "Surname": p."Surname", status: statusOf i })
     <$> filter (\{ p } -> hasPrefix prefix p."Surname") (mapWithIndex (\i p -> { i, p }) people)
   where
-  statusOf i = match { picked: \p -> if p.index == i then .selected {} else .unselected {}, none: \_ -> .unselected {} } selected
+  statusOf i = match
+    { picked: \p -> if p.index == i then .selected {} else .unselected {}
+    , none: \_ -> .unselected {}
+    } selected
   hasPrefix start s = isJust (stripPrefix (Pattern start) s)
 
 personLine :: Entry -> String
@@ -76,4 +79,3 @@ personLine { "Name": name, "Surname": surname } = surname <> ", " <> name
 
 isSelected :: Entry -> Boolean
 isSelected { status } = match { selected: \_ -> true, unselected: \_ -> false } status
-
