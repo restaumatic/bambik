@@ -25,11 +25,17 @@
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
 -- |   tag;
 -- | - **the leaf protocol, as functions** — what every vocabulary's leaves
--- |   are built from: `editorWiring` (write unless held, echo every feed,
--- |   report the platform's change through a busy guard),
--- |   `selectorWiring` (the same over an option list, in index terms),
--- |   `displayWiring` (render, release the row shown), `statusWiring` (render,
--- |   release nothing), `eventLeaf` (the click emitter over chrome),
+-- |   are built from, one wiring per shape a leaf answers in, named after
+-- |   it: `recordToRecordWiring` (write unless held, echo every feed,
+-- |   report the platform's change through a busy guard — a display is it
+-- |   with nothing reported), `recordToVariantWiring` (answer no feed,
+-- |   report the user's pick, over an option list in index terms: the
+-- |   selector leaf, whose `×→×` answer its lift adds),
+-- |   `variantToRecordWiring` (render, release nothing),
+-- |   `variantToVariantWiring` (open on a feed showing it to a content
+-- |   stage, answer nothing, release the content's row once on the user's
+-- |   decision and close — the dialog leaf), `eventLeaf` (the
+-- |   click emitter over chrome, a derivation rather than a wiring),
 -- |   `escaped` (a runtime
 -- |   string made safe for `staticHTML`), `listenNode`/`listenNodeDeferred`,
 -- |   `ensureStyle`, `autoDismiss` and the option tags `OptCaption`,
@@ -55,10 +61,12 @@ module PUI.Web
   , OptLabelIcon(..)
   , OptSelected(..)
   , Wiring
-  , editorWiring
-  , selectorWiring
-  , displayWiring
-  , statusWiring
+  , recordToRecordWiring
+  , recordToVariantWiring
+  , variantToRecordWiring
+  , variantToVariantWiring
+  , invokeMethod
+  , showModalOnce
   , eventLeaf
   , escaped
   , listenNode
@@ -137,7 +145,6 @@ module PUI.Web
   , clickedRow
   , occurrences
   , replayed
-  , witnessed
   , onClickedXY
   , dynamic
   , each
@@ -325,6 +332,8 @@ foreign import separatorRule :: Node -> Node -> Node -> Effect (Effect Unit)
 foreign import listenNodeDeferred :: Node -> String -> Effect Unit -> Effect Unit
 foreign import ensureStyle :: String -> String -> Effect Unit
 foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
+foreign import invokeMethod :: String -> Node -> Effect Unit
+foreign import showModalOnce :: Node -> Effect Unit
 foreign import setAttribute :: Node -> String -> String -> Effect Unit
 foreign import removeAttribute :: Node -> String -> Effect Unit
 foreign import removeAllChildren :: Node -> Effect Unit
@@ -487,8 +496,10 @@ data OptSelected = OptSelected
 instance ConvertOption OptSelected sym a a where
   convertOption _ _ = identity
 
--- The leaf protocol, as functions (see the module header): every leaf of
--- every vocabulary is one of these four wirings over its own element, so
+-- The leaf protocol, as functions (see the module header), one per shape
+-- a leaf answers in, named after it: every leaf of every vocabulary is one
+-- of these wirings over its own element (an emitter is `eventLeaf`, a
+-- derivation), so
 -- the echo a gate depends on, the busy guard around a programmatic write
 -- and the one-registration listener are written once here and nowhere
 -- else.
@@ -497,7 +508,9 @@ instance ConvertOption OptSelected sym a a where
 -- | registration leg (`PUI`'s wiring record, named for the vocabularies).
 type Wiring a b = { toUser :: a -> Effect Unit, fromUser :: (b -> Effect Unit) -> Effect Unit }
 
--- | An **editor leaf**'s wiring: `show` writes each fed value to the
+-- | The **`×→×` leaf**'s wiring — an editor's, and a display's, which is
+-- | an editor the user never changes (`held` false, `reports` registering
+-- | nothing, `read` `pure`): `show` writes each fed value to the
 -- | element unless `held` says the user is in it (the focus guard — a model
 -- | update never clobbers a field being typed in); every feed is **echoed**
 -- | whether written or not, so the lifted stage releases the row and an
@@ -507,7 +520,7 @@ type Wiring a b = { toUser :: a -> Effect Unit, fromUser :: (b -> Effect Unit) -
 -- | quantity it was shown). A report while a write is in progress is the
 -- | write's own echo and is dropped, and a report before any feed has
 -- | nothing to complete and is dropped too.
-editorWiring
+recordToRecordWiring
   :: forall a
    . { show :: a -> Effect Unit
      , held :: Effect Boolean
@@ -515,7 +528,7 @@ editorWiring
      , read :: a -> Effect a
      }
   -> Effect (Wiring a a)
-editorWiring leaf = do
+recordToRecordWiring leaf = do
   propRef <- Ref.new Nothing
   lastRef <- Ref.new Nothing
   busyRef <- Ref.new false
@@ -537,23 +550,25 @@ editorWiring leaf = do
             for_ last \a -> leaf.read a >>= prop
     }
 
--- | A **selector leaf**'s wiring over its option list, in index terms:
+-- | The **`×→+` leaf**'s wiring, a selector's over its option list: it
+-- | answers no feed and reports the user's pick — the `×→+` modality at
+-- | the leaf, the `×→×` answer added by the lift around it. In index terms:
 -- | `show` checks the option at the index (none for `Nothing`), `reports`
 -- | registers the platform's pick event, `read` reads the picked index
 -- | (`Nothing` for a cleared control). The option's value travels through
 -- | `selectedAt` and its siblings, which lift this `Maybe a` leaf to the
 -- | field editor and answer the feed themselves — so, unlike
--- | `editorWiring`, nothing is echoed here. A pick reported while a
+-- | `recordToRecordWiring`, nothing is echoed here. A pick reported while a
 -- | programmatic selection is in progress is that selection's own event
 -- | and is dropped.
-selectorWiring
+recordToVariantWiring
   :: Array String
   -> { show :: Maybe Int -> Effect Unit
      , reports :: Effect Unit -> Effect Unit
      , read :: Effect (Maybe Int)
      }
   -> Effect (Wiring (Maybe String) (Maybe String))
-selectorWiring options leaf = do
+recordToVariantWiring options leaf = do
   propRef <- Ref.new Nothing
   busyRef <- Ref.new false
   pure
@@ -570,27 +585,48 @@ selectorWiring options leaf = do
             Ref.read propRef >>= traverse_ (_ $ (mi >>= (options !! _)))
     }
 
--- | A **display leaf**'s wiring: `show` renders each fed value, and the
--- | feed is answered with the value itself — the display's echo, so a
--- | display is a stage of the pipeline that changes no data: the row it
--- | shows is the row the next line is fed. Nothing at registration, since
--- | an answer needs a feed.
-displayWiring :: forall a. (a -> Effect Unit) -> Effect (Wiring a a)
-displayWiring show = do
-  propRef <- Ref.new Nothing
-  pure
-    { toUser: \a -> do
-        show a
-        Ref.read propRef >>= traverse_ (_ $ a)
-    , fromUser: \prop -> Ref.write (Just prop) propRef
-    }
-
--- | A **status leaf**'s wiring: `show` renders each occurrence, and the
+-- | The **`+→×` leaf**'s wiring, a status's: `show` renders each occurrence, and the
 -- | status releases nothing — the `+→×` merge forwards every release as
 -- | the whole shared row, so a status is typed at every row, as the
 -- | silent component is.
-statusWiring :: forall a b. (a -> Effect Unit) -> Wiring a b
-statusWiring show = { toUser: show, fromUser: \_ -> pure unit }
+variantToRecordWiring :: forall a b. (a -> Effect Unit) -> Wiring a b
+variantToRecordWiring show = { toUser: show, fromUser: \_ -> pure unit }
+
+-- | The **`+→+` leaf**'s wiring, a dialog's: the leaf is `a → a`, a
+-- | case's payload, lifted by `focusCase @l` into the event row as an
+-- | editor's `a → a` is lifted by `focusField @l` into the model row. On a
+-- | feed it `open`s and feeds the payload to its `content` — the stage the
+-- | dialog shows, a display or editors — and answers **nothing**: a `+→+`
+-- | leaf may wait, and a dialog waits for the user. When `reports` fires —
+-- | the deciding button — it `close`s and releases the row the content
+-- | last answered, once; a decision before any feed has nothing to release
+-- | and is dropped, as is a second one before the next feed. A dismiss the
+-- | platform performs itself (Escape, the scrim) releases nothing, which
+-- | is the cancel. `acknowledged` drops the release (`onCase @l`, the case
+-- | consumed); `confirmed` re-emits it (`focusCase @l`).
+variantToVariantWiring
+  :: forall a
+   . { open :: Effect Unit
+     , close :: Effect Unit
+     , content :: Wiring a a
+     , reports :: Effect Unit -> Effect Unit
+     }
+  -> Effect (Wiring a a)
+variantToVariantWiring leaf = do
+  shownRef <- Ref.new Nothing
+  pure
+    { toUser: \a -> do
+        leaf.open
+        leaf.content.toUser a
+    , fromUser: \prop -> do
+        leaf.content.fromUser \a -> Ref.write (Just a) shownRef
+        leaf.reports do
+          shown <- Ref.read shownRef
+          for_ shown \a -> do
+            Ref.write Nothing shownRef
+            leaf.close
+            prop a
+    }
 
 -- | The click-emitter protocol over any `{}`-output element chrome: replay
 -- | the row last fed on click, as case `l` (a click before any value
@@ -908,10 +944,10 @@ textLeaf f = fromHandles do
   -- the display's answer to the feed is the row it was shown, so the
   -- stage after it is fed it (`confirmed`'s confirm replays what its
   -- content last answered). Nothing at registration, since an answer
-  -- needs a feed. Every display follows this protocol (`displayWiring`).
+  -- needs a feed. Every display follows this protocol (`recordToRecordWiring` with nothing reported).
   -- a hole read renders nothing (guardrails L18): a row may reach a display
   -- before its copy is written, as from a merge of sources
-  liftEffect $ displayWiring \s -> setTextNodeValue node (if isHole f then "" else f s)
+  liftEffect $ recordToRecordWiring { show: \s -> setTextNodeValue node (if isHole f then "" else f s), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | **Static copy**: text that is part of the structure — on screen before,
 -- | and regardless of, any model value — a value, never a label, since it
@@ -1136,19 +1172,6 @@ attrAt name = attrWith name (Record.get (Proxy @l))
 clickedRow :: forall @l r a b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
 clickedRow w = replayed @l identity (occurrences w)
 
--- | The **witness rung**'s button: `{}`-input chrome whose click releases
--- | `f` of the row the stage was last fed, as a row — `eventLeaf` with
--- | its one case unwrapped and applied, so a dialog's content and its
--- | deciding button make one stage over the payload row, released on the
--- | decision: `focusCase @l`-lifted it is `confirmed @l caption content`
--- | (MDC2/MDC3), the `+→+` prism re-emitting its case on confirm, and
--- | with the release swallowed it is `acknowledged @l caption content`,
--- | the case consumed on dismiss. The one lawful record-output emitter,
--- | and vocabulary-internal like `clickedRow`: an application's emitters
--- | are its vocabulary's.
-witnessed :: forall r r1. ({ | r } -> { | r1 }) -> PUI Web {} {} -> PUI Web { | r } { | r1 }
-witnessed f chrome = eventLeaf @"witnessed" chrome # rmap (on (Proxy @"witnessed") f case_)
-
 -- | `joined` at the empty payload: the click source's occurrence carries
 -- | nothing, so the event is dropped, `f` is read off the row last fed and
 -- | the case is renamed from the source's to `l`. Replay is `Strong`'s
@@ -1240,7 +1263,7 @@ dynamic :: forall r. ({ | r } -> PUI Web {} {}) -> PUI Web { | r } { | r }
 dynamic build = fromHandles do
   w <- handles (foreachWith build)
   liftEffect $ w.fromUser \_ -> pure unit
-  liftEffect $ displayWiring \value -> w.toUser [ value ]
+  liftEffect $ recordToRecordWiring { show: \value -> w.toUser [ value ], held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | Lay out a list that is known up front and never changes — the courses
 -- | on a menu, the keys of a keypad, a row of preset swatches:

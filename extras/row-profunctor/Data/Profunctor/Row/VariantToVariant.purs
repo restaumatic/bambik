@@ -174,7 +174,7 @@ discard first cont = bind first (\_ -> cont unit)
 -- | the two `Cons` alone (the background `b` is what both rows share).
 -- | At `f = f'` it is the dialog lift: a modal whose content is a stage
 -- | over the payload is `focusCase @l`-lifted into the event row
--- | (`confirmed @l`, MDC2/MDC3), as an editor is `focusField @l`-lifted
+-- | (`confirmed @l`, every vocabulary with a dialog), as an editor is `focusField @l`-lifted
 -- | into the model row. Laws: `focusCase @l identity ≈ identity`; a leaf
 -- | that answers no feed (a cancelled dialog) is a `⊑`-refinement of it.
 focusCase
@@ -200,7 +200,7 @@ focusCase =
 -- | row **less `l`** leaves, so what the handler does not re-emit is
 -- | consumed — the `+→+` stage that eliminates a case. The handler's
 -- | output is the background row, where a status face, releasing nothing,
--- | is typed at any row (`acknowledged @l`, MDC2/MDC3: a modal that
+-- | is typed at any row (`acknowledged @l`, every vocabulary with a dialog: a modal that
 -- | dismisses, the event dying with its copy read). `focusCase @l` keeps
 -- | the case in the row; `onCase @l` is for the stage that may not re-emit
 -- | it, so the fold block after it is typed at exactly what folds.

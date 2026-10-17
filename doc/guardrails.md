@@ -557,7 +557,7 @@ The codebase is three floors, each greppable:
   itself is the web **carrier** (`Hosting Web`, the DOM monad) and sits
   with the algebra layer for its internals — it may import the
   ecosystem's `Data.Profunctor` for the few reshapings it writes bare
-  (`eventLeaf`, `witnessed`) — so the checkable form of this floor is
+  (`eventLeaf`, `replayed`) — so the checkable form of this floor is
   `grep "import Data.Profunctor (" src/PUI/Web/ demo/`, empty. **The floor is
   the namespace**: every web vocabulary is a submodule of its carrier
   (`PUI.Web.*`, under `src/PUI/Web/`), so a module path states which

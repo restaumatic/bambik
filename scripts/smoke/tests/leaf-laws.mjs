@@ -87,11 +87,19 @@ const drive = (name) => `(async () => {
   let decided = null
   if (e.shape === '+→+') {
     const section = document.querySelector('section[data-bench=' + JSON.stringify(${JSON.stringify(name)}) + ']')
-    const host = section.querySelector('md-dialog [slot=actions] md-text-button, .mdc-dialog__button')
+    const isOpen = () => {
+      const d = section.querySelector('md-dialog, .mdc-dialog, dialog, sl-dialog, fluent-dialog')
+      if (!d) return null
+      if (d.classList.contains('mdc-dialog')) return d.classList.contains('mdc-dialog--open') || d.classList.contains('mdc-dialog--opening')
+      if (d.localName === 'fluent-dialog') return !!d.shadowRoot?.querySelector('dialog')?.open
+      return !!d.open
+    }
+    const openAfterFeed = isOpen()
+    const host = section.querySelector('md-dialog [slot=actions], .mdc-dialog__actions, dialog > button, sl-dialog sl-button[slot=footer], fluent-dialog fluent-button[slot=action]')
     const at = e.log.length
     host?.click()
     await wait()
-    decided = { host: host?.tagName.toLowerCase() ?? null, emitted: e.since(at).map(x => x.value) }
+    decided = { host: host?.tagName.toLowerCase() ?? null, emitted: e.since(at).map(x => x.value), openAfterFeed, openAfterDecision: isOpen() }
   }
   let cleared = null
   if (${JSON.stringify(name)}.endsWith('Optional')) {
@@ -233,6 +241,8 @@ export const run = async ({ ev, session, assertEq, sleep, page }) => {
       }
       assertEq(r.registration.length, 0, `${at} nothing fires at registration`)
       assertEq(r.decided.host !== null, true, `${at} Modal: the dialog has its deciding button`)
+      assertEq(r.decided.openAfterFeed, true, `${at} Modal: a feed opens the dialog`)
+      assertEq(r.decided.openAfterDecision, false, `${at} Modal: the decision closes it`)
       const fed = r.samples[r.samples.length - 1]
       if (name === 'confirmed') assertEq(r.decided.emitted, [fed], `${at} Modal: the confirm re-emits the fed case with the row shown`)
       if (name === 'acknowledged') assertEq(r.decided.emitted, [], `${at} Modal: the dismiss emits nothing, the case consumed`)

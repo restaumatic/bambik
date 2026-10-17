@@ -159,7 +159,7 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, anyOf, folding, introduced, isHole, Ocular, PUI)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, occurrences, onInputDebounced, removeAttribute, replayed, selectedAt, selectedOptionalAt, selectedUnpickedAt, selectorWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, uniqueId, witnessed, (:=))
+import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, recordToRecordWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, occurrences, onInputDebounced, removeAttribute, replayed, selectedAt, selectedOptionalAt, selectedUnpickedAt, recordToVariantWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, variantToRecordWiring, text, statusText, uniqueId, variantToVariantWiring, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Lacks)
 import Data.Variant (Variant)
@@ -417,7 +417,7 @@ textFieldLeaf tag mDebounce floatingLabel hint = fromHandles do
   attribute "label" floatingLabel
   when (hint /= "") $ attribute "supporting-text" hint
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setValue node
     , held: isFocused node
     , reports: case mDebounce of
@@ -440,7 +440,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
   -- narrow viewport — a leaf never escapes its surface
   attribute "style" ("width: " <> show config.columns <> "ch; max-width: 100%;")
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setValue node
     , held: isFocused node
     , reports: listenNode node "input"
@@ -469,7 +469,7 @@ checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $
     -- the wrapping <label> names the host but not the input inside its shadow
     -- root, so the caption is stamped as the box's accessible name
     liftEffect $ setAttribute node "aria-label" (reflectSymbol (Proxy @l))
-    liftEffect $ editorWiring
+    liftEffect $ recordToRecordWiring
       { show: \ma -> do
           lbl.toUser {}
           case Variant.prj (Proxy @c) ma of
@@ -563,7 +563,7 @@ switchLeaf lbl =
     node <- gets _.sibling
     liftEffect $ setAttribute node "aria-label" lbl
     _ <- handles (staticText lbl)
-    liftEffect $ editorWiring
+    liftEffect $ recordToRecordWiring
       { show: setBoolProp "selected" node
       , held: pure false
       , reports: listenNode node "change"
@@ -628,7 +628,7 @@ bareSliderLeaf live label measure = fromHandles do
         v <- getNumberProp "value" node
         setStringProp "valueLabel" node (toString v <> " " <> measure)
   liftEffect $ when (measure /= "") $ listenNode node "input" measured
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: \q -> do
         setNumberProp "min" node q.min
         setNumberProp "max" node q.max
@@ -675,7 +675,7 @@ selectLeaf clearable config options = fromHandles do
   node <- gets _.sibling
   -- programmatic selection can fire change too; the wiring's busy guard
   -- drops it
-  liftEffect $ selectorWiring options
+  liftEffect $ recordToVariantWiring options
     { show: setIntProp "selectedIndex" node <<< maybe (-1) (_ + offset)
     , reports: listenNode node "change"
     , read: getIntProp "selectedIndex" node <#> \idx -> Just (idx - offset)
@@ -762,7 +762,7 @@ chipLeaf lbl = fromHandles do
   node <- gets _.sibling
   -- the chip toggles `selected` as the click's default action; read it a
   -- microtask later, once the toggle has settled
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setBoolProp "selected" node
     , held: pure false
     , reports: listenNodeDeferred node "click"
@@ -785,7 +785,7 @@ iconToggleLeaf config = fromHandles do
     el "md-icon" $ staticText config.offIcon
     el "md-icon" >>> "slot" := "selected" >>> "style" := "font-variation-settings: 'FILL' 1;" $ staticText config.onIcon
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setBoolProp "selected" node
     , held: pure false
     , reports: listenNode node "change"
@@ -815,7 +815,7 @@ tabBarLeaf iconOf options = fromHandles do
   _ <- handles (staticHTML ("<md-tabs>" <> foldMap tabMarkup options <> "</md-tabs>"))
   node <- gets _.sibling
   -- programmatic activation fires change too; the wiring's busy guard drops it
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: \a -> for_ (findIndex (\o -> o == a) options) (setIntProp "activeTabIndex" node)
     , held: pure false
     , reports: listenNode node "change"
@@ -842,7 +842,7 @@ indeterminateLinearProgress = fromHandles do
   attribute "indeterminate" ""
   attribute "style" hiddenStyle
   node <- gets _.sibling
-  pure $ statusWiring $ Variant.match
+  pure $ variantToRecordWiring $ Variant.match
     { started: \_ -> setAttribute node "style" visibleStyle
     , ended: \_ -> setAttribute node "style" hiddenStyle }
   where
@@ -862,7 +862,7 @@ linearProgress f = fromHandles do
   element "md-linear-progress" (pure unit)
   attribute "style" "min-width: 200px;"
   node <- gets _.sibling
-  liftEffect $ displayWiring \r -> setNumberProp "value" node (f r)
+  liftEffect $ recordToRecordWiring { show: \r -> setNumberProp "value" node (f r), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
@@ -873,7 +873,7 @@ indeterminateCircularProgress = fromHandles do
   attribute "indeterminate" ""
   attribute "style" hiddenStyle
   node <- gets _.sibling
-  pure $ statusWiring $ Variant.match
+  pure $ variantToRecordWiring $ Variant.match
     { started: \_ -> setAttribute node "style" visibleStyle
     , ended: \_ -> setAttribute node "style" hiddenStyle }
   where
@@ -1074,7 +1074,7 @@ confirmed
   => String
   -> PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption identity content
+confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption content
 
 -- | The dismissed rung — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
 -- | over the modal, the `+→+` stage consuming case `l`, telling it as
@@ -1088,20 +1088,30 @@ acknowledged
   -> PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | b ]
 acknowledged dismissCaption content = onCase @l $ fromHandles do
-  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption identity content
+  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption content
   pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
 
--- the modal both dialog leaves are built over: a title, a content stage
--- shown the row fed, and one deciding button releasing `f` of the row the
--- content last answered — open on feed, closed on that release (`init`),
--- or by Escape with nothing released
-modal :: forall r r1. String -> String -> ({ | r } -> { | r1 }) -> PUI Web { | r } { | r } -> PUI Web { | r } { | r1 }
-modal title buttonCaption f content =
-  el "md-dialog" >>> init pure showDialog closeDialog $ Semigroupoid.do
-    fromHandles do
-      _ <- handles (div >>> "slot" := "headline" $ staticText title)
-      handles (div >>> "slot" := "content" $ content)
-    div >>> "slot" := "actions" $ witnessed f (el "md-text-button" $ staticText buttonCaption)
+-- the modal both dialog leaves are built over: `variantToVariantWiring`
+-- over `md-dialog`, a headline, the content stage and one deciding button;
+-- Escape closes the element by itself, releasing nothing
+modal :: forall r. String -> String -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
+modal title buttonCaption content = fromHandles do
+  actionsRef <- liftEffect $ Ref.new Nothing
+  shown <- handles $ el "md-dialog" $ fromHandles do
+    _ <- handles (div >>> "slot" := "headline" $ staticText title)
+    w <- handles (div >>> "slot" := "content" $ content)
+    _ <- handles (div >>> "slot" := "actions" $ el "md-text-button" $ staticText buttonCaption)
+    actions <- gets _.sibling
+    liftEffect $ Ref.write (Just actions) actionsRef
+    pure w
+  dialogNode <- gets _.sibling
+  actions <- liftEffect $ Ref.read actionsRef
+  liftEffect $ variantToVariantWiring
+    { open: showDialog dialogNode
+    , close: closeDialog dialogNode
+    , content: shown
+    , reports: \decided -> for_ actions \node -> listenNode node "click" decided
+    }
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just

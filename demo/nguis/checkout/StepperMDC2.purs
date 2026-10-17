@@ -15,7 +15,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import PUI (PUI, fromHandles, handles)
-import PUI.Web (Choices, choiceTags, tagged, Node, Web, addClass, appendChild, clazz, createTextNode, element, ensureStyle, escaped, listenNode, removeAttribute, removeClass, selectedAt, selectorWiring, setAttribute, setTextNodeValue, staticHTML, (:=))
+import PUI.Web (Choices, choiceTags, tagged, Node, Web, addClass, appendChild, clazz, createTextNode, element, ensureStyle, escaped, listenNode, removeAttribute, removeClass, selectedAt, recordToVariantWiring, setAttribute, setTextNodeValue, staticHTML, (:=))
 import PUI.Web.HTML (div)
 import Type.Proxy (Proxy(..))
 
@@ -52,7 +52,7 @@ stepperLeaf steps =
           when (j >= 0 && j < count) do
             render (Just j)
             reported
-    liftEffect $ selectorWiring steps
+    liftEffect $ recordToVariantWiring steps
       { show: render
       , reports: \reported -> do
           listenNode back "click" (moved (_ - 1) reported)

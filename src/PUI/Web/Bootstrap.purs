@@ -54,7 +54,7 @@ import Effect.Class (liftEffect)
 import PUI (fromHandles, handles, folding, Ocular, PUI)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, selectorWiring, setAttribute, setChecked, setValue, staticText, statusWiring, text, statusText, uniqueId, (:=))
+import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Web, attribute, autoDismiss, cl, recordToRecordWiring, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, recordToVariantWiring, setAttribute, setChecked, setValue, staticText, variantToRecordWiring, text, statusText, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (Variant)
@@ -136,7 +136,7 @@ inputLeaf lbl hint = div >>> "style" := "width: 100%;" $ fromHandles do
   attribute "class" "form-control"
   when (hint /= "") $ attribute "aria-describedby" hintId
   node <- gets _.sibling
-  wiring <- liftEffect $ editorWiring
+  wiring <- liftEffect $ recordToRecordWiring
     { show: setValue node
     , held: isFocused node
     , reports: listenNode node "input"
@@ -182,7 +182,7 @@ rangeLeaf lbl measure = div >>> "style" := "width: 100%;" $ fromHandles do
   attribute "type" "range"
   attribute "class" "form-range"
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: \q -> do
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
@@ -224,7 +224,7 @@ selectOf clearable lift options = let config = { label: reflectSymbol (Proxy @l)
   element "select" (void $ handles (optionLeaves))
   node <- gets _.sibling
   liftEffect $ setAttribute node "class" "form-select"
-  liftEffect $ selectorWiring options
+  liftEffect $ recordToVariantWiring options
     { show: setValue node <<< maybe "" show
     , reports: listenNode node "change"
     , read: Int.fromString <$> getValue node
@@ -255,7 +255,7 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
     setAttribute node "role" "switch"
     setAttribute node "id" inputId
   _ <- handles ((label >>> "for" := inputId $ staticText config.label) # cl "form-check-label")
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setChecked node
     , held: pure false
     , reports: listenNode node "change"
@@ -281,7 +281,7 @@ progress f = fromHandles do
     setAttribute node "class" "progress"
     setAttribute node "role" "progressbar"
     setAttribute node "style" "width: 100%; min-width: 200px;"
-  liftEffect $ displayWiring \r -> setAttribute barNode "style" ("width: " <> show (round (f r * 100.0)) <> "%;")
+  liftEffect $ recordToRecordWiring { show: \r -> setAttribute barNode "style" ("width: " <> show (round (f r * 100.0)) <> "%;"), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | The **toast**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just
@@ -369,7 +369,7 @@ indeterminateLinearProgress = fromHandles do
     setAttribute node "class" "progress"
     setAttribute node "role" "progressbar"
     setAttribute node "style" hiddenStyle
-  pure $ statusWiring $ Variant.match
+  pure $ variantToRecordWiring $ Variant.match
     { started: \_ -> setAttribute node "style" visibleStyle
     , ended: \_ -> setAttribute node "style" hiddenStyle }
   where

@@ -155,6 +155,26 @@ export function autoDismiss(node) {
   };
 }
 
+// invokeMethod :: String -> Node -> Effect Unit — call an element's own
+// no-argument method by name (a dialog's show/close, whatever the catalogue
+// calls them); a method missing on the node is a no-op, so a call before a
+// custom element upgrades does nothing rather than throwing
+export function invokeMethod(name) {
+  return function (node) {
+    return function () {
+      if (typeof node[name] === "function") node[name]();
+    };
+  };
+}
+
+// showModalOnce :: Node -> Effect Unit — the native <dialog>'s showModal,
+// which throws on a dialog already open
+export function showModalOnce(node) {
+  return function () {
+    if (!node.open) node.showModal();
+  };
+}
+
 // createDocumentFragment :: IOSync Node
 export function createDocumentFragment() {
   return document.createDocumentFragment();

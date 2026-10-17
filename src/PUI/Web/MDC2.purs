@@ -138,7 +138,7 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, anyOf, folding, isHole, Ocular, PUI, static)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, witnessed, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, displayWiring, documentBody, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, occurrences, onInputDebounced, replayed, selectorWiring, setAttribute, setChecked, staticHTML, staticText, statusWiring, text, statusText, uniqueId, separating, (:=))
+import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, variantToVariantWiring, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, recordToRecordWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, occurrences, onInputDebounced, replayed, recordToVariantWiring, setAttribute, setChecked, staticHTML, staticText, variantToRecordWiring, text, statusText, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Variant (Variant)
@@ -428,7 +428,7 @@ textFieldLeaf variant mDebounce floatingLabel hint = fromHandles do
 -- the shared text-field/text-area wiring: write through the foundation's
 -- `value` (focus-guarded, echoing), read the native input's events
 textFieldWiring :: Component -> Node -> Maybe Number -> Effect { toUser :: String -> Effect Unit, fromUser :: (String -> Effect Unit) -> Effect Unit }
-textFieldWiring comp inputNode mDebounce = editorWiring
+textFieldWiring comp inputNode mDebounce = recordToRecordWiring
   { show: setStringProp "value" comp
   , held: isFocused inputNode
   , reports: case mDebounce of
@@ -505,7 +505,7 @@ checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   ffNode <- gets _.sibling
   ffComp <- liftEffect $ newComponent material.formField."MDCFormField" ffNode
   liftEffect $ setFormFieldInput ffComp parts.cbComp
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: \ma -> do
         parts.lbl.toUser {}
         case Variant.prj (Proxy @c) ma of
@@ -610,7 +610,7 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
   comp <- liftEffect $ newComponent material.switchControl."MDCSwitch" node
   _ <- handles (staticHTML ("<label for=\"" <> switchId <> "\">" <> escaped lbl <> "</label>"))
   -- MDCSwitch toggles itself on click; read the post-toggle state
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setBoolProp "selected" comp
     , held: pure false
     , reports: listenNode node "click"
@@ -689,7 +689,7 @@ sliderLeaf live label = fromHandles do
   -- nothing, so re-listening per rebuild would leak a handler each time);
   -- the read goes through the *current* foundation in the state ref, since
   -- a bounds change replaces it
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: \q -> do
         comp <- scoped q
         setSliderValue comp q.current
@@ -754,7 +754,7 @@ selectLeaf clearable config options = fromHandles do
   comp <- liftEffect $ newComponent material.select."MDCSelect" node
   -- programmatic selection fires MDCSelect:change too; the wiring's busy
   -- guard drops it
-  liftEffect $ selectorWiring options
+  liftEffect $ recordToVariantWiring options
     { show: setIntProp "selectedIndex" comp <<< maybe (-1) (_ + offset)
     , reports: listen comp "MDCSelect:change"
     , read: getIntProp "selectedIndex" comp <#> \idx -> Just (idx - offset)
@@ -858,7 +858,7 @@ chipLeaf lbl = fromHandles do
         setClassIf node "mdc-chip--selected" b
         setAttribute actionNode "aria-checked" (if b then "true" else "false")
   -- the deprecated chip toggles nothing itself: a click flips the kept state
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: render
     , held: pure false
     , reports: listenNode node "click"
@@ -895,7 +895,7 @@ iconToggleLeaf config = fromHandles do
   _ <- handles (staticHTML markup)
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.iconButton."MDCIconButtonToggle" node
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setBoolProp "on" comp
     , held: pure false
     , reports: listen comp "MDCIconButtonToggle:change"
@@ -940,7 +940,7 @@ tabBarLeaf iconOf options = fromHandles do
   -- the activated index arrives with the event, kept for the read; a
   -- programmatic `activateTab` fires it too, which the wiring's busy guard drops
   activatedRef <- liftEffect $ Ref.new Nothing
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: \a -> for_ (findIndex (\o -> o == a) options) (activateTab comp)
     , held: pure false
     , reports: \report -> onTabBarActivated comp \idx -> Ref.write (Just idx) activatedRef *> report
@@ -973,7 +973,7 @@ indeterminateLinearProgress = fromHandles do
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   liftEffect $ close comp
-  pure $ statusWiring $ Variant.match { started: \_ -> open comp, ended: \_ -> close comp }
+  pure $ variantToRecordWiring $ Variant.match { started: \_ -> open comp, ended: \_ -> close comp }
 
 -- | The **determinate progress bar**: how far along something is, `value`
 -- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
@@ -988,7 +988,7 @@ linearProgress f = fromHandles do
   _ <- handles $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
-  liftEffect $ displayWiring \r -> setNumberProp "progress" comp (f r)
+  liftEffect $ recordToRecordWiring { show: \r -> setNumberProp "progress" comp (f r), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- the documented buffer/bar innards shared by both linear variants
 linearProgressInnards :: PUI Web {} {}
@@ -1010,7 +1010,7 @@ indeterminateCircularProgress = fromHandles do
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.circularProgress."MDCCircularProgress" node
   liftEffect $ close comp
-  pure $ statusWiring $ Variant.match { started: \_ -> open comp, ended: \_ -> close comp }
+  pure $ variantToRecordWiring $ Variant.match { started: \_ -> open comp, ended: \_ -> close comp }
   where
   innards = """
     <div class="mdc-circular-progress__determinate-container">
@@ -1232,7 +1232,7 @@ confirmed
   => String
   -> PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption identity content
+confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption content
 
 -- | The **dismissed rung**: `dialog` with a **dismiss button** built in,
 -- | for the outcome the user must read and can only close — a rejection
@@ -1254,30 +1254,42 @@ acknowledged
   -> PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | b ]
 acknowledged dismissCaption content = onCase @l $ fromHandles do
-  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption identity content
+  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption content
   pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
 
--- the modal both dialog leaves are built over: a title, a content stage
--- shown the row fed, and one deciding button releasing `f` of the row the
--- content last answered — open on feed, closed on that release (`init`),
--- or by Escape or the scrim with nothing released
-modal :: forall r r1. String -> String -> ({ | r } -> { | r1 }) -> PUI Web { | r } { | r } -> PUI Web { | r } { | r1 }
-modal title buttonCaption f content = fromHandles do
+-- the modal both dialog leaves are built over: `variantToVariantWiring`
+-- over the MDCDialog foundation's markup, a title, the content stage and
+-- one deciding button; Escape and the scrim close the foundation by
+-- itself, releasing nothing
+modal :: forall r. String -> String -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
+modal title buttonCaption content = fromHandles do
   titleId <- liftEffect uniqueId
   contentId <- liftEffect uniqueId
-  handles $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ fromHandles do
-    result <- handles $
+  actionsRef <- liftEffect $ Ref.new Nothing
+  shown <- handles $ div >>> cl "mdc-dialog" $ fromHandles do
+    w <- handles $
       div >>> cl "mdc-dialog__container" $
-        div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ Semigroupoid.do
-          fromHandles do
-            _ <- handles (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
-            handles (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
-          div >>> cl "mdc-dialog__actions" $ witnessed f $
+        div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ fromHandles do
+          _ <- handles (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
+          w' <- handles (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
+          _ <- handles $ div >>> cl "mdc-dialog__actions" $
             el "button" >>> "type" := "button" >>> "aria-label" := buttonCaption >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
               static (div >>> cl "mdc-button__ripple")
               span >>> cl "mdc-button__label" $ staticText buttonCaption
+          actions <- gets _.sibling
+          liftEffect $ Ref.write (Just actions) actionsRef
+          pure w'
     _ <- handles (static (div >>> cl "mdc-dialog__scrim"))
-    pure result
+    pure w
+  dialogNode <- gets _.sibling
+  component <- liftEffect $ newComponent material.dialog."MDCDialog" dialogNode
+  actions <- liftEffect $ Ref.read actionsRef
+  liftEffect $ variantToVariantWiring
+    { open: open component
+    , close: close component
+    , content: shown
+    , reports: \decided -> for_ actions \node -> listenNode node "click" decided
+    }
 
 -- | The **snackbar**: a brief message at the bottom of the screen,
 -- | dismissing itself, for something that has just happened and needs no

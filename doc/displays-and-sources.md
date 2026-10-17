@@ -72,7 +72,7 @@ Two structural facts follow from terminality, both load-bearing:
 
 - **A map to `1` cannot be a pipeline stage** (everything after it would
   receive the unique `{}`). A display is a stage only because it releases
-  its row (`displayWiring`: render, then echo the value); a status, which
+  its row (`recordToRecordWiring` with nothing reported: render, then echo the value); a status, which
   is such a map once instantiated at `{}`, is integrated beside the wire by
   the merge's unit law — `fold` is the status and the wire under the
   `×→×` merge. Dually, a

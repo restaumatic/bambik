@@ -15,7 +15,9 @@
 -- | and the structure builders (`dynamic`, `each`, `el`) — lives in the
 -- | parent module, `PUI.Web`, shared with SVG and the design systems.
 module PUI.Web.HTML
-  ( a
+  ( acknowledged
+  , confirmed
+  , a
   , article
   , aside
   , body
@@ -83,8 +85,9 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
+import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
 import PUI (fromHandles, handles, folding, Ocular, PUI)
-import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, displayWiring, documentBody, editorWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, selectorWiring, setAttribute, setValue, staticText, statusWiring, statusText, separating, (:=), (:=>))
+import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, documentBody, recordToRecordWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, recordToVariantWiring, setAttribute, setValue, staticText, variantToRecordWiring, statusText, separating, variantToVariantWiring, invokeMethod, showModalOnce, (:=), (:=>))
 
 -- UIs
 
@@ -104,7 +107,7 @@ input :: forall @l r b. IsSymbol l => Cons l String b r => String -> PUI Web { |
 input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ fromHandles do
   element "input" (pure unit)
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setValue node
     , held: isFocused node
     , reports: listenNode node "input"
@@ -132,7 +135,7 @@ textArea :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { 
 textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   element "textArea" (pure unit)
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setValue node
     , held: isFocused node
     , reports: listenNode node "input"
@@ -166,7 +169,7 @@ selectOf :: forall @l i o. IsSymbol l => Boolean -> (PUI Web (Maybe String) (May
 selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   element "select" (void $ handles optionLeaves)
   node <- gets _.sibling
-  liftEffect $ selectorWiring options
+  liftEffect $ recordToVariantWiring options
     { show: setValue node <<< maybe "" show
     , reports: listenNode node "change"
     , read: Int.fromString <$> getValue node
@@ -197,7 +200,7 @@ rangeInput :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Nu
 rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ fromHandles do
   element "input" (pure unit)
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: \q -> do
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
@@ -220,7 +223,7 @@ progress f = fromHandles do
   element "progress" (pure unit)
   attribute "max" "1"
   node <- gets _.sibling
-  liftEffect $ displayWiring \r -> setAttribute node "value" (show (f r))
+  liftEffect $ recordToRecordWiring { show: \r -> setAttribute node "value" (show (f r)), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | What just happened, told in place — the native `<output>`, HTML's
 -- | element for the result of a user action. It shows the latest event's
@@ -243,6 +246,57 @@ outputFace :: forall a r. String -> PUI Web a { | r }
 outputFace caseLabel = el "output" $ statusText caseLabel
 
 -- TODO disable button after click?
+-- | The **witness rung** — see `PUI.Web.MDC2.confirmed`: `focusCase @l`
+-- | over the modal, the `+→+` stage of case `l`, telling it as its title,
+-- | the confirm re-emitting the case with the row its content answered, a
+-- | dismiss consuming it, every other case passing. Over the native `<dialog>`, opened with `showModal`.
+confirmed
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => String
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | v ]
+confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption content
+
+-- | The **dismissed rung** — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
+-- | over the modal, the `+→+` stage consuming case `l`, telling it as its
+-- | title and showing its payload until the user closes it; the row less
+-- | `l` leaves.
+acknowledged
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => String
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | b ]
+acknowledged dismissCaption content = onCase @l $ fromHandles do
+  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption content
+  pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
+
+-- the modal both dialog leaves are built over: `variantToVariantWiring`
+-- over the native `<dialog>`, opened modal, a heading, the content
+-- stage and one deciding button; Escape closes the element by itself,
+-- releasing nothing
+modal :: forall r. String -> String -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
+modal title buttonCaption content = fromHandles do
+  actionsRef <- liftEffect $ Ref.new Nothing
+  shown <- handles $ el "dialog" >>> "aria-label" := title $ fromHandles do
+    _ <- handles (h2 $ staticText title)
+    w <- handles (div $ content)
+    _ <- handles (el "button" >>> "type" := "button" $ staticText buttonCaption)
+    actions <- gets _.sibling
+    liftEffect $ Ref.write (Just actions) actionsRef
+    pure w
+  dialogNode <- gets _.sibling
+  actions <- liftEffect $ Ref.read actionsRef
+  liftEffect $ variantToVariantWiring
+    { open: showModalOnce dialogNode
+    , close: invokeMethod "close" dialogNode
+    , content: shown
+    , reports: \decided -> for_ actions \node -> listenNode node "click" decided
+    }
+
 -- | A bare `<button>`, captioned by its label verbatim (`label:` overrides
 -- | with real copy the label cannot be). It reports, as case `l`, that the
 -- | user asked for something, carrying whatever row it was being shown at
@@ -497,7 +551,7 @@ indeterminateLinearProgress = fromHandles do
   element "progress" (pure unit)
   attribute "style" hiddenStyle
   node <- gets _.sibling
-  pure $ statusWiring $ match
+  pure $ variantToRecordWiring $ match
     { started: \_ -> setAttribute node "style" visibleStyle
     , ended: \_ -> setAttribute node "style" hiddenStyle }
   where

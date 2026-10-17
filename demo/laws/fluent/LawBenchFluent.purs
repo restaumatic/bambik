@@ -4,8 +4,8 @@ import Prelude
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, staticText)
-import PUI.Web.Fluent (body, button, dropdown, dropdownOptional, dropdownUnpicked, indeterminateLinearProgress, messageBar, progressBar, radioGroup, radioGroupOptional, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
+import PUI.Web (text, (<+>), choice, staticText)
+import PUI.Web.Fluent (acknowledged, confirmed, body, button, dropdown, dropdownOptional, dropdownUnpicked, indeterminateLinearProgress, messageBar, progressBar, radioGroup, radioGroupOptional, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
 
 lawBenchFluent :: Effect Unit
 lawBenchFluent = do
@@ -25,6 +25,9 @@ lawBenchFluent = do
     , bench "radioGroupOptional" "×→×" picks (radioGroupOptional @"Pick" @"chosen" @"unchosen" options)
     , bench "button" "×→+" rows (button @"Go")
     , bench "messageBar" "+→×" events (messageBar @"event" (const {}))
+    -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
+    , bench "confirmed" "+→+" decisions (confirmed @"decision" "Confirm" (text nLine))
+    , bench "acknowledged" "+→+" decisions (acknowledged @"decision" "Got it" (text nLine))
     ]
   where
   fractionOf { fraction } = fraction
@@ -38,4 +41,6 @@ lawBenchFluent = do
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]
+  decisions = [ .decision { n: 1 }, .decision { n: 2 } ] :: Array [ decision :: { n :: Int } ]
+  nLine { n } = "n = " <> show n
   events = [ .event "hello", .event "world" ]

@@ -4,8 +4,8 @@ import Prelude
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, staticText)
-import PUI.Web.Shoelace (body, button, indeterminateLinearProgress, progressBar, rating, select, selectOptional, selectUnpicked, sliderLive, textArea, textField, toast, toggleSwitch)
+import PUI.Web (text, (<+>), choice, staticText)
+import PUI.Web.Shoelace (acknowledged, confirmed, body, button, indeterminateLinearProgress, progressBar, rating, select, selectOptional, selectUnpicked, sliderLive, textArea, textField, toast, toggleSwitch)
 
 lawBenchShoelace :: Effect Unit
 lawBenchShoelace = do
@@ -23,6 +23,9 @@ lawBenchShoelace = do
     , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
     , bench "button" "×→+" rows (button @"Go")
     , bench "toast" "+→×" events (toast @"event" (const {}))
+    -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
+    , bench "confirmed" "+→+" decisions (confirmed @"decision" "Confirm" (text nLine))
+    , bench "acknowledged" "+→+" decisions (acknowledged @"decision" "Got it" (text nLine))
     ]
   where
   fractionOf { fraction } = fraction
@@ -37,4 +40,6 @@ lawBenchShoelace = do
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]
+  decisions = [ .decision { n: 1 }, .decision { n: 2 } ] :: Array [ decision :: { n :: Int } ]
+  nLine { n } = "n = " <> show n
   events = [ .event "hello", .event "world" ]

@@ -5,7 +5,7 @@ import Prelude hiding (div)
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI.Web ((<+>), choice, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, online, provided, providedAt, staticText, text, textAt)
-import PUI.Web.HTML (body, button, div, filePicked, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
+import PUI.Web.HTML (acknowledged, confirmed, body, button, div, filePicked, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
 lawBenchHTML = do
@@ -37,6 +37,9 @@ lawBenchHTML = do
     , bench "clock" "×→×" units (clock @"time" { ms: 60000.0 })
     , bench "colorScheme" "×→×" units (colorScheme @"scheme")
     , bench "filePicked" "×→×" units (filePicked @"Photo")
+    -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
+    , bench "confirmed" "+→+" decisions (confirmed @"decision" "Confirm" (text nLine))
+    , bench "acknowledged" "+→+" decisions (acknowledged @"decision" "Got it" (text nLine))
     ]
   where
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
@@ -52,6 +55,8 @@ lawBenchHTML = do
   gated = [ { mode: .on { n: "shown" }, "Name": "alpha", other: 1 }, { mode: .off {}, "Name": "beta", other: 2 } ]
   modes = [ { mode: .on { n: "shown" } }, { mode: .off {} } ]
   rows = [ { n: 1 }, { n: 2 } ]
+  decisions = [ .decision { n: 1 }, .decision { n: 2 } ] :: Array [ decision :: { n :: Int } ]
+  nLine { n } = "n = " <> show n
   events = [ .event "hello", .event "world" ]
   fractionOf { fraction } = fraction
 

@@ -27,7 +27,7 @@ One starvation bug becomes a theorem here. Broadcasting one input to two
 `⊳`-composed stages requires the first stage to be a **comonoid**: it must
 *duplicate* — pass its input through — not merely consume it. A display is
 exactly that comonoid (render *and* release the row it shows,
-`displayWiring`); a status has only the counit (render and *discard*).
+`recordToRecordWiring`); a status has only the counit (render and *discard*).
 That is the general reason a counit-only stage followed by a collection
 starves under `Semigroupoid.do` while a display followed by one flows
 (a counit-only display word, `muted`, went for it; CHANGELOG 2026-10-13):

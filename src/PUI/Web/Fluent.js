@@ -5,6 +5,8 @@
 // at mount, so pages need no stylesheet link — the whole design system ships
 // in the bundle, and nothing acts on the page at import time.
 import '@fluentui/web-components/button.js';
+import '@fluentui/web-components/dialog.js';
+import '@fluentui/web-components/dialog-body.js';
 import '@fluentui/web-components/divider.js';
 import '@fluentui/web-components/dropdown.js';
 import '@fluentui/web-components/field.js';

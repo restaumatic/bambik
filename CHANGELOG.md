@@ -8,6 +8,40 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-17, latest
 
+- **The wirings are named by shape.** `editorWiring`, `displayWiring`,
+  `selectorWiring` and `statusWiring` (2026-10-11) were named by leaf
+  kind while the library already names the shapes. They are now
+  `recordToRecordWiring`, `recordToVariantWiring` and
+  `variantToRecordWiring`, one per shape a leaf answers in. Two leaf
+  kinds shared `×→×`: a display was the editor protocol with nothing to
+  report, so `displayWiring` is gone and its nine call sites pass
+  `recordToRecordWiring` `held: pure false`, no reports and `read: pure`.
+  The selector's wiring was never `×→×`: it answers no feed and reports
+  the user's pick, the `×→+` modality at the leaf, with `selectedAt`
+  adding the answer because the leaf's `Maybe` loses the field — hence
+  `recordToVariantWiring`. Emitters stay `eventLeaf`, a derivation.
+- **The `+→+` wiring, and dialogs in every vocabulary with one.** The
+  shape had no wiring because no vocabulary had a `+→+` leaf until the
+  dialogs, which then assembled the protocol by hand in each Material
+  module: `init`'s hooks to open on a feed and close after a report, and
+  `witnessed`, a record-output button, to release the content's row.
+  `variantToVariantWiring { open, close, content, reports }` (`PUI.Web`)
+  is that protocol once — the leaf `a → a`, a case's payload, lifted by
+  `focusCase @l` as an editor's `a → a` is by `focusField @l`: a feed
+  opens the dialog and feeds its content stage, answering nothing; the
+  deciding gesture closes it and releases the content's last answer
+  once; a dismiss the platform performs (Escape, scrim) releases
+  nothing. Both Material modals are rebuilt on it, `witnessed` is
+  deleted (subsumed), and `confirmed`/`acknowledged` join HTML (the
+  native `<dialog>`, opened with `showModal`), Shoelace (`<sl-dialog>`)
+  and Fluent (`<fluent-dialog>` with `<fluent-dialog-body>`), each a
+  face over the one wiring, so a dialog switches design system with the
+  import like every other leaf. `PUI.Web` gains `invokeMethod` (an
+  element's own show/hide, whatever the catalogue names them) and
+  `showModalOnce`. Bootstrap stays without one: its modal is its
+  JavaScript plugin, and the vocabulary is CSS-only. The leaf-law bench
+  mounts both dialogs on every page that has them.
+
 - **The introducing editor.** A knotless form states each field's
   blank at its editor instead of in a seed: `introduced @l init editor`
   (`PUI`) lifts a lens editor to `{ | b } → { l :: a | b }`, and MDC3

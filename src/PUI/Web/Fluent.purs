@@ -16,7 +16,9 @@
 -- | show a figure, `card`, `divider` and the type ramp (`title3`, `body1`,
 -- | `caption1`) for structure, and `body` to mount the app.
 module PUI.Web.Fluent
-  ( body
+  ( acknowledged
+  , confirmed
+  , body
   , body1
   , button
   , caption1
@@ -56,10 +58,11 @@ import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
+import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
 import PUI (fromHandles, handles, folding, Ocular, PUI)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, choiceTags, tagged, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, separating, (:=))
+import PUI.Web (Choices, choiceTags, tagged, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, attribute, autoDismiss, cl, recordToRecordWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, recordToVariantWiring, setAttribute, setChecked, setValue, staticHTML, staticText, variantToRecordWiring, text, statusText, separating, variantToVariantWiring, invokeMethod, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (Variant)
@@ -154,7 +157,7 @@ textInputLeaf lbl hint = el "fluent-field" >>> "label-position" := "above" $ fro
     element "fluent-text-input" (pure unit)
     attribute "slot" "input"
     node <- gets _.sibling
-    liftEffect $ editorWiring
+    liftEffect $ recordToRecordWiring
       { show: setValue node
       , held: containsFocus node
       , reports: listenNode node "input"
@@ -168,7 +171,7 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
   element "fluent-switch" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setChecked node
     , held: pure false
     , reports: listenNode node "change"
@@ -208,7 +211,7 @@ sliderLeaf lbl measure = el "fluent-field" >>> "label-position" := "above" $ fro
   element "fluent-slider" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: \q -> do
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
@@ -250,7 +253,7 @@ dropdownOf clearable lift options = let config = { label: reflectSymbol (Proxy @
   element "fluent-dropdown" (void $ handles (staticHTML optionsMarkup))
   attribute "slot" "input"
   node <- gets _.sibling
-  liftEffect $ selectorWiring options
+  liftEffect $ recordToVariantWiring options
     { show: selectDropdownOption node <<< maybe "" show
     , reports: listenNode node "change"
     , read: fromString <$> getStringProp "value" node
@@ -334,7 +337,7 @@ progressBar f = fromHandles do
   attribute "max" "1"
   attribute "style" "min-width: 200px;"
   node <- gets _.sibling
-  liftEffect $ displayWiring \r -> setNumberProp "value" node (f r)
+  liftEffect $ recordToRecordWiring { show: \r -> setNumberProp "value" node (f r), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | A **read-only star rating**: someone else's score, shown but not
 -- | editable — Fluent's catalog has the display and not the editor, so
@@ -346,7 +349,7 @@ ratingDisplay
 ratingDisplay f = fromHandles do
   element "fluent-rating-display" (pure unit)
   node <- gets _.sibling
-  liftEffect $ displayWiring \r -> setNumberProp "value" node (f r)
+  liftEffect $ recordToRecordWiring { show: \r -> setNumberProp "value" node (f r), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | The **message bar**: a brief success message at the bottom of the
 -- | screen that dismisses itself after a few seconds, for something that
@@ -386,6 +389,57 @@ toastCss = """
 -- UIOculars
 
 -- the Fluent type ramp over <fluent-text>
+
+-- | The **witness rung** — see `PUI.Web.MDC2.confirmed`: `focusCase @l`
+-- | over the modal, the `+→+` stage of case `l`, telling it as its title,
+-- | the confirm re-emitting the case with the row its content answered, a
+-- | dismiss consuming it, every other case passing. Over `<fluent-dialog>`.
+confirmed
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => String
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | v ]
+confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption content
+
+-- | The **dismissed rung** — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
+-- | over the modal, the `+→+` stage consuming case `l`, telling it as its
+-- | title and showing its payload until the user closes it; the row less
+-- | `l` leaves.
+acknowledged
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => String
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | b ]
+acknowledged dismissCaption content = onCase @l $ fromHandles do
+  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption content
+  pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
+
+-- the modal both dialog leaves are built over: `variantToVariantWiring`
+-- over `<fluent-dialog>` and its `<fluent-dialog-body>` (v3's markup
+-- contract: title, content and action slots), one deciding button in the
+-- action slot; Escape closes the element by itself, releasing nothing
+modal :: forall r. String -> String -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
+modal title buttonCaption content = fromHandles do
+  actionsRef <- liftEffect $ Ref.new Nothing
+  shown <- handles $ el "fluent-dialog" >>> "aria-label" := title $ el "fluent-dialog-body" $ fromHandles do
+    _ <- handles (div >>> "slot" := "title" $ staticText title)
+    w <- handles (div $ content)
+    _ <- handles (el "fluent-button" >>> "slot" := "action" >>> "appearance" := "primary" $ staticText buttonCaption)
+    actions <- gets _.sibling
+    liftEffect $ Ref.write (Just actions) actionsRef
+    pure w
+  dialogNode <- gets _.sibling
+  actions <- liftEffect $ Ref.read actionsRef
+  liftEffect $ variantToVariantWiring
+    { open: invokeMethod "show" dialogNode
+    , close: invokeMethod "hide" dialogNode
+    , content: shown
+    , reports: \decided -> for_ actions \node -> listenNode node "click" decided
+    }
 
 -- | A **title**: the heading of a screen region or a card, in Fluent's
 -- | semibold title size.
@@ -462,7 +516,7 @@ indeterminateLinearProgress = fromHandles do
   element "fluent-progress-bar" (pure unit)
   attribute "style" hiddenStyle
   node <- gets _.sibling
-  pure $ statusWiring $ Variant.match
+  pure $ variantToRecordWiring $ Variant.match
     { started: \_ -> setAttribute node "style" visibleStyle
     , ended: \_ -> setAttribute node "style" hiddenStyle }
   where

@@ -18,7 +18,9 @@
 -- | Typography is deliberately absent: Shoelace styles plain HTML, so the
 -- | `PUI.Web.HTML` elements are the type scale.
 module PUI.Web.Shoelace
-  ( body
+  ( acknowledged
+  , confirmed
+  , body
   , button
   , card
   , divider
@@ -42,16 +44,19 @@ import Prelude hiding (div)
 import Control.Monad.State (gets)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Int (fromString)
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
+import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
+import Effect.Ref as Ref
+import Data.Foldable (for_)
 import PUI (fromHandles, handles, folding, Ocular, PUI)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, attribute, displayWiring, editorWiring, el, element, escaped, eventLeaf, getChecked, getValue, isFocused, listenNode, removeAttribute, selectorWiring, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, statusText, separating, (:=))
+import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, attribute, recordToRecordWiring, el, element, escaped, eventLeaf, getChecked, getValue, isFocused, listenNode, removeAttribute, recordToVariantWiring, setAttribute, setChecked, setValue, staticHTML, staticText, variantToRecordWiring, statusText, separating, variantToVariantWiring, invokeMethod, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (Variant)
@@ -132,7 +137,7 @@ inputLeaf lbl hint = fromHandles do
   attribute "label" lbl
   when (hint /= "") $ attribute "help-text" hint
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setValue node
     , held: isFocused node
     , reports: listenNode node "sl-input"
@@ -147,7 +152,7 @@ textArea provided = let config = convertOptionsWithDefaults OptCaption { label: 
   attribute "label" config.label
   attribute "rows" (show config.rows)
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setValue node
     , held: isFocused node
     , reports: listenNode node "sl-input"
@@ -170,7 +175,7 @@ rating = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "na
     element "sl-rating" (pure unit)
     attribute "label" config.label
     node <- gets _.sibling
-    liftEffect $ editorWiring
+    liftEffect $ recordToRecordWiring
       { show: \q -> do
           setAttribute node "max" (show q.max)
           setNumberProp "value" node q.current
@@ -208,7 +213,7 @@ rangeLeaf lbl measure = fromHandles do
   attribute "style" "width: 100%; min-width: 240px;"
   node <- gets _.sibling
   liftEffect $ when (measure /= "") $ setTooltipUnit node measure
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: \q -> do
         setAttribute node "min" (show q.min)
         setAttribute node "max" (show q.max)
@@ -226,7 +231,7 @@ toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r
 toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   element "sl-switch" (void $ handles (staticText config.label))
   node <- gets _.sibling
-  liftEffect $ editorWiring
+  liftEffect $ recordToRecordWiring
     { show: setChecked node
     , held: pure false
     , reports: listenNode node "sl-change"
@@ -260,7 +265,7 @@ selectOf :: forall @l i o. IsSymbol l => Boolean -> (PUI Web (Maybe String) (May
 selectOf clearable lift options = lift $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
   _ <- handles (staticHTML markup)
   node <- gets _.sibling
-  liftEffect $ selectorWiring options
+  liftEffect $ recordToVariantWiring options
     { show: setValue node <<< maybe "" show
     , reports: listenNode node "sl-change"
     , read: fromString <$> getValue node
@@ -286,7 +291,7 @@ progressBar f = fromHandles do
   attribute "style" "width: 100%; min-width: 200px;"
   node <- gets _.sibling
   -- sl-progress-bar runs 0–100
-  liftEffect $ displayWiring \r -> setNumberProp "value" node (f r * 100.0)
+  liftEffect $ recordToRecordWiring { show: \r -> setNumberProp "value" node (f r * 100.0), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | The **toast**: a brief message at the bottom of the screen that
 -- | dismisses itself, for something that has just happened and needs no
@@ -319,6 +324,56 @@ toastFace caseLabel = fromHandles do
     }
 
 -- UIOculars
+
+-- | The **witness rung** — see `PUI.Web.MDC2.confirmed`: `focusCase @l`
+-- | over the modal, the `+→+` stage of case `l`, telling it as its title,
+-- | the confirm re-emitting the case with the row its content answered, a
+-- | dismiss consuming it, every other case passing. Over `<sl-dialog>`.
+confirmed
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => String
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | v ]
+confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption content
+
+-- | The **dismissed rung** — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
+-- | over the modal, the `+→+` stage consuming case `l`, telling it as its
+-- | title and showing its payload until the user closes it; the row less
+-- | `l` leaves.
+acknowledged
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => String
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | b ]
+acknowledged dismissCaption content = onCase @l $ fromHandles do
+  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption content
+  pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
+
+-- the modal both dialog leaves are built over: `variantToVariantWiring`
+-- over `<sl-dialog>`, its title the `label`, the content stage and one
+-- deciding button in the footer; Escape and the overlay close the element
+-- by itself, releasing nothing
+modal :: forall r. String -> String -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
+modal title buttonCaption content = fromHandles do
+  actionsRef <- liftEffect $ Ref.new Nothing
+  shown <- handles $ el "sl-dialog" >>> "label" := title $ fromHandles do
+    w <- handles (div $ content)
+    _ <- handles (el "sl-button" >>> "slot" := "footer" >>> "variant" := "primary" $ staticText buttonCaption)
+    actions <- gets _.sibling
+    liftEffect $ Ref.write (Just actions) actionsRef
+    pure w
+  dialogNode <- gets _.sibling
+  actions <- liftEffect $ Ref.read actionsRef
+  liftEffect $ variantToVariantWiring
+    { open: invokeMethod "show" dialogNode
+    , close: invokeMethod "hide" dialogNode
+    , content: shown
+    , reports: \decided -> for_ actions \node -> listenNode node "click" decided
+    }
 
 -- | A **card**: a surface holding one subject's content. The body stacks
 -- | its children with even spacing, so a form or a summary can be dropped
@@ -375,7 +430,7 @@ indeterminateLinearProgress = fromHandles do
   attribute "indeterminate" ""
   attribute "style" hiddenStyle
   node <- gets _.sibling
-  pure $ statusWiring $ Variant.match
+  pure $ variantToRecordWiring $ Variant.match
     { started: \_ -> setAttribute node "style" visibleStyle
     , ended: \_ -> setAttribute node "style" hiddenStyle }
   where
