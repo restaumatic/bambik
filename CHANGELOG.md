@@ -8,6 +8,26 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-17, latest
 
+- **The introducing editor.** A knotless form states each field's
+  blank at its editor instead of in a seed: `introduced @l init editor`
+  (`PUI`) lifts a lens editor to `{ | b } → { l :: a | b }`, and MDC3
+  ships `filledTextFieldFrom`, `debouncedTextFieldFrom`,
+  `radioButtonFrom`, `selectFrom` and `checkboxFrom` over it.
+  signup-form's MDC3 twin is the first user: no `looped`, no `with`,
+  the seed taken apart into five init functions (`blankUsername`,
+  `defaultPlan`, …); its MDC2 twin keeps the loop. Piloted on a branch
+  first (doc/research-form-editors-pilot.md), the consequences accepted
+  by Eryk with the word: the lift **retains** the user's last value and
+  re-shows `init` only when it changed (structural equality), a state
+  the row does not show, since a bare `lcmap` of an insert re-shows
+  every init on any upstream edit; an init is typed at the row the
+  editors above it built, so screen order reaches the view model's
+  signatures; and an editor under a pane cannot introduce its field
+  (flight-booker's Return date failed to type), so a conditional field
+  stays model state. A hole init introduces nothing (L18).
+  scripts/smoke/tests/introducing-editors.mjs walks the form: an
+  upstream edit keeps every value set below it.
+
 - **The dialog is the variant dual of the lens editor.** An editor is
   `focusField @l` over a leaf that shows a field and lets the user
   change it; the library had the dual lift, `focusCase @l`, and no

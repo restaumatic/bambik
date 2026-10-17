@@ -1,4 +1,4 @@
-module SignupForm (Applicant, Consent, availableLine, invalidLine, newApplicant, readyLine, signUp, takenLine, usernameSettleTime, usernameStatus, validation) where
+module SignupForm (Applicant, Consent, Country, Plan, availableLine, blankEmail, blankUsername, defaultCountry, defaultPlan, invalidLine, newApplicant, readyLine, signUp, takenLine, termsUndecided, usernameSettleTime, usernameStatus, validation) where
 
 import Prelude (const, discard, not, pure, (<>), (==))
 
@@ -11,10 +11,14 @@ import Effect.Aff (Aff, Milliseconds(..), delay)
 type Applicant =
   { "Username" :: String
   , "Email" :: String
-  , "Plan" :: [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
-  , "Country" :: [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
+  , "Plan" :: Plan
+  , "Country" :: Country
   , "Accept the terms of service" :: Consent
   }
+
+type Plan = [ "Free" :: {}, "Pro" :: {}, "Team" :: {} ]
+
+type Country = [ "France" :: {}, "Germany" :: {}, "Poland" :: {}, "Spain" :: {} ]
 
 type Consent = [ accepted :: {}, declined :: {} ]
 
@@ -33,6 +37,21 @@ newApplicant =
   , "Country": ."Poland" {}
   , "Accept the terms of service": .declined {}
   }
+
+blankUsername :: {} -> String
+blankUsername _ = ""
+
+defaultPlan :: { "Username" :: String } -> Plan
+defaultPlan _ = ."Free" {}
+
+defaultCountry :: { "Username" :: String, "Plan" :: Plan } -> Country
+defaultCountry _ = ."Poland" {}
+
+blankEmail :: { "Username" :: String, "Plan" :: Plan, "Country" :: Country } -> String
+blankEmail _ = ""
+
+termsUndecided :: { "Username" :: String, "Plan" :: Plan, "Country" :: Country, "Email" :: String } -> Consent
+termsUndecided _ = .declined {}
 
 usernameSettleTime :: { ms :: Number }
 usernameSettleTime = { ms: 300.0 }

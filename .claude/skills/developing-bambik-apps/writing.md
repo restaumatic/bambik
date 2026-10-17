@@ -268,6 +268,19 @@ Semigroupoid.do
 # looped # with seed
 ```
 
+**A form is the exception to the loop.** When nothing in the logic
+writes into a field — no load fills it, no reset clears it, no fold or
+normalizer touches it, and every editor exists unconditionally — the
+form needs no knot and no seed: each editor states its own blank in its
+**introducing form**, `{ | b } → { l :: a | b }`, its init a function
+of the row the editors above it have built (signup-form's MDC3 view,
+`debouncedTextFieldFrom @"Username" blankUsername usernameSettleTime`,
+`radioButtonFrom @"Plan" defaultPlan …`, with `defaultPlan :: {
+"Username" :: String } -> Plan`). Displays, panes and the action follow
+below, reading the row the editors built; edits flow down the page
+only. A field the logic writes, or one under a pane (`inCaseAt`), is
+model state: the lens editor in a `looped` row.
+
 A fold is one line per event case, `fold @l f` (`fold @"Count"
 increment`): the case is its label, `f` of the payload the whole next
 model. A fold with something to tell is a **status**, which takes its

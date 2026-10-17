@@ -146,6 +146,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- |
 | the type a missing function must have | a typed hole, `?countLine` | writing.md *Writing order* |
 | the view model module's signatures, all at once | a typed hole for every imported value; the compiler's last message lists them, the model's tails left unknown for you to fill | writing.md *Writing order* |
+| a knotless form, no seed | each editor's introducing form, its blank an init of the row above it: `filledTextFieldFrom @"Email" blankEmail` (MDC3, also `debouncedTextFieldFrom`, `radioButtonFrom`, `selectFrom`, `checkboxFrom`) | signup-form (MDC3) | writing.md *App shape*; `PUI` (`introduced`) |
 | the model row | the seed's signature, `# looped # with seed` on the view (counter, inbox); the load's `Aff` when a load stands before the knot (crud, order-form) | writing.md *Types and values* |
 | a derived row | the signature of the function that brings it: a classifier's cases, a projection's element row, an action's outcomes (`# action @l f`, closed by the statuses or `joined` after it — flight-booker) | writing.md *Types and values* |
 | the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |

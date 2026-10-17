@@ -74,6 +74,11 @@ module PUI.Web.MDC3
   , filledTextArea
   , filledTextField
   , filledTextField'
+  , filledTextFieldFrom
+  , debouncedTextFieldFrom
+  , radioButtonFrom
+  , selectFrom
+  , checkboxFrom
   , filterChip
   , group
   , headlineLarge
@@ -151,12 +156,12 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, anyOf, folding, isHole, Ocular, PUI)
+import PUI (fromHandles, handles, anyOf, folding, introduced, isHole, Ocular, PUI)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, displayWiring, editorWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, occurrences, onInputDebounced, removeAttribute, replayed, selectedAt, selectedOptionalAt, selectedUnpickedAt, selectorWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, statusWiring, text, statusText, uniqueId, witnessed, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Lacks)
 import Data.Variant (Variant)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Record as Record
@@ -360,6 +365,29 @@ filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in fo
 -- | so the label stays the field's name. Shown as MD3's supporting text.
 filledTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
 filledTextField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing (reflectSymbol (Proxy @l)) hint)
+
+-- | `filledTextField` in its **introducing form**: the field is not in the
+-- | row fed but stated here, `init` of the rest of the row its blank
+-- | (`filledTextFieldFrom @"Email" blankEmail`, signup-form), for a
+-- | knotless form with no seed. See `PUI.introduced`.
+filledTextFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> PUI Web { | b } { | r }
+filledTextFieldFrom init = introduced @l init (filledTextField @l)
+
+-- | `debouncedTextField` in its introducing form, as `filledTextFieldFrom`.
+debouncedTextFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> { ms :: Number } -> PUI Web { | b } { | r }
+debouncedTextFieldFrom init settleTime = introduced @l init (debouncedTextField @l settleTime)
+
+-- | `radioButton` in its introducing form, as `filledTextFieldFrom`.
+radioButtonFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l (Variant w) b r => ({ | b } -> Variant w) -> Choices w -> PUI Web { | b } { | r }
+radioButtonFrom init options = introduced @l init (radioButton @l options)
+
+-- | `select` in its introducing form, as `filledTextFieldFrom`.
+selectFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l (Variant w) b r => ({ | b } -> Variant w) -> Choices w -> PUI Web { | b } { | r }
+selectFrom init options = introduced @l init (select @l options)
+
+-- | `checkbox` in its introducing form, as `filledTextFieldFrom`.
+checkboxFrom :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Lacks l b => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => ({ | b } -> [ | v ]) -> PUI Web { | b } { | r }
+checkboxFrom init = introduced @l init (checkbox @l @c @n)
 
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.

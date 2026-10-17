@@ -99,11 +99,12 @@ module PUI
   , anyEdit
   , with
   , looped
+  , introduced
   , module Adopters
   )
   where
 
-import Data.Profunctor.Row.Structural (withStructuralOrd)
+import Data.Profunctor.Row.Structural (withStructuralEq, withStructuralOrd)
 import Prelude
 
 import Data.Array as Array
@@ -156,7 +157,7 @@ import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (class Contractable, case_, contract, inj, on)
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Lacks)
 import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -167,7 +168,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
-import Record (get) as Record
+import Record (get, insert) as Record
 import Record.Unsafe (unsafeGet, unsafeSet)
 
 --------------------------------------------------------------------------------
@@ -288,6 +289,50 @@ retainingPair name focus completed reg prop = do
 instance Functor m => Choice (PUI m) where
   left (PUI p) = PUI $ p <#> \reg prop -> reg (prop <<< Left) <#> \leg -> either leg (prop <<< Right)
   right (PUI p) = PUI $ p <#> \reg prop -> reg (prop <<< Right) <#> \leg -> either (prop <<< Left) leg
+
+-- | The **introducing form of an editor**: field `l` inserted into the
+-- | row fed, from `init` of the rest, in front of the lens editor — `{ | b }
+-- | → { l :: a | b }`. For a knotless form, which states each field's
+-- | blank at its leaf (`filledTextFieldFrom @"Email" blankEmail`, MDC3)
+-- | instead of in a seed, so it needs no `looped` and no `with`; a document
+-- | whose logic writes into its fields keeps the lens editor in a `looped`
+-- | row, where the knot re-feeds the field's current value and a reset
+-- | lands as a feed of the whole row.
+-- |
+-- | Not `lcmap (insert (init b))`: in a chain of such editors an upstream
+-- | edit re-feeds every editor below it, which would re-show each init over
+-- | the user's value. So the lift **retains** the user's last value and
+-- | re-shows `init` only when `init` itself changed since the last feed
+-- | (structural equality, so no `Eq` is demanded and a hole needs none).
+-- | Consequences, accepted with the word (CHANGELOG, 2026-10-17): a state
+-- | the row does not show, an init typed at the row the editors above it
+-- | have built (screen order in the view model's signatures), and no
+-- | introducing editor under a pane — a pane is `{ | r } → { | r }`, so a
+-- | field whose editor exists sometimes is model state. A hole `init`
+-- | (guardrails L18) introduces nothing: the feed is withheld.
+introduced
+  :: forall @l m a b r
+   . Functor m
+  => IsSymbol l
+  => Lacks l b
+  => Cons l a b r
+  => ({ | b } -> a)
+  -> PUI m { | r } { | r }
+  -> PUI m { | b } { | r }
+introduced init (PUI p) = PUI $ p <#> \reg prop -> do
+  lastInit <- Ref.new Nothing
+  current <- Ref.new Nothing
+  leg <- reg \r -> do
+    Ref.write (Just (Record.get (Proxy @l) r)) current
+    prop r
+  pure \b -> if isHole init then pure unit else do
+    let i = init b
+    prev <- Ref.read lastInit
+    cur <- Ref.read current
+    Ref.write (Just i) lastInit
+    let shown = withStructuralEq @a (if prev == Just i then fromMaybe i cur else i)
+    Ref.write (Just shown) current
+    leg (Record.insert (Proxy @l) shown b)
 
 -- | The `×`-diagonal **trace** (dual of `Strong`): the `c` a UI component emits is
 -- | retained and paired with its next input — feedback of **state**.
