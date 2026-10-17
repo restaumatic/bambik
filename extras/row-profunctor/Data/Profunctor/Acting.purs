@@ -16,8 +16,8 @@
 -- | have no identity to preserve and ignore it (`(->)`: `actedBy _ = map`).
 -- | See doc/collections-profunctor-algebra.md.
 -- |
--- | Laws (the `Array b` output side is a product, so per the unit and gate
--- | laws it announces and gates):
+-- | Laws (the `Array b` output side is a product, so, like the record
+-- | merges' output, it gates):
 -- |
 -- |   * **empty** — fed `[]`, emits `[]` (the inhabited nullary of the `μ`;
 -- |     no starvation). No emission *before* the first feed: `[]` is not the

@@ -7,6 +7,32 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-10-17, latest
+- **The merge laws lose their unit laws.** Law 3 was *Monoid*: both unit
+  laws on the nose, symmetry and associativity up to `≈`. It is now
+  *Symmetry and associativity*, so a merge is a commutative semigroup on
+  labelled rows, and the unit probes are gone: eight laws from
+  test/Exhaustive.purs (left and right unit at each shape) and their
+  hand-written twins in test/Main.purs, the `(->)` ones included. What a
+  unit is still holds by construction and stays stated where it does
+  work: the `{}` wire, `lcmap case_ identity`, the carrier's silent
+  component as what an absent emitter is, `unshown @l`. Guardrail L5 keeps
+  its MUST NOT (no merge carries a unit of its own); the zero-field rule it
+  rested on is L6's and keeps its probes.
+- **The merge laws revised against the code.** `exact` (law 4) is a trim
+  only where the operands own their outputs, `×→×`; at the three shapes
+  that share their output row it is the identity — the `+→×` cell had
+  said "trim", which the copairing never did. Preservation at `×→+`
+  states its repetition half, now checked exhaustively over `joined`
+  emitters, the derivation every vocabulary emitter is. Arming (`×→+`'s
+  Answer) had been checked as "a script with its feeds removed emits the
+  same", which only an emitter that ignores its feeds satisfies — a
+  `joined` emitter fails it, since a feed arms the click it replays — and
+  is now checked as stated: no emission within a feed's step. The `×→+`
+  replay probe in test/Main.purs drives `joined` around a click instead of
+  a hand-written replay source. A pointed component (`announce`, a source)
+  is stated to release at registration, which the laws permit; "source"
+  in the `×→+` header became "emitter", the word now naming the `×→×`
+  platform facts; the `clicked` and `toCase` citations went.
 
 - **Neither dialog takes a caption; `confirmed` has a Cancel;
   `acknowledged` tells two more outcomes.** Every `confirmed @l caption` restated its case

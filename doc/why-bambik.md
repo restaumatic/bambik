@@ -169,7 +169,7 @@ A binary operator wants a unit, and the merges borrow theirs from the
 category they live in: `identity` at the unit object — the wire `{} → {}`
 for records, the wire `Variant () → Variant ()` for variants. Pure chrome
 has that type: a divider, a heading, a spacer reads no fields and produces
-none, so merging it in changes nothing about the model — the monoid law,
+none, so merging it in changes nothing about the model — the zero-field rule,
 and the license to sprinkle decoration freely through a form.
 
 The subtlety worth savoring: a unit carries no information, so it must not
@@ -295,7 +295,7 @@ whole design: in Bambik there is no boundary where "the algebra" ends and
 The algebra above comes with six laws, stated once in `Data.Profunctor.Row`
 and read at each of the four shapes: two on components — a record
 input is idempotent, and every feed is answered once at `×→×` and never at
-`×→+` — and four on the merges: monoid, projection (each operand sees only
+`×→+` — and four on the merges: symmetry and associativity, projection (each operand sees only
 its part, counts only at its labels), preservation (a merge is again a
 lawful component) and monotonicity (a quieter operand gives a quieter
 merge). What they buy the person writing an app is stated in the authoring

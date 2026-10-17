@@ -22,9 +22,9 @@ carrier dependency, but a `effect` package pin would ride along.) What this
 root defines is a general algebra:
 
 - **Four merge classes**, one per shape, each the label-strictified
-  `(M, N)`-monoidal structure for `M, N ∈ {×, +}`; the units are borrowed
-  from `Category` (`identity` at the unit object) wherever a wire fits, so
-  every shape is a monoid on labelled rows.
+  `(M, N)`-monoidal structure for `M, N ∈ {×, +}`, symmetric and
+  associative, so every shape is a commutative semigroup on labelled rows
+  (no unit law is stated).
 - **The container action** (`Data.Profunctor.Acting`), one `μ` past the rows —
   rows being the finitary, `μ`-free, label-strict fragment of the same
   container grammar.

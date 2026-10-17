@@ -264,18 +264,19 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 ### L5. Units are forced, not designed.
 
-- A merge MUST NOT carry a unit of its own where a wire fits. Its unit law
-  is conditional on the carrier: *if* `p` is also a `Category`, the wire at
-  the unit object — the `{}` wire at the merge's row, `lcmap (const {})
+- A merge MUST NOT carry a unit of its own where a wire fits. No unit law
+  is stated — the merge laws are symmetry and associativity
+  (`Data.Profunctor.Row`, "The laws"; CHANGELOG 2026-10-17) — but where `p`
+  is also a `Category` the wire at the unit object is the unit by
+  construction — the `{}` wire at the merge's row, `lcmap (const {})
   identity`, for `×→×` (the operands share one input row, so the
   unit is the terminal arrow out of it: `identity @{}` only at `{}`),
   `identity @(Variant ())` for `+→+`, `lcmap case_ identity` for `+→×` —
-  MUST play well with the merge,
-  exactly, not up to an echo, because a record gate MUST treat
+  because a record gate MUST treat
   a contribution of zero fields as no contribution (L6). The one unit no
   wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
   maps terminal→initial), and it is the carrier's silent component
-  (parametricity, not policy), stated and law-tested per carrier —
+  (parametricity, not policy), stated per carrier —
   `PUI`'s private `silent`, `Cont`'s `mempty` — and named by no class:
   the algebra names no unit but `Category`'s `identity`, so no merge
   class carries a unit and no word names silence (a `Silencing` class

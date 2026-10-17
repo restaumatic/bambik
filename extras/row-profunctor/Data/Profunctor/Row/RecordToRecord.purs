@@ -65,14 +65,7 @@
 -- |      whole row. That stage is every loop's body and is lawful as
 -- |      such; it is only no answering operand, so what must show at
 -- |      mount stands before it, never after.
--- |   3. **Monoid** — unit the `{}` wire at the merge's row,
--- |      `e = lcmap (const {}) identity`, exact:
--- |      `recordToRecord e g = g = recordToRecord g e`;
--- |      symmetric and associative up to `≈`. The operands share one input
--- |      row, so the unit is the terminal arrow out of it (`identity` at
--- |      `{}` only when that row is `{}`). The merge has no unit of its own,
--- |      and the merge pinned at its unit is the operand itself, so this
--- |      shape names no introducer.
+-- |   3. **Symmetry and associativity** — up to `≈`.
 -- |   4. **Projection** — `π_k` is the whole row: every feed of `m`
 -- |      reaches each operand whole, and nothing else does — a sibling's
 -- |      emission never reaches it; cross-feed is `looped`'s, and only

@@ -22,7 +22,7 @@
 -- | answers each feed with `{}` exactly as each of its operands does
 -- | (Answer, preserved), and `identity @{} ⊗ identity @{}` is
 -- | `identity @{}` on the nose. A dispatched step owes nothing and stays
--- | quiet, so the `+→×` unit law is untouched (`StepKind`).
+-- | quiet (`StepKind`).
 -- |
 -- | The machine is **data-independent with finite control**. Its control is
 -- | the participant sequence, which participants are known, how deep inside

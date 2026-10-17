@@ -21,7 +21,7 @@ import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
 import Data.Profunctor.Row.RecordToRecord (focusField, recordToRecord)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)
-import Data.Profunctor.Row.RecordToVariant (recordToVariant)
+import Data.Profunctor.Row.RecordToVariant (joined, recordToVariant)
 import Data.Profunctor.Row.VariantToVariant (focusCase, onCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
@@ -29,7 +29,7 @@ import Data.Profunctor (dimap, lcmap, rmap)
 import Data.Profunctor.Row (atCase, atField, toCase, toField)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
-import Data.Variant (Variant, case_, expand, match)
+import Data.Variant (expand, match)
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
@@ -107,16 +107,14 @@ quieter g = fromHandles do
         if already then prop o else Ref.write true spoken
     }
 
--- The probe carrier's occurrence source — `clicked`'s protocol as a probe:
--- a feed arms (stored, never emitted), a click replays the whole row last
--- fed as case `clicked`, and a click before any feed does nothing.
-replaySource :: forall i. Ref.Ref (Maybe (Effect Unit)) -> PUI Effect i [ clicked :: i ]
-replaySource trigger = fromHandles do
-  slot <- Ref.new Nothing
-  pure
-    { toUser: \i -> Ref.write (Just i) slot
-    , fromUser: \prop -> Ref.write (Just (Ref.read slot >>= \armed -> for_ armed \i -> prop (.clicked i))) trigger
-    }
+-- The probe carrier's click: an occurrence carrying nothing, whatever the
+-- feed — `PUI.Web.occurrences` without the DOM. `joined` around it is the
+-- derivation every vocabulary emitter is (`PUI.Web.replayed`).
+clickSource :: forall i. Ref.Ref (Maybe (Effect Unit)) -> PUI Effect i [ clicked :: {} ]
+clickSource trigger = fromHandles $ pure
+  { toUser: \_ -> pure unit
+  , fromUser: \prop -> Ref.write (Just (prop (.clicked {}))) trigger
+  }
 
 click :: Ref.Ref (Maybe (Effect Unit)) -> Effect Unit
 click trigger = Ref.read trigger >>= \act -> for_ act identity
@@ -265,37 +263,15 @@ main = do
   assertEqual "caseText" "Medium roast" (caseText (."Medium roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
   assertEqual "caseText/other case" "Light roast" (caseText (."Light roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
 
-  -- == Merge unit laws on the PUI carrier: each merge class carries its own ==
-  -- == nullary unit. At the diagonal shapes it is `Category`'s `identity` at ==
-  -- == the unit object — `identity @{}` and `identity @(Variant ())` — ==
-  -- == exactly: the record gates ignore a contribution of zero fields, so a ==
-  -- == wire, a silent display and an announcing one are one operand. ==
-
-  -- ×→× unit law: recordToRecord identity g = g (the output leg — g's emissions
-  -- must pass through undisturbed, not starve against the unit).
-  do
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { a :: Int })
-    m <- handles (recordToRecord unitWire (probe gProp :: PUI Effect {} { a :: Int }))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire gProp { a: 1 }
-    Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord identity g = g" [ { a: 1 } ]
-
-  -- and on the right: recordToRecord g identity = g.
-  do
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { a :: Int })
-    m <- handles (recordToRecord (probe gProp :: PUI Effect {} { a :: Int }) unitWire)
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire gProp { a: 2 }
-    Ref.read outs >>= assertEqual "unit law ×→×: recordToRecord g identity = g" [ { a: 2 } ]
+  -- == Zero-field operands (L6): a contribution of zero fields is no ==
+  -- == contribution, so a wire, a silent display and an announcing one ==
+  -- == are one operand. ==
 
   -- ×→× zero-field law: an operand owning zero fields is **pre-satisfied** — its
   -- only possible contribution is the informationless {}, so the gate must
-  -- not wait for it. Sharper than the unit law: this operand never emits at
-  -- all (a detached pane, an empty collection), where the wire echoes.
-  -- This law is what makes the display-as-stage a derived form (the merge
-  -- with the echo wire) rather than a carrier primitive.
+  -- not wait for it. Sharper than a wire beside it: this operand never emits
+  -- at all, where the wire echoes. It is what lets a vocabulary merge `{}`-output
+  -- chrome beside the fields it owns (L6's zero-field clause).
   do
     gProp <- Ref.new Nothing
     silentProp <- Ref.new Nothing
@@ -330,8 +306,7 @@ main = do
     assertEqual "zero-participant ×→×: silent operands, still one answer per feed" [ {}, {} ] neither.fed
 
   -- +→× zero-participant quiet: a dispatched occurrence owes nothing, so the
-  -- same empty-row gate stays quiet there — the +→× unit law with a silent
-  -- `{}`-output status as g.
+  -- same empty-row gate stays quiet there.
   do
     p1 <- Ref.new Nothing
     p2 <- Ref.new Nothing
@@ -342,13 +317,13 @@ main = do
     m.toUser (.y unit)
     Ref.read outs >>= assertEqual "zero-participant +→×: a dispatched occurrence is owed nothing" []
 
-  -- ×→× runtime-exactness: the merge widens each operand's input by coercion,
-  -- so an operand that echoes or lens-rebuilds its input emits an object
-  -- runtime-carrying stale copies of *sibling* fields while typed at its own
-  -- narrow row. The gate must trim to the declared output row, so the stale
-  -- copy cannot shadow the sibling's genuine contribution in the left-biased
-  -- union. (The fat emission below is exactly what `widenRecordInput`'s
-  -- coercion hands an echo wire.)
+  -- ×→× runtime-exactness: the operands are fed the merge's whole row, so an
+  -- operand that rebuilds its output from its input (a record update, an
+  -- `rmap` over the fed row) can emit an object runtime-carrying stale
+  -- copies of *sibling* fields while typed at its own narrow row. The gate
+  -- must trim to the declared output row, so the stale copy cannot shadow
+  -- the sibling's genuine contribution in the left-biased union. The one
+  -- shape whose `exact` is a trim: the other three share their output row.
   do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
@@ -374,15 +349,6 @@ main = do
     fire p2Prop { a: 0, b: "fresh" }
     fire p1Prop { a: 4, b: "fresh" }
     Ref.read outs >>= assertEqual "+→× copairing: releases forwarded whole, in order" [ { a: 0, b: "fresh" }, { a: 4, b: "fresh" } ]
-
-  -- +→× unit law: variantToRecord (lcmap case_ identity) g = g.
-  do
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { a :: Int })
-    m <- handles (variantToRecord (lcmap case_ identity :: PUI Effect (Variant ()) { a :: Int }) (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire gProp { a: 3 }
-    Ref.read outs >>= assertEqual "unit law +→×: variantToRecord (lcmap case_ identity) g = g" [ { a: 3 } ]
 
   -- == The trace quartet: each co-strength ties the knot its strength adds. ==
 
@@ -611,9 +577,8 @@ main = do
     m.toUser 2
     Ref.read outs >>= assertEqual "seeded: wire — inputs forward unchanged" [ 1, 2 ]
 
-  -- == The remaining merge laws: gating on ×→×, the right +→× unit, and ==
-  -- == the two ungated merges (×→+ broadcast, +→+ dispatch) with their ==
-  -- == units — completing one test per stated merge law. ==
+  -- == The remaining merge laws: gating on ×→×, and the two ungated ==
+  -- == merges (×→+ broadcast, +→+ dispatch). ==
 
   -- ×→× knowledge-gating (mirror of the +→× test): nothing propagates until
   -- every field of the merged record is known; later emissions merge with
@@ -633,15 +598,6 @@ main = do
     fire p1Prop { a: 2 }
     Ref.read outs >>= assertEqual "×→× gating: later emissions merge with retained side" [ { a: 1, b: "s" }, { a: 2, b: "s" } ]
 
-  -- +→× unit law on the right: variantToRecord g (lcmap case_ identity) = g.
-  do
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array { a :: Int })
-    m <- handles (variantToRecord (probe gProp :: PUI Effect [ x :: Unit ] { a :: Int }) (lcmap case_ identity :: PUI Effect (Variant ()) { a :: Int }))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire gProp { a: 3 }
-    Ref.read outs >>= assertEqual "unit law +→×: variantToRecord g (lcmap case_ identity) = g" [ { a: 3 } ]
-
   -- ×→+ merge (ungated broadcast): every operand sees the record, either
   -- operand's case exits immediately — no gate on either side.
   do
@@ -660,18 +616,6 @@ main = do
     fire p1Prop (.x 7)
     fire p2Prop (.y "e")
     Ref.read outs >>= assertEqual "×→+ broadcast: either operand's case exits, ungated" [ .x 7, .y "e" ]
-
-  -- ×→+ unit law: recordToVariant silent g = g — the unit is the silent
-  -- component, carrier structure no class names (uninhabited variant
-  -- output, so silence is forced), written here as a probe.
-  do
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array [ x :: Int ])
-    let silent = fromHandles (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit }) :: PUI Effect {} [ x :: Int ]
-    m <- handles (recordToVariant silent (probe gProp :: PUI Effect {} [ x :: Int ]))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    fire gProp (.x 1)
-    Ref.read outs >>= assertEqual "unit law ×→+: recordToVariant silence g = g" [ .x 1 ]
 
   -- +→+ merge (dispatch): each input case is routed to exactly its one
   -- handler; outputs may overlap and both exit.
@@ -693,19 +637,6 @@ main = do
     fire p1Prop (.ok 1)
     fire p2Prop (.err "e")
     Ref.read outs >>= assertEqual "+→+ dispatch: outputs may overlap, both exit" [ .ok 1, .err "e" ]
-
-  -- +→+ unit law: variantToVariant identity g = g (both unit ends uninhabited,
-  -- so the unit neither receives nor emits).
-  do
-    ins <- Ref.new ([] :: Array [ x :: Unit ])
-    gProp <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array [ ok :: Int ])
-    m <- handles (variantToVariant (lcmap case_ identity :: PUI Effect (Variant ()) [ ok :: Int ]) (probeIO ins gProp :: PUI Effect [ x :: Unit ] [ ok :: Int ]))
-    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser (.x unit)
-    Ref.read ins >>= assertEqual "unit law +→+: input reaches g" [ .x unit ]
-    fire gProp (.ok 9)
-    Ref.read outs >>= assertEqual "unit law +→+: variantToVariant identity g = g" [ .ok 9 ]
 
   -- == The hand-written ecosystem instances, tested directly, and the ==
   -- == retraction laws that hold outright (the ungated + channel). ==
@@ -930,65 +861,20 @@ main = do
     assertEqual "Category/associativity: emits alike" left.os right.os
     assertEqual "Category/associativity: the script reached every stage" { fs: [ 1, 2 ], gs: [ "f1", "f2" ], hs: [ true, false ], os: [ 0.5, 1.5 ] } left
 
-  -- display beside the wire: unconditional pass-through — no echo needed
-  -- from the wrapped display (its zero-field side is pre-satisfied), and
-  -- any {} it does emit is no contribution: nothing re-fires.
+  -- a `{}`-output operand beside the wire: unconditional pass-through — no
+  -- echo needed from it (its zero-field side is pre-satisfied), and any {}
+  -- it does emit is no contribution: nothing re-fires. (A display is no
+  -- longer built this way — it is a stage releasing the row it shows — but
+  -- a vocabulary's chrome beside an owned field is.)
   do
     gProp <- Ref.new Nothing
     outs <- Ref.new ([] :: Array { v :: Int })
     m <- handles (recordToRecord (probe gProp :: PUI Effect { v :: Int } {}) identity)
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { v: 1 }
-    Ref.read outs >>= assertEqual "display beside the wire: every value forwarded, no echo needed" [ { v: 1 } ]
+    Ref.read outs >>= assertEqual "zero-field operand beside the wire: every value forwarded, no echo needed" [ { v: 1 } ]
     fire gProp {}
-    Ref.read outs >>= assertEqual "display beside the wire: a {} emission contributes nothing" [ { v: 1 } ]
-
-  -- == Unit laws with Category's identity, both legs observed. The classes ==
-  -- == carry no unit; the law is conditional on the carrier being a ==
-  -- == Category, which the PUI carrier is: the merge with the wire at the ==
-  -- == unit object, on either side, observes g's own streams — in and out. ==
-
-  -- ×→×: recordToRecord identity g = g = recordToRecord g identity
-  do
-    let
-      run wrapper = do
-        ins <- Ref.new ([] :: Array { a :: Int })
-        gProp <- Ref.new Nothing
-        outs <- Ref.new ([] :: Array { a :: Int })
-        m <- handles (wrapper (probeIO ins gProp :: PUI Effect { a :: Int } { a :: Int }))
-        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-        m.toUser { a: 1 } *> m.toUser { a: 2 }
-        fire gProp { a: 3 } *> fire gProp { a: 4 }
-        i <- Ref.read ins
-        o <- Ref.read outs
-        pure { i, o }
-    bare <- run \g -> g
-    onLeft <- run \g -> recordToRecord unitWire g
-    onRight <- run \g -> recordToRecord g unitWire
-    assertEqual "×→× left unit: identity beside g observes g's streams" bare onLeft
-    assertEqual "×→× right unit: g beside identity observes g's streams" bare onRight
-    assertEqual "×→× unit laws: the streams are the full script" { i: [ { a: 1 }, { a: 2 } ], o: [ { a: 3 }, { a: 4 } ] } bare
-
-  -- +→+: variantToVariant identity g = g = variantToVariant g identity
-  do
-    let
-      run wrapper = do
-        ins <- Ref.new ([] :: Array [ x :: Int ])
-        gProp <- Ref.new Nothing
-        outs <- Ref.new ([] :: Array [ ok :: Int ])
-        m <- handles (wrapper (probeIO ins gProp :: PUI Effect [ x :: Int ] [ ok :: Int ]))
-        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-        m.toUser (.x 1) *> m.toUser (.x 2)
-        fire gProp (.ok 3) *> fire gProp (.ok 4)
-        i <- Ref.read ins
-        o <- Ref.read outs
-        pure { i, o }
-    bare <- run \g -> g
-    onLeft <- run \g -> variantToVariant (lcmap case_ identity) g
-    onRight <- run \g -> variantToVariant g (lcmap case_ identity)
-    assertEqual "+→+ left unit: identity beside g observes g's streams" bare onLeft
-    assertEqual "+→+ right unit: g beside identity observes g's streams" bare onRight
-    assertEqual "+→+ unit laws: the streams are the full script" { i: [ .x 1, .x 2 ], o: [ .ok 3, .ok 4 ] } bare
+    Ref.read outs >>= assertEqual "zero-field operand beside the wire: a {} emission contributes nothing" [ { v: 1 } ]
 
   -- ×→× associativity: (a ⊗ b) ⊗ c = a ⊗ (b ⊗ c), observed at every operand
   -- and at the gated output, under one script.
@@ -1512,8 +1398,8 @@ main = do
     Ref.read outs >>= assertEqual "actedBy identity: a re-feed with a leaver gathers only the fed vector"
       [ [ { k: "a", v: 1 }, { k: "b", v: 2 } ], [], [ { k: "b", v: 3 } ] ]
 
-  -- == The (->) instances of the diagonal merges: the (M,N)-monoid laws as ==
-  -- == pure equalities. ==
+  -- == The (->) instances of the diagonal merges: their laws as pure ==
+  -- == equalities. ==
 
   assertEqual "recordToRecord/(->): the (×,×) zip"
     { a: 10, b: "5" }
@@ -1521,12 +1407,6 @@ main = do
   assertEqual "recordToRecord/(->): exactness — an echoing operand cannot shadow its sibling"
     { a: 1, b: "x!" }
     (recordToRecord (\(r :: { a :: Int, b :: String }) -> { a: r.a }) (\(r :: { a :: Int, b :: String }) -> { b: r.b <> "!" }) { a: 1, b: "x" })
-  assertEqual "recordToRecord/(->): left unit"
-    { a: 7 }
-    (recordToRecord (const {} :: { s :: Int } -> {}) (\(r :: { s :: Int }) -> { a: r.s + 2 }) { s: 5 })
-  assertEqual "recordToRecord/(->): right unit"
-    { a: 7 }
-    (recordToRecord (\(r :: { s :: Int }) -> { a: r.s + 2 }) (const {} :: { s :: Int } -> {}) { s: 5 })
   do
     let
       fA = \(r :: { s :: Int }) -> { a: r.s }
@@ -1545,9 +1425,6 @@ main = do
   assertEqual "variantToVariant/(->): dispatch, second handler"
     (.err "boom" :: [ ok :: Int, err :: String ])
     (variantToVariant (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int, err :: String ]) }) (match { y: \(s :: String) -> (.err s :: [ ok :: Int, err :: String ]) }) (.y "boom"))
-  assertEqual "variantToVariant/(->): left unit"
-    (.ok 5 :: [ ok :: Int ])
-    (variantToVariant (case_ :: Variant () -> [ ok :: Int ]) (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int ]) }) (.x 5))
   do
     let
       hx = match { x: \(n :: Int) -> (.ok (n + 1) :: [ ok :: Int ]) }
@@ -1799,13 +1676,15 @@ main = do
     assertEqual "repetition ×→×: the state retained after two feeds is that after one" [ { a: 1, b: "x" }, { a: 1, b: "y" } ] once
     assertEqual "answer ×→×: each feed answered once — the stutter is exactly the second answer" [ { a: 1, b: "x" }, { a: 1, b: "x" }, { a: 1, b: "y" } ] twice
 
-  -- Repetition and answer at ×→+, and `clicked`'s replay contract, on the replay source: a click before any feed does
-  -- nothing, a feed emits nothing, two feeds arm the same one row, and a
-  -- click replays the whole row last fed.
+  -- Repetition and answer at ×→+, and the emitter's replay contract, on
+  -- `joined` around a click — the library's own emitter derivation: a click
+  -- before any feed does nothing (`Strong`'s gate), a feed emits nothing,
+  -- two feeds arm the same one row, and a click replays the whole row last
+  -- fed beside its event.
   do
     trigger <- Ref.new Nothing
-    outs <- Ref.new ([] :: Array [ clicked :: { a :: Int, b :: String } ])
-    m <- handles (replaySource trigger :: PUI Effect { a :: Int, b :: String } [ clicked :: { a :: Int, b :: String } ])
+    outs <- Ref.new ([] :: Array [ clicked :: { event :: {}, model :: { a :: Int, b :: String } } ])
+    m <- handles (joined @"clicked" (clickSource trigger) :: PUI Effect { a :: Int, b :: String } [ clicked :: { event :: {}, model :: { a :: Int, b :: String } } ])
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     click trigger
     Ref.read outs >>= assertEqual "emission ×→+: a click before any feed does nothing" []
@@ -1813,10 +1692,11 @@ main = do
     Ref.read outs >>= assertEqual "answer ×→+: a feed is answered by no emission — it arms" []
     m.toUser { a: 1, b: "x" }
     click trigger
-    Ref.read outs >>= assertEqual "repetition ×→+: fed twice, one click replays the one row" [ .clicked { a: 1, b: "x" } ]
+    Ref.read outs >>= assertEqual "repetition ×→+: fed twice, one click replays the one row" [ .clicked { event: {}, model: { a: 1, b: "x" } } ]
     m.toUser { a: 2, b: "y" }
     click trigger
-    Ref.read outs >>= assertEqual "emission ×→+: the whole row last fed" [ .clicked { a: 1, b: "x" }, .clicked { a: 2, b: "y" } ]
+    Ref.read outs >>= assertEqual "emission ×→+: the whole row last fed"
+      [ .clicked { event: {}, model: { a: 1, b: "x" } }, .clicked { event: {}, model: { a: 2, b: "y" } } ]
 
   -- No component law at +→+ — what `≈` counts, on the forward wire and its merge: nothing at
   -- registration, one occurrence forwarded exactly once, two occurrences
@@ -1867,7 +1747,7 @@ main = do
     mS.toUser (.z unit) *> mS.toUser (.y "s")
     Ref.read outsS >>= assertEqual "answer +→×: a status beside the fold owes nothing — the fold releases without it" [ { a: 1 } ]
 
-  -- Monoid at ×→+: operand order is not observable at the boundary.
+  -- Symmetry at ×→+: operand order is not observable at the boundary.
   do
     let
       run wrapper = do
@@ -1884,7 +1764,7 @@ main = do
     assertEqual "×→+ symmetry: boundary streams agree under either operand order" ab ba
     assertEqual "×→+ symmetry: the script's stream" [ .x 1, .y "e", .x 2 ] ab
 
-  -- Monoid at +→+: likewise, dispatch and exits alike.
+  -- Symmetry at +→+: likewise, dispatch and exits alike.
   do
     let
       run wrapper = do
@@ -2080,17 +1960,17 @@ main = do
     assertEqual "announce naturality: the point fires once" [ "42" ] l
 
   -- == What one-feed-one-release is reachable FROM (doc §8). The torn row ==
-  -- == needs operands owning DISJOINT rows; whole-row editors cannot. ==
+  -- == needs operands owning DISJOINT rows: sources, never editors. ==
 
   do
-    -- The positive half compiles right here: `disjointOperands` below is the
-    -- merge the law is about, and it typechecks. Its negative twin is a type
-    -- error and so cannot be written as a test — `OwnedRecordOutputs` (the ×→× merge's) wants
-    -- disjoint ownership, while `focusField @l` makes every editor a whole-row
-    -- citizen `p { l | rest } { l | rest }` claiming the entire row, so two
-    -- editors merged in parallel fail with `Prim.Row.Union` having no
-    -- instance, at any annotation. That is why this law is pinned by probes
-    -- and not by a demo: the shape is unreachable from application code.
+    -- `disjointOperands` below is the merge the law is about. Two editors
+    -- cannot form it — `OwnedRecordOutputs` (the ×→× merge's) wants disjoint
+    -- ownership, while `focusField @l` makes every editor a whole-row citizen
+    -- `p { l | rest } { l | rest }`, so two editors merged in parallel fail
+    -- with `Prim.Row.Union` having no instance. Sources can: each owns one
+    -- field and answers every feed with its last value, so a feed to
+    -- `RecordToRecord.do { geolocated …; online …; clock …; colorScheme … }`
+    -- (here-and-now) is exactly this broadcast.
     outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
     m <- handles disjointOperands
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -2157,17 +2037,12 @@ main = do
   Exhaustive.run
 
 
--- The reachable parallel-merge shape: two operands owning disjoint labels.
--- A vocabulary-level assembly can build this (a packaged control merging two
--- sub-displays it also feeds); an application merging two `focusField @l` editors
--- cannot, since both would own the whole row. See doc/observational-semantics.md §8.
+-- The reachable parallel-merge shape: two operands owning disjoint labels —
+-- what a merge of sources is (here-and-now, incident-report); an application
+-- merging two `focusField @l` editors cannot build it, since both would own the
+-- whole row. See doc/observational-semantics.md §8.
 disjointOperands :: PUI Effect { s :: Int } { a :: Int, b :: Int }
 disjointOperands = recordToRecord (rmap (\r -> { a: r.s }) idProbe) (rmap (\r -> { b: r.s + 100 }) idProbe)
   where
   idProbe :: PUI Effect { s :: Int } { s :: Int }
   idProbe = identity
-
--- holey-weak-types: an equal-input `×→×` merge feeds both operands one row,
--- so its unit is the `{}`-output wire at every input, not `identity` at `{}`.
-unitWire :: forall r. PUI Effect { | r } {}
-unitWire = lcmap (const {}) identity

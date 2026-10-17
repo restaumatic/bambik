@@ -49,7 +49,7 @@
 -- | they sit outside `src/` altogether, under the `extras/profunctor` and
 -- | `extras/lenses` source roots: complements of the ecosystem's families,
 -- | mentioning no `PUI`, no row and no carrier. A `Data.Profunctor.Row.*`
--- | module holds only what is about rows — the merge, its unit, and the
+-- | module holds only what is about rows — the merge and the
 -- | placements below; the whole-row knot `looped` and the point it is
 -- | closed with (`with`, over `announce`) are the carrier's, in `PUI`:
 -- | a beginning and feedback are the two things a timeless carrier
@@ -72,8 +72,8 @@
 -- | What makes such a profunctor a row profunctor is not its shape alone but
 -- | the structure that shape supports: for each shape, a **merge** combining
 -- | two profunctors over labelled rows into one over the
--- | combined row, with a forced unit (the table under *The laws*) — so every
--- | shape is a monoid on labelled rows, written with qualified-do
+-- | combined row, symmetric and associative (*The laws*) — so every shape
+-- | is a commutative semigroup on labelled rows, written with qualified-do
 -- | (`RecordToRecord.do`), and the labels of the merged output are exactly
 -- | the labels the operands own.
 -- |
@@ -115,8 +115,9 @@
 -- |     wire, since no wire fabricates a case (`{}` is terminal, `Variant
 -- |     ()` initial): over the algebra that merge is a semigroup, and a
 -- |     carrier with *nothing* in it supplies the unit as its own
--- |     structure — `PUI`'s silent component, `Cont`'s `mempty` — stated
--- |     and law-tested per carrier, named by no class.
+-- |     structure — `PUI`'s silent component, `Cont`'s `mempty` — named
+-- |     by no class. None of these is a law: the merge laws are symmetry
+-- |     and associativity (*The laws*).
 -- |   * **retention** (over `Strong`, `×→×`'s strength used at `×→+`) —
 -- |     one shape only: the fed row carried out with each occurrence.
 -- |     `+→×` has no `Choice` mirror, because `left` would release an
@@ -164,11 +165,11 @@
 -- | `fold @l f = unshown @l # folding @l f`), derived through the `×→×` merge.
 -- | **Retention** is `×→×`'s `Strong` at `×→+`: `first` around an
 -- | occurrence source, its state channel carrying the fed row out with
--- | each occurrence (`joined`, `{ event, model }`), followed by the
--- | grid's output half, `toCase @l` — the case introduced over the
--- | retained row, never renamed from the source's. A click, whose
--- | occurrence carries nothing, is `joined` with the `{}` event dropped
--- | (`PUI.Web.clicked` writes that derivation itself; it needs no word).
+-- | each occurrence (`joined`, `{ event, model }`): the case is the
+-- | source's own, its payload paired with the retained row, never renamed.
+-- | A click, whose occurrence carries nothing, is `joined` with the `{}`
+-- | event dropped and the case renamed (`PUI.Web.replayed` writes that
+-- | derivation itself; it needs no word).
 -- |
 -- | The pure shapes' two-sided words above and the floor's one-sided
 -- | halves together form one **single-label grid**, the same three words
@@ -279,7 +280,7 @@
 -- |      at `×→×` by a row — at least one emission, every emission of the
 -- |      step equal to the step's last (no torn row), and counting
 -- |      renderings rather than up to stutter, exactly one;
--- |      at `×→+` by nothing — a feed arms a source and never fires it.
+-- |      at `×→+` by nothing — a feed arms an emitter and never fires it.
 -- |
 -- | The two halves of law 2 differ in **reach**. The `×→+` half is a law
 -- | of every `×→+` stage however it is built: `>>>` keeps it, since a
@@ -293,20 +294,22 @@
 -- | it releases is a whole row. So the type says a stage's shape, not
 -- | whether it answers: a stage answers iff its route stays at `×`.
 -- |
--- | **Merge laws** — for each of the four merge classes, `m = merge w1 w2`,
--- | `u` the shape's unit and `π_k` the projection of the merge's input onto
+-- | **Merge laws** — for each of the four merge classes, `m = merge w1 w2`
+-- | and `π_k` the projection of the merge's input onto
 -- | operand `k`: the whole row at a record input, the occurrences of `k`'s
 -- | own cases at a variant input.
 -- |
--- |   3. **Monoid.** `merge u w = w = merge w u`, on the nose;
--- |      `merge w1 w2 ≈ merge w2 w1`;
--- |      `merge (merge w1 w2) w3 ≈ merge w1 (merge w2 w3)`.
+-- |   3. **Symmetry and associativity.** `merge w1 w2 ≈ merge w2 w1`;
+-- |      `merge (merge w1 w2) w3 ≈ merge w1 (merge w2 w3)`. No unit law
+-- |      is stated: a merge is a commutative semigroup.
 -- |   4. **Projection.** Each operand sees exactly its projection and
 -- |      counts exactly at its declared labels: the inner feed stream of
 -- |      `w_k` under `m` is `π_k` of `m`'s boundary input stream — a
 -- |      sibling's emission never reaches it — and
 -- |      `merge w1 w2 ≈ merge (exact w1) w2`, `exact` trimming an emission
--- |      to the operand's declared output labels.
+-- |      to the operand's declared output labels: a trim where the operands
+-- |      own their outputs, the identity where they share one output row,
+-- |      since there an operand's labels are the whole row.
 -- |   5. **Preservation.** If `w1` and `w2` satisfy 1 and 2, so does `m`.
 -- |   6. **Monotonicity.** `w1 ⊑ w1'` implies `merge w1 w2 ⊑ merge w1' w2`.
 -- |
@@ -317,34 +320,37 @@
 -- | --------------  ----------------  --------------  ----------------------  ---------------------
 -- | 1 repetition    owed              owed            —                       —
 -- | 2 answer        a row, once       nothing         —                       —
--- | 3 unit u        the {} wire       silent (carrier)  identity @(Variant ())  lcmap case_ identity
+-- | 3 symmetry,     the same at every shape
+-- |   associativity
 -- | 4 π_k           whole row         whole row       own cases               own cases
--- |   exact         trim              identity        identity                trim
+-- |   exact         trim              identity        identity                identity
 -- | 5 preservation  of 1 and 2        of 1 and 2      vacuous                 vacuous
 -- | 6 monotonicity  the same at every shape
 -- | ```
 -- |
--- | `exact` is the identity at a variant output because a variant carries
--- | its one tag: the merge forwards it as it is, and `joined` widens an
--- | action's exact outcomes into the block's row. At a record output the
--- | trim is `exactRow`, the runtime evidence `OwnedRecordOutputs` carries,
--- | so an operand's stale runtime copy of a sibling's field never shadows
--- | the sibling. Law 2's liveness half is a **leaf** law (above): a stage
+-- | `exact` is the identity at the three shapes whose output row is
+-- | shared: a variant carries its one tag, so the merge forwards it as it
+-- | is (and `joined` widens an action's exact outcomes into the block's
+-- | row), and at `+→×` every operand releases the whole row, so no sibling
+-- | owns a field it could shadow. Only `×→×` owns its outputs, and there
+-- | the trim is `exactRow`, the runtime evidence `OwnedRecordOutputs`
+-- | carries, so an operand's stale runtime copy of a sibling's field never
+-- | shadows the sibling. Law 2's liveness half is a **leaf** law (above): a stage
 -- | may refine it in time (the gather gate releases once every element
 -- | has spoken), by 6 the merge refines with
 -- | it, and a route through a variant does not owe it. 5 is conditional
 -- | on its operands for the same reason: a merge of answering operands
 -- | answers; one with an event-driven operand releases on that operand's
 -- | occurrences. `{}` is always known, so a `{}`-input component counts registration
--- | as its feed (`announce`, the point), and a display is a stage that
--- | answers with the row it shows. The `×→×` unit is the `{}` wire at
--- | the merge's own input, `lcmap (const {}) identity`: the
--- | operands of a `×→×` merge share one input row, so the unit is the
--- | terminal arrow out of it — `identity @{}` is that wire only at `{}`.
+-- | as its feed (`announce`, the point). A **pointed** component at any
+-- | input — a source — releases at registration too, before any feed: the
+-- | laws bound what a feed is owed, not what registration carries, and that
+-- | release is what primes a gate. A display is a stage that answers with
+-- | the row it shows.
 -- |
 -- | **What is not a law here.** That an emitted `{ | o }` is whole is the
--- | type. That `focusField @l` re-attaches the background, that `clicked`
--- | replays the row last fed, that `settled`'s normalizer is idempotent
+-- | type. That `focusField @l` re-attaches the background, that an emitter
+-- | replays the row last fed (`joined`), that `settled`'s normalizer is idempotent
 -- | are laws of those words, stated at them. That an occurrence twice is
 -- | two, that a handler answers any number of times, that a fold releases
 -- | when its state allows, is the absence of a quotient at a variant
@@ -366,10 +372,8 @@
 -- | pairs, so it appears exactly where a row is assembled from several
 -- | operands — the broadcast merge, and the container action's `Array b`,
 -- | gathered by the same machine over the fed keys as labels
--- | (`Data.Profunctor.Acting`) — and the unit is forced, not designed: a wire
--- | into the unit object wherever a wire fits (a zero-field side enrols
--- | no participant, so it is born satisfied), the carrier's silent
--- | component at the one shape no wire reaches. Counting
+-- | (`Data.Profunctor.Acting`) — and a zero-field side enrols no
+-- | participant, so it is born satisfied. Counting
 -- | renderings a gated merge is premonoidal — interchange at the inner
 -- | surfaces holds as `⊑` — and counting channels monoidal; at the
 -- | boundary interchange holds on the nose because a feed is one step
@@ -382,12 +386,14 @@
 -- | has an unprimed owned field (`with`, `seeded`, or a source, pointed
 -- | by construction).
 -- |
--- | **Coverage.** Laws 3, 4 and 6 and the gate's conformance to its pure
--- | step are checked over every script to a bound at every shape in
--- | test/Exhaustive.purs — complete, since the gate is a data-independent
--- | machine with finite control (doc §9); so is 5 wherever it has content
--- | (arming at `×→+`; repetition and the one untorn release per feed at
--- | `×→×`). The component laws at each shape's own wire or source, the
+-- | **Coverage.** Laws 3, 4's input half and 6 at every shape, 4's `exact`
+-- | at `×→×` (the one shape where it is not the identity) and the gate's
+-- | conformance to its pure step are checked over every script to a bound
+-- | in test/Exhaustive.purs — complete, since the gate is a
+-- | data-independent machine with finite control (doc §9); so is 5
+-- | wherever it has content (repetition and the one untorn release per
+-- | feed at `×→×`; repetition and arming at `×→+`, over `joined`
+-- | emitters). The component laws at each shape's own wire or source, the
 -- | `{}` clauses and the `looped` contrast are named probes in
 -- | test/Main.purs, each carrying its law and shape (`repetition ×→×`,
 -- | `answer ×→+`, `projection +→+`, `monotonicity at +→×`). Outside the

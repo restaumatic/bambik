@@ -28,14 +28,13 @@ import Data.Array as Array
 import Data.Foldable (foldl, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor (lcmap)
 import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Row.RecordToRecord (recordToRecord)
-import Data.Profunctor.Row.RecordToVariant (recordToVariant)
+import Data.Profunctor.Row.RecordToVariant (joined, recordToVariant)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)
 import Data.Profunctor.Row.VariantToVariant (variantToVariant)
 import Data.Tuple (Tuple(..))
-import Data.Variant (Variant, case_, match)
+import Data.Variant (Variant, match)
 import Effect (Effect, foreachE)
 import Effect.Class.Console (log)
 import Effect.Exception (throw)
@@ -169,10 +168,6 @@ rig mkFeed m fires = do
   m'.fromUser \o -> Ref.modify_ (_ <> [ show o ]) outs
   pure { feed: \_ n -> m'.toUser (mkFeed n), fires, outs }
 
--- A rig whose feeds are no-ops: equal streams mean feeds never emit.
-deaf :: Effect Rig -> Effect Rig
-deaf mk = mk <#> _ { feed = \_ _ -> pure unit }
-
 runScript :: Effect Rig -> Array Event -> Effect (Array (Array String))
 runScript mk script = do
   r <- mk
@@ -239,6 +234,7 @@ checkLaw law = do
 -- deleted without changing the stream up to stutter.
 checkRepetition :: String -> Array Event -> Int -> Effect Rig -> Effect Int
 checkRepetition name alphabet len mk = do
+  log ("Exhaustive: " <> name)
   let scripts = scriptsOf alphabet len
   foreachE scripts \script ->
     for_ (Array.range 1 (Array.length script - 1)) \i ->
@@ -260,8 +256,19 @@ fromMaybeEmpty dflt = case _ of
 -- Preservation of the answer law at `×→×` and at the collection: with
 -- operands (elements) answering every feed, every feed of the term is
 -- answered by exactly one release — which is at least one, and none torn.
+-- Answer at `×→×`: every feed is answered within its step by exactly one
+-- release.
 checkAnswer :: String -> Array Event -> Int -> Effect Rig -> Effect Int
-checkAnswer name alphabet len mk = do
+checkAnswer = checkAnsweredBy 1
+
+-- Answer at `×→+`: no feed is answered within its step — it arms. Stated
+-- per step, not as "a script with its feeds removed emits the same": a feed
+-- arms a replaying emitter, so it shapes what a later click carries.
+checkArming :: String -> Array Event -> Int -> Effect Rig -> Effect Int
+checkArming = checkAnsweredBy 0
+
+checkAnsweredBy :: Int -> String -> Array Event -> Int -> Effect Rig -> Effect Int
+checkAnsweredBy n name alphabet len mk = do
   log ("Exhaustive: " <> name)
   let scripts = scriptsOf alphabet len
   foreachE scripts \script -> do
@@ -271,7 +278,7 @@ checkAnswer name alphabet len mk = do
         let
           before = if i == 0 then [] else fromMaybeEmpty [] (Array.index snaps (i - 1))
           answer = Array.drop (Array.length before) (fromMaybeEmpty [] (Array.index snaps i))
-        unless (Array.length answer == 1) (failing name script answer before)
+        unless (Array.length answer == n) (failing name script answer before)
   pure (Array.length scripts)
 
 -- Projection's input half: under every script, each operand's inner feed
@@ -407,6 +414,23 @@ rvTwo merge = do
   a <- rvA
   b <- rvB
   rig recordFeed (merge a.p b.p) [ a.fire, b.fire ]
+
+-- The real emitter: `joined` around a click — what every vocabulary
+-- emitter is derived as (`PUI.Web.replayed`). A click before any feed is
+-- withheld; a feed arms it; a click replays the row last fed.
+type Joined = { event :: Int, model :: { s :: Int } }
+
+rjA :: Effect (Op { s :: Int } (Variant (x :: Joined, y :: Joined)))
+rjA = armedOp (\n -> .x n) <#> \a -> a { p = joined @"x" a.p }
+
+rjB :: Effect (Op { s :: Int } (Variant (x :: Joined, y :: Joined)))
+rjB = armedOp (\n -> .y n) <#> \b -> b { p = joined @"y" b.p }
+
+rjTwo :: Effect Rig
+rjTwo = do
+  a <- rjA
+  b <- rjB
+  rig recordFeed (recordToVariant a.p b.p) [ a.fire, b.fire ]
 
 rvThree :: (PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int))) -> Effect Rig
 rvThree merge = do
@@ -546,23 +570,6 @@ gatherAlphabet = [ Feed, FeedOnly1, FeedNone, Fire1, Fire2 ]
 gatherFeeds :: Array Event
 gatherFeeds = [ Feed, FeedAgain, FeedOnly1, FeedNone ]
 
--- holey-weak-types: an equal-input `×→×` merge feeds both operands the same
--- row, so its unit is the `{}`-output wire at *every* input (`blank`), no
--- longer `identity` at `{}` — the unit law restated, not merely re-typed.
-unitRR :: forall r. PUI Effect { | r } {}
-unitRR = lcmap (const {}) identity
-
-unitVV :: forall o. PUI Effect (Variant ()) (Variant o)
-unitVV = lcmap case_ identity
-
-unitVR :: forall r. PUI Effect (Variant ()) { | r }
-unitVR = lcmap case_ identity
-
--- the silent component: the ×→+ unit is carrier structure no class
--- names, so it is written here as a probe
-unitRV :: forall r v. PUI Effect { | r } (Variant v)
-unitRV = fromHandles (pure { toUser: \_ -> pure unit, fromUser: \_ -> pure unit })
-
 laws :: Array Law
 laws =
   -- ×→×
@@ -571,10 +578,6 @@ laws =
   , { name: "×→× associativity", alphabet: rrAlphabet3, len: three, rel: Equal
     , left: rrThree \a b c -> recordToRecord (recordToRecord a b) c
     , right: rrThree \a b c -> recordToRecord a (recordToRecord b c) }
-  , { name: "×→× left unit", alphabet: rrAlphabet, len: two, rel: Equal
-    , left: rrTwo \a b -> recordToRecord (recordToRecord unitRR a) b, right: rrTwo recordToRecord }
-  , { name: "×→× right unit", alphabet: rrAlphabet, len: two, rel: Equal
-    , left: rrTwo \a b -> recordToRecord (recordToRecord a unitRR) b, right: rrTwo recordToRecord }
   , { name: "×→× exactness", alphabet: rrAlphabet, len: two, rel: Equal
     , left: do
         a <- echoOp fatA
@@ -595,10 +598,6 @@ laws =
   , { name: "+→× associativity", alphabet: evAlphabet3, len: three, rel: Equal
     , left: vrThree \a b c -> variantToRecord (variantToRecord a b) c
     , right: vrThree \a b c -> variantToRecord a (variantToRecord b c) }
-  , { name: "+→× left unit", alphabet: evAlphabet, len: two, rel: Equal
-    , left: vrTwo \a b -> variantToRecord (variantToRecord unitVR a) b, right: vrTwo variantToRecord }
-  , { name: "+→× right unit", alphabet: evAlphabet, len: two, rel: Equal
-    , left: vrTwo \a b -> variantToRecord (variantToRecord a unitVR) b, right: vrTwo variantToRecord }
   , { name: "+→× monotonicity", alphabet: evAlphabet, len: two, rel: Refines
     , left: do
         a <- vrA >>= quieter
@@ -611,28 +610,19 @@ laws =
   , { name: "×→+ associativity", alphabet: evAlphabet3, len: three, rel: Equal
     , left: rvThree \a b c -> recordToVariant (recordToVariant a b) c
     , right: rvThree \a b c -> recordToVariant a (recordToVariant b c) }
-  , { name: "×→+ left unit", alphabet: evAlphabet, len: two, rel: Equal
-    , left: rvTwo \a b -> recordToVariant (recordToVariant unitRV a) b, right: rvTwo recordToVariant }
-  , { name: "×→+ right unit", alphabet: evAlphabet, len: two, rel: Equal
-    , left: rvTwo \a b -> recordToVariant (recordToVariant a unitRV) b, right: rvTwo recordToVariant }
   , { name: "×→+ monotonicity", alphabet: evAlphabet, len: two, rel: Refines
     , left: do
         a <- rvA >>= quieter
         b <- rvB
         rig recordFeed (recordToVariant a.p b.p) [ a.fire, b.fire ]
     , right: rvTwo recordToVariant }
-  , { name: "×→+ arming (feeds never emit)", alphabet: evAlphabet, len: two, rel: Equal
-    , left: rvTwo recordToVariant, right: deaf (rvTwo recordToVariant) }
+
   -- +→+
   , { name: "+→+ symmetry", alphabet: evAlphabet, len: two, rel: Equal
     , left: vvTwo variantToVariant, right: vvTwo \a b -> variantToVariant b a }
   , { name: "+→+ associativity", alphabet: evAlphabet3, len: three, rel: Equal
     , left: vvThree \a b c -> variantToVariant (variantToVariant a b) c
     , right: vvThree \a b c -> variantToVariant a (variantToVariant b c) }
-  , { name: "+→+ left unit", alphabet: evAlphabet, len: two, rel: Equal
-    , left: vvTwo \a b -> variantToVariant (variantToVariant unitVV a) b, right: vvTwo variantToVariant }
-  , { name: "+→+ right unit", alphabet: evAlphabet, len: two, rel: Equal
-    , left: vvTwo \a b -> variantToVariant (variantToVariant a unitVV) b, right: vvTwo variantToVariant }
   , { name: "+→+ monotonicity", alphabet: evAlphabet, len: two, rel: Refines
     , left: do
         a <- vvA >>= quieter
@@ -686,8 +676,11 @@ run = do
   for_ laws \law -> checkLaw law >>= count
   checkRepetition "×→× repetition (feed-idempotence of the merge)" rrAlphabet two (rrTwo recordToRecord) >>= count
   checkAnswer "×→× answer (one untorn release per feed)" rrAlphabet two (rrTwo recordToRecord) >>= count
+  checkArming "×→+ arming (no feed answered within its step)" evAlphabet two (rvTwo recordToVariant) >>= count
+  checkArming "×→+ arming over joined emitters" evAlphabet two rjTwo >>= count
+  checkRepetition "×→+ repetition (feed-idempotence of the merge, over joined emitters)" rrAlphabet two rjTwo >>= count
   checkRepetition "acted repetition (feed-idempotence of the collection)" [ Feed, FeedAgain, FeedOnly1, Fire1, Fire2 ] two (actedRig identity) >>= count
   checkAnswer "acted answer (one untorn release per feed, [] included)" gatherAlphabet two (actedRig identity) >>= count
   for_ projections \law -> checkProjection law >>= count
   n <- Ref.read total
-  log ("Exhaustive: " <> show (Array.length laws + 4 + Array.length projections) <> " laws over " <> show n <> " scripts, no distinguishing script found")
+  log ("Exhaustive: " <> show (Array.length laws + 7 + Array.length projections) <> " laws over " <> show n <> " scripts, no distinguishing script found")

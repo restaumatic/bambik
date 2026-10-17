@@ -164,7 +164,7 @@ combinator laws below fail without them.
 **How the headers state these.** `Data.Profunctor.Row` ("The laws") states
 the three as **two laws of a record input** — *Repetition* (law 1) and
 *Answer* (laws 2 and 3 as one law read by output shape: a row at `×→×`,
-nothing at `×→+`) — beside four merge laws (monoid, projection,
+nothing at `×→+`) — beside four merge laws (symmetry and associativity, projection,
 preservation, monotonicity); a variant input owes nothing, since dispatch
 reaches one owner. The headers also make one thing precise that "once"
 above leaves loose: at the boundary `≈` is up to stutter on a record
@@ -295,7 +295,7 @@ stands:
 
 Read as a contract: the provider owes §3's protocol at every leaf (the
 headers' *Repetition* and *Answer*), the carrier owes the four merge laws
-(monoid, projection, preservation, monotonicity — `Data.Profunctor.Row`,
+(symmetry and associativity, projection, preservation, monotonicity — `Data.Profunctor.Row`,
 "The laws"), and the application gets, for free and at every depth:
 a merge of answering operands is again an answering component, and a
 merge is a lawful component of its shape either way; operand order and
@@ -346,7 +346,7 @@ writing.md *What the laws guarantee*.
 
   So the answer to "is the gated merge monoidal?" is "which category?":
   counting only channels, it is **monoidal**; counting renderings, it is
-  premonoidal — unit, associativity and symmetry hold outright (tested, all
+  premonoidal — associativity and symmetry hold outright (tested, all
   four merges), interchange is bought back only as `⊑`. Symmetry itself is a
   boundary-stream fact — operand order stays observable in feed order to
   the operands, inside the `≈` quotient.
@@ -601,14 +601,17 @@ collection the feed shapes reach three participant sequences — both
 elements, element 1 alone, nobody — giving **seven** states (4 + 2 + 1).
 Scripts of length six and eight exhaust them with margin.
 
-**What is checked** (test/Exhaustive.purs, run from `spago test`, about 50
-seconds): at each of the four shapes, symmetry, associativity, both unit
-laws and `⊑`-monotonicity (a `quieter` operand, minus its first emission);
+**What is checked** (test/Exhaustive.purs, run from `spago test`, about two
+and a half minutes): at each of the four shapes, symmetry, associativity
+and `⊑`-monotonicity (a `quieter` operand, minus its first emission);
 at `×→×`, exactness against an operand whose every
 emission carries a stale runtime copy of the sibling's field, and
 **conformance** — the effectful merge's boundary stream equals the pure
-`gateStep` driven by the same script; at `×→+`, arming (replacing every feed
-by a no-op leaves the stream unchanged); at `×→×`, feed-idempotence of the
+`gateStep` driven by the same script; at `×→+`, arming (no feed is answered
+within its step — stated per step, since a feed arms a replaying emitter and
+so shapes what a later click carries) and feed-idempotence of the merge,
+both also over `joined` emitters, the derivation every vocabulary emitter
+is; at `×→×`, feed-idempotence of the
 merge (deleting a `FeedAgain` directly after a feed leaves the stream
 unchanged up to stutter) and the answer law (every feed of the merge is
 answered by exactly one release — at least one, none torn); at every
@@ -619,7 +622,7 @@ over scripts whose feeds take every shape, **conformance** of `acted` to the
 step rekeyed per feed, `⊑`-monotonicity (each element instance minus its
 first emission), the wire law (`actedBy k identity` against `identity`),
 feed-idempotence and the answer law with `[]` the empty array's one release.
-Thirty-four laws, about three hundred and eighty thousand scripts, no
+Twenty-eight laws, about three hundred and seventy thousand scripts, no
 distinguishing script. Because the pure step is the very function the
 carrier runs, and conformance pins each wrapper to it, a law that holds on
 the step holds on the merge and on the collection alike.

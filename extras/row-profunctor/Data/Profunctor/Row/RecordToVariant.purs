@@ -32,7 +32,7 @@
 -- | ## Laws at `×→+`
 -- |
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
--- | a component `w :: p { | i } [ | o ]` is an **event source** fed a row;
+-- | a component `w :: p { | i } [ | o ]` is an **emitter** fed a row;
 -- | the merge is `m = recordToVariant w1 w2`, inputs shared (one row
 -- | `i`: both operands fed the merge's whole row), outputs shared (one
 -- | row `o` every operand is typed at: an emitter open on its output
@@ -44,47 +44,43 @@
 -- |      **arms** — every emission has a cause outside the channel (a
 -- |      click, an `Aff` settling, quiescence) — which is what lets
 -- |      a loop re-feed an emitter without firing it. What an
--- |      emission carries is the source's contract, not the shape's:
--- |      `clicked` replays the row last fed.
--- |   3. **Monoid** — unit the carrier's silent component (the others'
--- |      laws are conditional on `Category`; this one is stated per
--- |      carrier, `PUI`'s in test/Main.purs and test/Exhaustive.purs),
--- |      exact:
--- |      `recordToVariant silent g = g = recordToVariant g silent`;
--- |      symmetric and associative up to `≈`. No wire reaches this unit
--- |      (`{}` is terminal, `Variant ()` initial), and parametricity
--- |      extends the silent element to any rows. The merge pinned at it is
--- |      a real word: `toCase @l g = rmap (inj (Proxy @l)) g`, which
--- |      is why `toCase` needs only `Profunctor`.
+-- |      emission carries is the emitter's contract, not the shape's:
+-- |      a button replays the row last fed (`joined` of a click).
+-- |   3. **Symmetry and associativity** — up to `≈`.
 -- |   4. **Projection** — `π_k` is the whole row: every feed of `m`
 -- |      reaches each operand whole, arming it, and nothing else does.
 -- |      `exact` is the identity: a variant carries its one tag, so two
 -- |      operands may declare the same case and the merge forwards each,
 -- |      unmarked.
--- |   5. **Preservation** — `m` obeys 1 and 2: neither operand answers a
--- |      feed, so neither does their passage.
+-- |   5. **Preservation** — `m` obeys 1 and 2: a feed reaches both
+-- |      operands whole and writes each one's replay slot, so a repeated
+-- |      feed changes neither; neither answers it, so neither does their
+-- |      passage.
 -- |   6. **Monotonicity** — `w1 ⊑ w1'` implies
 -- |      `recordToVariant w1 w2 ⊑ recordToVariant w1' w2`.
 -- |
 -- | On `PUI`: broadcast in, passage out — each emission exits as it
 -- | occurs, nothing retained, no state (`Applicative m` suffices). Law 2
--- | is why this shape has no starvation: a silent source is lawful, and
--- | an absent one is the silent component (below). Probes carry law and shape in
--- | test/Main.purs (`answer ×→+` on the probe carrier's replay source; the
--- | real sources are clicked on the leaf-law bench); 3–6 run over every
--- | script to a bound in test/Exhaustive.purs.
+-- | is why this shape has no starvation: a silent emitter is lawful, and
+-- | an absent one is the silent component (below). Probes carry law and
+-- | shape in test/Main.purs (`answer ×→+` over `joined` of a click probe,
+-- | the derivation every vocabulary emitter is, `PUI.Web.replayed`; the
+-- | real emitters are clicked on the leaf-law bench); 3–6, with 5's
+-- | repetition and arming over `joined` emitters, run over every script
+-- | to a bound in test/Exhaustive.purs.
 -- |
--- | The silent component is also what an **absent event source is**. A `×→+` component that
+-- | The carrier's silent component — fed nothing, emitting nothing — is
+-- | what an **absent emitter is**. A `×→+` component that
 -- | exists in one state and not in another
 -- | (`button @"Start" # provided @"halted" phaseOf`) is, in the state
 -- | where it is absent, observationally silent: fed nothing, emitting
 -- | nothing. That is why the type is variant-output only — silent at
--- | *variant* output is a source with nothing to say, while silent at an
+-- | *variant* output is an emitter with nothing to say, while silent at an
 -- | inhabited *record* output would be a starved gate, which is why the
 -- | record-side pane answers every feed instead — `inCase`, with the fed
 -- | row. But absence is **not a copairing**: routing the input away
 -- | from `w` leaves `w`'s own emission channel connected, so
--- | `lcmap f' (left w >>> right silent)` still emits when the source
+-- | `lcmap f' (left w >>> right silent)` still emits when the emitter
 -- | fires in the "absent" case (checked on the probe carrier: a Start
 -- | button clicked while `timing` still emitted). Only removing
 -- | the component silences it, and removal is `Hosting`'s — the DOM's —

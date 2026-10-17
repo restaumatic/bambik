@@ -68,13 +68,7 @@
 -- |      `Eq` is ever needed. Emitting inside `toUser`
 -- |      here is a response to an occurrence, not the echo law 2 forbids
 -- |      at `×→+`.
--- |   3. **Monoid** — unit `lcmap case_ identity`, the wire entered from
--- |      the empty variant at any output row,
--- |      exact: `variantToVariant unit g = g = variantToVariant g unit`;
--- |      symmetric and associative up to `≈`. Both ends uninhabited, the
--- |      wire there is silence, forced. The merge pinned at its unit is
--- |      the operand, so this shape names no introducer (`atCase` is bare
--- |      `Profunctor`).
+-- |   3. **Symmetry and associativity** — up to `≈`.
 -- |   4. **Projection** — `π_k` is the operand's own cases: an occurrence
 -- |      of case `l` reaches the one handler owning `l` and no other
 -- |      (`DisjointLabels` makes a duplicated case a compile error naming

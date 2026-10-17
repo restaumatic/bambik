@@ -74,7 +74,7 @@ Two structural facts follow from terminality, both load-bearing:
   receive the unique `{}`). A display is a stage only because it releases
   its row (`recordToRecordWiring` with nothing reported: render, then echo the value); a status, which
   is such a map once instantiated at `{}`, is integrated beside the wire by
-  the merge's unit law — `fold` is the status and the wire under the
+  the zero-field rule (guardrails L6) — `fold` is the status and the wire under the
   `×→×` merge. Dually, a
   map from `1` ignores everything before it, so sources sit at pipeline
   heads — which is what `body :: PUI Web {} o` says about the app itself:

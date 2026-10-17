@@ -45,20 +45,16 @@
 -- |      is released is a `{ | r }` — whole by type, the operand's own —
 -- |      and where a release needs retained state (`accumulated`) it is
 -- |      withheld, not invented, before that state exists.
--- |   3. **Monoid** — unit `lcmap case_ identity :: p (Variant ()) {}`,
--- |      exact: `variantToRecord (lcmap case_ identity) g = g =
--- |      variantToRecord g (lcmap case_ identity)`; symmetric and
--- |      associative up to `≈`. Never fed and owning no field, the unit's
--- |      side is born spoken, so any silent element of that type serves
--- |      equally (the silent component at `b = ()` is one). The merge pinned at it is
--- |      `fold @l f` (below), one case folded into the record
--- |      (`fold @"Count" increment`, counter); a loop's folds merge here one
--- |      per case, each releasing the whole next model, the statuses beside
--- |      them releasing nothing.
+-- |   3. **Symmetry and associativity** — up to `≈`. A loop's folds merge
+-- |      here one per case, each releasing the whole next model, the
+-- |      statuses beside them releasing nothing.
 -- |   4. **Projection** — `π_k` is the operand's own cases: an occurrence
 -- |      of case `l` reaches the one operand owning `l` and no other
 -- |      (`DisjointLabels`), and nothing else reaches an operand. `exact`
--- |      trims: `variantToRecord w1 w2 ≈ variantToRecord (rmap exactRow w1) w2`.
+-- |      is the identity: every operand is typed at the whole shared row
+-- |      and releases it whole, so no sibling owns a field a stale runtime
+-- |      copy could shadow, and the merge forwards each release untouched
+-- |      (`exactRow` is for `×→×`'s owned outputs alone).
 -- |   5. **Preservation** — vacuous at the input: nothing is owed. What
 -- |      the shape adds is that no torn row is reachable: dispatch feeds
 -- |      one owner per occurrence and that owner releases a whole row, so
