@@ -30,7 +30,7 @@
 -- |
 -- | Business functions are arguments of leaves, never adopters: a display
 -- | takes its read function, a status its business case and fold
--- | (`snackbar @"Flight booked" identity`), and an emitter emits its own case,
+-- | (`snackbar @"Card charged" identity`), and an emitter emits its own case,
 -- | which the fold consumes. So the adopters are structural and take no
 -- | function: `atCase` and `toCase` take only their cases, since there
 -- | the case is the caller's to name. A status is its face over its

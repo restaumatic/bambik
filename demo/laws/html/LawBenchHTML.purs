@@ -4,8 +4,8 @@ import Prelude hiding (div)
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, online, provided, providedAt, staticText, text, textAt)
-import PUI.Web.HTML (acknowledged, confirmed, body, button, div, filePicked, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
+import PUI.Web ((<+>), choice, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, online, provided, providedAt, staticText, text, textAt)
+import PUI.Web.HTML (acknowledged, confirmed, body, button, div, filePicked, inPlaceInput, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
 lawBenchHTML = do
@@ -31,12 +31,15 @@ lawBenchHTML = do
     , bench "providedAt" "×→+" modes (providedAt @"on" @"mode" (button @"Go"))
     , bench "button" "×→+" rows (button @"Go")
     , bench "onClickedXY" "×→+" units (onClickedXY @"at" (div (staticText "canvas")))
+    , bench "onHoveredXY" "×→+" units (onHoveredXY @"at" (div (staticText "canvas")))
+    , bench "onContextMenuXY" "×→+" units (onContextMenuXY @"at" (div (staticText "canvas")))
     , bench "output" "+→×" events (output @"event" (const {}))
     , bench "geolocated" "×→×" units (geolocated @"position")
     , bench "online" "×→×" units (online @"connection")
     , bench "clock" "×→×" units (clock @"time" { ms: 60000.0 })
     , bench "colorScheme" "×→×" units (colorScheme @"scheme")
     , bench "filePicked" "×→×" units (filePicked @"Photo")
+    , bench "inPlaceInput" "×→+" texts (inPlaceInput @"entered" @"Name")
     -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
     , bench "confirmed" "+→+" decisions (confirmed @"decision" "Confirm" (text nLine))
     , bench "acknowledged" "+→+" decisions (acknowledged @"decision" "Got it" (text nLine))

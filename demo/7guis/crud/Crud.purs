@@ -1,13 +1,13 @@
-module Crud (Catalogue, Entry, createPerson, deletePerson, entries, isSelected, loadPeopleCatalogue, personLine, pick, updatePerson) where
+module Crud (Catalogue, Entry, Person, createPerson, deletePerson, entries, filterChanged, freshCatalogue, isSelected, personLine, pick, updatePerson) where
 
-import Prelude (bind, otherwise, pure, (<#>), (<$>), (<>), (==), (||))
+import Prelude ((<$>), (<>), (==))
 
-import Crud.PeopleServer (Person, fetchPeople, storePeople)
-import Data.Array (deleteAt, filter, index, mapWithIndex, snoc, updateAt)
+import Data.Array (any, deleteAt, filter, index, mapWithIndex, snoc, updateAt)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String (Pattern(..), stripPrefix)
 import Data.Variant (match)
-import Effect.Aff (Aff)
+
+type Person = { "Name" :: String, "Surname" :: String }
 
 type Catalogue =
   { "Surname prefix" :: String
@@ -24,43 +24,46 @@ type Entry =
   , status :: [ selected :: {}, unselected :: {} ]
   }
 
-loadPeopleCatalogue :: {} -> Aff [ "People loaded" :: Catalogue ]
-loadPeopleCatalogue _ = do
-  people <- fetchPeople
-  pure (."People loaded" { "Surname prefix": "", "Name": "", "Surname": "", people, selected: .none {} })
+freshCatalogue :: Catalogue
+freshCatalogue =
+  { "Surname prefix": ""
+  , "Name": ""
+  , "Surname": ""
+  , people:
+      [ { "Name": "Hans", "Surname": "Emil" }
+      , { "Name": "Max", "Surname": "Mustermann" }
+      , { "Name": "Roman", "Surname": "Tisch" }
+      ]
+  , selected: .none {}
+  }
 
 pick :: { event :: Int, model :: Catalogue } -> Catalogue
 pick { event: i, model: m@{ people } } = case index people i of
   Just p -> m { selected = .picked { index: i }, "Name" = p."Name", "Surname" = p."Surname" }
   Nothing -> m
 
-createPerson
-  :: Catalogue
-  -> Aff [ "Person created" :: Catalogue, "Person not created" :: Catalogue ]
-createPerson m@{ "Name": name, "Surname": surname, people }
-  | name == "" || surname == "" = pure (."Person not created" m)
-  | otherwise =
-      storePeople (snoc people { "Name": name, "Surname": surname })
-        <#> \ps -> ."Person created" m { people = ps }
-
-updatePerson
-  :: Catalogue
-  -> Aff [ "Person not updated" :: Catalogue, "Person updated" :: Catalogue ]
-updatePerson m@{ "Name": name, "Surname": surname, people, selected } = match
+filterChanged :: Catalogue -> Catalogue
+filterChanged m@{ selected } = match
   { picked: \{ index: i } ->
-      storePeople (fromMaybe people (updateAt i { "Name": name, "Surname": surname } people))
-        <#> \ps -> ."Person updated" m { people = ps }
-  , none: \_ -> pure (."Person not updated" m)
+      if any (\e -> e.key == i) (entries m) then m else m { selected = .none {} }
+  , none: \_ -> m
   } selected
 
-deletePerson
-  :: Catalogue
-  -> Aff [ "Person deleted" :: Catalogue, "Person not deleted" :: Catalogue ]
-deletePerson m@{ people, selected } = match
+createPerson :: Catalogue -> Catalogue
+createPerson m@{ "Name": name, "Surname": surname, people } =
+  m { people = snoc people { "Name": name, "Surname": surname } }
+
+updatePerson :: Catalogue -> Catalogue
+updatePerson m@{ "Name": name, "Surname": surname, people, selected } = match
   { picked: \{ index: i } ->
-      storePeople (fromMaybe people (deleteAt i people))
-        <#> \ps -> ."Person deleted" m { people = ps, selected = .none {} }
-  , none: \_ -> pure (."Person not deleted" m)
+      m { people = fromMaybe people (updateAt i { "Name": name, "Surname": surname } people) }
+  , none: \_ -> m
+  } selected
+
+deletePerson :: Catalogue -> Catalogue
+deletePerson m@{ people, selected } = match
+  { picked: \{ index: i } -> m { people = fromMaybe people (deleteAt i people), selected = .none {} }
+  , none: \_ -> m
   } selected
 
 entries :: Catalogue -> Array Entry

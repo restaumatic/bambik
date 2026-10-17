@@ -1,21 +1,32 @@
-module TemperatureConverter (Temperatures, fromCelsius, fromFahrenheit, roomTemperature) where
+module TemperatureConverter (Temperatures, blankTemperatures, fromCelsius, fromFahrenheit) where
 
-import Prelude (show, (*), (+), (-), (/))
+import Prelude (not, show, (*), (+), (-), (/), (<))
 
 import Data.Maybe (Maybe(..))
-import Data.Number (fromString)
+import Data.Number (abs, fromString)
 
 type Temperatures = { "Celsius" :: String, "Fahrenheit" :: String }
 
-roomTemperature :: Temperatures
-roomTemperature = { "Celsius": "20.0", "Fahrenheit": "68.0" }
+blankTemperatures :: Temperatures
+blankTemperatures = { "Celsius": "", "Fahrenheit": "" }
 
 fromCelsius :: Temperatures -> Temperatures
 fromCelsius r = case fromString r."Celsius" of
-  Just c -> r { "Fahrenheit" = show (c * 9.0 / 5.0 + 32.0) }
-  Nothing -> r
+  Just c | not (agrees (fahrenheitOf c) r."Fahrenheit") -> r { "Fahrenheit" = show (fahrenheitOf c) }
+  _ -> r
 
 fromFahrenheit :: Temperatures -> Temperatures
 fromFahrenheit r = case fromString r."Fahrenheit" of
-  Just f -> r { "Celsius" = show ((f - 32.0) * 5.0 / 9.0) }
-  Nothing -> r
+  Just f | not (agrees (celsiusOf f) r."Celsius") -> r { "Celsius" = show (celsiusOf f) }
+  _ -> r
+
+fahrenheitOf :: Number -> Number
+fahrenheitOf c = c * 9.0 / 5.0 + 32.0
+
+celsiusOf :: Number -> Number
+celsiusOf f = (f - 32.0) * 5.0 / 9.0
+
+agrees :: Number -> String -> Boolean
+agrees expected shown = case fromString shown of
+  Just n -> abs (n - expected) < 1.0e-9
+  Nothing -> false

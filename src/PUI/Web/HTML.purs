@@ -41,6 +41,7 @@ module PUI.Web.HTML
   , i
   , img
   , input
+  , inPlaceInput
   , filePicked
   , label
   , li
@@ -87,7 +88,7 @@ import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
 import PUI (fromHandles, handles, folding, Ocular, PUI)
-import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, documentBody, recordToRecordWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, recordToVariantWiring, setAttribute, setValue, staticText, variantToRecordWiring, statusText, separating, variantToVariantWiring, invokeMethod, showModalOnce, (:=), (:=>))
+import PUI.Web (Choices, choiceTags, departures, replayed, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, documentBody, recordToRecordWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, recordToVariantWiring, setAttribute, setValue, staticText, variantToRecordWiring, statusText, separating, variantToVariantWiring, invokeMethod, showModalOnce, (:=), (:=>))
 
 -- UIs
 
@@ -113,6 +114,22 @@ input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := typ
     , reports: listenNode node "input"
     , read: \_ -> getValue node
     }
+
+-- | The **in-place text input** of a grid or a list — a sheet's cell
+-- | while it is edited: `input @k` over field `k`, its edits kept until
+-- | the user leaves it (a click elsewhere, Tab, Enter), when the row with
+-- | field `k` as typed leaves as case `l`. Shown by a pane while its
+-- | element is being edited, it takes the focus when shown
+-- | (`inPlaceInput @"Formula entered" @"Formula" # providedAt @"editing"
+-- | @"mode"`, cells). `× → +`: a leaving is the commit.
+inPlaceInput
+  :: forall @l @k r b1 b2 v
+   . IsSymbol l
+  => IsSymbol k
+  => Cons k String b1 r
+  => Cons l { | r } b2 v
+  => PUI Web { | r } [ | v ]
+inPlaceInput = span $ input @k "text" >>> replayed @l identity departures
 
 -- | A **file picker** — a capture, not an editor: the user supplies the
 -- | file and the platform cannot be shown one, so it owns its field like a
@@ -231,7 +248,7 @@ progress f = fromHandles do
 -- | itself).
 -- |
 -- | A status **tells its case**: its caption is the case label verbatim,
--- | so the outcome is named as what it tells (`output @"Flight booked"
+-- | so the outcome is named as what it tells (`output @"Card charged"
 -- | kept`) and the payload is read by nothing but the fold. A `+→×` leaf
 -- | like `fold @l f`, it takes its fold of the payload.
 output

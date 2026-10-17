@@ -451,25 +451,69 @@ export function removeChild(child) {
   };
 }
 
-// onClickXY :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
-// pointerdown works for mouse, touch and pen alike; coordinates are mapped
-// from CSS pixels into the SVG's viewBox space when the node has one, so a
-// responsive canvas stays accurate on any screen width.
-export function onClickXY(node) {
+// onPointerXY :: String -> Node -> (Number -> Number -> Effect Unit) -> Effect Unit
+// One pointer event type on the node, its coordinates mapped from CSS pixels
+// into the SVG's viewBox space when the node has one, so a responsive canvas
+// stays accurate on any screen width. pointerdown works for mouse, touch and
+// pen alike and reports the primary button only; contextmenu (a right click,
+// a long press) keeps the browser's own menu away; pointermove reports every
+// move and the point where the pointer leaves.
+export function onPointerXY(type) {
+  return function (node) {
+    return function (callback) {
+      return function () {
+        const report = function (event) {
+          if (type === "pointerdown" && event.button !== 0) return;
+          if (type !== "pointermove") event.preventDefault();
+          const rect = node.getBoundingClientRect();
+          const vb = node.viewBox && node.viewBox.baseVal;
+          const x = vb ? (event.clientX - rect.left) * (vb.width / rect.width) : event.clientX - rect.left;
+          const y = vb ? (event.clientY - rect.top) * (vb.height / rect.height) : event.clientY - rect.top;
+          callback(x)(y)();
+        };
+        node.addEventListener(type, report);
+        if (type === "pointermove") node.addEventListener("pointerleave", report);
+      };
+    };
+  };
+}
+
+
+// onDeparture :: Node -> Effect Unit -> Effect Unit
+// The focus leaving the container — a click elsewhere, Tab, or Enter, which
+// blurs the element it was pressed in.
+export function onDeparture(node) {
   return function (callback) {
     return function () {
-      node.addEventListener("pointerdown", function (event) {
-        event.preventDefault();
-        const rect = node.getBoundingClientRect();
-        const vb = node.viewBox && node.viewBox.baseVal;
-        const x = vb ? (event.clientX - rect.left) * (vb.width / rect.width) : event.clientX - rect.left;
-        const y = vb ? (event.clientY - rect.top) * (vb.height / rect.height) : event.clientY - rect.top;
-        callback(x)(y)();
+      node.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && event.target.blur) {
+          event.preventDefault();
+          event.target.blur();
+        }
+      });
+      node.addEventListener("focusout", function (event) {
+        if (!node.contains(event.relatedTarget)) callback();
       });
     };
   };
 }
 
+// focusWithin :: Node -> Effect Unit — once the current task is done (the
+// container may just have been attached), focus its first element, the caret
+// at the end, unless the focus is already inside
+export function focusWithin(node) {
+  return function () {
+    setTimeout(function () {
+      if (!node.isConnected || node.contains(document.activeElement)) return;
+      const target = node.firstElementChild;
+      if (!target || !target.focus) return;
+      target.focus();
+      if (target.setSelectionRange && typeof target.value === "string") {
+        target.setSelectionRange(target.value.length, target.value.length);
+      }
+    }, 0);
+  };
+}
 
 // afterTask :: Effect Unit -> Effect Unit — run once the current task (and
 // the microtasks custom elements defer their own click handling to) is done

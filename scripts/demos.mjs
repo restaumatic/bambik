@@ -13,8 +13,7 @@
 // named by the design system alone, the module by both, since every demo
 // compiles under one `spago build`), and the entry function is the app's
 // name (`counter`) in every view. Any further module of the app is named
-// the same way, the file its module minus the app prefix (crud's
-// `PeopleServer.purs` is `Crud.PeopleServer`, order-dashboard's
+// the same way, the file its module minus the app prefix (order-dashboard's
 // `ControlsMDC3.purs` is `OrderDashboard.ControlsMDC3`). A plain-HTML app
 // is one `html` variant (hello-world, restaurant-menu). A law bench is a
 // plain [module, fn] pair in a directory of its own.

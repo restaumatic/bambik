@@ -73,7 +73,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   label (`value`/`clicked`/`event`) appears in application code: business
   functions are arguments of leaves, never adopters — a display takes its
   read function, a status its business case and fold, its case label its
-  whole copy (`snackbar @"Flight booked" identity`; inside the vocabulary, the
+  whole copy (`snackbar @"Card charged" identity`; inside the vocabulary, the
   face over the label is adopted `# atCase @l`), and an emitter emits its
   own case. The structural adopters `atField`/`atCase`, `toField`/`toCase`
   take no function and stay inside the vocabularies:
@@ -188,15 +188,15 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   payload — is the view model's signature to state, and restated on a
   view line it is only a second copy of that signature (L18). A
   published word MUST NOT take such a row as a visible type argument.
-  It writes no row for an action either: `action @"Book" submit` is
-  typed at exactly the outcomes `submit` names, and what tells them
+  It writes no row for an action either: `action @"Charge card" chargeFlaky` is
+  typed at exactly the outcomes `chargeFlaky` names, and what tells them
   closes them — the statuses owning its cases, or among emitters the
   `joined @l` / `joined2 @l1 @l2` naming its outcome labels (until
   2026-10-16 the action declared them as a row, CHANGELOG). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
-  swap. Precedents: the statuses (`snackbar @"Flight booked" identity`,
+  swap. Precedents: the statuses (`snackbar @"Card charged" identity`,
   replacing a per-case copy record and then the copy function), `confirmed
   @"Refund a customer" "Refund"` (the caption a value, the
   dialog telling its case as its title), and the one-field ocular
@@ -355,7 +355,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - An emitter MUST NOT be primed — no canonical first occurrence exists
   (events occur, they don't pre-exist); an application's opening act is
   a model (`with seed`) or `{}` into a load action standing before the
-  knot (order-form, crud), never an event. The carrier tells you the
+  knot (order-form), never an event. The carrier tells you the
   shape axis, not the time axis:
   record-carried, event-natured channels (`select` before first pick,
   `acted`'s withheld aggregate) stay unpointed.
@@ -577,7 +577,7 @@ The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf @l @k
 rowsOf item`, `dispatched envelopeOf`, a status's fold
-(`snackbar @"Flight booked" identity`), `settled normalize` (`identity` says
+(`snackbar @"Card charged" identity`), `settled normalize` (`identity` says
 verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next word waiting to be coined — never a reason to import the
@@ -622,7 +622,7 @@ code below the UI) are algebra-layer material and exempt by location.
   adopters anywhere in `demo/` and any lambda in a `text` read.
 - A status is label-indexed at its business case and **tells its case**:
   it takes no copy function, its case label is its whole copy
-  (`snackbar @"Flight booked" identity`, `toast @"Review submitted"
+  (`snackbar @"Card charged" identity`, `toast @"Review submitted"
   identity`) — a status is ephemeral, and copy a status would compute
   from its payload is either data the user must keep (a reference, an
   order number), which is a model field shown by a display, or a reason,

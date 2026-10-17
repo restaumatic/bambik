@@ -1,72 +1,49 @@
-module FlightBooker (Trip, bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit) where
+module FlightBooker (Trip, bookedLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid) where
 
-import Prelude (bind, const, discard, otherwise, pure, show, (#), (&&), (*), (+), (<), (<=), (<>), (>=), (>>>))
+import Prelude (bind, otherwise, (#), (&&), (*), (+), (/=), (<=), (<>), (==), (>=), (||))
 
-import Data.Either (Either(..), either)
-import Data.Int (fromString)
-import Data.Maybe (Maybe(..))
+import Data.Int (fromString, rem)
+import Data.Maybe (Maybe(..), maybe)
 import Data.String (Pattern(..), split)
 import Data.Variant (match)
-import Effect.Aff (Aff, Milliseconds(..), delay)
 
 type Trip =
-  { "Flight type" :: [ "one-way" :: {}, return :: {} ]
+  { "Flight type" :: [ "one-way flight" :: {}, "return flight" :: {} ]
   , "Return date" :: String
   , "Start date" :: String
   }
 
 type Date = { y :: Int, m :: Int, d :: Int }
 
-type Problem =
-  [ returnBeforeStart :: {}
-  , unreadableReturn :: { input :: String }
-  , unreadableStart :: { input :: String }
-  ]
-
-type Itinerary = [ oneWayOn :: Date, returnBetween :: { out :: Date, back :: Date } ]
-
 plannedTrip :: Trip
-plannedTrip = { "Flight type": ."one-way" {}, "Start date": "27.03.2026", "Return date": "27.03.2026" }
+plannedTrip = { "Flight type": ."one-way flight" {}, "Start date": "27.03.2026", "Return date": "27.03.2026" }
 
-itinerarySettleTime :: { ms :: Number }
-itinerarySettleTime = { ms: 300.0 }
+startDateInvalid :: Trip -> String
+startDateInvalid { "Start date": input } = invalidity input
 
-bookingLine :: Trip -> String
-bookingLine = parse >>> either (\problem -> "⚠ " <> problemText problem) itineraryText
+returnDateInvalid :: Trip -> String
+returnDateInvalid { "Return date": input } = invalidity input
 
-bookingState :: Trip -> [ bookable :: {}, problem :: {} ]
-bookingState = parse >>> either (const (.problem {})) (const (.bookable {}))
+bookingState :: Trip -> [ bookable :: {}, unbookable :: {} ]
+bookingState trip = if bookable trip then .bookable {} else .unbookable {}
 
-submit :: Trip -> Aff [ "Flight booked" :: Trip ]
-submit trip = do
-  delay (Milliseconds 600.0)
-  pure (."Flight booked" trip)
+bookedLine :: Trip -> String
+bookedLine { "Flight type": flightType, "Start date": out, "Return date": back } = flightType # match
+  { "one-way flight": \_ -> "You have booked a one-way flight on " <> out <> "."
+  , "return flight": \_ -> "You have booked a return flight on " <> out <> ", returning on " <> back <> "."
+  }
 
-parse :: Trip -> Either Problem Itinerary
-parse { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } =
+invalidity :: String -> String
+invalidity input = maybe "true" (\_ -> "false") (parseDate input)
+
+bookable :: Trip -> Boolean
+bookable { "Flight type": flightType, "Start date": startInput, "Return date": returnInput } =
   case parseDate startInput of
-    Nothing -> Left (.unreadableStart { input: startInput })
+    Nothing -> false
     Just out -> flightType # match
-      { "one-way": \_ -> Right (.oneWayOn out)
-      , return: \_ -> case parseDate returnInput of
-          Nothing -> Left (.unreadableReturn { input: returnInput })
-          Just back
-            | dateKey back < dateKey out -> Left (.returnBeforeStart {})
-            | otherwise -> Right (.returnBetween { out, back })
+      { "one-way flight": \_ -> true
+      , "return flight": \_ -> maybe false (\back -> dateKey out <= dateKey back) (parseDate returnInput)
       }
-
-problemText :: Problem -> String
-problemText = match
-  { unreadableStart: \{ input } -> "start date " <> show input <> " is not a valid DD.MM.YYYY date"
-  , unreadableReturn: \{ input } -> "return date " <> show input <> " is not a valid DD.MM.YYYY date"
-  , returnBeforeStart: \_ -> "the return date is before the start date"
-  }
-
-itineraryText :: Itinerary -> String
-itineraryText = match
-  { oneWayOn: \out -> "A one-way flight on " <> formatDate out
-  , returnBetween: \{ out, back } -> "A return flight: out " <> formatDate out <> ", back " <> formatDate back
-  }
 
 parseDate :: String -> Maybe Date
 parseDate s = case split (Pattern ".") s of
@@ -74,15 +51,16 @@ parseDate s = case split (Pattern ".") s of
     d <- fromString dd
     m <- fromString mm
     y <- fromString yyyy
-    if d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1000
+    if m >= 1 && m <= 12 && d >= 1 && d <= daysIn m y && y >= 1000
       then Just { y, m, d }
       else Nothing
   _ -> Nothing
 
-formatDate :: forall r1. { y :: Int, m :: Int, d :: Int | r1 } -> String
-formatDate { y, m, d } = pad d <> "." <> pad m <> "." <> show y
-  where
-  pad n = (if n < 10 then "0" else "") <> show n
+daysIn :: Int -> Int -> Int
+daysIn m y
+  | m == 2 = if rem y 4 == 0 && (rem y 100 /= 0 || rem y 400 == 0) then 29 else 28
+  | m == 4 || m == 6 || m == 9 || m == 11 = 30
+  | otherwise = 31
 
 dateKey :: forall r1. { y :: Int, m :: Int, d :: Int | r1 } -> Int
 dateKey { y, m, d } = y * 10000 + m * 100 + d

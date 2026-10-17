@@ -2,13 +2,12 @@ module CircleDrawer.HTML (circleDrawer) where
 
 import Prelude ((#), ($), (>>>), Unit, identity)
 
-import CircleDrawer (canvasCircles, emptyCanvas, redo, resizeSelected, selectOrAddCircle, undo)
+import CircleDrawer (adjustDiameter, canvasCircles, circleFill, clickCanvas, closeAdjustment, emptyCanvas, hover, menuPlacement, openMenu, redo, resizeSelected, selectedCircleLine, undo)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Data.Variant (match)
 import Effect (Effect)
 import PUI (fold, foreach, joined, looped, settled, with)
-import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, staticText, (:=))
+import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, providedAt, staticText, text, (:=))
 import PUI.Web.HTML (body, button, div, label, p, rangeInput)
 import PUI.Web.SVG (circle, svg)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -16,24 +15,39 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 circleDrawer :: Effect Unit
 circleDrawer =
   body $ div $ Semigroupoid.do
-    ( p $ label $ Semigroupoid.do
-      staticText "Diameter "
-      rangeInput @"Diameter" ) # inCaseAt @"chosen" @"selected" # settled resizeSelected
+    ( div >>> "style" := frameFace $ Semigroupoid.do
+        p $ text selectedCircleLine
+        label $ Semigroupoid.do
+          staticText "Diameter "
+          rangeInput @"Diameter" # settled resizeSelected ) # inCaseAt @"adjusting" @"mode"
     RecordToVariant.do
-      ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; max-width: 500px; height: auto; touch-action: none;" $
-        ( onClickedXY @"Canvas clicked" $
-          ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
-            >>> attrWith "fill" circleFill $ identity ) # foreach @"key" canvasCircles ) ) # joined @"Canvas clicked"
+      button @"Close" # providedAt @"adjusting" @"mode"
       ( div $ RecordToVariant.do
         button @"Undo"
         button @"Redo" )
+      ( div >>> "style" := "position: relative; max-width: 500px;" $ RecordToVariant.do
+        ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := canvasFace $ RecordToVariant.do
+          ( onClickedXY @"Canvas clicked" $
+            ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
+              >>> attrWith "fill" circleFill $ identity ) # foreach @"key" canvasCircles ) # joined @"Canvas clicked"
+          onHoveredXY @"Canvas hovered" identity # joined @"Canvas hovered"
+          onContextMenuXY @"Canvas context menu" identity # joined @"Canvas context menu" )
+        ( div >>> attrWith "style" menuPlacement $ div >>> "style" := menuFace $ button @"Adjust diameter.." ) # providedAt @"menu" @"mode" )
     VariantToRecord.do
-      fold @"Canvas clicked" selectOrAddCircle
+      fold @"Canvas clicked" clickCanvas
+      fold @"Canvas hovered" hover
+      fold @"Canvas context menu" openMenu
+      fold @"Adjust diameter.." adjustDiameter
+      fold @"Close" closeAdjustment
       fold @"Undo" undo
       fold @"Redo" redo
   # looped # with emptyCanvas
 
-circleFill
-  :: { key :: String, r :: String, status :: [ selected :: {}, unselected :: {} ], x :: String, y :: String }
-  -> String
-circleFill { status } = match { selected: \_ -> "#ddd", unselected: \_ -> "transparent" } status
+canvasFace :: String
+canvasFace = "border: 1px solid #ccc; display: block; margin: 10px 0; background: white; width: 100%; height: auto; touch-action: none;"
+
+menuFace :: String
+menuFace = "background: white; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border-radius: 4px; padding: 4px;"
+
+frameFace :: String
+frameFace = "border: 1px solid #ccc; padding: 8px; margin: 8px 0;"

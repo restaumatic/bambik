@@ -8,6 +8,47 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-17, latest
 
+- **The 7GUIs demos meet the task statements.** Read against
+  <https://eugenkiss.github.io/7guis/tasks/> (doc/7guis-comparison.md:
+  17 → 22 of 23). Temperature-converter starts empty, and each field's
+  `settled` rewrites the other only when the two disagree, so a round
+  trip writes no float noise back. Flight-booker's options are the
+  spec's words (`"one-way flight"`, `"return flight"`), a date the
+  calendar lacks is rejected, each date field carries `# attrWith
+  "aria-invalid" …` which the page colours red, and Book opens
+  `acknowledged @"Book" "OK" $ … text bookedLine`, the message stating
+  the selection — its debounced itinerary line, simulated airline,
+  progress bar and snackbar, none of which the spec names, are gone.
+  Circle-drawer selects the circle nearest the pointer by hover, opens
+  a popup "Adjust diameter.." on a right click, adjusts in a frame with
+  the live slider, and commits the session as one undo step on Close;
+  its `drag` flag became the `mode` field `[ drawing, menu, adjusting {
+  before } ]`. Cells has 100 rows, is edited in place on a double
+  click, commits when the cell is left, and stores its values,
+  re-evaluating only the edited cell and its dependents in dependency
+  order (memoised, so a diamond of references is no longer
+  exponential); the formula bar and the "Cell X" line are gone. The
+  library words this needed: `onHoveredXY @l` and `onContextMenuXY @l`
+  beside `onClickedXY` (now primary-button only) in `PUI.Web`;
+  `doubleClickTile @l @k` in MDC3 (with `occurrencesOn`, `occurrences`
+  at another platform event); `inPlaceInput @l @k` in HTML (with
+  `departures`, the occurrence of the focus leaving a container). All
+  four new leaves are on the leaf-law benches. Disabled stays absent
+  (the panes), by decision. The `lists` dependency went with cells'
+  `Data.List`. walkthrough.md reads the new flight-booker; the docs that
+  cited its action and snackbar cite payment's.
+- **Crud is the benchmark and no more.** The 7GUIs task asks for an
+  in-memory list; crud carried a simulated server (`Crud.PeopleServer`,
+  300 ms round-trips), a load before the knot, a progress bar per action
+  and six outcome snackbars, none of which the spec names. It is now a
+  seed (`# looped # with freshCatalogue`) and four silent folds;
+  Create, Update and Delete are pure `Catalogue -> Catalogue`. Update
+  and Delete exist only while a person is picked (`# providedAt
+  @"picked" @"selected"`, the spec's enabled-iff-selected), and the
+  prefix filter's `# settled filterChanged` drops a selection it hides,
+  closing both CRUD gaps in doc/7guis-comparison.md. The docs that cited
+  crud for `load`, `action` and outcome statuses now cite order-form,
+  flight-booker, espresso-bar and reorder, which still show them.
 - **The 7GUIs demos reviewed as the showcase.** Flight-booker had three
   panes over a three-case `bookingState`, each holding the same display
   over its own copy function (`problemLine`, `oneWayLine`, `returnLine`),

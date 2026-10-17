@@ -16,7 +16,8 @@
 -- | - **text leaves** — `text` (copy from a read function), `textAt` (a
 -- |   field shown as stored), `statusText` (a status's caption), `staticText`,
 -- |   and `staticHTML`, kept off the public vocabularies (L10);
--- | - **occurrence sources** — `clicked @l @k`, `onClickedXY @l`;
+-- | - **occurrence sources** — `onClickedXY @l`, `onHoveredXY @l`,
+-- |   `onContextMenuXY @l`;
 -- | - **panes** — `provided` (emitters) and `inCase` (displays and
 -- |   editors), each fed the whole row; a pane over a variant the model
 -- |   stores names its field by label (`providedAt`, `inCaseAt`);
@@ -105,7 +106,7 @@ module PUI.Web
   , getValue
   , isFocused
   , onInputDebounced
-  , onClickXY
+  , onPointerXY
   , removeAllChildren
   , removeAttribute
   , removeClass
@@ -144,8 +145,12 @@ module PUI.Web
   , attrAt
   , clickedRow
   , occurrences
+  , occurrencesOn
+  , departures
   , replayed
   , onClickedXY
+  , onContextMenuXY
+  , onHoveredXY
   , dynamic
   , each
   , el
@@ -349,7 +354,9 @@ foreign import childrenFrom :: Int -> Node -> Effect (Array Node)
 -- | Pointer-down emitter with coordinates mapped into the element's local
 -- | space (an SVG's viewBox units when present, CSS pixels otherwise) —
 -- | works for mouse, touch and pen alike.
-foreign import onClickXY :: Node -> (Number -> Number -> Effect Unit) -> Effect Unit
+foreign import onPointerXY :: String -> Node -> (Number -> Number -> Effect Unit) -> Effect Unit
+foreign import onDeparture :: Node -> Effect Unit -> Effect Unit
+foreign import focusWithin :: Node -> Effect Unit
 foreign import watchPosition :: ({ lat :: Number, lng :: Number } -> Effect Unit) -> Effect Unit -> Effect (Effect Unit)
 foreign import isOnline :: Effect Boolean
 foreign import watchOnline :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
@@ -682,8 +689,8 @@ choice :: forall @l w. IsSymbol l => Row.Cons l {} () w => Choices w
 choice = Choices [ reflectSymbol (Proxy @l) ]
 
 -- | Join two option lists in writing order, their variant rows united — so
--- | `choice @"one-way" <+> choice @"return"` is the **closed** row
--- | `[ "one-way" :: {}, return :: {} ]` in that order, and a selector over
+-- | `choice @"one-way flight" <+> choice @"return flight"` is the **closed** row
+-- | `[ "one-way flight" :: {}, "return flight" :: {} ]` in that order, and a selector over
 -- | it leaves no option case open for a typed hole to report (guardrails
 -- | L18, the determination half). Option order stays the order written,
 -- | never the row's alphabetical one.
@@ -874,7 +881,7 @@ inCase f w = fromHandles do
     }
 
 -- | `inCase` over a variant the model stores: the editor exists in case `c`
--- | of field `l`, both named by label (`# inCaseAt @"return" @"Flight type"`).
+-- | of field `l`, both named by label (`# inCaseAt @"return flight" @"Flight type"`).
 inCaseAt
   :: forall @c @l r a v b1 b2
    . IsSymbol c => IsSymbol l => Cons c a b1 v => Cons l [ | v ] b2 r
@@ -1195,7 +1202,12 @@ replayed f src = joined @"occurred" src # rmap (on (Proxy @"occurred") (inj (Pro
 -- | attaches the row — replay is `Strong`'s retention, so no source keeps
 -- | a copy of the row it was shown. Plumbing, like `replayed`.
 occurrences :: forall a b. PUI Web a b -> PUI Web a [ occurred :: {} ]
-occurrences w = fromHandles do
+occurrences = occurrencesOn "click"
+
+-- | `occurrences` of another platform event on the content's node — a
+-- | `"dblclick"` for MDC3's `doubleClickTile`. Plumbing.
+occurrencesOn :: forall a b. String -> PUI Web a b -> PUI Web a [ occurred :: {} ]
+occurrencesOn eventName w = fromHandles do
   w' <- handles w
   node <- gets _.sibling
   pure
@@ -1203,7 +1215,24 @@ occurrences w = fromHandles do
     , fromUser: \prop -> do
         -- content is display-only: give its wiring a sink so echoes flow
         w'.fromUser \_ -> pure unit
-        void $ addEventListener "click" node $ const $ prop (inj (Proxy @"occurred") {})
+        void $ addEventListener eventName node $ const $ prop (inj (Proxy @"occurred") {})
+    }
+
+-- | The **departure** source of an in-place editor's container: an
+-- | occurrence each time the focus leaves the container — a click
+-- | elsewhere, Tab, or Enter, which leaves the element it is pressed in —
+-- | and, on every feed, the focus moved to the container's first element
+-- | unless it is already inside, so an editor shown by a pane is ready to
+-- | type in. Nothing leaves inside a feed. Placed after the editor in its
+-- | container, it is the commit of what the editor released:
+-- | `span $ input @k "text" >>> replayed @l identity departures`
+-- | (`PUI.Web.HTML.inPlaceInput`). Plumbing.
+departures :: forall a. PUI Web a [ occurred :: {} ]
+departures = fromHandles do
+  node <- gets _.parent
+  pure
+    { toUser: \_ -> focusWithin node
+    , fromUser: \prop -> onDeparture node (prop (inj (Proxy @"occurred") {}))
     }
 
 -- | Report *where* the user clicked, in the container's own coordinates —
@@ -1211,16 +1240,35 @@ occurrences w = fromHandles do
 -- | shapes are in the same units whatever size the drawing is on screen.
 -- | The canvas gesture, where the place clicked *is* the interaction:
 -- | `svg >>> "viewBox" := "0 0 500 300" $ onClickedXY @"picked" $ …`. An event
--- | source: the point leaves as an occurrence of case `l`.
+-- | source: the point leaves as an occurrence of case `l`. The primary button
+-- | only; a right click is `onContextMenuXY`'s.
 onClickedXY :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
-onClickedXY content = fromHandles do
+onClickedXY = pointedAt @l "pointerdown"
+
+-- | `onClickedXY`'s sibling for the pointer **moving** over the container:
+-- | every move leaves as case `l` with the point under the pointer, and so
+-- | does the point where it leaves — the hover gesture, what lies under the
+-- | pointer *is* the interaction (circle-drawer's nearest circle). Merged
+-- | beside the other sources of one container, `onHoveredXY @"Canvas
+-- | hovered" identity` when it has no content of its own.
+onHoveredXY :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+onHoveredXY = pointedAt @l "pointermove"
+
+-- | `onClickedXY`'s sibling for the **context-menu** gesture — a right
+-- | click, a long press — the point leaving as case `l` and the browser's
+-- | own menu kept away, so the app's popup takes its place.
+onContextMenuXY :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+onContextMenuXY = pointedAt @l "contextmenu"
+
+pointedAt :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => String -> PUI Web { | r } a -> PUI Web { | r } [ | v ]
+pointedAt eventType content = fromHandles do
   w' <- handles content
   node <- gets _.parent
   pure
     { toUser: w'.toUser
     , fromUser: \prop -> do
         w'.fromUser \_ -> pure unit
-        onClickXY node \x y -> prop (inj (Proxy @l) { x, y })
+        onPointerXY eventType node \x y -> prop (inj (Proxy @l) { x, y })
     }
 
 -- | Build a UI component per element from a function — for a list whose elements

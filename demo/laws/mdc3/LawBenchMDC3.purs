@@ -5,7 +5,7 @@ import Prelude
 import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI.Web (text, (<+>), choice, staticText, textAt)
-import PUI.Web.MDC3 (acknowledged, body, confirmed, button, checkbox, debouncedTextField, elevatedButton, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, tabBar', textButton, tile, toggleSwitch, tonalButton)
+import PUI.Web.MDC3 (acknowledged, body, confirmed, button, checkbox, debouncedTextField, doubleClickTile, elevatedButton, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, tabBar', textButton, tile, toggleSwitch, tonalButton)
 
 lawBenchMDC3 :: Effect Unit
 lawBenchMDC3 = do
@@ -43,6 +43,7 @@ lawBenchMDC3 = do
     , bench "fab" "×→+" rows (fab @"Go" "add")
     , bench "iconButton" "×→+" rows (iconButton @"Go" "add")
     , bench "tile" "×→+" rows (tile @"Go" @"n" (staticText "Go"))
+    , bench "doubleClickTile" "×→+" rows (doubleClickTile @"Go" @"n" (staticText "Go"))
     , bench "menuItem" "×→+" rows (menuItem @"Go")
     , bench "listOf" "×→+" lists (listOf @"picked" @"id" itemsOf (textAt @"title"))
     , bench "listOfAt" "×→+" lists (listOfAt @"picked" @"id" @"items" (textAt @"title"))

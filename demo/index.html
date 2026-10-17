@@ -35,7 +35,7 @@
           <ul>
             <li>the view exports one entry function and imports the design-system vocabulary and the view model;</li>
             <li>the view model holds pure business functions and values and imports only domain modules (<code>Prelude</code>, data modules, <code>Effect</code>, <code>Aff</code>, <code>Data.Variant.Case</code>);</li>
-            <li>further modules are only a stand-in server (crud) or packaged controls (order-dashboard).</li>
+            <li>further modules are only packaged controls (order-dashboard).</li>
           </ul>
         </li>
         <li><b>The view determines the view model.</b> With a typed hole for every imported value, the compiler reports each at a concrete type; those types are the view model's signatures. The library checks this for every demo.</li>
@@ -60,7 +60,7 @@
         <li><b>Every line names exactly one anchor:</b>
           <ul>
             <li>a model field, as the type argument of an editor, selector or group: <code>filledTextField @"First name"</code>, <code>group @"Customer" $ …</code>;</li>
-            <li>a business case, as the type argument of an emitter, pane or status: <code>button @"Submit order"</code>, <code>snackbar @"Flight booked" identity</code>;</li>
+            <li>a business case, as the type argument of an emitter, pane or status: <code>button @"Submit order"</code>, <code>snackbar @"Card charged" identity</code>;</li>
             <li>a copy function, as a display's positional argument: <code>text balanceLine</code>;</li>
             <li>nothing, for chrome: <code>card</code>, <code>staticText "Hours"</code>.</li>
           </ul>
@@ -74,11 +74,11 @@
         <li>A label is its caption verbatim and only the name: <code>filledTextField @"First name"</code>. A format, an example or a unit is not the name and rides the primed sibling: <code>filledTextField' @"Start date" { hint: "DD.MM.YYYY" }</code>, <code>sliderLive' @"Amount" { unit: "€" }</code>.</li>
         <li>Why: the code stays as close to the running UI as possible. The words on the screen are the words in the code, so a line is found from the screen and the screen from a line.</li>
         <li>A leaf takes no options record: it states its copy once, as its label. A word with optional presentation has a primed sibling: <code>button' @"Place order" { icon: "local_cafe" }</code>.</li>
-        <li>Options are one <code>choice</code> per case, joined by <code>&lt;+&gt;</code> in display order: <code>choice @"one-way" &lt;+&gt; choice @"return"</code>.</li>
+        <li>Options are one <code>choice</code> per case, joined by <code>&lt;+&gt;</code> in display order: <code>choice @"one-way flight" &lt;+&gt; choice @"return flight"</code>.</li>
         <li>A case label is read back with <code>caseText</code>, never restated in a <code>match</code>.</li>
         <li>A display's text is a named copy function in the view model, whole line including glue: <code>balanceLine :: { balance :: Number } -&gt; String</code>.</li>
         <li>Static copy (a heading, a note) is a literal in the view: <code>staticText "Hours"</code>.</li>
-        <li>Events and outcomes carry data, never copy: flight-booker's problems are reasons, phrased by <code>bookingLine</code>. A status tells its case and the case label is its whole copy, so an action names its outcomes as the words the user reads: <code>Aff [ "Total missing" :: {}, "Order submitted" :: {} ]</code>.</li>
+        <li>Events and outcomes carry data, never copy: flight-booker's confirmation is spelled by <code>bookedLine</code> from the trip the event carries. A status tells its case and the case label is its whole copy, so an action names its outcomes as the words the user reads: <code>Aff [ "Total missing" :: {}, "Order submitted" :: {} ]</code>.</li>
       </ul>
 
       <h3>Types and values</h3>
@@ -88,8 +88,8 @@
         <li>No <code>Maybe</code> in the model: <code>selected :: [ none :: {}, picked :: { index :: Int } ]</code>.</li>
         <li>No <code>Boolean</code> unless a Boolean editor edits it: <code>status :: [ active :: {}, completed :: {} ]</code>.</li>
         <li>The model row is stated once, by the seed's signature: <code>freshCount :: Count</code>, <code>type Count = { counted :: Int }</code>, closed on the view by <code># looped # with freshCount</code>.</li>
-        <li>The view writes no row: a classifier's cases, a projection's element row, a payload and an action's outcomes are their functions' signatures — <code>action @"Book" submit</code>, its outcomes closed by the statuses that tell them.</li>
-        <li>A stored field is named by its label, never picked with <code>_.</code>: <code>textAt @"title"</code>, <code>tile @"Cell picked" @"key"</code>, <code># providedAt @"halted" @"phase"</code>, <code>listOfAt @"Message opened" @"id" @"messages"</code>.</li>
+        <li>The view writes no row: a classifier's cases, a projection's element row, a payload and an action's outcomes are their functions' signatures — <code>action @"Charge card" chargeFlaky</code>, its outcomes closed by the statuses that tell them.</li>
+        <li>A stored field is named by its label, never picked with <code>_.</code>: <code>textAt @"title"</code>, <code>doubleClickTile @"Cell double-clicked" @"key"</code>, <code># providedAt @"halted" @"phase"</code>, <code>listOfAt @"Message opened" @"id" @"messages"</code>.</li>
         <li>Business values are model data: a slider edits <code>{ current, min, max, step }</code> from the seed.</li>
         <li>Constants have business names (<code>tickPeriod</code>, <code>freshCount</code>), never <code>initial</code>, <code>default</code> or <code>seed</code>.</li>
       </ul>
@@ -100,7 +100,7 @@
         <li>A handler updates the row it is given: <code>increment m = m { counted = m.counted + 1 }</code>.</li>
         <li>A constant replaces the model only whole, by a reset: <code>reset @"New game" openingPosition</code>.</li>
         <li>Each event case has its own fold: <code>fold @"Count" increment</code>.</li>
-        <li>A status is a fold with a face, <code>snackbar @"Person created" identity</code>; it shows its case label, never the fold's result, so it stands only after an action whose outcome it is. A command straight from an emitter folds silently: <code>fold @"Todo toggled" toggleTodo</code>. What the user must keep is a model field shown by a display, never copy flashed by a status.</li>
+        <li>A status is a fold with a face, <code>snackbar @"Card charged" identity</code>; it shows its case label, never the fold's result, so it stands only after an action whose outcome it is. A command straight from an emitter folds silently: <code>fold @"Todo toggled" toggleTodo</code>. What the user must keep is a model field shown by a display, never copy flashed by a status.</li>
         <li>An action is opened by its progress indicator alone; an outcome that is told and changes nothing is <code>joined @l</code> with its button, once per outcome, and folded <code>kept</code>.</li>
         <li>An event with a payload of its own is <code># joined @l</code> and handled by one record: <code>toggleTodo :: { event :: Int, model :: … } -&gt; …</code>.</li>
         <li>An action returns the model under its outcome case, folded by <code>identity</code>.</li>

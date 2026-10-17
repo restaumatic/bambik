@@ -1,45 +1,48 @@
-module Cells (Sheet, columnHeaders, commit, orderSheet, selectCell, selectedLine, sheetRows) where
+module Cells (Cell, Sheet, Value, columnHeaders, commit, edit, orderSheet, sheetRows) where
 
-import Prelude ((<>), bind, identity, map, max, min, mod, pure, show, (&&), (*), (+), (-), (/), (<#>), (<$>), (<=), (==), (>=), (||))
+import Prelude (bind, identity, map, max, min, mod, not, otherwise, pure, show, (&&), (*), (+), (-), (/), (<#>), (<$>), (<=), (<>), (==), (>=), (||))
 
-import Data.Array (range)
+import Data.Array (concatMap, range, snoc)
 import Data.Char (fromCharCode, toCharCode)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (fromString, round, toNumber) as Int
-import Data.List (List(..), elem, (:))
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Number (fromString)
 import Data.String.CodeUnits (charAt, drop, dropWhile, length, singleton, take, takeWhile)
 import Data.Variant (match)
-import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, lookup)
+import Foreign.Object (Object, delete, empty, fromHomogeneous, insert, keys, lookup, member)
 
 type Sheet =
-  { "Formula" :: String
-  , cells :: Object String
-  , selected :: [ none :: {}, picked :: { name :: String } ]
+  { editing :: [ cell :: { name :: String }, none :: {} ]
+  , formulas :: Object String
+  , values :: Object Value
   }
 
+type Cell =
+  { "Formula" :: String
+  , key :: String
+  , mode :: [ editing :: {}, shown :: {} ]
+  , text :: String
+  }
+
+type Value = [ errV :: String, numV :: Number, textV :: String ]
+
 orderSheet :: Sheet
-orderSheet =
-  { cells: fromHomogeneous
+orderSheet = { formulas, values: reevaluate formulas empty (keys formulas), editing: .none {} }
+  where
+  formulas = fromHomogeneous
     { "A0": "Item",     "B0": "Price", "C0": "Qty", "D0": "Total"
     , "A1": "Espresso", "B1": "2.5",   "C1": "2",   "D1": "=B1*C1"
     , "A2": "Cake",     "B2": "4",     "C2": "1",   "D2": "=B2*C2"
     , "A3": "Sum",                                  "D3": "=SUM(D1:D2)"
     }
-  , selected: .none {}
-  , "Formula": ""
-  }
-
-selectedLine :: Sheet -> String
-selectedLine { selected } = "Cell " <> match { picked: _.name, none: \_ -> "—" } selected
 
 cols :: Int
 cols = 26
 
 rows :: Int
-rows = 30
+rows = 100
 
 colName :: Int -> String
 colName c = fromMaybe "" (singleton <$> fromCharCode (toCharCode 'A' + c))
@@ -50,50 +53,87 @@ refKey { c, r } = colName c <> show r
 columnHeaders :: Array { key :: String, text :: String }
 columnHeaders = [ { key: "corner", text: "" } ] <> (range 0 (cols - 1) <#> \c -> { key: colName c, text: colName c })
 
-sheetRows
-  :: Sheet
-  -> Array
-       { cells ::
-           Array
-             { key :: String
-             , status :: [ selected :: {}, unselected :: {} ]
-             , text :: String
-             }
-       , rowKey :: String
-       }
-sheetRows { cells, selected } = range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: cellsOfRow r }
+sheetRows :: Sheet -> Array { cells :: Array Cell, rowKey :: String }
+sheetRows { formulas, values, editing } = range 0 (rows - 1) <#> \r -> { rowKey: show r, cells: cellsOfRow r }
   where
-  values = evalSheet cells
   cellsOfRow r = range 0 (cols - 1) <#> \c -> cellAt (refKey { c, r })
-  cellAt key = { key, text: fromMaybe "" (lookup key values), status: statusOf key }
-  statusOf key = match
-    { picked: \p -> if p.name == key then .selected {} else .unselected {}
-    , none: \_ -> .unselected {}
-    } selected
+  cellAt key =
+    { key
+    , text: maybe "" display (lookup key values)
+    , "Formula": fromMaybe "" (lookup key formulas)
+    , mode: match { cell: \{ name } -> if name == key then .editing {} else .shown {}, none: \_ -> .shown {} } editing
+    }
 
-selectCell :: { event :: String, model :: Sheet } -> Sheet
-selectCell { event: key, model: m } = m { selected = .picked { name: key }, "Formula" = fromMaybe "" (lookup key m.cells) }
+edit :: { event :: String, model :: Sheet } -> Sheet
+edit { event: key, model: m } = m { editing = .cell { name: key } }
 
-commit :: Sheet -> Sheet
-commit m@{ selected, "Formula": formula } = match
-  { picked: \p ->
-    if lookup p.name m.cells == Just formula then m
-    else m { cells = if formula == "" then delete p.name m.cells else insert p.name formula m.cells }
-  , none: \_ -> m
-  } selected
+commit :: { event :: Cell, model :: Sheet } -> Sheet
+commit { event: { key, "Formula": formula }, model: m@{ formulas, values } }
+  | fromMaybe "" (lookup key formulas) == formula = m { editing = .none {} }
+  | otherwise =
+      let edited = if formula == "" then delete key formulas else insert key formula formulas
+      in m { formulas = edited, values = reevaluate edited values (dependentsOf edited key), editing = .none {} }
 
-evalSheet :: Object String -> Object String
-evalSheet cells = foldl insertVal empty keys
+-- the cell and every cell that depends on it, directly or through others
+dependentsOf :: Object String -> String -> Array String
+dependentsOf formulas start = go [] [ start ]
   where
-  keys = do
-    c <- range 0 (cols - 1)
-    r <- range 0 (rows - 1)
-    pure (refKey { c, r })
-  insertVal acc key = case lookup key cells of
-    Nothing -> acc
-    Just _ -> insert key (display (evalCell cells Nil key)) acc
+  referrers key = concatMap (\k -> if refersTo k key then [ k ] else []) (keys formulas)
+  refersTo k key = case lookup k formulas of
+    Just src -> elemOf key (references src)
+    Nothing -> false
+  go seen pending = case pending of
+    [] -> seen
+    _ -> let next = concatMap (\k -> if elemOf k seen then [] else [ k ]) pending
+             seen' = seen <> next
+         in if next == [] then seen else go seen' (concatMap referrers next)
 
-type Value = [ numV :: Number, textV :: String, errV :: String ]
+-- re-evaluate the given cells, each after the cells it reads; every other
+-- value is kept as it was
+reevaluate :: Object String -> Object Value -> Array String -> Object Value
+reevaluate formulas old scope = (foldl evalOne { values: cleared, evaluated: empty } walk.order).values
+  where
+  inScope = foldl (\acc k -> insert k {} acc) empty scope
+  cleared = foldl (\acc k -> delete k acc) old scope
+  walk = foldl (visit formulas inScope) { done: empty, active: empty, order: [], cyclic: empty } scope
+  evalOne acc key =
+    let lookupRef k
+          | member k walk.cyclic = .errV "#CYCLE"
+          | member k inScope && not (member k acc.evaluated) = .errV "#CYCLE"
+          | otherwise = fromMaybe (.textV "") (lookup k acc.values)
+        value = if member key walk.cyclic then .errV "#CYCLE" else evalSource lookupRef (lookup key formulas)
+    in { values: insert key value acc.values, evaluated: insert key {} acc.evaluated }
+
+type Walk = { active :: Object {}, cyclic :: Object {}, done :: Object {}, order :: Array String }
+
+visit :: Object String -> Object {} -> Walk -> String -> Walk
+visit formulas scope w key
+  | member key w.done = w
+  | member key w.active = w { cyclic = insert key {} w.cyclic }
+  | not (member key scope) = w
+  | otherwise =
+      let entered = w { active = insert key {} w.active }
+          walked = foldl (visit formulas scope) entered (fromMaybe [] (references <$> lookup key formulas))
+      in walked { active = delete key walked.active, done = insert key {} walked.done, order = snoc walked.order key }
+
+elemOf :: String -> Array String -> Boolean
+elemOf x = foldl (\found y -> found || y == x) false
+
+references :: String -> Array String
+references src = case charAt 0 src of
+  Just '=' -> case parseExpr (drop 1 src) of
+    Just { val } -> refsOf val
+    Nothing -> []
+  _ -> []
+  where
+  refsOf = case _ of
+    Num _ -> []
+    Ref key -> [ key ]
+    Bin _ l r -> refsOf l <> refsOf r
+    Sum { from, to } -> do
+      c <- range (min from.c to.c) (max from.c to.c)
+      r <- range (min from.r to.r) (max from.r to.r)
+      pure (refKey { c, r })
 
 display :: Value -> String
 display = match { numV: formatNum, textV: identity, errV: identity }
@@ -105,21 +145,19 @@ formatNum n =
     then show (scaled / 100)
     else show (Int.toNumber scaled / 100.0)
 
-evalCell :: Object String -> List String -> String -> Value
-evalCell cells visiting key =
-  if key `elem` visiting then .errV "#CYCLE"
-  else case lookup key cells of
-    Nothing -> .textV ""
-    Just src -> case charAt 0 src of
-      Just '=' -> case parseExpr (drop 1 src) of
-        Just { val, rest } | length (skipSpace rest) == 0 -> evalExpr cells (key : visiting) val
-        _ -> .errV "#PARSE"
-      _ -> case fromString src of
-        Just n -> .numV n
-        Nothing -> .textV src
+evalSource :: (String -> Value) -> Maybe String -> Value
+evalSource valueOf = case _ of
+  Nothing -> .textV ""
+  Just src -> case charAt 0 src of
+    Just '=' -> case parseExpr (drop 1 src) of
+      Just { val, rest } | length (skipSpace rest) == 0 -> evalExpr valueOf val
+      _ -> .errV "#PARSE"
+    _ -> case fromString src of
+      Just n -> .numV n
+      Nothing -> .textV src
 
-numAt :: Object String -> List String -> String -> Either String Number
-numAt cells visiting key = case evalCell cells visiting key of
+numOf :: (String -> Value) -> String -> Either String Number
+numOf valueOf key = case valueOf key of
   .numV n -> Right n
   .textV "" -> Right 0.0
   .textV _ -> Left "#REF!"
@@ -206,11 +244,11 @@ parseRef s = case charAt 0 s of
       Nothing -> Nothing
   _ -> Nothing
 
-evalExpr :: Object String -> List String -> Expr -> Value
-evalExpr cells visiting = go
+evalExpr :: (String -> Value) -> Expr -> Value
+evalExpr valueOf = go
   where
   go (Num n) = .numV n
-  go (Ref key) = case numAt cells visiting key of
+  go (Ref key) = case numOf valueOf key of
     Right n -> .numV n
     Left e -> .errV e
   go (Bin op l r) = case go l, go r of
@@ -229,7 +267,7 @@ evalExpr cells visiting = go
           pure (refKey { c, r })
         step acc k = case acc of
           Left e -> Left e
-          Right total -> case numAt cells visiting k of
+          Right total -> case numOf valueOf k of
             Right n -> Right (total + n)
             Left e -> Left e
     in case foldl step (Right 0.0) ks of

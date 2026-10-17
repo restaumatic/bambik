@@ -1255,14 +1255,14 @@ static :: forall p r. Category p => Ocular p -> p { | r } { | r }
 static o = o identity
 
 -- | An action **owns its button's case**: the `+→+` leaf of case `l`
--- | (`action @"Create" createPerson`, crud), fed the row the button
+-- | (`action @"Charge card" chargeFlaky`, payment), fed the row the button
 -- | replayed, running the `Aff` on it, its outcome leaving as a case of
 -- | the row `t` the `Aff`'s signature names. Like a status it narrows its
 -- | input to its one case (`Cons l a () v`); its output is **exactly** its
 -- | outcomes, like `load`'s, so it widens nothing and the view writes no
 -- | row for it (guardrails L18): what tells the outcomes closes `t` —
--- | the statuses or capture after it, which own their cases (crud,
--- | flight-booker, weather), or, standing among emitters in a
+-- | the statuses or capture after it, which own their cases
+-- | (payment, weather), or, standing among emitters in a
 -- | `RecordToVariant.do`, the `joined @l` (one outcome) or `joined2 @l1
 -- | @l2` (two) it is joined by, which close its source to the labels
 -- | they name and widen it into the block's row (order-form, ticker).
@@ -1271,10 +1271,10 @@ static o = o identity
 -- |
 -- | It is **opened by its progress indicator**: the slot is a `+→×`
 -- | citizen of the run's two lifecycle occurrences, `started` and
--- | `ended` (`indeterminateLinearProgress # action @"Create" …`), and of
+-- | `ended` (`indeterminateCircularProgress # action @"Charge card" …`), and of
 -- | nothing else — a status that tells an outcome is never the slot, and
 -- | the types forbid it. The outcome is folded after the action by the
--- | statuses that tell it (`snackbar @"Person created" identity`, crud),
+-- | statuses that tell it (`snackbar @"Card charged" identity`, payment),
 -- | or by `capture @l` where nothing needs telling (weather); an outcome
 -- | whose fold keeps the model is `joined` with its button, so the fold
 -- | has the model in hand (order-form's submit). No
@@ -1306,8 +1306,8 @@ action arr slot = atCase @l (running (\i -> if isHole arr then Nothing else Just
 -- | The action a **feed** runs — `×→+`, the row fed is the `Aff`'s
 -- | argument and its outcome leaves as the case the `Aff` names: the
 -- | **load** standing before the knot, run by `body`'s one feed of `{}`
--- | (`indeterminateLinearProgress # load loadPeopleCatalogue; capture
--- | @"People loaded"`, crud; order-form), its outcome the model the knot
+-- | (`indeterminateLinearProgress # load loadOrder; snackbar @"Order
+-- | loaded" identity`, order-form), its outcome the model the knot
 -- | loops. Its outcome row `t` is the `Aff`'s signature: unlike `action`
 -- | it widens nothing, so the case the capture or status after it takes
 -- | needs no line of its own (guardrails L18). Opened by its progress indicator like `action`,
@@ -1359,13 +1359,13 @@ running run w = action'
 -- | returns the model (`capture @l`), so every handler has the model in
 -- | hand and the loop's memory stays at the emitters and in the knot. A
 -- | fold whose event needs telling is a **status**, which takes its fold
--- | the same way (`snackbar @"Person created" identity`) and tells its
+-- | the same way (`snackbar @"Card charged" identity`) and tells its
 -- | case, the label its whole copy; this is that fold with no face,
 -- | `folding @l f` over `unshown @l`.
 -- |
 -- | A status is **named as what it tells**: its case label is the words on
 -- | the screen, so it stands after an action whose outcome row names its
--- | outcomes (`"Person created"`, `"Order placed"`), and a command straight
+-- | outcomes (`"Card charged"`, `"Order placed"`), and a command straight
 -- | from an emitter — whose case is the button's caption — folds here,
 -- | silently, its result already on screen. Whatever the user must keep
 -- | (a reference, an order number) is a model field shown by a display,
@@ -1395,7 +1395,7 @@ reset
 reset x = fold @l (const x)
 
 -- | One case folded into the record by **capturing** its payload as the
--- | model whole (`capture @"People loaded"`, crud): the case an effect
+-- | model whole (`capture @"Forecast fetched"`, weather): the case an effect
 -- | returns the model under — a load, a fetch, a server's answer — where
 -- | nothing needs telling. `capture @l = fold @l identity`; a status
 -- | captures with `identity` (`snackbar @"Order loaded" identity`,

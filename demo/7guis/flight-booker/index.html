@@ -8,10 +8,30 @@
     <template data-variant="mdc2" data-source="MDC2.purs FlightBooker.purs">
       <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
       <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+      <style>
+        [aria-invalid="true"] .mdc-floating-label, [aria-invalid="true"] .mdc-text-field__input, [aria-invalid="true"] .mdc-text-field-helper-text { color: #b00020 !important; }
+        [aria-invalid="true"] .mdc-line-ripple::before, [aria-invalid="true"] .mdc-line-ripple::after { border-bottom-color: #b00020 !important; }
+      </style>
     </template>
     <template data-variant="mdc3" data-source="MDC3.purs FlightBooker.purs">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+      <style>
+        md-filled-text-field[data-aria-invalid="true"] {
+          --md-filled-text-field-active-indicator-color: #b3261e;
+          --md-filled-text-field-hover-active-indicator-color: #b3261e;
+          --md-filled-text-field-focus-active-indicator-color: #b3261e;
+          --md-filled-text-field-label-text-color: #b3261e;
+          --md-filled-text-field-hover-label-text-color: #b3261e;
+          --md-filled-text-field-focus-label-text-color: #b3261e;
+          --md-filled-text-field-input-text-color: #b3261e;
+          --md-filled-text-field-hover-input-text-color: #b3261e;
+          --md-filled-text-field-focus-input-text-color: #b3261e;
+          --md-filled-text-field-supporting-text-color: #b3261e;
+          --md-filled-text-field-hover-supporting-text-color: #b3261e;
+          --md-filled-text-field-focus-supporting-text-color: #b3261e;
+        }
+      </style>
     </template>
     <template data-variant="shoelace" data-source="Shoelace.purs FlightBooker.purs">
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
@@ -19,6 +39,8 @@
         body { font-family: var(--sl-font-sans, sans-serif); }
         #demo-column { flex: 0 1 520px; }
         #demo-column sl-card { width: 100%; }
+        sl-input[aria-invalid="true"]::part(base) { border-color: var(--sl-color-danger-600); }
+        sl-input[aria-invalid="true"]::part(input), sl-input[aria-invalid="true"]::part(form-control-label) { color: var(--sl-color-danger-600); }
       </style>
     </template>
     <template data-variant="fluent" data-source="Fluent.purs FlightBooker.purs">
@@ -26,6 +48,7 @@
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
         #demo-column { flex: 0 1 520px; }
         #demo-column .fluent-card { width: 100%; box-sizing: border-box; }
+        fluent-field[aria-invalid="true"] { --colorNeutralForeground1: #c50f1f; --colorNeutralStrokeAccessible: #c50f1f; --colorNeutralStrokeAccessibleHover: #c50f1f; --colorCompoundBrandStroke: #c50f1f; color: #c50f1f; }
       </style>
     </template>
     <template data-variant="bootstrap" data-source="Bootstrap.purs FlightBooker.purs">
@@ -34,6 +57,7 @@
         body { font-family: var(--bs-body-font-family); }
         #demo-column { flex: 0 1 520px; }
         #demo-column .card { width: 100%; }
+        [aria-invalid="true"] .form-control { border-color: var(--bs-form-invalid-border-color); color: var(--bs-form-invalid-color); }
       </style>
     </template>
     <template data-variant="html" data-source="HTML.purs FlightBooker.purs">
@@ -41,6 +65,7 @@
         body { font-family: system-ui, sans-serif; }
         #demo-column { flex: 0 1 520px; }
         #demo-column > :not(#demo-note) { width: 100%; }
+        input[aria-invalid="true"] { color: #b00020; border-color: #b00020; background: #fde7e9; }
       </style>
     </template>
     <title>Bambik · 7GUIs · Flight Booker</title>

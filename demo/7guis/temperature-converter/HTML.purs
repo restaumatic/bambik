@@ -7,7 +7,7 @@ import PUI (looped, settled, with)
 import PUI.Web (staticText)
 import PUI.Web.HTML (body, div, input, label, p)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TemperatureConverter (fromCelsius, fromFahrenheit, roomTemperature)
+import TemperatureConverter (blankTemperatures, fromCelsius, fromFahrenheit)
 
 temperatureConverter :: Effect Unit
 temperatureConverter =
@@ -18,4 +18,4 @@ temperatureConverter =
     ( p $ label $ Semigroupoid.do
       staticText "°F "
       input @"Fahrenheit" "text" ) # settled fromFahrenheit
-  # looped # with roomTemperature
+  # looped # with blankTemperatures

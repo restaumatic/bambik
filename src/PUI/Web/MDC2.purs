@@ -1297,7 +1297,7 @@ modal title buttonCaption content = fromHandles do
 -- | must acknowledge, use `banner` or a `dialog`.
 -- |
 -- | A status **tells its case**: its caption is the case label verbatim,
--- | so the outcome is named as what it tells (`snackbar @"Flight booked"
+-- | so the outcome is named as what it tells (`snackbar @"Card charged"
 -- | kept`) and the payload is read by nothing but the fold. Mutually
 -- | exclusive outcomes are sibling snackbars, one per business case. A
 -- | snackbar is a `+→×` leaf like `fold @l f`: it takes its fold of the

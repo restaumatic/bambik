@@ -25,7 +25,7 @@
 -- |     clicking a row)
 -- |   * **act** — `button`, with `elevatedButton`, `tonalButton`,
 -- |     `outlinedButton` and `textButton` at the lower emphasis levels;
--- |     `fab`; `iconButton`; `menu`/`menuItem`; `tile`, one clickable cell
+-- |     `fab`; `iconButton`; `menu`/`menuItem`; `tile` (and `doubleClickTile`), one clickable cell
 -- |     of a grid
 -- |   * **be told something** — `snackbar` (passing),
 -- |     `dialog`/`confirmed`/`acknowledged` (must be answered), `linearProgress`,
@@ -128,6 +128,7 @@ module PUI.Web.MDC3
   , tabBar'
   , textButton
   , tile
+  , doubleClickTile
   , titleLarge
   , titleMedium
   , titleSmall
@@ -159,7 +160,7 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, anyOf, folding, introduced, isHole, Ocular, PUI)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, recordToRecordWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, occurrences, onInputDebounced, removeAttribute, replayed, selectedAt, selectedOptionalAt, selectedUnpickedAt, recordToVariantWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, variantToRecordWiring, text, statusText, uniqueId, variantToVariantWiring, (:=))
+import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, recordToRecordWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, occurrences, occurrencesOn, onInputDebounced, removeAttribute, replayed, selectedAt, selectedOptionalAt, selectedUnpickedAt, recordToVariantWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, variantToRecordWiring, text, statusText, uniqueId, variantToVariantWiring, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Lacks)
 import Data.Variant (Variant)
@@ -1233,8 +1234,8 @@ listOf' provided f item = withStructuralOrd @key $ fromHandles do
 -- | A **tile**: one clickable cell of a grid of them — a sheet's cell, a
 -- | keypad's key, a palette's swatch — showing the given display and
 -- | reporting, as case `l`, field `k` of the row it was shown (`tile @"Key
--- | entered" @"key" $ textAt @"key"`, calculator; `tile @"Cell picked"
--- | @"key" $ textAt @"text"`, cells), its face styled outside like any
+-- | entered" @"key" $ textAt @"key"`, calculator; `tile @"Cell claimed"
+-- | @"key"`, tic-tac-toe), its face styled outside like any
 -- | leaf (`attrWith "style" keyFace $ tile …`). `listOf`'s pick at a
 -- | single cell, built the same way — replay of the row last shown,
 -- | `× → +` by shape as by behaviour — over a real `<button>`, so it has
@@ -1249,9 +1250,33 @@ tile
   => Cons l key b2 v
   => PUI Web { | r } o
   -> PUI Web { | r } [ | v ]
-tile content = fromHandles do
+tile = tileOn @l @k "click"
+
+-- | `tile` reporting a **double click** — the cell a sheet edits in place
+-- | (`doubleClickTile @"Cell double-clicked" @"key" $ textAt @"text"`,
+-- | cells), a single click left to selection and focus.
+doubleClickTile
+  :: forall @l @k r o b1 b2 key v
+   . IsSymbol l
+  => IsSymbol k
+  => Cons k key b1 r
+  => Cons l key b2 v
+  => PUI Web { | r } o
+  -> PUI Web { | r } [ | v ]
+doubleClickTile = tileOn @l @k "dblclick"
+
+tileOn
+  :: forall @l @k r o b1 b2 key v
+   . IsSymbol l
+  => IsSymbol k
+  => Cons k key b1 r
+  => Cons l key b2 v
+  => String
+  -> PUI Web { | r } o
+  -> PUI Web { | r } [ | v ]
+tileOn gesture content = fromHandles do
   liftEffect $ ensureStyle "md3-tile" tileCss
-  handles $ replayed @l (Record.get (Proxy @k)) $ occurrences $ el "button" >>> "type" := "button" >>> cl "md3-tile" $ content
+  handles $ replayed @l (Record.get (Proxy @k)) $ occurrencesOn gesture $ el "button" >>> "type" := "button" >>> cl "md3-tile" $ content
 
 tileCss :: String
 tileCss = ".md3-tile { display: block; width: 100%; border: 0; padding: 0; margin: 0; background: none; font: inherit; color: inherit; text-align: inherit; cursor: pointer; box-sizing: border-box; }"

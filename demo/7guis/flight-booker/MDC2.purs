@@ -1,23 +1,21 @@
 module FlightBooker.MDC2 (flightBooker) where
 
-import Prelude (Unit, (#), ($), identity)
+import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import FlightBooker (bookingLine, bookingState, itinerarySettleTime, plannedTrip, submit)
-import PUI (action, debounced, looped, with)
-import PUI.Web ((<+>), choice, inCaseAt, provided, text)
-import PUI.Web.MDC2 (body, body1, button', filledTextField', indeterminateLinearProgress, select, snackbar)
+import FlightBooker (bookedLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
+import PUI (looped, with)
+import PUI.Web ((<+>), attrWith, choice, inCaseAt, provided, text)
+import PUI.Web.MDC2 (acknowledged, body, body1, button', filledTextField', select)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
 flightBooker =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      select @"Flight type" (choice @"one-way" <+> choice @"return")
-      filledTextField' @"Start date" { hint: "DD.MM.YYYY" }
-      filledTextField' @"Return date" { hint: "DD.MM.YYYY" } # inCaseAt @"return" @"Flight type"
+      select @"Flight type" (choice @"one-way flight" <+> choice @"return flight")
+      filledTextField' @"Start date" { hint: "DD.MM.YYYY" } # attrWith "aria-invalid" startDateInvalid
+      filledTextField' @"Return date" { hint: "DD.MM.YYYY" } # attrWith "aria-invalid" returnDateInvalid # inCaseAt @"return flight" @"Flight type"
     ) # looped # with plannedTrip
-    ( body1 $ text bookingLine ) # debounced itinerarySettleTime
     button' @"Book" { icon: "flight_takeoff" } # provided @"bookable" bookingState
-    indeterminateLinearProgress # action @"Book" submit
-    snackbar @"Flight booked" identity
+    acknowledged @"Book" "OK" $ body1 $ text bookedLine

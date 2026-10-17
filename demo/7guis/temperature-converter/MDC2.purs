@@ -6,11 +6,11 @@ import Effect (Effect)
 import PUI (looped, settled, with)
 import PUI.Web.MDC2 (body, filledTextField)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import TemperatureConverter (fromCelsius, fromFahrenheit, roomTemperature)
+import TemperatureConverter (blankTemperatures, fromCelsius, fromFahrenheit)
 
 temperatureConverter :: Effect Unit
 temperatureConverter =
   body $ Semigroupoid.do
     filledTextField @"Celsius" # settled fromCelsius
     filledTextField @"Fahrenheit" # settled fromFahrenheit
-  # looped # with roomTemperature
+  # looped # with blankTemperatures
