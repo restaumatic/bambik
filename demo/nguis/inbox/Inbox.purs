@@ -1,4 +1,4 @@
-module Inbox (Inbox, Message, Reading, mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, inboxState, openMessage, requestDelete, deleteOpened, keepMessages, composeMessage, sortBySender, sortBySubject, sortUnreadFirst) where
+module Inbox (Inbox, Message, Reading, mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, deletionLine, inboxState, openMessage, deleteOpened, composeMessage, sortBySender, sortBySubject, sortUnreadFirst) where
 
 import Prelude ((<<<), (<>), (+), (==), comparing, const, map, max, not, show)
 
@@ -10,7 +10,7 @@ type Reading = [ open :: {}, read :: {}, unread :: {} ]
 
 type Message = { body :: String, id :: Int, sender :: String, status :: Reading, subject :: String }
 
-type Inbox = { deletion :: [ confirming :: {}, silent :: {} ], messages :: Array Message }
+type Inbox = { messages :: Array Message }
 
 mondayMail :: Inbox
 mondayMail =
@@ -19,7 +19,6 @@ mondayMail =
     , { id: 2, sender: "Bob Nowak", subject: "Lunch on Thursday?", body: "The new ramen place near the office finally opened. Noon works for me.", status: .read {} }
     , { id: 3, sender: "Carol Wu", subject: "Code review request", body: "Could you take a look at the profunctor refactor branch? Two files, mostly renames.", status: .unread {} }
     ]
-  , deletion: .silent {}
   }
 
 unreadLine :: Inbox -> String
@@ -45,6 +44,9 @@ fromLine = openMessageLine \{ sender } -> "From: " <> sender
 bodyText :: Inbox -> String
 bodyText = openMessageLine _.body
 
+deletionLine :: Inbox -> String
+deletionLine = openMessageLine \{ sender, subject } -> "“" <> subject <> "” from " <> sender <> " will be gone for good."
+
 openMessageLine :: (Message -> String) -> Inbox -> String
 openMessageLine line { messages } = maybe "" line (find (isOpen <<< _.status) messages)
 
@@ -54,14 +56,8 @@ inboxState { messages } = if length messages == 0 then .empty {} else .filled {}
 openMessage :: { event :: Int, model :: Inbox } -> Inbox
 openMessage { event: id, model: m@{ messages } } = m { messages = map (\g -> if g.id == id then g { status = .open {} } else if isOpen g.status then g { status = .read {} } else g) messages }
 
-requestDelete :: Inbox -> Inbox
-requestDelete m@{ messages } = if length messages == 1 then m { deletion = .confirming {} } else deleteOpened m
-
 deleteOpened :: Inbox -> Inbox
-deleteOpened m@{ messages } = m { messages = filter (not <<< isOpen <<< _.status) messages, deletion = .silent {} }
-
-keepMessages :: Inbox -> Inbox
-keepMessages m = m { deletion = .silent {} }
+deleteOpened m@{ messages } = m { messages = filter (not <<< isOpen <<< _.status) messages }
 
 composeMessage :: Inbox -> Inbox
 composeMessage m@{ messages } = m { messages = snoc messages { id, sender: "Me", subject: "Draft " <> show id, body: "A freshly composed note, still looking for its recipient.", status: .unread {} } }

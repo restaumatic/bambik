@@ -28,7 +28,7 @@
 -- |     `fab`; `iconButton`; `menu`/`menuItem`; `tile`, one clickable cell
 -- |     of a grid
 -- |   * **be told something** — `snackbar` (passing),
--- |     `dialog`/`confirmed` (must be answered), `linearProgress`,
+-- |     `dialog`/`confirmed`/`acknowledged` (must be answered), `linearProgress`,
 -- |     `indeterminateLinearProgress`, `indeterminateCircularProgress`,
 -- |     `tooltip`
 -- |   * **structure and surface** — `card`/`cardActions`, `list`/`listItem`,
@@ -113,6 +113,7 @@ module PUI.Web.MDC3
   , selectUnpicked
   , selectOptional
   , confirmed
+  , acknowledged
   , slider
   , slider'
   , sliderLive
@@ -144,6 +145,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
+import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
 import Data.Traversable (for)
 import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
@@ -1033,23 +1035,45 @@ dialog title content =
     _ <- handles (div >>> "slot" := "headline" $ staticText title)
     handles (div >>> "slot" := "content" $ content)
 
--- | The witness rung — see `PUI.Web.MDC2.confirmed`: `dialog` with a
--- | confirm button built in, the `+→×` leaf of case `l`, telling it as
--- | its title and folding `f` of the row shown on confirmation.
+-- | The witness rung — see `PUI.Web.MDC2.confirmed`: `focusCase @l` over
+-- | the modal, the `+→+` stage of case `l`, telling it as its title, the
+-- | confirm re-emitting the case with the row its content answered, a
+-- | cancel consuming it, every other case passing.
 confirmed
-  :: forall @l r r1 v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => String
-  -> ({ | r } -> { | r1 })
   -> PUI Web { | r } { | r }
-  -> PUI Web [ | v ] { | r1 }
-confirmed confirmCaption f content = atCase @l $
+  -> PUI Web [ | v ] [ | v ]
+confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption identity content
+
+-- | The dismissed rung — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
+-- | over the modal, the `+→+` stage consuming case `l`, telling it as
+-- | its title and showing its payload until the user closes it; the row
+-- | less `l` leaves.
+acknowledged
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => String
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | b ]
+acknowledged dismissCaption content = onCase @l $ fromHandles do
+  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption identity content
+  pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
+
+-- the modal both dialog leaves are built over: a title, a content stage
+-- shown the row fed, and one deciding button releasing `f` of the row the
+-- content last answered — open on feed, closed on that release (`init`),
+-- or by Escape with nothing released
+modal :: forall r r1. String -> String -> ({ | r } -> { | r1 }) -> PUI Web { | r } { | r } -> PUI Web { | r } { | r1 }
+modal title buttonCaption f content =
   el "md-dialog" >>> init pure showDialog closeDialog $ Semigroupoid.do
     fromHandles do
-      _ <- handles (div >>> "slot" := "headline" $ staticText (reflectSymbol (Proxy @l)))
+      _ <- handles (div >>> "slot" := "headline" $ staticText title)
       handles (div >>> "slot" := "content" $ content)
-    div >>> "slot" := "actions" $ witnessed f (el "md-text-button" $ staticText confirmCaption)
+    div >>> "slot" := "actions" $ witnessed f (el "md-text-button" $ staticText buttonCaption)
 
 -- | The **snackbar**: a brief message at the bottom of the screen that
 -- | dismisses itself after a few seconds, for something that has just

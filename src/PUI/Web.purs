@@ -1138,12 +1138,14 @@ clickedRow w = replayed @l identity (occurrences w)
 
 -- | The **witness rung**'s button: `{}`-input chrome whose click releases
 -- | `f` of the row the stage was last fed, as a row — `eventLeaf` with
--- | its one case unwrapped and folded, so a confirmation dialog is a
--- | `+→×` leaf like a status (`confirmed @l caption f content`,
--- | MDC2/MDC3: the content shown the case's payload, the click folding
--- | it), Answer refined in time: the row is released on confirmation.
--- | The one lawful record-output emitter, and vocabulary-internal like
--- | `clickedRow`: an application's emitters are its vocabulary's.
+-- | its one case unwrapped and applied, so a dialog's content and its
+-- | deciding button make one stage over the payload row, released on the
+-- | decision: `focusCase @l`-lifted it is `confirmed @l caption content`
+-- | (MDC2/MDC3), the `+→+` prism re-emitting its case on confirm, and
+-- | with the release swallowed it is `acknowledged @l caption content`,
+-- | the case consumed on dismiss. The one lawful record-output emitter,
+-- | and vocabulary-internal like `clickedRow`: an application's emitters
+-- | are its vocabulary's.
 witnessed :: forall r r1. ({ | r } -> { | r1 }) -> PUI Web {} {} -> PUI Web { | r } { | r1 }
 witnessed f chrome = eventLeaf @"witnessed" chrome # rmap (on (Proxy @"witnessed") f case_)
 

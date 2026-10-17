@@ -29,12 +29,14 @@ nothing more:
 > the user has answered makes the release **the witness itself**, and
 > since everything downstream waits on it, a witness is impossible to
 > discard silently: choosing a witnessing component is choosing to be
-> unable to ignore its answer. `confirmed` withholds the flow until the
-> user confirms; a plain display never withholds (the zero-certainty
+> unable to ignore its answer. `confirmed` withholds the event until the
+> user confirms (a `+→+` stage over the event's case, its content the
+> withholding display); a plain display never withholds (the zero-certainty
 > case); the pane (`inCase`) renders on relevance and answers always. A
 > status, `[ | e ] → { | r }`, releases nothing — its reading is
 > unwitnessed by type, so a witness can
-> never be dropped there either.
+> never be dropped there either; `acknowledged`, the message the user
+> must close, consumes its case the same way, read or not.
 
 The vocabulary is an **assurance ladder**, and it matches Material's own
 interruption ranking (snackbar < banner < dialog):
@@ -43,15 +45,15 @@ interruption ranking (snackbar < banner < dialog):
 | --- | --- | --- | --- |
 | ambient | stay visible, always current | none | `text`/`textAt`, the progress bars (stages releasing the row they show); the indeterminate progress, ambient over an **occurrence** input — a status showing between `action`'s `started` and `ended` |
 | salient-transient | interrupt attention, briefly | none | `snackbar`, `toast` |
-| persistent-until-acted | remain until superseded or dismissed | the dismiss | `banner`, `output` |
-| modal-witnessed | block everything until confirmed | the confirm | `confirmed @l` — the witness rung, the `+→×` leaf opened by its case and telling it, the flow withheld until the user confirms, the confirm folding; `dialog` — open on feed, close on emission |
+| persistent-until-acted | remain until superseded or dismissed | the dismiss | `banner`, `output`; `acknowledged @l` — the modal message, the `+→+` stage opened by its case and telling it, the case consumed when the user closes it |
+| modal-witnessed | block everything until confirmed | the confirm | `confirmed @l` — the witness rung, the `+→+` prism opened by its case and telling it, the event withheld until the user confirms and re-emitted carrying the row its content answered; `dialog` — open on feed, close on emission |
 
 Escalating assurance is a business decision made by **choosing the
 component**; routing by assurance is its composite form — cashbox is the
 worked example: outgoing money detours through a confirmation dialog (a
-witness demanded before money leaves), each such button's case owned by
-its `confirmed` in the fold block, while incoming money posts straight to
-its fold (ambient). One rung is currently empty: **ambient-with-witness** —
+witness demanded before money leaves), each such button's case intercepted
+by its `confirmed` between the emitters and the folds, while incoming money
+posts straight to its fold (ambient). One rung is currently empty: **ambient-with-witness** —
 a display that fulfills by visibility but reports (via an
 `IntersectionObserver`-style sensor) that it was actually seen. Nothing
 occupies it; the ladder predicts it.

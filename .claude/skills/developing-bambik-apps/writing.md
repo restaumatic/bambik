@@ -211,7 +211,8 @@ takes a trailing word that says what it is for:
 | a projected list whose elements are edited | `( listItem $ … iconToggle @"Favorite" … ) # anyEdit @"Favorite changed" @"title" visibleMovies # joined @"Favorite changed"` — the element stays an editor, a user's edit leaves as the case, the fold writes it back by key | movie-browser |
 | a list element echoing the row it shows | `( listItem $ text flightLine ) # dispatched …` | departures, scoreboard |
 | a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, merged in `RecordToRecord.do` | here-and-now, incident-report |
-| content that waits for the user to confirm | `confirmed @"Refund a customer" "Refund" refundStandard $ …` — a `+→×` leaf like a status: opened by its case, which it tells as its title, the confirm folding `f` | cashbox |
+| content that waits for the user to confirm | `confirmed @"Refund a customer" "Refund" $ …` — a `+→+` stage between the emitters and the folds: opened by its case, which it tells as its title, the confirm re-emitting the case with the row shown, which its fold then takes (`fold @"Refund a customer" refundStandard`); a cancel consumes it | cashbox, inbox |
+| a message the user must close | `acknowledged @"About this dashboard" "Got it" $ …` — the `+→+` stage consuming its case: the row less it goes on to the folds | weather |
 | an event folded into the model | `fold @"Add" addTodo`, one per case, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
 | an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Receipt" { icon: "file" }; indeterminateLinearProgress # action @"Receipt" printReceipt } ) # joined @"Receipt printed"` in the event ensemble, its status folding `kept`; two outcomes `# joined2 @"Order submitted" @"Order rejected: no total"` | order-form |
@@ -367,11 +368,20 @@ function reads it from that record.
 
 ## Modals
 
-A dialog opens when it is fed and closes when one of its buttons emits.
-Feed it only in the state that asks for it and put the deciding buttons
-inside: inbox's `dialog "Delete the last message?" $ RecordToVariant.do
-…` under `# providedAt @"confirming" @"deletion"`. For a confirmation step
-inside a flow, `confirmed` (cashbox).
+A dialog is a stage on the event path, between the emitters and the
+folds, and it names the one case it intercepts: `confirmed @"Delete
+message" "Delete" $ bodyMedium $ text deletionLine` (inbox) opens on
+that case, shows its payload to the content — a display or editors over
+the row the button replayed — and re-emits the case carrying the
+content's row when the user confirms, so the fold block folds it like
+any event (`fold @"Delete message" deleteOpened`); a cancel consumes it
+and no fold runs. `acknowledged @"About this dashboard" "Got it" $ …`
+(weather) is the same dialog with a dismiss: the case is consumed either
+way, so what follows is typed at the cases that go on. Every other case
+passes through both untouched, and a modal is never a model field — no
+`confirming` state, no `Delete`/`Keep` buttons. The bare `dialog` ocular
+remains for a dialog built by hand: it opens when fed and closes when
+its content emits.
 
 A drawer's navigation is the first stage and its content the second, so
 the pick reaches the content directly (photo-gallery).
@@ -530,7 +540,7 @@ arguments:
 
 ```purescript
 snackbar  @"Flight booked" identity            -- the "Flight booked" snackbar, folding identity
-confirmed @"Refund a customer" "Refund" refundStandard  -- the "Refund a customer" dialog, its case the title; the caption a value, the fold its argument
+confirmed @"Refund a customer" "Refund"        -- the "Refund a customer" dialog, its case the title; the caption a value
 button'   @"Sign up" { icon: "person_add" }    -- the record: optional presentation
 ```
 
@@ -854,13 +864,15 @@ the watch build running ([building.md](building.md)):
    abridged:
 
    ```
-   openMessage  :: { event :: t0, model :: { deletion :: [ confirming :: t2 | t3 ], messages :: Array { id :: t0 | t1 } | t4 } } -> { … }
-   inboxState   :: { deletion :: …, messages :: … | t4 } -> [ empty :: t5 | t6 ]
+   openMessage  :: { event :: t0, model :: { messages :: Array { id :: t0 | t1 } | t2 } } -> { … }
+   inboxState   :: { messages :: … | t2 } -> [ empty :: t3 | t4 ]
    ```
 
    — the picked key is the message id's type (`t0` twice), whatever
-   that type is; `deletion` is a variant with a `confirming` case,
-   because `providedAt @"confirming" @"deletion"` says so.
+   that type is; `inboxState` returns a variant with an `empty` case,
+   because `inCase @"empty" inboxState` says so, and stopwatch's
+   `providedAt @"halted" @"phase"` puts `phase :: [ halted :: t2 | t3 ]`
+   in its model the same way.
 3. **Write the signatures down: the hint with its tails filled.** Fill
    each unknown once, and the same everywhere it appears: counter's `t0`
    is `counted :: Int`, so the model is `{ counted :: Int }` — named

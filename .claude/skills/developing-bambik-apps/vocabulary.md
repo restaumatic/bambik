@@ -106,7 +106,7 @@ and emitters of a catalogue — are in the design-system module header
 | an event replacing the model whole | `reset @"New game" openingPosition`; on a status, `snackbar @"Order placed" (const usualOrder)` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
 | an outcome that is the model | `snackbar @"Card charged" identity`; `capture @"Forecast fetched"` where nothing needs telling | crud, order-form, payment, weather, password-generator, reorder | `PUI` |
 | two buttons changing one field | `fold @"Start" beginTiming`, `fold @"Stop" haltTiming` — two cases, two folds, never one button with a caption parameter | stopwatch | writing.md *Components* |
-| an event intercepted by a dialog | `confirmed @"Refund a customer" "Refund" refundStandard $ body1 $ text refundLine` — the dialog owns the button's case in the fold block, tells it as its title and folds on confirm | cashbox | writing.md *Stages* |
+| an event intercepted by a dialog | `confirmed @"Refund a customer" "Refund" $ body1 $ text refundLine` between the emitters and the folds — the dialog tells the button's case as its title and re-emits it on confirm, its fold (`fold @"Refund a customer" refundStandard`) among the folds | cashbox, inbox | writing.md *Modals* |
 | an event carrying something of its own | `listOf @"Todo toggled" @"key" … # joined @"Todo toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, calculator | writing.md *Stages* |
 | a button group fed the record it replays | `RecordToVariant.do` of emitters as a stage, each button replaying the row the block is fed | order-form, espresso-bar, signup-form | writing.md *Stages* |
 | a menu of presets | `menu "Presets" ( RecordToVariant.do menuItem @"The usual" … )` | espresso-bar, inbox | the design-system module |
@@ -124,10 +124,9 @@ and emitters of a catalogue — are in the design-system module header
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` and `fold @"Clock ticked" tick` | timer, stopwatch | `PUI` |
 | a status per outcome case | `snackbar @"Flight booked" identity` — the label is the copy; a reason is a sibling case, `snackbar @"Total missing" kept` | flight-booker, order-form | writing.md *Components* |
 | a message that stays while a state holds | `( banner $ staticText "Inbox zero!" ) # inCase @"empty" inboxState` — a display under a pane, not a status | inbox | writing.md *Components* |
-| confirm before the flow continues | `confirmed @"Refund a customer" "Refund" refundStandard $ …` | cashbox | writing.md *Modals* |
+| confirm before the flow continues | `confirmed @"Refund a customer" "Refund" $ …`, then `fold @"Refund a customer" refundStandard` | cashbox, inbox | writing.md *Modals* |
 | a fact the platform knows and the app cannot seed — position, connectivity, the time, the colour scheme, a chosen file | `geolocated @l`, `online @l`, `clock @l period`, `colorScheme @l` (`PUI.Web`), `filePicked @l` (`PUI.Web.HTML`), merged `RecordToRecord.do` | here-and-now, incident-report | writing.md *The pipeline*; `PUI.Web` (`source`) |
-| a dialog of choices | `dialog "Delete the last message?" $ RecordToVariant.do …` | inbox | writing.md *Modals* |
-| an informational dialog | `confirmed @"About this dashboard" "Got it" identity $ …` — a reading that changes nothing | weather | writing.md *Modals* |
+| a message the user must close | `acknowledged @"About this dashboard" "Got it" $ …` — the case consumed on dismiss, the row less it going on | weather | writing.md *Modals* |
 
 ## Collections
 

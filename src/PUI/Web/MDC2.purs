@@ -22,7 +22,7 @@
 -- |   * **act** — `button`, with `outlinedButton` and `textButton` at the
 -- |     lower emphasis levels; `fab`; `iconButton`; `menu`/`menuItem`
 -- |   * **be told something** — `snackbar` (passing), `banner` (until
--- |     dismissed), `dialog`/`confirmed` (must be answered),
+-- |     dismissed), `dialog`/`confirmed`/`acknowledged` (must be answered),
 -- |     `linearProgress`, `indeterminateLinearProgress`,
 -- |     `indeterminateCircularProgress`, `tooltip`
 -- |   * **structure and surface** — `card`/`cardActions`, `list`/`listItem`,
@@ -103,6 +103,7 @@ module PUI.Web.MDC2
   , selectUnpicked
   , selectOptional
   , confirmed
+  , acknowledged
   , slider
   , sliderLive
   , snackbar
@@ -128,6 +129,7 @@ import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
+import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
 import Data.Traversable (for)
 import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
@@ -1200,31 +1202,67 @@ dialog title content = fromHandles do
     pure result
 
 -- | The **witness rung** of the assurance ladder, baked in as a
--- | component: `dialog` with a **confirm button** built in. A `+→×` leaf
--- | like a status — it owns case `l`, **tells it** as its title, verbatim,
--- | and takes its fold: the case's payload (the row the button that
--- | opened it replayed) is shown by the content, a display, and the flow
--- | is **withheld until the user confirms**, then `f` of that row is
--- | released, the release the read receipt — `confirmed @"Refund a
--- | customer" "Refund" refundStandard $ body1 $ text refundLine` (cashbox,
--- | in the fold block beside the other folds), `confirmed @"About this
--- | dashboard" "Got it" identity $ …` (weather, a reading that changes
--- | nothing). The content needs no button of its own: a display releases
--- | the row it shows, so there is something to confirm. A dismiss without
--- | confirming releases nothing: a declined reading withholds, honestly.
--- | Not an `Ocular`, deliberately: the confirm **replays** the row last
+-- | component: `dialog` with a **confirm button** built in, the `+→+`
+-- | dual of the lens editor. As an editor is `focusField @l` over a leaf
+-- | that shows a field and lets the user change it, this is `focusCase
+-- | @l` over a modal that shows an event's payload and lets the user
+-- | decide its fate: opened by case `l`, which it **tells** as its title,
+-- | verbatim, its content — a stage over the payload, a display or
+-- | editors — shown the row the button that opened it replayed, the flow
+-- | **withheld until the user confirms**, when the case leaves again
+-- | carrying the row the content last answered, to be folded in the fold
+-- | block like any event (`confirmed @"Refund a customer" "Refund" $
+-- | body1 $ text refundLine` among the stages, `fold @"Refund a customer"
+-- | refundStandard` among the folds — cashbox; inbox's `"Delete
+-- | message"`). A dismiss without confirming consumes the case: a
+-- | declined decision reaches no fold. Every other case passes through
+-- | untouched, so the dialog names only its own case and the fold block
+-- | stays typed at exactly what folds. The content needs no button of
+-- | its own: a display releases the row it shows, so there is something
+-- | to confirm; editors inside amend the payload before it goes on. Not
+-- | an `Ocular`, deliberately: the confirm **replays** the row last
 -- | shown, and replay is lawful over **records** only — an entity's last
 -- | value may be re-said, a one-shot event may not (the `looped`
--- | argument) — so a dialog is opened by an event and shows a row.
+-- | argument) — so a dialog is opened by an event and shows a row. For a
+-- | reading that changes nothing, `acknowledged`.
 confirmed
-  :: forall @l r r1 v
+  :: forall @l r b v
    . IsSymbol l
-  => Cons l { | r } () v
+  => Cons l { | r } b v
   => String
-  -> ({ | r } -> { | r1 })
   -> PUI Web { | r } { | r }
-  -> PUI Web [ | v ] { | r1 }
-confirmed confirmCaption f content = atCase @l $ fromHandles do
+  -> PUI Web [ | v ] [ | v ]
+confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption identity content
+
+-- | The **dismissed rung**: `dialog` with a **dismiss button** built in,
+-- | for the outcome the user must read and can only close — a rejection
+-- | and its reason, a notice. `onCase @l` over the modal: opened by case
+-- | `l`, which it tells as its title, its content shown the payload for
+-- | as long as the user wants it, and the case **consumed** — the row
+-- | less `l` leaves, so what follows is typed at the cases that go on
+-- | (`acknowledged @"About this dashboard" "Got it" $ body1 $ text
+-- | aboutLine`, weather, between the emitters and the fold). The
+-- | persistent member of the status family: a `snackbar` tells its case
+-- | and is gone, so it carries no copy; a message the user closes is not
+-- | ephemeral, so its content may read the payload. Every other case
+-- | passes through untouched.
+acknowledged
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => String
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | b ]
+acknowledged dismissCaption content = onCase @l $ fromHandles do
+  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption identity content
+  pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
+
+-- the modal both dialog leaves are built over: a title, a content stage
+-- shown the row fed, and one deciding button releasing `f` of the row the
+-- content last answered — open on feed, closed on that release (`init`),
+-- or by Escape or the scrim with nothing released
+modal :: forall r r1. String -> String -> ({ | r } -> { | r1 }) -> PUI Web { | r } { | r } -> PUI Web { | r } { | r1 }
+modal title buttonCaption f content = fromHandles do
   titleId <- liftEffect uniqueId
   contentId <- liftEffect uniqueId
   handles $ div >>> cl "mdc-dialog" >>> init (newComponent material.dialog."MDCDialog") open close $ fromHandles do
@@ -1232,12 +1270,12 @@ confirmed confirmCaption f content = atCase @l $ fromHandles do
       div >>> cl "mdc-dialog__container" $
         div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ Semigroupoid.do
           fromHandles do
-            _ <- handles (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText (reflectSymbol (Proxy @l)))
+            _ <- handles (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
             handles (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
           div >>> cl "mdc-dialog__actions" $ witnessed f $
-            el "button" >>> "type" := "button" >>> "aria-label" := confirmCaption >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
+            el "button" >>> "type" := "button" >>> "aria-label" := buttonCaption >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
               static (div >>> cl "mdc-button__ripple")
-              span >>> cl "mdc-button__label" $ staticText confirmCaption
+              span >>> cl "mdc-button__label" $ staticText buttonCaption
     _ <- handles (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 

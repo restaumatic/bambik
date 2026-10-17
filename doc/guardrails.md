@@ -81,8 +81,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   or an action owns the one case its label names, an emitter is open on
   its output, an action is typed at exactly its outcomes (`action @l f`)
   and the `joined @l` that joins it among emitters closes and widens
-  it, a dialog owns the case that opens it (`confirmed
-  @l`), an editor's release leaving as an event is the editing list's
+  it, a dialog intercepts the case that opens it (`confirmed @l`,
+  `acknowledged @l`), an editor's release leaving as an event is the editing list's
   to say (`anyEdit @l @k`) — so a view places nothing at a row and
   `PUI` re-exports no adopter. There is no rename adopter: re-labelling a
   component built at a fixed internal label is exactly what this
@@ -180,7 +180,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   copy a line carries that is no label — a static's text, a bar's title,
   a dialog's caption and question, a column heading, a tip — is a String
   value (`staticText "Hours"`, `topAppBar "Espresso Bar"`, `confirmed
-  "Refund" "Refund the customer?"`, `columnHeader "Qty"`), and a
+  @"Refund a customer" "Refund"`, `columnHeader "Qty"`), and a
   quantity display takes only its read function (`linearProgress
   elapsedFraction`). A view
   **writes no row**: a row a line's function or value argument brings —
@@ -198,7 +198,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   presentation or same-typed values whose field names prevent a silent
   swap. Precedents: the statuses (`snackbar @"Flight booked" identity`,
   replacing a per-case copy record and then the copy function), `confirmed
-  @"Refund a customer" "Refund" refundStandard` (the caption a value, the
+  @"Refund a customer" "Refund"` (the caption a value, the
   dialog telling its case as its title), and the one-field ocular
   configs made positional (`tooltip`, `dialog`, `topAppBar`, `menu`,
   `imageList`, `layoutCell`, `badge`). The vocabulary MUST
@@ -739,8 +739,8 @@ code below the UI) are algebra-layer material and exempt by location.
   `String`, a fold the row, a pane's classifier a variant), and every
   field and case a line names by its label, at the type its leaf gives
   it (`filledTextField @"Celsius"` puts `"Celsius" :: String` in the
-  row, `providedAt @"confirming" @"deletion"` puts `deletion :: [
-  confirming :: t2 | t3 ]`). What it leaves is the **tails**: the
+  row, stopwatch's `providedAt @"halted" @"phase"` puts `phase :: [
+  halted :: t2 | t3 ]`). What it leaves is the **tails**: the
   fields and cases only business functions reach (counter's `counted ::
   Int`), and the payloads only they read. The tails are the model —
   representation is the model's choice (a next id stored or derived from

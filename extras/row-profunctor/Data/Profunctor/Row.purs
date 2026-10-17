@@ -330,8 +330,8 @@
 -- | trim is `exactRow`, the runtime evidence `OwnedRecordOutputs` carries,
 -- | so an operand's stale runtime copy of a sibling's field never shadows
 -- | the sibling. Law 2's liveness half is a **leaf** law (above): a stage
--- | may refine it in time (`confirmed` releases on confirmation, the gather
--- | gate once every element has spoken), by 6 the merge refines with
+-- | may refine it in time (the gather gate releases once every element
+-- | has spoken), by 6 the merge refines with
 -- | it, and a route through a variant does not owe it. 5 is conditional
 -- | on its operands for the same reason: a merge of answering operands
 -- | answers; one with an event-driven operand releases on that operand's

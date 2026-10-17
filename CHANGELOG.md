@@ -6,7 +6,51 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-10-16, latest
+## 2026-10-17, latest
+
+- **The dialog is the variant dual of the lens editor.** An editor is
+  `focusField @l` over a leaf that shows a field and lets the user
+  change it; the library had the dual lift, `focusCase @l`, and no
+  vocabulary used it. Now the dialog is that lift: `confirmed @l caption
+  content` (MDC2, MDC3) is `focusCase @l` over a modal whose content is
+  a stage over the event's payload — opened by case `l`, which it tells
+  as its title, the confirm re-emitting the case carrying the row the
+  content answered, a cancel consuming it, every other case passing — a
+  `+→+` stage between the emitters and the folds, its fold among the
+  folds (`confirmed @"Refund a customer" "Refund" $ bodyLarge $ text
+  refundLine`, then `fold @"Refund a customer" refundStandard`,
+  cashbox). Until today it was a `+→×` leaf folding `f` on confirm,
+  the one word that both intercepted and folded, so the fold block held
+  a dialog where every other line was a fold. The sibling for the
+  message the user must read and can only close is `acknowledged @l
+  caption content`: the same modal with a dismiss over `onCase @l`, the
+  case **consumed** — `[ l :: a | b ] → [ | b ]`, so what follows is
+  typed at the cases that go on (weather's About notice, which folded
+  `identity` before). Its content may read the payload, which a status
+  may not (2026-10-14): a status is ephemeral, a dialog is not, so the
+  2×2 of the `+` side is complete — the event dies or folds, the face
+  is gone by itself or dismissed — with told-only snackbars (`kept`),
+  `acknowledged`, folding snackbars and `confirmed` in its four cells.
+  Inbox's deletion is now one `confirmed @"Delete message"` on the
+  button's event and one fold: its `deletion :: [ confirming, silent ]`
+  field, `requestDelete`, `keepMessages`, the `dialog` pane and its
+  `Delete`/`Keep` buttons are gone (a modal is never a model field), and
+  it confirms every deletion, not only the last message's. The bare
+  `dialog` ocular stays as a catalogue word.
+  `onCase` joins `focusCase` in `Data.Profunctor.Row.VariantToVariant`,
+  derived over ecosystem `Choice` with no `Lacks` or `Union`, so nothing
+  is stuck on an open event row under holes; `focusCase` itself drops
+  its `Union b v2 v1` for the two `Cons` `focusField` has (the
+  background is what both rows share, written as one coercion where
+  `expand` would restate the constraint). The leaf-law bench mounts both
+  dialogs on the MDC2 and MDC3 pages and checks the modal protocol: a
+  feed opens and fires nothing, the confirm re-emits the fed case with
+  the row shown, the dismiss emits nothing. The `+→+` module header now
+  names the dialogs as the shape's leaves that wait beside the
+  `action`s, where it said no word passed background cases through a
+  `+→+` stage (2026-10-13).
+
+## 2026-10-16
 
 - **Every demo names its shared rows.** With the synonym ban lifted
   (flight-booker first), every view model module now writes its model

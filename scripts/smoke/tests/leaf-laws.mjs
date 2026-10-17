@@ -14,8 +14,12 @@
 // label of the event it was fed, its whole copy.
 // Optional selectors are then cleared by their face's own gesture and must
 // store the none case (the bench's first sample) exactly once.
-// Variant-input shapes (+→×, +→+) owe nothing; their entries are only
-// checked to register and accept a feed. Emitters are then clicked once to
+// Variant-input shapes (+→×, +→+) owe nothing; their entries are checked
+// to register and accept a feed, and the +→+ dialogs for the modal
+// protocol: a feed opens the dialog and fires nothing, then its deciding
+// button is clicked once — `confirmed` re-emits the fed case carrying the
+// row its content showed, `acknowledged` emits nothing (the case consumed).
+// Emitters are then clicked once to
 // check the replay half of the ×→+ protocol: the click leaves as the leaf's
 // case carrying the row last fed.
 const vocabularies = ['mdc2', 'mdc3', 'shoelace', 'fluent', 'bootstrap', 'html']
@@ -80,6 +84,15 @@ const drive = (name) => `(async () => {
     await wait()
     click = { host: host.tagName.toLowerCase(), emitted: e.since(at).map(x => x.value) }
   }
+  let decided = null
+  if (e.shape === '+→+') {
+    const section = document.querySelector('section[data-bench=' + JSON.stringify(${JSON.stringify(name)}) + ']')
+    const host = section.querySelector('md-dialog [slot=actions] md-text-button, .mdc-dialog__button')
+    const at = e.log.length
+    host?.click()
+    await wait()
+    decided = { host: host?.tagName.toLowerCase() ?? null, emitted: e.since(at).map(x => x.value) }
+  }
   let cleared = null
   if (${JSON.stringify(name)}.endsWith('Optional')) {
     const section = document.querySelector('section[data-bench=' + JSON.stringify(${JSON.stringify(name)}) + ']')
@@ -90,7 +103,7 @@ const drive = (name) => `(async () => {
       + section.querySelectorAll('.mdc-segmented-button__segment--selected, .md3-segmented-button__segment--selected').length
     cleared = { gesture, emitted: e.since(at).map(x => x.value), checked }
   }
-  return { shape: e.shape, samples: e.samples, registration, steps, click, cleared }
+  return { shape: e.shape, samples: e.samples, registration, steps, click, cleared, decided }
 })()`
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -213,6 +226,16 @@ export const run = async ({ ev, session, assertEq, sleep, page }) => {
         assertEq(s.first.length + s.second.length + s.late.length, 0, `${at} Answer: feeding sample ${s.k} fires nothing (got ${JSON.stringify([...s.first, ...s.second, ...s.late])})`)
       }
       assertEq(r.registration.length, 0, `${at} nothing fires at registration`)
+    }
+    if (r.shape === '+→+' && r.decided) {
+      for (const s of r.steps) {
+        assertEq(s.first.length + s.second.length + s.late.length, 0, `${at} Modal: feeding sample ${s.k} opens and fires nothing (got ${JSON.stringify([...s.first, ...s.second, ...s.late])})`)
+      }
+      assertEq(r.registration.length, 0, `${at} nothing fires at registration`)
+      assertEq(r.decided.host !== null, true, `${at} Modal: the dialog has its deciding button`)
+      const fed = r.samples[r.samples.length - 1]
+      if (name === 'confirmed') assertEq(r.decided.emitted, [fed], `${at} Modal: the confirm re-emits the fed case with the row shown`)
+      if (name === 'acknowledged') assertEq(r.decided.emitted, [], `${at} Modal: the dismiss emits nothing, the case consumed`)
     }
   }
 }

@@ -22,7 +22,7 @@ import Data.Profunctor.Coretaining (coretain)
 import Data.Profunctor.Row.RecordToRecord (focusField, recordToRecord)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (recordToVariant)
-import Data.Profunctor.Row.VariantToVariant (focusCase, variantToVariant)
+import Data.Profunctor.Row.VariantToVariant (focusCase, onCase, variantToVariant)
 import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
@@ -790,6 +790,16 @@ main = do
   assertEqual "focusCase/pass-through"
     (.err "e" :: [ ok :: String, err :: String ])
     (focusCase @"ok" (show :: Int -> String) (.err "e" :: [ ok :: Int, err :: String ]))
+
+  -- == onCase (the consuming case lift) on (->): case `l` handed to a handler ==
+  -- == typed at the background row, the other cases passing — the row less `l`. ==
+
+  assertEqual "onCase/handled"
+    (.err "5" :: [ err :: String ])
+    (onCase @"ok" (\n -> .err (show n)) (.ok 5 :: [ ok :: Int, err :: String ]))
+  assertEqual "onCase/pass-through"
+    (.err "e" :: [ err :: String ])
+    (onCase @"ok" (\n -> .err (show n)) (.err "e" :: [ ok :: Int, err :: String ]))
 
   -- == Registration protocol: the announcing leaves and the compose order ==
   -- == that lets their announcements be heard. ==

@@ -12,8 +12,12 @@
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusCase` (one case, the
--- |     value-level prism; the one-sided halves `atCase`/`toCase` live
--- |     on the floor). No co-strength row form: an app's loop is cut at
+-- |     value-level prism, the background passing — the lift every
+-- |     vocabulary dialog is built with, as every editor is `focusField
+-- |     @l`-lifted) and `onCase` (one case handed to a handler that
+-- |     answers nothing on it, the background passing: the row less that
+-- |     case); the one-sided halves `atCase`/`toCase` live
+-- |     on the floor. No co-strength row form: an app's loop is cut at
 -- |     its record junction, where the model row holds the state
 -- |     (`Data.Profunctor.Row`, *What is deliberately not here*).
 -- |
@@ -98,29 +102,40 @@
 -- | function of the occurrence, and deleted when that function moved onto
 -- | the fold (CHANGELOG, 2026-10-03): a pure
 -- | handling of an occurrence is applied where the occurrence is consumed,
--- | so the `+→+` shape keeps no pure leaf, and its handlers remain the
--- | `action`s. Nor does any word pass background cases through a `+→+`
--- | stage: an action is folded by its own outcome statuses, and that pair
--- | owns the button's case in the fold block, so every event reaches the
--- | fold block on its own (CHANGELOG, 2026-10-13).
+-- | so the `+→+` shape keeps no pure leaf. Its leaves are the ones that
+-- | **wait**: the `action`s, and the dialogs, which wait for the user —
+-- | `confirmed @l` (`focusCase @l` over a modal whose content is a stage
+-- | over the payload: confirm re-emits the case with the content's row,
+-- | cancel consumes it) and `acknowledged @l` (`onCase @l` over a modal
+-- | that dismisses: the case consumed, the row less it leaving). These are
+-- | the two words that pass background cases through a `+→+` stage, each
+-- | over its strength form and never over the merge, so a dialog among
+-- | events names only its own case and the fold block stays typed at
+-- | exactly the model-changing cases. Until 2026-10-17 `confirmed` was a
+-- | `+→×` leaf folding on confirm, and an informational dialog folded
+-- | `identity` (CHANGELOG).
 module Data.Profunctor.Row.VariantToVariant
   ( class VariantToVariant
   , variantToVariant
   , bind
   , discard
   , focusCase
+  , onCase
   )
   where
 import Data.Either (Either(..), either)
+import Control.Category (identity)
+import Control.Semigroupoid ((<<<))
 import Data.Lens.Prism.Existential (prismE)
-import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Choice (class Choice)
+import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Row (class OwnedVariantInputs, splitVariant)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Data.Variant (expand, inj, on)
-import Prim.Row (class Cons, class Union)
+import Data.Variant (Variant, inj, on)
+import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= VariantToVariant p where
   variantToVariant
@@ -153,17 +168,49 @@ discard
   -> p [ | i ] [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
--- | The case prism: transform the payload of case `l`, passing the other cases through.
+-- | The case prism: the payload of case `l` handed to the leaf, whose
+-- | emissions leave as case `l` again, every other case passing through
+-- | untouched — `focusField`'s `+→+` transpose, constrained like it by
+-- | the two `Cons` alone (the background `b` is what both rows share).
+-- | At `f = f'` it is the dialog lift: a modal whose content is a stage
+-- | over the payload is `focusCase @l`-lifted into the event row
+-- | (`confirmed @l`, MDC2/MDC3), as an editor is `focusField @l`-lifted
+-- | into the model row. Laws: `focusCase @l identity ≈ identity`; a leaf
+-- | that answers no feed (a cancelled dialog) is a `⊑`-refinement of it.
 focusCase
-  :: forall @l p f f' b v v1 v2
+  :: forall @l p f f' b v v1
    . IsSymbol l
   => Cons l f b v
   => Cons l f' b v1
-  => Union b v2 v1
   => Choice p
   => p f f'
   -> p [ | v ] [ | v1 ]
 focusCase =
   prismE
     (on (Proxy @l) Left Right)
-    (either (inj (Proxy @l)) expand)
+    (either (inj (Proxy @l)) background)
+  where
+  -- a background value is one of `v1`'s cases other than `l`, which
+  -- `Cons l f' b v1` states; `expand` would say the same under a
+  -- `Union b _ v1` the two `Cons` already imply
+  background :: Variant b -> Variant v1
+  background = unsafeCoerce
+
+-- | Case `l` handed to a handler, every other case passing through: the
+-- | row **less `l`** leaves, so what the handler does not re-emit is
+-- | consumed — the `+→+` stage that eliminates a case. The handler's
+-- | output is the background row, where a status face, releasing nothing,
+-- | is typed at any row (`acknowledged @l`, MDC2/MDC3: a modal that
+-- | dismisses, the event dying with its copy read). `focusCase @l` keeps
+-- | the case in the row; `onCase @l` is for the stage that may not re-emit
+-- | it, so the fold block after it is typed at exactly what folds.
+-- | Law: `onCase @l identity ≈ identity` at `b = v`'s background, and the
+-- | silent handler's `onCase` is `⊑` the wire.
+onCase
+  :: forall @l p a b v
+   . IsSymbol l
+  => Cons l a b v
+  => Choice p
+  => p a [ | b ]
+  -> p [ | v ] [ | b ]
+onCase = dimap (on (Proxy @l) Left Right) (either identity identity) <<< left

@@ -59,7 +59,7 @@
 -- |      background), a display answers with the row it shows, and a stage
 -- |      built from them without a variant keeps it — by `>>>`, by 5, by
 -- |      the `×→×` words — refining the liveness half at most in time
--- |      (`confirmed`, the gather gate). A route through a variant,
+-- |      (the gather gate). A route through a variant,
 -- |      `emitter >>> fold`, is `×→×` by type and answers no feed: it
 -- |      releases on occurrences, owing only that each release is a
 -- |      whole row. That stage is every loop's body and is lawful as

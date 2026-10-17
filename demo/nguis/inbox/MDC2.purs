@@ -5,11 +5,11 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import Inbox (composeMessage, deleteOpened, bodyText, fromLine, highlighted, inboxState, keepMessages, messageLine, messageView, mondayMail, openMessage, requestDelete, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
+import Inbox (composeMessage, deleteOpened, bodyText, deletionLine, fromLine, highlighted, inboxState, messageLine, messageView, mondayMail, openMessage, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
 import PUI (fold, joined, looped, with)
-import PUI.Web (inCase, provided, providedAt, staticText, text)
+import PUI.Web (inCase, provided, staticText, text)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC2 (banner, body, caption, headline6, body2, body1, button, dialog, fab, iconButton, listOfAt', menu, menuItem)
+import PUI.Web.MDC2 (banner, body, caption, headline6, body2, body1, confirmed, fab, iconButton, listOfAt', menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 inbox :: Effect Unit
@@ -24,19 +24,15 @@ inbox =
         body2 $ text fromLine
         body1 $ text bodyText
         iconButton @"Delete message" "delete" ) # provided @"reading" messageView
-      ( dialog "Delete the last message?" $ RecordToVariant.do
-        button @"Delete"
-        button @"Keep" ) # providedAt @"confirming" @"deletion"
       fab @"Compose" "edit"
       menu "Sort" $ RecordToVariant.do
         menuItem @"By sender"
         menuItem @"By subject"
         menuItem @"Unread first"
+    confirmed @"Delete message" "Delete" $ body2 $ text deletionLine
     VariantToRecord.do
       fold @"Message opened" openMessage
-      fold @"Delete message" requestDelete
-      fold @"Delete" deleteOpened
-      fold @"Keep" keepMessages
+      fold @"Delete message" deleteOpened
       fold @"Compose" composeMessage
       fold @"By sender" sortBySender
       fold @"By subject" sortBySubject

@@ -4,8 +4,8 @@ import Prelude
 
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, staticText, textAt)
-import PUI.Web.MDC2 (body, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, tabBar', textButton, toggleSwitch)
+import PUI.Web (text, (<+>), choice, staticText, textAt)
+import PUI.Web.MDC2 (acknowledged, body, confirmed, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, tabBar', textButton, toggleSwitch)
 
 lawBenchMDC2 :: Effect Unit
 lawBenchMDC2 = do
@@ -46,6 +46,9 @@ lawBenchMDC2 = do
     , bench "snackbar" "+→×" events (snackbar @"event" (const {}))
     , bench "indeterminateLinearProgress" "+→×" runs (indeterminateLinearProgress)
     , bench "indeterminateCircularProgress" "+→×" runs (indeterminateCircularProgress)
+    -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
+    , bench "confirmed" "+→+" decisions (confirmed @"decision" "Confirm" (text nLine))
+    , bench "acknowledged" "+→+" decisions (acknowledged @"decision" "Got it" (text nLine))
     ]
   where
   fractionOf { fraction } = fraction
@@ -65,6 +68,8 @@ lawBenchMDC2 = do
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]
+  decisions = [ .decision { n: 1 }, .decision { n: 2 } ] :: Array [ decision :: { n :: Int } ]
+  nLine { n } = "n = " <> show n
   lists = [ { items: [ { id: 1, title: "first" }, { id: 2, title: "second" } ] }, { items: [ { id: 2, title: "second" } ] } ]
   events = [ .event "hello", .event "world" ]
   runs = [ .started {}, .ended {} ]

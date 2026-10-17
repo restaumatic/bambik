@@ -98,9 +98,10 @@ combinator laws below fail without them.
    stage; **feed liveness** — every feed is answered, once — holds for
    every leaf and the instant rungs, is kept by the merges, by `>>>` of
    answering stages and by the `×→×` words, is *refined*, not broken, at
-   exactly two sorts of place: in **time** by the witness rung
-   (`confirmed` releases on confirmation; a declined reading withholds) and
-   the gather gate (`acted` releases once every element has spoken) —
+   exactly two sorts of place: in **time** by the gather gate (`acted`
+   releases once every element has spoken; the witness rung `confirmed`
+   waits for the user too, but as a `+→+` stage since 2026-10-17, where
+   nothing is owed) —
    and is **not owed** by a `×→×` stage whose route passes through a
    variant. `emitter >>> fold` is `×→×` by type and releases on
    occurrences, never on a feed: it is every app's loop body, lawful as
@@ -170,8 +171,8 @@ above leaves loose: at the boundary `≈` is up to stutter on a record
 channel, so it cannot count. What `≈` states is that every feed is
 answered and every emission of its step equals the step's last (no torn
 row); "exactly once" is the renderings-level guarantee of the step (§4),
-and the liveness half is a leaf law a stage may refine in time (`confirmed`,
-the gather gate) and a route through a variant does not owe.
+and the liveness half is a leaf law a stage may refine in time (the gather
+gate) and a route through a variant does not owe.
 
 ### 3.1 Echo by shape: must, must not, may, may
 

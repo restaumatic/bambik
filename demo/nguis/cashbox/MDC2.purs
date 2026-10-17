@@ -19,8 +19,10 @@ cashbox =
       button' @"Refund a customer" { icon: "undo" }
       button' @"Pay the courier" { icon: "local_shipping" }
       button' @"Take a deposit" { icon: "savings" }
+    confirmed @"Refund a customer" "Refund" $ body1 $ text refundLine
+    confirmed @"Pay the courier" "Pay" $ body1 $ text payoutLine
     VariantToRecord.do
-      confirmed @"Refund a customer" "Refund" refundStandard $ body1 $ text refundLine
-      confirmed @"Pay the courier" "Pay" payCourier $ body1 $ text payoutLine
+      fold @"Refund a customer" refundStandard
+      fold @"Pay the courier" payCourier
       fold @"Take a deposit" takeDeposit
   # looped # with openedTill
