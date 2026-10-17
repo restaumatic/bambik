@@ -165,9 +165,11 @@ How each kind takes its business meaning:
   their whole copy: `snackbar @"Card charged" identity` shows the words
   "Card charged". A status takes no copy function — it is ephemeral,
   so it names what happened and nothing more; what the user must keep
-  is a model field shown by a display. Mutually exclusive outcomes
-  are sibling statuses in one `VariantToRecord.do`, each owning its
-  case, so an action names its outcomes as the words the user reads
+  is a model field shown by a display, or an outcome's message the user
+  closes (`acknowledged`, *Modals*). Mutually exclusive outcomes
+  are sibling cases, each owning its teller — a status in one
+  `VariantToRecord.do`, or a dialog before it for the one the user must
+  read — so an action names its outcomes as the words the user reads
   (`Aff [ "Order submitted" :: {}, "Total missing" :: {} ]`);
   a run in progress is shown by the action's indicator, never by
   a status. A message that stays while a state holds is a display
@@ -211,8 +213,8 @@ takes a trailing word that says what it is for:
 | a projected list whose elements are edited | `( listItem $ … iconToggle @"Favorite" … ) # anyEdit @"Favorite changed" @"title" visibleMovies # joined @"Favorite changed"` — the element stays an editor, a user's edit leaves as the case, the fold writes it back by key | movie-browser |
 | a list element echoing the row it shows | `( listItem $ text flightLine ) # dispatched …` | departures, scoreboard |
 | a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, merged in `RecordToRecord.do` | here-and-now, incident-report |
-| content that waits for the user to confirm | `confirmed @"Refund a customer" "Refund" $ …` — a `+→+` stage between the emitters and the folds: opened by its case, which it tells as its title, the confirm re-emitting the case with the row shown, which its fold then takes (`fold @"Refund a customer" refundStandard`); a cancel consumes it | cashbox, inbox |
-| a message the user must close | `acknowledged @"About this dashboard" "Got it" $ …` — the `+→+` stage consuming its case: the row less it goes on to the folds | weather |
+| content that waits for the user to confirm | `confirmed @"Refund a customer" $ …` — a `+→+` stage between the emitters and the folds: opened by its case, which captions its confirm button, the confirm re-emitting the case with the row shown, which its fold then takes (`fold @"Refund a customer" refundStandard`); its Cancel consumes it | cashbox, inbox, flight-booker |
+| a message the user must close | `acknowledged @"About this dashboard" $ …` — the `+→+` stage consuming its case, titled by it, closed by its "OK": the row less it goes on to the folds; a rejection and its reason (`acknowledged @"Total missing" $ …`), a reference to keep (`acknowledged @"Report filed" $ … text referenceLine`) | weather, order-form, incident-report |
 | an event folded into the model | `fold @"Add" addTodo`, one per case, merged in `VariantToRecord.do` | todo-list |
 | an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
 | an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Receipt" { icon: "file" }; indeterminateLinearProgress # action @"Receipt" printReceipt } ) # joined @"Receipt printed"` in the event ensemble, its status folding `kept`; two outcomes `# joined2 @"Order submitted" @"Total missing"` | order-form |
@@ -330,7 +332,7 @@ compile error at `body` naming the missing fields.
 | a knot fed from upstream, no seed of its own | order-form (`looped` after the load action, which `body`'s one feed of `{}` runs) |
 | an action that retries until it succeeds | payment (`chargeFlaky`) |
 | a running maximum, a wizard's step, a counter: model fields | auction (`settled raiseTop`), checkout (`stepper @"step"`, its own selector), ticket-dispenser (`issue`) |
-| a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed @"Refund a customer" "Refund" refundStandard $ …`) |
+| a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed @"Refund a customer" $ …`) |
 | an effect's outcome folded into the model it lands on | order-form (`… # joined @"Distance estimated"`, `fold @"Distance estimated" setDistance`) |
 | keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
 
@@ -380,14 +382,20 @@ function reads it from that record.
 
 A dialog is a stage on the event path, between the emitters and the
 folds, and it names the one case it intercepts: `confirmed @"Delete
-message" "Delete" $ bodyMedium $ text deletionLine` (inbox) opens on
-that case, shows its payload to the content — a display or editors over
-the row the button replayed — and re-emits the case carrying the
-content's row when the user confirms, so the fold block folds it like
-any event (`fold @"Delete message" deleteOpened`); a cancel consumes it
-and no fold runs. `acknowledged @"About this dashboard" "Got it" $ …`
-(weather) is the same dialog with a dismiss: the case is consumed either
-way, so what follows is typed at the cases that go on. Every other case
+message" $ bodyMedium $ text deletionLine` (inbox) opens on that case,
+shows its payload to the content — a display or editors over the row
+the button replayed, stating what is at stake — and re-emits the case
+carrying the content's row when the user presses the button the case
+captions, so the fold block folds it like any event (`fold @"Delete
+message" deleteOpened`); its Cancel consumes it and no fold runs.
+`acknowledged @"About this dashboard" $ …` (weather) is the
+same dialog titled by its case, with an "OK" that only closes it: the
+case is consumed either way, so what follows is typed at the cases that
+go on. It is the teller of an outcome the user must read rather than
+glimpse — a rejection and its reason (order-form's `acknowledged
+@"Total missing"`), a reference to keep (incident-report's
+`acknowledged @"Report filed" $ bodyMedium $ text referenceLine`,
+its content reading the payload because it stays until closed). Every other case
 passes through both untouched, and a modal is never a model field — no
 `confirming` state, no `Delete`/`Keep` buttons. The bare `dialog` ocular
 remains for a dialog built by hand: it opens when fed and closes when
@@ -548,7 +556,7 @@ arguments:
 
 ```purescript
 snackbar  @"Card charged" identity             -- the "Card charged" snackbar, folding identity
-confirmed @"Refund a customer" "Refund"        -- the "Refund a customer" dialog, its case the title; the caption a value
+ticks     @"Clock ticked" tickPeriod           -- the "Clock ticked" source, beating every tickPeriod
 button'   @"Sign up" { icon: "person_add" }    -- the record: optional presentation
 ```
 
@@ -741,7 +749,7 @@ text is computed, a chrome line nothing.
   call at different rows gets two hints, and that is the one case for a
   `forall`: generalize to the fields both rows share, with a tail. A
   row the signature names through a `type` synonym is the same row
-  (`bookedLine :: Trip -> String`, flight-booker): the check expands it.
+  (`bookingLine :: Trip -> String`, flight-booker): the check expands it.
   Private helpers no view line types are free to be as general as they
   like (flight-booker's `dateKey`).
 - **Update the row you are given.** A function returning the row it
@@ -785,8 +793,9 @@ text is computed, a chrome line nothing.
   count, cashbox's till, inbox's list): `fold @"Todo toggled"
   toggleTodo`. What a status would compute from its payload is not
   copy: a value the user must keep is a model field shown by a display
-  (payment's `text statusLine` carries the attempt), a reason is a
-  sibling case (`"Total missing"`).
+  (payment's `text statusLine` carries the attempt) or what an
+  `acknowledged` dialog shows until closed (incident-report's
+  reference), a reason is a sibling case (`"Total missing"`).
 - **A handler carries no field it does not touch.** Group buttons into
   stages by the fields their handlers touch (circle-drawer keeps undo and
   redo apart from the canvas click). An identity handler means the
@@ -891,7 +900,7 @@ the watch build running ([building.md](building.md)):
    different rows, because two lines call it, is the one case for a
    `forall`: generalize to the fields both rows share, with a tail. A
   row the signature names through a `type` synonym is the same row
-  (`bookedLine :: Trip -> String`, flight-booker): the check expands it. The
+  (`bookingLine :: Trip -> String`, flight-booker): the check expands it. The
    hole's message goes away, and from then on the compiler checks the
    view against the signatures.
 4. **Fill the holes in any order.** The compiler reports one

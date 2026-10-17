@@ -110,7 +110,7 @@ and emitters of a catalogue — are in the design-system module header
 | an event replacing the model whole | `reset @"New game" openingPosition`; on a status, `snackbar @"Order placed" (const usualOrder)` | tic-tac-toe, quiz, shopping-cart, espresso-bar | `PUI` |
 | an outcome that is the model | `snackbar @"Card charged" identity`; `capture @"Forecast fetched"` where nothing needs telling | order-form, payment, weather, password-generator, reorder | `PUI` |
 | two buttons changing one field | `fold @"Start" beginTiming`, `fold @"Stop" haltTiming` — two cases, two folds, never one button with a caption parameter | stopwatch | writing.md *Components* |
-| an event intercepted by a dialog | `confirmed @"Refund a customer" "Refund" $ body1 $ text refundLine` between the emitters and the folds — the dialog tells the button's case as its title and re-emits it on confirm, its fold (`fold @"Refund a customer" refundStandard`) among the folds | cashbox, inbox | writing.md *Modals* |
+| an event intercepted by a dialog | `confirmed @"Refund a customer" $ body1 $ text refundLine` between the emitters and the folds — the button's case captions the confirm, which re-emits it, its fold (`fold @"Refund a customer" refundStandard`) among the folds | cashbox, inbox | writing.md *Modals* |
 | an event carrying something of its own | `listOf @"Todo toggled" @"key" … # joined @"Todo toggled"`, handled by `toggleTodo :: { event, model } -> model` | todo-list, cells, calculator | writing.md *Stages* |
 | a button group fed the record it replays | `RecordToVariant.do` of emitters as a stage, each button replaying the row the block is fed | order-form, espresso-bar, signup-form | writing.md *Stages* |
 | a menu of presets | `menu "Presets" ( RecordToVariant.do menuItem @"The usual" … )` | espresso-bar, inbox | the design-system module |
@@ -122,15 +122,15 @@ and emitters of a catalogue — are in the design-system module header
 | an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action @"Shuffle" shuffleAction; capture @"Setlist shuffled" } )` in the fold block, what follows owning the action's outcomes | reorder, espresso-bar | writing.md *Business functions* |
 | … whose outcomes are told | `indeterminateCircularProgress # action @"Charge card" chargeFlaky`, then `snackbar @"Card charged" identity`; one status per outcome where there are several | payment; order-form | writing.md *Business functions* |
 | the load before the knot | `indeterminateLinearProgress # load loadOrder`, then `snackbar @"Order loaded" identity` | order-form | writing.md *Business functions* |
-| an outcome told, the model kept | the action `joined @l` with its button in the event ensemble, once per outcome, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form, incident-report | writing.md *Business functions* |
+| an outcome told, the model kept | the action `joined @l` with its button in the event ensemble, once per outcome, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form | writing.md *Business functions* |
 | an action at load | `indeterminateLinearProgress # load loadOrder` then `snackbar @"Order loaded" identity` (or `capture @l` where nothing needs telling) | order-form | writing.md *App shape* |
 | an action's outcome cases | named by its `Aff` (`Aff [ "Total missing" :: {}, "Order submitted" :: {} ]`), each folded by its status | order-form | writing.md *Business functions* |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` and `fold @"Clock ticked" tick` | timer, stopwatch | `PUI` |
-| a status per outcome case | `snackbar @"Card charged" identity` — the label is the copy; a reason is a sibling case, `snackbar @"Total missing" kept` | payment, order-form | writing.md *Components* |
+| a status per outcome case | `snackbar @"Card charged" identity` — the label is the copy; a reason is a sibling case, told by its own status or, when the user must read it, `acknowledged @"Total missing" $ …` | payment, order-form | writing.md *Components* |
 | a message that stays while a state holds | `( banner $ staticText "Inbox zero!" ) # inCase @"empty" inboxState` — a display under a pane, not a status | inbox | writing.md *Components* |
-| confirm before the flow continues | `confirmed @"Refund a customer" "Refund" $ …`, then `fold @"Refund a customer" refundStandard` | cashbox, inbox | writing.md *Modals* |
+| confirm before the flow continues | `confirmed @"Refund a customer" $ …`, the case captioning the confirm beside a Cancel, then `fold @"Refund a customer" refundStandard`; its content may read the payload (`confirmed @"Book" $ … text bookingLine`) | cashbox, inbox, flight-booker | writing.md *Modals* |
 | a fact the platform knows and the app cannot seed — position, connectivity, the time, the colour scheme, a chosen file | `geolocated @l`, `online @l`, `clock @l period`, `colorScheme @l` (`PUI.Web`), `filePicked @l` (`PUI.Web.HTML`), merged `RecordToRecord.do` | here-and-now, incident-report | writing.md *The pipeline*; `PUI.Web` (`source`) |
-| a message the user must close | `acknowledged @"About this dashboard" "Got it" $ …` — the case consumed on dismiss, the row less it going on; its content may read the payload (`acknowledged @"Book" "OK" $ … text bookedLine`) | weather, flight-booker | writing.md *Modals* |
+| a message the user must close | `acknowledged @"About this dashboard" $ …` — the case consumed when its "OK" closes it, the row less it going on; its content may read the payload (`acknowledged @"Report filed" $ … text referenceLine`) | weather, order-form, incident-report | writing.md *Modals* |
 
 ## Collections
 

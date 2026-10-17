@@ -1206,16 +1206,18 @@ dialog title content = fromHandles do
 -- | dual of the lens editor. As an editor is `focusField @l` over a leaf
 -- | that shows a field and lets the user change it, this is `focusCase
 -- | @l` over a modal that shows an event's payload and lets the user
--- | decide its fate: opened by case `l`, which it **tells** as its title,
--- | verbatim, its content — a stage over the payload, a display or
--- | editors — shown the row the button that opened it replayed, the flow
--- | **withheld until the user confirms**, when the case leaves again
--- | carrying the row the content last answered, to be folded in the fold
--- | block like any event (`confirmed @"Refund a customer" "Refund" $
--- | body1 $ text refundLine` among the stages, `fold @"Refund a customer"
--- | refundStandard` among the folds — cashbox; inbox's `"Delete
--- | message"`). A dismiss without confirming consumes the case: a
--- | declined decision reaches no fold. Every other case passes through
+-- | decide its fate: opened by case `l`, its content — a stage over the
+-- | payload, a display or editors — shown the row the button that opened
+-- | it replayed, the flow **withheld until the user confirms** with the
+-- | button the case **captions**, verbatim, as an emitter draws its
+-- | label, when the case leaves again carrying the row the content last
+-- | answered, to be folded in the fold block like any event (`confirmed
+-- | @"Refund a customer" $ body1 $ text refundLine` among the stages,
+-- | `fold @"Refund a customer" refundStandard` among the folds — cashbox;
+-- | inbox's `"Delete message"`). The content states what is at stake, so
+-- | the dialog has no title of its own; the case names it. Cancel (or
+-- | Escape, or the scrim) consumes the case: a declined decision reaches
+-- | no fold. Every other case passes through
 -- | untouched, so the dialog names only its own case and the fold block
 -- | stays typed at exactly what folds. The content needs no button of
 -- | its own: a display releases the row it shows, so there is something
@@ -1229,10 +1231,10 @@ confirmed
   :: forall @l r b v
    . IsSymbol l
   => Cons l { | r } b v
-  => String
-  -> PUI Web { | r } { | r }
+  => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption content
+confirmed content = focusCase @l $ modal
+  { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just "Cancel" } content
 
 -- | The **dismissed rung**: `dialog` with a **dismiss button** built in,
 -- | for the outcome the user must read and can only close — a rejection
@@ -1240,56 +1242,75 @@ confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l
 -- | `l`, which it tells as its title, its content shown the payload for
 -- | as long as the user wants it, and the case **consumed** — the row
 -- | less `l` leaves, so what follows is typed at the cases that go on
--- | (`acknowledged @"About this dashboard" "Got it" $ body1 $ text
--- | aboutLine`, weather, between the emitters and the fold). The
--- | persistent member of the status family: a `snackbar` tells its case
--- | and is gone, so it carries no copy; a message the user closes is not
--- | ephemeral, so its content may read the payload. Every other case
+-- | (`acknowledged @"About this dashboard" $ body1 $ text aboutLine`,
+-- | weather, between the emitters and the fold). The dismiss is captioned
+-- | "OK" and decides nothing — closing it, Escape and the scrim all
+-- | consume the case — so, like `confirmed`'s Cancel, it is chrome and
+-- | takes no caption. The persistent member of the status family: a
+-- | `snackbar` tells its case and is gone, so it carries no copy; a
+-- | message the user closes is not ephemeral, so its content may read
+-- | the payload. Every other case
 -- | passes through untouched.
 acknowledged
   :: forall @l r b v
    . IsSymbol l
   => Cons l { | r } b v
-  => String
-  -> PUI Web { | r } { | r }
+  => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | b ]
-acknowledged dismissCaption content = onCase @l $ fromHandles do
-  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption content
+acknowledged content = onCase @l $ fromHandles do
+  w <- handles $ modal
+    { title: Just (reflectSymbol (Proxy @l)), decide: "OK", cancel: Nothing } content
   pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
 
 -- the modal both dialog leaves are built over: `variantToVariantWiring`
--- over the MDCDialog foundation's markup, a title, the content stage and
--- one deciding button; Escape and the scrim close the foundation by
--- itself, releasing nothing
-modal :: forall r. String -> String -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
-modal title buttonCaption content = fromHandles do
-  titleId <- liftEffect uniqueId
+-- over the MDCDialog foundation's markup, an optional title, the content
+-- stage, an optional cancel button and the deciding button, named by the
+-- title or else by the decision; Escape and the scrim close the
+-- foundation by itself, releasing nothing
+modal
+  :: forall r
+   . { title :: Maybe String, decide :: String, cancel :: Maybe String }
+  -> PUI Web { | r } { | r }
+  -> PUI Web { | r } { | r }
+modal { title, decide, cancel } content = fromHandles do
   contentId <- liftEffect uniqueId
-  actionsRef <- liftEffect $ Ref.new Nothing
+  decideRef <- liftEffect $ Ref.new Nothing
+  cancelRef <- liftEffect $ Ref.new Nothing
   shown <- handles $ div >>> cl "mdc-dialog" $ fromHandles do
     w <- handles $
       div >>> cl "mdc-dialog__container" $
-        div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ fromHandles do
-          _ <- handles (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
+        div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-label" := fromMaybe decide title >>> "aria-describedby" := contentId $ fromHandles do
+          for_ title \t -> handles (h2 >>> cl "mdc-dialog__title" $ staticText t)
           w' <- handles (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
-          _ <- handles $ div >>> cl "mdc-dialog__actions" $
-            el "button" >>> "type" := "button" >>> "aria-label" := buttonCaption >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
-              static (div >>> cl "mdc-button__ripple")
-              span >>> cl "mdc-button__label" $ staticText buttonCaption
-          actions <- gets _.sibling
-          liftEffect $ Ref.write (Just actions) actionsRef
+          _ <- handles $ div >>> cl "mdc-dialog__actions" $ fromHandles do
+            for_ cancel \c -> do
+              _ <- handles (dialogButton c)
+              node <- gets _.sibling
+              liftEffect $ Ref.write (Just node) cancelRef
+            decision <- handles (dialogButton decide)
+            node <- gets _.sibling
+            liftEffect $ Ref.write (Just node) decideRef
+            pure decision
           pure w'
     _ <- handles (static (div >>> cl "mdc-dialog__scrim"))
     pure w
   dialogNode <- gets _.sibling
   component <- liftEffect $ newComponent material.dialog."MDCDialog" dialogNode
-  actions <- liftEffect $ Ref.read actionsRef
+  decideNode <- liftEffect $ Ref.read decideRef
+  cancelNode <- liftEffect $ Ref.read cancelRef
   liftEffect $ variantToVariantWiring
     { open: open component
     , close: close component
     , content: shown
-    , reports: \decided -> for_ actions \node -> listenNode node "click" decided
+    , reports: \decided -> for_ decideNode \node -> listenNode node "click" decided
+    , cancels: \cancelled -> for_ cancelNode \node -> listenNode node "click" cancelled
     }
+  where
+  dialogButton :: forall r1. String -> PUI Web { | r1 } { | r1 }
+  dialogButton caption =
+    el "button" >>> "type" := "button" >>> "aria-label" := caption >>> cl "mdc-button" >>> cl "mdc-dialog__button" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
+      static (div >>> cl "mdc-button__ripple")
+      span >>> cl "mdc-button__label" $ staticText caption
 
 -- | The **snackbar**: a brief message at the bottom of the screen,
 -- | dismissing itself, for something that has just happened and needs no

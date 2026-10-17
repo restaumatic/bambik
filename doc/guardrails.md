@@ -179,8 +179,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   model field or a business case — and nothing else**: the
   copy a line carries that is no label — a static's text, a bar's title,
   a dialog's caption and question, a column heading, a tip — is a String
-  value (`staticText "Hours"`, `topAppBar "Espresso Bar"`, `confirmed
-  @"Refund a customer" "Refund"`, `columnHeader "Qty"`), and a
+  value (`staticText "Hours"`, `topAppBar "Espresso Bar"`, `columnHeader
+  "Qty"`), and a
   quantity display takes only its read function (`linearProgress
   elapsedFraction`). A view
   **writes no row**: a row a line's function or value argument brings —
@@ -197,9 +197,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
   swap. Precedents: the statuses (`snackbar @"Card charged" identity`,
-  replacing a per-case copy record and then the copy function), `confirmed
-  @"Refund a customer" "Refund"` (the caption a value, the
-  dialog telling its case as its title), and the one-field ocular
+  replacing a per-case copy record and then the copy function), `acknowledged
+  @"Total missing"` (the dialog telling its case as its title, its
+  caption dropped like `confirmed`'s Cancel: the dismiss decides nothing,
+  so it is chrome — every call passed "OK" or "Got it"), `confirmed @"Refund a customer"` (its caption
+  dropped: every one restated the case it confirms, so the case captions
+  the confirm, as an emitter draws its label), and the one-field ocular
   configs made positional (`tooltip`, `dialog`, `topAppBar`, `menu`,
   `imageList`, `layoutCell`, `badge`). The vocabulary MUST
   keep every line's anchor expressible and singular: an ocular MUST NOT

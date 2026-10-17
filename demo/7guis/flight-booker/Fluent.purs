@@ -3,10 +3,10 @@ module FlightBooker.Fluent (flightBooker) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import FlightBooker (bookedLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
+import FlightBooker (bookingLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
 import PUI (looped, with)
 import PUI.Web ((<+>), attrWith, choice, inCaseAt, provided, text)
-import PUI.Web.Fluent (acknowledged, body, body1, button, dropdown, textField')
+import PUI.Web.Fluent (body, body1, button, confirmed, dropdown, textField')
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
@@ -18,4 +18,4 @@ flightBooker =
       textField' @"Return date" { hint: "DD.MM.YYYY" } # attrWith "aria-invalid" returnDateInvalid # inCaseAt @"return flight" @"Flight type"
     ) # looped # with plannedTrip
     button @"Book" # provided @"bookable" bookingState
-    acknowledged @"Book" "OK" $ body1 $ text bookedLine
+    confirmed @"Book" $ body1 $ text bookingLine

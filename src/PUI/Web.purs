@@ -607,16 +607,19 @@ variantToRecordWiring show = { toUser: show, fromUser: \_ -> pure unit }
 -- | leaf may wait, and a dialog waits for the user. When `reports` fires —
 -- | the deciding button — it `close`s and releases the row the content
 -- | last answered, once; a decision before any feed has nothing to release
--- | and is dropped, as is a second one before the next feed. A dismiss the
--- | platform performs itself (Escape, the scrim) releases nothing, which
--- | is the cancel. `acknowledged` drops the release (`onCase @l`, the case
--- | consumed); `confirmed` re-emits it (`focusCase @l`).
+-- | and is dropped, as is a second one before the next feed. When
+-- | `cancels` fires — the cancel button — it `close`s and releases
+-- | nothing, forgetting the row, as does a dismiss the platform performs
+-- | itself (Escape, the scrim). `acknowledged` drops the release
+-- | (`onCase @l`, the case consumed) and has no cancel; `confirmed`
+-- | re-emits it (`focusCase @l`).
 variantToVariantWiring
   :: forall a
    . { open :: Effect Unit
      , close :: Effect Unit
      , content :: Wiring a a
      , reports :: Effect Unit -> Effect Unit
+     , cancels :: Effect Unit -> Effect Unit
      }
   -> Effect (Wiring a a)
 variantToVariantWiring leaf = do
@@ -633,6 +636,9 @@ variantToVariantWiring leaf = do
             Ref.write Nothing shownRef
             leaf.close
             prop a
+        leaf.cancels do
+          Ref.write Nothing shownRef
+          leaf.close
     }
 
 -- | The click-emitter protocol over any `{}`-output element chrome: replay

@@ -1,4 +1,4 @@
-module IncidentReport (Incident, clockPeriod, fileReport, reportLine) where
+module IncidentReport (Filing, Incident, clockPeriod, fileReport, referenceLine, reportLine) where
 
 import Prelude (const, discard, pure, show, (/), (<), (<>))
 
@@ -30,10 +30,15 @@ reportLine { "Photo": photo, position, time } =
     , none: const ", no photo attached"
     } photo
 
-fileReport :: Incident -> Aff [ "Report filed" :: {} ]
-fileReport _ = do
+type Filing = { event :: { reference :: String }, model :: Incident }
+
+fileReport :: Incident -> Aff [ "Report filed" :: { reference :: String } ]
+fileReport { time } = do
   delay (Milliseconds filingDelay.ms)
-  pure (."Report filed" {})
+  pure (."Report filed" { reference: "IR-" <> padded time.hours <> padded time.minutes <> padded time.seconds })
+
+referenceLine :: Filing -> String
+referenceLine { event: { reference } } = "Your report's reference is " <> reference <> ". Quote it when you follow up."
 
 filingDelay :: { ms :: Number }
 filingDelay = { ms: 800.0 }

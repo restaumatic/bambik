@@ -1,4 +1,4 @@
-module FlightBooker (Trip, bookedLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid) where
+module FlightBooker (Trip, bookingLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid) where
 
 import Prelude (bind, otherwise, (#), (&&), (*), (+), (/=), (<=), (<>), (==), (>=), (||))
 
@@ -27,10 +27,10 @@ returnDateInvalid { "Return date": input } = invalidity input
 bookingState :: Trip -> [ bookable :: {}, unbookable :: {} ]
 bookingState trip = if bookable trip then .bookable {} else .unbookable {}
 
-bookedLine :: Trip -> String
-bookedLine { "Flight type": flightType, "Start date": out, "Return date": back } = flightType # match
-  { "one-way flight": \_ -> "You have booked a one-way flight on " <> out <> "."
-  , "return flight": \_ -> "You have booked a return flight on " <> out <> ", returning on " <> back <> "."
+bookingLine :: Trip -> String
+bookingLine { "Flight type": flightType, "Start date": out, "Return date": back } = flightType # match
+  { "one-way flight": \_ -> "You are going to book a one-way flight on " <> out <> "."
+  , "return flight": \_ -> "You are going to book a return flight on " <> out <> ", returning on " <> back <> "."
   }
 
 invalidity :: String -> String

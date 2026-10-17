@@ -20,10 +20,10 @@ module FlightBooker.MDC2 (flightBooker) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import FlightBooker (bookedLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
+import FlightBooker (bookingLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
 import PUI (looped, with)
 import PUI.Web ((<+>), attrWith, choice, inCaseAt, provided, text)
-import PUI.Web.MDC2 (acknowledged, body, body1, button', filledTextField', select)
+import PUI.Web.MDC2 (body, body1, button', confirmed, filledTextField', select)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
@@ -35,7 +35,7 @@ flightBooker =
       filledTextField' @"Return date" { hint: "DD.MM.YYYY" } # attrWith "aria-invalid" returnDateInvalid # inCaseAt @"return flight" @"Flight type"
     ) # looped # with plannedTrip
     button' @"Book" { icon: "flight_takeoff" } # provided @"bookable" bookingState
-    acknowledged @"Book" "OK" $ body1 $ text bookedLine
+    confirmed @"Book" $ body1 $ text bookingLine
 ```
 
 **The imports.** `PUI` for the words that shape data flow (`looped`,
@@ -99,21 +99,21 @@ button, by construction rather than by a flag. The pane names only its
 case; the classifier's signature states the rest (writing.md
 *Conditional visibility*).
 
-**Stage 3 — the dialog, `acknowledged @"Book" "OK" $ body1 $ text
-bookedLine`.** `+→+`: the dialog owns the button's case. A `"Book"`
-event opens it, titled by the case and showing its content fed the
-event's payload — the trip — and the user's `"OK"` closes it, the case
-consumed, so nothing flows on. Its content is a stage like any other:
-`body1 $ text bookedLine`, a display whose whole sentence, "You have
-booked a one-way flight on 27.03.2026.", is one pure function in the view
-model module. The message stays until it is dismissed, so unlike a
-status, which tells only its case, it may read the payload (writing.md
-*Components*).
+**Stage 3 — the dialog, `confirmed @"Book" $ body1 $ text
+bookingLine`.** `+→+`: the dialog owns the button's case. A `"Book"`
+event opens it, showing its content fed the event's payload — the trip
+— above two buttons: Cancel, which consumes the case, and one the case
+captions, `"Book"`, which re-emits it with the row shown. Its content is a stage
+like any other: `body1 $ text bookingLine`, a display whose whole
+sentence, "You are going to book a one-way flight on 27.03.2026.", is one
+pure function in the view model module. The dialog stays until the user
+decides, so unlike a status, which tells only its case, it may read the
+payload (writing.md *Components*).
 
 ## The view model
 
 ```purescript
-module FlightBooker (Trip, bookedLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid) where
+module FlightBooker (Trip, bookingLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid) where
 
 import Prelude (bind, otherwise, (#), (&&), (*), (+), (/=), (<=), (<>), (==), (>=), (||))
 
@@ -142,10 +142,10 @@ returnDateInvalid { "Return date": input } = invalidity input
 bookingState :: Trip -> [ bookable :: {}, unbookable :: {} ]
 bookingState trip = if bookable trip then .bookable {} else .unbookable {}
 
-bookedLine :: Trip -> String
-bookedLine { "Flight type": flightType, "Start date": out, "Return date": back } = flightType # match
-  { "one-way flight": \_ -> "You have booked a one-way flight on " <> out <> "."
-  , "return flight": \_ -> "You have booked a return flight on " <> out <> ", returning on " <> back <> "."
+bookingLine :: Trip -> String
+bookingLine { "Flight type": flightType, "Start date": out, "Return date": back } = flightType # match
+  { "one-way flight": \_ -> "You are going to book a one-way flight on " <> out <> "."
+  , "return flight": \_ -> "You are going to book a return flight on " <> out <> ", returning on " <> back <> "."
   }
 
 invalidity :: String -> String
@@ -202,7 +202,7 @@ is a private helper. It compiles and tests without a browser (writing.md
 - `bookingState` — the classifier behind the Book pane: one of two
   exclusive states, the cases bare since the pane shows the model
   itself.
-- `bookedLine` — the dialog's copy function: the selection spelled out,
+- `bookingLine` — the dialog's copy function: the selection spelled out,
   the dates as they were entered.
 
 **Three things worth noticing.** The rows the signatures share are

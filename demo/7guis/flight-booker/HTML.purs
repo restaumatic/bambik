@@ -3,10 +3,10 @@ module FlightBooker.HTML (flightBooker) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import FlightBooker (bookedLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
+import FlightBooker (bookingLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
 import PUI (looped, with)
 import PUI.Web ((<+>), attrWith, choice, inCaseAt, provided, staticText, text)
-import PUI.Web.HTML (acknowledged, body, button, div, input, label, p, select)
+import PUI.Web.HTML (body, button, confirmed, div, input, label, p, select)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
@@ -24,4 +24,4 @@ flightBooker =
         input @"Return date" "text" # attrWith "aria-invalid" returnDateInvalid ) # inCaseAt @"return flight" @"Flight type"
     ) # looped # with plannedTrip
     button @"Book" # provided @"bookable" bookingState
-    acknowledged @"Book" "OK" $ p $ text bookedLine
+    confirmed @"Book" $ p $ text bookingLine

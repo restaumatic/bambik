@@ -1065,53 +1065,67 @@ dialog title content =
     handles (div >>> "slot" := "content" $ content)
 
 -- | The witness rung — see `PUI.Web.MDC2.confirmed`: `focusCase @l` over
--- | the modal, the `+→+` stage of case `l`, telling it as its title, the
--- | confirm re-emitting the case with the row its content answered, a
+-- | the modal, the `+→+` stage of case `l`, its confirm button captioned
+-- | by the case and re-emitting it with the row its content answered, a
 -- | cancel consuming it, every other case passing.
 confirmed
   :: forall @l r b v
    . IsSymbol l
   => Cons l { | r } b v
-  => String
-  -> PUI Web { | r } { | r }
+  => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption content
+confirmed content = focusCase @l $ modal
+  { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just "Cancel" } content
 
 -- | The dismissed rung — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
 -- | over the modal, the `+→+` stage consuming case `l`, telling it as
--- | its title and showing its payload until the user closes it; the row
--- | less `l` leaves.
+-- | its title and showing its payload until the user closes it with its
+-- | "OK"; the row less `l` leaves.
 acknowledged
   :: forall @l r b v
    . IsSymbol l
   => Cons l { | r } b v
-  => String
-  -> PUI Web { | r } { | r }
+  => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | b ]
-acknowledged dismissCaption content = onCase @l $ fromHandles do
-  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption content
+acknowledged content = onCase @l $ fromHandles do
+  w <- handles $ modal
+    { title: Just (reflectSymbol (Proxy @l)), decide: "OK", cancel: Nothing } content
   pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
 
 -- the modal both dialog leaves are built over: `variantToVariantWiring`
--- over `md-dialog`, a headline, the content stage and one deciding button;
--- Escape closes the element by itself, releasing nothing
-modal :: forall r. String -> String -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
-modal title buttonCaption content = fromHandles do
-  actionsRef <- liftEffect $ Ref.new Nothing
-  shown <- handles $ el "md-dialog" $ fromHandles do
-    _ <- handles (div >>> "slot" := "headline" $ staticText title)
+-- over `md-dialog`, an optional headline, the content stage, an optional
+-- cancel button and the deciding button, named by the headline or else
+-- by the decision; Escape closes the element by itself, releasing nothing
+modal
+  :: forall r
+   . { title :: Maybe String, decide :: String, cancel :: Maybe String }
+  -> PUI Web { | r } { | r }
+  -> PUI Web { | r } { | r }
+modal { title, decide, cancel } content = fromHandles do
+  decideRef <- liftEffect $ Ref.new Nothing
+  cancelRef <- liftEffect $ Ref.new Nothing
+  shown <- handles $ el "md-dialog" >>> "aria-label" := fromMaybe decide title $ fromHandles do
+    for_ title \t -> handles (div >>> "slot" := "headline" $ staticText t)
     w <- handles (div >>> "slot" := "content" $ content)
-    _ <- handles (div >>> "slot" := "actions" $ el "md-text-button" $ staticText buttonCaption)
-    actions <- gets _.sibling
-    liftEffect $ Ref.write (Just actions) actionsRef
+    _ <- handles $ div >>> "slot" := "actions" $ fromHandles do
+      for_ cancel \c -> do
+        _ <- handles (el "md-text-button" $ staticText c)
+        node <- gets _.sibling
+        liftEffect $ Ref.write (Just node) cancelRef
+      decision <- handles (el "md-text-button" $ staticText decide)
+      node <- gets _.sibling
+      liftEffect $ Ref.write (Just node) decideRef
+      pure decision
     pure w
   dialogNode <- gets _.sibling
-  actions <- liftEffect $ Ref.read actionsRef
+  decideNode <- liftEffect $ Ref.read decideRef
+  cancelNode <- liftEffect $ Ref.read cancelRef
   liftEffect $ variantToVariantWiring
     { open: showDialog dialogNode
     , close: closeDialog dialogNode
     , content: shown
-    , reports: \decided -> for_ actions \node -> listenNode node "click" decided
+    , reports: \decided -> for_ decideNode \node -> listenNode node "click" decided
+    , cancels: \cancelled -> for_ cancelNode \node -> listenNode node "click" cancelled
     }
 
 -- | The **snackbar**: a brief message at the bottom of the screen that

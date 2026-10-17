@@ -85,8 +85,8 @@ not implemented.
     field's `aria-invalid`, which the page colours red.
   - Book exists only for a bookable trip, which meets the rule by
     construction.
-  - Booking opens a message the user closes, "You have booked a one-way
-    flight on 27.03.2026."
+  - Book opens a dialog stating the selection, "You are going to book a
+    one-way flight on 27.03.2026.", confirmed by its own Book button.
 - **CRUD:**
   - Update and Delete exist only while an entry is selected rather than
     being disabled, which meets the rule by construction.

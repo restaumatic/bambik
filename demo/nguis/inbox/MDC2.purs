@@ -29,7 +29,7 @@ inbox =
         menuItem @"By sender"
         menuItem @"By subject"
         menuItem @"Unread first"
-    confirmed @"Delete message" "Delete" $ body2 $ text deletionLine
+    confirmed @"Delete message" $ body2 $ text deletionLine
     VariantToRecord.do
       fold @"Message opened" openMessage
       fold @"Delete message" deleteOpened

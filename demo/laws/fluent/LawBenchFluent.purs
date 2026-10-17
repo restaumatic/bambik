@@ -26,8 +26,8 @@ lawBenchFluent = do
     , bench "button" "×→+" rows (button @"Go")
     , bench "messageBar" "+→×" events (messageBar @"event" (const {}))
     -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
-    , bench "confirmed" "+→+" decisions (confirmed @"decision" "Confirm" (text nLine))
-    , bench "acknowledged" "+→+" decisions (acknowledged @"decision" "Got it" (text nLine))
+    , bench "confirmed" "+→+" decisions (confirmed @"decision" (text nLine))
+    , bench "acknowledged" "+→+" decisions (acknowledged @"decision" (text nLine))
     ]
   where
   fractionOf { fraction } = fraction

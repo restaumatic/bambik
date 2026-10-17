@@ -8,6 +8,36 @@ Before 2026-07 the history is the git log.
 
 ## 2026-10-17, latest
 
+- **Neither dialog takes a caption; `confirmed` has a Cancel;
+  `acknowledged` tells two more outcomes.** Every `confirmed @l caption` restated its case
+  (`@"Book" "Book"`, `@"Refund a customer" "Refund"`, `@"Delete message"
+  "Delete"`), so the case captions the confirm button, as an emitter
+  draws its label: `confirmed @"Refund a customer" $ body1 $ text
+  refundLine`. With the case on the button the dialog has no title of
+  its own (its content states what is at stake; the case still names it
+  for assistive technology), and it gains a Cancel before the confirm in
+  all five vocabularies — before, a decision could be declined only by
+  Escape or the scrim, which nothing on screen offered.
+  `variantToVariantWiring` takes `cancels` beside `reports`: it closes,
+  releases nothing and forgets the row shown; the leaf-law bench clicks
+  the cancel first, checks it emits nothing and closes, and that the
+  next feed reopens it. `acknowledged @l` keeps its title and loses
+  its caption: every call passed "OK" or "Got it", and its one button
+  decides nothing — closing it, Escape and the scrim all consume the
+  case — so, like `confirmed`'s Cancel, the dismiss is chrome, drawn
+  "OK" in all five vocabularies. It gains two demos:
+  order-form's rejection `acknowledged @"Total missing" $ …
+  staticText "Enter the order's total before submitting it."`, where a
+  snackbar flashed the reason, and incident-report's `acknowledged
+  @"Report filed" $ … text referenceLine`, the filing returning a
+  reference the user must keep — data a five-second snackbar could not
+  hold, so the outcome had carried `{}`.
+- **Flight-booker confirms before it books.** The dialog Book opens
+  stands before any booking, so it is `confirmed @"Book" $ … text
+  bookingLine`, "You are going to book a one-way flight on
+  27.03.2026.", not `acknowledged @"Book" "OK"` reporting "You have
+  booked…" for a booking nothing had made; the confirmed case leaves the
+  app, the task modelling no booking beyond the message.
 - **The 7GUIs demos meet the task statements.** Read against
   <https://eugenkiss.github.io/7guis/tasks/> (doc/7guis-comparison.md:
   17 → 22 of 23). Temperature-converter starts empty, and each field's

@@ -18,7 +18,9 @@
 // to register and accept a feed, and the +→+ dialogs for the modal
 // protocol: a feed opens the dialog and fires nothing, then its deciding
 // button is clicked once — `confirmed` re-emits the fed case carrying the
-// row its content showed, `acknowledged` emits nothing (the case consumed).
+// row its content showed, `acknowledged` emits nothing (the case consumed);
+// `confirmed`'s cancel, clicked first, closes it emitting nothing, and the
+// next feed opens it again.
 // Emitters are then clicked once to
 // check the replay half of the ×→+ protocol: the click leaves as the leaf's
 // case carrying the row last fed.
@@ -95,11 +97,22 @@ const drive = (name) => `(async () => {
       return !!d.open
     }
     const openAfterFeed = isOpen()
-    const host = section.querySelector('md-dialog [slot=actions], .mdc-dialog__actions, dialog > button, sl-dialog sl-button[slot=footer], fluent-dialog fluent-button[slot=action]')
+    const buttons = [...section.querySelectorAll('md-dialog [slot=actions] > *, .mdc-dialog__actions > button, dialog > button, sl-dialog sl-button[slot=footer], fluent-dialog fluent-button[slot=action]')]
+    const host = buttons[buttons.length - 1]
+    let cancelled = null
+    if (buttons.length > 1) {
+      const atCancel = e.log.length
+      buttons[0].click()
+      await wait()
+      cancelled = { emitted: e.since(atCancel).map(x => x.value), openAfterCancel: isOpen() }
+      e.feed(e.samples.length - 1)
+      await wait()
+      cancelled.reopened = isOpen()
+    }
     const at = e.log.length
     host?.click()
     await wait()
-    decided = { host: host?.tagName.toLowerCase() ?? null, emitted: e.since(at).map(x => x.value), openAfterFeed, openAfterDecision: isOpen() }
+    decided = { host: host?.tagName.toLowerCase() ?? null, emitted: e.since(at).map(x => x.value), openAfterFeed, openAfterDecision: isOpen(), cancelled }
   }
   let cleared = null
   if (${JSON.stringify(name)}.endsWith('Optional')) {
@@ -244,7 +257,14 @@ export const run = async ({ ev, session, assertEq, sleep, page }) => {
       assertEq(r.decided.openAfterFeed, true, `${at} Modal: a feed opens the dialog`)
       assertEq(r.decided.openAfterDecision, false, `${at} Modal: the decision closes it`)
       const fed = r.samples[r.samples.length - 1]
-      if (name === 'confirmed') assertEq(r.decided.emitted, [fed], `${at} Modal: the confirm re-emits the fed case with the row shown`)
+      if (name === 'confirmed') {
+        assertEq(r.decided.cancelled !== null, true, `${at} Modal: the dialog has a cancel button before its deciding one`)
+        assertEq(r.decided.cancelled?.emitted, [], `${at} Modal: the cancel emits nothing, the case consumed`)
+        assertEq(r.decided.cancelled?.openAfterCancel, false, `${at} Modal: the cancel closes it`)
+        assertEq(r.decided.cancelled?.reopened, true, `${at} Modal: the next feed opens it again`)
+        assertEq(r.decided.emitted, [fed], `${at} Modal: the confirm re-emits the fed case with the row shown`)
+      }
+      if (name === 'acknowledged') assertEq(r.decided.cancelled, null, `${at} Modal: the dismiss is its only button`)
       if (name === 'acknowledged') assertEq(r.decided.emitted, [], `${at} Modal: the dismiss emits nothing, the case consumed`)
     }
   }

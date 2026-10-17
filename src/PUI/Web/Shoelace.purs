@@ -44,7 +44,7 @@ import Prelude hiding (div)
 import Control.Monad.State (gets)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.Int (fromString)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
@@ -326,53 +326,65 @@ toastFace caseLabel = fromHandles do
 -- UIOculars
 
 -- | The **witness rung** — see `PUI.Web.MDC2.confirmed`: `focusCase @l`
--- | over the modal, the `+→+` stage of case `l`, telling it as its title,
--- | the confirm re-emitting the case with the row its content answered, a
--- | dismiss consuming it, every other case passing. Over `<sl-dialog>`.
+-- | over the modal, the `+→+` stage of case `l`, its confirm button
+-- | captioned by the case and re-emitting it with the row its content
+-- | answered, a cancel consuming it, every other case passing. Over `<sl-dialog>`.
 confirmed
   :: forall @l r b v
    . IsSymbol l
   => Cons l { | r } b v
-  => String
-  -> PUI Web { | r } { | r }
+  => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed confirmCaption content = focusCase @l $ modal (reflectSymbol (Proxy @l)) confirmCaption content
+confirmed content = focusCase @l $ modal
+  { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just "Cancel" } content
 
 -- | The **dismissed rung** — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
 -- | over the modal, the `+→+` stage consuming case `l`, telling it as its
--- | title and showing its payload until the user closes it; the row less
--- | `l` leaves.
+-- | title and showing its payload until the user closes it, dismissed
+-- | by its "OK"; the row less `l` leaves.
 acknowledged
   :: forall @l r b v
    . IsSymbol l
   => Cons l { | r } b v
-  => String
-  -> PUI Web { | r } { | r }
+  => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | b ]
-acknowledged dismissCaption content = onCase @l $ fromHandles do
-  w <- handles $ modal (reflectSymbol (Proxy @l)) dismissCaption content
+acknowledged content = onCase @l $ fromHandles do
+  w <- handles $ modal
+    { title: Just (reflectSymbol (Proxy @l)), decide: "OK", cancel: Nothing } content
   pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
 
 -- the modal both dialog leaves are built over: `variantToVariantWiring`
--- over `<sl-dialog>`, its title the `label`, the content stage and one
--- deciding button in the footer; Escape and the overlay close the element
--- by itself, releasing nothing
-modal :: forall r. String -> String -> PUI Web { | r } { | r } -> PUI Web { | r } { | r }
-modal title buttonCaption content = fromHandles do
-  actionsRef <- liftEffect $ Ref.new Nothing
-  shown <- handles $ el "sl-dialog" >>> "label" := title $ fromHandles do
+-- over `<sl-dialog>`, its title the `label` (its header hidden when there
+-- is none, the label naming it still), the content stage, an optional
+-- cancel button and the deciding button in the footer; Escape and the
+-- overlay close the element by itself, releasing nothing
+modal
+  :: forall r
+   . { title :: Maybe String, decide :: String, cancel :: Maybe String }
+  -> PUI Web { | r } { | r }
+  -> PUI Web { | r } { | r }
+modal { title, decide, cancel } content = fromHandles do
+  decideRef <- liftEffect $ Ref.new Nothing
+  cancelRef <- liftEffect $ Ref.new Nothing
+  shown <- handles $ el "sl-dialog" >>> "label" := fromMaybe decide title >>> maybe ("no-header" := "") (const identity) title $ fromHandles do
     w <- handles (div $ content)
-    _ <- handles (el "sl-button" >>> "slot" := "footer" >>> "variant" := "primary" $ staticText buttonCaption)
-    actions <- gets _.sibling
-    liftEffect $ Ref.write (Just actions) actionsRef
+    for_ cancel \c -> do
+      _ <- handles (el "sl-button" >>> "slot" := "footer" $ staticText c)
+      node <- gets _.sibling
+      liftEffect $ Ref.write (Just node) cancelRef
+    _ <- handles (el "sl-button" >>> "slot" := "footer" >>> "variant" := "primary" $ staticText decide)
+    node <- gets _.sibling
+    liftEffect $ Ref.write (Just node) decideRef
     pure w
   dialogNode <- gets _.sibling
-  actions <- liftEffect $ Ref.read actionsRef
+  decideNode <- liftEffect $ Ref.read decideRef
+  cancelNode <- liftEffect $ Ref.read cancelRef
   liftEffect $ variantToVariantWiring
     { open: invokeMethod "show" dialogNode
     , close: invokeMethod "hide" dialogNode
     , content: shown
-    , reports: \decided -> for_ actions \node -> listenNode node "click" decided
+    , reports: \decided -> for_ decideNode \node -> listenNode node "click" decided
+    , cancels: \cancelled -> for_ cancelNode \node -> listenNode node "click" cancelled
     }
 
 -- | A **card**: a surface holding one subject's content. The body stacks

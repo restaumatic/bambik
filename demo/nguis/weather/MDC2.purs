@@ -20,7 +20,7 @@ weather =
     RecordToVariant.do
       iconButton @"About this dashboard" "info"
       ( listOf' @"Forecast requested" @"request" { selected: isCurrent } forecastRequests $ text cityLine ) # joined @"Forecast requested"
-    acknowledged @"About this dashboard" "Got it" $ body1 $ text aboutLine
+    acknowledged @"About this dashboard" $ body1 $ text aboutLine
     indeterminateCircularProgress # action @"Forecast requested" fetchReport
     capture @"Forecast fetched"
   # looped # with warsawBulletin

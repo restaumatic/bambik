@@ -3,10 +3,10 @@ module FlightBooker.MDC3 (flightBooker) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import FlightBooker (bookedLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
+import FlightBooker (bookingLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
 import PUI (looped, with)
 import PUI.Web ((<+>), attrWith, choice, inCaseAt, provided, text)
-import PUI.Web.MDC3 (acknowledged, body, bodyMedium, button', filledTextField', select)
+import PUI.Web.MDC3 (body, bodyMedium, button', confirmed, filledTextField', select)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
@@ -18,4 +18,4 @@ flightBooker =
       filledTextField' @"Return date" { hint: "DD.MM.YYYY" } # attrWith "aria-invalid" returnDateInvalid # inCaseAt @"return flight" @"Flight type"
     ) # looped # with plannedTrip
     button' @"Book" { icon: "flight_takeoff" } # provided @"bookable" bookingState
-    acknowledged @"Book" "OK" $ bodyMedium $ text bookedLine
+    confirmed @"Book" $ bodyMedium $ text bookingLine
