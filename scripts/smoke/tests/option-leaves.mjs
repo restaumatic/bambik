@@ -6,8 +6,11 @@
 // is shown by every group.
 import { byName } from '../../demos.mjs'
 
-export const demos = ['espresso-bar-mdc3']
-export const pages = [{ url: `/${byName('espresso-bar-mdc3').page}`, label: 'mdc3' }]
+export const demos = ['espresso-bar-mdc3', 'checkout-mdc3']
+export const pages = [
+  { url: `/${byName('espresso-bar-mdc3').page}`, label: 'mdc3' },
+  { url: `/${byName('checkout-mdc3').page}`, label: 'stepper' },
+]
 
 const summary = `document.querySelector('#demo-column .md-typescale-body-medium, #demo-column [class*="body-medium"]')?.textContent ?? ''`
 const picked = {
@@ -17,7 +20,30 @@ const picked = {
   radio: `[...document.querySelectorAll('md-radio')].filter(r => r.checked).map(r => r.getAttribute('aria-label'))`,
 }
 
-export const run = async ({ ev, session, assertEq, sleep, page }) => {
+export const run = async (ctx) => (ctx.page === 'stepper' ? stepperWalk : espressoWalk)(ctx)
+
+// checkout's packaged stepper: Back and Next pick the neighbouring step leaf
+const stepperWalk = async ({ ev, session, assertEq, sleep, page }) => {
+  await sleep(600)
+  for (let i = 0; i < 25 && !(await ev(`!!document.querySelector('#demo-column')`)); i++) await sleep(200)
+  await sleep(500)
+  const caption = () => ev(`document.querySelector('.md3-stepper__caption').textContent`)
+  const press = async (label) => {
+    const [x, y] = await ev(`(() => { const el = [...document.querySelectorAll('.md3-stepper md-text-button')].find(b => b.textContent.includes(${JSON.stringify(label)})); el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2] })()`)
+    for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) await session.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1 })
+    await sleep(400)
+  }
+  assertEq(await caption(), 'Step 1 of 3 · Cart', `[${page}] the seeded step is named`)
+  await press('Next')
+  assertEq(await caption(), 'Step 2 of 3 · Shipping', `[${page}] Next moves to the second step`)
+  await press('Next')
+  assertEq(await caption(), 'Step 3 of 3 · Payment', `[${page}] Next moves to the last step`)
+  assertEq(await ev(`[...document.querySelectorAll('.md3-stepper md-text-button')].find(b => b.textContent.includes('Next')).hasAttribute('disabled')`), true, `[${page}] Next is disabled on the last step`)
+  await press('Back')
+  assertEq(await caption(), 'Step 2 of 3 · Shipping', `[${page}] Back moves to the previous step`)
+}
+
+const espressoWalk = async ({ ev, session, assertEq, sleep, page }) => {
   await sleep(600)
   for (let i = 0; i < 25 && !(await ev(`!!document.querySelector('#demo-column')`)); i++) await sleep(200)
   await sleep(500)

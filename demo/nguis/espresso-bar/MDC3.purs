@@ -10,28 +10,28 @@ import EspressoBar (caffeineFraction, cupLine, espressoNoFrills, placeOrder, the
 import PUI (action, fold, looped, with)
 import PUI.Web (staticText, text)
 import PUI.Web.HTML (div)
-import PUI.Web.MDC3 (body, bodyMedium, button', checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, indeterminateLinearProgress, labelMedium, linearProgress, menu, menuItem, option, radio, radioButtonV, segment, segmentedButtonV, selectV, sliderLive, snackbar, tab, tabBarV, toggleSwitch, tooltip, topAppBar)
+import PUI.Web.MDC3 (body, bodyMedium, button', checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, indeterminateLinearProgress, labelMedium, linearProgress, menu, menuItem, option, radio, radioButton, segment, segmentedButton, select, sliderLive, snackbar, tab, tabBar, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 espressoBar :: Effect Unit
 espressoBar =
   body $
     topAppBar "Espresso Bar" $ Semigroupoid.do
-      tabBarV @"Drink" $ VariantToVariant.do
+      tabBar @"Drink" $ VariantToVariant.do
         tab @"Espresso"
         tab @"Cappuccino"
         tab @"Latte"
       filledTextField @"Name"
-      segmentedButtonV @"Size" $ VariantToVariant.do
+      segmentedButton @"Size" $ VariantToVariant.do
         segment @"Small"
         segment @"Medium"
         segment @"Large"
-      selectV @"Milk" $ VariantToVariant.do
+      select @"Milk" $ VariantToVariant.do
         option @"Whole milk"
         option @"Oat milk"
         option @"Almond milk"
         option @"No milk"
-      radioButtonV @"Roast" $ VariantToVariant.do
+      radioButton @"Roast" $ VariantToVariant.do
         radio @"Light"
         radio @"Medium"
         radio @"Dark"

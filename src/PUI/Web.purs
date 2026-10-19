@@ -64,6 +64,11 @@ module PUI.Web
   , listenNode
   , listenNodeDeferred
   , afterTask
+  , eachMatching
+  , hasClass
+  , listenCapture
+  , Members
+  , clearedByRepress
   , ensureStyle
   , autoDismiss
   , Choices
@@ -317,6 +322,9 @@ foreign import removeAllNodesBetweenSiblings :: Node -> Node -> Effect Unit
 foreign import appendRawHtml :: String -> Node -> Effect Node
 foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Unit
 foreign import afterTask :: Effect Unit -> Effect Unit
+foreign import eachMatching :: String -> Node -> (Node -> Effect Unit) -> Effect Unit
+foreign import hasClass :: String -> Node -> Effect Boolean
+foreign import listenCapture :: Node -> String -> Effect Unit -> Effect Unit
 foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
 foreign import createCommentNode :: String -> Effect Node
 foreign import separatorRule :: Node -> Node -> Node -> Effect (Effect Unit)
@@ -592,6 +600,41 @@ instance (PerChoiceRL wl a r0, Row.Cons l a r0 r) => PerChoiceRL (RL.Cons l p wl
 -- | The value a `PerChoice` record holds for a choice's tag.
 perChoice :: forall w a r. PerChoice w a r => Choices w -> { | r } -> String -> a
 perChoice _ record tag = unsafeGet tag record
+
+-- | The options of a group, as its clearing sees them.
+type Members =
+  { selector :: String
+  , isPicked :: Node -> Effect Boolean
+  , unpickAll :: Node -> Effect Unit
+  -- register the snapshot of which option was picked before a click: on the
+  -- press for radios (whose arrow keys synthesize clicks), on the click's
+  -- capture phase for segments
+  , beforeClick :: Node -> Effect Unit -> Effect Unit
+  }
+
+-- The clearing gesture of an optional group: pressing (pointer or key) the
+-- option already picked and letting its click land clears the group and
+-- emits case `n`. The press snapshots which option was picked, so a click
+-- the platform synthesizes for an arrow-key move never clears; the clear
+-- runs after the element's own click handling, which re-checks a radio.
+clearedByRepress :: forall @n b v. IsSymbol n => Cons n {} b v => Members -> PUI Web [ | v ] [ | v ] -> PUI Web [ | v ] [ | v ]
+clearedByRepress members options = fromHandles do
+  container <- gets _.parent
+  inner <- handles options
+  propRef <- liftEffect $ Ref.new Nothing
+  liftEffect $ eachMatching members.selector container \node -> do
+    pressedRef <- Ref.new false
+    members.beforeClick container (members.isPicked node >>= flip Ref.write pressedRef)
+    listenNode node "click" do
+      pressed <- Ref.read pressedRef
+      Ref.write false pressedRef
+      when pressed $ afterTask do
+        members.unpickAll container
+        Ref.read propRef >>= traverse_ (_ $ inj (Proxy @n) {})
+  pure
+    { toUser: inner.toUser
+    , fromUser: \prop -> Ref.write (Just prop) propRef *> inner.fromUser prop
+    }
 
 -- | The clearing gesture of an optional radio group: the platform's radios
 -- | cannot be unchecked, so pressing the checked member again (pointer or

@@ -4,11 +4,12 @@ import Prelude ((#), ($), identity, Unit)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, payingLine, printReceipt, setDistance, staleDistanceForgotten, submitOrder, summaryLine)
 import PUI (action, fold, joined, joined2, kept, load, looped, settled)
-import PUI.Web ((<+>), choice, inCaseAt, provided, staticText, text)
-import PUI.Web.MDC3 (acknowledged, body, bodyLarge, button', card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segmentedButton, snackbar, tabBar)
+import PUI.Web (inCaseAt, provided, staticText, text)
+import PUI.Web.MDC3 (acknowledged, body, bodyLarge, button', card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segment, segmentedButton, snackbar, tab, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderForm :: Effect Unit
@@ -26,8 +27,10 @@ orderForm =
           filledTextField @"First name"
           filledTextField @"Last name"
         group @"Fulfillment" $ Semigroupoid.do
-          tabBar @"Mode"
-            (choice @"Dine in" <+> choice @"Takeaway" <+> choice @"Delivery")
+          tabBar @"Mode" $ VariantToVariant.do
+            tab @"Dine in"
+            tab @"Takeaway"
+            tab @"Delivery"
           filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"
           filledTextField @"Time" # inCaseAt @"Takeaway" @"Mode"
           ( Semigroupoid.do
@@ -35,8 +38,9 @@ orderForm =
             ( bodyLarge $ text distanceLine ) # inCaseAt @"estimated" @"distance" ) # inCaseAt @"Delivery" @"Mode"
         group @"Payment" $ Semigroupoid.do
           filledTextField @"Total"
-          segmentedButton @"Method"
-            (choice @"Cash" <+> choice @"Card")
+          segmentedButton @"Method" $ VariantToVariant.do
+            segment @"Cash"
+            segment @"Card"
           filledTextField @"Paid"
           bodyLarge $ text payingLine
         group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped

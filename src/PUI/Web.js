@@ -598,3 +598,17 @@ export function onFilePicked(node) {
     };
   };
 }
+
+// eachMatching :: String -> Node -> (Node -> Effect Unit) -> Effect Unit
+export const eachMatching = selector => container => f => () => {
+  for (const n of container.querySelectorAll(selector)) f(n)();
+};
+
+// hasClass :: String -> Node -> Effect Boolean
+export const hasClass = className => node => () => node.classList.contains(className);
+
+// listenCapture :: Node -> String -> Effect Unit -> Effect Unit — the
+// handler runs in the event's capture phase, before the target's own
+export const listenCapture = node => eventName => action => () => {
+  node.addEventListener(eventName, () => action(), { capture: true });
+};

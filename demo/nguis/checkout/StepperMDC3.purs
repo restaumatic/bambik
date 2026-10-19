@@ -1,63 +1,104 @@
-module Checkout.StepperMDC3 (stepper) where
+module Checkout.StepperMDC3 (stepper, step) where
 
-import Prelude (Unit, bind, discard, pure, show, when, ($), (&&), (*>), (+), (-), (<), (<>), (==), (>), (>=), (>>>), (>>=))
+import Prelude (Unit, bind, discard, negate, pure, show, unit, unless, when, ($), (&&), (*>), (+), (-), (<), (<$>), (<*>), (<>), (==), (>=), (>>=), (>>>))
 
 import Control.Monad.State (gets)
-import Data.Array (length, (!!))
-import Data.Foldable (for_)
-import Data.FoldableWithIndex (forWithIndex_)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Traversable (for)
 import Data.Variant (Variant)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
-import PUI (PUI, fromHandles, handles, recordToVariantWiring, selectedAt)
-import PUI.Web (Choices, choiceTags, tagged, Node, Web, addClass, appendChild, clazz, createTextNode, element, ensureStyle, escaped, listenNode, removeAttribute, removeClass, setAttribute, setTextNodeValue, staticHTML, (:=))
+import PUI (PUI, fromHandles, handles, optionWiring)
+import PUI.Web (Node, Web, addClass, appendChild, clazz, createTextNode, eachMatching, element, ensureStyle, escaped, getValue, hasClass, invokeMethod, listenNode, removeAttribute, removeClass, setAttribute, setTextNodeValue, staticHTML, (:=))
 import PUI.Web.HTML (div)
+import Data.Profunctor.Row.RecordToRecord (focusField)
 import Type.Proxy (Proxy(..))
 
-stepper :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Choices w -> PUI Web { | r } { | r }
-stepper steps = selectedAt @l $ "name" := reflectSymbol (Proxy @l) >>> "aria-label" := reflectSymbol (Proxy @l) $ tagged $ stepperLeaf (choiceTags steps)
+-- | A wizard's step selector: Back · one dot per step · Next, the current
+-- | step named beneath the dots. Its options are `step` leaves, merged
+-- | `VariantToVariant.do` in step order; Back and Next pick the dot beside
+-- | the current one, so each step emits its own case.
+stepper :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+stepper steps = focusField @l $ "name" := reflectSymbol (Proxy @l) >>> "aria-label" := reflectSymbol (Proxy @l) $ stepperGroup steps
 
-stepperLeaf :: Array String -> PUI Web (Maybe String) (Maybe String)
-stepperLeaf steps =
+-- | One step of a `stepper`: a dot, current while the field holds case `c`.
+step :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
+step = fromHandles do
+  dots <- gets _.parent
+  _ <- handles (staticHTML ("<data class=\"md3-stepper__dot\" aria-hidden=\"true\" value=\"" <> escaped (reflectSymbol (Proxy @c)) <> "\"></data>"))
+  dot <- lastBuilt
+  let
+    current = do
+      eachMatching ".md3-stepper__dot" dots \d -> removeClass d "md3-stepper__dot--current"
+      addClass dot "md3-stepper__dot--current"
+  liftEffect $ optionWiring @c
+    { show: current
+    , reports: \k -> listenNode dot "click" do
+        already <- hasClass "md3-stepper__dot--current" dot
+        unless already (current *> k)
+    , picked: pure true
+    }
+
+stepperGroup :: forall a. PUI Web a a -> PUI Web a a
+stepperGroup steps =
   div >>> "class" := "md3-stepper" >>> "role" := "group" $ fromHandles do
     liftEffect $ ensureStyle "md3-stepper" stepperCss
     back <- navButton "chevron_left" "Back"
-    { dots, caption } <- element "div" do
-      dots <- element "div" (for steps \_ -> handles (staticHTML "<span class=\"md3-stepper__dot\" aria-hidden=\"true\"></span>") *> lastBuilt)
+    { dots, inner, caption } <- element "div" do
+      { dots, inner } <- element "div" do
+        dots <- gets _.parent
+        inner <- handles steps
+        pure { dots, inner }
       clazz "md3-stepper__dots"
       caption <- liftEffect $ createTextNode ""
       _ <- handles (staticHTML "<span class=\"md3-stepper__caption\" aria-live=\"polite\"></span>")
       lastBuilt >>= \span -> liftEffect $ appendChild caption span
-      pure { dots, caption }
+      pure { dots, inner, caption }
     clazz "md3-stepper__progress"
     next <- navButton "chevron_right" "Next"
-    idxRef <- liftEffect $ Ref.new Nothing
     let
-      count = length steps
-      render mi = do
-        Ref.write mi idxRef
-        forWithIndex_ dots \i dot -> classIf dot "md3-stepper__dot--current" (mi == Just i)
-        setTextNodeValue caption $ maybe "" (\i -> "Step " <> show (i + 1) <> " of " <> show count <> " · " <> fromMaybe "" (steps !! i)) mi
-        disabledIf back (maybe true (_ < 1) mi)
-        disabledIf next (maybe true (\i -> i > count - 2) mi)
-      moved step reported = do
-        mi <- Ref.read idxRef
-        for_ mi \i -> do
-          let j = step i
-          when (j >= 0 && j < count) do
-            render (Just j)
-            reported
-    liftEffect $ recordToVariantWiring steps
-      { show: render
-      , reports: \reported -> do
-          listenNode back "click" (moved (_ - 1) reported)
-          listenNode next "click" (moved (_ + 1) reported)
-      , read: Ref.read idxRef
+      -- the dots in order, with the current one's index
+      scan = do
+        countRef <- Ref.new 0
+        currentRef <- Ref.new Nothing
+        eachMatching ".md3-stepper__dot" dots \d -> do
+          i <- Ref.read countRef
+          isCurrent <- hasClass "md3-stepper__dot--current" d
+          when isCurrent do
+            label <- getValue d
+            Ref.write (Just { index: i, label }) currentRef
+          Ref.write (i + 1) countRef
+        { count: _, current: _ } <$> Ref.read countRef <*> Ref.read currentRef
+      refresh = do
+        { count, current } <- scan
+        setTextNodeValue caption case current of
+          Just { index, label } -> "Step " <> show (index + 1) <> " of " <> show count <> " · " <> label
+          Nothing -> ""
+        disabledIf back case current of
+          Just { index } -> index < 1
+          Nothing -> true
+        disabledIf next case current of
+          Just { index } -> index >= count - 1
+          Nothing -> true
+      moveBy delta = do
+        { count, current } <- scan
+        case current of
+          Just { index } | index + delta >= 0 && index + delta < count -> do
+            targetRef <- Ref.new 0
+            eachMatching ".md3-stepper__dot" dots \d -> do
+              i <- Ref.read targetRef
+              when (i == index + delta) $ invokeMethod "click" d
+              Ref.write (i + 1) targetRef
+            refresh
+          _ -> pure unit
+    liftEffect do
+      listenNode back "click" (moveBy (-1))
+      listenNode next "click" (moveBy 1)
+    pure
+      { toUser: \a -> inner.toUser a *> refresh
+      , fromUser: inner.fromUser
       }
 
 navButton :: String -> String -> Web Node
@@ -67,9 +108,6 @@ navButton icon caption = do
 
 lastBuilt :: Web Node
 lastBuilt = gets \{ sibling } -> sibling
-
-classIf :: Node -> String -> Boolean -> Effect Unit
-classIf node name on = if on then addClass node name else removeClass node name
 
 disabledIf :: Node -> Boolean -> Effect Unit
 disabledIf node on = if on then setAttribute node "disabled" "" else removeAttribute node "disabled"
