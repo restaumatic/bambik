@@ -2,10 +2,11 @@ module SignupForm.MDC2 (signupForm) where
 
 import Prelude ((#), ($), identity, Unit)
 
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import PUI (action, looped, with)
-import PUI.Web ((<+>), choice, inCase, provided, staticText, text)
-import PUI.Web.MDC2 (body, body2, button', checkbox, debouncedTextField, filledTextField, headline4, indeterminateLinearProgress, radioButton, select, snackbar, subtitle2, tooltip)
+import PUI.Web (inCase, provided, staticText, text)
+import PUI.Web.MDC2 (body, body2, button', checkbox, debouncedTextField, filledTextField, headline4, indeterminateLinearProgress, option, radio, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import SignupForm (availableLine, invalidLine, newApplicant, readyLine, signUp, takenLine, usernameSettleTime, usernameStatus, validation)
 
@@ -14,10 +15,15 @@ signupForm =
   body $ Semigroupoid.do
     headline4 $ staticText "Create account"
     debouncedTextField @"Username" usernameSettleTime
-    radioButton @"Plan"
-      (choice @"Free" <+> choice @"Pro" <+> choice @"Team")
-    select @"Country"
-      (choice @"Poland" <+> choice @"Germany" <+> choice @"France" <+> choice @"Spain")
+    radioButton @"Plan" $ VariantToVariant.do
+      radio @"Free"
+      radio @"Pro"
+      radio @"Team"
+    select @"Country" $ VariantToVariant.do
+      option @"Poland"
+      option @"Germany"
+      option @"France"
+      option @"Spain"
     filledTextField @"Email"
     checkbox @"Accept the terms of service" @"accepted" @"declined" # tooltip "You must accept the terms of service to sign up"
     ( body2 $ staticText "Pick a username to check its availability" ) # inCase @"unnamed" usernameStatus

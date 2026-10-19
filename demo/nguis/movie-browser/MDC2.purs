@@ -2,19 +2,23 @@ module MovieBrowser.MDC2 (movieBrowser) where
 
 import Prelude ((#), ($), (>>>), Unit)
 
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import MovieBrowser (favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, visibleMovies, yearLine)
 import PUI (anyEdit, fold, joined, looped, with)
-import PUI.Web ((<+>), choice, clWhen, text, textAt)
+import PUI.Web (clWhen, text, textAt)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC2 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, subtitle1, tabBar)
+import PUI.Web.MDC2 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, subtitle1, tab, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 movieBrowser :: Effect Unit
 movieBrowser =
   body $ Semigroupoid.do
-    tabBar @"category"
-      (choice @"All" <+> choice @"Action" <+> choice @"Drama" <+> choice @"Comedy")
+    tabBar @"category" $ VariantToVariant.do
+      tab @"All"
+      tab @"Action"
+      tab @"Drama"
+      tab @"Comedy"
     chipSet $ Semigroupoid.do
       filterChip @"Classic"
       filterChip @"Cult"
