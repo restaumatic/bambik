@@ -18,11 +18,11 @@ compiler, and the library needs both:
 
 | Dependency      | Named in         | Pin                                                   |
 |-----------------|------------------|-------------------------------------------------------|
-| bambik          | `packages.dhall` (and the second `sources` glob in `spago.dhall`) | tag `v0.1.7` of `restaumatic/bambik` |
+| bambik          | `packages.dhall` (and the second `sources` glob in `spago.dhall`) | tag `v0.1.8` of `restaumatic/bambik` |
 | variant fork    | `packages.dhall` | tag `v8.0.0-prim-variant.1` of `erykciepiela/purescript-variant` |
 | forked compiler | `package.json`   | release `v0.15.16-variant.9` of `erykciepiela/purescript` |
 
-Below, `<tag>` is the bambik tag (`v0.1.7`).
+Below, `<tag>` is the bambik tag (`v0.1.8`).
 
 ## Steps
 
