@@ -2,11 +2,12 @@ module LoanCalculator.Bootstrap (loanCalculator) where
 
 import Prelude (($), (#), identity, Unit)
 
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import LoanCalculator (applyForLoan, cityCarLoan, interestShare, monthlyLine, rateLine, totalInterestLine)
 import PUI (action, looped, with)
-import PUI.Web ((<+>), choice, staticText, text)
-import PUI.Web.Bootstrap (body, button, card, indeterminateLinearProgress, listGroup, listGroupItem, progress, select, sliderLive', textField, toast, toggleSwitch)
+import PUI.Web (staticText, text)
+import PUI.Web.Bootstrap (body, button, card, indeterminateLinearProgress, listGroup, listGroupItem, option, progress, select, sliderLive', textField, toast, toggleSwitch)
 import PUI.Web.HTML (div)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -16,8 +17,10 @@ loanCalculator =
     textField @"Applicant"
     sliderLive' @"Amount" { unit: "€" }
     sliderLive' @"Term" { unit: "years" }
-    select @"Purpose"
-      (choice @"Car" <+> choice @"Home improvement" <+> choice @"Holiday")
+    select @"Purpose" $ VariantToVariant.do
+      option @"Car"
+      option @"Home improvement"
+      option @"Holiday"
     toggleSwitch @"Payment protection insurance"
     card $ Semigroupoid.do
       listGroup $ Semigroupoid.do
