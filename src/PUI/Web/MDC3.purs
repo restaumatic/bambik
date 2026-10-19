@@ -140,10 +140,15 @@ module PUI.Web.MDC3
   , radio
   , radioButtonV
   , radioButtonUnpickedV
+  , radioButtonOptionalV
   , segment
   , segmentedButtonV
+  , segmentedButtonUnpickedV
+  , segmentedButtonOptionalV
   , option
   , selectV
+  , selectUnpickedV
+  , selectOptionalV
   , tab
   , tab'
   , tabBarV
@@ -171,7 +176,7 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, anyOf, folding, introduced, isHole, Ocular, PUI, recordToRecordWiring, recordToVariantWiring, variantToRecordWiring, variantToVariantWiring, selectedAt, selectedUnpickedAt, selectedOptionalAt, replayed, occurrencesOn, Gesture(..), optionWiring)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=))
+import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), afterTask)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Lacks)
 import Data.Variant (Variant)
@@ -1532,21 +1537,43 @@ radio = fromHandles do
     _ <- handles (staticText (reflectSymbol (Proxy @c)))
     pure radioNode
   attribute "style" "display: inline-flex; align-items: center; gap: 12px;"
-  liftEffect $ optionWiring @c
-    { show: setChecked node true
-    , reports: listenNode node "change"
-    , picked: getChecked node
-    }
+  labelNode <- gets _.sibling
+  liftEffect do
+    -- md-radio reports a change on a click on a radio already checked; the
+    -- press says whether it was, so only a new pick leaves
+    wasCheckedRef <- Ref.new false
+    let snapshot = getChecked node >>= flip Ref.write wasCheckedRef
+    listenNode labelNode "pointerdown" snapshot
+    listenNode labelNode "keydown" snapshot
+    optionWiring @c
+      { show: setChecked node true
+      , reports: \k -> listenNode node "change" do
+          wasChecked <- Ref.read wasCheckedRef
+          Ref.write false wasCheckedRef
+          unless wasChecked k
+      , picked: getChecked node
+      }
+
+-- A selector group in three forms, over one clearing of its options:
+-- every feed first shows nothing picked, then the one option owning the
+-- fed case shows itself, so a case no option owns (an unpicked one) shows
+-- nothing. The plain form's field holds the options' case; the `…Unpicked`
+-- form's is a variant whose case `c` holds it, every other case unpicked;
+-- the `…Optional` form adds a named none case `n` that the user's clearing
+-- gesture stores.
 
 -- | The radio group over its options: field `l` holds one of their cases.
 radioButtonV :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 radioButtonV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf options
 
--- | `radioButtonV` for a choice owed but not yet made: field `l` is a
--- | variant whose case `c` holds the options' case; every other case shows
--- | nothing checked.
+-- | `radioButtonV` for a choice owed but not yet made.
 radioButtonUnpickedV :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 radioButtonUnpickedV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf (focusCase @c options)
+
+-- | `radioButtonV` for a choice the user may leave unmade: pressing the
+-- | checked radio again clears it, storing case `n`.
+radioButtonOptionalV :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+radioButtonOptionalV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf (clearedByRepress @n radioMembers (focusCase @c options))
 
 radioGroupOf :: forall a. PUI Web a a -> PUI Web a a
 radioGroupOf options =
@@ -1557,13 +1584,22 @@ radioGroupOf options =
       groupName <- uniqueId
       eachMatching "md-radio" container \n -> setAttribute n "name" groupName
     pure
-      { toUser: \a -> do
-          eachMatching "md-radio" container \n -> setChecked n false
-          inner.toUser a
+      { toUser: \a -> radioMembers.unpickAll container *> inner.toUser a
       , fromUser: inner.fromUser
       }
 
--- | One segment of a `segmentedButtonV`, captioned by its case.
+radioMembers :: Members
+radioMembers =
+  { selector: "md-radio"
+  , isPicked: getChecked
+  , unpickAll: \container -> eachMatching "md-radio" container \n -> setChecked n false
+  , beforeClick: \container snapshot -> do
+      listenNode container "pointerdown" snapshot
+      listenNode container "keydown" snapshot
+  }
+
+-- | One segment of a `segmentedButtonV`, captioned by its case. Pressing
+-- | the segment already selected picks nothing new.
 segment :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 segment = fromHandles do
   container <- gets _.parent
@@ -1571,21 +1607,85 @@ segment = fromHandles do
   node <- gets _.sibling
   let
     selectSelf = do
-      eachMatching ".md3-segmented-button__segment" container \n -> do
-        setClassIf n "md3-segmented-button__segment--selected" false
-        setAttribute n "aria-checked" "false"
-      setClassIf node "md3-segmented-button__segment--selected" true
+      segmentMembers.unpickAll container
+      setClassIf node segmentSelected true
       setAttribute node "aria-checked" "true"
   liftEffect $ optionWiring @c
     { show: selectSelf
-    , reports: \k -> listenNode node "click" (selectSelf *> k)
+    , reports: \k -> listenNode node "click" do
+        already <- hasClass segmentSelected node
+        unless already (selectSelf *> k)
     , picked: pure true
     }
 
+segmentSelected :: String
+segmentSelected = "md3-segmented-button__segment--selected"
+
+segmentMembers :: Members
+segmentMembers =
+  { selector: ".md3-segmented-button__segment"
+  , isPicked: hasClass segmentSelected
+  , unpickAll: \container -> eachMatching ".md3-segmented-button__segment" container \n -> do
+      setClassIf n segmentSelected false
+      setAttribute n "aria-checked" "false"
+  , beforeClick: \container snapshot -> listenCapture container "click" snapshot
+  }
+
 segmentedButtonV :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-segmentedButtonV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> cl "md3-segmented-button" >>> "role" := "radiogroup" $ fromHandles do
+segmentedButtonV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ segmentGroupOf options
+
+segmentedButtonUnpickedV :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+segmentedButtonUnpickedV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ segmentGroupOf (focusCase @c options)
+
+-- | `segmentedButtonV` for a choice the user may leave unmade: pressing the
+-- | selected segment again clears it, storing case `n`.
+segmentedButtonOptionalV :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+segmentedButtonOptionalV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ segmentGroupOf (clearedByRepress @n segmentMembers (focusCase @c options))
+
+segmentGroupOf :: forall a. PUI Web a a -> PUI Web a a
+segmentGroupOf options = div >>> cl "md3-segmented-button" >>> "role" := "radiogroup" $ fromHandles do
   liftEffect $ ensureStyle "md3-segmented-button" segmentedButtonCss
-  handles options
+  container <- gets _.parent
+  inner <- handles options
+  pure
+    { toUser: \a -> segmentMembers.unpickAll container *> inner.toUser a
+    , fromUser: inner.fromUser
+    }
+
+-- | The options of a group, as its clearing sees them.
+type Members =
+  { selector :: String
+  , isPicked :: Node -> Effect Boolean
+  , unpickAll :: Node -> Effect Unit
+  -- register the snapshot of which option was picked before a click: on the
+  -- press for radios (whose arrow keys synthesize clicks), on the click's
+  -- capture phase for segments
+  , beforeClick :: Node -> Effect Unit -> Effect Unit
+  }
+
+-- The clearing gesture of an optional group: pressing (pointer or key) the
+-- option already picked and letting its click land clears the group and
+-- emits case `n`. The press snapshots which option was picked, so a click
+-- the platform synthesizes for an arrow-key move never clears; the clear
+-- runs after the element's own click handling, which re-checks a radio.
+clearedByRepress :: forall @n b v. IsSymbol n => Cons n {} b v => Members -> PUI Web [ | v ] [ | v ] -> PUI Web [ | v ] [ | v ]
+clearedByRepress members options = fromHandles do
+  container <- gets _.parent
+  inner <- handles options
+  propRef <- liftEffect $ Ref.new Nothing
+  liftEffect $ eachMatching members.selector container \node -> do
+    pressedRef <- Ref.new false
+    members.beforeClick container (members.isPicked node >>= flip Ref.write pressedRef)
+    listenNode node "click" do
+      pressed <- Ref.read pressedRef
+      Ref.write false pressedRef
+      when pressed $ afterTask do
+        members.unpickAll container
+        Ref.read propRef >>= traverse_ (_ $ Variant.inj (Proxy @n) {})
+  pure
+    { toUser: inner.toUser
+    , fromUser: \prop -> Ref.write (Just prop) propRef *> inner.fromUser prop
+    }
 
 -- | One option of a `selectV`: an `md-select-option` headed by its case.
 option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
@@ -1602,7 +1702,39 @@ option = fromHandles do
     }
 
 selectV :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ el "md-filled-select" >>> "label" := reflectSymbol (Proxy @l) >>> "style" := "min-width: 200px;" $ options
+selectV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false options
+
+selectUnpickedV :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+selectUnpickedV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false (focusCase @c options)
+
+-- | `selectV` for a choice the user may leave unmade: an empty first
+-- | option, which picked stores case `n`.
+selectOptionalV :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+selectOptionalV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l true (blankEmits @n (focusCase @c options))
+
+selectGroupOf :: forall @l a. IsSymbol l => Boolean -> PUI Web a a -> PUI Web a a
+selectGroupOf blank options = el "md-filled-select" >>> "label" := reflectSymbol (Proxy @l) >>> "style" := "min-width: 200px;" $ fromHandles do
+  menu <- gets _.parent
+  when blank $ void $ handles (staticHTML "<md-select-option value=\"\"></md-select-option>")
+  inner <- handles options
+  pure
+    { toUser: \a -> setStringProp "value" menu "" *> inner.toUser a
+    , fromUser: inner.fromUser
+    }
+
+-- The clearing of an optional select: picking the empty option emits `n`.
+blankEmits :: forall @n b v. IsSymbol n => Cons n {} b v => PUI Web [ | v ] [ | v ] -> PUI Web [ | v ] [ | v ]
+blankEmits options = fromHandles do
+  menu <- gets _.parent
+  inner <- handles options
+  pure
+    { toUser: inner.toUser
+    , fromUser: \prop -> do
+        inner.fromUser prop
+        listenNode menu "change" do
+          value <- getStringProp "value" menu
+          when (value == "") $ prop (Variant.inj (Proxy @n) {})
+    }
 
 -- | One tab of a `tabBarV`, captioned by its case.
 tab :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
@@ -1637,6 +1769,9 @@ foreign import setBoolProp :: String -> Node -> Boolean -> Effect Unit
 foreign import getBoolProp :: String -> Node -> Effect Boolean
 foreign import setClassIf :: Node -> String -> Boolean -> Effect Unit
 foreign import eachMatching :: String -> Node -> (Node -> Effect Unit) -> Effect Unit
+foreign import listenCapture :: Node -> String -> Effect Unit -> Effect Unit
+foreign import hasClass :: String -> Node -> Effect Boolean
+foreign import getStringProp :: String -> Node -> Effect String
 foreign import showDialog :: Node -> Effect Unit
 foreign import closeDialog :: Node -> Effect Unit
 foreign import openMenuAnchoredTo :: Node -> Node -> Effect Unit

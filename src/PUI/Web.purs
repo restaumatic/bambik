@@ -63,6 +63,7 @@ module PUI.Web
   , escaped
   , listenNode
   , listenNodeDeferred
+  , afterTask
   , ensureStyle
   , autoDismiss
   , Choices

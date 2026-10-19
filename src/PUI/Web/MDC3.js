@@ -141,3 +141,11 @@ export function openMenuAnchoredTo(menu) {
 export const eachMatching = selector => container => f => () => {
   for (const n of container.querySelectorAll(selector)) f(n)();
 };
+
+export const hasClass = className => node => () => node.classList.contains(className);
+
+export const getStringProp = name => node => () => String(node[name] ?? "");
+
+export const listenCapture = node => eventName => action => () => {
+  node.addEventListener(eventName, () => action(), { capture: true });
+};
