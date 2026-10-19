@@ -148,7 +148,7 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import Data.Foldable (for_)
+import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
@@ -160,7 +160,7 @@ import Effect.Ref as Ref
 import PUI (static, fromHandles, handles, anyOf, introduced, isHole, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), eachMatching, hasClass, listenCapture, Members, clearedByRepress)
+import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), hasClass, listenCapture, grouping, member, unpickAll, clearedByRepress)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Lacks)
 import Data.Variant (Variant)
@@ -513,30 +513,24 @@ radioButtonUnpicked options = fieldLeaf @l $ radioGroupOf (focusCase @c options)
 -- | `radioButton` for a choice the user may leave unmade: pressing the
 -- | checked radio again clears it, storing case `n`.
 radioButtonOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioButtonOptional options = fieldLeaf @l $ radioGroupOf (clearedByRepress @n radioMembers (focusCase @c options))
+radioButtonOptional options = fieldLeaf @l $ radioGroupOf (clearedByRepress @n radioBeforeClick (focusCase @c options))
 
 radioGroupOf :: forall a. PUI Web a a -> PUI Web a a
 radioGroupOf options =
   div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start; gap: 8px;" >>> "role" := "radiogroup" $ fromHandles do
-    container <- gets _.parent
-    inner <- handles options
+    { result: inner, members } <- grouping (handles options)
     liftEffect do
       groupName <- uniqueId
-      eachMatching "md-radio" container \n -> setAttribute n "name" groupName
+      members >>= traverse_ \m -> setAttribute m.node "name" groupName
     pure
-      { toUser: \a -> radioMembers.unpickAll container *> inner.toUser a
+      { toUser: \a -> unpickAll members *> inner.toUser a
       , fromUser: inner.fromUser
       }
 
-radioMembers :: Members
-radioMembers =
-  { selector: "md-radio"
-  , isPicked: getChecked
-  , unpickAll: \container -> eachMatching "md-radio" container \n -> setChecked n false
-  , beforeClick: \container snapshot -> do
-      listenNode container "pointerdown" snapshot
-      listenNode container "keydown" snapshot
-  }
+radioBeforeClick :: Node -> Effect Unit -> Effect Unit
+radioBeforeClick container snapshot = do
+  listenNode container "pointerdown" snapshot
+  listenNode container "keydown" snapshot
 
 -- | One option of a `radioButton` group: an `md-radio` captioned by its case.
 radio :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
@@ -549,6 +543,7 @@ radio = fromHandles do
     pure radioNode
   attribute "style" "display: inline-flex; align-items: center; gap: 12px;"
   labelNode <- gets _.sibling
+  _ <- member { node, picked: getChecked node, unpick: setChecked node false }
   liftEffect do
     -- md-radio reports a change on a click on a radio already checked; the
     -- press says whether it was, so only a new pick leaves
@@ -719,14 +714,20 @@ blankEmits options = fromHandles do
 -- | the segment already selected picks nothing new.
 segment :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 segment = fromHandles do
-  container <- gets _.parent
   chrome $ el "button" >>> cl "md3-segmented-button__segment" >>> "role" := "radio" >>> "aria-checked" := "false" $ Semigroupoid.do
     static (span >>> cl "md3-segmented-button__check" >>> "aria-hidden" := "true")
     span $ staticText (reflectSymbol (Proxy @c))
   node <- gets _.sibling
+  members <- member
+    { node
+    , picked: hasClass segmentSelected node
+    , unpick: do
+        setClassIf node segmentSelected false
+        setAttribute node "aria-checked" "false"
+    }
   let
     selectSelf = do
-      segmentMembers.unpickAll container
+      unpickAll members
       setClassIf node segmentSelected true
       setAttribute node "aria-checked" "true"
   liftEffect $ optionWiring @c
@@ -740,15 +741,8 @@ segment = fromHandles do
 segmentSelected :: String
 segmentSelected = "md3-segmented-button__segment--selected"
 
-segmentMembers :: Members
-segmentMembers =
-  { selector: ".md3-segmented-button__segment"
-  , isPicked: hasClass segmentSelected
-  , unpickAll: \container -> eachMatching ".md3-segmented-button__segment" container \n -> do
-      setClassIf n segmentSelected false
-      setAttribute n "aria-checked" "false"
-  , beforeClick: \container snapshot -> listenCapture container "click" snapshot
-  }
+segmentBeforeClick :: Node -> Effect Unit -> Effect Unit
+segmentBeforeClick container snapshot = listenCapture container "click" snapshot
 
 segmentedButton :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 segmentedButton options = fieldLeaf @l $ segmentGroupOf options
@@ -759,15 +753,14 @@ segmentedButtonUnpicked options = fieldLeaf @l $ segmentGroupOf (focusCase @c op
 -- | `segmentedButton` for a choice the user may leave unmade: pressing the
 -- | selected segment again clears it, storing case `n`.
 segmentedButtonOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-segmentedButtonOptional options = fieldLeaf @l $ segmentGroupOf (clearedByRepress @n segmentMembers (focusCase @c options))
+segmentedButtonOptional options = fieldLeaf @l $ segmentGroupOf (clearedByRepress @n segmentBeforeClick (focusCase @c options))
 
 segmentGroupOf :: forall a. PUI Web a a -> PUI Web a a
 segmentGroupOf options = div >>> cl "md3-segmented-button" >>> "role" := "radiogroup" $ fromHandles do
   liftEffect $ ensureStyle "md3-segmented-button" segmentedButtonCss
-  container <- gets _.parent
-  inner <- handles options
+  { result: inner, members } <- grouping (handles options)
   pure
-    { toUser: \a -> segmentMembers.unpickAll container *> inner.toUser a
+    { toUser: \a -> unpickAll members *> inner.toUser a
     , fromUser: inner.fromUser
     }
 
@@ -848,16 +841,17 @@ tabWith icon = fromHandles do
     maybe identity (\i -> el "md-icon" >>> "slot" := "icon" $ staticText i) icon
     staticText (reflectSymbol (Proxy @c))
   node <- gets _.sibling
+  members <- member { node, picked: getBoolProp "active" node, unpick: setBoolProp "active" node false }
   liftEffect $ optionWiring @c
     { show: do
-        eachMatching "md-primary-tab" tabs \n -> setBoolProp "active" n false
+        unpickAll members
         setBoolProp "active" node true
     , reports: listenNode tabs "change"
     , picked: getBoolProp "active" node
     }
 
 tabBar :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-tabBar options = fieldLeaf @l $ el "md-tabs" $ options
+tabBar options = fieldLeaf @l $ el "md-tabs" $ fromHandles (_.result <$> grouping (handles options))
 
 -- | The **indeterminate progress bar**: work is under way and there is no
 -- | telling how long — a request in flight, a file being processed. A

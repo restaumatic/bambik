@@ -1,17 +1,19 @@
 module Checkout.StepperMDC2 (stepper, step) where
 
-import Prelude (Unit, bind, discard, negate, pure, show, unit, unless, when, ($), (&&), (*>), (+), (-), (<), (<$>), (<*>), (<>), (==), (>=), (>>=), (>>>))
+import Prelude (Unit, bind, discard, identity, negate, pure, show, unit, unless, ($), (&&), (*>), (+), (-), (<), (<#>), (<>), (>=), (>>=), (>>>))
 
 import Control.Monad.State (gets)
+import Data.Array (findIndex, index, length)
+import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
+import Data.Traversable (traverse)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (Variant)
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import PUI (static, PUI, fromHandles, handles, optionWiring)
-import PUI.Web (Node, Web, addClass, appendChild, clazz, createTextNode, eachMatching, element, ensureStyle, chrome, el, cl, staticText, fieldLeaf, getValue, hasClass, invokeMethod, listenNode, removeAttribute, removeClass, setAttribute, setTextNodeValue, staticHTML, (:=))
+import PUI.Web (Node, Web, addClass, appendChild, clazz, createTextNode, grouping, member, unpickAll, element, ensureStyle, chrome, el, cl, staticText, fieldLeaf, getValue, hasClass, invokeMethod, listenNode, removeAttribute, removeClass, setAttribute, setTextNodeValue, staticHTML, (:=))
 import PUI.Web.HTML (div, span)
 import Type.Proxy (Proxy(..))
 
@@ -25,12 +27,16 @@ stepper steps = fieldLeaf @l $ "aria-label" := reflectSymbol (Proxy @l) $ steppe
 -- | One step of a `stepper`: a dot, current while the field holds case `c`.
 step :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 step = fromHandles do
-  dots <- gets \{ parent } -> parent
   chrome (static (el "data" >>> cl "mdc2-stepper__dot" >>> "aria-hidden" := "true" >>> "value" := reflectSymbol (Proxy @c)))
   dot <- lastBuilt
+  steps <- member
+    { node: dot
+    , picked: hasClass "mdc2-stepper__dot--current" dot
+    , unpick: removeClass dot "mdc2-stepper__dot--current"
+    }
   let
     current = do
-      eachMatching ".mdc2-stepper__dot" dots \d -> removeClass d "mdc2-stepper__dot--current"
+      unpickAll steps
       addClass dot "mdc2-stepper__dot--current"
   liftEffect $ optionWiring @c
     { show: current
@@ -46,10 +52,7 @@ stepperGroup steps =
     liftEffect $ ensureStyle "mdc2-stepper" stepperCss
     back <- navButton "chevron_left" "Back"
     { dots, inner, caption } <- element "div" do
-      { dots, inner } <- element "div" do
-        dots <- gets \{ parent } -> parent
-        inner <- handles steps
-        pure { dots, inner }
+      { result: inner, members: dots } <- element "div" (grouping (handles steps))
       clazz "mdc2-stepper__dots"
       caption <- liftEffect $ createTextNode ""
       _ <- handles (staticHTML "<span class=\"mdc2-stepper__caption\" aria-live=\"polite\"></span>")
@@ -60,16 +63,12 @@ stepperGroup steps =
     let
       -- the dots in order, with the current one's index
       scan = do
-        countRef <- Ref.new 0
-        currentRef <- Ref.new Nothing
-        eachMatching ".mdc2-stepper__dot" dots \d -> do
-          i <- Ref.read countRef
-          isCurrent <- hasClass "mdc2-stepper__dot--current" d
-          when isCurrent do
-            label <- getValue d
-            Ref.write (Just { index: i, label }) currentRef
-          Ref.write (i + 1) countRef
-        { count: _, current: _ } <$> Ref.read countRef <*> Ref.read currentRef
+        ds <- dots
+        picks <- traverse (\{ picked } -> picked) ds
+        current <- case findIndex identity picks of
+          Just i -> traverse (\d -> getValue d.node <#> \label -> { index: i, label }) (index ds i)
+          Nothing -> pure Nothing
+        pure { count: length ds, current }
       refresh = do
         { count, current } <- scan
         setTextNodeValue caption case current of
@@ -84,12 +83,9 @@ stepperGroup steps =
       moveBy delta = do
         { count, current } <- scan
         case current of
-          Just { index } | index + delta >= 0 && index + delta < count -> do
-            targetRef <- Ref.new 0
-            eachMatching ".mdc2-stepper__dot" dots \d -> do
-              i <- Ref.read targetRef
-              when (i == index + delta) $ invokeMethod "click" d
-              Ref.write (i + 1) targetRef
+          Just { index: i } | i + delta >= 0 && i + delta < count -> do
+            ds <- dots
+            for_ (index ds (i + delta)) \d -> invokeMethod "click" d.node
             refresh
           _ -> pure unit
     liftEffect do

@@ -7,6 +7,20 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-10-19, latest
+- **A selector group knows its options by composition.** The builder
+  state carries the group being built: `grouping` builds a group and
+  `member` registers an option in it (its element, whether it shows
+  itself picked, how it stops), so the radio, segment, tab and stepper
+  groups clear, name and scan their options from the members list
+  instead of matching class names in the DOM. `clearedByRepress` takes
+  only the press snapshot and reads the members; `eachMatching` and
+  `Members` are deleted.
+- **Introducing editors in every vocabulary.** The `…From` forms the
+  MDC3 pilot introduced (2026-10-17) are now in every vocabulary that has
+  the editor: MDC2's same five, `textFieldFrom`/`selectFrom` (Shoelace,
+  Bootstrap), `textFieldFrom`/`dropdownFrom`/`radioGroupFrom` (Fluent),
+  `inputFrom`/`selectFrom` (HTML) — each `introduced @l init` over the
+  lens editor, so a knotless form switches design system with its import.
 - **No runtime string in markup; `escaped` deleted.** Every caption,
   label, title, icon name and URL that MDC2, MDC3 and the checkout
   steppers interpolated into `staticHTML` (31 sites) is now a

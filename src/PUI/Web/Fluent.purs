@@ -26,6 +26,7 @@ module PUI.Web.Fluent
   , card
   , divider
   , dropdown
+  , dropdownFrom
   , dropdownUnpicked
   , dropdownOptional
   , option
@@ -33,6 +34,7 @@ module PUI.Web.Fluent
   , indeterminateLinearProgress
   , progressBar
   , radioGroup
+  , radioGroupFrom
   , radioGroupUnpicked
   , radioGroupOptional
   , radio
@@ -40,6 +42,7 @@ module PUI.Web.Fluent
   , slider
   , slider'
   , textField
+  , textFieldFrom
   , textField'
   , title3
   , toggleSwitch
@@ -56,12 +59,12 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Data.Profunctor.Row.VariantToVariant (focusCase)
-import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
+import PUI (introduced, fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (chrome, fieldLeaf, Members, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, (:=))
+import PUI.Web (chrome, fieldLeaf, grouping, member, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Lacks)
 import Data.Variant (inj)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 
@@ -135,6 +138,12 @@ fieldWith position lbl editor = el "fluent-field" >>> "label-position" := positi
 -- | edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textField = fieldLeaf @l $ textInputLeaf (reflectSymbol (Proxy @l)) ""
+
+-- | `textField` in its **introducing form**: the field is not in the row fed
+-- | but stated here, `init` of the rest of the row its blank, for a
+-- | knotless form with no seed. See `PUI.introduced`.
+textFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> PUI Web { | b } { | r }
+textFieldFrom init = introduced @l init (textField @l)
 
 -- | `textField` with a `hint` under it — a format or an example the label
 -- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
@@ -240,6 +249,10 @@ sliderLeaf lbl measure = el "fluent-field" >>> "label-position" := "above" $ fro
 dropdown :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 dropdown options = fieldLeaf @l $ dropdownOf @l false options
 
+-- | `dropdown` in its introducing form, as `textFieldFrom`.
+dropdownFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
+dropdownFrom init options = introduced @l init (dropdown @l options)
+
 -- | `dropdown` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
@@ -303,6 +316,10 @@ option = fromHandles do
 radioGroup :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 radioGroup options = fieldLeaf @l $ radioGroupOf @l options
 
+-- | `radioGroup` in its introducing form, as `textFieldFrom`.
+radioGroupFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
+radioGroupFrom init options = introduced @l init (radioGroup @l options)
+
 -- | `radioGroup` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
@@ -313,14 +330,14 @@ radioGroupUnpicked options = fieldLeaf @l $ radioGroupOf @l (focusCase @c option
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | pressing the checked option again clears it, storing `n` again.
 radioGroupOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioGroupOptional options = fieldLeaf @l $ radioGroupOf @l (clearedByRepress @n radioMembers (focusCase @c options))
+radioGroupOptional options = fieldLeaf @l $ radioGroupOf @l (clearedByRepress @n radioBeforeClick (focusCase @c options))
 
 -- The group's value setter is the sanctioned selection path, and it needs
 -- the group bound (its bind-time sync would clear earlier per-radio
 -- writes), so the clearing and an option's showing both go through it.
 radioGroupOf :: forall @l a. IsSymbol l => PUI Web a a -> PUI Web a a
 radioGroupOf options = fieldWith "above" (reflectSymbol (Proxy @l)) do
-  inner <- element "fluent-radio-group" (handles options)
+  inner <- element "fluent-radio-group" (_.result <$> grouping (handles options))
   groupNode <- gets _.sibling
   liftEffect $ setAttribute groupNode "slot" "input"
   pure
@@ -328,15 +345,10 @@ radioGroupOf options = fieldWith "above" (reflectSymbol (Proxy @l)) do
     , fromUser: inner.fromUser
     }
 
-radioMembers :: Members
-radioMembers =
-  { selector: "fluent-radio"
-  , isPicked: getChecked
-  , unpickAll: \group -> selectGroupValue group ""
-  , beforeClick: \group snapshot -> do
-      listenNode group "pointerdown" snapshot
-      listenNode group "keydown" snapshot
-  }
+radioBeforeClick :: Node -> Effect Unit -> Effect Unit
+radioBeforeClick group snapshot = do
+  listenNode group "pointerdown" snapshot
+  listenNode group "keydown" snapshot
 
 -- | One option of a `radioGroup`: a `<fluent-radio>` labelled by its case.
 radio :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
@@ -347,6 +359,7 @@ radio = fromHandles do
     element "fluent-radio" (pure unit)
     gets _.sibling
   fieldNode <- gets _.sibling
+  _ <- member { node: radioNode, picked: getChecked radioNode, unpick: selectGroupValue groupNode "" }
   liftEffect do
     setAttribute radioNode "slot" "input"
     setAttribute radioNode "value" (reflectSymbol (Proxy @c))

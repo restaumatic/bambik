@@ -47,12 +47,14 @@ module PUI.Web.MDC2
   , card
   , cardActions
   , checkbox
+  , checkboxFrom
   , chipSet
   , dataCell
   , dataRow
   , columnHeader
   , dataTable
   , debouncedTextField
+  , debouncedTextFieldFrom
   , dialog
   , divider
   , drawer
@@ -62,6 +64,7 @@ module PUI.Web.MDC2
   , fab
   , filledTextArea
   , filledTextField
+  , filledTextFieldFrom
   , filledTextField'
   , filterChip
   , group
@@ -94,6 +97,7 @@ module PUI.Web.MDC2
   , outlinedTextField'
   , overline
   , radioButton
+  , radioButtonFrom
   , radio
   , radioButtonUnpicked
   , radioButtonOptional
@@ -102,6 +106,7 @@ module PUI.Web.MDC2
   , segmentedButtonUnpicked
   , segmentedButtonOptional
   , select
+  , selectFrom
   , option
   , selectUnpicked
   , selectOptional
@@ -127,7 +132,7 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
-import Data.Foldable (for_)
+import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
@@ -135,12 +140,12 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, anyOf, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
+import PUI (introduced, fromHandles, handles, anyOf, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (chrome, fieldLeaf, Members, clearedByRepress, eachMatching, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
+import PUI.Web (chrome, fieldLeaf, grouping, member, unpickAll, clearedByRepress, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Lacks)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Record as Record
 import Type.Proxy (Proxy(..))
@@ -359,6 +364,12 @@ menuItem = eventLeaf @l $
 filledTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (textFieldLeaf "filled" Nothing config.floatingLabel "")
 
+-- | `filledTextField` in its **introducing form**: the field is not in the row fed
+-- | but stated here, `init` of the rest of the row its blank, for a
+-- | knotless form with no seed. See `PUI.introduced`.
+filledTextFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> PUI Web { | b } { | r }
+filledTextFieldFrom init = introduced @l init (filledTextField @l)
+
 -- | `filledTextField` with a `hint` under it — a format or an example the
 -- | label is not (`filledTextField' @"Start date" { hint: "DD.MM.YYYY" }`),
 -- | so the label stays the field's name. Shown as MD2's persistent helper
@@ -435,6 +446,10 @@ textFieldWiring comp inputNode mDebounce = recordToRecordWiring
       Just millis -> \report -> onInputDebounced inputNode millis (const report)
   , read: \_ -> getValue inputNode
   }
+
+-- | `debouncedTextField` in its introducing form, as `filledTextFieldFrom`.
+debouncedTextFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> { ms :: Number } -> PUI Web { | b } { | r }
+debouncedTextFieldFrom init settleTime = introduced @l init (debouncedTextField @l settleTime)
 
 -- | The **multi-line text field**, sized in `rows` and `columns` of text (4 by 40 unless given) —
 -- | a note, a description, a message. Otherwise `filledTextField`: the label
@@ -520,6 +535,10 @@ checkbox = fieldLeaf @l $ fromHandles do
         pure (if checked then Variant.inj (Proxy @c) a else Variant.inj (Proxy @n) {})
     }
 
+-- | `checkbox` in its introducing form, as `filledTextFieldFrom`.
+checkboxFrom :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Lacks l b => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => ({ | b } -> [ | v ]) -> PUI Web { | b } { | r }
+checkboxFrom init = introduced @l init (checkbox @l @c @n)
+
 -- | The Material **radio group**: one choice among a handful, every option
 -- | visible and comparable at a glance. Beyond about five options, or where
 -- | the options don't deserve the space, use `select`.
@@ -544,6 +563,10 @@ checkbox = fieldLeaf @l $ fromHandles do
 radioButton :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 radioButton options = fieldLeaf @l $ radioGroupOf options
 
+-- | `radioButton` in its introducing form, as `filledTextFieldFrom`.
+radioButtonFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
+radioButtonFrom init options = introduced @l init (radioButton @l options)
+
 -- | `radioButton` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` holds the options' case, seeded at an unpicked case;
 -- | nothing is checked until the user picks, and a pick cannot be taken back.
@@ -554,33 +577,24 @@ radioButtonUnpicked options = fieldLeaf @l $ radioGroupOf (focusCase @c options)
 -- | variant whose case `c` holds the options' case and case `n` none,
 -- | seeded at `n`; pressing the checked radio again clears it, storing `n`.
 radioButtonOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioButtonOptional options = fieldLeaf @l $ radioGroupOf (clearedByRepress @n radioMembers (focusCase @c options))
+radioButtonOptional options = fieldLeaf @l $ radioGroupOf (clearedByRepress @n radioBeforeClick (focusCase @c options))
 
 radioGroupOf :: forall a. PUI Web a a -> PUI Web a a
 radioGroupOf options =
   div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start;" >>> "role" := "radiogroup" $ fromHandles do
-    container <- gets _.parent
-    inner <- handles options
+    { result: inner, members } <- grouping (handles options)
     liftEffect do
       groupName <- uniqueId
-      eachMatching radioInput container \n -> setAttribute n "name" groupName
+      members >>= traverse_ \m -> setAttribute m.node "name" groupName
     pure
-      { toUser: \a -> radioMembers.unpickAll container *> inner.toUser a
+      { toUser: \a -> unpickAll members *> inner.toUser a
       , fromUser: inner.fromUser
       }
 
-radioInput :: String
-radioInput = "input.mdc-radio__native-control"
-
-radioMembers :: Members
-radioMembers =
-  { selector: radioInput
-  , isPicked: getChecked
-  , unpickAll: \container -> eachMatching radioInput container \n -> setChecked n false
-  , beforeClick: \container snapshot -> do
-      listenNode container "pointerdown" snapshot
-      listenNode container "keydown" snapshot
-  }
+radioBeforeClick :: Node -> Effect Unit -> Effect Unit
+radioBeforeClick container snapshot = do
+  listenNode container "pointerdown" snapshot
+  listenNode container "keydown" snapshot
 
 -- | One option of a `radioButton` group: an MD2 radio captioned by its case.
 -- | The native radio reports a change only when it becomes checked, so
@@ -592,8 +606,9 @@ radio = fromHandles do
     staticHTML (radioMarkup uid)
     label >>> "for" := uid $ staticText (reflectSymbol (Proxy @c))
   root <- gets _.sibling
+  inputNode <- liftEffect $ querySelectorIn root "input"
+  _ <- member { node: inputNode, picked: getChecked inputNode, unpick: setChecked inputNode false }
   liftEffect do
-    inputNode <- querySelectorIn root "input"
     radioNode <- querySelectorIn root ".mdc-radio"
     radioComp <- newComponent material.radio."MDCRadio" radioNode
     ffComp <- newComponent material.formField."MDCFormField" root
@@ -745,6 +760,10 @@ sliderLeaf live label = fromHandles do
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf @l false options
 
+-- | `select` in its introducing form, as `filledTextFieldFrom`.
+selectFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
+selectFrom init options = introduced @l init (select @l options)
+
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` holds the options' case, seeded at an unpicked case;
 -- | nothing is picked until the user picks, and a pick cannot be taken back.
@@ -848,14 +867,13 @@ segmentedButtonUnpicked options = fieldLeaf @l $ segmentGroupOf (focusCase @c op
 -- | seeded at `n`; clicking the selected segment again clears it, storing
 -- | `n` again.
 segmentedButtonOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-segmentedButtonOptional options = fieldLeaf @l $ segmentGroupOf (clearedByRepress @n segmentMembers (focusCase @c options))
+segmentedButtonOptional options = fieldLeaf @l $ segmentGroupOf (clearedByRepress @n segmentBeforeClick (focusCase @c options))
 
 segmentGroupOf :: forall a. PUI Web a a -> PUI Web a a
 segmentGroupOf options = div >>> cl "mdc-segmented-button" >>> cl "mdc-segmented-button--single-select" >>> "role" := "radiogroup" $ fromHandles do
-  container <- gets _.parent
-  inner <- handles options
+  { result: inner, members } <- grouping (handles options)
   pure
-    { toUser: \a -> segmentMembers.unpickAll container *> inner.toUser a
+    { toUser: \a -> unpickAll members *> inner.toUser a
     , fromUser: inner.fromUser
     }
 
@@ -863,16 +881,22 @@ segmentGroupOf options = div >>> cl "mdc-segmented-button" >>> cl "mdc-segmented
 -- | the segment already selected picks nothing new.
 segment :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 segment = fromHandles do
-  container <- gets _.parent
   -- aria-label = the case verbatim: MD2 uppercases the rendered segment
   -- text, and the computed name follows rendering without the stamp
   chrome $ el "button" >>> cl "mdc-segmented-button__segment" >>> "role" := "radio" >>> "aria-checked" := "false" >>> "aria-label" := tag $ Semigroupoid.do
     static (div >>> cl "mdc-segmented-button__ripple")
     div >>> cl "mdc-segmented-button__label" $ staticText tag
   node <- gets _.sibling
+  members <- member
+    { node
+    , picked: hasClass segmentSelected node
+    , unpick: do
+        setClassIf node segmentSelected false
+        setAttribute node "aria-checked" "false"
+    }
   let
     selectSelf = do
-      segmentMembers.unpickAll container
+      unpickAll members
       setClassIf node segmentSelected true
       setAttribute node "aria-checked" "true"
   liftEffect $ optionWiring @c
@@ -888,15 +912,8 @@ segment = fromHandles do
 segmentSelected :: String
 segmentSelected = "mdc-segmented-button__segment--selected"
 
-segmentMembers :: Members
-segmentMembers =
-  { selector: ".mdc-segmented-button__segment"
-  , isPicked: hasClass segmentSelected
-  , unpickAll: \container -> eachMatching ".mdc-segmented-button__segment" container \n -> do
-      setClassIf n segmentSelected false
-      setAttribute n "aria-checked" "false"
-  , beforeClick: \container snapshot -> listenCapture container "click" snapshot
-  }
+segmentBeforeClick :: Node -> Effect Unit -> Effect Unit
+segmentBeforeClick container snapshot = listenCapture container "click" snapshot
 
 -- | The Material **filter chip**: a small tag the user switches on or off,
 -- | showing a checkmark while on. Chips come in sets where any number may

@@ -599,11 +599,6 @@ export function onFilePicked(node) {
   };
 }
 
-// eachMatching :: String -> Node -> (Node -> Effect Unit) -> Effect Unit
-export const eachMatching = selector => container => f => () => {
-  for (const n of container.querySelectorAll(selector)) f(n)();
-};
-
 // hasClass :: String -> Node -> Effect Boolean
 export const hasClass = className => node => () => node.classList.contains(className);
 

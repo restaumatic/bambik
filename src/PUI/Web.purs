@@ -35,7 +35,7 @@
 -- |   dialogs `confirmedOver`/`acknowledgedOver`): `fieldLeaf`, `chrome`,
 -- |   `listenNode`/`listenNodeDeferred`/
 -- |   `listenCapture`, `ensureStyle`, `autoDismiss`, the selector-group
--- |   helpers (`eachMatching`, `hasClass`, `Members`, `clearedByRepress` —
+-- |   helpers (`grouping`, `member`, `Member`, `unpickAll`, `hasClass`, `clearedByRepress` —
 -- |   an optional group's clearing gesture) and the presentation-option
 -- |   tags `OptCaption`, `OptLabelIcon`, `OptSelected`, `OptIcon`.
 -- |
@@ -63,10 +63,12 @@ module PUI.Web
   , listenNode
   , listenNodeDeferred
   , afterTask
-  , eachMatching
   , hasClass
   , listenCapture
-  , Members
+  , Member
+  , grouping
+  , member
+  , unpickAll
   , clearedByRepress
   , ensureStyle
   , autoDismiss
@@ -138,7 +140,7 @@ import Data.Array (concat)
 import Data.Variant (inj)
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -166,6 +168,7 @@ type DOM =
   { parent :: Node
   , sibling :: Node -- last sibling
   , scope :: Scope -- the subtree being built (`PUI`'s scope: suspended by a pane, cancelled by a leaver)
+  , group :: Maybe (Ref.Ref (Array Member)) -- the selector group being built, its options registering in it
   }
 
 derive newtype instance Functor Web
@@ -303,7 +306,6 @@ foreign import removeAllNodesBetweenSiblings :: Node -> Node -> Effect Unit
 foreign import appendRawHtml :: String -> Node -> Effect Node
 foreign import moveAllNodesBetweenSiblings :: Node -> Node -> Node -> Effect Unit
 foreign import afterTask :: Effect Unit -> Effect Unit
-foreign import eachMatching :: String -> Node -> (Node -> Effect Unit) -> Effect Unit
 foreign import hasClass :: String -> Node -> Effect Boolean
 foreign import listenCapture :: Node -> String -> Effect Unit -> Effect Unit
 foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
@@ -367,7 +369,7 @@ runDomInNode node builder = do
 
 -- a build under a given scope — a collection's element, a `dynamic` rebuild
 runDomInScope :: forall a. Scope -> Node -> Web a -> Effect a
-runDomInScope sc node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node, scope: sc }
+runDomInScope sc node (Web domBuilder) = fst <$> runStateT domBuilder { sibling: node, parent: node, scope: sc, group: Nothing }
 
 -- | The DOM carrier hosts collection children under the enclosing parent
 -- | (`PUI`'s container action): the freshly appended child is the instance's
@@ -505,34 +507,55 @@ listenNode :: Node -> String -> Effect Unit -> Effect Unit
 listenNode node event handler = void $ addEventListener event node (const handler)
 
 -- | The options of a group, as its clearing sees them.
-type Members =
-  { selector :: String
-  , isPicked :: Node -> Effect Boolean
-  , unpickAll :: Node -> Effect Unit
-  -- register the snapshot of which option was picked before a click: on the
-  -- press for radios (whose arrow keys synthesize clicks), on the click's
-  -- capture phase for segments
-  , beforeClick :: Node -> Effect Unit -> Effect Unit
-  }
+-- | One option of a selector group, as it registers with the group: its
+-- | element, whether it shows itself picked, and how it stops.
+type Member = { node :: Node, picked :: Effect Boolean, unpick :: Effect Unit }
+
+-- | Build a selector group: every option built inside registers with it
+-- | (`member`), so the group knows its options by composition rather than
+-- | by finding them in the DOM. Returns the result and the members.
+grouping :: forall a. Web a -> Web { result :: a, members :: Effect (Array Member) }
+grouping w = do
+  outer <- gets _.group
+  ref <- liftEffect $ Ref.new []
+  modify_ _ { group = Just ref }
+  result <- w
+  modify_ _ { group = outer }
+  pure { result, members: Ref.read ref }
+
+-- | Register an option with the group being built around it, handing back
+-- | the group's members (none outside a group).
+member :: Member -> Web (Effect (Array Member))
+member m = gets _.group >>= case _ of
+  Nothing -> pure (pure [])
+  Just ref -> liftEffect (Ref.modify_ (_ <> [ m ]) ref) $> Ref.read ref
+
+-- | Show every member unpicked.
+unpickAll :: Effect (Array Member) -> Effect Unit
+unpickAll members = members >>= traverse_ _.unpick
 
 -- The clearing gesture of an optional group: pressing (pointer or key) the
 -- option already picked and letting its click land clears the group and
--- emits case `n`. The press snapshots which option was picked, so a click
--- the platform synthesizes for an arrow-key move never clears; the clear
--- runs after the element's own click handling, which re-checks a radio.
-clearedByRepress :: forall @n b v. IsSymbol n => Cons n {} b v => Members -> PUI Web [ | v ] [ | v ] -> PUI Web [ | v ] [ | v ]
-clearedByRepress members options = fromHandles do
+-- emits case `n`. `beforeClick` registers, on the group's container, the
+-- snapshot of which option was picked before a click: on the press for
+-- radios (whose arrow keys synthesize clicks), on the click's capture
+-- phase for segments. So a click the platform synthesizes for an
+-- arrow-key move never clears; the clear runs after the element's own
+-- click handling, which re-checks a radio.
+clearedByRepress :: forall @n b v. IsSymbol n => Cons n {} b v => (Node -> Effect Unit -> Effect Unit) -> PUI Web [ | v ] [ | v ] -> PUI Web [ | v ] [ | v ]
+clearedByRepress beforeClick options = fromHandles do
   container <- gets _.parent
+  members <- gets _.group <#> maybe (pure []) Ref.read
   inner <- handles options
   propRef <- liftEffect $ Ref.new Nothing
-  liftEffect $ eachMatching members.selector container \node -> do
+  liftEffect $ members >>= traverse_ \m -> do
     pressedRef <- Ref.new false
-    members.beforeClick container (members.isPicked node >>= flip Ref.write pressedRef)
-    listenNode node "click" do
+    beforeClick container (m.picked >>= flip Ref.write pressedRef)
+    listenNode m.node "click" do
       pressed <- Ref.read pressedRef
       Ref.write false pressedRef
       when pressed $ afterTask do
-        members.unpickAll container
+        unpickAll members
         Ref.read propRef >>= traverse_ (_ $ inj (Proxy @n) {})
   pure
     { toUser: inner.toUser

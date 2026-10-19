@@ -41,6 +41,7 @@ module PUI.Web.HTML
   , i
   , img
   , input
+  , inputFrom
   , inPlaceInput
   , filePicked
   , label
@@ -55,6 +56,7 @@ module PUI.Web.HTML
   , runComponentInNode
   , section
   , select
+  , selectFrom
   , selectUnpicked
   , selectOptional
   , span
@@ -81,10 +83,10 @@ import Data.Variant (inj, match)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Lacks)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row.VariantToVariant (focusCase)
-import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, replayed, source, departures, statusOver, confirmedOver, acknowledgedOver)
+import PUI (introduced, fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, replayed, source, departures, statusOver, confirmedOver, acknowledgedOver)
 import PUI.Web (chrome, fieldLeaf, Node, Web, adoptHostDiagnostics, onFilePicked, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, setAttribute, setValue, staticText, statusText, separating, invokeMethod, showModalOnce, (:=), (:=>))
 
 -- UIs
@@ -111,6 +113,12 @@ input type_ = fieldLeaf @l $ "type" := type_ $ fromHandles do
     , reports: listenNode node "input"
     , read: \_ -> getValue node
     }
+
+-- | `input` in its **introducing form**: the field is not in the row fed
+-- | but stated here, `init` of the rest of the row its blank, for a
+-- | knotless form with no seed. See `PUI.introduced`.
+inputFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> String -> PUI Web { | b } { | r }
+inputFrom init kind = introduced @l init (input @l kind)
 
 -- | The **in-place text input** of a grid or a list — a sheet's cell
 -- | while it is edited: `input @k` over field `k`, its edits kept until
@@ -168,6 +176,10 @@ textArea = fieldLeaf @l $ fromHandles do
 -- | in the order written.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf false options
+
+-- | `select` in its introducing form, as `inputFrom`.
+selectFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
+selectFrom init options = introduced @l init (select @l options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing

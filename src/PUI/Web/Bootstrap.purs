@@ -28,11 +28,13 @@ module PUI.Web.Bootstrap
   , indeterminateLinearProgress
   , progress
   , select
+  , selectFrom
   , selectUnpicked
   , selectOptional
   , sliderLive
   , sliderLive'
   , textField
+  , textFieldFrom
   , textField'
   , toast
   , toggleSwitch
@@ -48,12 +50,12 @@ import Data.Number.Format (toString)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, statusOver, eventLeaf)
+import PUI (introduced, fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, statusOver, eventLeaf)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body, option) as HTML
 import PUI.Web (chrome, fieldLeaf, Web, attribute, autoDismiss, cl, el, element, getChecked, getValue, isFocused, listenNode, setAttribute, setChecked, setValue, staticText, text, statusText, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Lacks)
 import Data.Variant (inj)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -117,6 +119,12 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- | row, it edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textField = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) ""
+
+-- | `textField` in its **introducing form**: the field is not in the row fed
+-- | but stated here, `init` of the rest of the row its blank, for a
+-- | knotless form with no seed. See `PUI.introduced`.
+textFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> PUI Web { | b } { | r }
+textFieldFrom init = introduced @l init (textField @l)
 
 -- | `textField` with a `hint` under it — a format or an example the label
 -- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
@@ -206,6 +214,10 @@ rangeLeaf lbl measure = div >>> "style" := "width: 100%;" $ fromHandles do
 -- | written.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf @l false options
+
+-- | `select` in its introducing form, as `textFieldFrom`.
+selectFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
+selectFrom init options = introduced @l init (select @l options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
