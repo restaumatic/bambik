@@ -130,16 +130,15 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row (atCase)
-import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
+import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, anyOf, folding, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..))
+import PUI (fromHandles, handles, anyOf, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Members, clearedByRepress, eachMatching, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
+import PUI.Web (Members, clearedByRepress, eachMatching, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, escaped, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -1307,8 +1306,7 @@ confirmed
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed content = focusCase @l $ modal
-  { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just "Cancel" } content
+confirmed = confirmedOver @l modal
 
 -- | The **dismissed rung**: `dialog` with a **dismiss button** built in,
 -- | for the outcome the user must read and can only close — a rejection
@@ -1331,10 +1329,7 @@ acknowledged
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | b ]
-acknowledged content = onCase @l $ fromHandles do
-  w <- handles $ modal
-    { title: Just (reflectSymbol (Proxy @l)), decide: "OK", cancel: Nothing } content
-  pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
+acknowledged = acknowledgedOver @l modal
 
 -- the modal both dialog leaves are built over: `variantToVariantWiring`
 -- over the MDCDialog foundation's markup, an optional title, the content
@@ -1404,7 +1399,7 @@ snackbar
   => Cons l a () v
   => (a -> { | r })
   -> PUI Web [ | v ] { | r }
-snackbar f = snackbarFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
+snackbar = statusOver @l snackbarFace
 
 snackbarFace :: forall a r. String -> PUI Web a { | r }
 snackbarFace caseLabel = snackbarContainer $ statusText caseLabel

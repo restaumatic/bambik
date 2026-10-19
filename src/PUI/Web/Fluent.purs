@@ -52,16 +52,15 @@ import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
-import PUI (fromHandles, handles, folding, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring)
+import Data.Profunctor.Row.VariantToVariant (focusCase)
+import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Members, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, eventLeaf, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, (:=))
+import PUI.Web (Members, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (inj)
@@ -407,7 +406,7 @@ messageBar
   => Cons l a () v
   => (a -> { | r })
   -> PUI Web [ | v ] { | r }
-messageBar f = messageBarFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
+messageBar = statusOver @l messageBarFace
 
 messageBarFace :: forall a r. String -> PUI Web a { | r }
 messageBarFace caseLabel = fromHandles do
@@ -442,8 +441,7 @@ confirmed
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed content = focusCase @l $ modal
-  { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just "Cancel" } content
+confirmed = confirmedOver @l modal
 
 -- | The **dismissed rung** — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
 -- | over the modal, the `+→+` stage consuming case `l`, telling it as its
@@ -455,10 +453,7 @@ acknowledged
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | b ]
-acknowledged content = onCase @l $ fromHandles do
-  w <- handles $ modal
-    { title: Just (reflectSymbol (Proxy @l)), decide: "OK", cancel: Nothing } content
-  pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
+acknowledged = acknowledgedOver @l modal
 
 -- the modal both dialog leaves are built over: `variantToVariantWiring`
 -- over `<fluent-dialog>` and its `<fluent-dialog-body>` (v3's markup

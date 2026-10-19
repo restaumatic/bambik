@@ -31,8 +31,8 @@
 -- |   from over `PUI`'s leaf wirings (`recordToRecordWiring`,
 -- |   `variantToRecordWiring`, `variantToVariantWiring`, `optionWiring` —
 -- |   the leaf protocol, host-neutral, so it lives with the carrier, as
--- |   does the replay `replayed`): `eventLeaf` (the click emitter over
--- |   chrome, a derivation rather than a wiring), `escaped` (a runtime
+-- |   do the click emitter `eventLeaf`, the status `statusOver` and the
+-- |   dialogs `confirmedOver`/`acknowledgedOver`): `escaped` (a runtime
 -- |   string made safe for `staticHTML`), `listenNode`/`listenNodeDeferred`/
 -- |   `listenCapture`, `ensureStyle`, `autoDismiss`, the selector-group
 -- |   helpers (`eachMatching`, `hasClass`, `Members`, `clearedByRepress` —
@@ -58,7 +58,6 @@ module PUI.Web
   , OptSelected(..)
   , invokeMethod
   , showModalOnce
-  , eventLeaf
   , escaped
   , listenNode
   , listenNodeDeferred
@@ -128,7 +127,6 @@ module PUI.Web
   )
   where
 
-import Data.Profunctor (lcmap)
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
@@ -146,7 +144,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (inCase, inCaseAt, provided, providedAt) as Panes
-import PUI (class Interacting, Gesture(..), occurrencesOn, fromHandles, handles, recordToRecordWiring, replayed, source, class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, isHole, newScope, onCancel, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
+import PUI (class Interacting, Gesture(..), fromHandles, handles, recordToRecordWiring, source, class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, isHole, newScope, onCancel, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
 import Prim.Row (class Cons)
 import Record as Record
 
@@ -479,17 +477,6 @@ data OptSelected = OptSelected
 
 instance ConvertOption OptSelected sym a a where
   convertOption _ _ = identity
-
--- | The click-emitter protocol over any `{}`-output element chrome: replay
--- | the row last fed on click, as case `l` (a click before any value
--- | arrived is withheld) — `replayed` over the chrome's click occurrences,
--- | the chrome placed at the row
--- | (`lcmap (const {})`: chrome reads nothing, and the terminal record is
--- | the one row every row maps onto, so the placement is total), the
--- | last-built element listening. Every vocabulary's `button` family
--- | is this over its own chrome.
-eventLeaf :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web {} {} -> PUI Web { | r } [ | v ]
-eventLeaf chrome = replayed @l identity (occurrencesOn Click (lcmap (const {}) chrome))
 
 -- | A runtime string made safe to concatenate into `staticHTML` markup —
 -- | as text or as a double-quoted attribute value. Every caption, label,

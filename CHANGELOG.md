@@ -7,6 +7,14 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-10-19, latest
+- **Leaves written once for every vocabulary.** `eventLeaf` moves from
+  `PUI.Web` to `PUI`, over any `Interacting` carrier — it only composes
+  `replayed` and `occurrencesOn`. Beside it, `statusOver @l face f` (a
+  status over its face: `snackbar = statusOver @l snackbarFace`) and
+  `confirmedOver`/`acknowledgedOver @l modal` (the two dialogs over a
+  vocabulary's `Modal`) replace the definitions each vocabulary had
+  copied verbatim; `acknowledgedOver` writes off the modal's release
+  on the carrier rather than through a hand-written `toUser`/`fromUser` pair.
 - **Selectors are groups over option leaves.** A selector's field holds a
   variant of empty cases, so its options are leaves, one per case, merged
   by the existing `VariantToVariant.do`: `radioButton @"Roast" $

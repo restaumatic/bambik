@@ -95,6 +95,11 @@ module PUI
   , Gesture(..)
   , occurrencesOn
   , departures
+  , eventLeaf
+  , statusOver
+  , Modal
+  , confirmedOver
+  , acknowledgedOver
   -- the vocabulary: what a view writes, with the words `Adopters` re-exports
   , action
   , load
@@ -154,7 +159,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- `atCase`, `toField`) stay inside the vocabularies, where a face is
 -- adopted at its label; `toCase` alone is a view's, the one shape change
 -- a business case can name (an editor's release leaving as an event).
--- `{}`-input chrome is placed by the vocabulary's `eventLeaf` with a bare
+-- `{}`-input chrome is placed by `eventLeaf` with a bare
 -- `lcmap (const {})`.
 import Data.Profunctor.Row (settled) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, joined2, kept) as Adopters
@@ -167,12 +172,12 @@ import Data.String (joinWith)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, unshown)
-import Data.Profunctor.Row.VariantToVariant (class VariantToVariant)
+import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, focusCase, onCase)
 import Data.Profunctor.Strong (class Strong)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (class Contractable, case_, contract, inj, on, prj)
 import Prim.Row (class Cons, class Lacks)
 import Prim.RowList (class RowToList)
@@ -1482,6 +1487,77 @@ departures = fromHandles do
     , fromUser: \prop -> container.onDeparture (prop (inj (Proxy @"occurred") {}))
     }
 
+-- | The click-emitter protocol over any `{}`-output element chrome: replay
+-- | the row last fed on click, as case `l` (a click before any value
+-- | arrived is withheld) — `replayed` over the chrome's click occurrences,
+-- | the chrome placed at the row
+-- | (`lcmap (const {})`: chrome reads nothing, and the terminal record is
+-- | the one row every row maps onto, so the placement is total), the
+-- | last-built element listening. Every vocabulary's `button` family
+-- | is this over its own chrome. Plumbing.
+eventLeaf :: forall @l m r b v. Interacting m => IsSymbol l => Cons l { | r } b v => PUI m {} {} -> PUI m { | r } [ | v ]
+eventLeaf chrome = replayed @l identity (occurrencesOn Click (lcmap (const {}) chrome))
+
+-- | A status over its vocabulary's face: the face shown case `l`'s label,
+-- | adopted at case `l` and folding its payload by `f` — every
+-- | vocabulary's `snackbar`/`toast`/`messageBar`/`output` is this over
+-- | its own face (`snackbar = statusOver @l snackbarFace`). Plumbing.
+statusOver
+  :: forall @l m a v r
+   . Applicative m
+  => IsSymbol l
+  => Cons l a () v
+  => (String -> PUI m a {})
+  -> (a -> { | r })
+  -> PUI m [ | v ] { | r }
+statusOver face f = face (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
+
+-- | A vocabulary's modal, which both dialog leaves are built over:
+-- | `variantToVariantWiring` over the catalogue's dialog, an optional
+-- | title, the content stage, an optional cancel button and the deciding
+-- | button, releasing the content's row once on the decision and nothing
+-- | on a cancel.
+type Modal m r
+  = { title :: Maybe String, decide :: String, cancel :: Maybe String }
+  -> PUI m { | r } { | r }
+  -> PUI m { | r } { | r }
+
+-- | The **witness rung** over a vocabulary's modal: `focusCase @l`, opened
+-- | by case `l`, untitled, its confirm button captioned by the case and
+-- | re-emitting it with the content's row, its Cancel consuming it, every
+-- | other case passing. Every vocabulary's `confirmed` is this over its
+-- | `modal` (the contract is stated at `PUI.Web.MDC2.confirmed`). Plumbing.
+confirmedOver
+  :: forall @l m r b v
+   . Functor m
+  => IsSymbol l
+  => Cons l { | r } b v
+  => Modal m r
+  -> PUI m { | r } { | r }
+  -> PUI m [ | v ] [ | v ]
+confirmedOver modal content = focusCase @l $ modal
+  { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just "Cancel" } content
+
+-- | The **dismissed rung** over a vocabulary's modal: `onCase @l`, titled
+-- | by case `l`, dismissed by its "OK", the case consumed either way and
+-- | the row less `l` leaving. Every vocabulary's `acknowledged` is this
+-- | over its `modal` (the contract is stated at
+-- | `PUI.Web.MDC2.acknowledged`). Plumbing.
+acknowledgedOver
+  :: forall @l m r b v
+   . Functor m
+  => IsSymbol l
+  => Cons l { | r } b v
+  => Modal m r
+  -> PUI m { | r } { | r }
+  -> PUI m [ | v ] [ | b ]
+acknowledgedOver modal content = onCase @l $ dismissed $ modal
+  { title: Just (reflectSymbol (Proxy @l)), decide: "OK", cancel: Nothing } content
+  where
+  -- the dismiss decides nothing: the modal's release is written off
+  dismissed :: forall a c. PUI m a { | r } -> PUI m a c
+  dismissed (PUI w) = PUI (map (\reg _ -> reg \_ -> pure unit) w)
+
 -- Optics
 
 type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
@@ -1680,8 +1756,8 @@ capture = fold @l identity
 
 -- | The fold behind every `+→×` leaf — plumbing, not vocabulary: a status
 -- | face owning case `l` and the fold of its payload, in one leaf. The
--- | vocabularies build their statuses with it (`snackbar @l f =
--- | snackbarFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f`),
+-- | vocabularies build their statuses with it, through `statusOver`
+-- | (`snackbar = statusOver @l snackbarFace`),
 -- | and `fold @l f` is it over the faceless `unshown @l`. The status is fed
 -- | the **event**, never the fold's result — it shows its case's label, so
 -- | what a status says is the name of what happened — and `f` of the

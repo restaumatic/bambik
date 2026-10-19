@@ -46,14 +46,13 @@ import Data.Maybe (fromMaybe)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import PUI (fromHandles, handles, folding, Ocular, PUI, recordToRecordWiring, variantToRecordWiring)
+import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, statusOver, eventLeaf)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body, option) as HTML
-import PUI.Web (Web, attribute, autoDismiss, cl, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, setAttribute, setChecked, setValue, staticText, text, statusText, uniqueId, (:=))
+import PUI.Web (Web, attribute, autoDismiss, cl, el, element, getChecked, getValue, isFocused, listenNode, setAttribute, setChecked, setValue, staticText, text, statusText, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (inj)
@@ -312,7 +311,7 @@ toast
   => Cons l a () v
   => (a -> { | r })
   -> PUI Web [ | v ] { | r }
-toast f = toastFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
+toast = statusOver @l toastFace
 
 toastFace :: forall a r. String -> PUI Web a { | r }
 toastFace caseLabel = fromHandles do

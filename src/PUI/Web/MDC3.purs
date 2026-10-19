@@ -152,16 +152,15 @@ import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Row (atCase)
-import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
+import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, anyOf, folding, introduced, isHole, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring)
+import PUI (fromHandles, handles, anyOf, introduced, isHole, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), eachMatching, hasClass, listenCapture, Members, clearedByRepress)
+import PUI.Web (Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, escaped, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), eachMatching, hasClass, listenCapture, Members, clearedByRepress)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Lacks)
 import Data.Variant (Variant)
@@ -1101,8 +1100,7 @@ confirmed
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed content = focusCase @l $ modal
-  { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just "Cancel" } content
+confirmed = confirmedOver @l modal
 
 -- | The dismissed rung — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
 -- | over the modal, the `+→+` stage consuming case `l`, telling it as
@@ -1114,10 +1112,7 @@ acknowledged
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | b ]
-acknowledged content = onCase @l $ fromHandles do
-  w <- handles $ modal
-    { title: Just (reflectSymbol (Proxy @l)), decide: "OK", cancel: Nothing } content
-  pure { toUser: w.toUser, fromUser: \_ -> w.fromUser \_ -> pure unit }
+acknowledged = acknowledgedOver @l modal
 
 -- the modal both dialog leaves are built over: `variantToVariantWiring`
 -- over `md-dialog`, an optional headline, the content stage, an optional
@@ -1173,7 +1168,7 @@ snackbar
   => Cons l a () v
   => (a -> { | r })
   -> PUI Web [ | v ] { | r }
-snackbar f = snackbarFace (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
+snackbar = statusOver @l snackbarFace
 
 snackbarFace :: forall a r. String -> PUI Web a { | r }
 snackbarFace caseLabel = fromHandles do
