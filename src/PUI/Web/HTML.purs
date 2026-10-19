@@ -87,8 +87,8 @@ import Effect.Ref as Ref
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
-import PUI (fromHandles, handles, folding, Ocular, PUI)
-import PUI.Web (Choices, choiceTags, departures, replayed, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, Web, adoptHostDiagnostics, onFilePicked, source, appendChild, attribute, createElementNS, documentBody, recordToRecordWiring, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, recordToVariantWiring, setAttribute, setValue, staticText, variantToRecordWiring, statusText, separating, variantToVariantWiring, invokeMethod, showModalOnce, (:=), (:=>))
+import PUI (fromHandles, handles, folding, Ocular, PUI, recordToRecordWiring, recordToVariantWiring, variantToRecordWiring, variantToVariantWiring, selectedAt, selectedUnpickedAt, selectedOptionalAt, replayed, source, departures)
+import PUI.Web (Choices, choiceTags, tagged, Node, Web, adoptHostDiagnostics, onFilePicked, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, setAttribute, setValue, staticText, statusText, separating, invokeMethod, showModalOnce, (:=), (:=>))
 
 -- UIs
 
@@ -133,7 +133,7 @@ inPlaceInput = span $ input @k "text" >>> replayed @l identity departures
 
 -- | A **file picker** — a capture, not an editor: the user supplies the
 -- | file and the platform cannot be shown one, so it owns its field like a
--- | source (`PUI.Web.source`): `none` until a file is chosen, then `picked`
+-- | source (`PUI.source`): `none` until a file is chosen, then `picked`
 -- | with its name, size and MIME type. Label-indexed, `name` stamped.
 filePicked
   :: forall @l r r1

@@ -135,10 +135,10 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, anyOf, folding, isHole, Ocular, PUI, static)
+import PUI (fromHandles, handles, anyOf, folding, isHole, Ocular, PUI, static, recordToRecordWiring, recordToVariantWiring, variantToRecordWiring, variantToVariantWiring, selectedAt, selectedUnpickedAt, selectedOptionalAt, replayed, occurrencesOn, Gesture(..))
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, variantToVariantWiring, clearedOnRepress, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, recordToRecordWiring, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, occurrences, onInputDebounced, replayed, recordToVariantWiring, setAttribute, setChecked, staticHTML, staticText, variantToRecordWiring, text, statusText, uniqueId, separating, (:=))
+import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, clearedOnRepress, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Variant (Variant)
@@ -1448,7 +1448,7 @@ listOf'
   -> PUI Web { | i } [ | v ]
 listOf' provided f item = withStructuralOrd @key $ fromHandles do
   w <- handles $ ul >>> cl "mdc-deprecated-list" >>> "style" := "overflow-y: auto;" $
-    ( replayed @l (Record.get (Proxy @k)) $ occurrences $ clWhen config.selected "mdc-deprecated-list-item--selected"
+    ( replayed @l (Record.get (Proxy @k)) $ occurrencesOn Click $ clWhen config.selected "mdc-deprecated-list-item--selected"
         $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
     ) # anyOf @k f
   node <- gets _.sibling

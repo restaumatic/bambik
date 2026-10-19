@@ -53,10 +53,10 @@ import Effect.Class (liftEffect)
 import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
 import Effect.Ref as Ref
 import Data.Foldable (for_)
-import PUI (fromHandles, handles, folding, Ocular, PUI)
+import PUI (fromHandles, handles, folding, Ocular, PUI, recordToRecordWiring, recordToVariantWiring, variantToRecordWiring, variantToVariantWiring, selectedAt, selectedUnpickedAt, selectedOptionalAt)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, choiceTags, tagged, selectedAt, selectedOptionalAt, selectedUnpickedAt, Node, OptCaption(..), Web, attribute, recordToRecordWiring, el, element, escaped, eventLeaf, getChecked, getValue, isFocused, listenNode, removeAttribute, recordToVariantWiring, setAttribute, setChecked, setValue, staticHTML, staticText, variantToRecordWiring, statusText, separating, variantToVariantWiring, invokeMethod, (:=))
+import PUI.Web (Choices, choiceTags, tagged, Node, OptCaption(..), Web, attribute, el, element, escaped, eventLeaf, getChecked, getValue, isFocused, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, statusText, separating, invokeMethod, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (Variant)

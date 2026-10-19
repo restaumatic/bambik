@@ -130,7 +130,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   user may leave unmade. The last two share a view model and differ in
   behaviour, which is exactly why they are two words: a name says what
   the component does, not only what it stores. Lifted by
-  `PUI.Web.selectedAt`/`selectedUnpickedAt`/`selectedOptionalAt`; a
+  `PUI.selectedAt`/`selectedUnpickedAt`/`selectedOptionalAt`; a
   pick's echo is the pick.
   **Decorators** are outside the rule, as oculars (`Ocular (PUI Web)`)
   are: `clWhen`/`attrWith` read the row (`{ | i }`) to style the element
@@ -561,7 +561,7 @@ The codebase is three floors, each greppable:
   itself is the web **carrier** (`Hosting Web`, the DOM monad) and sits
   with the algebra layer for its internals — it may import the
   ecosystem's `Data.Profunctor` for the few reshapings it writes bare
-  (`eventLeaf`, `replayed`) — so the checkable form of this floor is
+  (`eventLeaf`) — so the checkable form of this floor is
   `grep "import Data.Profunctor (" src/PUI/Web/ demo/`, empty. **The floor is
   the namespace**: every web vocabulary is a submodule of its carrier
   (`PUI.Web.*`, under `src/PUI/Web/`), so a module path states which
@@ -570,7 +570,7 @@ The codebase is three floors, each greppable:
 - **Application layer** — vocabulary only: no `Data.Profunctor`, no
   carrier internals (Part II, and the rule as applications read it in
   writing.md's *Wiring*). `PUI.Web` holds both: its **internals** are the
-  building blocks (`element`, `attachable`, `runDomInNode`, `Node`, the
+  building blocks (`element`, `runDomInNode`, `Node`, the
   DOM FFI, `staticHTML`), its **vocabulary** the element-neutral words
   every vocabulary shares (`choice`, the decorators, `text`/`staticText`,
   `onClickedXY`, the panes `provided`/`inCase`, the sources,
@@ -731,7 +731,7 @@ code below the UI) are algebra-layer material and exempt by location.
   module. A word whose every reach reads one field takes only the label:
   `listOf @l @k` and `tile @l @k` report field `k`, and the
   vocabularies' whole-row replay behind every emitter is the internal
-  `clickedRow @l`. A new reading word MUST come with its label sibling
+  `eventLeaf @l`. A new reading word MUST come with its label sibling
   as soon as a demo reads a stored field through it, and not before
   (L14).
 - **The view determines the view model's interface up to its tails.**

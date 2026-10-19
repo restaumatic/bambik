@@ -6,7 +6,41 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-10-17, latest
+## 2026-10-18, latest
+- **The leaf protocol moves to `PUI`.** The four wirings
+  (`recordToRecordWiring`, `recordToVariantWiring`,
+  `variantToRecordWiring`, `variantToVariantWiring`) left `PUI.Web` for
+  `PUI`, exported as plumbing beside `folding`. They touch no DOM — every
+  platform fact reaches them as a callback — so they are the carrier's,
+  not the web layer's. Their record type `Wiring a b` was `PUI`'s
+  `Handles a b` under a second name and is deleted; they return `Handles`.
+  The vocabularies and checkout's packaged steppers import them from
+  `PUI`.
+- **More host-neutral plumbing follows it.** `selectedAt`,
+  `selectedUnpickedAt`, `selectedOptionalAt` (with their private
+  `selectedWith`), `replayed` and `source` moved from `PUI.Web` to `PUI`,
+  generalized from `PUI Web` to the carrier they need — `MonadEffect m`
+  for the selector lifts, `Functor m` for `replayed`, `Scoped m` for
+  `source` (as `ticks`). The browser facts over `source` and the click
+  sources `replayed` is applied to stay in `PUI.Web`.
+- **`PUI.Web` thinned.** `clickedRow` (one caller) is inlined into
+  `eventLeaf`, and `occurrences` (an alias) into its callers as
+  `occurrencesOn "click"`; `uniqueId` is the foreign import itself rather
+  than an alias over `randomElementId`; the unused `textContent` FFI is
+  deleted.
+- **The panes and the occurrence sources leave the web layer.** `Hosting`
+  gains `attachable` (a pane's content built parked in a suspended scope,
+  shown and parked on demand — the DOM fragment juggling is `Web`'s
+  instance, a scope flip the `Effect` probe's), so `inCase`, `inCaseAt`,
+  `provided`, `providedAt` and their shared `attachedOn` move to `PUI`
+  over any `Hosting` carrier; `PUI.Web` re-exports the four public ones,
+  so views import them where they did. A new `class Interacting m`
+  (`gestured`, `focused`; instances `Web` and the never-firing `Effect`
+  probe) carries what `occurrencesOn` and `departures` read, and both move
+  to `PUI`. The event name becomes a closed `Gesture` (`Click`,
+  `DoubleClick`) instead of a DOM string.
+
+## 2026-10-17
 - **The merge laws lose their unit laws.** Law 3 was *Monoid*: both unit
   laws on the nose, symmetry and associativity up to `≈`. It is now
   *Symmetry and associativity*, so a merge is a commutative semigroup on

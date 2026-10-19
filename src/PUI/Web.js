@@ -36,8 +36,8 @@ export function hostDiagnostics() {
   return window.__bambikNoWarn !== true;
 }
 
-// randomElementId :: Effect String
-export function randomElementId() {
+// uniqueId :: Effect String
+export function uniqueId() {
   return "" + Math.floor(Math.random() * 99999999 + 100000000); // TODO use UUID?
 }
 
@@ -331,13 +331,6 @@ export function setValue(node) {
 export function getChecked(node) {
   return function () {
     return node.checked;
-  };
-}
-
-// textContent :: Node -> Effect String
-export function textContent(node) {
-  return function () {
-    return node.textContent;
   };
 }
 

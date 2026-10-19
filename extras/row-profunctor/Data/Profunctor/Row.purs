@@ -168,7 +168,7 @@
 -- | each occurrence (`joined`, `{ event, model }`): the case is the
 -- | source's own, its payload paired with the retained row, never renamed.
 -- | A click, whose occurrence carries nothing, is `joined` with the `{}`
--- | event dropped and the case renamed (`PUI.Web.replayed` writes that
+-- | event dropped and the case renamed (`PUI.replayed` writes that
 -- | derivation itself; it needs no word).
 -- |
 -- | The pure shapes' two-sided words above and the floor's one-sided

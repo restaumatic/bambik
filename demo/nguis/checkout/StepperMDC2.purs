@@ -14,8 +14,8 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
-import PUI (PUI, fromHandles, handles)
-import PUI.Web (Choices, choiceTags, tagged, Node, Web, addClass, appendChild, clazz, createTextNode, element, ensureStyle, escaped, listenNode, removeAttribute, removeClass, selectedAt, recordToVariantWiring, setAttribute, setTextNodeValue, staticHTML, (:=))
+import PUI (PUI, fromHandles, handles, recordToVariantWiring, selectedAt)
+import PUI.Web (Choices, choiceTags, tagged, Node, Web, addClass, appendChild, clazz, createTextNode, element, ensureStyle, escaped, listenNode, removeAttribute, removeClass, setAttribute, setTextNodeValue, staticHTML, (:=))
 import PUI.Web.HTML (div)
 import Type.Proxy (Proxy(..))
 

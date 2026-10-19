@@ -70,6 +70,7 @@ module PUI
   , inScope
   , class Hosting
   , hosting
+  , attachable
   , setSink
   , setTracing
   , setDiagnostics
@@ -82,6 +83,21 @@ module PUI
   , seeded
   , resolveFor
   , folding
+  , recordToRecordWiring
+  , recordToVariantWiring
+  , variantToRecordWiring
+  , variantToVariantWiring
+  , selectedAt
+  , selectedUnpickedAt
+  , selectedOptionalAt
+  , replayed
+  , source
+  , class Interacting
+  , gestured
+  , focused
+  , Gesture(..)
+  , occurrencesOn
+  , departures
   -- the vocabulary: what a view writes, with the words `Adopters` re-exports
   , action
   , load
@@ -99,6 +115,10 @@ module PUI
   , anyEdit
   , with
   , looped
+  , inCase
+  , inCaseAt
+  , provided
+  , providedAt
   , introduced
   , module Adopters
   )
@@ -115,13 +135,13 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype)
 import Data.Map as Map
 import Data.Set as Set
-import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Acting (class Acting)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, focusField, recordToRecord)
 -- the words a view writes beside the leaves, re-exported so demos need the
 -- row modules only for the `.do` merges and the knot. `focusField` is
 -- deliberately absent: the leaf lift is design-system plumbing — every
@@ -156,7 +176,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol)
-import Data.Variant (class Contractable, case_, contract, inj, on)
+import Data.Variant (class Contractable, case_, contract, inj, on, prj)
 import Prim.Row (class Cons, class Lacks)
 import Prim.RowList (class RowToList)
 import Type.Proxy (Proxy(..))
@@ -226,6 +246,185 @@ handles (PUI mreg) = do
         Ref.read legRef >>= case _ of
           Nothing -> registered
           _ -> pure unit
+    }
+
+-- The leaf protocol, as functions, one per shape
+-- a leaf answers in, named after it: every leaf of every vocabulary is one
+-- of these wirings over its own element (an emitter is `eventLeaf`, a
+-- derivation), so
+-- the echo a gate depends on, the busy guard around a programmatic write
+-- and the one-registration listener are written once here and nowhere
+-- else.
+
+-- | The **`×→×` leaf**'s wiring — an editor's, and a display's, which is
+-- | an editor the user never changes (`held` false, `reports` registering
+-- | nothing, `read` `pure`): `show` writes each fed value to the
+-- | element unless `held` says the user is in it (the focus guard — a model
+-- | update never clobbers a field being typed in); every feed is **echoed**
+-- | whether written or not, so the lifted stage releases the row and an
+-- | enclosing gate opens; `reports` registers the platform event that
+-- | means the user changed the value, and `read` reads that value off the
+-- | element given the row last fed (a slider reads its position into the
+-- | quantity it was shown). A report while a write is in progress is the
+-- | write's own echo and is dropped, and a report before any feed has
+-- | nothing to complete and is dropped too.
+recordToRecordWiring
+  :: forall a
+   . { show :: a -> Effect Unit
+     , held :: Effect Boolean
+     , reports :: Effect Unit -> Effect Unit
+     , read :: a -> Effect a
+     }
+  -> Effect (Handles a a)
+recordToRecordWiring leaf = do
+  propRef <- Ref.new Nothing
+  lastRef <- Ref.new Nothing
+  busyRef <- Ref.new false
+  pure
+    { toUser: \a -> do
+        Ref.write (Just a) lastRef
+        held <- leaf.held
+        unless held do
+          Ref.write true busyRef
+          leaf.show a
+          Ref.write false busyRef
+        Ref.read propRef >>= traverse_ (_ $ a)
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        leaf.reports do
+          busy <- Ref.read busyRef
+          unless busy do
+            last <- Ref.read lastRef
+            for_ last \a -> leaf.read a >>= prop
+    }
+
+-- | The **`×→+` leaf**'s wiring, a selector's over its option list: it
+-- | answers no feed and reports the user's pick — the `×→+` modality at
+-- | the leaf, the `×→×` answer added by the lift around it. In index terms:
+-- | `show` checks the option at the index (none for `Nothing`), `reports`
+-- | registers the platform's pick event, `read` reads the picked index
+-- | (`Nothing` for a cleared control). The option's value travels through
+-- | `selectedAt` and its siblings, which lift this `Maybe a` leaf to the
+-- | field editor and answer the feed themselves — so, unlike
+-- | `recordToRecordWiring`, nothing is echoed here. A pick reported while a
+-- | programmatic selection is in progress is that selection's own event
+-- | and is dropped.
+recordToVariantWiring
+  :: Array String
+  -> { show :: Maybe Int -> Effect Unit
+     , reports :: Effect Unit -> Effect Unit
+     , read :: Effect (Maybe Int)
+     }
+  -> Effect (Handles (Maybe String) (Maybe String))
+recordToVariantWiring options leaf = do
+  propRef <- Ref.new Nothing
+  busyRef <- Ref.new false
+  pure
+    { toUser: \ma -> do
+        Ref.write true busyRef
+        leaf.show (ma >>= \a -> Array.findIndex (\o -> o == a) options)
+        Ref.write false busyRef
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        leaf.reports do
+          busy <- Ref.read busyRef
+          unless busy do
+            mi <- leaf.read
+            Ref.read propRef >>= traverse_ (_ $ (mi >>= (Array.index options)))
+    }
+
+-- | The **`+→×` leaf**'s wiring, a status's: `show` renders each occurrence, and the
+-- | status releases nothing — the `+→×` merge forwards every release as
+-- | the whole shared row, so a status is typed at every row, as the
+-- | silent component is.
+variantToRecordWiring :: forall a b. (a -> Effect Unit) -> Handles a b
+variantToRecordWiring show = { toUser: show, fromUser: \_ -> pure unit }
+
+-- | The **`+→+` leaf**'s wiring, a dialog's: the leaf is `a → a`, a
+-- | case's payload, lifted by `focusCase @l` into the event row as an
+-- | editor's `a → a` is lifted by `focusField @l` into the model row. On a
+-- | feed it `open`s and feeds the payload to its `content` — the stage the
+-- | dialog shows, a display or editors — and answers **nothing**: a `+→+`
+-- | leaf may wait, and a dialog waits for the user. When `reports` fires —
+-- | the deciding button — it `close`s and releases the row the content
+-- | last answered, once; a decision before any feed has nothing to release
+-- | and is dropped, as is a second one before the next feed. When
+-- | `cancels` fires — the cancel button — it `close`s and releases
+-- | nothing, forgetting the row, as does a dismiss the platform performs
+-- | itself (Escape, the scrim). `acknowledged` drops the release
+-- | (`onCase @l`, the case consumed) and has no cancel; `confirmed`
+-- | re-emits it (`focusCase @l`).
+variantToVariantWiring
+  :: forall a
+   . { open :: Effect Unit
+     , close :: Effect Unit
+     , content :: Handles a a
+     , reports :: Effect Unit -> Effect Unit
+     , cancels :: Effect Unit -> Effect Unit
+     }
+  -> Effect (Handles a a)
+variantToVariantWiring leaf = do
+  shownRef <- Ref.new Nothing
+  pure
+    { toUser: \a -> do
+        leaf.open
+        leaf.content.toUser a
+    , fromUser: \prop -> do
+        leaf.content.fromUser \a -> Ref.write (Just a) shownRef
+        leaf.reports do
+          shown <- Ref.read shownRef
+          for_ shown \a -> do
+            Ref.write Nothing shownRef
+            leaf.close
+            prop a
+        leaf.cancels do
+          Ref.write Nothing shownRef
+          leaf.close
+    }
+
+
+-- | Lift a bare selection leaf — the option to check in (`Nothing`: none),
+-- | the option the user checked out (`Nothing`: cleared) — to the
+-- | **selection editor** of field `l`, a whole-row citizen
+-- | `{ l :: a | rest } → { l :: a | rest }` like every other editor: the
+-- | widget stores a value, so it has an editor's shape and owes an editor's
+-- | answer — every feed is answered with the row, and every pick is stored
+-- | into field `l`. Here the field is the option itself, so the model has a
+-- | choice at all times. Vocabulary plumbing, beside `focusField @l`: every
+-- | plain selector in every vocabulary is its leaf lifted with this.
+selectedAt :: forall @l m a b r. MonadEffect m => IsSymbol l => Cons l a b r => PUI m (Maybe a) (Maybe a) -> PUI m { | r } { | r }
+selectedAt = selectedWith @l Just identity
+
+-- | `selectedAt` for a choice owed but not yet made: field `l` is a variant
+-- | whose case `c` is the made choice, seeded at an unpicked case the
+-- | application names. Every other case shows nothing checked, a pick
+-- | stores case `c` and there is no way back, so the stages demanding the
+-- | selection adopt the made case. Every `…Unpicked` selector is its leaf
+-- | lifted with this.
+selectedUnpickedAt :: forall @l @c m a b1 v b r. MonadEffect m => IsSymbol l => IsSymbol c => Cons c a b1 v => Cons l [ | v ] b r => PUI m (Maybe a) (Maybe a) -> PUI m { | r } { | r }
+selectedUnpickedAt = selectedWith @l (prj (Proxy @c)) (map (inj (Proxy @c)))
+
+-- | `selectedAt` for a choice the user may leave unmade: field `l` is a
+-- | variant whose case `c` is the made choice and whose case `n` is none,
+-- | and clearing the widget stores case `n`. Every `…Optional` selector is
+-- | its leaf lifted with this.
+selectedOptionalAt :: forall @l @c @n m a b1 b2 v b r. MonadEffect m => IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI m (Maybe a) (Maybe a) -> PUI m { | r } { | r }
+selectedOptionalAt = selectedWith @l (prj (Proxy @c)) (Just <<< maybe (inj (Proxy @n) {}) (inj (Proxy @c)))
+
+-- checkedOf: the option the field shows checked; stored: what a pick (`Just`)
+-- or a clear (`Nothing`) stores, if anything; `checkedOf <=< stored` must give
+-- back the pick, so a pick's echo is the pick
+selectedWith :: forall @l m f a b r. MonadEffect m => IsSymbol l => Cons l f b r => (f -> Maybe a) -> (Maybe a -> Maybe f) -> PUI m (Maybe a) (Maybe a) -> PUI m { | r } { | r }
+selectedWith checkedOf stored w = focusField @l $ fromHandles do
+  w' <- handles w
+  mPropRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \v -> do
+        w'.toUser (checkedOf v)
+        Ref.read mPropRef >>= traverse_ (_ $ v)
+    , fromUser: \prop -> do
+        Ref.write (Just prop) mPropRef
+        w'.fromUser (traverse_ prop <<< stored)
     }
 
 -- | Register with the input leg in scope of the continuation: a feedback
@@ -1212,6 +1411,122 @@ ticks interval = fromHandles do
     }
 
 
+-- | A **source**: a fact the platform knows and the app cannot seed — where
+-- | the device is, whether it is online, what time it is, which colour
+-- | scheme is preferred. A source owns one field, `l`, reads nothing of the
+-- | row it is fed, and is **pointed**: it announces its first value at
+-- | registration (`now`), so a merge of sources is a row the gate releases
+-- | at once and keeps current. Every feed is answered with the last value
+-- | known (Answer at `×→×`), and each change the platform reports is an
+-- | emission outside any feed — the editor whose user is the platform. A
+-- | fact the platform may never supply is a variant with its named cases
+-- | (`geolocated`'s `located`/`unknown`/`denied`), never a `Maybe`, so the
+-- | gate never starves on it. The watch is quiet while the scope is
+-- | suspended (a detached pane) and ends when it is cancelled. Several
+-- | sources are merged, `RecordToRecord.do`, each owning its field
+-- | (here-and-now, incident-report) — the one application use of the
+-- | `×→×` merge, since every editor owns the whole row.
+source
+  :: forall @l m a r r1
+   . Scoped m
+  => IsSymbol l
+  => Cons l a () r1
+  => Effect a
+  -> ((a -> Effect Unit) -> Effect (Effect Unit))
+  -> PUI m { | r } { | r1 }
+source now watch = fromHandles do
+  sc <- scope
+  first <- liftEffect now
+  lastRef <- liftEffect $ Ref.new first
+  propRef <- liftEffect $ Ref.new Nothing
+  let row a = Record.insert (Proxy @l) a {}
+  pure
+    { toUser: \_ -> do
+        a <- Ref.read lastRef
+        Ref.read propRef >>= traverse_ (_ $ row a)
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        Ref.read lastRef >>= prop <<< row
+        stop <- watch \a -> do
+          Ref.write a lastRef
+          active <- scopeActive sc
+          when active $ prop (row a)
+        onCancel sc stop
+    }
+
+-- | `joined` at the empty payload: the click source's occurrence carries
+-- | nothing, so the event is dropped, `f` is read off the row last fed and
+-- | the case is renamed from the source's to `l`. Replay is `Strong`'s
+-- | retention and nothing else — the primed `Strong` law: an occurrence
+-- | before any feed is withheld, a feed never emits. With `occurrencesOn`
+-- | this is how a vocabulary builds a pick that carries a field of what
+-- | it showed (`listOf @l @k`'s row, MDC3's `tile @l @k`): `replayed @l
+-- | (Record.get (Proxy @k)) (occurrencesOn Click content)`. Plumbing, not
+-- | vocabulary — an application's emitters are its vocabulary's.
+replayed :: forall @l m r k b v. Functor m => IsSymbol l => Cons l k b v => ({ | r } -> k) -> PUI m { | r } [ occurred :: {} ] -> PUI m { | r } [ | v ]
+replayed f src = Adopters.joined @"occurred" src # rmap (on (Proxy @"occurred") (inj (Proxy @l) <<< f <<< _.model) case_)
+
+-- | What a host tells about the user's hands on what it built, for the
+-- | occurrence sources that read nothing else: a **gesture** on the element
+-- | built last (`occurrencesOn`), and the **focus** of the container being
+-- | built (`departures`). Each method is read at build time and hands back
+-- | the registration, so the place it speaks of is fixed where the source
+-- | is written. `Web` answers on the DOM; the `Effect` probe has no user
+-- | and never fires.
+class MonadEffect m <= Interacting m where
+  -- | Register an action run on each `gesture` on the element built last.
+  gestured :: Gesture -> m (Effect Unit -> Effect Unit)
+  -- | The container being built: move the focus inside it (unless it is
+  -- | there already), and register an action run each time it leaves.
+  focused :: m { focusInside :: Effect Unit, onDeparture :: Effect Unit -> Effect Unit }
+
+-- | The gestures an occurrence source listens for.
+data Gesture = Click | DoubleClick
+
+instance Interacting Effect where
+  gestured _ = pure \_ -> pure unit
+  focused = pure { focusInside: pure unit, onDeparture: \_ -> pure unit }
+
+-- | The occurrence source every emitter is built from: each `gesture` on
+-- | the last-built element (the content's own node) — a `Click` for every
+-- | emitter, a `DoubleClick` for MDC3's `doubleClickTile` — leaves as an
+-- | occurrence carrying nothing; the content is fed the row and its output
+-- | written off. The `× → +` leaf's occurrence half — at the closed empty
+-- | row, `occurrencesOn Click chrome :: PUI m {} [ occurred :: {} ]` is
+-- | the point's dual, an occurrence out of the terminal record (`ticks` is
+-- | its timer sibling). One fixed case: the business label is the
+-- | vocabulary leaf's to state, and `replayed @l` relabels while it
+-- | attaches the row — replay is `Strong`'s retention, so no source keeps
+-- | a copy of the row it was shown. Plumbing, like `replayed`.
+occurrencesOn :: forall m a b. Interacting m => Gesture -> PUI m a b -> PUI m a [ occurred :: {} ]
+occurrencesOn gesture w = fromHandles do
+  w' <- handles w
+  listen <- gestured gesture
+  pure
+    { toUser: w'.toUser
+    , fromUser: \prop -> do
+        -- content is display-only: give its wiring a sink so echoes flow
+        w'.fromUser \_ -> pure unit
+        listen $ prop (inj (Proxy @"occurred") {})
+    }
+
+-- | The **departure** source of an in-place editor's container: an
+-- | occurrence each time the focus leaves the container — a click
+-- | elsewhere, Tab, or Enter, which leaves the element it is pressed in —
+-- | and, on every feed, the focus moved to the container's first element
+-- | unless it is already inside, so an editor shown by a pane is ready to
+-- | type in. Nothing leaves inside a feed. Placed after the editor in its
+-- | container, it is the commit of what the editor released:
+-- | `span $ input @k "text" >>> replayed @l identity departures`
+-- | (`PUI.Web.HTML.inPlaceInput`). Plumbing.
+departures :: forall m a. Interacting m => PUI m a [ occurred :: {} ]
+departures = fromHandles do
+  container <- focused
+  pure
+    { toUser: \_ -> container.focusInside
+    , fromUser: \prop -> container.onDeparture (prop (inj (Proxy @"occurred") {}))
+    }
+
 -- Optics
 
 type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
@@ -1525,6 +1840,12 @@ debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 -- | probe carrier the value-level law tests run on.
 class MonadEffect m <= Hosting m node | m -> node where
   hosting :: forall a b. PUI m a b -> m (Hooks a b node)
+  -- | Build a pane's content parked, in a scope of its own that starts
+  -- | suspended, and hand back how to show and park it: `ensureAttached`
+  -- | places it and resumes its scope, `ensureDetached` takes it away and
+  -- | suspends the scope. Both are idempotent. The panes (`inCase`,
+  -- | `provided`) are this and nothing else of the host.
+  attachable :: forall r. m r -> m { result :: r, ensureAttached :: Effect Unit, ensureDetached :: Effect Unit }
 
 type Hooks a b node =
   { instantiate :: Effect { feed :: a -> Effect Unit, subscribe :: (b -> Effect Unit) -> Effect Unit, node :: node, cancel :: Effect Unit }
@@ -1544,6 +1865,11 @@ instance Hosting Effect Unit where
     , detach: \_ -> pure unit
     , restack: \_ -> pure unit
     }
+  attachable build = do
+    outer <- scope
+    child <- newScope (Just outer) Suspended
+    result <- inScope child build
+    pure { result, ensureAttached: resumeScope child, ensureDetached: suspendScope child }
 
 -- | Keyed, retaining collection on any hosting carrier (laws in
 -- | `Data.Profunctor.Acting`'s header; the vocabulary form is `acted @l`).
@@ -1551,6 +1877,127 @@ instance Hosting m node => Acting (PUI m) where
   actedBy key w = fromHandles do
     hooks <- hosting w
     liftEffect $ actedWith key hooks
+
+-- | The **pane**: a whole-row citizen — a display, an editor, or a pipeline
+-- | of them — that *exists* only while the classifier yields case `l`:
+-- | attached and fed the whole row on that case, detached on any other,
+-- | the fed row released always. Where its content is a display, it shows
+-- | the row only in that state (`text ticketLine # inCaseAt @"serving"
+-- | @"display"`); where
+-- | this pane's content emits the **row**, so the pane is a stage — the
+-- | pane's channel and the wire's, side by side over one input and one
+-- | output.
+-- |
+-- | It dissolves the identity fold: a field that exists only in one mode
+-- | is *not* a payload to fold back into the row by hand — it is a
+-- | whole-row editor whose existence is gated, and
+-- | its `focusField @l` lift already re-attaches the rest of the row. The
+-- | classifier is a business function typed at the stage's row, exactly as
+-- | `pane`'s is; a variant the model stores is named by its label
+-- | instead, `inCaseAt` (`# inCaseAt @"Delivery" @"selected"`, order-form). One release per feed either way: attached, the
+-- | editor's own echo is the release; detached, the wire speaks for the
+-- | absent editor. What the edit does to the rest of the row is a `settled`
+-- | normalization on the same stage when it is a state invariant
+-- | (meeting-booker's `seatsInRoom`, circle-drawer's `resizeSelected`).
+-- | Like the other panes, it names only its case: the states it chooses
+-- | among are the classifier's signature (guardrails L18).
+inCase
+  :: forall @l m node v r a b
+   . Hosting m node => IsSymbol l => Cons l a b v
+  => ({ | r } -> [ | v ]) -> PUI m { | r } { | r } -> PUI m { | r } { | r }
+inCase f w = fromHandles do
+  { result: editor, ensureAttached, ensureDetached } <- attachable $ handles w
+  propRef <- liftEffect $ Ref.new Nothing
+  pure
+    { toUser: \row -> do
+        case prj (Proxy @l) (f row) of
+          Nothing -> do
+            ensureDetached
+            -- the wire speaks only for the absent editor: attached, the
+            -- editor's own echo is the release (one feed, one release)
+            mProp <- Ref.read propRef
+            for_ mProp \prop -> prop row
+          -- attach before feeding, as `provided` does
+          Just _ -> ensureAttached *> editor.toUser row
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        editor.fromUser prop
+    }
+
+-- | `inCase` over a variant the model stores: the editor exists in case `c`
+-- | of field `l`, both named by label (`# inCaseAt @"return flight" @"Flight type"`).
+inCaseAt
+  :: forall @c @l m node r a v b1 b2
+   . Hosting m node => IsSymbol c => IsSymbol l => Cons c a b1 v => Cons l [ | v ] b2 r
+  => PUI m { | r } { | r } -> PUI m { | r } { | r }
+inCaseAt = inCase @c (Record.get (Proxy @l))
+
+-- | Show the **emitter pane** while the model is in state `l` — visibility
+-- | is **case adoption**: the argument is a business function classifying
+-- | the situation into a variant, and the pane is attached and fed the row
+-- | on case `l`, detached on every other case. A quiz whose run is either `asking` or `finished` shows its
+-- | answer list as `listOf … # provided @"asking" quizPhase`; a stopwatch
+-- | shows Start only while `halted`.
+-- |
+-- | The content is an emitter (`×→+`), and that is what makes the pane
+-- | lawful: a feed arms an emitter and fires nothing, so a detached one
+-- | firing nothing is the same answer — an emitter removed by `provided`
+-- | *is* silent. For a button that is the document's doing (a parked
+-- | node gets no clicks); for a `ticks` or an `action` inside, whose
+-- | occurrences have no cause on the channel, it is the pane's **scope**:
+-- | the content is built in a scope the pane suspends while detached, so a
+-- | tick skips its beat and an outcome that settles meanwhile is dropped
+-- | (`PUI`, "Scope"). The pane family is indexed by the shape of what the
+-- | pane holds, each member lawful at its shape: `provided` for emitters,
+-- | `inCase` for displays and editors (the wire while detached).
+-- |
+-- | A `Maybe`-gated pane is the same
+-- | thing with its two cases unnamed, so there is no `Maybe` form: a state a
+-- | pane depends on is a variant with **named** cases — `estimated`/`unknown`
+-- | for a distance, `reading`/`browsing` for an inbox, `chosen`/`unchosen`
+-- | for a selection — which is what makes the view line say which state it
+-- | renders. Where several states are **mutually exclusive**, one classifier
+-- | states it (`# provided @"taken" usernameStatus`) and each pane
+-- | adopts its own case, so two panes can never both be on screen — which
+-- | separate "should this be visible?" tests can always accidentally allow.
+-- |
+-- | The pane is fed the whole row, like every stage, and it is removed
+-- | from the page while the model sits elsewhere: the rule for *what is on
+-- | screen when* lives in business code where it can be tested, and a pane
+-- | that is absent contributes nothing — so anything downstream waiting on
+-- | it waits, rather than showing a stale or invented value.
+-- |
+-- | The pane names only its case (`# provided @"reading" messageView`):
+-- | every state it chooses among is the classifier's signature, in the view
+-- | model module, and the view restates none of them (guardrails L18).
+-- | A variant the model stores is named by its label instead, `providedAt`.
+provided :: forall @l m node v r a b v1. Hosting m node => IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI m { | r } [ | v1 ] -> PUI m { | r } [ | v1 ]
+provided = attachedOn @l
+
+-- | `provided` over a variant the model stores: the emitter exists in case
+-- | `c` of field `l`, both named by label (`# providedAt @"halted" @"phase"`).
+providedAt :: forall @c @l m node r a v v1 b1 b2. Hosting m node => IsSymbol c => IsSymbol l => Cons c a b1 v => Cons l [ | v ] b2 r => PUI m { | r } [ | v1 ] -> PUI m { | r } [ | v1 ]
+providedAt = provided @c (Record.get (Proxy @l))
+
+-- The pane mechanism every pane shares, at any content output: attach and
+-- feed the row on case `l`, detach on every other case. Public only
+-- through its lawful restrictions — `provided` at emitter content, where a
+-- detached pane's silence is `×→+`'s Answer (`inCase` answers for a
+-- detached content itself).
+attachedOn :: forall @l @v m node r a b c. Hosting m node => IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI m { | r } c -> PUI m { | r } c
+attachedOn f w = fromHandles do
+  {result: { toUser, fromUser}, ensureAttached, ensureDetached} <- attachable $ handles w
+  pure
+    { toUser: \fed -> case prj (Proxy @l) (f fed) of
+      Nothing -> ensureDetached
+      Just _ -> do
+        -- attach before feeding: a UI component that measures itself on toUser (the
+        -- MDC slider positions its thumb from the track width) needs to be in
+        -- the document first, or it lays out against a zero-width detached node
+        ensureAttached
+        toUser fed
+    , fromUser
+    }
 
 -- | The dynamic collection — the **collapsed (sum-flavored) reading of the
 -- | container action** on any hosting carrier. **Keyed and retaining**: each

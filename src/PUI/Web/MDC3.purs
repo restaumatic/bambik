@@ -157,10 +157,10 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, anyOf, folding, introduced, isHole, Ocular, PUI)
+import PUI (fromHandles, handles, anyOf, folding, introduced, isHole, Ocular, PUI, recordToRecordWiring, recordToVariantWiring, variantToRecordWiring, variantToVariantWiring, selectedAt, selectedUnpickedAt, selectedOptionalAt, replayed, occurrencesOn, Gesture(..))
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, recordToRecordWiring, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, occurrences, occurrencesOn, onInputDebounced, removeAttribute, replayed, selectedAt, selectedOptionalAt, selectedUnpickedAt, recordToVariantWiring, separating, setAttribute, setChecked, setValue, staticHTML, staticText, variantToRecordWiring, text, statusText, uniqueId, variantToVariantWiring, (:=))
+import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Lacks)
 import Data.Variant (Variant)
@@ -1239,7 +1239,7 @@ listOf'
 listOf' provided f item = withStructuralOrd @key $ fromHandles do
   liftEffect $ ensureStyle "md3-list" listCss
   handles $ el "md-list" >>> "style" := "overflow-y: auto;" $
-    ( replayed @l (Record.get (Proxy @k)) $ occurrences $ clWhen config.selected "md3-list-item--selected"
+    ( replayed @l (Record.get (Proxy @k)) $ occurrencesOn Click $ clWhen config.selected "md3-list-item--selected"
         $ el "md-list-item" >>> "type" := "button" $ item
     ) # anyOf @k f
   where
@@ -1264,7 +1264,7 @@ tile
   => Cons l key b2 v
   => PUI Web { | r } o
   -> PUI Web { | r } [ | v ]
-tile = tileOn @l @k "click"
+tile = tileOn @l @k Click
 
 -- | `tile` reporting a **double click** — the cell a sheet edits in place
 -- | (`doubleClickTile @"Cell double-clicked" @"key" $ textAt @"text"`,
@@ -1277,7 +1277,7 @@ doubleClickTile
   => Cons l key b2 v
   => PUI Web { | r } o
   -> PUI Web { | r } [ | v ]
-doubleClickTile = tileOn @l @k "dblclick"
+doubleClickTile = tileOn @l @k DoubleClick
 
 tileOn
   :: forall @l @k r o b1 b2 key v
@@ -1285,7 +1285,7 @@ tileOn
   => IsSymbol k
   => Cons k key b1 r
   => Cons l key b2 v
-  => String
+  => Gesture
   -> PUI Web { | r } o
   -> PUI Web { | r } [ | v ]
 tileOn gesture content = fromHandles do

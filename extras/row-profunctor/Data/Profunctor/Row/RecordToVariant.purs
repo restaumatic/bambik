@@ -64,7 +64,7 @@
 -- | is why this shape has no starvation: a silent emitter is lawful, and
 -- | an absent one is the silent component (below). Probes carry law and
 -- | shape in test/Main.purs (`answer ×→+` over `joined` of a click probe,
--- | the derivation every vocabulary emitter is, `PUI.Web.replayed`; the
+-- | the derivation every vocabulary emitter is, `PUI.replayed`; the
 -- | real emitters are clicked on the leaf-law bench); 3–6, with 5's
 -- | repetition and arming over `joined` emitters, run over every script
 -- | to a bound in test/Exhaustive.purs.
