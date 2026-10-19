@@ -24,6 +24,7 @@ module PUI.Web.Bootstrap
   , card
   , listGroup
   , listGroupItem
+  , option
   , indeterminateLinearProgress
   , progress
   , select
@@ -40,10 +41,8 @@ module PUI.Web.Bootstrap
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
-import Data.FoldableWithIndex (forWithIndex_)
-import Data.Int (fromString) as Int
 import Data.Int (round)
-import Data.Maybe (Maybe, fromMaybe, maybe)
+import Data.Maybe (fromMaybe)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
@@ -51,13 +50,14 @@ import Data.Profunctor.Row (atCase)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import PUI (fromHandles, handles, folding, Ocular, PUI, recordToRecordWiring, recordToVariantWiring, variantToRecordWiring, selectedAt, selectedUnpickedAt, selectedOptionalAt)
+import PUI (fromHandles, handles, folding, Ocular, PUI, recordToRecordWiring, variantToRecordWiring)
 import PUI.Web.HTML (div, label, span)
-import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, choiceTags, tagged, Web, attribute, autoDismiss, cl, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, setAttribute, setChecked, setValue, staticText, text, statusText, uniqueId, (:=))
+import PUI.Web.HTML (body, option) as HTML
+import PUI.Web (Web, attribute, autoDismiss, cl, el, element, eventLeaf, getChecked, getValue, isFocused, listenNode, setAttribute, setChecked, setValue, staticText, text, statusText, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
-import Data.Variant (Variant)
+import Data.Variant (inj)
+import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 
 -- Implementation notes — the reference above is the contract.
@@ -202,45 +202,60 @@ rangeLeaf lbl measure = div >>> "style" := "width: 100%;" $ fromHandles do
 -- | choice owed but not yet made, `selectOptional @l @c @n` for one
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
--- | The options belong to the control, not to the model.
-select :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Choices w -> PUI Web { | r } { | r }
-select options = selectOf @l false (selectedAt @l <<< tagged) (choiceTags options)
+-- | The options belong to the control, not to the model: they are `option`
+-- | leaves (the native `<option>`) merged
+-- | `VariantToVariant.do`, the block closing the field's row in the order
+-- | written.
+select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+select options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false options
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-selectUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
-selectUnpicked options = selectOf @l false (selectedUnpickedAt @l @c <<< tagged) (choiceTags options)
+selectUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+selectUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false (focusCase @c options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-selectOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
-selectOptional options = selectOf @l true (selectedOptionalAt @l @c @n <<< tagged) (choiceTags options)
+selectOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+selectOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l true (blankEmits @n (focusCase @c options))
 
-selectOf :: forall @l i o. IsSymbol l => Boolean -> (PUI Web (Maybe String) (Maybe String) -> PUI Web i o) -> Array String -> PUI Web i o
-selectOf clearable lift options = let config = { label: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ div >>> "style" := "width: 100%;" $ fromHandles do
-  _ <- handles ((label $ staticText config.label) # cl "form-label")
-  element "select" (void $ handles (optionLeaves))
-  node <- gets _.sibling
-  liftEffect $ setAttribute node "class" "form-select"
-  liftEffect $ recordToVariantWiring options
-    { show: setValue node <<< maybe "" show
-    , reports: listenNode node "change"
-    , read: Int.fromString <$> getValue node
-    }
-  where
-  optionLeaves :: PUI Web {} {}
-  optionLeaves = fromHandles do
-    when clearable do
+-- The label and the `.form-select` around the options, cleared before every
+-- feed so a case no option owns shows nothing picked; `blank` leads with an
+-- empty option, the one a cleared optional select shows.
+selectGroupOf :: forall @l a. IsSymbol l => Boolean -> PUI Web a a -> PUI Web a a
+selectGroupOf blank options = div >>> "style" := "width: 100%;" $ fromHandles do
+  _ <- handles ((label $ staticText (reflectSymbol (Proxy @l))) # cl "form-label")
+  handles $ el "select" >>> "class" := "form-select" $ fromHandles do
+    selectNode <- gets _.parent
+    when blank do
       element "option" (pure unit)
       noneNode <- gets _.sibling
       liftEffect $ setAttribute noneNode "value" ""
-    forWithIndex_ options \idx o -> do
-      element "option" (void $ handles (staticText (o)))
-      optionNode <- gets _.sibling
-      liftEffect $ setAttribute optionNode "value" (show idx)
-    pure { toUser: mempty, fromUser: \prop -> prop {} }
+    inner <- handles options
+    pure
+      { toUser: \fed -> setValue selectNode "" *> inner.toUser fed
+      , fromUser: inner.fromUser
+      }
+
+-- | One option of a `select`: the native `<option>` showing its case.
+option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
+option = HTML.option @c
+
+-- The clearing of an optional select: picking the empty option emits `n`.
+blankEmits :: forall @n b v. IsSymbol n => Cons n {} b v => PUI Web [ | v ] [ | v ] -> PUI Web [ | v ] [ | v ]
+blankEmits options = fromHandles do
+  selectNode <- gets _.parent
+  inner <- handles options
+  pure
+    { toUser: inner.toUser
+    , fromUser: \prop -> do
+        inner.fromUser prop
+        listenNode selectNode "change" do
+          value <- getValue selectNode
+          when (value == "") $ prop (inj (Proxy @n) {})
+    }
 
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label is part of the target, so clicking the words toggles it too.

@@ -2,10 +2,12 @@ module LawBenchHTML (lawBenchHTML) where
 
 import Prelude hiding (div)
 
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, online, provided, providedAt, staticText, text, textAt)
-import PUI.Web.HTML (acknowledged, confirmed, body, button, div, filePicked, inPlaceInput, indeterminateLinearProgress, input, output, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
+import PUI (PUI)
+import PUI.Web (Web, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, online, provided, providedAt, staticText, text, textAt)
+import PUI.Web.HTML (acknowledged, confirmed, body, button, div, filePicked, inPlaceInput, indeterminateLinearProgress, input, output, option, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
 lawBenchHTML = do
@@ -50,7 +52,10 @@ lawBenchHTML = do
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   runs = [ .started {}, .ended {} ]
-  options = choice @"one" <+> choice @"two"
+  options :: PUI Web [ one :: {}, two :: {} ] [ one :: {}, two :: {} ]
+  options = VariantToVariant.do
+    option @"one"
+    option @"two"
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   titled = [ { title: "first", other: 1 }, { title: "second", other: 2 } ]

@@ -2,10 +2,12 @@ module LawBenchBootstrap (lawBenchBootstrap) where
 
 import Prelude
 
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web ((<+>), choice, staticText)
-import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, progress, select, selectOptional, selectUnpicked, sliderLive, textField, toast, toggleSwitch)
+import PUI (PUI)
+import PUI.Web (Web, staticText)
+import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, option, progress, select, selectOptional, selectUnpicked, sliderLive, textField, toast, toggleSwitch)
 
 lawBenchBootstrap :: Effect Unit
 lawBenchBootstrap = do
@@ -30,7 +32,10 @@ lawBenchBootstrap = do
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   runs = [ .started {}, .ended {} ]
-  options = choice @"one" <+> choice @"two"
+  options :: PUI Web [ one :: {}, two :: {} ] [ one :: {}, two :: {} ]
+  options = VariantToVariant.do
+    option @"one"
+    option @"two"
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]

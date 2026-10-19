@@ -2,11 +2,12 @@ module FlightBooker.HTML (flightBooker) where
 
 import Prelude (Unit, (#), ($))
 
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import FlightBooker (bookingLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
 import PUI (looped, with)
-import PUI.Web ((<+>), attrWith, choice, inCaseAt, provided, staticText, text)
-import PUI.Web.HTML (body, button, confirmed, div, input, label, p, select)
+import PUI.Web (attrWith, inCaseAt, provided, staticText, text)
+import PUI.Web.HTML (body, button, confirmed, div, input, label, option, p, select)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
@@ -15,7 +16,9 @@ flightBooker =
     ( Semigroupoid.do
       p $ label $ Semigroupoid.do
         staticText "Flight type "
-        select @"Flight type" (choice @"one-way flight" <+> choice @"return flight")
+        select @"Flight type" $ VariantToVariant.do
+          option @"one-way flight"
+          option @"return flight"
       p $ label $ Semigroupoid.do
         staticText "Start date (DD.MM.YYYY) "
         input @"Start date" "text" # attrWith "aria-invalid" startDateInvalid
