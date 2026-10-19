@@ -26,7 +26,7 @@ stepper steps = focusField @l $ "name" := reflectSymbol (Proxy @l) >>> "aria-lab
 -- | One step of a `stepper`: a dot, current while the field holds case `c`.
 step :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 step = fromHandles do
-  dots <- gets _.parent
+  dots <- gets \{ parent } -> parent
   _ <- handles (staticHTML ("<data class=\"md3-stepper__dot\" aria-hidden=\"true\" value=\"" <> escaped (reflectSymbol (Proxy @c)) <> "\"></data>"))
   dot <- lastBuilt
   let
@@ -48,7 +48,7 @@ stepperGroup steps =
     back <- navButton "chevron_left" "Back"
     { dots, inner, caption } <- element "div" do
       { dots, inner } <- element "div" do
-        dots <- gets _.parent
+        dots <- gets \{ parent } -> parent
         inner <- handles steps
         pure { dots, inner }
       clazz "md3-stepper__dots"
