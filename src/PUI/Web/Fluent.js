@@ -123,3 +123,8 @@ export function containsFocus(node) {
   };
 }
 
+
+// enclosingDropdown :: Node -> Effect Node — the dropdown an option is built
+// in: v3 requires its options inside a `<fluent-listbox>`, so the option's
+// parent is the listbox, not the dropdown
+export const enclosingDropdown = node => () => node.closest('fluent-dropdown');

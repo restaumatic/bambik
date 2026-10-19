@@ -11,10 +11,11 @@
 -- | font stack.
 -- |
 -- | The catalogue: `textField`, `toggleSwitch` and `slider` to enter
--- | values, `dropdown` and `radioGroup` to choose one, `button` to act,
--- | `messageBar` to say what happened, `progressBar` and `ratingDisplay` to
--- | show a figure, `card`, `divider` and the type ramp (`title3`, `body1`,
--- | `caption1`) for structure, and `body` to mount the app.
+-- | values, `dropdown` and `radioGroup` (over `option` and `radio` leaves)
+-- | to choose one, `button` to act, `messageBar` to say what happened,
+-- | `progressBar` and `ratingDisplay` to show a figure, `card`, `divider`
+-- | and the type ramp (`title3`, `body1`, `caption1`) for structure, and
+-- | `body` to mount the app.
 module PUI.Web.Fluent
   ( acknowledged
   , confirmed
@@ -27,12 +28,14 @@ module PUI.Web.Fluent
   , dropdown
   , dropdownUnpicked
   , dropdownOptional
+  , option
   , messageBar
   , indeterminateLinearProgress
   , progressBar
   , radioGroup
   , radioGroupUnpicked
   , radioGroupOptional
+  , radio
   , ratingDisplay
   , slider
   , slider'
@@ -45,27 +48,23 @@ module PUI.Web.Fluent
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)
-import Data.Array (findIndex)
-import Data.FoldableWithIndex (foldMapWithIndex)
-import Data.Foldable (for_, traverse_)
-import Data.Int (fromString)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Foldable (for_)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row (atCase)
-import Data.TraversableWithIndex (forWithIndex)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Data.Profunctor.Row.VariantToVariant (focusCase, onCase)
-import PUI (fromHandles, handles, folding, Ocular, PUI, recordToRecordWiring, recordToVariantWiring, variantToRecordWiring, variantToVariantWiring, selectedAt, selectedUnpickedAt, selectedOptionalAt)
+import PUI (fromHandles, handles, folding, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Choices, choiceTags, tagged, clearedOnRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, (:=))
+import PUI.Web (Members, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, eventLeaf, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
-import Data.Variant (Variant)
+import Data.Variant (inj)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 
 -- Implementation notes — the reference above is the contract.
@@ -89,9 +88,11 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 --       `×→×` editors — `textField @l`, `toggleSwitch @l`
 --         (`<fluent-switch>`), `slider @l` (`<fluent-slider>` — Fluent's
 --         slider emits on every value change; the catalog has no
---         commit/live split), and the type-changing `dropdown @l` and
---         `radioGroup @l` (`{ l :: f } → { l :: f }`, `f` the option itself, or a
---         variant around it for the `…Unpicked`/`…Optional` siblings);
+--         commit/live split), and the selector groups `dropdown @l` and
+--         `radioGroup @l` (`{ l :: f } → { l :: f }`, `f` the case of one of
+--         their `option`/`radio` leaves, or a variant around it for the
+--         `…Unpicked`/`…Optional` siblings), each over a
+--         `VariantToVariant.do` block of `+→+` option leaves;
 --       `×→×` displays — `progressBar` (`{ value :: Number } → {}`, the
 --         filled fraction 0–1) and `ratingDisplay`
 --         (`{ value :: Number } → {}` — Fluent's read-only star display,
@@ -227,102 +228,143 @@ sliderLeaf lbl measure = el "fluent-field" >>> "label-position" := "above" $ fro
 
 -- | The **dropdown**: one choice out of a list too long to lay out in the
 -- | open.
--- | The field holds the option itself, so the model always has one.
+-- |
+-- | The options are `option` leaves, one per case of the field, merged
+-- | `VariantToVariant.do` in the order they are listed:
+-- | `dropdown @"Room" $ VariantToVariant.do option @"Focus pod"; option @"Boardroom"`.
+-- | The block closes the field's cases; the dropdown lifts it onto field
+-- | `l`, so the field holds the option itself and the model always has one.
 -- | Two siblings hold a variant instead: `dropdownUnpicked @l @c` for a
 -- | choice owed but not yet made, `dropdownOptional @l @c @n` for one
 -- | the user may leave unmade. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
-dropdown :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Choices w -> PUI Web { | r } { | r }
-dropdown options = dropdownOf @l false (selectedAt @l <<< tagged) (choiceTags options)
+dropdown :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+dropdown options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ dropdownOf @l false options
 
 -- | `dropdown` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-dropdownUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
-dropdownUnpicked options = dropdownOf @l false (selectedUnpickedAt @l @c <<< tagged) (choiceTags options)
+dropdownUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+dropdownUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ dropdownOf @l false (focusCase @c options)
 
 -- | `dropdown` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
-dropdownOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
-dropdownOptional options = dropdownOf @l true (selectedOptionalAt @l @c @n <<< tagged) (choiceTags options)
+dropdownOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+dropdownOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ dropdownOf @l true (blankEmits @n (focusCase @c options))
 
-dropdownOf :: forall @l i o. IsSymbol l => Boolean -> (PUI Web (Maybe String) (Maybe String) -> PUI Web i o) -> Array String -> PUI Web i o
-dropdownOf clearable lift options = let config = { label: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
-  element "fluent-dropdown" (void $ handles (staticHTML optionsMarkup))
-  attribute "slot" "input"
+-- A selector group in three forms, over one clearing of its options:
+-- every feed first shows nothing picked, then the one option owning the
+-- fed case shows itself, so a case no option owns (an unpicked one) shows
+-- nothing. Both writes wait for the dropdown to bind (`whenBoundDo`), in
+-- the order they were made.
+dropdownOf :: forall @l a. IsSymbol l => Boolean -> PUI Web a a -> PUI Web a a
+dropdownOf blank options = fieldWith "above" (reflectSymbol (Proxy @l)) do
+  inner <- element "fluent-dropdown" do
+    element "fluent-listbox" do
+      when blank $ void $ handles (staticHTML "<fluent-option value=\"\"></fluent-option>")
+      handles options
   node <- gets _.sibling
-  liftEffect $ recordToVariantWiring options
-    { show: selectDropdownOption node <<< maybe "" show
-    , reports: listenNode node "change"
-    , read: fromString <$> getStringProp "value" node
+  liftEffect $ setAttribute node "slot" "input"
+  pure
+    { toUser: \a -> selectDropdownOption node "" *> inner.toUser a
+    , fromUser: inner.fromUser
     }
-  where
-  optionsMarkup = "<fluent-listbox>" <> (if clearable then "<fluent-option value=\"\"></fluent-option>" else "") <> foldMapWithIndex optionMarkup options <> "</fluent-listbox>"
-  optionMarkup idx o = "<fluent-option value=\"" <> show idx <> "\">" <> escaped (o) <> "</fluent-option>"
+
+-- The clearing of an optional dropdown: picking the empty option emits `n`.
+blankEmits :: forall @n b v. IsSymbol n => Cons n {} b v => PUI Web [ | v ] [ | v ] -> PUI Web [ | v ] [ | v ]
+blankEmits options = fromHandles do
+  dropdownNode <- gets _.parent >>= liftEffect <<< enclosingDropdown
+  inner <- handles options
+  pure
+    { toUser: inner.toUser
+    , fromUser: \prop -> do
+        inner.fromUser prop
+        listenNode dropdownNode "change" do
+          value <- getStringProp "value" dropdownNode
+          when (value == "") $ prop (inj (Proxy @n) {})
+    }
+
+-- | One option of a `dropdown`: a `<fluent-option>` reading its case.
+option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
+option = fromHandles do
+  dropdownNode <- gets _.parent >>= liftEffect <<< enclosingDropdown
+  element "fluent-option" (void $ handles (staticText (reflectSymbol (Proxy @c))))
+  attribute "value" (reflectSymbol (Proxy @c))
+  liftEffect $ optionWiring @c
+    { show: selectDropdownOption dropdownNode (reflectSymbol (Proxy @c))
+    , reports: listenNode dropdownNode "change"
+    , picked: (_ == reflectSymbol (Proxy @c)) <$> getStringProp "value" dropdownNode
+    }
 
 -- | The **radio group**: one choice among a handful, every option visible
 -- | and comparable at a glance. Beyond about five options use `dropdown`.
--- | Same selection contract as `dropdown`.
-radioGroup :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => Choices w -> PUI Web { | r } { | r }
-radioGroup options = radioGroupOf @l false (selectedAt @l <<< tagged) (choiceTags options)
+-- | Same selection contract as `dropdown`; its options are `radio` leaves:
+-- | `radioGroup @"Duration" $ VariantToVariant.do radio @"30 min"; radio @"1 hour"`.
+radioGroup :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+radioGroup options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf @l options
 
 -- | `radioGroup` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
-radioGroupUnpicked :: forall @l @c w b1 v b2 r. IsSymbol l => IsSymbol c => Cons c (Variant w) b1 v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
-radioGroupUnpicked options = radioGroupOf @l false (selectedUnpickedAt @l @c <<< tagged) (choiceTags options)
+radioGroupUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+radioGroupUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf @l (focusCase @c options)
 
 -- | `radioGroup` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | pressing the checked option again clears it, storing `n` again.
-radioGroupOptional :: forall @l @c @n w b1 t v b2 r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c (Variant w) b1 v => Cons n {} t v => Cons l [ | v ] b2 r => Choices w -> PUI Web { | r } { | r }
-radioGroupOptional options = radioGroupOf @l true (selectedOptionalAt @l @c @n <<< tagged) (choiceTags options)
+radioGroupOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+radioGroupOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf @l (clearedByRepress @n radioMembers (focusCase @c options))
 
-radioGroupOf :: forall @l i o. IsSymbol l => Boolean -> (PUI Web (Maybe String) (Maybe String) -> PUI Web i o) -> Array String -> PUI Web i o
-radioGroupOf clearable lift options = let config = { label: reflectSymbol (Proxy @l) } in lift $ "name" := reflectSymbol (Proxy @l) $ fieldWith "above" config.label do
-  members <- element "fluent-radio-group" do
-    forWithIndex options \idx o -> do
-      member <- element "fluent-field" do
-        _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText (o))
-        element "fluent-radio" (pure unit)
-        radioNode <- gets _.sibling
-        liftEffect do
-          setAttribute radioNode "slot" "input"
-          setAttribute radioNode "value" (show idx)
-        pure { radioNode, value: o }
-      fieldNode <- gets _.sibling
-      liftEffect $ setAttribute fieldNode "label-position" "after"
-      pure { press: fieldNode, click: member.radioNode, radioNode: member.radioNode, value: member.value }
+-- The group's value setter is the sanctioned selection path, and it needs
+-- the group bound (its bind-time sync would clear earlier per-radio
+-- writes), so the clearing and an option's showing both go through it.
+radioGroupOf :: forall @l a. IsSymbol l => PUI Web a a -> PUI Web a a
+radioGroupOf options = fieldWith "above" (reflectSymbol (Proxy @l)) do
+  inner <- element "fluent-radio-group" (handles options)
   groupNode <- gets _.sibling
   liftEffect $ setAttribute groupNode "slot" "input"
-  mPropRef <- liftEffect $ Ref.new Nothing
-  selRef <- liftEffect $ Ref.new Nothing
-  let
-    -- the group's value setter is the sanctioned selection path, and it
-    -- needs the group bound (its bind-time sync would clear earlier
-    -- per-radio writes)
-    render ma = do
-      Ref.write ma selRef
-      case ma of
-        Just a' -> for_ (findIndex (\o -> o == a') options) \idx -> selectGroupValue groupNode (show idx)
-        Nothing -> selectGroupValue groupNode ""
-    emit ma = Ref.read mPropRef >>= traverse_ (_ $ ma)
-  -- listen per radio (the group's own sync can lag); the model echo below
-  -- re-feeds through the group's value setter, which restores exclusivity
-  liftEffect $ for_ members \m -> listenNode m.radioNode "change" do
-    checked <- getChecked m.radioNode
-    sel <- Ref.read selRef
-    when (checked && sel /= Just m.value) do
-      Ref.write (Just m.value) selRef
-      emit (Just m.value)
-  liftEffect $ when clearable $ clearedOnRepress selRef members (render Nothing *> emit Nothing)
   pure
-    { toUser: \ma -> do
-        render ma
-    , fromUser: \prop -> Ref.write (Just prop) mPropRef
+    { toUser: \a -> selectGroupValue groupNode "" *> inner.toUser a
+    , fromUser: inner.fromUser
     }
+
+radioMembers :: Members
+radioMembers =
+  { selector: "fluent-radio"
+  , isPicked: getChecked
+  , unpickAll: \group -> selectGroupValue group ""
+  , beforeClick: \group snapshot -> do
+      listenNode group "pointerdown" snapshot
+      listenNode group "keydown" snapshot
+  }
+
+-- | One option of a `radioGroup`: a `<fluent-radio>` labelled by its case.
+radio :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
+radio = fromHandles do
+  groupNode <- gets _.parent
+  radioNode <- element "fluent-field" do
+    _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText (reflectSymbol (Proxy @c)))
+    element "fluent-radio" (pure unit)
+    gets _.sibling
+  fieldNode <- gets _.sibling
+  liftEffect do
+    setAttribute radioNode "slot" "input"
+    setAttribute radioNode "value" (reflectSymbol (Proxy @c))
+    setAttribute fieldNode "label-position" "after"
+    -- the group re-reports the checked radio when a press focuses it; the
+    -- press says whether it was checked, so only a new pick leaves
+    wasCheckedRef <- Ref.new false
+    listenNode fieldNode "pointerdown" (getChecked radioNode >>= flip Ref.write wasCheckedRef)
+    listenNode fieldNode "click" (Ref.write false wasCheckedRef)
+    optionWiring @c
+      { show: selectGroupValue groupNode (reflectSymbol (Proxy @c))
+      , reports: \k -> listenNode radioNode "change" do
+          wasChecked <- Ref.read wasCheckedRef
+          unless wasChecked k
+      , picked: getChecked radioNode
+      }
 
 -- | The **progress bar**: how far along something is, `value` running 0 to
 -- | 1. As much a gauge as a progress indicator — a quota, a share, a
@@ -502,6 +544,7 @@ foreign import getNumberProp :: String -> Node -> Effect Number
 foreign import getStringProp :: String -> Node -> Effect String
 foreign import selectDropdownOption :: Node -> String -> Effect Unit
 foreign import selectGroupValue :: Node -> String -> Effect Unit
+foreign import enclosingDropdown :: Node -> Effect Node
 foreign import containsFocus :: Node -> Effect Boolean
 
 -- Entry point
