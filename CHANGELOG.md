@@ -7,6 +7,12 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-10-19, latest
+- **`fieldLeaf @l` and `chrome` in `PUI.Web`.** `fieldLeaf @l leaf` is
+  `focusField @l` over the leaf with the label stamped as its `name`, the
+  line all 81 editors and selectors across the vocabularies had spelled
+  out; `chrome w` places a component a leaf's builder does not wire,
+  replacing the 75 `_ <- handles …`/`void $ handles …` lines, so
+  `handles` is left to the components a builder actually wires.
 - **Leaves written once for every vocabulary.** `eventLeaf` moves from
   `PUI.Web` to `PUI`, over any `Interacting` carrier — it only composes
   `replayed` and `occurrencesOn`. Beside it, `statusOver @l face f` (a

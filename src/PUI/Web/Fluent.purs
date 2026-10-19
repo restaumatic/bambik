@@ -51,7 +51,6 @@ import Control.Monad.State (gets)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -60,7 +59,7 @@ import Data.Profunctor.Row.VariantToVariant (focusCase)
 import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Members, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, (:=))
+import PUI.Web (chrome, fieldLeaf, Members, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (inj)
@@ -127,7 +126,7 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- appends (Fluent's label protocol: both are slotted children of the field)
 fieldWith :: forall i o. String -> String -> Web { toUser :: i -> Effect Unit, fromUser :: (o -> Effect Unit) -> Effect Unit } -> PUI Web i o
 fieldWith position lbl editor = el "fluent-field" >>> "label-position" := position $ fromHandles do
-  _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText lbl)
+  chrome (el "fluent-label" >>> "slot" := "label" $ staticText lbl)
   editor
 
 -- | The **text field**: a labelled single-line input. Shows the string it
@@ -135,20 +134,20 @@ fieldWith position lbl editor = el "fluent-field" >>> "label-position" := positi
 -- | arriving from elsewhere. A whole-row citizen: fed the wide row, it
 -- | edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textField = focusField @l $ "name" := reflectSymbol (Proxy @l) $ textInputLeaf (reflectSymbol (Proxy @l)) ""
+textField = fieldLeaf @l $ textInputLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `textField` with a `hint` under it — a format or an example the label
 -- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
 -- | label stays the field's name. Shown as the field's message.
 textField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
-textField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ textInputLeaf (reflectSymbol (Proxy @l)) hint
+textField' { hint } = fieldLeaf @l $ textInputLeaf (reflectSymbol (Proxy @l)) hint
 
 textInputLeaf :: String -> String -> PUI Web String String
 textInputLeaf lbl hint = el "fluent-field" >>> "label-position" := "above" $ fromHandles do
-  _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText lbl)
+  chrome (el "fluent-label" >>> "slot" := "label" $ staticText lbl)
   editor <- textInput
   when (hint /= "") $
-    void $ handles (el "fluent-text" >>> "slot" := "message" >>> "size" := "200" $ staticText hint)
+    chrome (el "fluent-text" >>> "slot" := "message" >>> "size" := "200" $ staticText hint)
   pure editor
   where
   textInput = do
@@ -167,7 +166,7 @@ textInputLeaf lbl hint = el "fluent-field" >>> "label-position" := "above" $ fro
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | Its label sits after the control, in Fluent's manner.
 toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
-toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fieldWith "after" config.label do
+toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ fieldWith "after" config.label do
   element "fluent-switch" (pure unit)
   attribute "slot" "input"
   node <- gets _.sibling
@@ -193,18 +192,18 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
 -- | be `debounced` downstream. The current number is shown at the end of
 -- | the label line, since the control has no readout of its own.
 slider :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-slider = focusField @l $ "name" := reflectSymbol (Proxy @l) $ sliderLeaf (reflectSymbol (Proxy @l)) ""
+slider = fieldLeaf @l $ sliderLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `slider` whose value is read in a `unit` (`slider' @"Amount" { unit:
 -- | "€" }`), shown after the number in the label line's readout, so the
 -- | label stays the quantity's name.
 slider' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
-slider' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ sliderLeaf (reflectSymbol (Proxy @l)) config.unit
+slider' config = fieldLeaf @l $ sliderLeaf (reflectSymbol (Proxy @l)) config.unit
 
 sliderLeaf :: String -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
 sliderLeaf lbl measure = el "fluent-field" >>> "label-position" := "above" $ fromHandles do
   readout <- handles $ (el "fluent-label" >>> "slot" := "label" >>> "style" := "display: flex; justify-content: space-between; width: 100%;" $ fromHandles do
-      _ <- handles (staticText lbl)
+      chrome (staticText lbl)
       handles (el "span" >>> "style" := "color: var(--colorNeutralForeground3, #616161);" $ text _.readout))
   -- the readout is written, never listened to; text's echo needs a listener
   liftEffect $ readout.fromUser \_ -> pure unit
@@ -239,19 +238,19 @@ sliderLeaf lbl measure = el "fluent-field" >>> "label-position" := "above" $ fro
 -- | answered with the row, every pick stored.
 -- | The options belong to the control, not to the model.
 dropdown :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-dropdown options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ dropdownOf @l false options
+dropdown options = fieldLeaf @l $ dropdownOf @l false options
 
 -- | `dropdown` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
 dropdownUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-dropdownUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ dropdownOf @l false (focusCase @c options)
+dropdownUnpicked options = fieldLeaf @l $ dropdownOf @l false (focusCase @c options)
 
 -- | `dropdown` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
 dropdownOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-dropdownOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ dropdownOf @l true (blankEmits @n (focusCase @c options))
+dropdownOptional options = fieldLeaf @l $ dropdownOf @l true (blankEmits @n (focusCase @c options))
 
 -- A selector group in three forms, over one clearing of its options:
 -- every feed first shows nothing picked, then the one option owning the
@@ -262,7 +261,7 @@ dropdownOf :: forall @l a. IsSymbol l => Boolean -> PUI Web a a -> PUI Web a a
 dropdownOf blank options = fieldWith "above" (reflectSymbol (Proxy @l)) do
   inner <- element "fluent-dropdown" do
     element "fluent-listbox" do
-      when blank $ void $ handles (staticHTML "<fluent-option value=\"\"></fluent-option>")
+      when blank $ chrome (staticHTML "<fluent-option value=\"\"></fluent-option>")
       handles options
   node <- gets _.sibling
   liftEffect $ setAttribute node "slot" "input"
@@ -289,7 +288,7 @@ blankEmits options = fromHandles do
 option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 option = fromHandles do
   dropdownNode <- gets _.parent >>= liftEffect <<< enclosingDropdown
-  element "fluent-option" (void $ handles (staticText (reflectSymbol (Proxy @c))))
+  element "fluent-option" (chrome (staticText (reflectSymbol (Proxy @c))))
   attribute "value" (reflectSymbol (Proxy @c))
   liftEffect $ optionWiring @c
     { show: selectDropdownOption dropdownNode (reflectSymbol (Proxy @c))
@@ -302,19 +301,19 @@ option = fromHandles do
 -- | Same selection contract as `dropdown`; its options are `radio` leaves:
 -- | `radioGroup @"Duration" $ VariantToVariant.do radio @"30 min"; radio @"1 hour"`.
 radioGroup :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioGroup options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf @l options
+radioGroup options = fieldLeaf @l $ radioGroupOf @l options
 
 -- | `radioGroup` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
 radioGroupUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioGroupUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf @l (focusCase @c options)
+radioGroupUnpicked options = fieldLeaf @l $ radioGroupOf @l (focusCase @c options)
 
 -- | `radioGroup` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | pressing the checked option again clears it, storing `n` again.
 radioGroupOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioGroupOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf @l (clearedByRepress @n radioMembers (focusCase @c options))
+radioGroupOptional options = fieldLeaf @l $ radioGroupOf @l (clearedByRepress @n radioMembers (focusCase @c options))
 
 -- The group's value setter is the sanctioned selection path, and it needs
 -- the group bound (its bind-time sync would clear earlier per-radio
@@ -344,7 +343,7 @@ radio :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI W
 radio = fromHandles do
   groupNode <- gets _.parent
   radioNode <- element "fluent-field" do
-    _ <- handles (el "fluent-label" >>> "slot" := "label" $ staticText (reflectSymbol (Proxy @c)))
+    chrome (el "fluent-label" >>> "slot" := "label" $ staticText (reflectSymbol (Proxy @c)))
     element "fluent-radio" (pure unit)
     gets _.sibling
   fieldNode <- gets _.sibling
@@ -473,10 +472,10 @@ modal { title, decide, cancel } content = fromHandles do
     for_ title \t -> handles (div >>> "slot" := "title" $ staticText t)
     w <- handles (div $ content)
     for_ cancel \c -> do
-      _ <- handles (el "fluent-button" >>> "slot" := "action" $ staticText c)
+      chrome (el "fluent-button" >>> "slot" := "action" $ staticText c)
       node <- gets _.sibling
       liftEffect $ Ref.write (Just node) cancelRef
-    _ <- handles (el "fluent-button" >>> "slot" := "action" >>> "appearance" := "primary" $ staticText decide)
+    chrome (el "fluent-button" >>> "slot" := "action" >>> "appearance" := "primary" $ staticText decide)
     node <- gets _.sibling
     liftEffect $ Ref.write (Just node) decideRef
     pure w

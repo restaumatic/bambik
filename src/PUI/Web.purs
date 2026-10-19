@@ -58,6 +58,8 @@ module PUI.Web
   , OptSelected(..)
   , invokeMethod
   , showModalOnce
+  , fieldLeaf
+  , chrome
   , escaped
   , listenNode
   , listenNodeDeferred
@@ -131,7 +133,8 @@ import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
-import Data.Symbol (class IsSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Array (concat)
 import Data.String (replaceAll, Pattern(..), Replacement(..))
 import Data.Variant (inj)
@@ -477,6 +480,22 @@ data OptSelected = OptSelected
 
 instance ConvertOption OptSelected sym a a where
   convertOption _ _ = identity
+
+-- | The editor of field `l` over its leaf: the leaf lifted by
+-- | `focusField @l`, so it is a whole-row citizen, and its host stamped
+-- | with the label as its `name` (the stamp invariant, `OptCaption`).
+-- | Every vocabulary's editors and selectors are this over their own leaf
+-- | (`textField = fieldLeaf @l $ inputLeaf …`).
+fieldLeaf :: forall @l a b r. IsSymbol l => Cons l a b r => PUI Web a a -> PUI Web { | r } { | r }
+fieldLeaf leaf = focusField @l $ "name" := reflectSymbol (Proxy @l) $ leaf
+
+-- | Build a component inside a leaf's builder as **chrome**: placed where
+-- | the builder stands and never fed or listened to — a caption, a ripple,
+-- | a static's markup beside the element the leaf wires. The one way a
+-- | vocabulary places a component it does not wire, so placing chrome
+-- | needs no `handles`.
+chrome :: forall a b. PUI Web a b -> Web Unit
+chrome = void <<< handles
 
 -- | A runtime string made safe to concatenate into `staticHTML` markup —
 -- | as text or as a double-quoted attribute value. Every caption, label,

@@ -160,7 +160,7 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, anyOf, introduced, isHole, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, escaped, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), eachMatching, hasClass, listenCapture, Members, clearedByRepress)
+import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, escaped, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), eachMatching, hasClass, listenCapture, Members, clearedByRepress)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Lacks)
 import Data.Variant (Variant)
@@ -359,13 +359,13 @@ menuItem = eventLeaf @l $
 -- | interrupted by values arriving from elsewhere. A whole-row citizen:
 -- | fed the wide row, it edits field `l` and carries the rest.
 filledTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel "")
+filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (textFieldLeaf "md-filled-text-field" Nothing config.floatingLabel "")
 
 -- | `filledTextField` with a `hint` under it — a format or an example the
 -- | label is not (`filledTextField' @"Start date" { hint: "DD.MM.YYYY" }`),
 -- | so the label stays the field's name. Shown as MD3's supporting text.
 filledTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
-filledTextField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" Nothing (reflectSymbol (Proxy @l)) hint)
+filledTextField' { hint } = fieldLeaf @l $ (textFieldLeaf "md-filled-text-field" Nothing (reflectSymbol (Proxy @l)) hint)
 
 -- | `filledTextField` in its **introducing form**: the field is not in the
 -- | row fed but stated here, `init` of the rest of the row its blank
@@ -393,17 +393,17 @@ checkboxFrom init = introduced @l init (checkbox @l @c @n)
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.
 outlinedTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel "")
+outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (textFieldLeaf "md-outlined-text-field" Nothing config.floatingLabel "")
 
 -- | `outlinedTextField` with a `hint` under it, as `filledTextField'`.
 outlinedTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
-outlinedTextField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-outlined-text-field" Nothing (reflectSymbol (Proxy @l)) hint)
+outlinedTextField' { hint } = fieldLeaf @l $ (textFieldLeaf "md-outlined-text-field" Nothing (reflectSymbol (Proxy @l)) hint)
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
 debouncedTextField :: forall @l r b. IsSymbol l => Cons l String b r => { ms :: Number } -> PUI Web { | r } { | r }
-debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "md-filled-text-field" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel "")
+debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (textFieldLeaf "md-filled-text-field" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel "")
 
 -- the raw MD3 text field — scalar, so private; the custom element carries
 -- its own label/ripple chrome, so the leaf is property/event wiring only.
@@ -432,7 +432,7 @@ textFieldLeaf tag mDebounce floatingLabel hint = fromHandles do
 -- | floats (`floatingLabel` overrides it for real copy), shows a string,
 -- | reports each edit, never interrupts typing.
 filledTextArea :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String, columns :: Int, rows :: Int } { | provided } { floatingLabel :: String, columns :: Int, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
-filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), columns: 40, rows: 4 } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), columns: 40, rows: 4 } provided in fieldLeaf @l $ fromHandles do
   element "md-filled-text-field" (pure unit)
   attribute "type" "textarea"
   attribute "label" config.floatingLabel
@@ -461,7 +461,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | states as part of a form; use `toggleSwitch` for a setting that takes
 -- | effect at once.
 checkbox :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => PUI Web { | r } { | r }
-checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $
+checkbox = fieldLeaf @l $
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ fromHandles do
     aRef <- liftEffect $ Ref.new {}
     element "md-checkbox" (pure unit)
@@ -504,16 +504,16 @@ checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $
 
 -- | The radio group over its options: field `l` holds one of their cases.
 radioButton :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioButton options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf options
+radioButton options = fieldLeaf @l $ radioGroupOf options
 
 -- | `radioButton` for a choice owed but not yet made.
 radioButtonUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioButtonUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf (focusCase @c options)
+radioButtonUnpicked options = fieldLeaf @l $ radioGroupOf (focusCase @c options)
 
 -- | `radioButton` for a choice the user may leave unmade: pressing the
 -- | checked radio again clears it, storing case `n`.
 radioButtonOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioButtonOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf (clearedByRepress @n radioMembers (focusCase @c options))
+radioButtonOptional options = fieldLeaf @l $ radioGroupOf (clearedByRepress @n radioMembers (focusCase @c options))
 
 radioGroupOf :: forall a. PUI Web a a -> PUI Web a a
 radioGroupOf options =
@@ -545,7 +545,7 @@ radio = fromHandles do
     element "md-radio" (pure unit)
     radioNode <- gets _.sibling
     liftEffect $ setAttribute radioNode "aria-label" (reflectSymbol (Proxy @c))
-    _ <- handles (staticText (reflectSymbol (Proxy @c)))
+    chrome (staticText (reflectSymbol (Proxy @c)))
     pure radioNode
   attribute "style" "display: inline-flex; align-items: center; gap: 12px;"
   labelNode <- gets _.sibling
@@ -569,7 +569,7 @@ radio = fromHandles do
 -- | flipped — notifications on, dark mode on. (A `checkbox` states a fact
 -- | to be submitted with the rest of a form; a switch acts immediately.)
 toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
-toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (switchLeaf config.label)
+toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (switchLeaf config.label)
 
 switchLeaf :: String -> PUI Web Boolean Boolean
 switchLeaf lbl =
@@ -577,7 +577,7 @@ switchLeaf lbl =
     element "md-switch" (pure unit)
     node <- gets _.sibling
     liftEffect $ setAttribute node "aria-label" lbl
-    _ <- handles (staticText lbl)
+    chrome (staticText lbl)
     liftEffect $ recordToRecordWiring
       { show: setBoolProp "selected" node
       , held: pure false
@@ -600,24 +600,24 @@ switchLeaf lbl =
 -- | entry in the history — one undo step, one audit line. For a readout
 -- | that follows the thumb, use `sliderLive`.
 slider :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-slider = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label "")
+slider = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (sliderLeaf false config.label "")
 
 -- | `slider` whose value is read in a `unit` (`slider' @"Amount" { unit:
 -- | "€" }`), shown after the number on the handle's value label, so the
 -- | label stays the quantity's name.
 slider' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
-slider' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false (reflectSymbol (Proxy @l)) config.unit)
+slider' config = fieldLeaf @l $ (sliderLeaf false (reflectSymbol (Proxy @l)) config.unit)
 
 -- | `slider` reporting continuously while the thumb moves — for a live
 -- | readout or preview that has to follow the drag. Whatever it drives
 -- | should be cheap to redo; a drag that should land in the history as one
 -- | change needs the plain `slider`, or a `debounced` stage downstream.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label "")
+sliderLive = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (sliderLeaf true config.label "")
 
 -- | `sliderLive` whose value is read in a `unit`, as `slider'`.
 sliderLive' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
-sliderLive' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true (reflectSymbol (Proxy @l)) config.unit)
+sliderLive' config = fieldLeaf @l $ (sliderLeaf true (reflectSymbol (Proxy @l)) config.unit)
 
 -- `<md-slider>` ships no text label of its own (`labeled` is the handle's
 -- value indicator), so a non-empty config label renders visibly above the
@@ -627,7 +627,7 @@ sliderLeaf live label measure
   | label == "" = bareSliderLeaf live label measure
   | otherwise =
       div >>> "style" := "display: inline-flex; flex-direction: column; align-items: flex-start;" $ fromHandles do
-        _ <- handles (span >>> cl "md-typescale-label-medium" >>> "style" := "color: var(--md-sys-color-on-surface-variant, #49454f); margin-left: 8px;" $ staticText label)
+        chrome (span >>> cl "md-typescale-label-medium" >>> "style" := "color: var(--md-sys-color-on-surface-variant, #49454f); margin-left: 8px;" $ staticText label)
         handles (bareSliderLeaf live label measure)
 
 bareSliderLeaf :: Boolean -> String -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
@@ -667,7 +667,7 @@ option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI 
 option = fromHandles do
   selectNode <- gets _.parent
   element "md-select-option" do
-    void $ handles (staticHTML ("<div slot=\"headline\">" <> escaped (reflectSymbol (Proxy @c)) <> "</div>"))
+    chrome (staticHTML ("<div slot=\"headline\">" <> escaped (reflectSymbol (Proxy @c)) <> "</div>"))
   attribute "value" (reflectSymbol (Proxy @c))
   optionNode <- gets _.sibling
   liftEffect $ optionWiring @c
@@ -677,20 +677,20 @@ option = fromHandles do
     }
 
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-select options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false options
+select options = fieldLeaf @l $ selectGroupOf @l false options
 
 selectUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false (focusCase @c options)
+selectUnpicked options = fieldLeaf @l $ selectGroupOf @l false (focusCase @c options)
 
 -- | `select` for a choice the user may leave unmade: an empty first
 -- | option, which picked stores case `n`.
 selectOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l true (blankEmits @n (focusCase @c options))
+selectOptional options = fieldLeaf @l $ selectGroupOf @l true (blankEmits @n (focusCase @c options))
 
 selectGroupOf :: forall @l a. IsSymbol l => Boolean -> PUI Web a a -> PUI Web a a
 selectGroupOf blank options = el "md-filled-select" >>> "label" := reflectSymbol (Proxy @l) >>> "style" := "min-width: 200px;" $ fromHandles do
   selectNode <- gets _.parent
-  when blank $ void $ handles (staticHTML "<md-select-option value=\"\"></md-select-option>")
+  when blank $ chrome (staticHTML "<md-select-option value=\"\"></md-select-option>")
   inner <- handles options
   pure
     { toUser: \a -> setStringProp "value" selectNode "" *> inner.toUser a
@@ -720,7 +720,7 @@ blankEmits options = fromHandles do
 segment :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 segment = fromHandles do
   container <- gets _.parent
-  _ <- handles (staticHTML ("<button class=\"md3-segmented-button__segment\" role=\"radio\" aria-checked=\"false\"><span class=\"md3-segmented-button__check\" aria-hidden=\"true\"></span><span>" <> escaped (reflectSymbol (Proxy @c)) <> "</span></button>"))
+  chrome (staticHTML ("<button class=\"md3-segmented-button__segment\" role=\"radio\" aria-checked=\"false\"><span class=\"md3-segmented-button__check\" aria-hidden=\"true\"></span><span>" <> escaped (reflectSymbol (Proxy @c)) <> "</span></button>"))
   node <- gets _.sibling
   let
     selectSelf = do
@@ -749,15 +749,15 @@ segmentMembers =
   }
 
 segmentedButton :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-segmentedButton options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ segmentGroupOf options
+segmentedButton options = fieldLeaf @l $ segmentGroupOf options
 
 segmentedButtonUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-segmentedButtonUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ segmentGroupOf (focusCase @c options)
+segmentedButtonUnpicked options = fieldLeaf @l $ segmentGroupOf (focusCase @c options)
 
 -- | `segmentedButton` for a choice the user may leave unmade: pressing the
 -- | selected segment again clears it, storing case `n`.
 segmentedButtonOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-segmentedButtonOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ segmentGroupOf (clearedByRepress @n segmentMembers (focusCase @c options))
+segmentedButtonOptional options = fieldLeaf @l $ segmentGroupOf (clearedByRepress @n segmentMembers (focusCase @c options))
 
 segmentGroupOf :: forall a. PUI Web a a -> PUI Web a a
 segmentGroupOf options = div >>> cl "md3-segmented-button" >>> "role" := "radiogroup" $ fromHandles do
@@ -783,7 +783,7 @@ segmentedButtonCss = """
 -- | be active at once — dietary tags, categories, facets. Put them in a
 -- | `chipSet`.
 filterChip :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
-filterChip = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (chipLeaf config.label)
+filterChip = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (chipLeaf config.label)
 
 chipLeaf :: String -> PUI Web Boolean Boolean
 chipLeaf lbl = fromHandles do
@@ -805,13 +805,13 @@ chipLeaf lbl = fromHandles do
 -- | filled, so the same glyph in both slots still reads as off and on. The
 -- | compact form of a `toggleSwitch`, for list rows and toolbars.
 iconToggle :: forall @l r b provided. IsSymbol l => Cons l Boolean b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { onIcon :: String, offIcon :: String, label :: String } => { | provided } -> PUI Web { | r } { | r }
-iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (iconToggleLeaf config)
+iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in fieldLeaf @l $ (iconToggleLeaf config)
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
 iconToggleLeaf config = fromHandles do
   -- the selected icon renders filled (the MD3 selected-state convention),
   -- so a same-glyph pair still reads as off/on
-  _ <- handles $ el "md-icon-button" >>> "toggle" := "" >>> "aria-label" := config.label $ Semigroupoid.do
+  chrome $ el "md-icon-button" >>> "toggle" := "" >>> "aria-label" := config.label $ Semigroupoid.do
     el "md-icon" $ staticText config.offIcon
     el "md-icon" >>> "slot" := "selected" >>> "style" := "font-variation-settings: 'FILL' 1;" $ staticText config.onIcon
   node <- gets _.sibling
@@ -842,7 +842,7 @@ tab' { icon } = tabWith @c (Just icon)
 tabWith :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => Maybe String -> PUI Web [ | v ] [ | o ]
 tabWith icon = fromHandles do
   tabs <- gets _.parent
-  _ <- handles (staticHTML ("<md-primary-tab>" <> maybe "" (\i -> "<md-icon slot=\"icon\">" <> escaped i <> "</md-icon>") icon <> escaped (reflectSymbol (Proxy @c)) <> "</md-primary-tab>"))
+  chrome (staticHTML ("<md-primary-tab>" <> maybe "" (\i -> "<md-icon slot=\"icon\">" <> escaped i <> "</md-icon>") icon <> escaped (reflectSymbol (Proxy @c)) <> "</md-primary-tab>"))
   node <- gets _.sibling
   liftEffect $ optionWiring @c
     { show: do
@@ -853,7 +853,7 @@ tabWith icon = fromHandles do
     }
 
 tabBar :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-tabBar options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ el "md-tabs" $ options
+tabBar options = fieldLeaf @l $ el "md-tabs" $ options
 
 -- | The **indeterminate progress bar**: work is under way and there is no
 -- | telling how long — a request in flight, a file being processed. A
@@ -1087,7 +1087,7 @@ group w = fromHandles do
 dialog :: String -> Ocular (PUI Web)
 dialog title content =
   el "md-dialog" >>> init pure showDialog closeDialog $ fromHandles do
-    _ <- handles (div >>> "slot" := "headline" $ staticText title)
+    chrome (div >>> "slot" := "headline" $ staticText title)
     handles (div >>> "slot" := "content" $ content)
 
 -- | The witness rung — see `PUI.Web.MDC2.confirmed`: `focusCase @l` over
@@ -1129,9 +1129,9 @@ modal { title, decide, cancel } content = fromHandles do
   shown <- handles $ el "md-dialog" >>> "aria-label" := fromMaybe decide title $ fromHandles do
     for_ title \t -> handles (div >>> "slot" := "headline" $ staticText t)
     w <- handles (div >>> "slot" := "content" $ content)
-    _ <- handles $ div >>> "slot" := "actions" $ fromHandles do
+    chrome $ div >>> "slot" := "actions" $ fromHandles do
       for_ cancel \c -> do
-        _ <- handles (el "md-text-button" $ staticText c)
+        chrome (el "md-text-button" $ staticText c)
         node <- gets _.sibling
         liftEffect $ Ref.write (Just node) cancelRef
       decision <- handles (el "md-text-button" $ staticText decide)
@@ -1195,7 +1195,7 @@ snackbarCss = """
 menu :: String -> Ocular (PUI Web)
 menu anchorCaption content =
   span >>> "style" := "position: relative; display: inline-block;" $ fromHandles do
-    _ <- handles (staticHTML ("<md-outlined-button trailing-icon>" <> escaped anchorCaption <> "<md-icon slot=\"icon\">arrow_drop_down</md-icon></md-outlined-button>"))
+    chrome (staticHTML ("<md-outlined-button trailing-icon>" <> escaped anchorCaption <> "<md-icon slot=\"icon\">arrow_drop_down</md-icon></md-outlined-button>"))
     anchorNode <- gets _.sibling
     w <- handles (el "md-menu" $ content)
     menuNode <- gets _.sibling
@@ -1367,7 +1367,7 @@ dataTable tableName headerCells content = fromHandles do
   liftEffect $ ensureStyle "md3-data-table" dataTableCss
   handles $ div >>> cl "md3-data-table" $
     table >>> "aria-label" := tableName $ fromHandles do
-      _ <- handles (thead $ tr $ headerCells)
+      chrome (thead $ tr $ headerCells)
       handles (tbody $ content)
 
 -- | One **column header** of a `dataTable` — static copy naming the column,
@@ -1422,7 +1422,7 @@ layoutCell cellSpan = div >>> "style" := ("grid-column: span " <> show cellSpan 
 topAppBar :: String -> Ocular (PUI Web)
 topAppBar title content = fromHandles do
   liftEffect $ ensureStyle "md3-top-app-bar" topAppBarCss
-  _ <- handles (staticHTML ("<header class=\"md3-top-app-bar\"><span class=\"md3-top-app-bar__title\">" <> escaped title <> "</span></header>"))
+  chrome (staticHTML ("<header class=\"md3-top-app-bar\"><span class=\"md3-top-app-bar__title\">" <> escaped title <> "</span></header>"))
   handles (div >>> cl "md3-top-app-bar-content" $ content)
 
 topAppBarCss :: String
@@ -1442,7 +1442,7 @@ drawer :: forall r o. { title :: String, subtitle :: String } -> PUI Web { | r }
 drawer config nav content = div >>> "style" := "display: flex;" $ fromHandles do
   liftEffect $ ensureStyle "md3-drawer" drawerCss
   nav' <- handles $ aside >>> cl "md3-drawer" $ fromHandles do
-    _ <- handles (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
+    chrome (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
     handles (div $ nav)
   content' <- handles (div >>> "style" := "flex: 1; padding: 16px;" $ content)
   -- the content is a display: its echoes are the row the nav already has
@@ -1470,7 +1470,7 @@ tooltip tipText content =
     liftEffect $ ensureStyle "md3-tooltip" tooltipCss
     tipId <- liftEffect uniqueId
     w <- handles ("aria-describedby" := tipId $ content)
-    _ <- handles (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> escaped tipText <> "</div>"))
+    chrome (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> escaped tipText <> "</div>"))
     pure w
 
 

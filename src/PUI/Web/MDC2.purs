@@ -138,7 +138,7 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, anyOf, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Members, clearedByRepress, eachMatching, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, escaped, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
+import PUI.Web (chrome, fieldLeaf, Members, clearedByRepress, eachMatching, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, escaped, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -357,23 +357,23 @@ menuItem = eventLeaf @l $
 -- | interrupted by values arriving from elsewhere. A whole-row citizen:
 -- | fed the wide row, it edits field `l` and carries the rest.
 filledTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "filled" Nothing config.floatingLabel "")
+filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (textFieldLeaf "filled" Nothing config.floatingLabel "")
 
 -- | `filledTextField` with a `hint` under it — a format or an example the
 -- | label is not (`filledTextField' @"Start date" { hint: "DD.MM.YYYY" }`),
 -- | so the label stays the field's name. Shown as MD2's persistent helper
 -- | text, which describes the input.
 filledTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
-filledTextField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ hinted $ (textFieldLeaf "filled" Nothing (reflectSymbol (Proxy @l)) hint)
+filledTextField' { hint } = fieldLeaf @l $ hinted $ (textFieldLeaf "filled" Nothing (reflectSymbol (Proxy @l)) hint)
 
 -- | `filledTextField` in Material's outlined variant — a border instead of
 -- | a fill. Same behaviour; pick one variant and keep to it across a form.
 outlinedTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "outlined" Nothing config.floatingLabel "")
+outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (textFieldLeaf "outlined" Nothing config.floatingLabel "")
 
 -- | `outlinedTextField` with a `hint` under it, as `filledTextField'`.
 outlinedTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
-outlinedTextField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ hinted $ (textFieldLeaf "outlined" Nothing (reflectSymbol (Proxy @l)) hint)
+outlinedTextField' { hint } = fieldLeaf @l $ hinted $ (textFieldLeaf "outlined" Nothing (reflectSymbol (Proxy @l)) hint)
 
 -- the field and its helper line are siblings in MD2's markup, so a hinted
 -- field is wrapped to stay one element under the label's stamp
@@ -384,7 +384,7 @@ hinted = el "div" >>> "style" := "display: inline-flex; flex-direction: column;"
 -- | reporting — for a field that drives expensive work (a search, a
 -- | recomputed preview) and should not fire once per character.
 debouncedTextField :: forall @l r b. IsSymbol l => Cons l String b r => { ms :: Number } -> PUI Web { | r } { | r }
-debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (textFieldLeaf "filled" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel "")
+debouncedTextField settleTime = let config = { floatingLabel: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (textFieldLeaf "filled" (if isHole settleTime then Nothing else Just settleTime.ms) config.floatingLabel "")
 
 -- the raw MD2 text field — scalar, so private; the documented markup per
 -- variant plus an `MDCTextField` foundation, values written through the
@@ -399,14 +399,14 @@ textFieldLeaf variant mDebounce floatingLabel hint = fromHandles do
   hintId <- liftEffect uniqueId
   inputNode <- element "label" do
     if variant == "outlined"
-      then void $ handles $ span >>> cl "mdc-notched-outline" $ Semigroupoid.do
+      then chrome $ span >>> cl "mdc-notched-outline" $ Semigroupoid.do
         static (span >>> cl "mdc-notched-outline__leading")
         span >>> cl "mdc-notched-outline__notch" $
           span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel
         static (span >>> cl "mdc-notched-outline__trailing")
       else do
-        _ <- handles (static (span >>> cl "mdc-text-field__ripple"))
-        void $ handles (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel)
+        chrome (static (span >>> cl "mdc-text-field__ripple"))
+        chrome (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText floatingLabel)
     element "input" (pure unit)
     clazz "mdc-text-field__input"
     attribute "type" "text"
@@ -414,14 +414,14 @@ textFieldLeaf variant mDebounce floatingLabel hint = fromHandles do
     when (hint /= "") $ attribute "aria-describedby" hintId
     node <- gets _.sibling
     when (variant == "filled") $
-      void $ handles (static (span >>> cl "mdc-line-ripple"))
+      chrome (static (span >>> cl "mdc-line-ripple"))
     pure node
   clazz "mdc-text-field"
   clazz ("mdc-text-field--" <> variant)
   fieldNode <- gets _.sibling
   comp <- liftEffect $ newComponent material.textField."MDCTextField" fieldNode
   when (hint /= "") $
-    void $ handles (div >>> cl "mdc-text-field-helper-line" $ div >>> cl "mdc-text-field-helper-text" >>> cl "mdc-text-field-helper-text--persistent" >>> "id" := hintId $ staticText hint)
+    chrome (div >>> cl "mdc-text-field-helper-line" $ div >>> cl "mdc-text-field-helper-text" >>> cl "mdc-text-field-helper-text--persistent" >>> "id" := hintId $ staticText hint)
   liftEffect $ textFieldWiring comp inputNode mDebounce
 
 -- the shared text-field/text-area wiring: write through the foundation's
@@ -441,11 +441,11 @@ textFieldWiring comp inputNode mDebounce = recordToRecordWiring
 -- | floats (`floatingLabel` overrides it for real copy), shows a string,
 -- | reports each edit, never interrupts typing.
 filledTextArea :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { floatingLabel :: String, columns :: Int, rows :: Int } { | provided } { floatingLabel :: String, columns :: Int, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
-filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), columns: 40, rows: 4 } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { floatingLabel: reflectSymbol (Proxy @l), columns: 40, rows: 4 } provided in fieldLeaf @l $ fromHandles do
   labelId <- liftEffect uniqueId
   inputNode <- element "label" do
-    _ <- handles (static (span >>> cl "mdc-text-field__ripple"))
-    _ <- handles (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText config.floatingLabel)
+    chrome (static (span >>> cl "mdc-text-field__ripple"))
+    chrome (span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText config.floatingLabel)
     node <- element "span" do
       element "textarea" (pure unit)
       clazz "mdc-text-field__input"
@@ -454,7 +454,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
       attribute "aria-labelledby" labelId
       gets _.sibling
     clazz "mdc-text-field__resizer"
-    _ <- handles (static (span >>> cl "mdc-line-ripple"))
+    chrome (static (span >>> cl "mdc-line-ripple"))
     pure node
   clazz "mdc-text-field"
   clazz "mdc-text-field--filled"
@@ -476,7 +476,7 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | states as part of a form; use `toggleSwitch` for a setting that takes
 -- | effect at once.
 checkbox :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => PUI Web { | r } { | r }
-checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+checkbox = fieldLeaf @l $ fromHandles do
   checkboxId <- liftEffect uniqueId
   aRef <- liftEffect $ Ref.new {}
   parts <- element "div" do
@@ -486,14 +486,14 @@ checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
       attribute "type" "checkbox"
       attribute "id" checkboxId
       node <- gets _.sibling
-      _ <- handles $ div >>> cl "mdc-checkbox__background" $ Semigroupoid.do
+      chrome $ div >>> cl "mdc-checkbox__background" $ Semigroupoid.do
         staticHTML """
           <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
             <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"></path>
           </svg>""" -- Without raw HTML it doesn't work
         static (div >>> cl "mdc-checkbox__mixedmark")
-      _ <- handles (static (div >>> cl "mdc-checkbox__ripple"))
-      _ <- handles (static (div >>> cl "mdc-checkbox__focus-ring"))
+      chrome (static (div >>> cl "mdc-checkbox__ripple"))
+      chrome (static (div >>> cl "mdc-checkbox__focus-ring"))
       pure node
     clazz "mdc-checkbox"
     cbNode <- gets _.sibling
@@ -542,19 +542,19 @@ checkbox = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
 -- the `…Optional` form adds a named none case `n` that the user's clearing
 -- gesture stores.
 radioButton :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioButton options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf options
+radioButton options = fieldLeaf @l $ radioGroupOf options
 
 -- | `radioButton` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` holds the options' case, seeded at an unpicked case;
 -- | nothing is checked until the user picks, and a pick cannot be taken back.
 radioButtonUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioButtonUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf (focusCase @c options)
+radioButtonUnpicked options = fieldLeaf @l $ radioGroupOf (focusCase @c options)
 
 -- | `radioButton` for a choice the user may leave unmade: field `l` is a
 -- | variant whose case `c` holds the options' case and case `n` none,
 -- | seeded at `n`; pressing the checked radio again clears it, storing `n`.
 radioButtonOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-radioButtonOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf (clearedByRepress @n radioMembers (focusCase @c options))
+radioButtonOptional options = fieldLeaf @l $ radioGroupOf (clearedByRepress @n radioMembers (focusCase @c options))
 
 radioGroupOf :: forall a. PUI Web a a -> PUI Web a a
 radioGroupOf options =
@@ -588,7 +588,7 @@ radioMembers =
 radio :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 radio = fromHandles do
   uid <- liftEffect uniqueId
-  _ <- handles (staticHTML (markup uid))
+  chrome (staticHTML (markup uid))
   root <- gets _.sibling
   liftEffect do
     inputNode <- querySelectorIn root "input"
@@ -617,15 +617,15 @@ radio = fromHandles do
 -- | flipped — notifications on, dark mode on. (A `checkbox` states a fact
 -- | to be submitted with the rest of a form; a switch acts immediately.)
 toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
-toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (switchLeaf config.label)
+toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (switchLeaf config.label)
 
 switchLeaf :: String -> PUI Web Boolean Boolean
 switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8px;" $ fromHandles do
   switchId <- liftEffect uniqueId
-  _ <- handles (staticHTML (switchMarkup switchId))
+  chrome (staticHTML (switchMarkup switchId))
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.switchControl."MDCSwitch" node
-  _ <- handles (staticHTML ("<label for=\"" <> switchId <> "\">" <> escaped lbl <> "</label>"))
+  chrome (staticHTML ("<label for=\"" <> switchId <> "\">" <> escaped lbl <> "</label>"))
   -- MDCSwitch toggles itself on click; read the post-toggle state
   liftEffect $ recordToRecordWiring
     { show: setBoolProp "selected" comp
@@ -666,14 +666,14 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
 -- | entry in the history — one undo step, one audit line. For a readout
 -- | that follows the thumb, use `sliderLive`.
 slider :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-slider = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf false config.label)
+slider = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (sliderLeaf false config.label)
 
 -- | `slider` reporting continuously while the thumb moves — for a live
 -- | readout or preview that has to follow the drag. Whatever it drives
 -- | should be cheap to redo; a drag that should land in the history as one
 -- | change needs the plain `slider`, or a `debounced` stage downstream.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (sliderLeaf true config.label)
+sliderLive = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (sliderLeaf true config.label)
 
 -- `MDCSlider`'s value API is method-based (`getValue`/`setValue`), the one
 -- foundation here off the property-wiring convention; its bounds are
@@ -681,7 +681,7 @@ sliderLive = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $
 -- input attributes and constructs a fresh foundation over the same markup
 sliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
 sliderLeaf live label = fromHandles do
-  _ <- handles (staticHTML markup)
+  chrome (staticHTML markup)
   node <- gets _.sibling
   stateRef <- liftEffect $ Ref.new Nothing
   let
@@ -744,19 +744,19 @@ sliderLeaf live label = fromHandles do
 -- | Same selection contract as `radioButton`, with the same two siblings
 -- | (`selectUnpicked`, `selectOptional`); its options are `option` leaves.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-select options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false options
+select options = fieldLeaf @l $ selectGroupOf @l false options
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` holds the options' case, seeded at an unpicked case;
 -- | nothing is picked until the user picks, and a pick cannot be taken back.
 selectUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false (focusCase @c options)
+selectUnpicked options = fieldLeaf @l $ selectGroupOf @l false (focusCase @c options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a
 -- | variant whose case `c` holds the options' case and case `n` none,
 -- | seeded at `n`; an empty first option, which picked stores `n` again.
 selectOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l true (blankEmits @n (focusCase @c options))
+selectOptional options = fieldLeaf @l $ selectGroupOf @l true (blankEmits @n (focusCase @c options))
 
 -- MDCSelect reads its items at construction, so the group builds the
 -- documented markup with the options' items in its list first, then the
@@ -768,10 +768,10 @@ selectGroupOf blank options = div >>> cl "mdc-select" >>> cl "mdc-select--filled
   root <- gets _.parent
   labelId <- liftEffect uniqueId
   textId <- liftEffect uniqueId
-  _ <- handles (staticHTML (anchorMarkup labelId textId))
+  chrome (staticHTML (anchorMarkup labelId textId))
   inner <- element "div" do
     inner <- element "ul" do
-      when blank $ void $ handles (staticHTML "<li class=\"mdc-deprecated-list-item\" data-value=\"\" role=\"option\" aria-selected=\"false\"><span class=\"mdc-deprecated-list-item__ripple\"></span></li>")
+      when blank $ chrome (staticHTML "<li class=\"mdc-deprecated-list-item\" data-value=\"\" role=\"option\" aria-selected=\"false\"><span class=\"mdc-deprecated-list-item__ripple\"></span></li>")
       handles options
     attribute "class" "mdc-deprecated-list"
     attribute "role" "listbox"
@@ -817,7 +817,7 @@ blankEmits options = fromHandles do
 -- | the case too.
 option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 option = fromHandles do
-  _ <- handles (staticHTML markup)
+  chrome (staticHTML markup)
   item <- gets _.sibling
   liftEffect $ optionWiring @c
     { show: componentWithin ".mdc-select" item >>= \comp -> selectQuietly comp tag
@@ -838,21 +838,21 @@ option = fromHandles do
 -- | hide the alternatives. Same selection contract as `select`; its
 -- | options are `segment` leaves.
 segmentedButton :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-segmentedButton options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ segmentGroupOf options
+segmentedButton options = fieldLeaf @l $ segmentGroupOf options
 
 -- | `segmentedButton` for a choice owed but not yet made: field `l` is a
 -- | variant whose case `c` holds the options' case, seeded at an unpicked
 -- | case; nothing is selected until the user picks, and a pick cannot be
 -- | taken back.
 segmentedButtonUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-segmentedButtonUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ segmentGroupOf (focusCase @c options)
+segmentedButtonUnpicked options = fieldLeaf @l $ segmentGroupOf (focusCase @c options)
 
 -- | `segmentedButton` for a choice the user may leave unmade: field `l` is
 -- | a variant whose case `c` holds the options' case and case `n` none,
 -- | seeded at `n`; clicking the selected segment again clears it, storing
 -- | `n` again.
 segmentedButtonOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-segmentedButtonOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ segmentGroupOf (clearedByRepress @n segmentMembers (focusCase @c options))
+segmentedButtonOptional options = fieldLeaf @l $ segmentGroupOf (clearedByRepress @n segmentMembers (focusCase @c options))
 
 segmentGroupOf :: forall a. PUI Web a a -> PUI Web a a
 segmentGroupOf options = div >>> cl "mdc-segmented-button" >>> cl "mdc-segmented-button--single-select" >>> "role" := "radiogroup" $ fromHandles do
@@ -870,7 +870,7 @@ segment = fromHandles do
   container <- gets _.parent
   -- aria-label = the case verbatim: MD2 uppercases the rendered segment
   -- text, and the computed name follows rendering without the stamp
-  _ <- handles (staticHTML ("<button class=\"mdc-segmented-button__segment\" role=\"radio\" aria-checked=\"false\" aria-label=\"" <> escaped tag <> "\"><div class=\"mdc-segmented-button__ripple\"></div><div class=\"mdc-segmented-button__label\">" <> escaped tag <> "</div></button>"))
+  chrome (staticHTML ("<button class=\"mdc-segmented-button__segment\" role=\"radio\" aria-checked=\"false\" aria-label=\"" <> escaped tag <> "\"><div class=\"mdc-segmented-button__ripple\"></div><div class=\"mdc-segmented-button__label\">" <> escaped tag <> "</div></button>"))
   node <- gets _.sibling
   let
     selectSelf = do
@@ -905,13 +905,13 @@ segmentMembers =
 -- | be active at once — dietary tags, categories, facets. Put them in a
 -- | `chipSet`.
 filterChip :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
-filterChip = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (chipLeaf config.label)
+filterChip = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (chipLeaf config.label)
 
 -- deprecated `mdc-chip` markup on purpose: the prebuilt v14 CSS bundle has
 -- no `mdc-evolution-chip` rules at all
 chipLeaf :: String -> PUI Web Boolean Boolean
 chipLeaf lbl = fromHandles do
-  _ <- handles (staticHTML markup)
+  chrome (staticHTML markup)
   node <- gets _.sibling
   actionNode <- liftEffect $ querySelectorIn node ".mdc-chip__primary-action"
   stateRef <- liftEffect $ Ref.new false
@@ -950,11 +950,11 @@ chipLeaf lbl = fromHandles do
 -- | `label` is what assistive technology announces. The compact form of a
 -- | `toggleSwitch`, for list rows and toolbars.
 iconToggle :: forall @l r b provided. IsSymbol l => Cons l Boolean b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { onIcon :: String, offIcon :: String, label :: String } => { | provided } -> PUI Web { | r } { | r }
-iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (iconToggleLeaf config)
+iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in fieldLeaf @l $ (iconToggleLeaf config)
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
 iconToggleLeaf config = fromHandles do
-  _ <- handles (staticHTML markup)
+  chrome (staticHTML markup)
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.iconButton."MDCIconButtonToggle" node
   liftEffect $ recordToRecordWiring
@@ -985,7 +985,7 @@ iconToggleLeaf config = fromHandles do
 -- documented markup with the tabs inside its scroll content first, then
 -- the foundation over it, stashed on the root for the tabs to reach.
 tabBar :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-tabBar options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> cl "mdc-tab-bar" >>> "role" := "tablist" $ fromHandles do
+tabBar options = fieldLeaf @l $ div >>> cl "mdc-tab-bar" >>> "role" := "tablist" $ fromHandles do
   root <- gets _.parent
   inner <- element "div" do
     inner <- element "div" do
@@ -1011,7 +1011,7 @@ tab' { icon } = tabWith @c (Just icon)
 -- busy guard drops it.
 tabWith :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => Maybe String -> PUI Web [ | v ] [ | o ]
 tabWith icon = fromHandles do
-  _ <- handles (staticHTML markup)
+  chrome (staticHTML markup)
   node <- gets _.sibling
   liftEffect $ optionWiring @c
     { show: componentWithin ".mdc-tab-bar" node >>= \comp -> activateTabNode comp node
@@ -1042,7 +1042,7 @@ tabWith icon = fromHandles do
 -- | copy, which is a function, not a label.
 indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateLinearProgress = fromHandles do
-  _ <- handles $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
+  chrome $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   liftEffect $ close comp
@@ -1058,7 +1058,7 @@ linearProgress
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
 linearProgress f = fromHandles do
-  _ <- handles $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
+  chrome $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ linearProgressInnards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.linearProgress."MDCLinearProgress" node
   liftEffect $ recordToRecordWiring { show: \r -> setNumberProp "progress" comp (f r), held: pure false, reports: \_ -> pure unit, read: pure }
@@ -1079,7 +1079,7 @@ linearProgressInnards = Semigroupoid.do
 -- | the width would be too much.
 indeterminateCircularProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
 indeterminateCircularProgress = fromHandles do
-  _ <- handles $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
+  chrome $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.circularProgress."MDCCircularProgress" node
   liftEffect $ close comp
@@ -1269,9 +1269,9 @@ dialog title content = fromHandles do
     result <- handles $
       div >>> cl "mdc-dialog__container" $
         div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-labelledby" := titleId >>> "aria-describedby" := contentId $ fromHandles do
-          _ <- handles (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
+          chrome (h2 >>> cl "mdc-dialog__title" >>> "id" := titleId $ staticText title)
           handles (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
-    _ <- handles (static (div >>> cl "mdc-dialog__scrim"))
+    chrome (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
 -- | The **witness rung** of the assurance ladder, baked in as a
@@ -1351,9 +1351,9 @@ modal { title, decide, cancel } content = fromHandles do
         div >>> cl "mdc-dialog__surface" >>> "role" := "alertdialog" >>> "aria-modal" := "true" >>> "aria-label" := fromMaybe decide title >>> "aria-describedby" := contentId $ fromHandles do
           for_ title \t -> handles (h2 >>> cl "mdc-dialog__title" $ staticText t)
           w' <- handles (div >>> cl "mdc-dialog__content" >>> "id" := contentId $ content)
-          _ <- handles $ div >>> cl "mdc-dialog__actions" $ fromHandles do
+          chrome $ div >>> cl "mdc-dialog__actions" $ fromHandles do
             for_ cancel \c -> do
-              _ <- handles (dialogButton c)
+              chrome (dialogButton c)
               node <- gets _.sibling
               liftEffect $ Ref.write (Just node) cancelRef
             decision <- handles (dialogButton decide)
@@ -1361,7 +1361,7 @@ modal { title, decide, cancel } content = fromHandles do
             liftEffect $ Ref.write (Just node) decideRef
             pure decision
           pure w'
-    _ <- handles (static (div >>> cl "mdc-dialog__scrim"))
+    chrome (static (div >>> cl "mdc-dialog__scrim"))
     pure w
   dialogNode <- gets _.sibling
   component <- liftEffect $ newComponent material.dialog."MDCDialog" dialogNode
@@ -1439,7 +1439,7 @@ banner content =
 -- | a value the model keeps, use `select`.
 menu :: String -> Ocular (PUI Web)
 menu anchorCaption content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ fromHandles do
-  _ <- handles (staticHTML ("<button class=\"mdc-button mdc-button--outlined\" aria-label=\"" <> escaped anchorCaption <> "\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> escaped anchorCaption <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
+  chrome (staticHTML ("<button class=\"mdc-button mdc-button--outlined\" aria-label=\"" <> escaped anchorCaption <> "\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> escaped anchorCaption <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
   anchorNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.ripple."MDCRipple" anchorNode
   w <- handles (div >>> cl "mdc-menu" >>> cl "mdc-menu-surface" $ ul >>> cl "mdc-deprecated-list" >>> "role" := "menu" >>> "aria-hidden" := "true" >>> "aria-orientation" := "vertical" $ content)
@@ -1472,7 +1472,7 @@ list content = fromHandles do
 -- | looks exactly as before.
 listItem :: Ocular (PUI Web)
 listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: auto; min-height: 48px;" $ fromHandles do
-  _ <- handles (static (span >>> cl "mdc-deprecated-list-item__ripple"))
+  chrome (static (span >>> cl "mdc-deprecated-list-item__ripple"))
   handles (span >>> cl "mdc-deprecated-list-item__text" >>> "style" := "display: flex; align-items: center; gap: 16px; width: 100%; white-space: normal; overflow: visible;" $ content)
 
 -- | A **list built from data**: one row per element of the collection the
@@ -1577,7 +1577,7 @@ dataTable tableName headerCells content =
   div >>> cl "mdc-data-table" $
     div >>> cl "mdc-data-table__table-container" $
       table >>> cl "mdc-data-table__table" >>> "aria-label" := tableName $ fromHandles do
-        _ <- handles (thead $ tr >>> cl "mdc-data-table__header-row" $ headerCells)
+        chrome (thead $ tr >>> cl "mdc-data-table__header-row" $ headerCells)
         handles (tbody >>> cl "mdc-data-table__content" $ content)
 
 -- | One **column header** of a `dataTable` — static copy naming the column,
@@ -1615,7 +1615,7 @@ layoutCell cellSpan content = div >>> cl "mdc-layout-grid__cell" >>> cl ("mdc-la
 -- | content laid out beneath it and clear of it.
 topAppBar :: String -> Ocular (PUI Web)
 topAppBar title content = fromHandles do
-  _ <- handles (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> escaped title <> "</span></section></div></header>"))
+  chrome (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> escaped title <> "</span></section></div></header>"))
   headerNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.topAppBar."MDCTopAppBar" headerNode
   handles (div >>> cl "mdc-top-app-bar--fixed-adjust" $ content)
@@ -1630,7 +1630,7 @@ topAppBar title content = fromHandles do
 drawer :: forall r o. { title :: String, subtitle :: String } -> PUI Web { | r } o -> PUI Web { | r } { | r } -> PUI Web { | r } o
 drawer config nav content = div >>> "style" := "display: flex;" $ fromHandles do
   nav' <- handles $ aside >>> cl "mdc-drawer" $ fromHandles do
-    _ <- handles (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
+    chrome (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
     handles (div >>> cl "mdc-drawer__content" $ nav)
   content' <- handles (div >>> cl "mdc-drawer-app-content" >>> "style" := "flex: 1; padding: 16px;" $ content)
   -- the content is a display: its echoes are the row the nav already has
@@ -1648,7 +1648,7 @@ tooltip :: String -> Ocular (PUI Web)
 tooltip tipText content = fromHandles do
   tipId <- liftEffect uniqueId
   w <- handles ("aria-describedby" := tipId $ content)
-  _ <- handles (staticHTML ("<div id=\"" <> tipId <> "\" class=\"mdc-tooltip\" role=\"tooltip\" aria-hidden=\"true\"><div class=\"mdc-tooltip__surface mdc-tooltip__surface-animation\">" <> escaped tipText <> "</div></div>"))
+  chrome (staticHTML ("<div id=\"" <> tipId <> "\" class=\"mdc-tooltip\" role=\"tooltip\" aria-hidden=\"true\"><div class=\"mdc-tooltip__surface mdc-tooltip__surface-animation\">" <> escaped tipText <> "</div></div>"))
   tipNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.tooltip."MDCTooltip" tipNode
   pure w

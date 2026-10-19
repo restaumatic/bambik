@@ -44,7 +44,6 @@ import Prelude hiding (div)
 
 import Control.Monad.State (gets)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Variant (inj, match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -54,7 +53,7 @@ import Data.Foldable (for_)
 import PUI (fromHandles, handles, Ocular, PUI, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (Node, OptCaption(..), Web, attribute, el, element, getChecked, getValue, isFocused, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, statusText, separating, invokeMethod, (:=))
+import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), Web, attribute, el, element, getChecked, getValue, isFocused, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, statusText, separating, invokeMethod, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -120,13 +119,13 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- | arriving from elsewhere. A whole-row citizen: fed the wide row, it
 -- | edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textField = focusField @l $ "name" := reflectSymbol (Proxy @l) $ inputLeaf (reflectSymbol (Proxy @l)) ""
+textField = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `textField` with a `hint` under it — a format or an example the label
 -- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
 -- | label stays the field's name. Shown as Shoelace's help text.
 textField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
-textField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ inputLeaf (reflectSymbol (Proxy @l)) hint
+textField' { hint } = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) hint
 
 inputLeaf :: String -> String -> PUI Web String String
 inputLeaf lbl hint = fromHandles do
@@ -146,7 +145,7 @@ inputLeaf lbl hint = fromHandles do
 -- | The **multi-line text field**, `rows` lines tall — a note, a review, a
 -- | message. Otherwise `textField`.
 textArea :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
-textArea provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+textArea provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in fieldLeaf @l $ fromHandles do
   element "sl-textarea" (pure unit)
   attribute "label" config.label
   attribute "rows" (show config.rows)
@@ -168,9 +167,9 @@ textArea provided = let config = convertOptionsWithDefaults OptCaption { label: 
 -- | and a scale nobody supplied is a compile error rather than a wrong
 -- | screen. The label is drawn above the stars.
 rating :: forall @l r b. IsSymbol l => Cons l { current :: Number, max :: Int } b r => PUI Web { | r } { | r }
-rating = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $
+rating = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ fromHandles do
-    _ <- handles (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
+    chrome (span >>> "style" := "font-size: var(--sl-input-label-font-size-medium); color: var(--sl-input-label-color);" $ staticText config.label)
     element "sl-rating" (pure unit)
     attribute "label" config.label
     node <- gets _.sibling
@@ -197,13 +196,13 @@ rating = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "na
 -- | drives should be cheap to redo, or be `debounced` downstream. The
 -- | current number shows in the control's own tooltip while dragging.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-sliderLive = focusField @l $ "name" := reflectSymbol (Proxy @l) $ rangeLeaf (reflectSymbol (Proxy @l)) ""
+sliderLive = fieldLeaf @l $ rangeLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `sliderLive` whose value is read in a `unit` (`sliderLive' @"Amount"
 -- | { unit: "€" }`), shown after the number in the control's tooltip, so
 -- | the label stays the quantity's name.
 sliderLive' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
-sliderLive' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ rangeLeaf (reflectSymbol (Proxy @l)) config.unit
+sliderLive' config = fieldLeaf @l $ rangeLeaf (reflectSymbol (Proxy @l)) config.unit
 
 rangeLeaf :: String -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
 rangeLeaf lbl measure = fromHandles do
@@ -227,8 +226,8 @@ rangeLeaf lbl measure = fromHandles do
 -- | The label sits beside it and is part of the target, so clicking the
 -- | words toggles it too.
 toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
-toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
-  element "sl-switch" (void $ handles (staticText config.label))
+toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ fromHandles do
+  element "sl-switch" (chrome (staticText config.label))
   node <- gets _.sibling
   liftEffect $ recordToRecordWiring
     { show: setChecked node
@@ -251,20 +250,20 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
 -- shows nothing picked, then the one option owning the fed case shows
 -- itself, so a case no option owns (an unpicked one) shows nothing.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-select options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false options
+select options = fieldLeaf @l $ selectGroupOf @l false options
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` holds the made choice, seeded at an unpicked case;
 -- | nothing is checked until the user picks, and a pick cannot be taken
 -- | back.
 selectUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false (focusCase @c options)
+selectUnpicked options = fieldLeaf @l $ selectGroupOf @l false (focusCase @c options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` holds the made choice and case `n` none, seeded at `n`;
 -- | its clear button clears it, storing `n` again.
 selectOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l true (clearEmits @n (focusCase @c options))
+selectOptional options = fieldLeaf @l $ selectGroupOf @l true (clearEmits @n (focusCase @c options))
 
 selectGroupOf :: forall @l a. IsSymbol l => Boolean -> PUI Web a a -> PUI Web a a
 selectGroupOf clearable options = el "sl-select" >>> "label" := reflectSymbol (Proxy @l) >>> clearing >>> "style" := "min-width: 240px;" $ fromHandles do
@@ -299,7 +298,7 @@ clearEmits options = fromHandles do
 option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 option = fromHandles do
   selectNode <- gets _.parent
-  element "sl-option" (void $ handles (staticText (reflectSymbol (Proxy @c))))
+  element "sl-option" (chrome (staticText (reflectSymbol (Proxy @c))))
   attribute "value" value
   liftEffect $ optionWiring @c
     { show: setValue selectNode value
@@ -344,7 +343,7 @@ toastFace :: forall a r. String -> PUI Web a { | r }
 toastFace caseLabel = fromHandles do
   w <- handles $ el "sl-alert" >>> "variant" := "primary" >>> "duration" := "5000" >>> "closable" := ""
     >>> "style" := "position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; min-width: 300px;" $ fromHandles do
-    _ <- handles (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
+    chrome (el "sl-icon" >>> "slot" := "icon" >>> "name" := "check2-circle" $ staticText "")
     handles (statusText caseLabel)
   node <- gets _.sibling
   pure
@@ -396,10 +395,10 @@ modal { title, decide, cancel } content = fromHandles do
   shown <- handles $ el "sl-dialog" >>> "label" := fromMaybe decide title >>> maybe ("no-header" := "") (const identity) title $ fromHandles do
     w <- handles (div $ content)
     for_ cancel \c -> do
-      _ <- handles (el "sl-button" >>> "slot" := "footer" $ staticText c)
+      chrome (el "sl-button" >>> "slot" := "footer" $ staticText c)
       node <- gets _.sibling
       liftEffect $ Ref.write (Just node) cancelRef
-    _ <- handles (el "sl-button" >>> "slot" := "footer" >>> "variant" := "primary" $ staticText decide)
+    chrome (el "sl-button" >>> "slot" := "footer" >>> "variant" := "primary" $ staticText decide)
     node <- gets _.sibling
     liftEffect $ Ref.write (Just node) decideRef
     pure w

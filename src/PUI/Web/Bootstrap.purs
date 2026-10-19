@@ -45,14 +45,13 @@ import Data.Int (round)
 import Data.Maybe (fromMaybe)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
-import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, statusOver, eventLeaf)
 import PUI.Web.HTML (div, label, span)
 import PUI.Web.HTML (body, option) as HTML
-import PUI.Web (Web, attribute, autoDismiss, cl, el, element, getChecked, getValue, isFocused, listenNode, setAttribute, setChecked, setValue, staticText, text, statusText, uniqueId, (:=))
+import PUI.Web (chrome, fieldLeaf, Web, attribute, autoDismiss, cl, el, element, getChecked, getValue, isFocused, listenNode, setAttribute, setChecked, setValue, staticText, text, statusText, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons)
 import Data.Variant (inj)
@@ -117,19 +116,19 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- | by values arriving from elsewhere. A whole-row citizen: fed the wide
 -- | row, it edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textField = focusField @l $ "name" := reflectSymbol (Proxy @l) $ inputLeaf (reflectSymbol (Proxy @l)) ""
+textField = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `textField` with a `hint` under it — a format or an example the label
 -- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
 -- | label stays the field's name. Shown as Bootstrap's form text, which
 -- | describes the input.
 textField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
-textField' { hint } = focusField @l $ "name" := reflectSymbol (Proxy @l) $ inputLeaf (reflectSymbol (Proxy @l)) hint
+textField' { hint } = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) hint
 
 inputLeaf :: String -> String -> PUI Web String String
 inputLeaf lbl hint = div >>> "style" := "width: 100%;" $ fromHandles do
   hintId <- liftEffect uniqueId
-  _ <- handles ((label $ staticText lbl) # cl "form-label")
+  chrome ((label $ staticText lbl) # cl "form-label")
   element "input" (pure unit)
   attribute "type" "text"
   attribute "class" "form-control"
@@ -142,7 +141,7 @@ inputLeaf lbl hint = div >>> "style" := "width: 100%;" $ fromHandles do
     , read: \_ -> getValue node
     }
   when (hint /= "") $
-    void $ handles ((div >>> "id" := hintId $ staticText hint) # cl "form-text")
+    chrome ((div >>> "id" := hintId $ staticText hint) # cl "form-text")
   pure wiring
 
 -- | The **slider**: a quantity chosen by feel, where the range matters more
@@ -161,18 +160,18 @@ inputLeaf lbl hint = div >>> "style" := "width: 100%;" $ fromHandles do
 -- | current number is shown at the end of the label line, since the control
 -- | has no readout of its own.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-sliderLive = focusField @l $ "name" := reflectSymbol (Proxy @l) $ rangeLeaf (reflectSymbol (Proxy @l)) ""
+sliderLive = fieldLeaf @l $ rangeLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `sliderLive` whose value is read in a `unit` (`sliderLive' @"Amount"
 -- | { unit: "€" }`), shown after the number in the label line's readout,
 -- | so the label stays the quantity's name.
 sliderLive' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
-sliderLive' config = focusField @l $ "name" := reflectSymbol (Proxy @l) $ rangeLeaf (reflectSymbol (Proxy @l)) config.unit
+sliderLive' config = fieldLeaf @l $ rangeLeaf (reflectSymbol (Proxy @l)) config.unit
 
 rangeLeaf :: String -> String -> PUI Web { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
 rangeLeaf lbl measure = div >>> "style" := "width: 100%;" $ fromHandles do
   readout <- handles $ (label $ fromHandles do
-      _ <- handles (span $ staticText lbl)
+      chrome (span $ staticText lbl)
       handles ((span $ text _.readout) # cl "text-body-secondary")
     ) # cl "form-label" # cl "d-flex" # cl "justify-content-between"
   -- the readout is written, never listened to; text's echo needs a listener
@@ -206,26 +205,26 @@ rangeLeaf lbl measure = div >>> "style" := "width: 100%;" $ fromHandles do
 -- | `VariantToVariant.do`, the block closing the field's row in the order
 -- | written.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-select options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false options
+select options = fieldLeaf @l $ selectGroupOf @l false options
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
 selectUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l false (focusCase @c options)
+selectUnpicked options = fieldLeaf @l $ selectGroupOf @l false (focusCase @c options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
 selectOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf @l true (blankEmits @n (focusCase @c options))
+selectOptional options = fieldLeaf @l $ selectGroupOf @l true (blankEmits @n (focusCase @c options))
 
 -- The label and the `.form-select` around the options, cleared before every
 -- feed so a case no option owns shows nothing picked; `blank` leads with an
 -- empty option, the one a cleared optional select shows.
 selectGroupOf :: forall @l a. IsSymbol l => Boolean -> PUI Web a a -> PUI Web a a
 selectGroupOf blank options = div >>> "style" := "width: 100%;" $ fromHandles do
-  _ <- handles ((label $ staticText (reflectSymbol (Proxy @l))) # cl "form-label")
+  chrome ((label $ staticText (reflectSymbol (Proxy @l))) # cl "form-label")
   handles $ el "select" >>> "class" := "form-select" $ fromHandles do
     selectNode <- gets _.parent
     when blank do
@@ -259,7 +258,7 @@ blankEmits options = fromHandles do
 -- | The **switch**: a setting that takes effect the moment it is flipped.
 -- | The label is part of the target, so clicking the words toggles it too.
 toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
-toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l $ "name" := reflectSymbol (Proxy @l) $ (div $ fromHandles do
+toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (div $ fromHandles do
   inputId <- liftEffect uniqueId
   element "input" (pure unit)
   node <- gets _.sibling
@@ -268,7 +267,7 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in focusField @l
     setAttribute node "type" "checkbox"
     setAttribute node "role" "switch"
     setAttribute node "id" inputId
-  _ <- handles ((label >>> "for" := inputId $ staticText config.label) # cl "form-check-label")
+  chrome ((label >>> "for" := inputId $ staticText config.label) # cl "form-check-label")
   liftEffect $ recordToRecordWiring
     { show: setChecked node
     , held: pure false

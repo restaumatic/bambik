@@ -76,7 +76,6 @@ import Control.Monad.State (gets, modify_)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Number (fromString) as Number
-import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (inj, match)
 import Effect (Effect)
@@ -86,7 +85,7 @@ import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, replayed, source, departures, statusOver, confirmedOver, acknowledgedOver)
-import PUI.Web (Node, Web, adoptHostDiagnostics, onFilePicked, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, setAttribute, setValue, staticText, statusText, separating, invokeMethod, showModalOnce, (:=), (:=>))
+import PUI.Web (chrome, fieldLeaf, Node, Web, adoptHostDiagnostics, onFilePicked, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, setAttribute, setValue, staticText, statusText, separating, invokeMethod, showModalOnce, (:=), (:=>))
 
 -- UIs
 
@@ -103,7 +102,7 @@ import PUI.Web (Node, Web, adoptHostDiagnostics, onFilePicked, appendChild, attr
 -- | swallow a half-typed word; the field picks the model up again the
 -- | moment it loses focus.
 input :: forall @l r b. IsSymbol l => Cons l String b r => String -> PUI Web { | r } { | r }
-input type_ = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := type_ $ fromHandles do
+input type_ = fieldLeaf @l $ "type" := type_ $ fromHandles do
   element "input" (pure unit)
   node <- gets _.sibling
   liftEffect $ recordToRecordWiring
@@ -147,7 +146,7 @@ filePicked = "name" := reflectSymbol (Proxy @l) $ "type" := "file" $ fromHandles
 -- | stamped) and same guarantee: typing is never interrupted by values
 -- | arriving from elsewhere.
 textArea :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
-textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
+textArea = fieldLeaf @l $ fromHandles do
   element "textArea" (pure unit)
   node <- gets _.sibling
   liftEffect $ recordToRecordWiring
@@ -168,26 +167,26 @@ textArea = focusField @l $ "name" := reflectSymbol (Proxy @l) $ fromHandles do
 -- | leaves merged `VariantToVariant.do`, the block closing the field's row
 -- | in the order written.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-select options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf false options
+select options = fieldLeaf @l $ selectGroupOf false options
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
 selectUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectUnpicked options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf false (focusCase @c options)
+selectUnpicked options = fieldLeaf @l $ selectGroupOf false (focusCase @c options)
 
 -- | `select` for a choice the user may leave unmade: field `l` is a variant
 -- | whose case `c` is the made choice and case `n` none, seeded at `n`;
 -- | an empty first option clears it, storing `n` again.
 selectOptional :: forall @l @c @n w b1 b2 v b r. IsSymbol l => IsSymbol c => IsSymbol n => Cons c [ | w ] b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-selectOptional options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ selectGroupOf true (blankEmits @n (focusCase @c options))
+selectOptional options = fieldLeaf @l $ selectGroupOf true (blankEmits @n (focusCase @c options))
 
 -- | One option of a `select`: a native `<option>` showing its case.
 option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 option = fromHandles do
   let tag = reflectSymbol (Proxy @c)
   selectNode <- gets _.parent
-  element "option" (void $ handles (staticText tag))
+  element "option" (chrome (staticText tag))
   optionNode <- gets _.sibling
   liftEffect $ setAttribute optionNode "value" tag
   liftEffect $ optionWiring @c
@@ -236,7 +235,7 @@ blankEmits options = fromHandles do
 -- | compile error rather than a wrong screen. `step` is `.discrete n`
 -- | or `.continuous {}`, named like every other two-state field.
 rangeInput :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
-rangeInput = focusField @l $ "name" := reflectSymbol (Proxy @l) $ "type" := "range" $ fromHandles do
+rangeInput = fieldLeaf @l $ "type" := "range" $ fromHandles do
   element "input" (pure unit)
   node <- gets _.sibling
   liftEffect $ recordToRecordWiring
@@ -326,10 +325,10 @@ modal { title, decide, cancel } content = fromHandles do
     for_ title \t -> handles (h2 $ staticText t)
     w <- handles (div $ content)
     for_ cancel \c -> do
-      _ <- handles (el "button" >>> "type" := "button" $ staticText c)
+      chrome (el "button" >>> "type" := "button" $ staticText c)
       node <- gets _.sibling
       liftEffect $ Ref.write (Just node) cancelRef
-    _ <- handles (el "button" >>> "type" := "button" $ staticText decide)
+    chrome (el "button" >>> "type" := "button" $ staticText decide)
     node <- gets _.sibling
     liftEffect $ Ref.write (Just node) decideRef
     pure w
