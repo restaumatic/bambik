@@ -138,7 +138,7 @@ import Effect.Ref as Ref
 import PUI (fromHandles, handles, anyOf, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (chrome, fieldLeaf, Members, clearedByRepress, eachMatching, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, escaped, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
+import PUI.Web (chrome, fieldLeaf, Members, clearedByRepress, eachMatching, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -588,7 +588,9 @@ radioMembers =
 radio :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 radio = fromHandles do
   uid <- liftEffect uniqueId
-  chrome (staticHTML (markup uid))
+  chrome $ div >>> cl "mdc-form-field" $ Semigroupoid.do
+    staticHTML (radioMarkup uid)
+    label >>> "for" := uid $ staticText (reflectSymbol (Proxy @c))
   root <- gets _.sibling
   liftEffect do
     inputNode <- querySelectorIn root "input"
@@ -602,15 +604,12 @@ radio = fromHandles do
       , picked: getChecked inputNode
       }
   where
-  markup uid =
-    "<div class=\"mdc-form-field\">"
-      <> "<div class=\"mdc-radio\">"
+  radioMarkup uid =
+    "<div class=\"mdc-radio\">"
       <> "<input class=\"mdc-radio__native-control\" type=\"radio\" id=\"" <> uid <> "\">"
       <> "<div class=\"mdc-radio__background\"><div class=\"mdc-radio__outer-circle\"></div><div class=\"mdc-radio__inner-circle\"></div></div>"
       <> "<div class=\"mdc-radio__ripple\"></div>"
       <> "<div class=\"mdc-radio__focus-ring\"></div>"
-      <> "</div>"
-      <> "<label for=\"" <> uid <> "\">" <> escaped (reflectSymbol (Proxy @c)) <> "</label>"
       <> "</div>"
 
 -- | The Material **switch**: a setting that takes effect the moment it is
@@ -625,7 +624,7 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
   chrome (staticHTML (switchMarkup switchId))
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.switchControl."MDCSwitch" node
-  chrome (staticHTML ("<label for=\"" <> switchId <> "\">" <> escaped lbl <> "</label>"))
+  chrome (label >>> "for" := switchId $ staticText lbl)
   -- MDCSwitch toggles itself on click; read the post-toggle state
   liftEffect $ recordToRecordWiring
     { show: setBoolProp "selected" comp
@@ -683,6 +682,7 @@ sliderLeaf :: Boolean -> String -> PUI Web { current :: Number, min :: Number, m
 sliderLeaf live label = fromHandles do
   chrome (staticHTML markup)
   node <- gets _.sibling
+  liftEffect $ querySelectorIn node "input" >>= \input -> setAttribute input "aria-label" label
   stateRef <- liftEffect $ Ref.new Nothing
   let
     scoped q = do
@@ -725,8 +725,7 @@ sliderLeaf live label = fromHandles do
   where
   markup =
     "<div class=\"mdc-slider\" style=\"min-width: 200px;\">"
-      <> "<input class=\"mdc-slider__input\" type=\"range\" min=\"0\" max=\"100\" value=\"0\""
-      <> " aria-label=\"" <> escaped label <> "\">"
+      <> "<input class=\"mdc-slider__input\" type=\"range\" min=\"0\" max=\"100\" value=\"0\">"
       <> "<div class=\"mdc-slider__track\">"
       <> "<div class=\"mdc-slider__track--inactive\"></div>"
       <> "<div class=\"mdc-slider__track--active\"><div class=\"mdc-slider__track--active_fill\"></div></div>"
@@ -768,7 +767,11 @@ selectGroupOf blank options = div >>> cl "mdc-select" >>> cl "mdc-select--filled
   root <- gets _.parent
   labelId <- liftEffect uniqueId
   textId <- liftEffect uniqueId
-  chrome (staticHTML (anchorMarkup labelId textId))
+  chrome $ div >>> cl "mdc-select__anchor" >>> "role" := "button" >>> "aria-haspopup" := "listbox" >>> "aria-expanded" := "false" >>> "aria-labelledby" := (labelId <> " " <> textId) $ Semigroupoid.do
+    static (span >>> cl "mdc-select__ripple")
+    span >>> cl "mdc-floating-label" >>> "id" := labelId $ staticText (reflectSymbol (Proxy @l))
+    staticText " "
+    staticHTML (anchorRest textId)
   inner <- element "div" do
     inner <- element "ul" do
       when blank $ chrome (staticHTML "<li class=\"mdc-deprecated-list-item\" data-value=\"\" role=\"option\" aria-selected=\"false\"><span class=\"mdc-deprecated-list-item__ripple\"></span></li>")
@@ -784,11 +787,8 @@ selectGroupOf blank options = div >>> cl "mdc-select" >>> cl "mdc-select--filled
     , fromUser: inner.fromUser
     }
   where
-  anchorMarkup labelId textId =
-    "<div class=\"mdc-select__anchor\" role=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-labelledby=\"" <> labelId <> " " <> textId <> "\">"
-      <> "<span class=\"mdc-select__ripple\"></span>"
-      <> "<span class=\"mdc-floating-label\" id=\"" <> labelId <> "\">" <> escaped (reflectSymbol (Proxy @l)) <> "</span> "
-      <> "<span class=\"mdc-select__selected-text-container\"><span class=\"mdc-select__selected-text\" id=\"" <> textId <> "\"></span></span>"
+  anchorRest textId =
+    "<span class=\"mdc-select__selected-text-container\"><span class=\"mdc-select__selected-text\" id=\"" <> textId <> "\"></span></span>"
       <> "<span class=\"mdc-select__dropdown-icon\">"
       <> "<svg class=\"mdc-select__dropdown-icon-graphic\" viewBox=\"7 10 10 5\" focusable=\"false\">"
       <> "<polygon class=\"mdc-select__dropdown-icon-inactive\" stroke=\"none\" fill-rule=\"evenodd\" points=\"7 10 12 15 17 10\"></polygon>"
@@ -796,7 +796,6 @@ selectGroupOf blank options = div >>> cl "mdc-select" >>> cl "mdc-select--filled
       <> "</svg>"
       <> "</span>"
       <> "<span class=\"mdc-line-ripple\"></span>"
-      <> "</div>"
 
 -- The clearing of an optional select: picking the empty option emits `n`.
 blankEmits :: forall @n b v. IsSymbol n => Cons n {} b v => PUI Web [ | v ] [ | v ] -> PUI Web [ | v ] [ | v ]
@@ -817,7 +816,9 @@ blankEmits options = fromHandles do
 -- | the case too.
 option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 option = fromHandles do
-  chrome (staticHTML markup)
+  chrome $ li >>> cl "mdc-deprecated-list-item" >>> "data-value" := tag >>> "role" := "option" >>> "aria-selected" := "false" $ Semigroupoid.do
+    static (span >>> cl "mdc-deprecated-list-item__ripple")
+    span >>> cl "mdc-deprecated-list-item__text" $ staticText tag
   item <- gets _.sibling
   liftEffect $ optionWiring @c
     { show: componentWithin ".mdc-select" item >>= \comp -> selectQuietly comp tag
@@ -826,11 +827,6 @@ option = fromHandles do
     }
   where
   tag = reflectSymbol (Proxy @c)
-  markup =
-    "<li class=\"mdc-deprecated-list-item\" data-value=\"" <> escaped tag <> "\" role=\"option\" aria-selected=\"false\">"
-      <> "<span class=\"mdc-deprecated-list-item__ripple\"></span>"
-      <> "<span class=\"mdc-deprecated-list-item__text\">" <> escaped tag <> "</span>"
-      <> "</li>"
 
 -- | The Material **segmented button**: two to five options joined in one
 -- | control, all visible, one selected — a filter row, a view switch, a
@@ -870,7 +866,9 @@ segment = fromHandles do
   container <- gets _.parent
   -- aria-label = the case verbatim: MD2 uppercases the rendered segment
   -- text, and the computed name follows rendering without the stamp
-  chrome (staticHTML ("<button class=\"mdc-segmented-button__segment\" role=\"radio\" aria-checked=\"false\" aria-label=\"" <> escaped tag <> "\"><div class=\"mdc-segmented-button__ripple\"></div><div class=\"mdc-segmented-button__label\">" <> escaped tag <> "</div></button>"))
+  chrome $ el "button" >>> cl "mdc-segmented-button__segment" >>> "role" := "radio" >>> "aria-checked" := "false" >>> "aria-label" := tag $ Semigroupoid.do
+    static (div >>> cl "mdc-segmented-button__ripple")
+    div >>> cl "mdc-segmented-button__label" $ staticText tag
   node <- gets _.sibling
   let
     selectSelf = do
@@ -911,7 +909,9 @@ filterChip = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ 
 -- no `mdc-evolution-chip` rules at all
 chipLeaf :: String -> PUI Web Boolean Boolean
 chipLeaf lbl = fromHandles do
-  chrome (staticHTML markup)
+  chrome $ div >>> cl "mdc-chip" >>> "role" := "row" $ Semigroupoid.do
+    staticHTML chipMarkup
+    span >>> "role" := "gridcell" $ span >>> "role" := "checkbox" >>> "tabindex" := "0" >>> "aria-checked" := "false" >>> cl "mdc-chip__primary-action" $ span >>> cl "mdc-chip__text" $ staticText lbl
   node <- gets _.sibling
   actionNode <- liftEffect $ querySelectorIn node ".mdc-chip__primary-action"
   stateRef <- liftEffect $ Ref.new false
@@ -930,20 +930,13 @@ chipLeaf lbl = fromHandles do
         pure b
     }
   where
-  markup =
-    "<div class=\"mdc-chip\" role=\"row\">"
-      <> "<div class=\"mdc-chip__ripple\"></div>"
+  chipMarkup =
+    "<div class=\"mdc-chip__ripple\"></div>"
       <> "<span class=\"mdc-chip__checkmark\">"
       <> "<svg class=\"mdc-chip__checkmark-svg\" viewBox=\"-2 -3 30 30\">"
       <> "<path class=\"mdc-chip__checkmark-path\" fill=\"none\" stroke=\"black\" d=\"M1.73,12.91 8.1,19.28 22.79,4.59\" />"
       <> "</svg>"
       <> "</span>"
-      <> "<span role=\"gridcell\">"
-      <> "<span role=\"checkbox\" tabindex=\"0\" aria-checked=\"false\" class=\"mdc-chip__primary-action\">"
-      <> "<span class=\"mdc-chip__text\">" <> escaped lbl <> "</span>"
-      <> "</span>"
-      <> "</span>"
-      <> "</div>"
 
 -- | An **icon that stays pressed** — favourite, bookmark, mute, pin:
 -- | `onIcon` is shown while it is on, `offIcon` while it is off, and
@@ -954,7 +947,11 @@ iconToggle provided = let config = convertOptionsWithDefaults OptCaption { label
 
 iconToggleLeaf :: { onIcon :: String, offIcon :: String, label :: String } -> PUI Web Boolean Boolean
 iconToggleLeaf config = fromHandles do
-  chrome (staticHTML markup)
+  chrome $ el "button" >>> cl "mdc-icon-button" >>> "aria-label" := config.label >>> "aria-pressed" := "false" $ Semigroupoid.do
+    static (div >>> cl "mdc-icon-button__ripple")
+    static (span >>> cl "mdc-icon-button__focus-ring")
+    i >>> cl "material-icons" >>> cl "mdc-icon-button__icon" >>> cl "mdc-icon-button__icon--on" $ staticText config.onIcon
+    i >>> cl "material-icons" >>> cl "mdc-icon-button__icon" $ staticText config.offIcon
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.iconButton."MDCIconButtonToggle" node
   liftEffect $ recordToRecordWiring
@@ -963,14 +960,6 @@ iconToggleLeaf config = fromHandles do
     , reports: listen comp "MDCIconButtonToggle:change"
     , read: \_ -> getBoolProp "on" comp
     }
-  where
-  markup =
-    "<button class=\"mdc-icon-button\" aria-label=\"" <> escaped config.label <> "\" aria-pressed=\"false\">"
-      <> "<div class=\"mdc-icon-button__ripple\"></div>"
-      <> "<span class=\"mdc-icon-button__focus-ring\"></span>"
-      <> "<i class=\"material-icons mdc-icon-button__icon mdc-icon-button__icon--on\">" <> escaped config.onIcon <> "</i>"
-      <> "<i class=\"material-icons mdc-icon-button__icon\">" <> escaped config.offIcon <> "</i>"
-      <> "</button>"
 
 -- | The Material **tab bar**: the top-level sections of one screen, one
 -- | open at a time. Arrow-key navigation and the sliding indicator come
@@ -1011,7 +1000,13 @@ tab' { icon } = tabWith @c (Just icon)
 -- busy guard drops it.
 tabWith :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => Maybe String -> PUI Web [ | v ] [ | o ]
 tabWith icon = fromHandles do
-  chrome (staticHTML markup)
+  -- aria-label = the case verbatim: MD2 uppercases the rendered tab
+  -- text, and the computed name follows rendering without the stamp
+  chrome $ el "button" >>> cl "mdc-tab" >>> "role" := "tab" >>> "aria-selected" := "false" >>> "tabindex" := "-1" >>> "aria-label" := tag $ Semigroupoid.do
+    span >>> cl "mdc-tab__content" $ Semigroupoid.do
+      maybe identity (\icn -> span >>> cl "mdc-tab__icon" >>> cl "material-icons" >>> "aria-hidden" := "true" $ staticText icn) icon
+      span >>> cl "mdc-tab__text-label" $ staticText tag
+    staticHTML tabRest
   node <- gets _.sibling
   liftEffect $ optionWiring @c
     { show: componentWithin ".mdc-tab-bar" node >>= \comp -> activateTabNode comp node
@@ -1020,17 +1015,9 @@ tabWith icon = fromHandles do
     }
   where
   tag = reflectSymbol (Proxy @c)
-  markup =
-    -- aria-label = the case verbatim: MD2 uppercases the rendered tab
-    -- text, and the computed name follows rendering without the stamp
-    "<button class=\"mdc-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\" aria-label=\"" <> escaped tag <> "\">"
-      <> "<span class=\"mdc-tab__content\">"
-      <> maybe "" (\i -> "<span class=\"mdc-tab__icon material-icons\" aria-hidden=\"true\">" <> escaped i <> "</span>") icon
-      <> "<span class=\"mdc-tab__text-label\">" <> escaped tag <> "</span>"
-      <> "</span>"
-      <> "<span class=\"mdc-tab-indicator\"><span class=\"mdc-tab-indicator__content mdc-tab-indicator__content--underline\"></span></span>"
+  tabRest =
+    "<span class=\"mdc-tab-indicator\"><span class=\"mdc-tab-indicator__content mdc-tab-indicator__content--underline\"></span></span>"
       <> "<span class=\"mdc-tab__ripple\"></span>"
-      <> "</button>"
 
 -- | The **indeterminate progress bar**: work is under way and there is no
 -- | telling how long — a request in flight, a file being processed. A
@@ -1439,7 +1426,10 @@ banner content =
 -- | a value the model keeps, use `select`.
 menu :: String -> Ocular (PUI Web)
 menu anchorCaption content = div >>> cl "mdc-menu-surface--anchor" >>> "style" := "display: inline-block;" $ fromHandles do
-  chrome (staticHTML ("<button class=\"mdc-button mdc-button--outlined\" aria-label=\"" <> escaped anchorCaption <> "\"><span class=\"mdc-button__ripple\"></span><span class=\"mdc-button__label\">" <> escaped anchorCaption <> "</span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">arrow_drop_down</i></button>"))
+  chrome $ el "button" >>> cl "mdc-button" >>> cl "mdc-button--outlined" >>> "aria-label" := anchorCaption $ Semigroupoid.do
+    static (span >>> cl "mdc-button__ripple")
+    span >>> cl "mdc-button__label" $ staticText anchorCaption
+    i >>> cl "material-icons" >>> cl "mdc-button__icon" >>> "aria-hidden" := "true" $ staticText "arrow_drop_down"
   anchorNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.ripple."MDCRipple" anchorNode
   w <- handles (div >>> cl "mdc-menu" >>> cl "mdc-menu-surface" $ ul >>> cl "mdc-deprecated-list" >>> "role" := "menu" >>> "aria-hidden" := "true" >>> "aria-orientation" := "vertical" $ content)
@@ -1615,7 +1605,7 @@ layoutCell cellSpan content = div >>> cl "mdc-layout-grid__cell" >>> cl ("mdc-la
 -- | content laid out beneath it and clear of it.
 topAppBar :: String -> Ocular (PUI Web)
 topAppBar title content = fromHandles do
-  chrome (staticHTML ("<header class=\"mdc-top-app-bar\"><div class=\"mdc-top-app-bar__row\"><section class=\"mdc-top-app-bar__section mdc-top-app-bar__section--align-start\"><span class=\"mdc-top-app-bar__title\">" <> escaped title <> "</span></section></div></header>"))
+  chrome $ el "header" >>> cl "mdc-top-app-bar" $ div >>> cl "mdc-top-app-bar__row" $ el "section" >>> cl "mdc-top-app-bar__section" >>> cl "mdc-top-app-bar__section--align-start" $ span >>> cl "mdc-top-app-bar__title" $ staticText title
   headerNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.topAppBar."MDCTopAppBar" headerNode
   handles (div >>> cl "mdc-top-app-bar--fixed-adjust" $ content)
@@ -1630,7 +1620,9 @@ topAppBar title content = fromHandles do
 drawer :: forall r o. { title :: String, subtitle :: String } -> PUI Web { | r } o -> PUI Web { | r } { | r } -> PUI Web { | r } o
 drawer config nav content = div >>> "style" := "display: flex;" $ fromHandles do
   nav' <- handles $ aside >>> cl "mdc-drawer" $ fromHandles do
-    chrome (staticHTML ("<div class=\"mdc-drawer__header\"><h3 class=\"mdc-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"mdc-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
+    chrome $ div >>> cl "mdc-drawer__header" $ Semigroupoid.do
+      h3 >>> cl "mdc-drawer__title" $ staticText config.title
+      h6 >>> cl "mdc-drawer__subtitle" $ staticText config.subtitle
     handles (div >>> cl "mdc-drawer__content" $ nav)
   content' <- handles (div >>> cl "mdc-drawer-app-content" >>> "style" := "flex: 1; padding: 16px;" $ content)
   -- the content is a display: its echoes are the row the nav already has
@@ -1648,7 +1640,7 @@ tooltip :: String -> Ocular (PUI Web)
 tooltip tipText content = fromHandles do
   tipId <- liftEffect uniqueId
   w <- handles ("aria-describedby" := tipId $ content)
-  chrome (staticHTML ("<div id=\"" <> tipId <> "\" class=\"mdc-tooltip\" role=\"tooltip\" aria-hidden=\"true\"><div class=\"mdc-tooltip__surface mdc-tooltip__surface-animation\">" <> escaped tipText <> "</div></div>"))
+  chrome $ div >>> "id" := tipId >>> cl "mdc-tooltip" >>> "role" := "tooltip" >>> "aria-hidden" := "true" $ div >>> cl "mdc-tooltip__surface" >>> cl "mdc-tooltip__surface-animation" $ staticText tipText
   tipNode <- gets _.sibling
   _ <- liftEffect $ newComponent material.tooltip."MDCTooltip" tipNode
   pure w
@@ -1667,11 +1659,9 @@ divider = separating dividerExact
 -- | One picture in an `imageList`, with `label` shown as its caption and
 -- | used as its alternative text.
 imageListItem :: forall r. { src :: String, alt :: String } -> PUI Web { | r } { | r }
-imageListItem config = staticHTML $
-  "<li class=\"mdc-image-list__item\" style=\"margin-bottom: 16px;\">"
-    <> "<img class=\"mdc-image-list__image\" src=\"" <> escaped config.src <> "\" alt=\"" <> escaped config.alt <> "\">"
-    <> "<div class=\"mdc-image-list__supporting\"><span class=\"mdc-image-list__label\">" <> escaped config.alt <> "</span></div>"
-    <> "</li>"
+imageListItem config = li >>> cl "mdc-image-list__item" >>> "style" := "margin-bottom: 16px;" $ Semigroupoid.do
+  static (img >>> cl "mdc-image-list__image" >>> "src" := config.src >>> "alt" := config.alt)
+  div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ staticText config.alt
 
 
 -- | One picture in an `imageList`, **fed through the channel**: like any

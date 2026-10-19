@@ -157,10 +157,10 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, anyOf, introduced, isHole, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
+import PUI (static, fromHandles, handles, anyOf, introduced, isHole, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, escaped, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), eachMatching, hasClass, listenCapture, Members, clearedByRepress)
+import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), eachMatching, hasClass, listenCapture, Members, clearedByRepress)
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Prim.Row (class Cons, class Lacks)
 import Data.Variant (Variant)
@@ -667,7 +667,7 @@ option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI 
 option = fromHandles do
   selectNode <- gets _.parent
   element "md-select-option" do
-    chrome (staticHTML ("<div slot=\"headline\">" <> escaped (reflectSymbol (Proxy @c)) <> "</div>"))
+    chrome (div >>> "slot" := "headline" $ staticText (reflectSymbol (Proxy @c)))
   attribute "value" (reflectSymbol (Proxy @c))
   optionNode <- gets _.sibling
   liftEffect $ optionWiring @c
@@ -720,7 +720,9 @@ blankEmits options = fromHandles do
 segment :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 segment = fromHandles do
   container <- gets _.parent
-  chrome (staticHTML ("<button class=\"md3-segmented-button__segment\" role=\"radio\" aria-checked=\"false\"><span class=\"md3-segmented-button__check\" aria-hidden=\"true\"></span><span>" <> escaped (reflectSymbol (Proxy @c)) <> "</span></button>"))
+  chrome $ el "button" >>> cl "md3-segmented-button__segment" >>> "role" := "radio" >>> "aria-checked" := "false" $ Semigroupoid.do
+    static (span >>> cl "md3-segmented-button__check" >>> "aria-hidden" := "true")
+    span $ staticText (reflectSymbol (Proxy @c))
   node <- gets _.sibling
   let
     selectSelf = do
@@ -842,7 +844,9 @@ tab' { icon } = tabWith @c (Just icon)
 tabWith :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => Maybe String -> PUI Web [ | v ] [ | o ]
 tabWith icon = fromHandles do
   tabs <- gets _.parent
-  chrome (staticHTML ("<md-primary-tab>" <> maybe "" (\i -> "<md-icon slot=\"icon\">" <> escaped i <> "</md-icon>") icon <> escaped (reflectSymbol (Proxy @c)) <> "</md-primary-tab>"))
+  chrome $ el "md-primary-tab" $ Semigroupoid.do
+    maybe identity (\i -> el "md-icon" >>> "slot" := "icon" $ staticText i) icon
+    staticText (reflectSymbol (Proxy @c))
   node <- gets _.sibling
   liftEffect $ optionWiring @c
     { show: do
@@ -1195,7 +1199,9 @@ snackbarCss = """
 menu :: String -> Ocular (PUI Web)
 menu anchorCaption content =
   span >>> "style" := "position: relative; display: inline-block;" $ fromHandles do
-    chrome (staticHTML ("<md-outlined-button trailing-icon>" <> escaped anchorCaption <> "<md-icon slot=\"icon\">arrow_drop_down</md-icon></md-outlined-button>"))
+    chrome $ el "md-outlined-button" >>> "trailing-icon" := "" $ Semigroupoid.do
+      staticText anchorCaption
+      el "md-icon" >>> "slot" := "icon" $ staticText "arrow_drop_down"
     anchorNode <- gets _.sibling
     w <- handles (el "md-menu" $ content)
     menuNode <- gets _.sibling
@@ -1422,7 +1428,7 @@ layoutCell cellSpan = div >>> "style" := ("grid-column: span " <> show cellSpan 
 topAppBar :: String -> Ocular (PUI Web)
 topAppBar title content = fromHandles do
   liftEffect $ ensureStyle "md3-top-app-bar" topAppBarCss
-  chrome (staticHTML ("<header class=\"md3-top-app-bar\"><span class=\"md3-top-app-bar__title\">" <> escaped title <> "</span></header>"))
+  chrome $ el "header" >>> cl "md3-top-app-bar" $ span >>> cl "md3-top-app-bar__title" $ staticText title
   handles (div >>> cl "md3-top-app-bar-content" $ content)
 
 topAppBarCss :: String
@@ -1442,7 +1448,9 @@ drawer :: forall r o. { title :: String, subtitle :: String } -> PUI Web { | r }
 drawer config nav content = div >>> "style" := "display: flex;" $ fromHandles do
   liftEffect $ ensureStyle "md3-drawer" drawerCss
   nav' <- handles $ aside >>> cl "md3-drawer" $ fromHandles do
-    chrome (staticHTML ("<div class=\"md3-drawer__header\"><h3 class=\"md3-drawer__title\">" <> escaped config.title <> "</h3><h6 class=\"md3-drawer__subtitle\">" <> escaped config.subtitle <> "</h6></div>"))
+    chrome $ div >>> cl "md3-drawer__header" $ Semigroupoid.do
+      h3 >>> cl "md3-drawer__title" $ staticText config.title
+      el "h6" >>> cl "md3-drawer__subtitle" $ staticText config.subtitle
     handles (div $ nav)
   content' <- handles (div >>> "style" := "flex: 1; padding: 16px;" $ content)
   -- the content is a display: its echoes are the row the nav already has
@@ -1470,7 +1478,7 @@ tooltip tipText content =
     liftEffect $ ensureStyle "md3-tooltip" tooltipCss
     tipId <- liftEffect uniqueId
     w <- handles ("aria-describedby" := tipId $ content)
-    chrome (staticHTML ("<div id=\"" <> tipId <> "\" class=\"md3-tooltip\" role=\"tooltip\">" <> escaped tipText <> "</div>"))
+    chrome $ div >>> "id" := tipId >>> cl "md3-tooltip" >>> "role" := "tooltip" $ staticText tipText
     pure w
 
 
@@ -1500,11 +1508,9 @@ divider = separating dividerExact
 imageListItem :: forall r. { src :: String, alt :: String } -> PUI Web { | r } { | r }
 imageListItem config = fromHandles do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
-  handles $ staticHTML $
-    "<li class=\"md3-image-list__item\">"
-      <> "<img class=\"md3-image-list__image\" src=\"" <> escaped config.src <> "\" alt=\"" <> escaped config.alt <> "\">"
-      <> "<span class=\"md3-image-list__label\">" <> escaped config.alt <> "</span>"
-      <> "</li>"
+  handles $ el "li" >>> cl "md3-image-list__item" $ Semigroupoid.do
+    static (img >>> cl "md3-image-list__image" >>> "src" := config.src >>> "alt" := config.alt)
+    span >>> cl "md3-image-list__label" $ staticText config.alt
 
 
 -- | One picture in an `imageList`, **fed through the channel**: like any

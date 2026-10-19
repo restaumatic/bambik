@@ -7,6 +7,13 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-10-19, latest
+- **No runtime string in markup; `escaped` deleted.** Every caption,
+  label, title, icon name and URL that MDC2, MDC3 and the checkout
+  steppers interpolated into `staticHTML` (31 sites) is now a
+  `staticText` or an attribute on an element built with `el`; the
+  constant markup a catalogue documents stays a string. With nothing
+  left to escape, `PUI.Web.escaped` is deleted. The steppers take
+  `fieldLeaf`, so no demo lifts a focus itself again.
 - **`fieldLeaf @l` and `chrome` in `PUI.Web`.** `fieldLeaf @l leaf` is
   `focusField @l` over the leaf with the label stamped as its `name`, the
   line all 81 editors and selectors across the vocabularies had spelled

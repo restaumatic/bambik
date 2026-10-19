@@ -32,8 +32,8 @@
 -- |   `variantToRecordWiring`, `variantToVariantWiring`, `optionWiring` —
 -- |   the leaf protocol, host-neutral, so it lives with the carrier, as
 -- |   do the click emitter `eventLeaf`, the status `statusOver` and the
--- |   dialogs `confirmedOver`/`acknowledgedOver`): `escaped` (a runtime
--- |   string made safe for `staticHTML`), `listenNode`/`listenNodeDeferred`/
+-- |   dialogs `confirmedOver`/`acknowledgedOver`): `fieldLeaf`, `chrome`,
+-- |   `listenNode`/`listenNodeDeferred`/
 -- |   `listenCapture`, `ensureStyle`, `autoDismiss`, the selector-group
 -- |   helpers (`eachMatching`, `hasClass`, `Members`, `clearedByRepress` —
 -- |   an optional group's clearing gesture) and the presentation-option
@@ -60,7 +60,6 @@ module PUI.Web
   , showModalOnce
   , fieldLeaf
   , chrome
-  , escaped
   , listenNode
   , listenNodeDeferred
   , afterTask
@@ -136,7 +135,6 @@ import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Array (concat)
-import Data.String (replaceAll, Pattern(..), Replacement(..))
 import Data.Variant (inj)
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
@@ -398,7 +396,11 @@ instance Hosting Web (Array Node) where
 -- | Fixed decoration given as a raw markup string — for chrome a design
 -- | system only documents as markup. Like `staticText` it never changes and
 -- | carries no data; unlike it, the string is inserted as markup, so it must
--- | be written in the source and never assembled from model or user text.
+-- | be written in the source and never assembled from model or user text:
+-- | a runtime string — a caption, a label, a title, a URL — is a
+-- | `staticText` or an attribute (`:=`) on an element built with `el`,
+-- | the constant markup around it staying a string where the catalogue
+-- | documents it so.
 -- |
 -- | **Internal chrome plumbing** (L10): it lives here, on the carrier, rather
 -- | than in the `PUI.Web.HTML` vocabulary, because an HTML-string surface must
@@ -496,17 +498,6 @@ fieldLeaf leaf = focusField @l $ "name" := reflectSymbol (Proxy @l) $ leaf
 -- | needs no `handles`.
 chrome :: forall a b. PUI Web a b -> Web Unit
 chrome = void <<< handles
-
--- | A runtime string made safe to concatenate into `staticHTML` markup —
--- | as text or as a double-quoted attribute value. Every caption, label,
--- | title or URL a vocabulary interpolates into markup passes through it,
--- | so no copy can close a tag or open an attribute.
-escaped :: String -> String
-escaped = replaceAll (Pattern "&") (Replacement "&amp;")
-  >>> replaceAll (Pattern "<") (Replacement "&lt;")
-  >>> replaceAll (Pattern ">") (Replacement "&gt;")
-  >>> replaceAll (Pattern "\"") (Replacement "&quot;")
-  >>> replaceAll (Pattern "'") (Replacement "&#39;")
 
 -- | Listen for an event on a node, the remover discarded: a leaf's node is
 -- | detached whole with its listeners, never unwired.

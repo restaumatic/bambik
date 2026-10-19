@@ -10,10 +10,9 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons)
-import PUI (PUI, fromHandles, handles, optionWiring)
-import PUI.Web (Node, Web, addClass, appendChild, clazz, createTextNode, eachMatching, element, ensureStyle, escaped, getValue, hasClass, invokeMethod, listenNode, removeAttribute, removeClass, setAttribute, setTextNodeValue, staticHTML, (:=))
-import PUI.Web.HTML (div)
-import Data.Profunctor.Row.RecordToRecord (focusField)
+import PUI (static, PUI, fromHandles, handles, optionWiring)
+import PUI.Web (Node, Web, addClass, appendChild, clazz, createTextNode, eachMatching, element, ensureStyle, chrome, el, cl, staticText, fieldLeaf, getValue, hasClass, invokeMethod, listenNode, removeAttribute, removeClass, setAttribute, setTextNodeValue, staticHTML, (:=))
+import PUI.Web.HTML (div, span)
 import Type.Proxy (Proxy(..))
 
 -- | A wizard's step selector: Back · one dot per step · Next, the current
@@ -21,13 +20,13 @@ import Type.Proxy (Proxy(..))
 -- | `VariantToVariant.do` in step order; Back and Next pick the dot beside
 -- | the current one, so each step emits its own case.
 stepper :: forall @l w b r. IsSymbol l => Cons l (Variant w) b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-stepper steps = focusField @l $ "name" := reflectSymbol (Proxy @l) >>> "aria-label" := reflectSymbol (Proxy @l) $ stepperGroup steps
+stepper steps = fieldLeaf @l $ "aria-label" := reflectSymbol (Proxy @l) $ stepperGroup steps
 
 -- | One step of a `stepper`: a dot, current while the field holds case `c`.
 step :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 step = fromHandles do
   dots <- gets \{ parent } -> parent
-  _ <- handles (staticHTML ("<data class=\"mdc2-stepper__dot\" aria-hidden=\"true\" value=\"" <> escaped (reflectSymbol (Proxy @c)) <> "\"></data>"))
+  chrome (static (el "data" >>> cl "mdc2-stepper__dot" >>> "aria-hidden" := "true" >>> "value" := reflectSymbol (Proxy @c)))
   dot <- lastBuilt
   let
     current = do
@@ -103,7 +102,7 @@ stepperGroup steps =
 
 navButton :: String -> String -> Web Node
 navButton icon caption = do
-  _ <- handles (staticHTML ("<button class=\"mdc-button\"><span class=\"mdc-button__ripple\"></span><i class=\"material-icons mdc-button__icon\" aria-hidden=\"true\">" <> escaped icon <> "</i><span class=\"mdc-button__label\">" <> escaped caption <> "</span></button>"))
+  chrome $ el "button" >>> cl "mdc-button" $ static (span >>> cl "mdc-button__ripple") >>> (el "i" >>> cl "material-icons" >>> cl "mdc-button__icon" >>> "aria-hidden" := "true" $ staticText icon) >>> (span >>> cl "mdc-button__label" $ staticText caption)
   lastBuilt
 
 lastBuilt :: Web Node
