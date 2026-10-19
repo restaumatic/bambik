@@ -2,10 +2,12 @@ module LawBenchMDC2 (lawBenchMDC2) where
 
 import Prelude
 
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
+import PUI (PUI)
 import LawBench (bench, runBench)
-import PUI.Web (text, (<+>), choice, staticText, textAt)
-import PUI.Web.MDC2 (acknowledged, body, confirmed, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, outlinedButton, outlinedTextField, radioButton, radioButtonOptional, radioButtonUnpicked, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tabBar, tabBar', textButton, toggleSwitch)
+import PUI.Web (Web, text, staticText, textAt)
+import PUI.Web.MDC2 (acknowledged, body, confirmed, button, checkbox, debouncedTextField, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, toggleSwitch)
 
 lawBenchMDC2 :: Effect Unit
 lawBenchMDC2 = do
@@ -21,20 +23,20 @@ lawBenchMDC2 = do
     , bench "iconToggle" "×→×" flags (iconToggle @"On" { onIcon: "star", offIcon: "star_border" })
     , bench "slider" "×→×" quantities (slider @"Amount")
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount")
-    , bench "tabBar" "×→×" tabs (tabBar @"Tab" (choice @"a" <+> choice @"b"))
-    , bench "tabBar'" "×→×" tabs (tabBar' @"Tab" { icons: { a: "star", b: "home" } } (choice @"a" <+> choice @"b"))
+    , bench "tabBar" "×→×" tabs (tabBar @"Tab" tabOptions)
+    , bench "tabBar'" "×→×" tabs (tabBar @"Tab" iconTabOptions)
     , bench "linearProgress" "×→×" fractions (linearProgress fractionOf)
     , bench "imagePane" "×→×" images (imagePane identity)
     , bench "group" "×→×" grouped (group @"Customer" (filledTextField @"Name"))
-    , bench "select" "×→×" chosen (select @"Pick" options)
-    , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" options)
-    , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
-    , bench "radioButton" "×→×" chosen (radioButton @"Pick" options)
-    , bench "radioButtonUnpicked" "×→×" picks (radioButtonUnpicked @"Pick" @"chosen" options)
-    , bench "radioButtonOptional" "×→×" picks (radioButtonOptional @"Pick" @"chosen" @"unchosen" options)
-    , bench "segmentedButton" "×→×" chosen (segmentedButton @"Pick" options)
-    , bench "segmentedButtonUnpicked" "×→×" picks (segmentedButtonUnpicked @"Pick" @"chosen" options)
-    , bench "segmentedButtonOptional" "×→×" picks (segmentedButtonOptional @"Pick" @"chosen" @"unchosen" options)
+    , bench "select" "×→×" chosen (select @"Pick" selectOptions)
+    , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" selectOptions)
+    , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" selectOptions)
+    , bench "radioButton" "×→×" chosen (radioButton @"Pick" radioOptions)
+    , bench "radioButtonUnpicked" "×→×" picks (radioButtonUnpicked @"Pick" @"chosen" radioOptions)
+    , bench "radioButtonOptional" "×→×" picks (radioButtonOptional @"Pick" @"chosen" @"unchosen" radioOptions)
+    , bench "segmentedButton" "×→×" chosen (segmentedButton @"Pick" segmentOptions)
+    , bench "segmentedButtonUnpicked" "×→×" picks (segmentedButtonUnpicked @"Pick" @"chosen" segmentOptions)
+    , bench "segmentedButtonOptional" "×→×" picks (segmentedButtonOptional @"Pick" @"chosen" @"unchosen" segmentOptions)
     , bench "button" "×→+" rows (button @"Go")
     , bench "outlinedButton" "×→+" rows (outlinedButton @"Go")
     , bench "textButton" "×→+" rows (textButton @"Go")
@@ -64,7 +66,26 @@ lawBenchMDC2 = do
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   images = [ { src: "a.png", alt: "A" }, { src: "b.png", alt: "B" } ]
   grouped = [ { "Customer": { "Name": "alpha" }, other: 1 }, { "Customer": { "Name": "beta" }, other: 2 } ]
-  options = choice @"one" <+> choice @"two"
+  tabOptions :: PUI Web [ a :: {}, b :: {} ] [ a :: {}, b :: {} ]
+  tabOptions = VariantToVariant.do
+    tab @"a"
+    tab @"b"
+  iconTabOptions :: PUI Web [ a :: {}, b :: {} ] [ a :: {}, b :: {} ]
+  iconTabOptions = VariantToVariant.do
+    tab' @"a" { icon: "star" }
+    tab' @"b" { icon: "home" }
+  selectOptions :: PUI Web [ one :: {}, two :: {} ] [ one :: {}, two :: {} ]
+  selectOptions = VariantToVariant.do
+    option @"one"
+    option @"two"
+  radioOptions :: PUI Web [ one :: {}, two :: {} ] [ one :: {}, two :: {} ]
+  radioOptions = VariantToVariant.do
+    radio @"one"
+    radio @"two"
+  segmentOptions :: PUI Web [ one :: {}, two :: {} ] [ one :: {}, two :: {} ]
+  segmentOptions = VariantToVariant.do
+    segment @"one"
+    segment @"two"
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]

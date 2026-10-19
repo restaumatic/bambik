@@ -37,24 +37,6 @@ export function layoutComponent(component) {
   };
 }
 
-// activateTab :: Component -> Int -> Effect Unit (MDCTabBar)
-export function activateTab(component) {
-  return function (index) {
-    return function () {
-      component.activateTab(index);
-    };
-  };
-}
-
-// onTabBarActivated :: Component -> (Int -> Effect Unit) -> Effect Unit (MDCTabBar)
-export function onTabBarActivated(component) {
-  return function (handler) {
-    return function () {
-      component.listen('MDCTabBar:activated', function (e) { handler(e.detail.index)(); });
-    };
-  };
-}
-
 // MDCSlider's value API is method-based, the one foundation off the
 // property convention
 export function getSliderValue(component) {
@@ -223,3 +205,36 @@ export function configureMdcSlider(node) {
     };
   };
 }
+
+// A group's foundation, kept on its root so the option leaves built inside
+// it reach it once it exists: the group builds its options' markup first,
+// constructs the foundation over it, then stashes it here.
+
+// stashComponent :: Node -> Component -> Effect Unit
+export const stashComponent = node => component => () => {
+  node.__bambikMdc = component;
+};
+
+// componentWithin :: String -> Node -> Effect Component — the foundation
+// stashed on the nearest ancestor matching the selector
+export const componentWithin = selector => node => () => node.closest(selector).__bambikMdc;
+
+// closestOf :: String -> Node -> Effect Node
+export const closestOf = selector => node => () => node.closest(selector);
+
+// getStringProp :: String -> Component -> Effect String
+export const getStringProp = name => component => () => String(component[name] ?? '');
+
+// selectQuietly :: Component -> String -> Effect Unit (MDCSelect: pick the
+// item of that value, or none for "", without firing MDCSelect:change)
+export const selectQuietly = component => value => () => {
+  if (value === '') component.setSelectedIndex(-1, true);
+  else component.setValue(value, true);
+};
+
+// activateTabNode :: Component -> Node -> Effect Unit (MDCTabBar: activate
+// the tab element given, by its position among the bar's tabs)
+export const activateTabNode = component => tab => () => {
+  const index = [...component.root.querySelectorAll('.mdc-tab')].indexOf(tab);
+  if (index >= 0) component.activateTab(index);
+};
