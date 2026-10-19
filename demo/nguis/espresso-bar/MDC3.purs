@@ -4,27 +4,37 @@ import Prelude ((#), ($), const, Unit)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import EspressoBar (caffeineFraction, cupLine, espressoNoFrills, placeOrder, theUsual, usualOrder)
 import PUI (action, fold, looped, with)
-import PUI.Web ((<+>), choice, staticText, text)
+import PUI.Web (staticText, text)
 import PUI.Web.HTML (div)
-import PUI.Web.MDC3 (body, bodyMedium, button', checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, indeterminateLinearProgress, labelMedium, linearProgress, menu, menuItem, radioButton, segmentedButton, select, sliderLive, snackbar, tabBar, toggleSwitch, tooltip, topAppBar)
+import PUI.Web.MDC3 (body, bodyMedium, button', checkbox, chipSet, divider, filledTextField, filterChip, iconToggle, indeterminateLinearProgress, labelMedium, linearProgress, menu, menuItem, option, radio, radioButtonV, segment, segmentedButtonV, selectV, sliderLive, snackbar, tab, tabBarV, toggleSwitch, tooltip, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 espressoBar :: Effect Unit
 espressoBar =
   body $
     topAppBar "Espresso Bar" $ Semigroupoid.do
-      tabBar @"Drink"
-        (choice @"Espresso" <+> choice @"Cappuccino" <+> choice @"Latte")
+      tabBarV @"Drink" $ VariantToVariant.do
+        tab @"Espresso"
+        tab @"Cappuccino"
+        tab @"Latte"
       filledTextField @"Name"
-      segmentedButton @"Size"
-        (choice @"Small" <+> choice @"Medium" <+> choice @"Large")
-      select @"Milk"
-        (choice @"Whole milk" <+> choice @"Oat milk" <+> choice @"Almond milk" <+> choice @"No milk")
-      radioButton @"Roast"
-        (choice @"Light" <+> choice @"Medium" <+> choice @"Dark")
+      segmentedButtonV @"Size" $ VariantToVariant.do
+        segment @"Small"
+        segment @"Medium"
+        segment @"Large"
+      selectV @"Milk" $ VariantToVariant.do
+        option @"Whole milk"
+        option @"Oat milk"
+        option @"Almond milk"
+        option @"No milk"
+      radioButtonV @"Roast" $ VariantToVariant.do
+        radio @"Light"
+        radio @"Medium"
+        radio @"Dark"
       sliderLive @"Sugar"
       chipSet $ Semigroupoid.do
         filterChip @"Extra shot"

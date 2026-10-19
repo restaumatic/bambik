@@ -136,6 +136,17 @@ module PUI.Web.MDC3
   , tonalButton
   , tooltip
   , topAppBar
+  -- option leaves (spike)
+  , radio
+  , radioButtonV
+  , radioButtonUnpickedV
+  , segment
+  , segmentedButtonV
+  , option
+  , selectV
+  , tab
+  , tab'
+  , tabBarV
   )
   where
 
@@ -157,7 +168,7 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, anyOf, folding, introduced, isHole, Ocular, PUI, recordToRecordWiring, recordToVariantWiring, variantToRecordWiring, variantToVariantWiring, selectedAt, selectedUnpickedAt, selectedOptionalAt, replayed, occurrencesOn, Gesture(..))
+import PUI (fromHandles, handles, anyOf, folding, introduced, isHole, Ocular, PUI, recordToRecordWiring, recordToVariantWiring, variantToRecordWiring, variantToVariantWiring, selectedAt, selectedUnpickedAt, selectedOptionalAt, replayed, occurrencesOn, Gesture(..), optionWiring)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (Choices, class PerChoice, choiceTags, perChoice, tagged, taggedTotal, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, clearedOnRepress, el, element, ensureStyle, escaped, eventLeaf, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=))
@@ -1508,6 +1519,115 @@ imagePaneFace picture = fromHandles do
 
 -- Private
 
+-- Option leaves (spike): a selector as a group over its options, merged
+-- `VariantToVariant.do`, each option a leaf of one case of the field.
+
+-- | One option of a `radioButtonV` group: an `md-radio` captioned by its case.
+radio :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
+radio = fromHandles do
+  node <- element "label" do
+    element "md-radio" (pure unit)
+    radioNode <- gets _.sibling
+    liftEffect $ setAttribute radioNode "aria-label" (reflectSymbol (Proxy @c))
+    _ <- handles (staticText (reflectSymbol (Proxy @c)))
+    pure radioNode
+  attribute "style" "display: inline-flex; align-items: center; gap: 12px;"
+  liftEffect $ optionWiring @c
+    { show: setChecked node true
+    , reports: listenNode node "change"
+    , picked: getChecked node
+    }
+
+-- | The radio group over its options: field `l` holds one of their cases.
+radioButtonV :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+radioButtonV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf options
+
+-- | `radioButtonV` for a choice owed but not yet made: field `l` is a
+-- | variant whose case `c` holds the options' case; every other case shows
+-- | nothing checked.
+radioButtonUnpickedV :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+radioButtonUnpickedV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ radioGroupOf (focusCase @c options)
+
+radioGroupOf :: forall a. PUI Web a a -> PUI Web a a
+radioGroupOf options =
+  div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start; gap: 8px;" >>> "role" := "radiogroup" $ fromHandles do
+    container <- gets _.parent
+    inner <- handles options
+    liftEffect do
+      groupName <- uniqueId
+      eachMatching "md-radio" container \n -> setAttribute n "name" groupName
+    pure
+      { toUser: \a -> do
+          eachMatching "md-radio" container \n -> setChecked n false
+          inner.toUser a
+      , fromUser: inner.fromUser
+      }
+
+-- | One segment of a `segmentedButtonV`, captioned by its case.
+segment :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
+segment = fromHandles do
+  container <- gets _.parent
+  _ <- handles (staticHTML ("<button class=\"md3-segmented-button__segment\" role=\"radio\" aria-checked=\"false\"><span class=\"md3-segmented-button__check\" aria-hidden=\"true\"></span><span>" <> escaped (reflectSymbol (Proxy @c)) <> "</span></button>"))
+  node <- gets _.sibling
+  let
+    selectSelf = do
+      eachMatching ".md3-segmented-button__segment" container \n -> do
+        setClassIf n "md3-segmented-button__segment--selected" false
+        setAttribute n "aria-checked" "false"
+      setClassIf node "md3-segmented-button__segment--selected" true
+      setAttribute node "aria-checked" "true"
+  liftEffect $ optionWiring @c
+    { show: selectSelf
+    , reports: \k -> listenNode node "click" (selectSelf *> k)
+    , picked: pure true
+    }
+
+segmentedButtonV :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+segmentedButtonV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ div >>> cl "md3-segmented-button" >>> "role" := "radiogroup" $ fromHandles do
+  liftEffect $ ensureStyle "md3-segmented-button" segmentedButtonCss
+  handles options
+
+-- | One option of a `selectV`: an `md-select-option` headed by its case.
+option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
+option = fromHandles do
+  menu <- gets _.parent
+  element "md-select-option" do
+    void $ handles (staticHTML ("<div slot=\"headline\">" <> escaped (reflectSymbol (Proxy @c)) <> "</div>"))
+  attribute "value" (reflectSymbol (Proxy @c))
+  optionNode <- gets _.sibling
+  liftEffect $ optionWiring @c
+    { show: setStringProp "value" menu (reflectSymbol (Proxy @c))
+    , reports: listenNode menu "change"
+    , picked: getBoolProp "selected" optionNode
+    }
+
+selectV :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+selectV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ el "md-filled-select" >>> "label" := reflectSymbol (Proxy @l) >>> "style" := "min-width: 200px;" $ options
+
+-- | One tab of a `tabBarV`, captioned by its case.
+tab :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
+tab = tabWith @c Nothing
+
+-- | `tab` with an icon beside its caption.
+tab' :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => { icon :: String } -> PUI Web [ | v ] [ | o ]
+tab' { icon } = tabWith @c (Just icon)
+
+tabWith :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => Maybe String -> PUI Web [ | v ] [ | o ]
+tabWith icon = fromHandles do
+  tabs <- gets _.parent
+  _ <- handles (staticHTML ("<md-primary-tab>" <> maybe "" (\i -> "<md-icon slot=\"icon\">" <> escaped i <> "</md-icon>") icon <> escaped (reflectSymbol (Proxy @c)) <> "</md-primary-tab>"))
+  node <- gets _.sibling
+  liftEffect $ optionWiring @c
+    { show: do
+        eachMatching "md-primary-tab" tabs \n -> setBoolProp "active" n false
+        setBoolProp "active" node true
+    , reports: listenNode tabs "change"
+    , picked: getBoolProp "active" node
+    }
+
+tabBarV :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+tabBarV options = focusField @l $ "name" := reflectSymbol (Proxy @l) $ el "md-tabs" $ options
+
 foreign import setNumberProp :: String -> Node -> Number -> Effect Unit
 foreign import setStringProp :: String -> Node -> String -> Effect Unit
 foreign import getNumberProp :: String -> Node -> Effect Number
@@ -1516,6 +1636,7 @@ foreign import getIntProp :: String -> Node -> Effect Int
 foreign import setBoolProp :: String -> Node -> Boolean -> Effect Unit
 foreign import getBoolProp :: String -> Node -> Effect Boolean
 foreign import setClassIf :: Node -> String -> Boolean -> Effect Unit
+foreign import eachMatching :: String -> Node -> (Node -> Effect Unit) -> Effect Unit
 foreign import showDialog :: Node -> Effect Unit
 foreign import closeDialog :: Node -> Effect Unit
 foreign import openMenuAnchoredTo :: Node -> Node -> Effect Unit

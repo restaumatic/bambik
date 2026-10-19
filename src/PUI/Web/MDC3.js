@@ -137,3 +137,7 @@ export function openMenuAnchoredTo(menu) {
   };
 }
 
+
+export const eachMatching = selector => container => f => () => {
+  for (const n of container.querySelectorAll(selector)) f(n)();
+};

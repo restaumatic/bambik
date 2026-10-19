@@ -87,6 +87,7 @@ module PUI
   , recordToVariantWiring
   , variantToRecordWiring
   , variantToVariantWiring
+  , optionWiring
   , selectedAt
   , selectedUnpickedAt
   , selectedOptionalAt
@@ -382,6 +383,43 @@ variantToVariantWiring leaf = do
           leaf.close
     }
 
+
+-- | The **option leaf**'s wiring — one case `c` of a selector's field,
+-- | `[ c :: {} ] → [ | o ]`: options are merged `VariantToVariant.do` under
+-- | a selector group, so each is fed only when the field holds its case.
+-- | Fed, it `show`s itself picked and **echoes** its case, so the group's
+-- | lifted editor answers every feed (one feed, one option, one echo).
+-- | When `reports` fires and `picked` says the user chose it, it emits its
+-- | case; a report while its own write is in progress is that write's echo
+-- | and is dropped. Exclusivity is the group's and the platform's.
+optionWiring
+  :: forall @c v b o
+   . IsSymbol c
+  => Cons c {} () v
+  => Cons c {} b o
+  => { show :: Effect Unit
+     , reports :: Effect Unit -> Effect Unit
+     , picked :: Effect Boolean
+     }
+  -> Effect (Handles [ | v ] [ | o ])
+optionWiring leaf = do
+  propRef <- Ref.new Nothing
+  busyRef <- Ref.new false
+  let emit = Ref.read propRef >>= traverse_ (_ $ inj (Proxy @c) {})
+  pure
+    { toUser: \_ -> do
+        Ref.write true busyRef
+        leaf.show
+        Ref.write false busyRef
+        emit
+    , fromUser: \prop -> do
+        Ref.write (Just prop) propRef
+        leaf.reports do
+          busy <- Ref.read busyRef
+          unless busy do
+            picked <- leaf.picked
+            when picked emit
+    }
 
 -- | Lift a bare selection leaf — the option to check in (`Nothing`: none),
 -- | the option the user checked out (`Nothing`: cleared) — to the
