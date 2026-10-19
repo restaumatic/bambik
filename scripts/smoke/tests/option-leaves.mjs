@@ -31,6 +31,7 @@ const faces = {
     option: (c) => `[...document.querySelectorAll('md-select-option')].find(o => o.value === ${JSON.stringify(c)})`,
     radio: (c) => `[...document.querySelectorAll('md-radio')].find(r => r.getAttribute('aria-label') === ${JSON.stringify(c)})`,
     presets: `[...document.querySelectorAll('md-outlined-button')].find(b => b.textContent.includes('Presets'))`,
+    toggle: `document.querySelector('md-switch')`,
   },
   mdc2: {
     summary: `document.querySelector('#demo-column .mdc-typography--body2')?.textContent ?? ''`,
@@ -46,6 +47,7 @@ const faces = {
     option: (c) => `document.querySelector('.mdc-select li[data-value=${JSON.stringify(c)}]')`,
     radio: (c) => `[...document.querySelectorAll('.mdc-form-field label')].find(l => l.textContent === ${JSON.stringify(c)})`,
     presets: `[...document.querySelectorAll('.mdc-menu-surface--anchor > button')].find(b => b.textContent.includes('Presets'))`,
+    toggle: `document.querySelector('.mdc-switch')`,
   },
 }
 
@@ -114,6 +116,18 @@ const espressoWalk = async ({ ev, session, assertEq, sleep, page }) => {
   await click(face.radio('Dark'))
   assertEq(await ev(picked.radio), ['Dark'], `[${page}] clicking a radio makes it the one checked radio`)
   assertEq((await line()).includes('Dark roast'), true, `[${page}] the picked roast is stored (the summary says Dark roast)`)
+
+  // a pick survives every other widget's edit: each re-feeds the row
+  await click(face.segment('Small'))
+  assertEq(await ev(picked.radio), ['Dark'], `[${page}] picking a size leaves the roast's radio checked`)
+  await click(face.tab('Espresso'))
+  assertEq(await ev(picked.radio), ['Dark'], `[${page}] picking a drink leaves the roast's radio checked`)
+  assertEq(await ev(picked.segment), ['Small'], `[${page}] picking a drink leaves the size's segment checked`)
+  await click(face.toggle)
+  assertEq(await ev(picked.radio), ['Dark'], `[${page}] flipping a switch leaves the roast's radio checked`)
+  assertEq(await ev(picked.segment), ['Small'], `[${page}] flipping a switch leaves the size's segment checked`)
+  assertEq(await ev(picked.tab), ['Espresso'], `[${page}] flipping a switch leaves the drink's tab active`)
+  assertEq((await line()).includes('Dark roast'), true, `[${page}] the roast is still stored after other edits`)
 
   await click(face.presets)
   await sleep(300)

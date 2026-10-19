@@ -16,11 +16,13 @@ import TodoList (addTodo, clearCompleted, emptyTodoList, isCompleted, remainingI
 todoList :: Effect Unit
 todoList =
   body $ Semigroupoid.do
-    filledTextField' @"Todo" { hint: "What needs to be done?" }
-    segmentedButton @"Visibility" $ VariantToVariant.do
-      segment @"All"
-      segment @"Active"
-      segment @"Completed"
+    ( Semigroupoid.do
+      filledTextField' @"Todo" { hint: "What needs to be done?" }
+      segmentedButton @"Visibility" $ VariantToVariant.do
+        segment @"All"
+        segment @"Active"
+        segment @"Completed"
+    ) # looped
     ( caption $ text soleLine ) # inCase @"sole" remainingItems
     ( caption $ text severalLine ) # inCase @"several" remainingItems
     RecordToVariant.do

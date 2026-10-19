@@ -14,15 +14,17 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 movieBrowser :: Effect Unit
 movieBrowser =
   body $ Semigroupoid.do
-    tabBar @"category" $ VariantToVariant.do
-      tab @"All"
-      tab @"Action"
-      tab @"Drama"
-      tab @"Comedy"
-    chipSet $ Semigroupoid.do
-      filterChip @"Classic"
-      filterChip @"Cult"
-      filterChip @"Oscar"
+    ( Semigroupoid.do
+      tabBar @"category" $ VariantToVariant.do
+        tab @"All"
+        tab @"Action"
+        tab @"Drama"
+        tab @"Comedy"
+      chipSet $ Semigroupoid.do
+        filterChip @"Classic"
+        filterChip @"Cult"
+        filterChip @"Oscar"
+    ) # looped
     elevation1 $ subtitle1 $ text favoritesLine
     list $
       ( listItem >>> clWhen isFavorite "mdc-deprecated-list-item--selected" $ Semigroupoid.do

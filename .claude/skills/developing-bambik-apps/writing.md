@@ -305,10 +305,15 @@ forwards each release as it comes — its output row is shared, where the
 `×→×` merge's operands own their fields. The seed and every later model enter at the top, so everything that
 must be on screen at mount — displays, editors, the list a pick comes
 from — stands before the ensemble; a stage after the fold is fed only by
-events. Editors before the ensemble flow forward only; an editor whose
-edit must reach its siblings keeps its own normalizer (`# settled`,
-temperature-converter) or stands in a loop of its own: a form of several
-editors is `( … ) # looped` inside the app's loop (order-form). An event
+events. Editors before the ensemble flow forward only, and the ensemble
+answers a feed with nothing, so the app's loop never sees an edit: **two
+or more editors before the ensemble are always `( … ) # looped`** inside
+the app's loop (order-form, espresso-bar, crud). Without it an editor
+keeps the row it was last fed, so its next edit writes back the values
+the fields below it held then — a roast picked below a size is undone
+by the next size pick. A single editor needs no loop of its own; an
+edit that must change a sibling's value keeps its own normalizer
+(`# settled`, temperature-converter). An event
 whose effect takes time is joined with the model when its outcome lands,
 not when it fired: `joined @l` wraps the emitter and its action together
 (`( Semigroupoid.do { button …; … # action @"Estimate distance" estimateDistance } )

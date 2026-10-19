@@ -14,9 +14,11 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 crud :: Effect Unit
 crud =
   body $ Semigroupoid.do
-    filledTextField @"Surname prefix" # settled filterChanged
-    filledTextField @"Name"
-    filledTextField @"Surname"
+    ( Semigroupoid.do
+      filledTextField @"Surname prefix" # settled filterChanged
+      filledTextField @"Name"
+      filledTextField @"Surname"
+    ) # looped
     RecordToVariant.do
       ( listOf' @"Person picked" @"key" { selected: isSelected } entries $ text personLine ) # joined @"Person picked"
       button @"Create"

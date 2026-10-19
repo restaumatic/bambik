@@ -14,18 +14,20 @@ signupForm :: Effect Unit
 signupForm =
   body $ Semigroupoid.do
     headline4 $ staticText "Create account"
-    debouncedTextField @"Username" usernameSettleTime
-    radioButton @"Plan" $ VariantToVariant.do
-      radio @"Free"
-      radio @"Pro"
-      radio @"Team"
-    select @"Country" $ VariantToVariant.do
-      option @"Poland"
-      option @"Germany"
-      option @"France"
-      option @"Spain"
-    filledTextField @"Email"
-    checkbox @"Accept the terms of service" @"accepted" @"declined" # tooltip "You must accept the terms of service to sign up"
+    ( Semigroupoid.do
+      debouncedTextField @"Username" usernameSettleTime
+      radioButton @"Plan" $ VariantToVariant.do
+        radio @"Free"
+        radio @"Pro"
+        radio @"Team"
+      select @"Country" $ VariantToVariant.do
+        option @"Poland"
+        option @"Germany"
+        option @"France"
+        option @"Spain"
+      filledTextField @"Email"
+      checkbox @"Accept the terms of service" @"accepted" @"declined" # tooltip "You must accept the terms of service to sign up"
+    ) # looped
     ( body2 $ staticText "Pick a username to check its availability" ) # inCase @"unnamed" usernameStatus
     ( body2 $ text takenLine ) # inCase @"taken" usernameStatus
     ( body2 $ text availableLine ) # inCase @"available" usernameStatus

@@ -17,31 +17,33 @@ espressoBar :: Effect Unit
 espressoBar =
   body $
     topAppBar "Espresso Bar" $ Semigroupoid.do
-      tabBar @"Drink" $ VariantToVariant.do
-        tab @"Espresso"
-        tab @"Cappuccino"
-        tab @"Latte"
-      filledTextField @"Name"
-      segmentedButton @"Size" $ VariantToVariant.do
-        segment @"Small"
-        segment @"Medium"
-        segment @"Large"
-      select @"Milk" $ VariantToVariant.do
-        option @"Whole milk"
-        option @"Oat milk"
-        option @"Almond milk"
-        option @"No milk"
-      radioButton @"Roast" $ VariantToVariant.do
-        radio @"Light"
-        radio @"Medium"
-        radio @"Dark"
-      sliderLive @"Sugar"
-      chipSet $ Semigroupoid.do
-        filterChip @"Extra shot"
-        filterChip @"Decaf"
-      toggleSwitch @"Takeaway cup"
-      iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "heart_plus" }
-      checkbox @"Loyalty member" @"member" @"guest" # tooltip "Members get 10% off"
+      ( Semigroupoid.do
+        tabBar @"Drink" $ VariantToVariant.do
+          tab @"Espresso"
+          tab @"Cappuccino"
+          tab @"Latte"
+        filledTextField @"Name"
+        segmentedButton @"Size" $ VariantToVariant.do
+          segment @"Small"
+          segment @"Medium"
+          segment @"Large"
+        select @"Milk" $ VariantToVariant.do
+          option @"Whole milk"
+          option @"Oat milk"
+          option @"Almond milk"
+          option @"No milk"
+        radioButton @"Roast" $ VariantToVariant.do
+          radio @"Light"
+          radio @"Medium"
+          radio @"Dark"
+        sliderLive @"Sugar"
+        chipSet $ Semigroupoid.do
+          filterChip @"Extra shot"
+          filterChip @"Decaf"
+        toggleSwitch @"Takeaway cup"
+        iconToggle @"Mark as favorite" { onIcon: "favorite", offIcon: "heart_plus" }
+        checkbox @"Loyalty member" @"member" @"guest" # tooltip "Members get 10% off"
+      ) # looped
       divider $ Semigroupoid.do
         bodyMedium $ text cupLine
         div $ Semigroupoid.do

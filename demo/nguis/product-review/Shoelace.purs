@@ -14,15 +14,17 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 productReview :: Effect Unit
 productReview =
   body $ Semigroupoid.do
-    rating @"Overall rating"
-    textField @"Headline"
-    textArea @"Review" { rows: 4 }
-    select @"Owned for" $ VariantToVariant.do
-      option @"Under a month"
-      option @"Up to a year"
-      option @"Over a year"
-    toggleSwitch @"Recommend to a friend"
-    textField @"Nickname"
+    ( Semigroupoid.do
+      rating @"Overall rating"
+      textField @"Headline"
+      textArea @"Review" { rows: 4 }
+      select @"Owned for" $ VariantToVariant.do
+        option @"Under a month"
+        option @"Up to a year"
+        option @"Over a year"
+      toggleSwitch @"Recommend to a friend"
+      textField @"Nickname"
+    ) # looped
     divider $ card $ p $ text previewLine
     button @"Submit review"
     indeterminateLinearProgress # action @"Submit review" submitReview

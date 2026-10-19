@@ -7,6 +7,17 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-10-19, latest
+- **Fixed: an edit undone by the next edit above it.** Nine apps — crud,
+  todo-list, password-generator, espresso-bar, movie-browser (all
+  twins), color-mixer, loan-calculator, product-review and signup-form's
+  MDC2 twin — had several editors before an emitter under the app's one
+  `looped`. The emitter answers a feed with nothing, so an edit never
+  reached the loop and the editors above it kept the row of their last
+  feed: picking a size after a roast put the roast back. Each now keeps
+  its editors in a `( … ) # looped` of their own, as writing.md's app
+  shape requires and order-form and flight-booker already did; the rule
+  is now stated as a must, and the option-leaves walk checks that a pick
+  survives other edits.
 - **A selector group knows its options by composition.** The builder
   state carries the group being built: `grouping` builds a group and
   `member` registers an option in it (its element, whether it shows

@@ -13,11 +13,13 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 passwordGenerator :: Effect Unit
 passwordGenerator =
   body $ Semigroupoid.do
-    slider @"Length"
-    toggleSwitch @"Uppercase letters"
-    toggleSwitch @"Lowercase letters"
-    toggleSwitch @"Digits"
-    toggleSwitch @"Symbols"
+    ( Semigroupoid.do
+      slider @"Length"
+      toggleSwitch @"Uppercase letters"
+      toggleSwitch @"Lowercase letters"
+      toggleSwitch @"Digits"
+      toggleSwitch @"Symbols"
+    ) # looped
     bodyMedium $ text strengthLine
     code >>> attr "style" "word-break: break-all;" $ textAt @"password"
     button @"Generate"

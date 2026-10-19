@@ -13,9 +13,11 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 colorMixer :: Effect Unit
 colorMixer =
   body $ Semigroupoid.do
-    sliderLive @"Red"
-    sliderLive @"Green"
-    sliderLive @"Blue"
+    ( Semigroupoid.do
+      sliderLive @"Red"
+      sliderLive @"Green"
+      sliderLive @"Blue"
+    ) # looped
     bodyMedium $ text hexLine
     bodyMedium $ text rgbLine
     ( div $ Semigroupoid.do
