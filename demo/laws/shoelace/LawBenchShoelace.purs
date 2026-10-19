@@ -2,10 +2,12 @@ module LawBenchShoelace (lawBenchShoelace) where
 
 import Prelude
 
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import LawBench (bench, runBench)
-import PUI.Web (text, (<+>), choice, staticText)
-import PUI.Web.Shoelace (acknowledged, confirmed, body, button, indeterminateLinearProgress, progressBar, rating, select, selectOptional, selectUnpicked, sliderLive, textArea, textField, toast, toggleSwitch)
+import PUI (PUI)
+import PUI.Web (Web, text, staticText)
+import PUI.Web.Shoelace (acknowledged, confirmed, body, button, indeterminateLinearProgress, option, progressBar, rating, select, selectOptional, selectUnpicked, sliderLive, textArea, textField, toast, toggleSwitch)
 
 lawBenchShoelace :: Effect Unit
 lawBenchShoelace = do
@@ -36,7 +38,10 @@ lawBenchShoelace = do
   ratings = [ { "Stars": { current: 2.0, max: 5 }, other: 1 }, { "Stars": { current: 4.0, max: 5 }, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]
   runs = [ .started {}, .ended {} ]
-  options = choice @"one" <+> choice @"two"
+  options :: PUI Web [ one :: {}, two :: {} ] [ one :: {}, two :: {} ]
+  options = VariantToVariant.do
+    option @"one"
+    option @"two"
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]

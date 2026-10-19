@@ -59,3 +59,7 @@ export function showAlert(node) {
     node.show();
   };
 }
+
+// an sl-option value holds no space (multiple selection separates values
+// by spaces), so an option's case rides its value URI-encoded
+export const optionValue = (label) => encodeURIComponent(label);
