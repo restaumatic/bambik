@@ -28,17 +28,16 @@
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
 -- |   tag;
 -- | - **leaf building blocks** — what every vocabulary's leaves are built
--- |   from over `PUI`'s four leaf wirings (`recordToRecordWiring`,
--- |   `recordToVariantWiring`, `variantToRecordWiring`,
--- |   `variantToVariantWiring` — the leaf protocol, host-neutral, so it
--- |   lives with the carrier, as do the selector lifts `selectedAt`,
--- |   `selectedUnpickedAt`, `selectedOptionalAt` and the replay
--- |   `replayed`): `eventLeaf` (the
--- |   click emitter over chrome, a derivation rather than a wiring),
--- |   `escaped` (a runtime
--- |   string made safe for `staticHTML`), `listenNode`/`listenNodeDeferred`,
--- |   `ensureStyle`, `autoDismiss` and the option tags `OptCaption`,
--- |   `OptLabelIcon`, `OptSelected`, `OptIcon`.
+-- |   from over `PUI`'s leaf wirings (`recordToRecordWiring`,
+-- |   `variantToRecordWiring`, `variantToVariantWiring`, `optionWiring` —
+-- |   the leaf protocol, host-neutral, so it lives with the carrier, as
+-- |   does the replay `replayed`): `eventLeaf` (the click emitter over
+-- |   chrome, a derivation rather than a wiring), `escaped` (a runtime
+-- |   string made safe for `staticHTML`), `listenNode`/`listenNodeDeferred`/
+-- |   `listenCapture`, `ensureStyle`, `autoDismiss`, the selector-group
+-- |   helpers (`eachMatching`, `hasClass`, `Members`, `clearedByRepress` —
+-- |   an optional group's clearing gesture) and the presentation-option
+-- |   tags `OptCaption`, `OptLabelIcon`, `OptSelected`, `OptIcon`.
 -- |
 -- | There are two ways to draw a screen from data, and the choice is visible
 -- | to the user. When the **shape is fixed and only the values move** — a
@@ -71,17 +70,6 @@ module PUI.Web
   , clearedByRepress
   , ensureStyle
   , autoDismiss
-  , Choices
-  , choice
-  , andChoice
-  , choiceTags
-  , tagged
-  , taggedTotal
-  , class PerChoice
-  , class PerChoiceRL
-  , perChoice
-  , (<+>)
-  , clearedOnRepress
   , Web
   , addClass
   , addEventListener
@@ -140,21 +128,15 @@ module PUI.Web
   )
   where
 
-import Data.Profunctor (dimap, lcmap)
+import Data.Profunctor (lcmap)
 import Prelude
 
 import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
-import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant.Case (caseText)
-import Data.Variant.Internal (VariantRep(..))
-import Unsafe.Coerce (unsafeCoerce)
+import Data.Symbol (class IsSymbol)
 import Data.Array (concat)
 import Data.String (replaceAll, Pattern(..), Replacement(..))
-import Data.Variant (Variant, inj)
-import Prim.Row as Row
-import Prim.RowList as RL
-import Record.Unsafe (unsafeGet)
+import Data.Variant (inj)
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..), isNothing)
@@ -525,82 +507,6 @@ escaped = replaceAll (Pattern "&") (Replacement "&amp;")
 listenNode :: Node -> String -> Effect Unit -> Effect Unit
 listenNode node event handler = void $ addEventListener event node (const handler)
 
--- | A selector's **options**: tags in the order written, over the closed
--- | row `w` of the cases they name, each carrying `{}`. A choice is its tag
--- | — the case it stores and the copy it draws — so nothing else rides
--- | along, and a selector compares picks by tag. Built only by `choice` and
--- | `<+>` (the constructor is not exported), which is what makes every case
--- | of `w` a `{}` and so a tag the whole value.
-newtype Choices :: Row Type -> Type
-newtype Choices w = Choices (Array String)
-
--- | One selector **option**, named by its case: `choice @"Boardroom"` is
--- | the case it stores and the label it draws, so a choice states its copy
--- | once — exactly as a captioned leaf does:
--- |
--- | ```
--- | dropdown @"Room" (choice @"Focus pod" <+> choice @"Boardroom")
--- | ```
--- |
--- | A choice is one option over the **closed** singleton row of its case,
--- | and `<+>` joins option lists uniting their rows, so the options keep
--- | the order they are written — a selector's option order is a design
--- | decision (rooms by size, durations by length) and deliberately does
--- | **not** come from the variant row, which the compiler sorts
--- | alphabetically — while the row the selector's field holds is closed by
--- | the list itself, with no case left open for a typed hole to report.
-choice :: forall @l w. IsSymbol l => Row.Cons l {} () w => Choices w
-choice = Choices [ reflectSymbol (Proxy @l) ]
-
--- | Join two option lists in writing order, their variant rows united — so
--- | `choice @"one-way flight" <+> choice @"return flight"` is the **closed** row
--- | `[ "one-way flight" :: {}, "return flight" :: {} ]` in that order, and a selector over
--- | it leaves no option case open for a typed hole to report (guardrails
--- | L18, the determination half). Option order stays the order written,
--- | never the row's alphabetical one.
-andChoice :: forall w1 w2 w. Row.Union w1 w2 w => Row.Union w2 w1 w => Choices w1 -> Choices w2 -> Choices w
-andChoice (Choices xs) (Choices ys) = Choices (xs <> ys)
-
-infixr 5 andChoice as <+>
-
--- | The options' tags in writing order — what a selector face draws and
--- | indexes. Vocabulary plumbing, with `tagged`.
-choiceTags :: forall w. Choices w -> Array String
-choiceTags (Choices tags) = tags
-
--- | A selector leaf over its options' tags lifted to the variant its
--- | field holds: a picked tag becomes its case, a fed case its tag. Total
--- | because a `Choices w` is built only by `choice` and `<+>`, so every
--- | case of `w` carries `{}` and its tag is the whole value.
-tagged :: forall w. PUI Web (Maybe String) (Maybe String) -> PUI Web (Maybe (Variant w)) (Maybe (Variant w))
-tagged = dimap (map caseText) (map caseOf)
-
--- | `tagged` for a leaf that always has a pick (the tab bar).
-taggedTotal :: forall w. PUI Web String String -> PUI Web (Variant w) (Variant w)
-taggedTotal = dimap caseText caseOf
-
-caseOf :: forall w. String -> Variant w
-caseOf tag = unsafeCoerce (VariantRep { type: tag, value: {} })
-
--- | A record holding one `a` per choice of `w`, labelled by the choices'
--- | cases — exactly those, so a missing or extra label is a compile error
--- | (`tabBar' { icons: { "Espresso": "local_cafe", "Tea": "emoji_food_beverage" } }`).
--- | Presentation a face draws beside a choice's tag; read by `perChoice`.
-class PerChoice :: Row Type -> Type -> Row Type -> Constraint
-class PerChoice w a r | w a -> r
-
-instance (RL.RowToList w wl, PerChoiceRL wl a r) => PerChoice w a r
-
-class PerChoiceRL :: RL.RowList Type -> Type -> Row Type -> Constraint
-class PerChoiceRL wl a r | wl a -> r
-
-instance PerChoiceRL RL.Nil a ()
-instance (PerChoiceRL wl a r0, Row.Cons l a r0 r) => PerChoiceRL (RL.Cons l p wl) a r
-
--- | The value a `PerChoice` record holds for a choice's tag.
-perChoice :: forall w a r. PerChoice w a r => Choices w -> { | r } -> String -> a
-perChoice _ record tag = unsafeGet tag record
-
 -- | The options of a group, as its clearing sees them.
 type Members =
   { selector :: String
@@ -635,29 +541,6 @@ clearedByRepress members options = fromHandles do
     { toUser: inner.toUser
     , fromUser: \prop -> Ref.write (Just prop) propRef *> inner.fromUser prop
     }
-
--- | The clearing gesture of an optional radio group: the platform's radios
--- | cannot be unchecked, so pressing the checked member again (pointer or
--- | key, on `press`) and letting its `click` land clears the group. The
--- | press snapshots the selection, so a click the platform synthesizes for
--- | an arrow-key move to another member never clears; the clear runs after
--- | the element's own click handling, which re-checks it. Vocabulary plumbing
--- | for the `…Optional` radio leaves.
-clearedOnRepress :: forall m. Ref.Ref (Maybe String) -> Array { press :: Node, click :: Node, value :: String | m } -> Effect Unit -> Effect Unit
-clearedOnRepress selRef members clear = do
-  pressedRef <- Ref.new Nothing
-  for_ members \m -> do
-    let
-      snapshot = do
-        sel <- Ref.read selRef
-        Ref.write (if sel == Just m.value then sel else Nothing) pressedRef
-    void $ addEventListener "pointerdown" m.press (const snapshot)
-    void $ addEventListener "keydown" m.press (const snapshot)
-    void $ addEventListener "click" m.click $ const do
-      pressed <- Ref.read pressedRef
-      Ref.write Nothing pressedRef
-      -- after the element's own click handling, which re-checks it
-      when (pressed == Just m.value) (afterTask clear)
 
 -- The element-neutral vocabulary (see the module header).
 

@@ -19,18 +19,21 @@ module FlightBooker.MDC2 (flightBooker) where
 
 import Prelude (Unit, (#), ($))
 
+import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import FlightBooker (bookingLine, bookingState, plannedTrip, returnDateInvalid, startDateInvalid)
 import PUI (looped, with)
-import PUI.Web ((<+>), attrWith, choice, inCaseAt, provided, text)
-import PUI.Web.MDC2 (body, body1, button', confirmed, filledTextField', select)
+import PUI.Web (attrWith, inCaseAt, provided, text)
+import PUI.Web.MDC2 (body, body1, button', confirmed, filledTextField', option, select)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 flightBooker :: Effect Unit
 flightBooker =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      select @"Flight type" (choice @"one-way flight" <+> choice @"return flight")
+      select @"Flight type" $ VariantToVariant.do
+        option @"one-way flight"
+        option @"return flight"
       filledTextField' @"Start date" { hint: "DD.MM.YYYY" } # attrWith "aria-invalid" startDateInvalid
       filledTextField' @"Return date" { hint: "DD.MM.YYYY" } # attrWith "aria-invalid" returnDateInvalid # inCaseAt @"return flight" @"Flight type"
     ) # looped # with plannedTrip
@@ -39,10 +42,11 @@ flightBooker =
 ```
 
 **The imports.** `PUI` for the words that shape data flow (`looped`,
-`with`); `PUI.Web` for the words every design system shares (`choice` and
-`<+>`, the panes `inCaseAt` and `provided`, the `attrWith` decorator, the
-`text` leaf); and `PUI.Web.MDC2` for the design system, its `body`
-included. The MDC3 twin differs in its module and entry name, that one
+`with`); `PUI.Web` for the words every design system shares (the panes
+`inCaseAt` and `provided`, the `attrWith` decorator, the `text` leaf);
+`PUI.Web.MDC2` for the design system, its `body` and the select's
+`option` leaves included; and `VariantToVariant`, the merge that joins
+the options. The MDC3 twin differs in its module and entry name, that one
 vocabulary import, and the typography it pulls from it (`bodyMedium` for
 `body1`); the view model module is shared verbatim.
 `QualifiedDo.Semigroupoid as Semigroupoid` gives `Semigroupoid.do`:
@@ -60,11 +64,13 @@ user what the event booked. Code order is DOM order and data order
 with `# looped # with plannedTrip`; the model row is `plannedTrip`'s
 signature, in the view model module.
 
-- `select @"Flight type" (choice @"one-way flight" <+> choice @"return flight")` —
-  the type argument is both the caption and the model field, so this
-  edits `{ "Flight type" :: [ "one-way flight" :: {}, "return flight" :: {} ] }`.
-  Each `choice @l` states an option's copy once, as its case, and `<+>`
-  joins the options in writing order while closing their row. A trip
+- `select @"Flight type" $ VariantToVariant.do` over `option @"one-way flight"`
+  and `option @"return flight"` — the type argument is both the caption and
+  the model field, so this edits
+  `{ "Flight type" :: [ "one-way flight" :: {}, "return flight" :: {} ] }`.
+  Each `option @l` is a leaf of one case, stating its copy once, and the
+  `VariantToVariant.do` block joins the options in writing order while
+  closing their row. A trip
   always has a type, so the plain `select` fits: the field holds the
   variant itself.
 - `filledTextField' @"Start date" { hint: "DD.MM.YYYY" }` — the label is
@@ -241,8 +247,9 @@ model module is the ordinary one.
   selector, and panes over `remainingItems`.
 - **checkout** — a wizard: the step is a model field, each step's line a
   pane `# inCaseAt @c @"step"`, and Back and Next are the face of a
-  selector the app packages itself, `stepper @"step" (choice @"Cart" <+>
-  …)`, editing that field in the order its options are written.
+  selector the app packages itself, `stepper @"step"` over `step @"Cart"`,
+  `step @"Shipping"`, `step @"Payment"`, editing that field in the order
+  its steps are written.
 - **crud** — the list's pick `# joined @"Person picked"`, folded by
   `pick`; Update and Delete exist only while a person is picked, `#
   providedAt @"picked" @"selected"`; the prefix filter's `# settled

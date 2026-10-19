@@ -129,8 +129,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   same shape with a none case `n` the face clears back to, a choice the
   user may leave unmade. The last two share a view model and differ in
   behaviour, which is exactly why they are two words: a name says what
-  the component does, not only what it stores. Lifted by
-  `PUI.selectedAt`/`selectedUnpickedAt`/`selectedOptionalAt`; a
+  the component does, not only what it stores. Each is a group over
+  option leaves (`PUI.optionWiring`), lifted by `focusField @l`; a
   pick's echo is the pick.
   **Decorators** are outside the rule, as oculars (`Ocular (PUI Web)`)
   are: `clWhen`/`attrWith` read the row (`{ | i }`) to style the element
@@ -158,16 +158,17 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   (`filledTextField' @"Start date" { hint: "DD.MM.YYYY" }`,
   `sliderLive' @"Amount" { unit: "€" }`), a question or a sentence is cut
   to the name it asks for (`@"Todo"`, `@"Teams link"`), a fact about an
-  option is model data (`choice @"Focus pod"`, its seats in the model),
+  option is model data (`option @"Focus pod"`, its seats in the model),
   and a case label is never shaped to fit a sentence elsewhere (`"Oat
   milk"`, not `"with oat milk"`). A leaf takes no options record unless
   one is genuinely needed; a word with optional presentation has a
   primed sibling (`button'`, `listOf'`, the hinted text fields, the
-  sliders with a unit), so no call site writes `{}`. A selector's **options** are its ordered case labels
-  (`choice @l` per option, joined by `<+>` into `Choices w`, whose
-  constructor is not exported — a choice is its tag, nothing beside it);
-  the order MUST be the order written, never the variant row's, which the
-  compiler sorts alphabetically.
+  sliders with a unit), so no call site writes `{}`. A selector's **options** are leaves, one per case
+  (`radio @l`, `segment @l`, `option @l`, `tab @l`), merged
+  `VariantToVariant.do` — an option is its case, nothing beside it but
+  the presentation of its primed leaf (`tab' @l { icon }`); the order
+  MUST be the order written, never the variant row's, which the compiler
+  sorts alphabetically.
 - The closure of the discipline is the **anchor invariant**
   (application-side statement: writing.md's *The anchor invariant*): every
   view line names exactly one semantic anchor, in the anchor's own
@@ -572,7 +573,7 @@ The codebase is three floors, each greppable:
   writing.md's *Wiring*). `PUI.Web` holds both: its **internals** are the
   building blocks (`element`, `runDomInNode`, `Node`, the
   DOM FFI, `staticHTML`), its **vocabulary** the element-neutral words
-  every vocabulary shares (`choice`, the decorators, `text`/`staticText`,
+  every vocabulary shares (the decorators, `text`/`staticText`,
   `onClickedXY`, the panes `provided`/`inCase`, the sources,
   `dynamic`/`each`/`el`) —
   an application imports the second and never the first.
@@ -761,8 +762,8 @@ code below the UI) are algebra-layer material and exempt by location.
   view state the model; there is no exception (an action's outcome
   labels were one until 2026-10-16: its own widening, `Union t b o`,
   was stuck on a hole's `t`, so the widening moved to the `joined` that
-  names the labels anyway). An option list
-  MUST close its row (`choice @"a" <+> choice @"b"`), since its options
+  names the labels anyway). An option block
+  MUST close its row (the merge's owned inputs do), since its options
   are the view's. What it demands of the application: a stored variant
   field is named by label on its pane line (`providedAt`/`inCaseAt
   @case @field`); a view helper applies one view model function per

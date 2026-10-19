@@ -84,13 +84,9 @@ module PUI
   , resolveFor
   , folding
   , recordToRecordWiring
-  , recordToVariantWiring
   , variantToRecordWiring
   , variantToVariantWiring
   , optionWiring
-  , selectedAt
-  , selectedUnpickedAt
-  , selectedOptionalAt
   , replayed
   , source
   , class Interacting
@@ -142,7 +138,7 @@ import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.PointedCostrong (class PointedCostrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, focusField, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- the words a view writes beside the leaves, re-exported so demos need the
 -- row modules only for the `.do` merges and the knot. `focusField` is
 -- deliberately absent: the leaf lift is design-system plumbing — every
@@ -299,41 +295,6 @@ recordToRecordWiring leaf = do
             for_ last \a -> leaf.read a >>= prop
     }
 
--- | The **`×→+` leaf**'s wiring, a selector's over its option list: it
--- | answers no feed and reports the user's pick — the `×→+` modality at
--- | the leaf, the `×→×` answer added by the lift around it. In index terms:
--- | `show` checks the option at the index (none for `Nothing`), `reports`
--- | registers the platform's pick event, `read` reads the picked index
--- | (`Nothing` for a cleared control). The option's value travels through
--- | `selectedAt` and its siblings, which lift this `Maybe a` leaf to the
--- | field editor and answer the feed themselves — so, unlike
--- | `recordToRecordWiring`, nothing is echoed here. A pick reported while a
--- | programmatic selection is in progress is that selection's own event
--- | and is dropped.
-recordToVariantWiring
-  :: Array String
-  -> { show :: Maybe Int -> Effect Unit
-     , reports :: Effect Unit -> Effect Unit
-     , read :: Effect (Maybe Int)
-     }
-  -> Effect (Handles (Maybe String) (Maybe String))
-recordToVariantWiring options leaf = do
-  propRef <- Ref.new Nothing
-  busyRef <- Ref.new false
-  pure
-    { toUser: \ma -> do
-        Ref.write true busyRef
-        leaf.show (ma >>= \a -> Array.findIndex (\o -> o == a) options)
-        Ref.write false busyRef
-    , fromUser: \prop -> do
-        Ref.write (Just prop) propRef
-        leaf.reports do
-          busy <- Ref.read busyRef
-          unless busy do
-            mi <- leaf.read
-            Ref.read propRef >>= traverse_ (_ $ (mi >>= (Array.index options)))
-    }
-
 -- | The **`+→×` leaf**'s wiring, a status's: `show` renders each occurrence, and the
 -- | status releases nothing — the `+→×` merge forwards every release as
 -- | the whole shared row, so a status is typed at every row, as the
@@ -419,50 +380,6 @@ optionWiring leaf = do
           unless busy do
             picked <- leaf.picked
             when picked emit
-    }
-
--- | Lift a bare selection leaf — the option to check in (`Nothing`: none),
--- | the option the user checked out (`Nothing`: cleared) — to the
--- | **selection editor** of field `l`, a whole-row citizen
--- | `{ l :: a | rest } → { l :: a | rest }` like every other editor: the
--- | widget stores a value, so it has an editor's shape and owes an editor's
--- | answer — every feed is answered with the row, and every pick is stored
--- | into field `l`. Here the field is the option itself, so the model has a
--- | choice at all times. Vocabulary plumbing, beside `focusField @l`: every
--- | plain selector in every vocabulary is its leaf lifted with this.
-selectedAt :: forall @l m a b r. MonadEffect m => IsSymbol l => Cons l a b r => PUI m (Maybe a) (Maybe a) -> PUI m { | r } { | r }
-selectedAt = selectedWith @l Just identity
-
--- | `selectedAt` for a choice owed but not yet made: field `l` is a variant
--- | whose case `c` is the made choice, seeded at an unpicked case the
--- | application names. Every other case shows nothing checked, a pick
--- | stores case `c` and there is no way back, so the stages demanding the
--- | selection adopt the made case. Every `…Unpicked` selector is its leaf
--- | lifted with this.
-selectedUnpickedAt :: forall @l @c m a b1 v b r. MonadEffect m => IsSymbol l => IsSymbol c => Cons c a b1 v => Cons l [ | v ] b r => PUI m (Maybe a) (Maybe a) -> PUI m { | r } { | r }
-selectedUnpickedAt = selectedWith @l (prj (Proxy @c)) (map (inj (Proxy @c)))
-
--- | `selectedAt` for a choice the user may leave unmade: field `l` is a
--- | variant whose case `c` is the made choice and whose case `n` is none,
--- | and clearing the widget stores case `n`. Every `…Optional` selector is
--- | its leaf lifted with this.
-selectedOptionalAt :: forall @l @c @n m a b1 b2 v b r. MonadEffect m => IsSymbol l => IsSymbol c => IsSymbol n => Cons c a b1 v => Cons n {} b2 v => Cons l [ | v ] b r => PUI m (Maybe a) (Maybe a) -> PUI m { | r } { | r }
-selectedOptionalAt = selectedWith @l (prj (Proxy @c)) (Just <<< maybe (inj (Proxy @n) {}) (inj (Proxy @c)))
-
--- checkedOf: the option the field shows checked; stored: what a pick (`Just`)
--- or a clear (`Nothing`) stores, if anything; `checkedOf <=< stored` must give
--- back the pick, so a pick's echo is the pick
-selectedWith :: forall @l m f a b r. MonadEffect m => IsSymbol l => Cons l f b r => (f -> Maybe a) -> (Maybe a -> Maybe f) -> PUI m (Maybe a) (Maybe a) -> PUI m { | r } { | r }
-selectedWith checkedOf stored w = focusField @l $ fromHandles do
-  w' <- handles w
-  mPropRef <- liftEffect $ Ref.new Nothing
-  pure
-    { toUser: \v -> do
-        w'.toUser (checkedOf v)
-        Ref.read mPropRef >>= traverse_ (_ $ v)
-    , fromUser: \prop -> do
-        Ref.write (Just prop) mPropRef
-        w'.fromUser (traverse_ prop <<< stored)
     }
 
 -- | Register with the input leg in scope of the continuation: a feedback

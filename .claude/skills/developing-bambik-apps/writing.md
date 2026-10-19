@@ -146,10 +146,12 @@ How each kind takes its business meaning:
   holds. The plain word when the field always holds an option; the
   `…Unpicked` word when a choice is owed but not yet made; the
   `…Optional` word when the user may leave it unmade. Options are
-  `choice @"…"` values in the order written (meeting-booker:
-  `dropdownUnpicked @"Room" @"chosen" (choice @"Focus pod" <+> …)`). A
-  fact about an option (a room's seats) is model data, never part of
-  its name.
+  leaves, one per case, in a `VariantToVariant.do` block in the order
+  shown (meeting-booker: `dropdownUnpicked @"Room" @"chosen" $
+  VariantToVariant.do` over `option @"Focus pod"`, `option @"Boardroom"`,
+  …, one per line); the selector names its leaf (`radio`, `segment`,
+  `option`, `tab`). A fact about an option (a room's seats) is model
+  data, never part of its name.
 - **Displays** take a copy function, not a label:
   `headline4 $ text countLine` (counter). A number shown as a
   bar or gauge takes a function too, and keeps its label only as the
@@ -602,7 +604,7 @@ text is computed, a chrome line nothing.
 - **Closing parens and `#` chains never start a line.** A trailing
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
-  it closes over: `… choice @"Pavlova") ) # acted @"name"` (potluck). The
+  it closes over: `… ) ) # acted @"name"` (potluck). The
   exception is a seed closer, `) # looped # with seed` / `) # with seed`,
   on its own line.
   `#` binds tighter than `$`: where a chain must apply to a whole
@@ -640,8 +642,9 @@ text is computed, a chrome line nothing.
   `# providedAt @"halted" @"phase"`). The view states only what is its
   own: the labels it names — an action's outcomes among them where its
   followers name them (`snackbar @"Card charged" identity`, `joined
-  @"Receipt printed"`) — and an option list, closed by `<+>` (`choice @"one-way flight" <+>
-  choice @"return flight"`).
+  @"Receipt printed"`) — and an option block, closed by its merge
+  (`option @"one-way flight"` and `option @"return flight"` under
+  `VariantToVariant.do`).
 
   What no signature states is not in the model. State only the business
   needs is derived (inbox computes the next message id from
@@ -721,7 +724,7 @@ text is computed, a chrome line nothing.
   the view). Text that *is* data (a parsed markdown run) is
   `staticText` too.
 - **A label is read back, never restated.** A case label is the copy
-  its option draws (`choice @"Oat milk"`, `choice @"Cash"`); a line
+  its option draws (`option @"Oat milk"`, `segment @"Cash"`); a line
   that shows it reads it back with `caseText` from `Data.Variant.Case`,
   adapting at most its letter case (order-form's `payingLine r =
   "Paying by " <> toLower (caseText r."Method")`). A label is never
@@ -731,7 +734,7 @@ text is computed, a chrome line nothing.
   (espresso-bar's `milkText`). A `match` that only echoes its case
   labels is the label restated. A map that does real work —
   shortening, glyphs, per-case sentences — stays a named copy function.
-  An affix the option shows is part of its copy (`choice @"15 min"`).
+  An affix the option shows is part of its copy (`radio @"15 min"`).
 - **Events carry data, never UI copy.** An emission carries the order,
   the outcome, the reason — a reason as a case of its own, since the
   status telling it shows its label and nothing else.

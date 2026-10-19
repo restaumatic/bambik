@@ -6,7 +6,37 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-10-18, latest
+## 2026-10-19, latest
+- **Selectors are groups over option leaves.** A selector's field holds a
+  variant of empty cases, so its options are leaves, one per case, merged
+  by the existing `VariantToVariant.do`: `radioButton @"Roast" $
+  VariantToVariant.do radio @"Light"; radio @"Dark"`, one leaf per line.
+  The merge's owned inputs close the field's row and keep the order
+  written (a case written twice is its `DisjointLabels` error); the group
+  lifts the block with `focusField @l` and clears its options before
+  every feed. Each option is a leaf over the new `PUI.optionWiring` (fed
+  its case: show itself picked and echo; picked: emit the case) — `radio`,
+  `segment`, `option` (selects and dropdowns), `tab`/`tab'` — in every
+  vocabulary that has the group. `…Unpicked` is the group around
+  `focusCase @c` over the options; `…Optional` adds the clearing gesture
+  as a group-level emission of the none case (`PUI.Web.clearedByRepress`
+  for radios and segments, an empty first option for selects, Shoelace's
+  clear button). Presentation of one option rides its primed leaf:
+  `tab' @"Espresso" { icon: "coffee" }` replaces `tabBar'`'s record keyed
+  by every case.
+- **Deleted with it:** `Choices`, `choice`, `<+>`, `choiceTags`, `tagged`,
+  `taggedTotal`, `PerChoice`/`perChoice`, `clearedOnRepress`, the lifts
+  `selectedAt`/`selectedUnpickedAt`/`selectedOptionalAt`, and
+  `recordToVariantWiring` (the index-based selector wiring). The option
+  list had been a runtime array of tags beside the field's type, linked to
+  it only by each vocabulary's signature; an option block is the field's
+  cases. Every demo with a selector is converted, checkout's packaged
+  stepper among them (a group over `step` leaves whose Back and Next pick
+  the neighbouring step), and the leaf-law benches cover every group, the
+  clearing gestures included; scripts/smoke/tests/option-leaves*.mjs walk
+  espresso-bar (MDC2, MDC3), checkout's stepper and meeting-booker.
+
+## 2026-10-18
 - **The leaf protocol moves to `PUI`.** The four wirings
   (`recordToRecordWiring`, `recordToVariantWiring`,
   `variantToRecordWiring`, `variantToVariantWiring`) left `PUI.Web` for

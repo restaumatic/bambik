@@ -80,7 +80,8 @@ and emitters of a catalogue — are in the design-system module header
 | a text field checked as the user pauses | `debouncedTextField @"Username" usernameSettleTime` | signup-form | the design-system module |
 | a yes/no over a two-case field | `checkbox @"Accept the terms of service" @"accepted" @"declined"` | signup-form, espresso-bar | the design-system module |
 | a switch | `toggleSwitch @"Takeaway cup"` | espresso-bar | the design-system module |
-| a selection that always has a value | `select @"Flight type" (choice @"one-way flight" <+> choice @"return flight")` | flight-booker | writing.md *Components* |
+| a selection that always has a value | `select @"Flight type" $ VariantToVariant.do` over one `option @"…"` per case | flight-booker | writing.md *Components* |
+| one option of a selector | `radio @"Light"`, `segment @"Small"`, `option @"Oat milk"`, `tab @"Latte"` (`tab' @l { icon }`), one per line under the selector's block | espresso-bar | writing.md *Components* |
 | a selection owed but not yet made | `dropdownUnpicked @"Room" @"chosen" […]`; `segmentedButtonUnpicked @"Dish" @"chosen"` | meeting-booker; potluck | writing.md *Components* |
 | a selection the user may leave unmade | `dropdownOptional @"Catering" @"ordered" @"none" […]` | meeting-booker | writing.md *Components* |
 | a bounded quantity | `sliderLive @"Duration"`; `slider @"Split between"` | timer; tip-calculator | writing.md *Code style* → *Types and values* |

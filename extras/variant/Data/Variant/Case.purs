@@ -11,7 +11,7 @@
 -- |   caseText (inj @l a) = reflectSymbol (Proxy @l)
 -- |
 -- | Under the label-indexed vocabulary a case label *is* the copy it draws
--- | (a selector's `choice @l` states its copy once, at its case), so a
+-- | (a selector's option leaf, `option @l`, states its copy once, at its case), so a
 -- | business `match` whose branches merely restate their labels — verbatim
 -- | or re-cased — is this function in disguise: write the label as the exact
 -- | copy the line needs and read it back with `caseText`.
