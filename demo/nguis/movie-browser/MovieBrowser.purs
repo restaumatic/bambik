@@ -1,4 +1,4 @@
-module MovieBrowser (Catalogue, Category, Listing, Movie, favoritesLine, isFavorite, markFavorite, movieCatalogue, ratingLine, visibleMovies, yearLine) where
+module MovieBrowser (Catalogue, Category, Listing, Movie, favoritesLine, isFavorite, listingLine, markFavorite, movieCatalogue, visibleMovies) where
 
 import Prelude ((&&), (||), (==), (<>), const, map, not, show)
 
@@ -9,8 +9,8 @@ import Data.Variant (match)
 type Catalogue =
   { "Classic" :: Boolean
   , "Cult" :: Boolean
+  , "Category" :: Category
   , "Oscar" :: Boolean
-  , category :: Category
   , movies :: Array Movie
   }
 
@@ -29,7 +29,7 @@ type Listing = { "Favorite" :: Boolean, rating :: Number, title :: String, year 
 
 movieCatalogue :: Catalogue
 movieCatalogue =
-  { category: ."All" {}
+  { "Category": ."All" {}
   , "Classic": false
   , "Cult": false
   , "Oscar": false
@@ -50,7 +50,7 @@ movieCatalogue =
   }
 
 visibleMovies :: Catalogue -> Array Listing
-visibleMovies { category, "Classic": classic, "Cult": cult, "Oscar": oscar, movies } = map listing (filter (\movie -> inCategory movie && taggedAsChosen movie) movies)
+visibleMovies { "Category": category, "Classic": classic, "Cult": cult, "Oscar": oscar, movies } = map listing (filter (\movie -> inCategory movie && taggedAsChosen movie) movies)
   where
   inCategory movie = category == ."All" {} || movie.category == category
   taggedAsChosen movie = not (classic || cult || oscar) || any chosenTag movie.tags
@@ -63,11 +63,8 @@ markFavorite { event: { title, "Favorite": favorite }, model: catalogue } = cata
 isFavorite :: Listing -> Boolean
 isFavorite { "Favorite": favorite } = favorite
 
-yearLine :: Listing -> String
-yearLine { year } = show year
-
-ratingLine :: Listing -> String
-ratingLine { rating } = "★ " <> toStringWith (fixed 1) rating
+listingLine :: Listing -> String
+listingLine { title, year, rating } = title <> " (" <> show year <> ") · ★ " <> toStringWith (fixed 1) rating
 
 favoritesLine :: Catalogue -> String
 favoritesLine { movies } =

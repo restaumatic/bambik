@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Effect (Effect)
 import PUI (action, capture, joined, looped, with)
 import PUI.Web (text)
-import PUI.Web.MDC3 (body, bodyLarge, bodySmall, displayLarge, headlineMedium, iconButton, indeterminateCircularProgress, listOf', acknowledged)
+import PUI.Web.MDC3 (acknowledged, body, bodyLarge, bodySmall, displayLarge, headlineMedium, iconButton, indeterminateCircularProgress, listOf')
 import QualifiedDo.Semigroupoid as Semigroupoid
 import Weather (aboutLine, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, servedLine, temperatureLine, warsawBulletin)
 

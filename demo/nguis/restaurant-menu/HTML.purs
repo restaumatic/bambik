@@ -14,7 +14,7 @@ restaurantMenu :: Effect Unit
 restaurantMenu =
   body $ article >>> cl "menu" $ Semigroupoid.do
     header >>> cl "menu-header" $ Semigroupoid.do
-      SVG.svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "role" := "img" $ Semigroupoid.do
+      SVG.svg >>> cl "monogram" >>> "viewBox" := "0 0 100 100" >>> "aria-hidden" := "true" $ Semigroupoid.do
         static (SVG.circle >>> cl "ring" >>> "cx" := "50" >>> "cy" := "50" >>> "r" := "47")
         SVG.text >>> cl "initial" >>> "x" := "50" >>> "y" := "52"
           >>> "text-anchor" := "middle" >>> "dominant-baseline" := "central" $ staticText "Y"

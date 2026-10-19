@@ -34,10 +34,10 @@ cityCarLoan =
   }
 
 rateLine :: Loan -> String
-rateLine r = "Interest rate " <> toStringWith (fixed 1) (annualRate r) <> "% p.a."
+rateLine loan = "Interest rate " <> toStringWith (fixed 1) (annualRate loan) <> "% p.a."
 
 monthlyLine :: Loan -> String
-monthlyLine loan = "Monthly payment " <> monthlyText loan
+monthlyLine loan = "Monthly payment €" <> toStringWith (fixed 2) (monthlyPayment loan)
 
 totalInterestLine :: Loan -> String
 totalInterestLine loan = "Total interest €" <> toStringWith (fixed 2) (totalInterest loan)
@@ -50,49 +50,23 @@ applyForLoan loan = do
 applicationDelay :: { ms :: Number }
 applicationDelay = { ms: 800.0 }
 
-monthlyText
-  :: forall r1.
-     { "Amount" :: Quantity
-     , "Term" :: Quantity
-     , "Purpose" :: Purpose
-     , "Payment protection insurance" :: Boolean
-     | r1
-     }
-  -> String
-monthlyText loan = "€" <> toStringWith (fixed 2) (monthlyPayment loan)
+monthlyPayment :: Loan -> Number
+monthlyPayment loan =
+  let monthlyRate = annualRate loan / 100.0 / 12.0
+      months = loan."Term".current * 12.0
+  in loan."Amount".current * monthlyRate / (1.0 - pow (1.0 + monthlyRate) (-months))
 
-monthlyPayment
-  :: forall r1.
-     { "Amount" :: Quantity
-     , "Term" :: Quantity
-     , "Purpose" :: Purpose
-     , "Payment protection insurance" :: Boolean
-     | r1
-     }
-  -> Number
-monthlyPayment { "Amount": amount, "Term": years, "Purpose": purpose, "Payment protection insurance": insured } =
-  let monthlyRate = annualRate { "Purpose": purpose, "Payment protection insurance": insured } / 100.0 / 12.0
-      months = years.current * 12.0
-  in amount.current * monthlyRate / (1.0 - pow (1.0 + monthlyRate) (-months))
-
-totalInterest
-  :: forall r1.
-     { "Amount" :: Quantity
-     , "Term" :: Quantity
-     , "Purpose" :: Purpose
-     , "Payment protection insurance" :: Boolean
-     | r1
-     }
-  -> Number
+totalInterest :: Loan -> Number
 totalInterest loan = monthlyPayment loan * loan."Term".current * 12.0 - loan."Amount".current
 
 interestShare :: Loan -> Number
 interestShare loan = totalInterest loan / (monthlyPayment loan * loan."Term".current * 12.0)
 
-annualRate
-  :: forall r1. { "Purpose" :: Purpose, "Payment protection insurance" :: Boolean | r1 }
-  -> Number
-annualRate { "Purpose": purpose, "Payment protection insurance": insured } = basePurposeRate purpose + (if insured then -0.3 else 0.0)
+annualRate :: Loan -> Number
+annualRate loan = basePurposeRate loan."Purpose" - (if loan."Payment protection insurance" then insuranceDiscount else 0.0)
+
+insuranceDiscount :: Number
+insuranceDiscount = 0.3
 
 basePurposeRate :: Purpose -> Number
 basePurposeRate = match { "Car": const 7.4, "Home improvement": const 4.9, "Holiday": const 9.9 }

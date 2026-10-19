@@ -1,4 +1,4 @@
-module Reorder (Setlist, Track, openingSetlist, rotateSetlist, shuffleAction) where
+module Reorder (Setlist, Track, openingSetlist, rotateSetlist, shuffleSetlist) where
 
 import Prelude (bind, compare, map, pure, (<$>))
 
@@ -26,10 +26,10 @@ openingSetlist =
   }
 
 rotateSetlist :: Setlist -> Setlist
-rotateSetlist pl@{ "Setlist": tracks } = pl { "Setlist" = rotate tracks }
+rotateSetlist setlist@{ "Setlist": tracks } = setlist { "Setlist" = rotate tracks }
 
-shuffleAction :: Setlist -> Aff [ "Setlist shuffled" :: Setlist ]
-shuffleAction pl@{ "Setlist": tracks } = (\ts -> ."Setlist shuffled" (pl { "Setlist" = ts })) <$> liftEffect (shuffleOrder tracks)
+shuffleSetlist :: Setlist -> Aff [ "Setlist shuffled" :: Setlist ]
+shuffleSetlist setlist@{ "Setlist": tracks } = (\ts -> ."Setlist shuffled" (setlist { "Setlist" = ts })) <$> liftEffect (shuffleOrder tracks)
 
 rotate :: Array Track -> Array Track
 rotate tracks = maybe tracks (\{ head, tail } -> snoc tail head) (uncons tracks)

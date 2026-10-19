@@ -15,12 +15,11 @@ photoGallery =
     topAppBar "Photo Gallery" $
       ( drawer { title: "Darkroom", subtitle: "photos drawn on the spot" }
         ( Semigroupoid.do
-          ( listOf' @"opened" @"name" { selected: isOpen } albumChoices $ textAt @"name" ) # joined @"opened"
-          fold @"opened" openAlbum
+          ( listOf' @"Album opened" @"name" { selected: isOpen } albumChoices $ textAt @"name" ) # joined @"Album opened"
+          fold @"Album opened" openAlbum
           divider $ Semigroupoid.do
             list $ Semigroupoid.do
-              listItem $ staticText "Every photo is an SVG"
-              listItem $ staticText "developed from its caption"
+              listItem $ staticText "Every photo is an SVG developed from its caption"
               listItem $ staticText "No network involved"
             overline $ staticText "Favorites"
             imageList 2 $ each favoriteShots imageListItem )

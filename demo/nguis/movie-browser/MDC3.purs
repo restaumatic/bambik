@@ -4,9 +4,9 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import MovieBrowser (favoritesLine, markFavorite, movieCatalogue, ratingLine, visibleMovies, yearLine)
+import MovieBrowser (favoritesLine, listingLine, markFavorite, movieCatalogue, visibleMovies)
 import PUI (anyEdit, fold, joined, looped, with)
-import PUI.Web (text, textAt)
+import PUI.Web (text)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (body, chipSet, elevation1, filterChip, iconToggle, list, listItem, tab, tabBar, titleMedium)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,7 +15,7 @@ movieBrowser :: Effect Unit
 movieBrowser =
   body $ Semigroupoid.do
     ( Semigroupoid.do
-      tabBar @"category" $ VariantToVariant.do
+      tabBar @"Category" $ VariantToVariant.do
         tab @"All"
         tab @"Action"
         tab @"Drama"
@@ -28,9 +28,7 @@ movieBrowser =
     elevation1 $ titleMedium $ text favoritesLine
     list $
       ( listItem $ Semigroupoid.do
-        span $ textAt @"title"
-        span $ text yearLine
-        span $ text ratingLine
+        span $ text listingLine
         iconToggle @"Favorite" { onIcon: "star", offIcon: "star_border" } ) # anyEdit @"Favorite changed" @"title" visibleMovies # joined @"Favorite changed"
     fold @"Favorite changed" markFavorite
   # looped # with movieCatalogue

@@ -1,6 +1,6 @@
 module OrderDashboard (Day, Order, Window, kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes) where
 
-import Prelude (compare, max, min, mod, negate, show, (&&), (*), (+), (-), (/), (<), (<$>), (>), (>=))
+import Prelude (compare, min, mod, negate, show, (*), (+), (-), (/), (<$>), (==), (>), (>=))
 
 import Data.Array (filter, index, length, mapMaybe, range, snoc, sortBy, take)
 import Data.Foldable (sum)
@@ -13,7 +13,7 @@ import Data.Variant (match)
 
 type Day = { "Showing" :: Window, orders :: Array Order, tick :: Int }
 
-type Order = { at :: Int, dish :: String, id :: Int, total :: Number }
+type Order = { at :: Int, dish :: String, total :: Number }
 
 type Window = [ "Last 15 min" :: {}, "Last minute" :: {}, "Since open" :: {} ]
 
@@ -34,7 +34,7 @@ ordersArrive day@{ tick, orders } = day
 arrival :: Int -> Maybe Order
 arrival t = case pseudo t `mod` 3 of
   0 -> case index menu (pseudo (t + 17) `mod` length menu) of
-    Just dish -> Just { id: t, dish: dish.name, total: dish.price * toNumber (1 + pseudo (t + 5) `mod` 3), at: t }
+    Just dish -> Just { dish: dish.name, total: dish.price * toNumber (1 + pseudo (t + 5) `mod` 3), at: t }
     Nothing -> Nothing
   _ -> Nothing
 
@@ -56,11 +56,13 @@ openingTick :: Int
 openingTick = -900
 
 windowStart :: Window -> Int -> Int
-windowStart window tick = match { "Last minute": \_ -> tick - 60, "Last 15 min": \_ -> tick - 900, "Since open": \_ -> openingTick } window
+windowStart window tick = match
+  { "Last minute": \_ -> tick - 59
+  , "Last 15 min": \_ -> tick - 899
+  , "Since open": \_ -> openingTick
+  } window
 
-inWindow
-  :: forall r1. { orders :: Array Order, "Showing" :: Window, tick :: Int | r1 }
-  -> Array Order
+inWindow :: Day -> Array Order
 inWindow { orders, "Showing": window, tick } = filter (\o -> o.at >= windowStart window tick) orders
 
 ordersCount :: Day -> String
@@ -75,13 +77,16 @@ kitchenLoad { orders, tick } = min 1.0 (toNumber (length (filter (\o -> o.at > t
 orderFlow :: Day -> Array Number
 orderFlow m@{ "Showing": window, tick } =
   let start = windowStart window tick
-      width = max 1 ((tick - start) / trendBuckets)
-      recent = inWindow m
-      bucket i = toNumber (length (filter (\o -> o.at >= start + i * width && o.at < start + (i + 1) * width) recent))
+      bucketOf o = (o.at - start) * trendBuckets / (tick - start + 1)
+      bucket i = toNumber (length (filter (\o -> bucketOf o == i) (inWindow m)))
   in bucket <$> range 0 (trendBuckets - 1)
 
 topDishes :: Day -> Array { name :: String, score :: String }
-topDishes m = take 5 ((\(Tuple name count) -> { name, score: show (count :: Int) }) <$> sortBy (\(Tuple _ a) (Tuple _ b) -> compare b a) (toUnfoldable (fromFoldableWith (+) ((\o -> Tuple o.dish 1) <$> inWindow m))))
+topDishes m = take 5 (entry <$> sortBy byCountDescending counts)
+  where
+  counts = toUnfoldable (fromFoldableWith (+) ((\o -> Tuple o.dish 1) <$> inWindow m))
+  byCountDescending (Tuple _ a) (Tuple _ b) = compare b a
+  entry (Tuple name count) = { name, score: show (count :: Int) }
 
 prepTime :: Int
 prepTime = 45

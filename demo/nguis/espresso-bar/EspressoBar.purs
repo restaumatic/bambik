@@ -1,4 +1,4 @@
-module EspressoBar (Drink, Loyalty, Milk, Order, Roast, Size, Sugar, caffeineFraction, cupLine, espressoNoFrills, placeOrder, theUsual, usualOrder) where
+module EspressoBar (Drink, Loyalty, Milk, Order, Roast, Size, Sugar, caffeineFraction, cupLine, plainEspresso, placeOrder, theUsual, usualOrder) where
 
 import Prelude (discard, min, otherwise, pure, ($), (*), (+), (-), (<>), (==))
 
@@ -58,38 +58,22 @@ usualOrder =
 theUsual :: Order -> Order
 theUsual order = order { "Drink" = ."Cappuccino" {}, "Size" = ."Medium" {}, "Milk" = ."Whole milk" {}, "Roast" = ."Medium" {}, "Sugar" = sugars 1.0, "Extra shot" = false, "Decaf" = false }
 
-espressoNoFrills :: Order -> Order
-espressoNoFrills order = order { "Drink" = ."Espresso" {}, "Size" = ."Small" {}, "Milk" = ."No milk" {}, "Sugar" = sugars 0.0, "Extra shot" = false, "Decaf" = false }
+plainEspresso :: Order -> Order
+plainEspresso order = order { "Drink" = ."Espresso" {}, "Size" = ."Small" {}, "Milk" = ."No milk" {}, "Sugar" = sugars 0.0, "Extra shot" = false, "Decaf" = false }
 
 cupLine :: Order -> String
-cupLine order = "Your cup: " <> summaryText order
-
-summaryText
-  :: forall r1.
-     { "Drink" :: Drink
-     , "Size" :: Size
-     , "Milk" :: Milk
-     , "Roast" :: Roast
-     , "Sugar" :: Sugar
-     , "Extra shot" :: Boolean
-     , "Decaf" :: Boolean
-     , "Takeaway cup" :: Boolean
-     , "Loyalty member" :: Loyalty
-     | r1
-     }
-  -> String
-summaryText { "Drink": drink, "Size": size, "Milk": milk, "Roast": roast, "Sugar": sugar, "Extra shot": extraShot, "Decaf": decaf, "Takeaway cup": takeaway, "Loyalty member": loyalty } =
-  caseText size <> " " <> caseText drink
-    <> milkText milk
-    <> ", " <> caseText roast <> " roast"
-    <> (if extraShot then ", extra shot" else "")
-    <> (if decaf then ", decaf" else "")
-    <> sugarsText sugar.current
-    <> (if takeaway then ", to go" else "")
-    <> " — " <> money (price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty member": loyalty })
+cupLine order =
+  "Your cup: " <> caseText order."Size" <> " " <> caseText order."Drink"
+    <> milkText order."Milk"
+    <> ", " <> caseText order."Roast" <> " roast"
+    <> (if order."Extra shot" then ", extra shot" else "")
+    <> (if order."Decaf" then ", decaf" else "")
+    <> sugarsText order."Sugar".current
+    <> (if order."Takeaway cup" then ", to go" else "")
+    <> " — " <> money (price order)
 
 milkText :: Milk -> String
-milkText = on (Proxy @"No milk") (\_ -> " no milk") (\milk -> " with " <> toLower (caseText milk))
+milkText = on (Proxy @"No milk") (\_ -> ", no milk") (\milk -> " with " <> toLower (caseText milk))
 
 sugarsText :: Number -> String
 sugarsText n
@@ -97,17 +81,13 @@ sugarsText n
   | n == 1.0 = ", 1 sugar"
   | otherwise = ", " <> toStringWith (fixed 0) n <> " sugars"
 
-price
-  :: forall r1.
-     { "Size" :: Size, "Milk" :: Milk, "Extra shot" :: Boolean, "Loyalty member" :: Loyalty | r1 }
-  -> Number
+price :: Order -> Number
 price { "Size": size, "Milk": milk, "Extra shot": extraShot, "Loyalty member": loyalty } = discounted (sizePrice size + milkPrice milk + (if extraShot then 0.5 else 0.0))
   where
   discounted p = match { member: \_ -> p * (1.0 - memberDiscount), guest: \_ -> p } loyalty
 
 memberDiscount :: Number
 memberDiscount = 0.1
-
 
 sizePrice :: Size -> Number
 sizePrice = match { "Small": \_ -> 3.0, "Medium": \_ -> 3.5, "Large": \_ -> 4.0 }

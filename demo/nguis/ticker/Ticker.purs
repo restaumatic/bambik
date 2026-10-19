@@ -1,10 +1,11 @@
 module Ticker (Quote, Ticker, closedTicker, fetchQuote, phaseLine, quoteLine, recordQuote, stepAway, tick, tickLine, tickPeriod, watch) where
 
-import Prelude ((<>), (+), (/), ($), bind, discard, pure, show)
+import Prelude ((<>), (+), (/), (==), ($), bind, discard, pure, show)
 
 import Data.Array (last, length, snoc)
 import Data.Int (toNumber)
 import Data.Maybe (maybe)
+import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
@@ -30,10 +31,10 @@ phaseLine { phase } = match
   } phase
 
 tickLine :: Ticker -> String
-tickLine { ticks } = show ticks <> " ticks while watching"
+tickLine { ticks } = counted ticks "tick" "ticks" <> " while watching"
 
 quoteLine :: Ticker -> String
-quoteLine { quotes } = show (length quotes) <> " quotes received" <> maybe "" (\p -> ", last " <> show p) (last quotes)
+quoteLine { quotes } = counted (length quotes) "quote" "quotes" <> " received" <> maybe "" (\p -> ", last " <> toStringWith (fixed 2) p) (last quotes)
 
 watch :: Ticker -> Ticker
 watch model = model { phase = .watching {} }
@@ -52,4 +53,7 @@ fetchQuote _ = do
 
 recordQuote :: { event :: Quote, model :: Ticker } -> Ticker
 recordQuote { event: { price }, model } = model { quotes = snoc model.quotes price }
+
+counted :: Int -> String -> String -> String
+counted n one many = show n <> " " <> if n == 1 then one else many
 

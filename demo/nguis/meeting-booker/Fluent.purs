@@ -16,12 +16,10 @@ meetingBooker =
   body $ Semigroupoid.do
     ( Semigroupoid.do
       textField @"Meeting title"
-      dropdownUnpicked @"Room" @"chosen"
-        ( VariantToVariant.do
-          option @"Focus pod"
-          option @"Boardroom"
-          option @"Auditorium"
-        ) # settled seatsInRoom
+      ( dropdownUnpicked @"Room" @"chosen" $ VariantToVariant.do
+        option @"Focus pod"
+        option @"Boardroom"
+        option @"Auditorium" ) # settled seatsInRoom
       radioGroupUnpicked @"Duration" @"chosen" $ VariantToVariant.do
         radio @"15 min"
         radio @"30 min"

@@ -10,12 +10,12 @@ import PUI.Web (providedAt, text)
 import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC2 (body, button', headline3)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Stopwatch (beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch)
+import Stopwatch (beginTiming, clearStopwatch, elapsedLine, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch)
 
 stopwatch :: Effect Unit
 stopwatch =
   body $ Semigroupoid.do
-    headline3 $ text elapsedText
+    headline3 $ text elapsedLine
     RecordToVariant.do
       ticks @"Clock ticked" tickPeriod
       button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"

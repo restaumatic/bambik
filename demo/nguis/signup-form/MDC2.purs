@@ -8,7 +8,7 @@ import PUI (action, looped, with)
 import PUI.Web (inCase, provided, staticText, text)
 import PUI.Web.MDC2 (body, body2, button', checkbox, debouncedTextField, filledTextField, headline4, indeterminateLinearProgress, option, radio, radioButton, select, snackbar, subtitle2, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import SignupForm (availableLine, invalidLine, newApplicant, readyLine, signUp, takenLine, usernameSettleTime, usernameStatus, validation)
+import SignupForm (availableLine, invalidLine, newApplicant, readyLine, signUp, usernameSettleTime, usernameStatus, validation)
 
 signupForm :: Effect Unit
 signupForm =
@@ -27,13 +27,10 @@ signupForm =
         option @"Spain"
       filledTextField @"Email"
       checkbox @"Accept the terms of service" @"accepted" @"declined" # tooltip "You must accept the terms of service to sign up"
-    ) # looped
-    ( body2 $ staticText "Pick a username to check its availability" ) # inCase @"unnamed" usernameStatus
-    ( body2 $ text takenLine ) # inCase @"taken" usernameStatus
+    ) # looped # with newApplicant
     ( body2 $ text availableLine ) # inCase @"available" usernameStatus
     ( subtitle2 $ text invalidLine ) # inCase @"invalid" validation
     ( subtitle2 $ text readyLine ) # inCase @"ready" validation
     button' @"Sign up" { icon: "person_add" } # provided @"ready" validation
     indeterminateLinearProgress # action @"Sign up" signUp
     snackbar @"Account created" identity
-  # looped # with newApplicant

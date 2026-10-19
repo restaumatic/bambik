@@ -1,4 +1,4 @@
-module SignupForm (Applicant, Consent, Country, Plan, availableLine, blankEmail, blankUsername, defaultCountry, defaultPlan, invalidLine, newApplicant, readyLine, signUp, takenLine, termsUndecided, usernameSettleTime, usernameStatus, validation) where
+module SignupForm (Applicant, Consent, Country, Plan, availableLine, blankEmail, blankUsername, freePlan, homeCountry, invalidLine, newApplicant, readyLine, signUp, termsDeclined, usernameSettleTime, usernameStatus, validation) where
 
 import Prelude (const, discard, not, pure, (<>), (==))
 
@@ -41,27 +41,29 @@ newApplicant =
 blankUsername :: {} -> String
 blankUsername _ = ""
 
-defaultPlan :: { "Username" :: String } -> Plan
-defaultPlan _ = ."Free" {}
+freePlan :: { "Username" :: String } -> Plan
+freePlan _ = ."Free" {}
 
-defaultCountry :: { "Username" :: String, "Plan" :: Plan } -> Country
-defaultCountry _ = ."Poland" {}
+homeCountry :: { "Username" :: String, "Plan" :: Plan } -> Country
+homeCountry _ = ."Poland" {}
 
 blankEmail :: { "Username" :: String, "Plan" :: Plan, "Country" :: Country } -> String
 blankEmail _ = ""
 
-termsUndecided :: { "Username" :: String, "Plan" :: Plan, "Country" :: Country, "Email" :: String } -> Consent
-termsUndecided _ = .declined {}
+termsDeclined
+  :: { "Username" :: String, "Plan" :: Plan, "Country" :: Country, "Email" :: String }
+  -> Consent
+termsDeclined _ = .declined {}
 
 usernameSettleTime :: { ms :: Number }
 usernameSettleTime = { ms: 300.0 }
 
 refusalText :: Refusal -> String
 refusalText = match
-  { unnamed: const "choose a username"
-  , taken: \{ "Username": username } -> "username " <> username <> " is taken"
-  , badEmail: const "enter a valid email address"
-  , termsUnaccepted: const "accept the terms of service"
+  { unnamed: const "Choose a username"
+  , taken: \{ "Username": username } -> "Username " <> username <> " is already taken"
+  , badEmail: const "Enter a valid email address"
+  , termsUnaccepted: const "Accept the terms of service"
   }
 
 validate
@@ -94,14 +96,11 @@ invalidLine applicant = either (\reason -> "⚠ " <> refusalText reason) (const 
 readyLine :: Applicant -> String
 readyLine applicant = either (const "") (\name -> "Ready to sign up as " <> name) (validate applicant)
 
-usernameStatus :: Applicant -> [ available :: {}, taken :: {}, unnamed :: {} ]
+usernameStatus :: Applicant -> [ available :: {}, unavailable :: {} ]
 usernameStatus { "Username": username } = case trim username of
-  "" -> .unnamed {}
-  name | usernameTaken name -> .taken {}
+  "" -> .unavailable {}
+  name | usernameTaken name -> .unavailable {}
   _ -> .available {}
-
-takenLine :: Applicant -> String
-takenLine { "Username": username } = "✗ " <> trim username <> " is already taken"
 
 availableLine :: Applicant -> String
 availableLine { "Username": username } = "✓ " <> trim username <> " is available"

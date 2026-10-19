@@ -2,12 +2,12 @@ module Checkout.MDC3 (checkout) where
 
 import Prelude ((#), ($), Unit)
 
-import Checkout (cartLine, freshOrder, orderPlaced, paymentLine, placedLine, shippingLine)
+import Checkout (cartLine, checkoutStage, freshOrder, orderPlaced, paymentLine, placedLine, shippingLine)
 import Checkout.StepperMDC3 (step, stepper)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import PUI (fold, looped, with)
-import PUI.Web (inCaseAt, providedAt, text)
+import PUI.Web (inCaseAt, provided, text)
 import PUI.Web.MDC3 (body, bodyMedium, button')
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -21,9 +21,8 @@ checkout =
       stepper @"step" $ VariantToVariant.do
         step @"Cart"
         step @"Shipping"
-        step @"Payment"
-    ) # looped
-    button' @"Place order" { icon: "shopping_cart_checkout" } # providedAt @"Payment" @"step"
+        step @"Payment" ) # looped # inCaseAt @"pending" @"status"
+    button' @"Place order" { icon: "shopping_cart_checkout" } # provided @"paying" checkoutStage
     fold @"Place order" orderPlaced
     ( bodyMedium $ text placedLine ) # inCaseAt @"placed" @"status"
   # looped # with freshOrder

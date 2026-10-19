@@ -2,9 +2,10 @@ module Weather (Bulletin, CityChoice, ForecastRequest, Report, aboutLine, cityLi
 
 import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (<>), (==))
 
-import Data.Array (filter, index)
+import Data.Array (find)
 import Data.Int (round, toNumber)
 import Data.Maybe (fromMaybe)
+import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
@@ -26,13 +27,13 @@ warsawBulletin :: Bulletin
 warsawBulletin = { report: conditionsFor "Warsaw" 0, servedReports: 1 }
 
 temperatureLine :: Bulletin -> String
-temperatureLine { report } = show report.temperature <> " °C"
+temperatureLine { report } = toStringWith (fixed 0) report.temperature <> " °C"
 
 conditionLine :: Bulletin -> String
 conditionLine { report } = report.condition <> " in " <> report.city
 
 humidityWindLine :: Bulletin -> String
-humidityWindLine { report } = "Humidity " <> show report.humidity <> "% · Wind " <> show report.wind <> " km/h"
+humidityWindLine { report } = "Humidity " <> show report.humidity <> "% · Wind " <> toStringWith (fixed 0) report.wind <> " km/h"
 
 servedLine :: Bulletin -> String
 servedLine { servedReports } = "Simulated service · " <> if servedReports == 1 then "1 report served" else show servedReports <> " reports served"
@@ -63,7 +64,7 @@ conditionsFor city sample =
     }
 
 firstWithCity :: String -> Report
-firstWithCity city = fromMaybe unknownTerritory (index (filter (\r -> r.city == city) climateTable) 0)
+firstWithCity city = fromMaybe unknownTerritory (find (\r -> r.city == city) climateTable)
 
 unknownTerritory :: Report
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }

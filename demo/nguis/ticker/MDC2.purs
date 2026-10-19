@@ -20,13 +20,13 @@ ticker =
     RecordToVariant.do
       button' @"Watch" { icon: "visibility" } # providedAt @"away" @"phase"
       button' @"Step away" { icon: "visibility_off" } # providedAt @"watching" @"phase"
-      ticks @"Ticked" tickPeriod # providedAt @"watching" @"phase"
+      ticks @"Clock ticked" tickPeriod # providedAt @"watching" @"phase"
       ( Semigroupoid.do
         button' @"Fetch quote" { icon: "download" }
         indeterminateLinearProgress # action @"Fetch quote" fetchQuote ) # providedAt @"watching" @"phase" # joined @"Quote fetched"
     VariantToRecord.do
       fold @"Watch" watch
       fold @"Step away" stepAway
-      fold @"Ticked" tick
+      fold @"Clock ticked" tick
       snackbar @"Quote fetched" recordQuote
   # looped # with closedTicker

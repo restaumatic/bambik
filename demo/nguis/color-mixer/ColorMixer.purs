@@ -1,4 +1,4 @@
-module ColorMixer (Channel, Mix, Mixer, mixedColor, applyPreset, duskViolet, hexLine, palette, rgb, rgbLine) where
+module ColorMixer (Channel, Mix, Mixer, applyPreset, duskViolet, hexLine, mixedColor, palette, rgb, rgbLine) where
 
 import Prelude ((<>), (<<<), (==), max, min, show)
 
@@ -19,7 +19,7 @@ type Channel =
 type Mix = { "Red" :: Number, "Green" :: Number, "Blue" :: Number }
 
 duskViolet :: Mixer
-duskViolet = let m = mix 96.0 64.0 160.0 in { "Red": channelRange m."Red", "Green": channelRange m."Green", "Blue": channelRange m."Blue" }
+duskViolet = { "Red": channelRange 96.0, "Green": channelRange 64.0, "Blue": channelRange 160.0 }
 
 hexLine :: Mixer -> String
 hexLine channels = hex (mixOf channels)
@@ -28,9 +28,13 @@ rgbLine :: Mixer -> String
 rgbLine channels = rgb (mixOf channels)
 
 applyPreset :: { event :: String, model :: Mixer } -> Mixer
-applyPreset { event: name, model: channels } = maybe channels
-  (\p -> channels { "Red" = channels."Red" { current = p.mix."Red" }, "Green" = channels."Green" { current = p.mix."Green" }, "Blue" = channels."Blue" { current = p.mix."Blue" } })
-  (find (\p -> p.name == name) palette)
+applyPreset { event: name, model: channels } = maybe channels mixed (find (\p -> p.name == name) palette)
+  where
+  mixed { mix: m } = channels
+    { "Red" = channels."Red" { current = m."Red" }
+    , "Green" = channels."Green" { current = m."Green" }
+    , "Blue" = channels."Blue" { current = m."Blue" }
+    }
 
 palette :: Array { mix :: Mix, name :: String }
 palette =

@@ -61,7 +61,12 @@ orderLine :: Order -> String
 orderLine r = "Order " <> r."Identifier"."Short ID"
 
 summaryLine :: Order -> String
-summaryLine r = "Summary: Order " <> r."Identifier"."Short ID" <> " (uniquely " <> r."Identifier"."Unique ID" <> ") for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name" <> ", fulfilled as " <> fulfillmentText r."Fulfillment" <> ", paid " <> r."Payment"."Paid" <> " by " <> toLower (caseText r."Payment"."Method")
+summaryLine r =
+  "Summary: Order " <> r."Identifier"."Short ID" <> " (ID " <> r."Identifier"."Unique ID" <> ")"
+    <> " for " <> r."Customer"."First name" <> " " <> r."Customer"."Last name"
+    <> ", fulfilled as " <> fulfillmentText r."Fulfillment"
+    <> ", total " <> r."Payment"."Total"
+    <> ", paid " <> r."Payment"."Paid" <> " by " <> toLower (caseText r."Payment"."Method")
 
 fulfillmentText :: Fulfillment -> String
 fulfillmentText f = match

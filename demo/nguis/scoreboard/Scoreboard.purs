@@ -1,4 +1,4 @@
-module Scoreboard (Leader, Score, Summary, boardSummary, goal, scoreLine, summaryLine, tickPeriod) where
+module Scoreboard (Leader, Score, Summary, boardSummary, clockPeriod, goal, scoreLine, summaryLine) where
 
 import Prelude (const, show, (*), (+), (<>), (==), mod)
 
@@ -14,8 +14,8 @@ type Summary = { key :: String, leader :: Leader, teams :: Int }
 
 type Leader = [ led :: Score, unled :: {} ]
 
-tickPeriod :: { ms :: Number }
-tickPeriod = { ms: 1000.0 }
+clockPeriod :: { ms :: Number }
+clockPeriod = { ms: 1000.0 }
 
 goal
   :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } }
@@ -36,11 +36,13 @@ boardSummary :: Array Score -> Array Summary
 boardSummary scores = [ { key: "summary", teams: length scores, leader: leaderOf scores } ]
 
 summaryLine :: Summary -> String
-summaryLine r = show r.teams <> " teams on the board — leading: " <> match { led: \{ team, points } -> team <> " (" <> show points <> ")", unled: const "—" } r.leader
+summaryLine { teams: count, leader } =
+  show count <> (if count == 1 then " team" else " teams") <> " on the board — leading: "
+    <> match { led: \{ team, points } -> team <> " (" <> show points <> ")", unled: const "—" } leader
 
 leaderOf :: Array Score -> Leader
 leaderOf scores = case maximumBy (comparing _.points) scores of
-  Just top -> .led { team: top.team, points: top.points }
+  Just top -> .led top
   Nothing -> .unled {}
 
 pick :: Array String -> Int -> String

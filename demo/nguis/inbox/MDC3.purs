@@ -5,11 +5,11 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import Inbox (composeMessage, deleteOpened, bodyText, deletionLine, fromLine, highlighted, inboxState, messageLine, messageView, mondayMail, openMessage, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
+import Inbox (bodyLine, composeMessage, deleteOpened, deletionLine, fromLine, highlighted, inboxState, messageLine, messageView, mondayMail, openMessage, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine)
 import PUI (fold, joined, looped, with)
 import PUI.Web (inCase, provided, staticText, text)
 import PUI.Web.HTML (span)
-import PUI.Web.MDC3 (body, bodySmall, headlineSmall, bodyMedium, bodyLarge, confirmed, fab, iconButton, listOfAt', menu, menuItem)
+import PUI.Web.MDC3 (body, bodyLarge, bodyMedium, bodySmall, confirmed, fab, headlineSmall, iconButton, listOfAt', menu, menuItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 inbox :: Effect Unit
@@ -22,7 +22,7 @@ inbox =
       ( Semigroupoid.do
         headlineSmall $ text subjectLine
         bodyMedium $ text fromLine
-        bodyLarge $ text bodyText
+        bodyLarge $ text bodyLine
         iconButton @"Delete message" "delete" ) # provided @"reading" messageView
       fab @"Compose" "edit"
       menu "Sort" $ RecordToVariant.do

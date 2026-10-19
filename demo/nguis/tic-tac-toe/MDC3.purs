@@ -2,10 +2,10 @@ module TicTacToe.MDC3 (ticTacToe) where
 
 import Prelude ((#), ($), (<>), (>>>), Unit)
 
-import Data.Variant (match)
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Effect (Effect)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import Data.Variant (match)
+import Effect (Effect)
 import PUI (anyOf, fold, joined, looped, reset, with)
 import PUI.Web (attrWith, inCase, staticText, text, (:=))
 import PUI.Web.HTML (div)
@@ -21,14 +21,19 @@ ticTacToe =
     ( headlineSmall $ text toMoveLine ) # inCase @"toMove" gameOutcome
     RecordToVariant.do
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-        ( attrWith "style" cellFace $ tile @"Cell claimed" @"key" $ text cellMark ) # anyOf @"key" cells ) # joined @"Cell claimed"
+        ( tile @"Cell claimed" @"key" $ text cellMark ) # attrWith "style" cellFace # anyOf @"key" cells ) # joined @"Cell claimed"
       button' @"New game" { icon: "replay" }
     VariantToRecord.do
       fold @"Cell claimed" claimCell
       reset @"New game" openingPosition
   # looped # with openingPosition
 
-cellFace :: { key :: String, mark :: [ x :: {}, o :: {}, free :: {} ], line :: [ winning :: {}, plain :: {} ] } -> String
+cellFace
+  :: { key :: Int
+     , line :: [ plain :: {}, winning :: {} ]
+     , mark :: [ free :: {}, o :: {}, x :: {} ]
+     }
+  -> String
 cellFace { line } = cellStyle <> match { winning: \_ -> "background: #a5d6a7;", plain: \_ -> "background: #eceff1;" } line
 
 cellStyle :: String

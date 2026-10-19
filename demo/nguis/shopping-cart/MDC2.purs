@@ -2,9 +2,9 @@ module ShoppingCart.MDC2 (shoppingCart) where
 
 import Prelude ((#), ($), Unit, const)
 
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (anyOf, fold, joined, looped, reset, with)
 import PUI.Web (text, textAt)
 import PUI.Web.MDC2 (body, body1, button, columnHeader, dataCell, dataRow, dataTable, iconButton, listOf)
@@ -23,7 +23,7 @@ shoppingCart =
           columnHeader "Qty"
           columnHeader "Total"
           columnHeader "" )
-        ( ( dataRow Semigroupoid.do
+        ( ( dataRow $ Semigroupoid.do
           dataCell $ textAt @"product"
           dataCell $ text quantityLine
           dataCell $ text lineTotalLine

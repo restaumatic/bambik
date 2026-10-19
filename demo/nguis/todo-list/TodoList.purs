@@ -1,4 +1,4 @@
-module TodoList (Status, Todo, Todos, addTodo, clearCompleted, emptyTodoList, isCompleted, remainingItems, severalLine, soleLine, toggleTodo, visibleEntries) where
+module TodoList (Status, Todo, Todos, addTodo, clearCompleted, emptyTodoList, isCompleted, itemsLeftLine, toggleTodo, visibleEntries) where
 
 import Prelude ((+), (<), (<<<), (<>), (==), const, map, not, show)
 
@@ -30,17 +30,10 @@ toggleTodo { event: id, model: m@{ todos } } = m { todos = map (\t -> if t.id ==
 clearCompleted :: Todos -> Todos
 clearCompleted m@{ todos } = m { todos = filter (isActive <<< _.status) todos }
 
-itemsLeft :: forall r1. { todos :: Array Todo | r1 } -> Int
-itemsLeft { todos } = length (filter (isActive <<< _.status) todos)
-
-remainingItems :: Todos -> [ several :: {}, sole :: {} ]
-remainingItems { todos } = if itemsLeft { todos } == 1 then .sole {} else .several {}
-
-soleLine :: Todos -> String
-soleLine { todos } = show (itemsLeft { todos }) <> " item left"
-
-severalLine :: Todos -> String
-severalLine { todos } = show (itemsLeft { todos }) <> " items left"
+itemsLeftLine :: Todos -> String
+itemsLeftLine { todos } = case length (filter (isActive <<< _.status) todos) of
+  1 -> "1 item left"
+  n -> show n <> " items left"
 
 visibleEntries :: Todos -> Array Todo
 visibleEntries { todos, "Visibility": visibility } = filter (matches visibility) todos

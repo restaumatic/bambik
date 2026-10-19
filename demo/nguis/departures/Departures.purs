@@ -1,4 +1,4 @@
-module Departures (Departure, Update, arrival, flightLine, tickPeriod, updateLine) where
+module Departures (Departure, Update, arrival, clockPeriod, flightLine, updateLine) where
 
 import Prelude ((*), (+), (<>), div, mod)
 
@@ -9,15 +9,15 @@ type Departure = { code :: String, status :: String }
 
 type Update = { key :: String, value :: Departure }
 
-tickPeriod :: { ms :: Number }
-tickPeriod = { ms: 1000.0 }
+clockPeriod :: { ms :: Number }
+clockPeriod = { ms: 1000.0 }
 
 arrival :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } -> Update
 arrival { time } =
   let
     beat = time.minutes * 60 + time.seconds
     code = pick flights beat
-    status = pick statuses (beat + beat `div` length flights)
+    status = pick statuses (beat `div` length flights + beat `mod` length flights)
   in
     { key: code, value: { code, status } }
 

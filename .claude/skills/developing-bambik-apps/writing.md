@@ -277,7 +277,7 @@ form needs no knot and no seed: each editor states its own blank in its
 **introducing form**, `{ | b } → { l :: a | b }`, its init a function
 of the row the editors above it have built (signup-form's MDC3 view,
 `debouncedTextFieldFrom @"Username" blankUsername usernameSettleTime`,
-`radioButtonFrom @"Plan" defaultPlan …`, with `defaultPlan :: {
+`radioButtonFrom @"Plan" freePlan …`, with `freePlan :: {
 "Username" :: String } -> Plan`). Displays, panes and the action follow
 below, reading the row the editors built; edits flow down the page
 only. A field the logic writes, or one under a pane (`inCaseAt`), is
@@ -437,8 +437,8 @@ the pick reaches the content directly (photo-gallery).
 - An element whose content reads several things names that reading
   once, in a face function, typed at the element row and closed like
   every other function a view line names
-  (`attrWith "style" cellFace`, `cellFace :: { key :: String, text ::
-  String, status :: [ … ] } -> String`, cells).
+  (`attrWith "style" cellFace`, `cellFace :: { key :: Int, line :: [ … ],
+  mark :: [ … ] } -> String`, tic-tac-toe).
 
 ## View module and view model module
 
@@ -609,7 +609,8 @@ text is computed, a chrome line nothing.
 - **Closing parens and `#` chains never start a line.** A trailing
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
-  it closes over: `… ) ) # acted @"name"` (potluck). The
+  it closes over: `… ) # anyOf @"key" (const keyPad) ) # joined @"Key
+  entered"` (calculator). The
   exception is a seed closer, `) # looped # with seed` / `) # with seed`,
   on its own line.
   `#` binds tighter than `$`: where a chain must apply to a whole

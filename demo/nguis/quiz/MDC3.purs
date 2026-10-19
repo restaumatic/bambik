@@ -2,9 +2,9 @@ module Quiz.MDC3 (quiz) where
 
 import Prelude ((#), ($), Unit)
 
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import PUI (fold, joined, looped, reset, with)
 import PUI.Web (provided, text, textAt)
 import PUI.Web.MDC3 (body, bodyLarge, button', headlineMedium, headlineSmall, linearProgress, listOf)
@@ -15,9 +15,9 @@ quiz :: Effect Unit
 quiz =
   body $ Semigroupoid.do
     linearProgress quizProgress
-    bodyLarge $ text questionLine
     RecordToVariant.do
       ( Semigroupoid.do
+        bodyLarge $ text questionLine
         headlineMedium $ text askedPrompt
         listOf @"Question answered" @"key" choices $ textAt @"choice" ) # provided @"asking" quizPhase # joined @"Question answered"
       ( Semigroupoid.do

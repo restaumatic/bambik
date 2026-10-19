@@ -36,7 +36,7 @@ addUnit :: { event :: Product, model :: Cart } -> Cart
 addUnit { event: product, model: cart@{ order } }
   | any (\l -> l.product.name == product.name) order =
     cart { order = map (\l -> if l.product.name == product.name then l { quantity = l.quantity + 1 } else l) order }
-  | otherwise = cart { order = snoc order { product: { name: product.name, unitPrice: product.unitPrice }, quantity: 1 } }
+  | otherwise = cart { order = snoc order { product, quantity: 1 } }
 
 removeUnit :: { event :: CartLine, model :: Cart } -> Cart
 removeUnit { event: { product: name }, model: cart } = cart { order = mapMaybe oneFewer cart.order }

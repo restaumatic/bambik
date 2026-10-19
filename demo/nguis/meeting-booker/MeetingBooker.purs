@@ -2,12 +2,12 @@ module MeetingBooker (Booking, Catering, Duration, Headcount, Refreshments, Room
 
 import Prelude (discard, pure, (<>), show, (/), ($))
 
-import Effect.Aff (Aff, Milliseconds(..), delay)
 import Data.Int (round)
 import Data.Ord (clamp)
 import Data.String (toLower, trim)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
+import Effect.Aff (Aff, Milliseconds(..), delay)
 
 type Room = [ "Auditorium" :: {}, "Boardroom" :: {}, "Focus pod" :: {} ]
 
@@ -43,7 +43,14 @@ type Plan =
   }
 
 blankBooking :: Booking
-blankBooking = { "Meeting title": "", "Room": .unchosen {}, "Duration": .unchosen {}, "Attendees": { current: justTheOrganizer, min: justTheOrganizer, max: justTheOrganizer, step: .discrete 1.0 }, "Teams link": false, "Catering": .none {} }
+blankBooking =
+  { "Meeting title": ""
+  , "Room": .unchosen {}
+  , "Duration": .unchosen {}
+  , "Attendees": { current: justTheOrganizer, min: justTheOrganizer, max: justTheOrganizer, step: .discrete 1.0 }
+  , "Teams link": false
+  , "Catering": .none {}
+  }
 
 seatsInRoom :: Booking -> Booking
 seatsInRoom booking@{ "Room": room, "Attendees": seats } = match
@@ -81,10 +88,12 @@ planLine booking = match { complete: \p -> "Plan: " <> planText p, incomplete: \
 
 planText :: Plan -> String
 planText p =
-  titleText p."Meeting title" <> " in the " <> roomText p.room <> ", " <> caseText p.duration <> ", " <> headcount p.attendees <> " attendees" <> onlineNote p."Teams link" <> cateringNote p.catering
+  titleText p."Meeting title" <> " in the " <> roomText p.room <> ", " <> caseText p.duration <> ", " <> headcount p.attendees <> onlineNote p."Teams link" <> cateringNote p.catering
 
 headcount :: Number -> String
-headcount attendees = show (round attendees)
+headcount attendees = case round attendees of
+  1 -> "1 attendee"
+  n -> show n <> " attendees"
 
 onlineNote :: Boolean -> String
 onlineNote online = if online then ", with a Teams link" else ""
@@ -100,10 +109,8 @@ titleText title = case trim title of
 roomText :: Room -> String
 roomText room = toLower (caseText room)
 
-
 roomRating :: Room -> Number
 roomRating = match { "Focus pod": \_ -> 4.5, "Boardroom": \_ -> 3.5, "Auditorium": \_ -> 4.0 }
-
 
 roomCapacity :: Room -> Number
 roomCapacity = match { "Focus pod": \_ -> 4.0, "Boardroom": \_ -> 12.0, "Auditorium": \_ -> 40.0 }

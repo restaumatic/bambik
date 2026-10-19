@@ -1,4 +1,4 @@
-module Stopwatch (Lap, Stopwatch, beginTiming, clearStopwatch, elapsedText, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch) where
+module Stopwatch (Lap, Stopwatch, beginTiming, clearStopwatch, elapsedLine, haltTiming, lapLine, lapRows, recordLap, tick, tickPeriod, zeroedStopwatch) where
 
 import Prelude ((<>), (+), (<), show)
 
@@ -17,8 +17,8 @@ type Lap = { number :: Int, tenths :: Int }
 zeroedStopwatch :: Stopwatch
 zeroedStopwatch = { phase: .halted {}, elapsedTenths: 0, laps: [] }
 
-elapsedText :: Stopwatch -> String
-elapsedText { elapsedTenths } = formatTime elapsedTenths
+elapsedLine :: Stopwatch -> String
+elapsedLine { elapsedTenths } = formatTime elapsedTenths
 
 tickPeriod :: { ms :: Number }
 tickPeriod = { ms: 100.0 }

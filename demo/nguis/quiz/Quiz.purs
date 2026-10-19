@@ -1,6 +1,6 @@
-module Quiz (QuizRun, answer, askedPrompt, choices, finalScoreLine, freshQuizRun, questionLine, quizProgress, quizPhase) where
+module Quiz (QuizRun, answer, askedPrompt, choices, finalScoreLine, freshQuizRun, questionLine, quizPhase, quizProgress) where
 
-import Prelude (show, (+), (/), (<>), (==), min)
+import Prelude (show, (+), (/), (<>), (==))
 
 import Data.Array (index, length, mapWithIndex)
 import Data.Int (toNumber)
@@ -15,7 +15,7 @@ quizProgress :: QuizRun -> Number
 quizProgress { question } = toNumber question / toNumber (length questionCatalogue)
 
 questionLine :: QuizRun -> String
-questionLine { question, correct } = "Question " <> show (min (question + 1) (length questionCatalogue)) <> " of " <> show (length questionCatalogue) <> " · Score " <> show correct
+questionLine { question, correct } = "Question " <> show (question + 1) <> " of " <> show (length questionCatalogue) <> " · Score " <> show correct
 
 questionCatalogue :: Array { prompt :: String, choices :: Array String, answer :: Int }
 questionCatalogue =

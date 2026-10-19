@@ -20,15 +20,19 @@ colorMixer =
     ) # looped
     bodyMedium $ text hexLine
     bodyMedium $ text rgbLine
-    ( div $ Semigroupoid.do
-      div >>> attrWith "style" swatchStyle $ identity
-      div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-        ( attrAt @"name" "aria-label" >>> attrAt @"name" "title" >>> attrWith "style" chipFace $ tile @"Preset applied" @"name" identity ) # anyOf @"name" (const palette) ) # joined @"Preset applied"
+    div >>> attrWith "style" swatchStyle $ identity
+    ( div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
+      tile @"Preset applied" @"name" identity # attrAt @"name" "aria-label" # attrAt @"name" "title" # attrWith "style" chipFace # anyOf @"name" (const palette) ) # joined @"Preset applied"
     fold @"Preset applied" applyPreset
   # looped # with duskViolet
 
-chipFace :: { name :: String, mix :: { "Red" :: Number, "Green" :: Number, "Blue" :: Number } } -> String
+chipFace :: { mix :: { "Blue" :: Number, "Green" :: Number, "Red" :: Number }, name :: String } -> String
 chipFace { mix } = "width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid #999; background-color: " <> rgb mix <> ";"
 
-swatchStyle :: { "Red" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Green" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }, "Blue" :: { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } } -> String
+swatchStyle
+  :: { "Blue" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }
+     , "Green" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }
+     , "Red" :: { current :: Number, max :: Number, min :: Number, step :: [ continuous :: {}, discrete :: Number ] }
+     }
+  -> String
 swatchStyle channels = "width: 100%; max-width: 420px; height: 120px; border-radius: 8px; border: 1px solid #ccc; background-color: " <> mixedColor channels <> ";"

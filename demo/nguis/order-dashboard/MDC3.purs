@@ -2,10 +2,10 @@ module OrderDashboard.MDC3 (orderDashboard) where
 
 import Prelude ((#), ($), Unit)
 
-import OrderDashboard.ControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderDashboard (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
+import OrderDashboard.ControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
 import PUI (fold, looped, ticks, with)
 import PUI.Web.MDC3 (body, segment, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid

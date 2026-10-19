@@ -1,8 +1,8 @@
-module Inbox (Inbox, Message, Reading, mondayMail, unreadLine, highlighted, messageLine, messageView, subjectLine, fromLine, bodyText, deletionLine, inboxState, openMessage, deleteOpened, composeMessage, sortBySender, sortBySubject, sortUnreadFirst) where
+module Inbox (Inbox, Message, Reading, bodyLine, composeMessage, deleteOpened, deletionLine, fromLine, highlighted, inboxState, messageLine, messageView, mondayMail, openMessage, sortBySender, sortBySubject, sortUnreadFirst, subjectLine, unreadLine) where
 
-import Prelude ((<<<), (<>), (+), (==), comparing, const, map, max, not, show)
+import Prelude ((<<<), (<>), (+), (==), comparing, const, map, max, not, otherwise, show)
 
-import Data.Array (filter, find, foldl, length, snoc, sortBy)
+import Data.Array (filter, find, foldl, length, null, snoc, sortBy)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Variant (match)
 
@@ -22,7 +22,11 @@ mondayMail =
   }
 
 unreadLine :: Inbox -> String
-unreadLine { messages } = show (length (filter (isUnread <<< _.status) messages)) <> " unread of " <> show (length messages) <> " messages"
+unreadLine { messages } = show (length (filter (isUnread <<< _.status) messages)) <> " unread of " <> received
+  where
+  received = case length messages of
+    1 -> "1 message"
+    n -> show n <> " messages"
 
 highlighted :: Message -> Boolean
 highlighted { status } = match { unread: const true, read: const false, open: const true } status
@@ -41,8 +45,8 @@ subjectLine = openMessageLine _.subject
 fromLine :: Inbox -> String
 fromLine = openMessageLine \{ sender } -> "From: " <> sender
 
-bodyText :: Inbox -> String
-bodyText = openMessageLine _.body
+bodyLine :: Inbox -> String
+bodyLine = openMessageLine _.body
 
 deletionLine :: Inbox -> String
 deletionLine = openMessageLine \{ sender, subject } -> "“" <> subject <> "” from " <> sender <> " will be gone for good."
@@ -51,10 +55,15 @@ openMessageLine :: (Message -> String) -> Inbox -> String
 openMessageLine line { messages } = maybe "" line (find (isOpen <<< _.status) messages)
 
 inboxState :: Inbox -> [ empty :: {}, filled :: {} ]
-inboxState { messages } = if length messages == 0 then .empty {} else .filled {}
+inboxState { messages } = if null messages then .empty {} else .filled {}
 
 openMessage :: { event :: Int, model :: Inbox } -> Inbox
-openMessage { event: id, model: m@{ messages } } = m { messages = map (\g -> if g.id == id then g { status = .open {} } else if isOpen g.status then g { status = .read {} } else g) messages }
+openMessage { event: id, model: m@{ messages } } = m { messages = map opened messages }
+  where
+  opened g
+    | g.id == id = g { status = .open {} }
+    | isOpen g.status = g { status = .read {} }
+    | otherwise = g
 
 deleteOpened :: Inbox -> Inbox
 deleteOpened m@{ messages } = m { messages = filter (not <<< isOpen <<< _.status) messages }

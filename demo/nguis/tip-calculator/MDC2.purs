@@ -17,8 +17,8 @@ tipCalculator =
     slider @"Tip percentage"
     rangeInput @"Tip percentage"
     body2 $ text tipLine
-    body2 $ text splitLine
     slider @"Split between"
+    body2 $ text splitLine
     body2 $ text tipAmountLine
     body2 $ text totalLine
     body2 $ text perPersonLine

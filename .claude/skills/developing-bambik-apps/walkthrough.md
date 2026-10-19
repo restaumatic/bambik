@@ -244,7 +244,8 @@ model module is the ordinary one.
   then `snackbar @"Card charged" identity`, the fold that takes the
   charged order as the model.
 - **todo-list** — a selectable list, `listOf @"Todo toggled" @"id"`, a filter
-  selector, and panes over `remainingItems`.
+  selector, and a count line, `text itemsLeftLine`, that says "1 item
+  left" or "3 items left" itself.
 - **checkout** — a wizard: the step is a model field, each step's line a
   pane `# inCaseAt @c @"step"`, and Back and Next are the face of a
   selector the app packages itself, `stepper @"step"` over `step @"Cart"`,

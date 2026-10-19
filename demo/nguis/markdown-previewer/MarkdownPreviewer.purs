@@ -2,8 +2,8 @@ module MarkdownPreviewer (Block, Document, Inline, parseMarkdown, welcomeDocumen
 
 import Prelude (not, otherwise, (&&), (+), (/=), (<#>), (<<<), (<>), (==), (>), (||))
 
-import Data.Array (cons, span, uncons)
-import Data.Maybe (Maybe(..), isJust, isNothing)
+import Data.Array (any, cons, span, uncons)
+import Data.Maybe (Maybe(..), isJust)
 import Data.String (Pattern(..), split, trim)
 import Data.String.CodeUnits (drop, indexOf, length, stripPrefix, take)
 import Data.String.Common (joinWith)
@@ -69,8 +69,11 @@ isQuote = isJust <<< stripPrefix (Pattern "> ")
 dropMarker :: String -> String
 dropMarker = drop 2
 
+isHeading :: String -> Boolean
+isHeading l = any (\marker -> isJust (stripPrefix (Pattern marker) l)) [ "# ", "## ", "### " ]
+
 isPlainLine :: String -> Boolean
-isPlainLine l = trim l /= "" && isNothing (stripPrefix (Pattern "#") l) && not (isBullet l || isQuote l)
+isPlainLine l = trim l /= "" && not (isHeading l || isBullet l || isQuote l)
 
 parseInlines :: String -> Array Inline
 parseInlines s

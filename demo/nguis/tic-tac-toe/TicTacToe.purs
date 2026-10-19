@@ -1,9 +1,8 @@
 module TicTacToe (Board, Cell, Game, Mark, cellMark, cells, claimCell, gameOutcome, openingPosition, toMoveLine, wonLine) where
 
-import Prelude ((&&), (/=), (<#>), (<>), (==), bind, mod, not, show)
+import Prelude ((&&), (/=), (<#>), (<>), (==), bind, mod, not, otherwise)
 
 import Data.Array (catMaybes, elem, filter, findMap, index, length, range, updateAt)
-import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Variant (match)
 
@@ -13,7 +12,7 @@ type Board = Array Mark
 
 type Mark = [ x :: {}, o :: {}, free :: {} ]
 
-type Cell = { key :: String, line :: [ plain :: {}, winning :: {} ], mark :: Mark }
+type Cell = { key :: Int, line :: [ plain :: {}, winning :: {} ], mark :: Mark }
 
 openingPosition :: Game
 openingPosition =
@@ -27,7 +26,11 @@ openingPosition =
 cells :: Game -> Array Cell
 cells { board } =
   let winners = fromMaybe [] (winningLine board)
-  in range 0 8 <#> \i -> { key: show i, mark: fromMaybe (.free {}) (index board i), line: if i `elem` winners then .winning {} else .plain {} }
+  in range 0 8 <#> \i ->
+    { key: i
+    , mark: fromMaybe (.free {}) (index board i)
+    , line: if i `elem` winners then .winning {} else .plain {}
+    }
 
 cellMark :: Cell -> String
 cellMark { mark } = markText mark
@@ -35,11 +38,11 @@ cellMark { mark } = markText mark
 markText :: Mark -> String
 markText = match { x: \_ -> "X", o: \_ -> "O", free: \_ -> "" }
 
-claimCell :: { event :: String, model :: Game } -> Game
-claimCell { event: key, model: game@{ board } } = case fromString key of
-  Just i | index board i == Just (.free {}) && isNothing (winningLine board) ->
+claimCell :: { event :: Int, model :: Game } -> Game
+claimCell { event: i, model: game@{ board } }
+  | index board i == Just (.free {}) && isNothing (winningLine board) =
     game { board = fromMaybe board (updateAt i (playerToMove board) board) }
-  _ -> game
+  | otherwise = game
 
 playerToMove :: Board -> Mark
 playerToMove board = if length (filter (_ == .free {}) board) `mod` 2 == 1 then .x {} else .o {}

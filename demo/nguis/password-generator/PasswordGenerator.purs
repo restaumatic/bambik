@@ -1,6 +1,6 @@
-module PasswordGenerator (Quantity, Recipe, samplePassword, strengthLine, strongMixRecipe) where
+module PasswordGenerator (Quantity, Recipe, characterKinds, samplePassword, strengthLine, strongMixRecipe) where
 
-import Prelude (bind, otherwise, pure, (*), (-), (/), (<), (<>))
+import Prelude (bind, otherwise, pure, show, (*), (-), (/), (<), (<>))
 
 import Data.Array (index, length, null, replicate)
 import Data.Int (round, toNumber)
@@ -31,7 +31,7 @@ type Quantity =
 
 strongMixRecipe :: Recipe
 strongMixRecipe =
-  { "Length": passwordLengths 16.0
+  { "Length": { current: 16.0, min: 8.0, max: 64.0, step: .discrete 1.0 }
   , "Uppercase letters": true
   , "Lowercase letters": true
   , "Digits": true
@@ -40,53 +40,32 @@ strongMixRecipe =
   }
 
 strengthLine :: Recipe -> String
-strengthLine r = "Strength: " <> strengthGrade (entropyBits r)
+strengthLine r
+  | null (effectiveAlphabet r) = "Pick at least one kind of character"
+  | otherwise = "Strength: " <> strengthGrade (entropyBits r) <> " (" <> show (round r."Length".current) <> " characters)"
 
-passwordLengths :: Number -> Quantity
-passwordLengths n = { current: n, min: 8.0, max: 64.0, step: .discrete 1.0 }
+characterKinds :: Recipe -> [ chosen :: {}, none :: {} ]
+characterKinds r = if null (effectiveAlphabet r) then .none {} else .chosen {}
 
 samplePassword :: Recipe -> Aff [ "Password generated" :: Recipe ]
-samplePassword recipe@{ "Length": length, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = liftEffect do
-  let alphabet = effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols }
-  chars <- sequence (replicate (round length.current) (randomCharacter alphabet))
-  pure (."Password generated" (rememberPassword (fromCharArray chars) recipe))
+samplePassword recipe = liftEffect do
+  chars <- sequence (replicate (round recipe."Length".current) (randomCharacter (effectiveAlphabet recipe)))
+  pure (."Password generated" recipe { password = fromCharArray chars })
 
 randomCharacter :: Array Char -> Effect Char
 randomCharacter alphabet = do
   i <- randomInt 0 (length alphabet - 1)
   pure (fromMaybe 'a' (index alphabet i))
 
+effectiveAlphabet :: Recipe -> Array Char
+effectiveAlphabet r =
+  (if r."Uppercase letters" then uppercaseLetters else [])
+    <> (if r."Lowercase letters" then lowercaseLetters else [])
+    <> (if r."Digits" then digitCharacters else [])
+    <> (if r."Symbols" then symbolCharacters else [])
 
-rememberPassword :: String -> Recipe -> Recipe
-rememberPassword password recipe = recipe { password = password }
-
-effectiveAlphabet
-  :: forall r1.
-     { "Uppercase letters" :: Boolean
-     , "Lowercase letters" :: Boolean
-     , "Digits" :: Boolean
-     , "Symbols" :: Boolean
-     | r1
-     }
-  -> Array Char
-effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } =
-  let chosen = (if uppercase then uppercaseLetters else [])
-            <> (if lowercase then lowercaseLetters else [])
-            <> (if digits then digitCharacters else [])
-            <> (if symbols then symbolCharacters else [])
-  in if null chosen then lowercaseLetters else chosen
-
-entropyBits
-  :: forall r1.
-     { "Length" :: Quantity
-     , "Uppercase letters" :: Boolean
-     , "Lowercase letters" :: Boolean
-     , "Digits" :: Boolean
-     , "Symbols" :: Boolean
-     | r1
-     }
-  -> Number
-entropyBits { "Length": len, "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols } = len.current * log (toNumber (length (effectiveAlphabet { "Uppercase letters": uppercase, "Lowercase letters": lowercase, "Digits": digits, "Symbols": symbols }))) / log 2.0
+entropyBits :: Recipe -> Number
+entropyBits r = r."Length".current * log (toNumber (length (effectiveAlphabet r))) / log 2.0
 
 strengthGrade :: Number -> String
 strengthGrade bits

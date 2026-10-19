@@ -9,7 +9,7 @@ import PUI (acted, action, capture, fold, looped, static, with)
 import PUI.Web (el, (:=))
 import PUI.Web.MDC2 (body, button', filledTextField, group, indeterminateLinearProgress, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Reorder (openingSetlist, rotateSetlist, shuffleAction)
+import Reorder (openingSetlist, rotateSetlist, shuffleSetlist)
 
 reorder :: Effect Unit
 reorder =
@@ -24,6 +24,6 @@ reorder =
     VariantToRecord.do
       fold @"Rotate" rotateSetlist
       ( Semigroupoid.do
-        indeterminateLinearProgress # action @"Shuffle" shuffleAction
+        indeterminateLinearProgress # action @"Shuffle" shuffleSetlist
         capture @"Setlist shuffled" )
   # looped # with openingSetlist

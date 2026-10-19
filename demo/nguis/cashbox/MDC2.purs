@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
 import PUI (fold, looped, with)
 import PUI.Web (text)
-import PUI.Web.MDC2 (body, body1, button', headline6, confirmed)
+import PUI.Web.MDC2 (body, body1, button', confirmed, headline6)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 cashbox :: Effect Unit

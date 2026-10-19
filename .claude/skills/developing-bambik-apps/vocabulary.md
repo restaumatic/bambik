@@ -120,7 +120,7 @@ and emitters of a catalogue — are in the design-system module header
 
 | The screen needs | Word | Demo | Read |
 | --- | --- | --- | --- |
-| an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action @"Shuffle" shuffleAction; capture @"Setlist shuffled" } )` in the fold block, what follows owning the action's outcomes | reorder, espresso-bar | writing.md *Business functions* |
+| an `Aff` action on an event | `( Semigroupoid.do { indeterminateLinearProgress # action @"Shuffle" shuffleSetlist; capture @"Setlist shuffled" } )` in the fold block, what follows owning the action's outcomes | reorder, espresso-bar | writing.md *Business functions* |
 | … whose outcomes are told | `indeterminateCircularProgress # action @"Charge card" chargeFlaky`, then `snackbar @"Card charged" identity`; one status per outcome where there are several | payment; order-form | writing.md *Business functions* |
 | the load before the knot | `indeterminateLinearProgress # load loadOrder`, then `snackbar @"Order loaded" identity` | order-form | writing.md *Business functions* |
 | an outcome told, the model kept | the action `joined @l` with its button in the event ensemble, once per outcome, its status folding `kept` (`snackbar @"Order submitted" kept`) | order-form | writing.md *Business functions* |

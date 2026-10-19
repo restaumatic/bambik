@@ -13,8 +13,8 @@ const press = (name) => `(() => {
   return true
 })()`
 const shown = (re) => `(() => { const m = document.body.innerText.match(${re}); return m ? Number(m[1]) : null })()`
-const ticksShown = shown('/(\\d+) ticks while watching/')
-const quotesShown = shown('/(\\d+) quotes received/')
+const ticksShown = shown('/(\\d+) ticks? while watching/')
+const quotesShown = shown('/(\\d+) quotes? received/')
 
 export const run = async ({ ev, assertEq, sleep, page }) => {
   await sleep(600)

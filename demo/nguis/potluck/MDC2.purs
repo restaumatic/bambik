@@ -17,12 +17,10 @@ potluck =
     group @"Guests" $ list $
       ( listItem $ Semigroupoid.do
         subtitle1 $ textAt @"name"
-        segmentedButtonUnpicked @"Dish" @"chosen"
-          ( VariantToVariant.do
-            segment @"Salad"
-            segment @"Lasagna"
-            segment @"Pavlova"
-          ) ) # acted @"name"
+        segmentedButtonUnpicked @"Dish" @"chosen" $ VariantToVariant.do
+          segment @"Salad"
+          segment @"Lasagna"
+          segment @"Pavlova" ) # acted @"name"
     ( headline6 $ text menuLine ) # inCase @"complete" menuState
     ( body2 $ text waitingLine ) # inCase @"waiting" menuState
   # with invitation

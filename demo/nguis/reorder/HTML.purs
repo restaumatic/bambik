@@ -9,7 +9,7 @@ import PUI (actedAt, action, capture, fold, looped, static, with)
 import PUI.Web (el, staticText, textAt, (:=))
 import PUI.Web.HTML (body, button, dd, div, dl, dt, h3, indeterminateLinearProgress, input, label)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Reorder (openingSetlist, rotateSetlist, shuffleAction)
+import Reorder (openingSetlist, rotateSetlist, shuffleSetlist)
 
 reorder :: Effect Unit
 reorder =
@@ -21,7 +21,7 @@ reorder =
           static (el "input" >>> "type" := "checkbox")
           textAt @"Title"
         dd $ label $ Semigroupoid.do
-          staticText "Rename "
+          staticText "Title "
           input @"Title" "text" ) # actedAt @"id" @"Setlist"
     RecordToVariant.do
       button @"Rotate"
@@ -29,6 +29,6 @@ reorder =
     VariantToRecord.do
       fold @"Rotate" rotateSetlist
       ( Semigroupoid.do
-        indeterminateLinearProgress # action @"Shuffle" shuffleAction
+        indeterminateLinearProgress # action @"Shuffle" shuffleSetlist
         capture @"Setlist shuffled" )
   # looped # with openingSetlist

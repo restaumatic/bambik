@@ -23,7 +23,7 @@ loanCalculator =
         option @"Home improvement"
         option @"Holiday"
       toggleSwitch @"Payment protection insurance"
-    ) # looped
+    ) # looped # with cityCarLoan
     card $ Semigroupoid.do
       listGroup $ Semigroupoid.do
         listGroupItem $ text monthlyLine
@@ -35,4 +35,3 @@ loanCalculator =
     button @"Apply for this loan"
     indeterminateLinearProgress # action @"Apply for this loan" applyForLoan
     toast @"Application received" identity
-  # looped # with cityCarLoan
