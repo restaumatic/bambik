@@ -54,7 +54,9 @@
 -- | a selection the filter hid dropped, a quantity re-bounded by its
 -- | room). Every field has the type the screen represents exactly — a
 -- | text field's is `String`, a slider's a number, a selector's its
--- | option's case — so what the row says is what the user sees.
+-- | option's case, a number field's the two-case `[ number, invalid ]`
+-- | that keeps the text that is not one — so what the row says is what
+-- | the user sees.
 -- |
 -- | The **data model** is never a row here. It enters and leaves on the
 -- | variant edges, as the payload of an event: in through a fold

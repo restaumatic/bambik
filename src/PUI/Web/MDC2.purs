@@ -63,6 +63,7 @@ module PUI.Web.MDC2
   , elevation20
   , fab
   , filledTextArea
+  , filledNumberField
   , filledTextField
   , filledTextFieldFrom
   , filledTextField'
@@ -93,6 +94,7 @@ module PUI.Web.MDC2
   , menu
   , menuItem
   , outlinedButton
+  , outlinedNumberField
   , outlinedTextField
   , outlinedTextField'
   , overline
@@ -105,6 +107,8 @@ module PUI.Web.MDC2
   , segment
   , segmentedButtonUnpicked
   , segmentedButtonOptional
+  , rangeSlider
+  , rangeSliderLive
   , select
   , selectFrom
   , option
@@ -140,7 +144,7 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (introduced, fromHandles, handles, anyOf, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
+import PUI (introduced, numeral, fromHandles, handles, anyOf, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, grouping, member, unpickAll, clearedByRepress, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
@@ -385,6 +389,21 @@ outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in 
 -- | `outlinedTextField` with a `hint` under it, as `filledTextField'`.
 outlinedTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
 outlinedTextField' { hint } = fieldLeaf @l $ hinted $ (textFieldLeaf "outlined" Nothing (reflectSymbol (Proxy @l)) hint)
+
+-- | `filledTextField` read as a **number**: `filledNumberField @"Amount"
+-- | @"number" @"invalid"` edits a field `[ number :: Number, invalid ::
+-- | String ]` — the case names the view's, as `checkbox`'s are — holding
+-- | the number when the text parses and the text itself when it does not,
+-- | so an invalid entry is model state a pane shows (`# inCaseAt
+-- | @"invalid" @"Amount"`) and a `provided` withholds the submit on, never
+-- | a fact the DOM alone knows. `PUI.numeral` states the parse and what a
+-- | parsed number keeps of its text.
+filledNumberField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Number nr v => Cons i String ir v => PUI Web { | r } { | r }
+filledNumberField = fieldLeaf @l $ numeral @n @i (textFieldLeaf "filled" Nothing (reflectSymbol (Proxy @l)) "")
+
+-- | `outlinedTextField` read as a number, as `filledNumberField`.
+outlinedNumberField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Number nr v => Cons i String ir v => PUI Web { | r } { | r }
+outlinedNumberField = fieldLeaf @l $ numeral @n @i (textFieldLeaf "outlined" Nothing (reflectSymbol (Proxy @l)) "")
 
 -- the field and its helper line are siblings in MD2's markup, so a hinted
 -- field is wrapped to stay one element under the label's stamp
@@ -744,6 +763,86 @@ sliderLeaf live label = fromHandles do
       <> "<div class=\"mdc-slider__track\">"
       <> "<div class=\"mdc-slider__track--inactive\"></div>"
       <> "<div class=\"mdc-slider__track--active\"><div class=\"mdc-slider__track--active_fill\"></div></div>"
+      <> "</div>"
+      <> "<div class=\"mdc-slider__thumb\">"
+      <> "<div class=\"mdc-slider__thumb-knob\"></div>"
+      <> "</div>"
+      <> "</div>"
+
+-- | The **range slider**: an interval chosen by feel between two thumbs — a
+-- | price band, a time window, the hours a shop is open. Like `slider`'s
+-- | quantity the interval is one business datum, `{ start, end, min, max,
+-- | step }`, its bounds from the data; `start ≤ end` is the model's
+-- | invariant, which the thumbs cannot cross. Reports on **release**, once
+-- | per adjustment, like `slider`; `rangeSliderLive` follows the drag.
+-- | (HTML's `rangeInput` is the native single-thumb input, a quantity.)
+rangeSlider :: forall @l r b. IsSymbol l => Cons l { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
+rangeSlider = fieldLeaf @l $ rangeSliderLeaf false (reflectSymbol (Proxy @l))
+
+-- | `rangeSlider` reporting continuously while a thumb moves, as
+-- | `sliderLive` does.
+rangeSliderLive :: forall @l r b. IsSymbol l => Cons l { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
+rangeSliderLive = fieldLeaf @l $ rangeSliderLeaf true (reflectSymbol (Proxy @l))
+
+-- `sliderLeaf` over MDC's two-thumb markup: the foundation's `getValue`/
+-- `setValue` are the end thumb, `getValueStart`/`setValueStart` the start,
+-- and a write that would cross the thumbs is ordered so it never does
+rangeSliderLeaf :: Boolean -> String -> PUI Web { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+rangeSliderLeaf live label = fromHandles do
+  chrome (staticHTML markup)
+  node <- gets _.sibling
+  liftEffect do
+    querySelectorIn node ".mdc-slider__input:first-of-type" >>= \i -> setAttribute i "aria-label" (label <> " start")
+    querySelectorIn node ".mdc-slider__input:last-of-type" >>= \i -> setAttribute i "aria-label" (label <> " end")
+  stateRef <- liftEffect $ Ref.new Nothing
+  let
+    scoped q = do
+      st <- Ref.read stateRef
+      case st of
+        Just s | s.interval.min == q.min, s.interval.max == q.max, s.interval.step == q.step -> do
+          Ref.write (Just s { interval = q }) stateRef
+          pure s.comp
+        _ -> do
+          for_ st \s -> destroyComponent s.comp
+          Variant.match
+            { discrete: \step -> configureMdcRangeSlider node q.min q.max step true q.start q.end
+            , continuous: \_ -> configureMdcRangeSlider node q.min q.max 0.0 false q.start q.end
+            } q.step
+          comp <- newComponent material.slider."MDCSlider" node
+          Ref.write (Just { comp, interval: q }) stateRef
+          pure comp
+  liftEffect $ recordToRecordWiring
+    { show: \q -> do
+        comp <- scoped q
+        end' <- getSliderValue comp
+        if q.start <= end'
+          then setSliderValueStart comp q.start *> setSliderValue comp q.end
+          else setSliderValue comp q.end *> setSliderValueStart comp q.start
+        layoutComponent comp
+    , held: pure false
+    , reports: \report -> do
+        when live $ listenNode node "MDCSlider:input" report
+        listenNode node "MDCSlider:change" report
+    , read: \q -> do
+        st <- Ref.read stateRef
+        case st of
+          Just st' -> do
+            start <- getSliderValueStart st'.comp
+            end <- getSliderValue st'.comp
+            pure q { start = start, end = end }
+          Nothing -> pure q
+    }
+  where
+  markup =
+    "<div class=\"mdc-slider mdc-slider--range\" style=\"min-width: 200px;\">"
+      <> "<input class=\"mdc-slider__input\" type=\"range\" min=\"0\" max=\"50\" value=\"25\">"
+      <> "<input class=\"mdc-slider__input\" type=\"range\" min=\"25\" max=\"100\" value=\"75\">"
+      <> "<div class=\"mdc-slider__track\">"
+      <> "<div class=\"mdc-slider__track--inactive\"></div>"
+      <> "<div class=\"mdc-slider__track--active\"><div class=\"mdc-slider__track--active_fill\"></div></div>"
+      <> "</div>"
+      <> "<div class=\"mdc-slider__thumb\">"
+      <> "<div class=\"mdc-slider__thumb-knob\"></div>"
       <> "</div>"
       <> "<div class=\"mdc-slider__thumb\">"
       <> "<div class=\"mdc-slider__thumb-knob\"></div>"
@@ -1718,6 +1817,8 @@ foreign import selectQuietly :: Component -> String -> Effect Unit
 foreign import activateTabNode :: Component -> Node -> Effect Unit
 foreign import getSliderValue :: Component -> Effect Number
 foreign import setSliderValue :: Component -> Number -> Effect Unit
+foreign import getSliderValueStart :: Component -> Effect Number
+foreign import setSliderValueStart :: Component -> Number -> Effect Unit
 foreign import setFormFieldInput :: Component -> Component -> Effect Unit
 
 -- property access — MDC foundations expose their model as component
@@ -1735,6 +1836,7 @@ foreign import getBoolProp :: String -> Component -> Effect Boolean
 foreign import listen :: Component -> String -> Effect Unit -> Effect Unit
 foreign import destroyComponent :: Component -> Effect Unit
 foreign import configureMdcSlider :: Node -> Number -> Number -> Number -> Boolean -> Number -> Effect Unit
+foreign import configureMdcRangeSlider :: Node -> Number -> Number -> Number -> Boolean -> Number -> Number -> Effect Unit
 foreign import setClassIf :: Node -> String -> Boolean -> Effect Unit
 foreign import querySelectorIn :: Node -> String -> Effect Node
 foreign import fixListTabIndexes :: Node -> Effect Unit

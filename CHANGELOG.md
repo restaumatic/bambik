@@ -6,7 +6,31 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-11-06, latest
+## 2026-11-07, latest
+- **`rangeSlider`/`rangeSliderLive` in MDC2 and MDC3** (MDC3 also the
+  `'` siblings reading in a `unit`): the catalogues' two-thumb slider,
+  editing a field whose value is a bounded interval `{ start, end, min,
+  max, step }` — the one MDC control the vocabularies did not expose
+  (the Material Design 3 `md-slider range`, MDC2's `mdc-slider--range`
+  with `getValueStart`/`setValueStart`). A field of this shape was
+  reachable only as two sliders in a `group`. Law-bench rows on both
+  pages; no demo reaches it yet (L14's catalogue-word clause).
+- **Number fields, as two-case fields.** `PUI.numeral @n @i` reads a
+  text leaf as a field `[ n :: Number, i :: String ]`: the number when
+  the text parses (strictly — digits, one point, a leading minus), the
+  text itself when it does not, so an invalid entry is model state a
+  pane shows and a `provided` withholds on. A leaf typed at a bare
+  `Number` was rejected in the same discussion: it keeps the last parse
+  while the screen shows "abc", and the next broadcast erases the user's
+  text. `filledNumberField`/`outlinedNumberField @l @n @i` in MDC2 and
+  MDC3 are it over their text leaves; law-bench rows on both pages. The
+  other "closed by rule" cells of the editor grid stay closed: a
+  payload-carrying choice edited in place (L14, state the row does not
+  hold), a bare payload amended in a dialog or a bare element edited in
+  a list (L3, no label-less leaf), a variant at the knot (the deleted
+  `cycled`, 2026-10-06).
+
+## 2026-11-06
 - **`group @l` in every vocabulary.** The labelled model group, the one
   editor of a field whose value is a record, existed in MDC2 and MDC3
   only, so the other four vocabularies could not nest a sub-record at

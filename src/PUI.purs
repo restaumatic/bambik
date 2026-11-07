@@ -88,6 +88,7 @@ module PUI
   , variantToRecordWiring
   , variantToVariantWiring
   , optionWiring
+  , numeral
   , replayed
   , source
   , class Interacting
@@ -132,7 +133,7 @@ import Prelude
 
 import Data.Array as Array
 import Data.Either (Either(..), either)
-import Data.Foldable (elem, foldl, for_)
+import Data.Foldable (all, elem, foldl, for_)
 import Data.Lens (Optic)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype)
@@ -169,7 +170,10 @@ import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
 import Data.Profunctor.Row (class RowLabels, atCase, exactRow, rowLabels)
-import Data.String (joinWith)
+import Data.String (joinWith, trim)
+import Data.String.CodeUnits (toCharArray)
+import Data.Number (fromString) as Number
+import Data.Number.Format (toString)
 import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, unshown)
@@ -449,6 +453,45 @@ retainingPair name focus completed reg prop = do
 instance Functor m => Choice (PUI m) where
   left (PUI p) = PUI $ p <#> \reg prop -> reg (prop <<< Left) <#> \leg -> either leg (prop <<< Right)
   right (PUI p) = PUI $ p <#> \reg prop -> reg (prop <<< Right) <#> \leg -> either (prop <<< Left) leg
+
+-- | A text leaf read as a **number field**: `numeral @n @i leaf` edits a
+-- | two-case field, case `n` holding the number and case `i` the text
+-- | that is not one, so an invalid entry stays in the model — where a pane
+-- | can show it and a `provided` can withhold on it — instead of in the
+-- | DOM alone, which a leaf typed at a bare `Number` would leave it in
+-- | (the model keeping the last parse while the screen shows "abc", and
+-- | the next broadcast erasing it). Shown a number, the leaf renders it
+-- | with `toString`, so "12." re-shows as "12" once the field is left (the
+-- | focus guard keeps what is being typed); shown the invalid text, it
+-- | shows it verbatim; shown any other case, nothing. The parse is strict
+-- | — digits, at most one point, a leading minus — never `parseFloat`'s
+-- | prefix. Plumbing: a vocabulary's number field is this over its text
+-- | leaf (`filledNumberField @l @n @i`, MDC2/MDC3).
+numeral
+  :: forall @n @i m v nr ir
+   . Functor m
+  => IsSymbol n
+  => IsSymbol i
+  => Cons n Number nr v
+  => Cons i String ir v
+  => PUI m String String
+  -> PUI m [ | v ] [ | v ]
+numeral = dimap render parse
+  where
+  render va = case prj (Proxy @n) va of
+    Just x -> toString x
+    Nothing -> fromMaybe "" (prj (Proxy @i) va)
+  parse s = maybe (inj (Proxy @i) s) (inj (Proxy @n)) (strictNumber s)
+
+strictNumber :: String -> Maybe Number
+strictNumber s =
+  let
+    t = trim s
+    chars = toCharArray t
+    numeric c = c == '.' || c == '-' || (c >= '0' && c <= '9')
+    wellFormed = all numeric chars && Array.length (Array.filter (_ == '.') chars) <= 1 && Array.elemIndex '-' chars `elem` [ Nothing, Just 0 ]
+  in
+    if t == "" || t == "-" || t == "." || t == "-." || not wellFormed then Nothing else Number.fromString t
 
 -- | The **introducing form of an editor**: field `l` inserted into the
 -- | row fed, from `init` of the rest, in front of the lens editor — `{ | b }

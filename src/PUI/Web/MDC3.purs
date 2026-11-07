@@ -72,6 +72,7 @@ module PUI.Web.MDC3
   , elevation5
   , fab
   , filledTextArea
+  , filledNumberField
   , filledTextField
   , filledTextField'
   , filledTextFieldFrom
@@ -106,6 +107,7 @@ module PUI.Web.MDC3
   , menu
   , menuItem
   , outlinedButton
+  , outlinedNumberField
   , outlinedTextField
   , outlinedTextField'
   , radioButton
@@ -114,6 +116,10 @@ module PUI.Web.MDC3
   , segmentedButton
   , segmentedButtonUnpicked
   , segmentedButtonOptional
+  , rangeSlider
+  , rangeSlider'
+  , rangeSliderLive
+  , rangeSliderLive'
   , select
   , selectUnpicked
   , selectOptional
@@ -157,7 +163,7 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (static, fromHandles, handles, anyOf, introduced, isHole, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
+import PUI (static, fromHandles, handles, anyOf, introduced, numeral, isHole, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), hasClass, listenCapture, grouping, member, unpickAll, clearedByRepress)
@@ -398,6 +404,21 @@ outlinedTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in 
 -- | `outlinedTextField` with a `hint` under it, as `filledTextField'`.
 outlinedTextField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
 outlinedTextField' { hint } = fieldLeaf @l $ (textFieldLeaf "md-outlined-text-field" Nothing (reflectSymbol (Proxy @l)) hint)
+
+-- | `filledTextField` read as a **number**: `filledNumberField @"Amount"
+-- | @"number" @"invalid"` edits a field `[ number :: Number, invalid ::
+-- | String ]` — the case names the view's, as `checkbox`'s are — holding
+-- | the number when the text parses and the text itself when it does not,
+-- | so an invalid entry is model state a pane shows (`# inCaseAt
+-- | @"invalid" @"Amount"`) and a `provided` withholds the submit on, never
+-- | a fact the DOM alone knows. `PUI.numeral` states the parse and what a
+-- | parsed number keeps of its text.
+filledNumberField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Number nr v => Cons i String ir v => PUI Web { | r } { | r }
+filledNumberField = fieldLeaf @l $ numeral @n @i (textFieldLeaf "md-filled-text-field" Nothing (reflectSymbol (Proxy @l)) "")
+
+-- | `outlinedTextField` read as a number, as `filledNumberField`.
+outlinedNumberField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Number nr v => Cons i String ir v => PUI Web { | r } { | r }
+outlinedNumberField = fieldLeaf @l $ numeral @n @i (textFieldLeaf "md-outlined-text-field" Nothing (reflectSymbol (Proxy @l)) "")
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
@@ -650,6 +671,73 @@ bareSliderLeaf live label measure = fromHandles do
         when live $ listenNode node "input" report
         listenNode node "change" report
     , read: \q -> getNumberProp "value" node <#> \v -> q { current = v }
+    }
+
+-- | The **range slider**: an interval chosen by feel between two thumbs — a
+-- | price band, a time window, the hours a shop is open. Like `slider`'s
+-- | quantity the interval is one business datum, `{ start, end, min, max,
+-- | step }`, its bounds from the data; `start ≤ end` is the model's
+-- | invariant, which the thumbs cannot cross. Reports on **release**, once
+-- | per adjustment, like `slider`; `rangeSliderLive` follows the drag.
+-- | (HTML's `rangeInput` is the native single-thumb input, a quantity.)
+rangeSlider :: forall @l r b. IsSymbol l => Cons l { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
+rangeSlider = fieldLeaf @l $ rangeSliderLeaf false (reflectSymbol (Proxy @l)) ""
+
+-- | `rangeSlider` whose values are read in a `unit`, as `slider'`.
+rangeSlider' :: forall @l r b. IsSymbol l => Cons l { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
+rangeSlider' config = fieldLeaf @l $ rangeSliderLeaf false (reflectSymbol (Proxy @l)) config.unit
+
+-- | `rangeSlider` reporting continuously while a thumb moves, as
+-- | `sliderLive` does.
+rangeSliderLive :: forall @l r b. IsSymbol l => Cons l { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
+rangeSliderLive = fieldLeaf @l $ rangeSliderLeaf true (reflectSymbol (Proxy @l)) ""
+
+-- | `rangeSliderLive` whose values are read in a `unit`, as `slider'`.
+rangeSliderLive' :: forall @l r b. IsSymbol l => Cons l { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
+rangeSliderLive' config = fieldLeaf @l $ rangeSliderLeaf true (reflectSymbol (Proxy @l)) config.unit
+
+rangeSliderLeaf :: Boolean -> String -> String -> PUI Web { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+rangeSliderLeaf live label measure
+  | label == "" = bareRangeSliderLeaf live label measure
+  | otherwise =
+      div >>> "style" := "display: inline-flex; flex-direction: column; align-items: flex-start;" $ fromHandles do
+        chrome (span >>> cl "md-typescale-label-medium" >>> "style" := "color: var(--md-sys-color-on-surface-variant, #49454f); margin-left: 8px;" $ staticText label)
+        handles (bareRangeSliderLeaf live label measure)
+
+-- `<md-slider range>`: `valueStart`/`valueEnd` are its two thumbs, each
+-- with its own value label and accessible name
+bareRangeSliderLeaf :: Boolean -> String -> String -> PUI Web { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } { start :: Number, end :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] }
+bareRangeSliderLeaf live label measure = fromHandles do
+  element "md-slider" (pure unit)
+  attribute "range" ""
+  attribute "labeled" ""
+  attribute "aria-label" label
+  attribute "aria-label-start" (label <> " start")
+  attribute "aria-label-end" (label <> " end")
+  attribute "style" "min-width: 200px;"
+  node <- gets _.sibling
+  let measured = when (measure /= "") do
+        start <- getNumberProp "valueStart" node
+        end <- getNumberProp "valueEnd" node
+        setStringProp "valueLabelStart" node (toString start <> " " <> measure)
+        setStringProp "valueLabelEnd" node (toString end <> " " <> measure)
+  liftEffect $ when (measure /= "") $ listenNode node "input" measured
+  liftEffect $ recordToRecordWiring
+    { show: \q -> do
+        setNumberProp "min" node q.min
+        setNumberProp "max" node q.max
+        Variant.match { discrete: \s -> setNumberProp "step" node s, continuous: \_ -> removeAttribute node "step" } q.step
+        setNumberProp "valueStart" node q.start
+        setNumberProp "valueEnd" node q.end
+        measured
+    , held: pure false
+    , reports: \report -> do
+        when live $ listenNode node "input" report
+        listenNode node "change" report
+    , read: \q -> do
+        start <- getNumberProp "valueStart" node
+        end <- getNumberProp "valueEnd" node
+        pure q { start = start, end = end }
     }
 
 -- | The Material **filled select** (exposed dropdown): one choice out of a

@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (PUI)
 import LawBench (bench, runBench)
 import PUI.Web (Web, text, staticText, textAt)
-import PUI.Web.MDC3 (acknowledged, body, button, checkbox, confirmed, debouncedTextField, doubleClickTile, elevatedButton, fab, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, tile, toggleSwitch, tonalButton)
+import PUI.Web.MDC3 (acknowledged, body, button, checkbox, confirmed, debouncedTextField, doubleClickTile, elevatedButton, fab, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, tile, toggleSwitch, tonalButton)
 
 lawBenchMDC3 :: Effect Unit
 lawBenchMDC3 = do
@@ -15,6 +15,8 @@ lawBenchMDC3 = do
   runBench
     [ bench "filledTextField" "×→×" texts (filledTextField @"Name")
     , bench "outlinedTextField" "×→×" texts (outlinedTextField @"Name")
+    , bench "filledNumberField" "×→×" numerals (filledNumberField @"Amount" @"number" @"invalid")
+    , bench "outlinedNumberField" "×→×" numerals (outlinedNumberField @"Amount" @"number" @"invalid")
     , bench "debouncedTextField" "×→×" texts (debouncedTextField @"Name" { ms: 200.0 })
     , bench "filledTextArea" "×→×" texts (filledTextArea @"Name" { columns: 20, rows: 2 })
     , bench "checkbox" "×→×" ticks (checkbox @"Terms" @"accepted" @"declined")
@@ -23,6 +25,8 @@ lawBenchMDC3 = do
     , bench "iconToggle" "×→×" flags (iconToggle @"On" { onIcon: "star", offIcon: "star_border" })
     , bench "slider" "×→×" quantities (slider @"Amount")
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount")
+    , bench "rangeSlider" "×→×" intervals (rangeSlider @"Window")
+    , bench "rangeSliderLive" "×→×" intervals (rangeSliderLive @"Window")
     , bench "linearProgress" "×→×" fractions (linearProgress fractionOf)
     , bench "imagePane" "×→×" images (imagePane identity)
     , bench "group" "×→×" grouped (group @"Customer" (filledTextField @"Name"))
@@ -60,10 +64,13 @@ lawBenchMDC3 = do
   fractionOf { fraction } = fraction
   itemsOf { items } = items
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
+  numerals = [ { "Amount": .number 3.0, other: 1 }, { "Amount": .invalid "abc", other: 2 } ]
   ticks = [ { "Terms": .accepted {}, other: 1 }, { "Terms": .declined {}, other: 2 } ]
   flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
+  interval start end = { start, end, min: 0.0, max: 10.0, step: .discrete 1.0 }
+  intervals = [ { "Window": interval 2.0 6.0, other: 1 }, { "Window": interval 3.0 8.0, other: 2 } ]
   tabA = .a {} :: [ a :: {}, b :: {} ]
   tabB = .b {} :: [ a :: {}, b :: {} ]
   tabs = [ { "Tab": tabA, other: 1 }, { "Tab": tabB, other: 2 } ]

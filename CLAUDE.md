@@ -391,7 +391,10 @@ design-system **umbrella**. What they share, stated once:
   exactly one shape (the boundary reading — displays as assurance
   policies, sources as the seed generalized, user input as occurrences —
   is doc/displays-and-sources.md): `×→×` editors (text fields, `checkbox`,
-  `toggleSwitch`, `slider`/`sliderLive`) and displays (progress/gauge), `×→+`
+  `toggleSwitch`, `slider`/`sliderLive`, and in MDC2/MDC3 the two-thumb
+  `rangeSlider`/`rangeSliderLive` over an interval `{ start, end, min, max, step }` and the number fields
+  `filledNumberField`/`outlinedNumberField @l @n @i` over a two-case field `[ n :: Number, i :: String ]`,
+  `PUI.numeral` over the text leaf, so an entry that is no number is model state and never a bare `Number`'s lie) and displays (progress/gauge), `×→+`
   events (`button` and its emphasis siblings, `fab`, `iconButton`, `menuItem`),
   `+→×` statuses (`snackbar`/`toast`/`messageBar`/`output`, each telling its case by its label and taking its fold), plus the
   **selectors** (`select`, `radioButton`/`radioGroup`, `segmentedButton`,

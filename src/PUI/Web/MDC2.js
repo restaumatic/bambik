@@ -53,6 +53,21 @@ export function setSliderValue(component) {
   };
 }
 
+// the range slider's start thumb: `getValue`/`setValue` are its end thumb
+export function getSliderValueStart(component) {
+  return function () {
+    return component.getValueStart();
+  };
+}
+
+export function setSliderValueStart(component) {
+  return function (value) {
+    return function () {
+      component.setValueStart(value);
+    };
+  };
+}
+
 // setFormFieldInput :: Component -> Component -> Effect Unit (MDCFormField.input, wires label-click ripple)
 export function setFormFieldInput(formField) {
   return function (input) {
@@ -198,6 +213,48 @@ export function configureMdcSlider(node) {
               } else if (!discrete && indicator) {
                 indicator.remove();
               }
+            };
+          };
+        };
+      };
+    };
+  };
+}
+
+// configureMdcRangeSlider :: Node -> min -> max -> step -> discrete -> start -> end -> Effect Unit
+// `configureMdcSlider` for the two-thumb markup: the foundation reads the
+// range's min from the start input and its max from the end input, each
+// input bounded by the other thumb's value as MDC's own markup writes it.
+export function configureMdcRangeSlider(node) {
+  return function (min) {
+    return function (max) {
+      return function (step) {
+        return function (discrete) {
+          return function (start) {
+            return function (end) {
+              return function () {
+                const [startInput, endInput] = node.querySelectorAll('.mdc-slider__input');
+                const bound = (input, lo, hi, value) => {
+                  input.setAttribute('min', String(lo));
+                  input.setAttribute('max', String(hi));
+                  if (discrete) input.setAttribute('step', String(step));
+                  else input.removeAttribute('step');
+                  input.setAttribute('value', String(value));
+                  input.value = String(value);
+                };
+                bound(startInput, min, end, start);
+                bound(endInput, start, max, end);
+                node.classList.toggle('mdc-slider--discrete', discrete);
+                for (const thumb of node.querySelectorAll('.mdc-slider__thumb')) {
+                  const indicator = thumb.querySelector('.mdc-slider__value-indicator-container');
+                  if (discrete && !indicator) {
+                    thumb.insertAdjacentHTML('afterbegin',
+                      '<div class="mdc-slider__value-indicator-container" aria-hidden="true"><div class="mdc-slider__value-indicator"><span class="mdc-slider__value-indicator-text"></span></div></div>');
+                  } else if (!discrete && indicator) {
+                    indicator.remove();
+                  }
+                }
+              };
             };
           };
         };
