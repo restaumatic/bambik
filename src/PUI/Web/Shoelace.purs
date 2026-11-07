@@ -23,6 +23,7 @@ module PUI.Web.Shoelace
   , body
   , button
   , card
+  , group
   , divider
   , indeterminateLinearProgress
   , option
@@ -49,13 +50,14 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Variant (inj, match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
+import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Effect.Ref as Ref
 import Data.Foldable (for_)
 import PUI (introduced, fromHandles, handles, Ocular, PUI, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), Web, attribute, el, element, getChecked, getValue, isFocused, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, statusText, separating, invokeMethod, (:=))
+import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), Web, attribute, el, element, getChecked, getValue, isFocused, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, statusText, separating, invokeMethod, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons, class Lacks)
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -433,8 +435,33 @@ modal { title, decide, cancel } content = fromHandles do
 -- | heading of its own is ordinary typography placed in its content —
 -- | Shoelace styles plain HTML, so the HTML oculars are that type scale.
 card :: Ocular (PUI Web)
-card content = el "sl-card" $
-  div >>> "style" := "display: flex; flex-direction: column; align-items: flex-start; gap: var(--sl-spacing-medium);" $ content
+card content = el "sl-card" $ div >>> "style" := cardBodyStyle $ content
+
+cardBodyStyle :: String
+cardBodyStyle = "display: flex; flex-direction: column; align-items: flex-start; gap: var(--sl-spacing-medium);"
+
+-- | A **labelled model group** — the contract is `PUI.Web.MDC2.group`'s:
+-- | `focusField @l` fused with the `card` surface, `group @l w` rendering
+-- | `w` on an `sl-card` whose `header` slot holds the label verbatim and
+-- | nesting `w`'s model under field `l`, the label stamped as the
+-- | accessible group name (`role="group"`, `aria-labelledby` the
+-- | heading). Derived, not primitive:
+-- |
+-- | ```
+-- | group @l w = card (heading >>> focusField @l w)      -- + the a11y stamp
+-- | ```
+group
+  :: forall @l f f' b s t
+   . IsSymbol l
+  => Cons l f b s
+  => Cons l f' b t
+  => PUI Web f f'
+  -> PUI Web { | s } { | t }
+group w = fromHandles do
+  headingId <- liftEffect uniqueId
+  handles $ "role" := "group" $ "aria-labelledby" := headingId $ el "sl-card" $
+    (div >>> "slot" := "header" >>> "id" := headingId $ staticText (reflectSymbol (Proxy @l)))
+      >>> (div >>> "style" := cardBodyStyle $ focusField @l w)
 
 -- statics (chrome with a face, the wire at any row)
 

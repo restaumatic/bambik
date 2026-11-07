@@ -51,7 +51,7 @@ export const sets = {
     'payment': ['mdc2', 'mdc3'],
     'ticket-dispenser': ['mdc2', 'mdc3'],
     'cashbox': ['mdc2', 'mdc3'],
-    'parcel': ['mdc2', 'mdc3'],
+    'parcel': ['mdc2', 'mdc3', 'shoelace', 'fluent', 'bootstrap', 'html'],
     'potluck': ['mdc2', 'mdc3'],
     'departures': ['mdc2', 'mdc3'],
     'scoreboard': ['mdc2', 'mdc3'],

@@ -42,29 +42,87 @@
 -- | l a () v`), the shared half leaves it open (`toCase`: `Cons l a b v`,
 -- | the case sitting in the row the `×→+` block shares).
 -- |
--- | ## Laws at `×→×`
+-- | ## What the shape models
 -- |
--- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
--- | a component `w :: p { | i } { | o }` is an **editor** of knowledge, or
--- | at `i = o` a **display** releasing the row it was fed; the merge is
--- | `m = recordToRecord w1 w2`,
--- | inputs shared (one row `i`: both operands are fed the merge's whole
--- | row), outputs owned (`OwnedRecordOutputs`).
+-- | A `×→×` row is the **view model**: the one row the screen and the
+-- | app share, the row the loop re-enters whole through `looped` and
+-- | the seed's signature states. Everything typed at this shape holds,
+-- | shows, edits or normalizes it — editors and selectors (`focusField
+-- | @l` over a leaf), displays (fed the row, releasing the row they
+-- | show), sources (each owning the field it knows) and `settled` (a
+-- | correction of the row by a function of it: a bid raised to the top,
+-- | a selection the filter hid dropped, a quantity re-bounded by its
+-- | room). Every field has the type the screen represents exactly — a
+-- | text field's is `String`, a slider's a number, a selector's its
+-- | option's case — so what the row says is what the user sees.
 -- |
--- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`.
+-- | The **data model** is never a row here. It enters and leaves on the
+-- | variant edges, as the payload of an event: in through a fold
+-- | (`capture @l`, `fold @l f` with `f :: payload -> state -> state`,
+-- | `load f` at mount), out through an action (`action @l f`, `f :: row
+-- | -> Aff outcomes`, where the view model is parsed into what the
+-- | domain takes and a failed parse is one of the outcomes). So the two
+-- | transforms a form needs — data model to view model, view model to
+-- | data model — are functions on the `+` edges, and the first stage
+-- | typed at a domain value is an action's argument. What `×→×` itself
+-- | transforms is lawful only as long as it stays total: a `dimap f g`
+-- | bracket on an editor is an iso lens (a lossy `g` loses what the user
+-- | typed on the next broadcast), `settled` rewrites the row whole, and
+-- | `introduced @l init` grows it by a field the user then owns.
+-- |
+-- | What the shape cannot model is a **decision**. A stage that could say
+-- | "no" to a row — a parse that fails, a validation — would withhold,
+-- | and in `>>>` withholding reaches nothing: the stages after it keep
+-- | the row they last held and an emitter among them replays it, so a
+-- | failure shown at the field is a stale value sent from the button
+-- | beside it. A decision is a sum, and a sum is a **classifier**, a
+-- | function of the row returning a variant, handed to a pane: `inCase
+-- | @l f` for displays and editors, `provided @l f` for emitters. The
+-- | pane owns its content and **detaches** it on every other case — its
+-- | scope suspended, its emitters silent — which is the only safe form of
+-- | withholding, and why a classifier is a pane's argument and never a
+-- | stage. A validating stage `p { l :: String } { l' :: Number }` was
+-- | considered and rejected on these grounds (CHANGELOG, 2026-11-06).
+-- |
+-- | ## The two laws
+-- |
+-- | The shape owes its carrier exactly two things, both obligations of a
+-- | **record input** (Data.Profunctor.Row, "The laws", 1 and 2): a record
+-- | input is shared, one feed reaching every operand of a merge, so the
+-- | boundary can be owed at most one thing back. A component `w :: p { |
+-- | i } { | o }` is an **editor** of the row, or at `i = o` a **display**
+-- | releasing the row it was fed.
+-- |
+-- |   1. **Repetition** — `feed x ; feed x ≈ feed x`. Showing the same
+-- |      row twice is showing it once: a feed writes the view, it never
+-- |      accumulates, so a loop may re-broadcast the model freely.
 -- |   2. **Answer** — a row, once: every feed is answered within its step
 -- |      by at least one emission, all equal to the step's last; counting
--- |      renderings, exactly one. A **leaf** law: leaves answer on the nose
--- |      (`identity` is the echo wire, `focusField @l` the echo with its
--- |      background), a display answers with the row it shows, and a stage
--- |      built from them without a variant keeps it — by `>>>`, by 5, by
--- |      the `×→×` words — refining the liveness half at most in time
--- |      (the gather gate). A route through a variant,
--- |      `emitter >>> fold`, is `×→×` by type and answers no feed: it
--- |      releases on occurrences, owing only that each release is a
--- |      whole row. That stage is every loop's body and is lawful as
--- |      such; it is only no answering operand, so what must show at
--- |      mount stands before it, never after.
+-- |      renderings, exactly one. The row downstream is therefore always
+-- |      whole and current, never torn and never stale. A **leaf** law:
+-- |      leaves answer on the nose (`identity` is the echo wire,
+-- |      `focusField @l` the echo with its background), a display
+-- |      answers with the row it shows, and a stage built from them
+-- |      without a variant keeps it — by `>>>`, by 5, by the `×→×`
+-- |      words — refining the liveness half at most in time (the gather
+-- |      gate). A route through a variant, `emitter >>> fold`, is `×→×`
+-- |      by type and answers no feed: it releases on occurrences, owing
+-- |      only that each release is a whole row. That stage is every
+-- |      loop's body and is lawful as such; it is only no answering
+-- |      operand, so what must show at mount stands before it, never
+-- |      after.
+-- |
+-- | The type cannot carry either law; they are the protocol a vocabulary
+-- | provider discharges at its leaves (`PUI.recordToRecordWiring`), and
+-- | the leaf-law bench checks them on the real DOM.
+-- |
+-- | ## The merge at `×→×`
+-- |
+-- | The four merge laws of Data.Profunctor.Row read here, for
+-- | `m = recordToRecord w1 w2`, inputs shared (one row `i`: both
+-- | operands are fed the merge's whole row), outputs owned
+-- | (`OwnedRecordOutputs`):
+-- |
 -- |   3. **Symmetry and associativity** — up to `≈`.
 -- |   4. **Projection** — `π_k` is the whole row: every feed of `m`
 -- |      reaches each operand whole, and nothing else does — a sibling's

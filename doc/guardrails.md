@@ -221,10 +221,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   bijection (one `settled` spans fields, two lines may read one field,
   `+`-side lines anchor at cases), and making display lines fields would
   move copy back into state, reversing L17.
-- The **labelled group** `group @l` (MDC2/MDC3) is
+- The **labelled group** `group @l` (every vocabulary) is
   the boundary confirmed, not breached: it is a component, not an
   ocular — its label is the sub-record field it nests (`focusField @l` fused
-  with the card surface), doubling as the heading copy verbatim and the
+  with the catalogue's grouping surface, a card or HTML's `fieldset`), doubling as the heading copy verbatim and the
   accessible group name (`role="group"`), so the label is an anchor
   doing work, never a dead parameter. The criterion it instantiates is
   the **leaf-fusion criterion**: `@l` fuses onto a wrapper exactly where

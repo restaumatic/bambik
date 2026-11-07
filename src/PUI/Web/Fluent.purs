@@ -24,6 +24,7 @@ module PUI.Web.Fluent
   , button
   , caption1
   , card
+  , group
   , divider
   , dropdown
   , dropdownFrom
@@ -58,11 +59,12 @@ import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
+import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import PUI (introduced, fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
-import PUI.Web (chrome, fieldLeaf, grouping, member, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, (:=))
+import PUI.Web (chrome, fieldLeaf, grouping, member, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
 import Prim.Row (class Cons, class Lacks)
 import Data.Variant (inj)
@@ -346,9 +348,9 @@ radioGroupOf options = fieldWith "above" (reflectSymbol (Proxy @l)) do
     }
 
 radioBeforeClick :: Node -> Effect Unit -> Effect Unit
-radioBeforeClick group snapshot = do
-  listenNode group "pointerdown" snapshot
-  listenNode group "keydown" snapshot
+radioBeforeClick groupNode snapshot = do
+  listenNode groupNode "pointerdown" snapshot
+  listenNode groupNode "keydown" snapshot
 
 -- | One option of a `radioGroup`: a `<fluent-radio>` labelled by its case.
 radio :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
@@ -528,6 +530,28 @@ card :: Ocular (PUI Web)
 card content = fromHandles do
   liftEffect $ ensureStyle "fluent-card" cardCss
   handles $ div >>> "class" := "fluent-card" $ content
+
+-- | A **labelled model group** — the contract is `PUI.Web.MDC2.group`'s:
+-- | `focusField @l` fused with the `card` surface, `group @l w` rendering
+-- | `w` on a card headed by the label verbatim (`title3`) and nesting
+-- | `w`'s model under field `l`, the label stamped as the accessible group
+-- | name (`role="group"`, `aria-labelledby` the heading). Derived, not
+-- | primitive:
+-- |
+-- | ```
+-- | group @l w = card (heading >>> focusField @l w)      -- + the a11y stamp
+-- | ```
+group
+  :: forall @l f f' b s t
+   . IsSymbol l
+  => Cons l f b s
+  => Cons l f' b t
+  => PUI Web f f'
+  -> PUI Web { | s } { | t }
+group w = fromHandles do
+  headingId <- liftEffect uniqueId
+  handles $ "role" := "group" $ "aria-labelledby" := headingId $ card $
+    ("id" := headingId $ title3 $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
 
 cardCss :: String
 cardCss = """

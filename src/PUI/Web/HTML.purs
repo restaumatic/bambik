@@ -2,7 +2,8 @@
 -- | controls.
 -- |
 -- | **Elements** (`div`, `p`, `ul`, `li`, `a`, `table`, `h1`–`h6`, ...) wrap
--- | content. **Native controls** are the places a plain-HTML screen takes a
+-- | content; `fieldset` with its `legend` is the platform's own grouping
+-- | surface, and `group @l` is the labelled model group over it. **Native controls** are the places a plain-HTML screen takes a
 -- | value: `input` and `textArea` edit a string, `select`/`rangeInput` a
 -- | choice and a bounded quantity, `progress` shows a fraction, `output`
 -- | narrates an event, `button` reports a click. `hr` is fixed decoration,
@@ -29,6 +30,7 @@ module PUI.Web.HTML
   , dl
   , dt
   , em
+  , fieldset
   , footer
   , h1
   , h2
@@ -44,7 +46,9 @@ module PUI.Web.HTML
   , inputFrom
   , inPlaceInput
   , filePicked
+  , group
   , label
+  , legend
   , li
   , ol
   , option
@@ -85,6 +89,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Prim.Row (class Cons, class Lacks)
 import Type.Proxy (Proxy(..))
+import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import PUI (introduced, fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, replayed, source, departures, statusOver, confirmedOver, acknowledgedOver)
 import PUI.Web (chrome, fieldLeaf, Node, Web, adoptHostDiagnostics, onFilePicked, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, setAttribute, setValue, staticText, statusText, separating, invokeMethod, showModalOnce, (:=), (:=>))
@@ -441,6 +446,36 @@ section = el "section"
 -- | words part of its hit area, so clicking the text works the control.
 label :: Ocular (PUI Web)
 label = el "label"
+
+-- | A set of related controls named by its `legend` — the platform's own
+-- | grouping surface: the group role and the accessible name come from
+-- | the element itself, so nothing is stamped. A fieldset whose content is
+-- | one model sub-record is not chrome but the labelled group, `group @l`.
+fieldset :: Ocular (PUI Web)
+fieldset = el "fieldset"
+
+-- | The caption of a `fieldset`, written as its first line.
+legend :: Ocular (PUI Web)
+legend = el "legend"
+
+-- | A **labelled model group** — the contract is `PUI.Web.MDC2.group`'s:
+-- | `focusField @l` fused with the floor's grouping surface, `group @l w`
+-- | rendering `w` in a `fieldset` whose `legend` is the label verbatim and
+-- | nesting `w`'s model under field `l`. The platform names a fieldset by
+-- | its legend, so the label is the accessible group name with no
+-- | `aria-*` stamp. Derived, not primitive:
+-- |
+-- | ```
+-- | group @l w = fieldset (legend >>> focusField @l w)
+-- | ```
+group
+  :: forall @l f f' b s t
+   . IsSymbol l
+  => Cons l f b s
+  => Cons l f' b t
+  => PUI Web f f'
+  -> PUI Web { | s } { | t }
+group w = fieldset $ (legend $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
 
 -- | A picture. The source and alternative text are attributes:
 -- | `"src" := url $ "alt" := "Cover" $ img …`.

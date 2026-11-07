@@ -7,13 +7,14 @@ import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI (PUI)
 import PUI.Web (Web, staticText)
-import PUI.Web.Bootstrap (body, button, indeterminateLinearProgress, option, progress, select, selectOptional, selectUnpicked, sliderLive, textField, toast, toggleSwitch)
+import PUI.Web.Bootstrap (body, button, group, indeterminateLinearProgress, option, progress, select, selectOptional, selectUnpicked, sliderLive, textField, toast, toggleSwitch)
 
 lawBenchBootstrap :: Effect Unit
 lawBenchBootstrap = do
   body (staticText "Leaf-law bench · Bootstrap")
   runBench
     [ bench "textField" "×→×" texts (textField @"Name")
+    , bench "group" "×→×" grouped (group @"Customer" (textField @"Name"))
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On")
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount")
     , bench "progress" "×→×" fractions (progress fractionOf)
@@ -27,6 +28,7 @@ lawBenchBootstrap = do
   where
   fractionOf { fraction } = fraction
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
+  grouped = [ { "Customer": { "Name": "alpha" }, other: 1 }, { "Customer": { "Name": "beta" }, other: 2 } ]
   flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]

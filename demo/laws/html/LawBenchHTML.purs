@@ -7,13 +7,14 @@ import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI (PUI)
 import PUI.Web (Web, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, online, provided, providedAt, staticText, text, textAt)
-import PUI.Web.HTML (acknowledged, confirmed, body, button, div, filePicked, inPlaceInput, indeterminateLinearProgress, input, output, option, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
+import PUI.Web.HTML (acknowledged, confirmed, body, button, div, filePicked, group, inPlaceInput, indeterminateLinearProgress, input, output, option, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
 
 lawBenchHTML :: Effect Unit
 lawBenchHTML = do
   body (staticText "Leaf-law bench · HTML")
   runBench
     [ bench "input" "×→×" texts (input @"Name" "text")
+    , bench "group" "×→×" grouped (group @"Customer" (input @"Name" "text"))
     , bench "textArea" "×→×" texts (textArea @"Name")
     , bench "rangeInput" "×→×" quantities (rangeInput @"Amount")
     , bench "progress" "×→×" fractions (progress fractionOf)
@@ -48,6 +49,7 @@ lawBenchHTML = do
     ]
   where
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
+  grouped = [ { "Customer": { "Name": "alpha" }, other: 1 }, { "Customer": { "Name": "beta" }, other: 2 } ]
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]
   fractions = [ { fraction: 0.25 }, { fraction: 0.75 } ]

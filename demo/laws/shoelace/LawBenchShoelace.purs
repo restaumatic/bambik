@@ -7,13 +7,14 @@ import Effect (Effect)
 import LawBench (bench, runBench)
 import PUI (PUI)
 import PUI.Web (Web, text, staticText)
-import PUI.Web.Shoelace (acknowledged, confirmed, body, button, indeterminateLinearProgress, option, progressBar, rating, select, selectOptional, selectUnpicked, sliderLive, textArea, textField, toast, toggleSwitch)
+import PUI.Web.Shoelace (acknowledged, confirmed, body, button, group, indeterminateLinearProgress, option, progressBar, rating, select, selectOptional, selectUnpicked, sliderLive, textArea, textField, toast, toggleSwitch)
 
 lawBenchShoelace :: Effect Unit
 lawBenchShoelace = do
   body (staticText "Leaf-law bench · Shoelace")
   runBench
     [ bench "textField" "×→×" texts (textField @"Name")
+    , bench "group" "×→×" grouped (group @"Customer" (textField @"Name"))
     , bench "textArea" "×→×" texts (textArea @"Name" { rows: 2 })
     , bench "toggleSwitch" "×→×" flags (toggleSwitch @"On")
     , bench "sliderLive" "×→×" quantities (sliderLive @"Amount")
@@ -32,6 +33,7 @@ lawBenchShoelace = do
   where
   fractionOf { fraction } = fraction
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
+  grouped = [ { "Customer": { "Name": "alpha" }, other: 1 }, { "Customer": { "Name": "beta" }, other: 2 } ]
   flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }
   quantities = [ { "Amount": quantity 3.0, other: 1 }, { "Amount": quantity 7.0, other: 2 } ]

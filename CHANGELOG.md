@@ -6,7 +6,36 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-10-19, latest
+## 2026-11-06, latest
+- **`group @l` in every vocabulary.** The labelled model group, the one
+  editor of a field whose value is a record, existed in MDC2 and MDC3
+  only, so the other four vocabularies could not nest a sub-record at
+  all — the one cell of the field/case × record/variant grid a view
+  could reach and had no word for. It is now in Shoelace (an `sl-card`
+  with the label in its `header` slot), Fluent and Bootstrap (their
+  `card` with a `title3` / `card-title` heading), each stamped
+  `role="group"` + `aria-labelledby` as the Material ones are, and HTML
+  (a `fieldset` whose `legend` is the label, which the platform names by
+  itself — `fieldset` and `legend` join the element oculars). Same
+  derivation everywhere, `surface (heading >>> focusField @l w)`. parcel
+  gains its four twins and the leaf-law bench a `group` row per page.
+- **`×→×` is the view model; the header says so.** `RecordToRecord`'s
+  header now opens with what the shape models — the one row the screen
+  and the app share, every field typed as the screen represents it, the
+  data model never a row but the payload of the folds it enters by and
+  the actions it leaves by — and states the shape's two laws, Repetition
+  and Answer, apart from the four merge laws it reads at this shape.
+  A **validating stage** `p { l :: String } { l' :: Number }` (a parse
+  showing its failure and passing only valid rows) was proposed and
+  rejected as a stage: withholding in `>>>` reaches nothing, the stages
+  after it keep the row they last held and an emitter among them
+  replays it. A decision is a classifier handed to a pane, which
+  detaches its content instead. What the proposal would reopen is the
+  pane that feeds its content the case's payload, dropped 2026-10-13
+  when panes stopped narrowing; its honest home would be the knotless
+  form, as a row-growing pane beside `introduced`.
+
+## 2026-10-19
 - **Fixed: an edit undone by the next edit above it.** Nine apps — crud,
   todo-list, password-generator, espresso-bar, movie-browser (all
   twins), color-mixer, loan-calculator, product-review and signup-form's

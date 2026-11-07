@@ -28,7 +28,8 @@
 -- | instance below is stated against are doc/observational-semantics.md
 -- | §1–3; the six laws — two on components, four on merges — are stated
 -- | once in `Data.Profunctor.Row` ("The laws") and read per shape in the
--- | four `Data.Profunctor.Row.*` headers ("Laws at `×→×`" and siblings);
+-- | four `Data.Profunctor.Row.*` headers (`RecordToRecord`'s "The two
+-- | laws" and "The merge at `×→×`", "Laws at `×→+`" and siblings);
 -- | nothing of them is restated here.
 -- |
 -- | How applications are written over this module — the presentation rows,

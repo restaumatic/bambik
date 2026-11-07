@@ -257,7 +257,8 @@
 -- | ## The laws
 -- |
 -- | Six statements, stated here once and read at each shape in the four
--- | shape modules ("Laws at `×→×`" and its siblings). All are stated
+-- | shape modules (`RecordToRecord`'s "The two laws" and "The merge at
+-- | `×→×`", "Laws at `×→+`" and its siblings). All are stated
 -- | against doc/observational-semantics.md §1–2: a **script** is a finite
 -- | interleaving of registration, feeds (`feed x`, at a record input),
 -- | occurrences (`occur e`, at a variant input) and inner firings; an

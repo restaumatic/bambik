@@ -22,6 +22,7 @@ module PUI.Web.Bootstrap
   , body
   , button
   , card
+  , group
   , listGroup
   , listGroupItem
   , option
@@ -51,7 +52,8 @@ import Data.Variant (match) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import PUI (introduced, fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, statusOver, eventLeaf)
-import PUI.Web.HTML (div, label, span)
+import Data.Profunctor.Row.RecordToRecord (focusField)
+import PUI.Web.HTML (div, h5, label, span)
 import PUI.Web.HTML (body, option) as HTML
 import PUI.Web (chrome, fieldLeaf, Web, attribute, autoDismiss, cl, el, element, getChecked, getValue, isFocused, listenNode, setAttribute, setChecked, setValue, staticText, text, statusText, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
@@ -353,6 +355,28 @@ card content =
   (div $ (div $ content)
     # cl "card-body" # cl "d-flex" # cl "flex-column" # cl "align-items-start" # cl "gap-3"
   ) # cl "card"
+
+-- | A **labelled model group** — the contract is `PUI.Web.MDC2.group`'s:
+-- | `focusField @l` fused with the `card` surface, `group @l w` rendering
+-- | `w` on a card headed by the label verbatim as the documented
+-- | `card-title` and nesting `w`'s model under field `l`, the label
+-- | stamped as the accessible group name (`role="group"`,
+-- | `aria-labelledby` the heading). Derived, not primitive:
+-- |
+-- | ```
+-- | group @l w = card (heading >>> focusField @l w)      -- + the a11y stamp
+-- | ```
+group
+  :: forall @l f f' b s t
+   . IsSymbol l
+  => Cons l f b s
+  => Cons l f' b t
+  => PUI Web f f'
+  -> PUI Web { | s } { | t }
+group w = fromHandles do
+  headingId <- liftEffect uniqueId
+  handles $ "role" := "group" $ "aria-labelledby" := headingId $ card $
+    ("id" := headingId $ h5 >>> cl "card-title" $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
 
 -- | A **list group**: rows of `listGroupItem`s sharing one bordered
 -- | surface — a readout of figures, a set of related lines.
