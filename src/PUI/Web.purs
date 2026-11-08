@@ -42,7 +42,7 @@
 -- | There are two ways to draw a screen from data, and the choice is visible
 -- | to the user. When the **shape is fixed and only the values move** — a
 -- | spreadsheet grid, an SVG canvas, a table of orders — build the shape
--- | once and let data flow through it (`foreach` from `PUI` for the repeated
+-- | once and let data flow through it (`actedOf` from `PUI` for the repeated
 -- | part, `text` for contents, `attrWith`/`clWhen` for anything computed):
 -- | elements are updated in place, so nothing loses focus, scroll position
 -- | or a half-finished gesture when a value changes. When the **shape itself
@@ -791,7 +791,7 @@ clWhen pred name w = fromHandles do
 -- | This is what keeps a drawing or a large grid from being rebuilt: the
 -- | element is created once and restyled in place as values arrive, so
 -- | selection, focus and scrolling survive every update. Pair it with
--- | `foreach` for a collection whose elements are never torn down.
+-- | `actedOf` for a collection whose elements are never torn down.
 attrWith :: forall r a. String -> ({ | r } -> String) -> PUI Web { | r } a -> PUI Web { | r } a
 attrWith name valueOf w = fromHandles do
   w' <- handles w
@@ -851,7 +851,7 @@ pointedAt eventType content = fromHandles do
 -- |
 -- | The container is redrawn whenever the list arrives, so use it only when
 -- | the shape really does vary. When the shape is fixed and only the values
--- | move, `foreach` with `text` and `attrWith` updates the same elements in
+-- | move, `actedOf` with `text` and `attrWith` updates the same elements in
 -- | place instead — no flicker, nothing losing focus. It owns the element it
 -- | sits in, so give it its own container rather than a shared one.
 foreachWith :: forall a b. (a -> PUI Web {} b) -> PUI Web (Array a) b

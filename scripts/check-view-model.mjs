@@ -78,7 +78,7 @@ if (lambdas.length) {
 }
 // A field is named by its label, never picked by a function: a view reads a
 // stored field through the word's own label slot (`textAt @"title"`,
-// `clicked @l @"key"`, `# providedAt @"halted" @"phase"`, `actedAt`, `anyOfAt`,
+// `clicked @l @"key"`, `# providedAt @"halted" @"phase"`, `actedAt`, `gatheredAt`,
 // `listOfAt`, `attrAt`), so an accessor section in view code is a field read
 // that skipped its label — and anything more than one field is a named
 // function in the view model module.
@@ -96,12 +96,12 @@ if (accessors.length) {
   for (const a of accessors) console.error("  " + a);
   process.exit(1);
 }
-// No silent information loss (guardrails L13): a `foreach` element and a
+// No silent information loss (guardrails L13): an `actedOf` element and a
 // `clicked` face release into nothing — the list passes the fed row on, the
 // click reports a field — so an editor inside either loses its edits. The
 // type cannot say so (a display and an editor are both `{ | r } → { | r }`),
 // so the view is checked: an editor word must not appear in the balanced
-// expression a `# foreach` trails or a `clicked @l @k` applies to. A list
+// expression a `# actedOf` trails or a `clicked @l @k` applies to. A list
 // of editors over a stored array is `actedAt`; one over a derived array has
 // no array to write back to.
 const editorWords = ["input", "textArea", "rangeInput", "select", "selectUnpicked", "selectOptional",
@@ -136,10 +136,10 @@ const lost = [];
 for (const file of walk("demo")) {
   if (isViewModel(file)) continue;
   const src = readFileSync(file, "utf8");
-  for (const m of src.matchAll(/# foreach @/g)) {
+  for (const m of src.matchAll(/# actedOf @/g)) {
     const el = balancedBefore(src, m.index);
     const e = el.match(editorRe);
-    if (e) lost.push(`${file}:${src.slice(0, m.index).split("\n").length}: ${e[0]} inside a foreach element`);
+    if (e) lost.push(`${file}:${src.slice(0, m.index).split("\n").length}: ${e[0]} inside an actedOf element`);
   }
   for (const m of src.matchAll(/\bclicked @"[^"]+" @"[^"]+"\s*\$?\s*/g)) {
     const el = balancedAfter(src, m.index + m[0].length);

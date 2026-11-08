@@ -40,7 +40,7 @@ pass-through branch in the gate — which is a redesign, not a weakening.
    **every leaf that takes a read function**: `text`, `attrWith`, `clWhen`,
    `clicked`'s key, `provided`/`shownWhen`/`inCase` classifiers, the number
    displays of all six vocabularies (`progress`, `progressBar`,
-   `linearProgress`, `ratingDisplay`, `imagePane`), `listOf`/`foreach`
+   `linearProgress`, `ratingDisplay`, `imagePane`), `listOf`/`actedOf`
    projections, `dynamic`, every status's copy function (`snackbar`, `toast`,
    `messageBar`, `banner`, `output`), `action`'s function, `toCase`'s payload
    function, and the stages' handlers (`applied`, `updated`, `every`,
@@ -70,7 +70,7 @@ pass-through branch in the gate — which is a redesign, not a weakening.
 7. **Runtime hole-awareness.** `hole` answers `true` to `__bambikHole`, read
    by a pure `isHole` (`Data.Profunctor.Seeding`; since moved to `PUI`, see Status). `announce`, the
    `folding`/`unfolding` seeds, `ticks`, the debounced text fields, `action`,
-   `foreach` and `each` treat a hole as absent. This is needed even for a
+   `actedOf` and `each` treat a hole as absent. This is needed even for a
    `{}` `body` feeds once (crud's and order-form's load actions; until
    2026-10-06 written as a redundant `with {}`): it is real data, and it
    reaches a load action that is a hole.
@@ -119,7 +119,7 @@ comparison and runtime guards:
 
 - **The stages** read the row they are fed: `applied`/`updated`/`every`/
   `settled` (the first three since removed, see Status) take `{ | big } -> { | big }`, the panes' classifiers and
-  `shownEach`'s projection read `{ | row }`, `foreach`'s projection reads its
+  `shownEach`'s projection read `{ | row }`, `actedOf`'s projection reads its
   input, `tooltipWith` its content's row.
 - **The collections' items** are typed at the whole element row, key
   included, and the carrier **re-sets** the key on each emission

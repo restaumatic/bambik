@@ -320,7 +320,7 @@ What changed:
 Kept by decision: no `type` synonyms in application code, logic modules
 included — the shape is the interface; the cost (rows repeated verbatim)
 is now stated in writing.md rather than left to be discovered.
-`toCase @l identity` (13 of 52 sites) and `foreach @l identity` (5 of 40)
+`toCase @l identity` (13 of 52 sites) and `actedOf @l identity` (5 of 40)
 keep their slots, real projections being the majority.
 
 `shownAlways` lasted a day. The adverb was a policy word on the one rung

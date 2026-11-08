@@ -144,7 +144,7 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (introduced, numeral, fromHandles, handles, anyOf, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
+import PUI (introduced, numeral, fromHandles, handles, gatheredOf, isHole, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, grouping, member, unpickAll, clearedByRepress, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
@@ -1625,7 +1625,7 @@ listOf' provided f item = withStructuralOrd @key $ fromHandles do
   w <- handles $ ul >>> cl "mdc-deprecated-list" >>> "style" := "overflow-y: auto;" $
     ( replayed @l (Record.get (Proxy @k)) $ occurrencesOn Click $ clWhen config.selected "mdc-deprecated-list-item--selected"
         $ li >>> cl "mdc-deprecated-list-item" >>> "style" := "cursor: pointer;" $ item
-    ) # anyOf @k f
+    ) # gatheredOf @k f
   node <- gets _.sibling
   comp <- liftEffect $ newComponent material.list."MDCList" node
   pure
@@ -1782,9 +1782,9 @@ imageListItem config = li >>> cl "mdc-image-list__item" >>> "style" := "margin-b
 
 -- | One picture in an `imageList`, **fed through the channel**: like any
 -- | display it takes its read function — the business row in, the picture's
--- | `{ src, alt }` out — so a gallery is the retaining `foreach` over the
+-- | `{ src, alt }` out — so a gallery is the retaining `actedOf` over the
 -- | pictures rather than a wholesale rebuild —
--- | `imagePane developedShot # foreach @"shot" albumShots`, each item built once and its
+-- | `imagePane developedShot # actedOf @"shot" albumShots`, each item built once and its
 -- | source and caption updated in place. `imageListItem`'s sibling, for the
 -- | collection case; `imageListItem` stays the closure-known static.
 imagePane :: forall r. ({ | r } -> { src :: String, alt :: String }) -> PUI Web { | r } { | r }

@@ -280,20 +280,28 @@ laxity has a price (the gate) that pure treatments never see.
   identity-follows-key, wire — composition deliberately not preserved (two
   reconcilers double-gate), so whole element pipelines are lifted, never
   stages.
-- **Five forms** divide the ground by input (everything at once → `×`;
-  one entity at a time → `+`) and output. The `×`-members are keyed by a
-  **materialized identity field** `@l` of the element row (rows carry their
-  identity; `actedBy` keeps the function form as the minimal carrier
-  obligation); the `+`-members take the `{ key, value }` envelope, identity
-  being the structural tag that arrives in the input, so no key function.
+- **The keyed square** divides the ground by input (everything at once →
+  `×`; one entity at a time → `+`) and output, one class per shape, each
+  the keyed analogue of a static strength: `Acting` (`×→×`, `Strong`'s),
+  `Dispatching` (`+→+`, `Choice`'s), `Gathering` (`×→+`, `Resolving`'s),
+  `Accumulating` (`+→×`, `Retaining`'s). Every member is keyed by a
+  **materialized identity field** `@l` of the element row (rows carry
+  their identity; the class primitives `actedBy`/`dispatchedBy`/
+  `gatheredBy`/`accumulatedBy` keep the function form as the minimal
+  carrier obligation), the `+`-members reading it off the one entity fed
+  as the `×`-members read it off each element (they took a `{ key, value }`
+  envelope until 2026-11-08). Each class has the same three forms: bare
+  over the element's row, `…Of @l proj` over a projection (`PUI`,
+  hole-aware), `…At @l @t` over a stored array (`×` input) or `…On @l @c`
+  over a case (`+` input).
 
   | Form | Shape | Behaviour |
   | --- | --- | --- |
-  | `foreach @l` | `(a -> Array { \| r }) -> p { \| r } { \| r } -> p a a` | the list of displays: keyed, retaining reconciliation; the elements' releases stay inside and the fed row passes on, so the list is a stage |
-  | `anyOf @l` | `(a -> Array { \| r }) -> p { \| r } [ \| v ] -> p a [ \| v ]` | the emitting list: the same reconciler, every element emission forwarded onto one channel, ungated, silent on empty (`anyOfAt @l @t` over a stored array) |
+  | `actedOf @l` | `(a -> Array { \| r }) -> p { \| r } { \| r } -> p a a` | the list of displays: keyed, retaining reconciliation; the elements' releases stay inside and the fed row passes on, so the list is a stage |
+  | `gatheredOf @l` | `(a -> Array { \| r }) -> p { \| r } [ \| v ] -> p a [ \| v ]` | the emitting list: the same reconciler, every element emission forwarded onto one channel, ungated, silent on empty (`gatheredAt @l @t` over a stored array) |
   | `acted @l` | `p { \| r } { \| r1 } -> p (Array { \| r }) (Array { \| r1 })` | the container action: the element typed at its whole row, key included, the carrier re-setting the key on every emission from the input row through the `Strong` state channel, so identity is unforgeable; output is the gather gate (`actedAt @l @t` over a stored array) |
-  | `dispatched` | `(i -> { key :: k, value :: a }) -> p a b -> p i { key :: k, value :: b }` | `+→+`: an unknown key instantiates a new case, a known key re-feeds its instance, emissions leave tagged |
-  | `accumulated` | `(i -> { key :: k, value :: a }) -> p a a -> p i (Array a)` | `+→×`, the keyed Mealy: grows per new key in first-appearance order, updates known slots, emits the whole array at once, input-primed |
+  | `dispatched @l` | `p { \| r } { \| r1 } -> p { \| r } { \| r1 }` | `+→+`: one instance per value of field `l`, an unknown key instantiating a new one, a known key re-feeding exactly its instance, emissions leaving with the key they were fed under (`dispatchedOf @l proj` over a projection, `dispatchedOn @l @c` over a case) |
+  | `accumulated @l` | `p { \| r } { \| r } -> p { \| r } (Array { \| r })` | `+→×`, the keyed Mealy: grows per new key in first-appearance order, updates known slots, emits the whole array at once, input-primed (`accumulatedOf @l proj`, `accumulatedOn @l @c`) |
 
   The `+`-members never detach or restack: absence of a key is no signal,
   so removal and ordering stay array-level concerns upstream.
@@ -306,11 +314,11 @@ laxity has a price (the gate) that pure treatments never see.
   release, the empty law and L6's zero-field clause the same consequence
   of enrolling nothing, a feed one step at both (a reconcile whose elements
   echo gathers once, whole). `accumulated` is input-primed and never
-  withholds, so it needs no gate; `anyOf` and `dispatched` are
+  withholds, so it needs no gate; `gathered` and `dispatched` are
   variant-output and gate nothing.
 - **Tests and demos.** Value-level laws run in `test/Main.purs` on
   `PUI Effect` probes (empty announces `[]` and nothing at registration,
-  singleton retraction, gather gate, identity-follows-key, `anyOf` silent
+  singleton retraction, gather gate, identity-follows-key, `gatheredOf` silent
   on empty), `acted`'s conformance to the step, monotonicity, wire law,
   feed-idempotence and one release per feed over every script to a bound in
   test/Exhaustive.purs (doc/observational-semantics.md §9), and DOM
@@ -318,9 +326,9 @@ laxity has a price (the gate) that pure treatments never see.
   potluck (`acted @"name"`, per-guest dish selectors, the table's state a
   classifier over the gathered rows), reorder (`acted @"id"`, a playlist
   whose DOM nodes move with their keys; `actedAt @"id" @"Setlist"` in its
-  HTML twin), departures (`dispatched`) and scoreboard (`accumulated`),
-  both fed by the `clock` source; cells' grid is `anyOfAt @"key" @"cells"`
-  inside `anyOf @"rowKey"`.
+  HTML twin), departures (`dispatchedOf`) and scoreboard (`accumulatedOf`),
+  both fed by the `clock` source; cells' grid is `gatheredAt @"key" @"cells"`
+  inside `gatheredOf @"rowKey"`.
 - The two component laws of §1 are stated once in `Data.Profunctor.Row`'s
   header; the duoidal reading of §0 in `PUI`'s.
 

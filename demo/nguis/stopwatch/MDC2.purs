@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, foreach, looped, ticks, with)
+import PUI (fold, actedOf, looped, ticks, with)
 import PUI.Web (providedAt, text)
 import PUI.Web.HTML (li, ul)
 import PUI.Web.MDC2 (body, button', headline3)
@@ -28,5 +28,5 @@ stopwatch =
       fold @"Stop" haltTiming
       fold @"Lap" recordLap
       fold @"Reset" clearStopwatch
-    ul $ ( li $ text lapLine ) # foreach @"number" lapRows
+    ul $ ( li $ text lapLine ) # actedOf @"number" lapRows
   # looped # with zeroedStopwatch

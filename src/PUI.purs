@@ -110,13 +110,12 @@ module PUI
   , capture
   , static
   , ticks
-  , accumulated
+  , accumulatedOf
   , debounced
-  , dispatched
-  , foreach
-  , anyOf
-  , anyOfAt
-  , anyEdit
+  , dispatchedOf
+  , actedOf
+  , gatheredOf
+  , editsOf
   , with
   , looped
   , inCase
@@ -141,6 +140,9 @@ import Data.Map as Map
 import Data.Set as Set
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Acting (class Acting)
+import Data.Profunctor.Accumulating (class Accumulating, accumulated)
+import Data.Profunctor.Dispatching (class Dispatching, dispatched)
+import Data.Profunctor.Gathering (class Gathering, gathered)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
@@ -166,6 +168,9 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 import Data.Profunctor.Row (settled) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, joined2, kept) as Adopters
 import Data.Profunctor.Acting (acted, actedAt) as Adopters
+import Data.Profunctor.Accumulating (accumulated, accumulatedOn) as Adopters
+import Data.Profunctor.Dispatching (dispatched, dispatchedOn) as Adopters
+import Data.Profunctor.Gathering (gathered, gatheredAt) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
@@ -433,7 +438,7 @@ instance Functor m => Strong (PUI m) where
 
 -- The pair state is allocated at registration, once per instantiation —
 -- the phase it belongs to (doc/observational-semantics.md §1), which is
--- also what keeps every `foreach` row on its own ref: the last pair fed,
+-- also what keeps every `actedOf` row on its own ref: the last pair fed,
 -- the inner leg shown its focus, an emission completed with the retained
 -- side or withheld before any pair arrived.
 retainingPair :: forall a b x y. String -> (x -> a) -> (b -> x -> y) -> Registration a b -> Registration x y
@@ -1859,52 +1864,49 @@ action' arr w = fromHandles do
 debounced :: forall m. Applicative m => { ms :: Number } -> Ocular (PUI m)
 debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 
--- The container action on PUI (class in Data.Profunctor.Acting — the pure
--- algebra; instances live with the carriers, like the merge instances above).
+-- The keyed square on PUI (classes in Data.Profunctor.{Acting, Dispatching,
+-- Gathering, Accumulating} — the pure algebra; instances live with the
+-- carriers, like the merge instances above).
 --
--- Five collection combinators share one instance discipline and fill the
--- 2×2 of the shape square. The element is always a data-model row and
--- rows carry their identity: ×-input members are keyed by a **materialized
--- identity field** `@l` of the row (the whole array broadcasts, identity is
--- read off each row); +-input members receive the runtime variant
--- `{ key, value }`, one case at a time, whose envelope IS the tag:
+-- Four classes, one per shape, share one instance discipline: the element
+-- is a data-model row and rows carry their identity, so every member is
+-- keyed by a **materialized identity field** `@l` of the row — a ×-input
+-- is the whole array, identity read off each row; a +-input is one entity
+-- at a time, identity read off that row. Each class has the same three
+-- forms: bare over the element's row, `…Of @l proj` over a projection
+-- (written here, where `isHole` is, since a hole projection is absent),
+-- and `…At @l @t` over a stored array (× input) or `…On @l @c` over a
+-- case (+ input).
 --
---   combinator  | input              | element    | output           | primed by     | emits             | nullary case
---   ------------|--------------------|------------|------------------|---------------|-------------------|-------------
---   foreach @l  | Array {l::k|r} (×) | p {l::k|r} | o            (+) | — (no slots)  | each emission,    | silent
---               |                    |   o        |                  |               | as it happens     | (no o to make)
---   acted @l    | Array {l::k|ra}(×) | p {l::k|ra}| Array {l::k|rb} | element       | whole array, once | emits []
---               |                    |   {|rb}    |              (×) | emissions     | every element     | (inhabited
---               |                    |            |                  |               | spoke; retain-    | nullary)
---               |                    |            |                  |               | last after        |
---   dispatched  | {key,value:a} (+)  | p a b      | {key,value:b}(+) | — (no slots)  | the fed case's    | unknown key =
---               |                    |            |                  |               | emissions, tagged | new instance
---   accumulated | {key,value:a} (+)  | p a a      | Array a      (×) | the fed cases | whole array,      | grows per new
---               |                    |            |                  | (a ≅ a)       | immediately per   | key; [] before
---               |                    |            |                  |               | case              | the first
+--   class / bare       | input              | element      | output           | primed by        | emits                  | nullary case
+--   -------------------|--------------------|--------------|------------------|------------------|------------------------|--------------
+--   Acting / acted     | Array {l::k|r} (×) | p {l::k|ra}  | Array {l::k|rb}  | element          | whole array, once      | emits []
+--                      |                    |   {l::k|rb}  |              (×) | emissions (gate) | every element spoke;   |
+--                      |                    |              |                  |                  | retain-last after      |
+--   actedOf            | a (×), proj to     | p {l::k|r}   | a            (×) | — (releases      | the fed value, once    | passes it
+--                      |   the array        |   {l::k|r}   |                  |   stay inside)   | per feed               |
+--   Gathering /        | Array {l::k|r} (×) | p {l::k|r}   | [|v]         (+) | — (no slots)     | each emission, as it   | silent
+--     gathered         |                    |   [|v]       |                  |                  | happens                |
+--   Dispatching /      | {l::k|r}       (+) | p {l::k|ra}  | {l::k|rb}    (+) | — (no slots)     | the fed entity's       | unknown key =
+--     dispatched       |                    |   {l::k|rb}  |                  |                  | emissions, key re-set  | new instance
+--   Accumulating /     | {l::k|r}       (+) | p {l::k|r}   | Array {l::k|r}   | the fed rows     | whole array, at once   | grows per new
+--     accumulated      |                    |   {l::k|r}   |              (×) | (input-primed)   | per entity             | key; none before
 --
 -- Rule of thumb — ask what the stage means downstream, and how updates
 -- arrive: everything at once (a model projection) → ×-input; one entity at a
 -- time (a stream, a tick, a push) → +-input. Then: an individual event
--- ("this one fired") → foreach/dispatched; the aggregate as a joint decision
--- (exists only when everyone has spoken; for element editors, which answer
--- every feed, that is every feed and every edit) → acted; the aggregate as
--- running state of a stream → accumulated. foreach cannot be acted (a gate
--- over event sources is absurd; Array b erases "which one") — and the
--- +-members never
--- detach or restack: the absence of a key is no signal, so removal and
--- ordering are array-level concerns of some ×-stage upstream.
---
--- The key's form encodes its ontology, two ways: a **label @l** on the
--- ×-members (identity is a materialized field of the model row — and in the
--- product-output member `acted` the element's output row EXCLUDES
--- it: the key is re-attached from the *input* row, so an element cannot
--- forge or change identity; `acted` derives this in the pure algebra by
--- riding the key around the element on the Strong state channel); the
--- **{ key, value } envelope** on the +-members (identity is the structural
--- tag of the runtime variant, arriving in the input). `Ord k` is an
--- indexing requirement (the reconciler's Map); identity semantics remain
--- equality — keys must be unique, never rendered.
+-- ("this one fired") → gathered/dispatched; the aggregate as a joint
+-- decision (exists only when everyone has spoken; for element editors,
+-- which answer every feed, that is every feed and every edit) → acted; the
+-- aggregate as running state of a stream → accumulated; a list that only
+-- shows → actedOf. gathered cannot be acted (a gate over event sources is
+-- absurd; Array b erases "which one") — and the +-members never detach or
+-- restack: the absence of a key is no signal, so removal and ordering are
+-- array-level concerns of some ×-stage upstream. In the product-output
+-- members the carrier re-sets the key on every emission from the input
+-- row, so identity is unforgeable (the `Strong` state channel in the
+-- class modules' bare forms).
+
 
 -- | What a stateful carrier contributes to the container action: how to
 -- | **instantiate** one element UI component at runtime and how to **place** it —
@@ -1946,12 +1948,37 @@ instance Hosting Effect Unit where
     result <- inScope child build
     pure { result, ensureAttached: resumeScope child, ensureDetached: suspendScope child }
 
+
 -- | Keyed, retaining collection on any hosting carrier (laws in
 -- | `Data.Profunctor.Acting`'s header; the vocabulary form is `acted @l`).
 instance Hosting m node => Acting (PUI m) where
   actedBy key w = fromHandles do
     hooks <- hosting w
     liftEffect $ actedWith key hooks
+
+-- | One instance per key on any hosting carrier (laws in
+-- | `Data.Profunctor.Dispatching`'s header; the vocabulary forms are
+-- | `dispatched @l`, `dispatchedOf @l proj`, `dispatchedOn @l @c`).
+instance Hosting m node => Dispatching (PUI m) where
+  dispatchedBy key w = fromHandles do
+    hooks <- hosting w
+    liftEffect $ dispatchedWith key hooks
+
+-- | The emitting collection on any hosting carrier (laws in
+-- | `Data.Profunctor.Gathering`'s header; the vocabulary forms are
+-- | `gathered @l`, `gatheredOf @l proj`, `gatheredAt @l @t`).
+instance Hosting m node => Gathering (PUI m) where
+  gatheredBy key w = fromHandles do
+    hooks <- hosting w
+    liftEffect $ collapsedWith key hooks
+
+-- | The keyed Mealy on any hosting carrier (laws in
+-- | `Data.Profunctor.Accumulating`'s header; the vocabulary forms are
+-- | `accumulated @l`, `accumulatedOf @l proj`, `accumulatedOn @l @c`).
+instance Hosting m node => Accumulating (PUI m) where
+  accumulatedBy key w = fromHandles do
+    hooks <- hosting w
+    liftEffect $ accumulatedWith key hooks
 
 -- | The **pane**: a whole-row citizen — a display, an editor, or a pipeline
 -- | of them — that *exists* only while the classifier yields case `l`:
@@ -2074,28 +2101,30 @@ attachedOn f w = fromHandles do
     , fromUser
     }
 
--- | The dynamic collection — the **collapsed (sum-flavored) reading of the
--- | container action** on any hosting carrier. **Keyed and retaining**: each
--- | element is identified by `key a`, and on every fed array the collection
--- | reconciles *by key* — matched elements are re-fed in place (their carrier
--- | node kept), new keys built, absent keys removed, and nodes restacked only
--- | when the key sequence actually changed. So a fixed-key grid never
--- | rebuilds, a growing list only appends, and a reordered list **moves each
--- | element's node with it** — carrier-local state (focus, scroll, selection)
--- | follows the item, not the position. Keys must be unique.
+-- | The **list of displays** — `acted`'s `…Of` form, the `×→×` member over
+-- | a projection. **Keyed and retaining** like every member of the keyed
+-- | square: each element is identified by field `l` of its row, and on
+-- | every fed array the list reconciles *by key* — matched elements are
+-- | re-fed in place (their carrier node kept), new keys built, absent keys
+-- | removed, and nodes restacked only when the key sequence actually
+-- | changed. So a fixed-key grid never rebuilds, a growing list only
+-- | appends, and a reordered list **moves each element's node with it** —
+-- | carrier-local state (focus, scroll, selection) follows the item, not
+-- | the position. Keys must be unique.
 -- |
--- | Written trailing, wrapped in a container ocular: `ul $ item # foreach
+-- | Written trailing, wrapped in a container ocular: `ul $ item # actedOf
 -- | @"id" rowsOf` — keyed by the row's **materialized identity field** (the
 -- | element is a data-model row; rows carry their identity). The element
 -- | is a display of its row — it releases the row it shows — and the list
 -- | is a display of the row it is fed: the elements' releases stay inside
 -- | and the fed row passes, so a list of displays is a line of the
--- | pipeline like any display. An array the model stores is `actedAt`,
--- | the container action, which writes the elements' releases back; a
--- | list whose elements **emit** is `anyOf`. Both share this keyed
--- | reconciler.
-foreach :: forall @l r m node k b a. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } { | r } -> PUI m a a
-foreach f w = withStructuralOrd @k $ fromHandles do
+-- | pipeline like any display; a projection's array is a view with nothing
+-- | to write back. An array the model stores is `actedAt`, the container
+-- | action, which writes the elements' releases back; a list whose
+-- | elements **emit** is `gatheredOf`. A hole projection is an empty array
+-- | (guardrails L18).
+actedOf :: forall @l r m node k b a. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } { | r } -> PUI m a a
+actedOf f w = withStructuralOrd @k $ fromHandles do
   hooks <- hosting w
   liftEffect do
     list <- collapsedWith (Record.get (Proxy @l)) hooks
@@ -2108,25 +2137,17 @@ foreach f w = withStructuralOrd @k $ fromHandles do
       , fromUser: \prop -> Ref.write (Just prop) propRef
       }
 
--- | The **emitting collection** — `foreach`'s `×→+` sibling: the same keyed
--- | and retaining reconciliation over elements that emit (a clickable row,
--- | a cell reporting its key). Every element's emission collapses onto one
--- | shared channel as it happens, ungated and lawfully **silent on an empty
--- | array** (no event to fabricate):
--- | `clicked @"Key entered" @"key" cell # anyOf @"key" keyPad`.
-anyOf :: forall @l r m node k b a v. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } [ | v ] -> PUI m a [ | v ]
-anyOf f w = withStructuralOrd @k (lcmap (\r -> if isHole f then [] else let xs = f r in if isHole xs then [] else xs) $ fromHandles do
-  hooks <- hosting w
-  liftEffect $ collapsedWith (Record.get (Proxy @l)) hooks)
+-- | The **emitting list** — `gathered`'s `…Of` form, the `×→+` member over
+-- | a projection: the same keyed and retaining reconciliation over elements
+-- | that emit (a clickable row, a cell reporting its key). Every element's
+-- | emission leaves on the one shared channel as it happens, ungated, and
+-- | an empty array is lawfully silent (no event to fabricate):
+-- | `tile @"Key entered" @"key" cell # gatheredOf @"key" keyPad`. A hole
+-- | projection is an empty array (guardrails L18).
+gatheredOf :: forall @l r m node k b a v. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } [ | v ] -> PUI m a [ | v ]
+gatheredOf f w = lcmap (\r -> if isHole f then [] else let xs = f r in if isHole xs then [] else xs) (gathered @l w)
 
--- | `anyOf` over an array the model stores: keyed by field `l` of each
--- | element, the array field `t` of the fed row, both named by label
--- | (`# anyOfAt @"key" @"cells"`, cells). An array derived from the row is
--- | a projection, `anyOf`.
-anyOfAt :: forall @l @t m node k b1 b2 r1 r v. Hosting m node => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => PUI m { | r1 } [ | v ] -> PUI m { | r } [ | v ]
-anyOfAt = anyOf @l (Record.get (Proxy @t))
-
--- | The **editing collection** — `anyOf` over editors: the same keyed and
+-- | The **editing list** — `gatheredOf` over editors: the same keyed and
 -- | retaining reconciliation over elements that are `×→×` citizens (a row
 -- | holding a toggle, a field), a user's edit of an element leaving as
 -- | case `l` carrying the element's row, while an element's answer to the
@@ -2135,12 +2156,12 @@ anyOfAt = anyOf @l (Record.get (Proxy @t))
 -- | by shape (Answer: a feed is answered by no emission) without leaning
 -- | on the knot's re-entrancy guard, and the element stays the
 -- | checkbox-like leaf it is: `( listItem $ Semigroupoid.do { …; iconToggle
--- | @"Favorite" … } ) # anyEdit @"Favorite changed" @"title"
+-- | @"Favorite" … } ) # editsOf @"Favorite changed" @"title"
 -- | visibleMovies # joined @"Favorite changed"` (movie-browser), the fold
 -- | writing the edit back into the stored collection by key. The
 -- | projection's array is a view, so nothing gathers — a stored array's
 -- | editors are `acted`.
-anyEdit
+editsOf
   :: forall @l @k r m node key b1 b2 a v
    . Hosting m node
   => IsSymbol l
@@ -2150,7 +2171,7 @@ anyEdit
   => (a -> Array { | r })
   -> PUI m { | r } { | r }
   -> PUI m a [ | v ]
-anyEdit f editor = anyOf @k f $ fromHandles do
+editsOf f editor = gatheredOf @k f $ fromHandles do
   w' <- handles editor
   feeding <- liftEffect $ Ref.new false
   pure
@@ -2161,76 +2182,94 @@ anyEdit f editor = anyOf @k f $ fromHandles do
     , fromUser: \prop -> w'.fromUser \o -> do
         answering <- Ref.read feeding
         if answering
-          then tr "anyEdit: an element's answer to the feed is no edit" o
+          then tr "editsOf: an element's answer to the feed is no edit" o
           else prop (inj (Proxy @l) o)
     }
 
--- | The **keyed dispatch** — the +→+ member: one runtime case at a time.
--- | A fed `{ key, value }` reaches exactly the instance whose key matches —
--- | instantiated on first appearance (an unknown key is a new case, not an
--- | error) — and that instance's emissions leave tagged with its key. The
--- | targeted-update direction: no whole-array re-feed, O(1) per case, the
--- | shape for streams/pushes that arrive one entity at a time. No key
--- | function: the runtime variant input carries its tag, as a variant case
--- | carries its label.
-dispatched :: forall k a m node i b. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a b -> PUI m i { key :: k, value :: b }
-dispatched f w = withStructuralOrd @k (fromHandles do
-  hooks <- hosting w
-  liftEffect do
-    propRef <- Ref.new Nothing
-    indexRef <- Ref.new Map.empty
-    orderRef <- Ref.new []
-    let
-      onEmit k _ b = do
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> prop { key: k, value: b }
-    pure
-      -- a hole projection is absent (guardrails L18): the feed reaches no case
-      { toUser: \i -> if isHole f then pure unit else do
-          let u = f i
-          e <- ensureInstance hooks onEmit indexRef orderRef u.key
-          e.feed u.value
-      , fromUser: \prop -> Ref.write (Just prop) propRef
-      })
+-- | The **keyed dispatch over a projection** — `dispatched`'s `…Of` form,
+-- | the `+→+` member: the fed value projected to one entity, which reaches
+-- | exactly the instance its field `l` names — instantiated on first
+-- | appearance (an unknown key is a new case, not an error) — and that
+-- | instance's emissions leave as they come, the key re-set from the
+-- | entity fed. The targeted-update direction: no whole-array re-feed, O(1)
+-- | per entity, the shape for streams and pushes that arrive one entity at
+-- | a time: `( listItem $ text flightLine ) # dispatchedOf @"code" arrival`
+-- | (departures). A hole projection is absent: the feed reaches no instance
+-- | (guardrails L18).
+dispatchedOf :: forall @l r r1 m node k b1 b2 a. Hosting m node => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => (a -> { | r }) -> PUI m { | r } { | r1 } -> PUI m a { | r1 }
+dispatchedOf f w = fromHandles do
+  inner <- handles (dispatched @l w)
+  pure
+    { toUser: \a -> if isHole f then pure unit else inner.toUser (f a)
+    , fromUser: inner.fromUser
+    }
 
--- | The **keyed Mealy** — the +→× member: retain the array, feed one case,
--- | emit the whole. Each fed `{ key, value }` updates (or, on a new key,
--- | appends) its slot and re-emits the whole array immediately — input-primed
--- | so there is never a hole to withhold over; element
--- | emissions fold back into their slot the same way. The board/ledger shape
--- | for keyed streams: the aggregate as running state, built one entity at a
--- | time. Emits `[]` for no keys yet only in the sense that nothing has been
--- | fed; order is first-appearance order.
-accumulated :: forall k a m node i. Hosting m node => (i -> { key :: k, value :: a }) -> PUI m a a -> PUI m i (Array a)
-accumulated f w = withStructuralOrd @k (fromHandles do
-  hooks <- hosting w
-  liftEffect do
-    propRef <- Ref.new Nothing
-    indexRef <- Ref.new Map.empty
-    orderRef <- Ref.new []
-    busyRef <- Ref.new false
-    let
-      emitAll = do
-        entries <- Ref.read orderRef
-        slots <- for entries \e -> Ref.read e.slot
-        for_ (sequence slots) \values -> do
-          mProp <- Ref.read propRef
-          for_ mProp \prop -> prop values
-      onEmit _ slot a = do
-        Ref.write (Just a) slot
-        busy <- Ref.read busyRef
-        unless busy emitAll
-    pure
-      { toUser: \i -> if isHole f then pure unit else do
-          let u = f i
-          Ref.write true busyRef
-          e <- ensureInstance hooks onEmit indexRef orderRef u.key
-          Ref.write (Just u.value) e.slot
-          e.feed u.value
-          Ref.write false busyRef
-          emitAll
-      , fromUser: \prop -> Ref.write (Just prop) propRef
-      })
+-- | The **keyed Mealy over a projection** — `accumulated`'s `…Of` form, the
+-- | `+→×` member: retain the array, feed one entity, emit the whole. Each
+-- | fed entity updates (or, on a new key, appends) its slot and the whole
+-- | array leaves immediately — input-primed, so there is never a hole to
+-- | withhold over; element emissions fold back into their slot the same
+-- | way. The board/ledger shape for keyed streams, the aggregate as
+-- | running state built one entity at a time, in first-appearance order:
+-- | `( listItem $ text scoreLine ) # accumulatedOf @"team" goal`
+-- | (scoreboard). A hole projection is absent (guardrails L18).
+accumulatedOf :: forall @l r m node k b a. Hosting m node => IsSymbol l => Cons l k b r => (a -> { | r }) -> PUI m { | r } { | r } -> PUI m a (Array { | r })
+accumulatedOf f w = fromHandles do
+  inner <- handles (accumulated @l w)
+  pure
+    { toUser: \a -> if isHole f then pure unit else inner.toUser (f a)
+    , fromUser: inner.fromUser
+    }
+
+-- The dispatch mode: one instance per key, fed on its key, its emissions
+-- forwarded as they come; nothing is ever detached.
+dispatchedWith :: forall k a b node. Ord k => (a -> k) -> Hooks a b node -> Effect { toUser :: a -> Effect Unit, fromUser :: (b -> Effect Unit) -> Effect Unit }
+dispatchedWith key hooks = do
+  propRef <- Ref.new Nothing
+  indexRef <- Ref.new Map.empty
+  orderRef <- Ref.new []
+  let
+    onEmit _ _ b = do
+      mProp <- Ref.read propRef
+      for_ mProp \prop -> prop b
+  pure
+    { toUser: \a -> do
+        e <- ensureInstance hooks onEmit indexRef orderRef (key a)
+        e.feed a
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
+
+-- The accumulate mode: one slot per key holding its latest row, the fed
+-- row written before the feed (input-primed) and every element emission
+-- after, the whole vector released after each; the busy guard keeps an
+-- element's answer inside a feed from releasing twice.
+accumulatedWith :: forall k a node. Ord k => (a -> k) -> Hooks a a node -> Effect { toUser :: a -> Effect Unit, fromUser :: (Array a -> Effect Unit) -> Effect Unit }
+accumulatedWith key hooks = do
+  propRef <- Ref.new Nothing
+  indexRef <- Ref.new Map.empty
+  orderRef <- Ref.new []
+  busyRef <- Ref.new false
+  let
+    emitAll = do
+      entries <- Ref.read orderRef
+      slots <- for entries \e -> Ref.read e.slot
+      for_ (sequence slots) \values -> do
+        mProp <- Ref.read propRef
+        for_ mProp \prop -> prop values
+    onEmit _ slot a = do
+      Ref.write (Just a) slot
+      busy <- Ref.read busyRef
+      unless busy emitAll
+  pure
+    { toUser: \a -> do
+        Ref.write true busyRef
+        e <- ensureInstance hooks onEmit indexRef orderRef (key a)
+        Ref.write (Just a) e.slot
+        e.feed a
+        Ref.write false busyRef
+        emitAll
+    , fromUser: \prop -> Ref.write (Just prop) propRef
+    }
 
 -- Look up the instance for a runtime case, instantiating it on first
 -- appearance and wiring its emissions through `onEmit` over its own key and

@@ -4,7 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
 import PhotoGallery (albumChoices, albumShots, developedShot, favoriteShots, isOpen, landscapesOpen, openAlbum)
-import PUI (fold, foreach, joined, looped, with)
+import PUI (fold, actedOf, joined, looped, with)
 import PUI.Web (each, staticText, textAt)
 import PUI.Web.MDC2 (body, divider, drawer, headline2, imageList, imageListItem, imagePane, list, listItem, listOf', overline, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -25,5 +25,5 @@ photoGallery =
             imageList 2 $ each favoriteShots imageListItem )
         ( Semigroupoid.do
           headline2 $ textAt @"album"
-          imageList 3 $ imagePane developedShot # foreach @"shot" albumShots )
+          imageList 3 $ imagePane developedShot # actedOf @"shot" albumShots )
       ) # looped # with landscapesOpen

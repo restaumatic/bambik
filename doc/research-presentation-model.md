@@ -89,13 +89,13 @@ function and one unit test.
 | Change | Rationale |
 | --- | --- |
 | `projection`, `projected` leave the application vocabulary | formatting is no longer a view-side act; `projected` may survive as library plumbing for the statuses' internal reads, or dissolve there too |
-| `forProperty` **stays** — the one read adopter (since removed, see Status) | it is *selection*, not formatting: a verbatim field read from a context-pinned wider row (`foreach` item, `provided` pane payload) that `settled` cannot reach because the row is not the model's |
+| `forProperty` **stays** — the one read adopter (since removed, see Status) | it is *selection*, not formatting: a verbatim field read from a context-pinned wider row (`actedOf` item, `provided` pane payload) that `settled` cannot reach because the row is not the model's |
 | `forCase @l` dissolves into `forCases` (both since removed, see Status) — **revised same day**: restored as a *derived* word (`forCase @l f = forCases { l: f }` by law), and `forCases` now takes the record of per-case copy functions directly (elimination is the mechanism's own) | the dissolution made the dominant single-case sites (17 of 19) longer and broke the `@l` adopter grammar; the `applied = updated (const f)` precedent admits a derived convenience — and the record form removes `match` from the status story entirely |
 | the canonical `[ event :: String ]` row goes private | a status only ever appears behind its business classifier (`snackbar # forCases lineOf`); the last fixed display label stops being API |
 | `shownWhen` as a derivation of `provided` (`shownWhen` since removed, see Status) — **already holds** (since 2026-08-27, "Visibility is case adoption"): `shownWhen f content = recordToRecord (provided @l f content) identity` | one visibility primitive (`provided`), the display rung derived as the pane owned-merged with the wire; `inCase` is the honest primitive remainder — its content emits the *row*, which the owned merge's disjointness rejects, so it keeps a carrier body |
 
 Context-row formatting is already logic-side by construction: it lands
-in the collection's **projection argument** (`foreach @l proj`,
+in the collection's **projection argument** (`actedOf @l proj`,
 `listOf`'s, `shownEach`'s) — a business function — and the element view
 only selects via `forProperty`.
 

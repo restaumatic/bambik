@@ -5,7 +5,7 @@ import Prelude ((#), ($), Unit, const)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (anyOf, fold, joined, looped, reset, with)
+import PUI (gatheredOf, fold, joined, looped, reset, with)
 import PUI.Web (text, textAt)
 import PUI.Web.MDC3 (body, bodyLarge, button, columnHeader, dataCell, dataRow, dataTable, iconButton, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -27,7 +27,7 @@ shoppingCart =
           dataCell $ textAt @"product"
           dataCell $ text quantityLine
           dataCell $ text lineTotalLine
-          dataCell $ iconButton @"Unit removed" "remove" ) # anyOf @"product" cartLines ) # joined @"Unit removed"
+          dataCell $ iconButton @"Unit removed" "remove" ) # gatheredOf @"product" cartLines ) # joined @"Unit removed"
       button @"Empty cart"
     VariantToRecord.do
       fold @"Unit added" addUnit

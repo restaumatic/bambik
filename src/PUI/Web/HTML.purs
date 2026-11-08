@@ -528,7 +528,7 @@ li = el "li"
 
 -- | A description list: terms, each followed by its description, as bare
 -- | `dt`/`dd` siblings — the one HTML list whose item is two elements
--- | and nothing wrapping them (a keyed `foreach` or `acted` over such an
+-- | and nothing wrapping them (a keyed `actedOf` or `acted` over such an
 -- | item moves and detaches both nodes with the key; reorder-html).
 dl :: Ocular (PUI Web)
 dl = el "dl"

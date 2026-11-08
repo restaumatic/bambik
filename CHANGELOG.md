@@ -6,7 +6,40 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-11-07, latest
+## 2026-11-08, latest
+- **The keyed square: four classes, twelve words, one shape of
+  derivation.** `Acting` (`×→×`) gets its three siblings, each the keyed
+  analogue of a static strength and each a module beside it:
+  `Dispatching` (`+→+`, `Choice`'s; `dispatchedBy`, instances `(->)`,
+  `Cont`, `PUI`), `Gathering` (`×→+`, `Resolving`'s; `gatheredBy`,
+  instances `Monoid r => Cont r` and `PUI`, no `(->)`: one value cannot
+  forward many) and `Accumulating` (`+→×`, `Retaining`'s;
+  `accumulatedBy`, `PUI` only — the other keys' slots are state, the
+  square's one stated carrier-only corner, as `Retaining` is among the
+  static four). Every class has the same three derived forms, so the
+  words are symmetric across the shapes: the bare word over the element
+  typed at its whole row with its key field (`acted`, `gathered`,
+  `dispatched`, `accumulated`, the product-output ones re-setting the key
+  from the input through the `Strong` state channel), `…Of @l proj` over
+  a projection (`PUI`, hole-aware: `actedOf`, `gatheredOf`,
+  `dispatchedOf`, `accumulatedOf`, and `editsOf @l @k` as `gatheredOf`
+  over an editor), and the stored form, `…At @l @t` over an array the
+  model stores for a `×` input (`actedAt`, `gatheredAt`) or `…On @l @c`
+  over the case an entity arrives in for a `+` input (`dispatchedOn`,
+  `accumulatedOn`). **Renamed**: `foreach` → `actedOf`, `anyOf` →
+  `gatheredOf`, `anyOfAt` → `gatheredAt`, `anyEdit` → `editsOf`;
+  `dispatched proj`/`accumulated proj` → `dispatchedOf @l proj`/
+  `accumulatedOf @l proj`, the `{ key, value }` envelope gone: a `+`
+  member reads identity off the entity's own row, as a `×` member reads
+  it off each element (L9), so departures' and scoreboard's view models
+  name the key field (`code`, `team`) instead of wrapping it. `PUI` keeps
+  the `…Of` forms (where `isHole` is) and the four generic `Hosting m
+  node =>` instances; the laws of all four run in test/Main.purs on `(->)`
+  where an instance exists and on `PUI Effect` probes everywhere;
+  `Cont`'s inventory names what it inhabits and the one it provably
+  cannot.
+
+## 2026-11-07
 - **`rangeSlider`/`rangeSliderLive` in MDC2 and MDC3** (MDC3 also the
   `'` siblings reading in a `unit`): the catalogues' two-thumb slider,
   editing a field whose value is a bounded interval `{ start, end, min,

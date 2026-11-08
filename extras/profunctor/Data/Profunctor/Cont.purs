@@ -24,6 +24,10 @@
 -- |   * `Wander` — instantiate a traversal's `Applicative` at `K r`
 -- |   * `Acting` — `Wander` at `traverse`; the key is ignored, exactly as in
 -- |     `actedBy _ = map` for `(->)`
+-- |   * `Dispatching` — the component itself: a CPS run has no instances to
+-- |     keep apart, exactly as `dispatchedBy _ = identity` for `(->)`
+-- |   * `Gathering` — needs `Monoid r`: every element's run is combined,
+-- |     as the `RecordToVariant` instance combines its operands
 -- |   * `Cochoice` — the continuation sits in tail position, so the `Right c`
 -- |     branch re-enters: `tailRec` at the optic level (it may diverge; that
 -- |     is what iteration is)
@@ -46,8 +50,9 @@
 -- | scope — the ecosystem's `Strong`/`Choice`/`Closed`/`Costrong`/`Cochoice`
 -- | plus `Wander`, the `extras/profunctor` complements (the four coined
 -- | strengths `Resolving`/`Coresolving`/`Retaining`/`Coretaining` and the
--- | pointed trace `PointedCostrong`), and bambik's own
--- | `Acting` and four row merges. Nothing is merely unwritten:
+-- | pointed trace `PointedCostrong`), and bambik's own keyed square
+-- | (`Acting`, `Dispatching`, `Gathering`, `Accumulating`) and four row
+-- | merges. Nothing is merely unwritten:
 -- | each class either has an instance here or appears below with its reason.
 -- |
 -- | What it cannot inhabit, and why — graded, because there are two kinds
@@ -60,6 +65,8 @@
 -- |     state channel instead)
 -- |   * `Retaining` — must produce a `b` for a `Right c` input; a stateless
 -- |     carrier has none (same reason there is no `(->)` instance)
+-- |   * `Accumulating` — must release the other keys' latest rows with
+-- |     this one's; a CPS run holds none (`Retaining`'s reason, keyed)
 -- |   * `VariantToRecord` — an input case reaches one operand only, so the
 -- |     other never contributes; retention is what `PUI`'s `Ref`s supply
 -- |   * `Closed` — would have to extract a `b` per `x`, and CPS only ever
@@ -83,7 +90,11 @@ import Data.Either (Either(..))
 import Data.Lens.Internal.Wander (class Wander)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor (class Profunctor)
+import Data.Foldable (foldMap)
+import Data.Profunctor.Accumulating (class Accumulating)
 import Data.Profunctor.Acting (class Acting)
+import Data.Profunctor.Dispatching (class Dispatching)
+import Data.Profunctor.Gathering (class Gathering)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Row (exactRow, splitVariant)
@@ -151,6 +162,12 @@ instance Wander (Cont r) where
 
 instance Acting (Cont r) where
   actedBy _ p = unstar (traverse (star p))
+
+instance Dispatching (Cont r) where
+  dispatchedBy _ p = p
+
+instance Monoid r => Gathering (Cont r) where
+  gatheredBy _ p = wrap \k -> foldMap (unwrap p k)
 
 instance Cochoice (Cont r) where
   unleft p = wrap \k ->

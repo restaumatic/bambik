@@ -3,7 +3,7 @@ module Scoreboard.MDC2 (scoreboard) where
 import Prelude (Unit, (#), ($))
 
 import Effect (Effect)
-import PUI (accumulated, foreach)
+import PUI (accumulatedOf, actedOf)
 import PUI.Web (clock, text)
 import PUI.Web.MDC2 (body, body2, list, listItem)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -13,5 +13,5 @@ scoreboard :: Effect Unit
 scoreboard =
   body $ Semigroupoid.do
     clock @"time" clockPeriod
-    list $ ( listItem $ text scoreLine ) # accumulated goal
-    ( body2 $ text summaryLine ) # foreach @"key" boardSummary
+    list $ ( listItem $ text scoreLine ) # accumulatedOf @"team" goal
+    ( body2 $ text summaryLine ) # actedOf @"key" boardSummary

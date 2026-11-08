@@ -3,7 +3,7 @@ module RestaurantMenu.HTML (restaurantMenu) where
 import Prelude ((#), ($), (>>>), Unit, const)
 
 import Effect (Effect)
-import PUI (actedAt, foreach, static)
+import PUI (actedAt, actedOf, static)
 import PUI.Web (cl, staticText, text, textAt, (:=))
 import PUI.Web.HTML (a, article, blockquote, body, div, footer, h1, h2, h3, header, hr, li, p, section, span, ul)
 import PUI.Web.SVG as SVG
@@ -31,7 +31,7 @@ restaurantMenu =
               span >>> cl "dish-price" $ text priceLine
             p >>> cl "dish-desc" $ textAt @"description"
             span >>> cl "tags" $
-              ( span >>> cl "tag" $ textAt @"tag" ) # foreach @"tag" dishTags ) # actedAt @"name" @"dishes" ) # foreach @"name" (const menuCourses)
+              ( span >>> cl "tag" $ textAt @"tag" ) # actedOf @"tag" dishTags ) # actedAt @"name" @"dishes" ) # actedOf @"name" (const menuCourses)
     blockquote >>> cl "chef-note" $ Semigroupoid.do
       p $ staticText "Every plate is built from a few honest parts that compose into something whole — the same idea that built this page."
       p >>> cl "attribution" $ staticText "— from the kitchen"

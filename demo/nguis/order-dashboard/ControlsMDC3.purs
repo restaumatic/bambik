@@ -16,7 +16,7 @@ import Data.String (joinWith)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (Variant)
 import Prim.Row (class Cons)
-import PUI (foreach, Ocular, PUI)
+import PUI (actedOf, Ocular, PUI)
 import PUI.Web (Web, attrWith, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (displaySmall, labelLarge, labelMedium, linearProgress, list, listItem, segmentedButton)
@@ -57,7 +57,7 @@ leaderboard
 leaderboard l f =
   tile >>> "aria-label" := l $ Semigroupoid.do
     labelMedium $ staticText l
-    list $ ( listItem $ text entryLine ) # foreach @"name" f
+    list $ ( listItem $ text entryLine ) # actedOf @"name" f
 
 rangePicker
   :: forall @l w rest r

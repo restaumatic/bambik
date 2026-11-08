@@ -328,7 +328,7 @@ number.
 
 **What bambik costs.**
 - **A vocabulary:** a few dozen words (`looped`, `with`, `fold`,
-  `joined`, `inCase`, `provided`, `settled`, `foreach`, `anyOf`, …), each
+  `joined`, `inCase`, `provided`, `settled`, `actedOf`, `gatheredOf`, …), each
   with a shape.
 - **A PureScript fork** for its variant-row sugar.
 - **17% ceremony** in imports.

@@ -6,7 +6,7 @@ import CircleDrawer (adjustDiameter, canvasCircles, circleFill, clickCanvas, clo
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, foreach, joined, looped, settled, with)
+import PUI (fold, actedOf, joined, looped, settled, with)
 import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, providedAt, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC2 (body, button', card, cardActions, sliderLive, subtitle1, textButton)
@@ -28,7 +28,7 @@ circleDrawer =
         ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := canvasFace $ RecordToVariant.do
           ( onClickedXY @"Canvas clicked" $
             ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
-              >>> attrWith "fill" circleFill $ identity ) # foreach @"key" canvasCircles ) # joined @"Canvas clicked"
+              >>> attrWith "fill" circleFill $ identity ) # actedOf @"key" canvasCircles ) # joined @"Canvas clicked"
           onHoveredXY @"Canvas hovered" identity # joined @"Canvas hovered"
           onContextMenuXY @"Canvas context menu" identity # joined @"Canvas context menu" )
         ( div >>> attrWith "style" menuPlacement $ div >>> "style" := menuFace $ textButton @"Adjust diameter.." ) # providedAt @"menu" @"mode" )

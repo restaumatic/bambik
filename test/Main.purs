@@ -36,7 +36,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, PUI, ScopeState(..), accumulated, acted, announce, anyOf, cancelScope, capture, dispatched, fold, folding, foreach, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
+import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedOf, announce, dispatched, dispatchedOf, dispatchedOn, gathered, gatheredOf, cancelScope, capture, fold, folding, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -1003,78 +1003,108 @@ main = do
     Ref.read builds >>= assertEqual "acted/keys: dropping a key rebuilds nothing" 2
     Ref.read outs >>= \os -> assertEqual "acted/keys: after drop, gathers the survivor" (Just [ { k: "a", txt: "x" } ]) (os !! (length os - 1))
 
-  -- anyOf (the collapsed, sum-flavored sibling): silent on empty, forwards each
+  -- gathered / gatheredOf (the ×→+ member): silent on empty, forwards each
   -- element emission as it happens — ungated.
   do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } [ z :: String ]))
     outs <- Ref.new ([] :: Array [ z :: String ])
-    m <- handles (anyOf @"k" identity (elemProbe builds roster))
+    m <- handles (gatheredOf @"k" identity (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser []
-    Ref.read outs >>= assertEqual "anyOf: silent on empty" []
+    Ref.read outs >>= assertEqual "gatheredOf: silent on empty" []
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
     fireElem roster 0 (.z "z")
-    Ref.read outs >>= assertEqual "anyOf: forwards immediately, no gate" [ .z "z" ]
+    Ref.read outs >>= assertEqual "gatheredOf: forwards immediately, no gate" [ .z "z" ]
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } [ z :: String ]))
+    outs <- Ref.new ([] :: Array [ z :: String ])
+    m <- handles (gathered @"k" (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser [ { k: "a", v: 1 } ]
+    Ref.read outs >>= assertEqual "gathered/singleton: a feed fires nothing" []
+    fireElem roster 0 (.z "z")
+    Ref.read outs >>= assertEqual "gathered/singleton: behaves as the element" [ .z "z" ]
+    m.toUser [ { k: "a", v: 2 } ]
+    Ref.read builds >>= assertEqual "gathered: a surviving key is re-fed, not rebuilt" 1
 
-  -- foreach (the list of displays): the elements are fed their rows, their
+  -- actedOf (the list of displays): the elements are fed their rows, their
   -- releases stay inside, and the list releases the row it was fed — once
   -- per feed, the empty array included.
   do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
     outs <- Ref.new ([] :: Array { rows :: Array { k :: String, v :: Int } })
-    m <- handles (foreach @"k" _.rows (elemProbe builds roster))
+    m <- handles (actedOf @"k" _.rows (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { rows: [] }
-    Ref.read outs >>= assertEqual "foreach: the fed row passes, empty array included" [ { rows: [] } ]
+    Ref.read outs >>= assertEqual "actedOf: the fed row passes, empty array included" [ { rows: [] } ]
     m.toUser { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] }
-    Ref.read builds >>= assertEqual "foreach: one element per key" 2
+    Ref.read builds >>= assertEqual "actedOf: one element per key" 2
     fireElem roster 0 { k: "a", v: 99 }
-    Ref.read outs >>= assertEqual "foreach: an element's release stays inside; the row passes once per feed"
+    Ref.read outs >>= assertEqual "actedOf: an element's release stays inside; the row passes once per feed"
       [ { rows: [] }, { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] } ]
 
-  -- == The keyed-input members — the runtime variant `{ key, value }` feeds ==
-  -- == one case at a time; the tag arrives in the input, no key function. ==
+  -- == The +-input members — one entity at a time, identity read off the ==
+  -- == entity's own key field, as the ×-members read it off each row.    ==
 
-  -- dispatched (+→+): an unknown key instantiates (a new runtime case), a
-  -- known key re-feeds exactly its instance, and emissions leave tagged.
+  -- dispatched on (->): a function has no instances to keep apart, and the
+  -- key is re-set from the input (unforgeable) as in acted.
+  assertEqual "dispatched/(->) = the function, key re-set" { k: "a", v: 2 }
+    (dispatched @"k" (\(r :: { k :: String, v :: Int }) -> r { k = "forged", v = r.v * 2 }) { k: "a", v: 1 })
+  assertEqual "dispatchedOn/(->): the case is dispatched" (.c { k: "a", v: 2 } :: [ c :: { k :: String, v :: Int }, d :: {} ])
+    (dispatchedOn @"k" @"c" (\(r :: { k :: String, v :: Int }) -> r { v = r.v * 2 }) (.c { k: "a", v: 1 }))
+  assertEqual "dispatchedOn/(->): every other case passes" (.d {} :: [ c :: { k :: String, v :: Int }, d :: {} ])
+    (dispatchedOn @"k" @"c" (\(r :: { k :: String, v :: Int }) -> r { v = r.v * 2 }) (.d {}))
+
+  -- dispatchedOf (+→+): an unknown key instantiates (a new runtime case), a
+  -- known key re-feeds exactly its instance, and emissions leave with the
+  -- key they were fed under.
   do
     builds <- Ref.new 0
-    roster <- Ref.new ([] :: Array (ElemHandle Int String))
-    outs <- Ref.new ([] :: Array { key :: String, value :: String })
-    m <- handles (dispatched identity (elemProbe builds roster))
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, txt :: String }))
+    outs <- Ref.new ([] :: Array { k :: String, txt :: String })
+    m <- handles (dispatchedOf @"k" identity (unsafeCoerce (elemProbe builds roster) :: PUI Effect { k :: String, v :: Int } { k :: String, txt :: String }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser { key: "a", value: 1 }
-    Ref.read builds >>= assertEqual "dispatched: first case instantiates" 1
-    m.toUser { key: "b", value: 2 }
-    Ref.read builds >>= assertEqual "dispatched: second case instantiates" 2
-    m.toUser { key: "a", value: 3 }
-    Ref.read builds >>= assertEqual "dispatched: a known key re-feeds, no rebuild" 2
+    m.toUser { k: "a", v: 1 }
+    Ref.read builds >>= assertEqual "dispatchedOf: first case instantiates" 1
+    m.toUser { k: "b", v: 2 }
+    Ref.read builds >>= assertEqual "dispatchedOf: second case instantiates" 2
+    m.toUser { k: "a", v: 3 }
+    Ref.read builds >>= assertEqual "dispatchedOf: a known key re-feeds, no rebuild" 2
     handles <- Ref.read roster
-    for_ (handles !! 0) \h -> Ref.read h.ins >>= assertEqual "dispatched: targeted feeds reach exactly their case" [ 1, 3 ]
-    for_ (handles !! 1) \h -> Ref.read h.ins >>= assertEqual "dispatched: the other case untouched" [ 2 ]
-    fireElem roster 1 "hello"
-    Ref.read outs >>= assertEqual "dispatched: emissions leave tagged with their case's key" [ { key: "b", value: "hello" } ]
+    for_ (handles !! 0) \h -> Ref.read h.ins >>= assertEqual "dispatchedOf: targeted feeds reach exactly their case" [ { k: "a", v: 1 }, { k: "a", v: 3 } ]
+    for_ (handles !! 1) \h -> Ref.read h.ins >>= assertEqual "dispatchedOf: the other case untouched" [ { k: "b", v: 2 } ]
+    fireElem roster 1 { k: "forged", txt: "hello" }
+    Ref.read outs >>= assertEqual "dispatchedOf: emissions leave under the key they were fed, unforgeable" [ { k: "b", txt: "hello" } ]
 
-  -- accumulated (+→×): the keyed Mealy — grows per new key, updates per
+  -- accumulatedOf (+→×): the keyed Mealy — grows per new key, updates per
   -- known key, emits the whole array immediately (input-primed); element
   -- emissions fold back into their slot; order is first appearance.
   do
     builds <- Ref.new 0
-    roster <- Ref.new ([] :: Array (ElemHandle Int Int))
-    outs <- Ref.new ([] :: Array (Array Int))
-    m <- handles (accumulated identity (elemProbe builds roster))
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
+    outs <- Ref.new ([] :: Array (Array { k :: String, v :: Int }))
+    m <- handles (accumulatedOf @"k" identity (elemProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
-    m.toUser { key: "a", value: 1 }
-    Ref.read outs >>= assertEqual "accumulated: first case emits the singleton immediately" [ [ 1 ] ]
-    m.toUser { key: "b", value: 2 }
-    Ref.read outs >>= assertEqual "accumulated: a new key grows the array in first-appearance order" [ [ 1 ], [ 1, 2 ] ]
-    m.toUser { key: "a", value: 10 }
-    Ref.read outs >>= assertEqual "accumulated: a known key updated its slot in place" [ [ 1 ], [ 1, 2 ], [ 10, 2 ] ]
-    Ref.read builds >>= assertEqual "accumulated: two keys, two instances" 2
-    fireElem roster 1 20
-    Ref.read outs >>= \os -> assertEqual "accumulated: an element emission folds into its slot" (Just [ 10, 20 ]) (os !! (length os - 1))
+    m.toUser { k: "a", v: 1 }
+    Ref.read outs >>= assertEqual "accumulatedOf: first case emits the singleton immediately" [ [ { k: "a", v: 1 } ] ]
+    m.toUser { k: "b", v: 2 }
+    Ref.read outs >>= assertEqual "accumulatedOf: a new key grows the array in first-appearance order" [ [ { k: "a", v: 1 } ], [ { k: "a", v: 1 }, { k: "b", v: 2 } ] ]
+    m.toUser { k: "a", v: 10 }
+    Ref.read outs >>= assertEqual "accumulatedOf: a known key updated its slot in place" [ [ { k: "a", v: 1 } ], [ { k: "a", v: 1 }, { k: "b", v: 2 } ], [ { k: "a", v: 10 }, { k: "b", v: 2 } ] ]
+    Ref.read builds >>= assertEqual "accumulatedOf: two keys, two instances" 2
+    fireElem roster 1 { k: "forged", v: 20 }
+    Ref.read outs >>= \os -> assertEqual "accumulatedOf: an element emission folds into its slot, key re-set" (Just [ { k: "a", v: 10 }, { k: "b", v: 20 } ]) (os !! (length os - 1))
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
+    outs <- Ref.new ([] :: Array (Array { k :: String, v :: Int }))
+    m <- handles (accumulatedOn @"k" @"c" (elemProbe builds roster) :: PUI Effect [ c :: { k :: String, v :: Int } ] (Array { k :: String, v :: Int }))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (.c { k: "a", v: 1 })
+    Ref.read outs >>= assertEqual "accumulatedOn: the operand owning case c accumulates it" [ [ { k: "a", v: 1 } ] ]
 
   -- == The seeded retraction laws (doc/observational-semantics.md): the ==
   -- == raw ×-side composites deadlock — each gate waits on the other — so ==

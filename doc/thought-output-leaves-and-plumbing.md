@@ -28,7 +28,7 @@ No display takes a formatter; each shows its field as fed (reversed
 
 | Leaf | Row | Where |
 | --- | --- | --- |
-| `text @l` (since `text f` / `textAt @l` in `PUI.Web`, see Status) | `Cons l String` | `PUI.Web.HTML` — the workhorse, also inside every MDC/`foreach` cell |
+| `text @l` (since `text f` / `textAt @l` in `PUI.Web`, see Status) | `Cons l String` | `PUI.Web.HTML` — the workhorse, also inside every MDC/`actedOf` cell |
 | `progress @l` | `Cons l Number` (fraction 0–1) | HTML, Bootstrap |
 | `linearProgress @l` / `progressBar @l` | `Cons l Number` | MDC2, MDC3 / Shoelace, Fluent |
 | `indeterminateLinearProgress @l`, `indeterminateCircularProgress @l` | `Cons l Boolean` (running/not) | MDC2, MDC3 |

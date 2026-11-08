@@ -59,7 +59,7 @@ and emitters of a catalogue — are in the design-system module header
 | fixed copy on its own — a note | `listItem $ staticText "…"` | photo-gallery | writing.md *Components* |
 | a rule between things | `divider $ …`, `hr $ …` — shown only while both sides render something | meeting-booker, photo-gallery, restaurant-menu | writing.md *Code style* → *Types and values*; `PUI.Web` |
 | a pane for one state of the model | `# inCase @"won" gameOutcome`; `# inCaseAt @"serving" @"display"` — displays and editors alike | tic-tac-toe, potluck; ticket-dispenser, checkout, calculator | writing.md *Conditional visibility* |
-| a list, displayed | `ul $ ( li $ text lapLine ) # foreach @"number" lapRows` | stopwatch | writing.md *Collections* |
+| a list, displayed | `ul $ ( li $ text lapLine ) # actedOf @"number" lapRows` | stopwatch | writing.md *Collections* |
 | a card that edits nothing | `card $ body1 $ text summaryLine` | order-form, product-review | writing.md *Components* |
 | a hint on hover | `# tooltip "You must accept the terms of service to sign up"` | signup-form, espresso-bar | the design-system module |
 | a value-computed attribute | `attrWith "style" keyFace` | calculator, circle-drawer | `PUI.Web` |
@@ -137,12 +137,12 @@ and emitters of a catalogue — are in the design-system module header
 
 | What comes in → what goes out | Word | Demo | Read |
 | --- | --- | --- | --- |
-| the array → each element shown, the row passing on | `# foreach @"number" lapRows`; a stored array `# actedAt @"key" @"cells"` | stopwatch; cells | writing.md *Collections* |
-| the array → each element's event | `tile @"Key entered" @"key" ( … ) # anyOf @"key" (const keyPad)`; a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe, shopping-cart, color-mixer; cells | writing.md *Collections* |
-| the array → each element's edit | `( … iconToggle @"Favorite" … ) # anyEdit @"Favorite changed" @"title" @( … ) visibleMovies # joined @"Favorite changed"` | movie-browser | writing.md *Collections* |
+| the array → each element shown, the row passing on | `# actedOf @"number" lapRows`; a stored array `# actedAt @"key" @"cells"` | stopwatch; cells | writing.md *Collections* |
+| the array → each element's event | `tile @"Key entered" @"key" ( … ) # gatheredOf @"key" (const keyPad)`; a stored array `# gatheredAt @"key" @"cells"` | calculator, tic-tac-toe, shopping-cart, color-mixer; cells | writing.md *Collections* |
+| the array → each element's edit | `( … iconToggle @"Favorite" … ) # editsOf @"Favorite changed" @"title" @( … ) visibleMovies # joined @"Favorite changed"` | movie-browser | writing.md *Collections* |
 | the array → the array, decided jointly or edited in place | `# acted @"name"`; `# acted @"id"`; a stored array `# actedAt @"id" @"Setlist"` | potluck; reorder; reorder (HTML) | writing.md *Collections* |
-| one `{ key, value }` at a time → tagged output | `# dispatched arrival` | departures | writing.md *Collections* |
-| one `{ key, value }` at a time → the array | `# accumulated goal` | scoreboard | writing.md *Collections* |
+| one entity at a time → that entity's instance, keyed by its field | `# dispatchedOf @"code" arrival`; arriving as a case, `# dispatchedOn @"code" @"Arrived"` | departures | writing.md *Collections* |
+| one entity at a time → the array of them | `# accumulatedOf @"team" goal`; arriving as a case, `# accumulatedOn @"team" @"Scored"` | scoreboard | writing.md *Collections* |
 | a selectable list (MDC2, MDC3) | `listOfAt' @"Message opened" @"id" @"messages" { selected: highlighted } (…)` | inbox | writing.md *Collections* |
 
 ## View model not written yet

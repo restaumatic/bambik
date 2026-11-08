@@ -83,7 +83,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   and the `joined @l` that joins it among emitters closes and widens
   it, a dialog intercepts the case that opens it (`confirmed @l`,
   `acknowledged @l`), an editor's release leaving as an event is the editing list's
-  to say (`anyEdit @l @k`) — so a view places nothing at a row and
+  to say (`editsOf @l @k`) — so a view places nothing at a row and
   `PUI` re-exports no adopter. There is no rename adopter: re-labelling a
   component built at a fixed internal label is exactly what this
   guardrail forbids, which is why `asField`/`asCase` went (CHANGELOG,
@@ -104,15 +104,15 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
   | Type | Shape | Sort |
   | --- | --- | --- |
-  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`foreach`, `actedAt`), sources (`geolocated`, `clock`, `filePicked` — pointed, owning one field), stages |
-  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `tile`, `onClickedXY`), the emitter pane `provided`, the emitting lists `anyOf` and `anyEdit` |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`actedOf`, `actedAt`), sources (`geolocated`, `clock`, `filePicked` — pointed, owning one field), stages |
+  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `tile`, `onClickedXY`), the emitter pane `provided`, the emitting lists `gatheredOf` and `editsOf` |
   | `PUI Web [ \| a ] { \| b }` | `+→×` | the folds (`fold @l f`, `reset @l x`, `capture @l`) and the statuses, each a fold with a face (`snackbar @l line f`); the action slot (`indeterminateLinearProgress`) owns `started`/`ended` only, so a status is never the slot |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
 
   A closed row (`{}`, `[ event :: String ]`) is a row. A word that
   would need two shapes is two words, each lawful at its own: a pane is `provided` for emitters (a detached one's
   silence is `×→+`'s answer) and `inCase` for displays and editors (the
-  wire while detached); a list is `foreach` for displays and `anyOf` for
+  wire while detached); a list is `actedOf` for displays and `gatheredOf` for
   emitters. A display is `×→×` like an editor: it releases the row it
   shows (a `{}` output made every display line a decorator of its
   neighbour and the display pane a word of its own; CHANGELOG,
@@ -377,10 +377,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 ### L9. Identity is data; reconciliation is naturality.
 
-- Collection identity MUST be materialized: a model field (`@l` on the
-  `×`-members) or the structural tag (`{ key, value }` on the
-  `+`-members) — never a DOM annotation (`data-*`), never a render
-  index, never carrier-private guesswork.
+- Collection identity MUST be materialized: a field `@l` of the element
+  row, on the `×`-members (the array fed whole) and the `+`-members (one
+  entity at a time) alike — never a DOM annotation (`data-*`), never a
+  render index, never carrier-private guesswork. (The `+`-members took a
+  `{ key, value }` envelope until 2026-11-08, CHANGELOG.)
 - Identity MUST be unforgeable where the carrier owns it: in
   `acted` the element is typed at its whole row, key included,
   and the carrier **re-sets** the key on every emission, so whatever an
@@ -451,12 +452,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   discards it; a pane (`inCase`) releases what its content releases; a
   list over a stored array is the container action (`actedAt`), which
   writes its elements' releases back. Two slots discard by construction, because their
-  content's release has no row to land in: `foreach` over a **derived**
+  content's release has no row to land in: `actedOf` over a **derived**
   array and a `tile`'s or `listOf`'s content (a face, not a form). An editor
   placed in either is a mistake the type cannot catch, so `npm run
-  check-view-model` rejects an editor word inside a `foreach` element
+  check-view-model` rejects an editor word inside a `actedOf` element
   in any demo view; an editor whose edits must leave a projected list is
-  `anyEdit`'s element. Nothing discards deliberately
+  `editsOf`'s element. Nothing discards deliberately
   either: there is no counit — a chain whose output is not the model
   ends the block (departures' `dispatched` stream, fed by the `clock`
   source); `muted` went with the last slot that demanded `{}`
@@ -580,8 +581,8 @@ The codebase is three floors, each greppable:
 
 The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
-`rmap` stage — `provided @l classifierOf`, `foreach @l rowsOf`, `listOf @l @k
-rowsOf item`, `dispatched envelopeOf`, a status's fold
+`rmap` stage — `provided @l classifierOf`, `actedOf @l rowsOf`, `listOf @l @k
+rowsOf item`, `dispatchedOf @l arrival`, a status's fold
 (`snackbar @"Card charged" identity`), `settled normalize` (`identity` says
 verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
@@ -703,7 +704,7 @@ code below the UI) are algebra-layer material and exempt by location.
   time — or calls a business function on the `{}` `body` feeds once (a
   load action standing before the knot) MUST treat a hole as
   absent: `announce`, `ticks`, `clock`, `debouncedTextField`, `action`,
-  `foreach`, `anyOf`, `dispatched`, `accumulated`, `each` and `text` do.
+  `actedOf`, `gatheredOf`, `dispatchedOf`, `accumulatedOf`, `each` and `text` do.
   A new word of that kind MUST do the same.
 - The rule tightens the library itself: an exported signature MUST NOT
   carry a constraint only a concrete row can discharge, because at a
@@ -725,7 +726,7 @@ code below the UI) are algebra-layer material and exempt by location.
   view, law benches included. So every word taking a read function that
   an application feeds a stored field has a **label sibling**, `…At`,
   whose label slot is that read: `textAt @l`, `attrAt @l name`,
-  `providedAt`/`inCaseAt @case @field`, `actedAt`/`anyOfAt @key
+  `providedAt`/`inCaseAt @case @field`, `actedAt`/`gatheredAt @key
   @field`, `listOfAt @l @key @field`. The function form stays for what
   is *derived* — a copy function, a classifier, a projection, a read
   deeper than one field (weather's `cityLine`) — named in the view model

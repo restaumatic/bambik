@@ -209,11 +209,11 @@ takes a trailing word that says what it is for:
 | a display shown in one case | `text ticketLine # inCaseAt @"serving" @"display"` | ticket-dispenser |
 | an editor that exists in one case | `filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"` | order-form |
 | a button that exists in one case | `button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"`; in a derived state, `button' @"Book" { icon: "flight_takeoff" } # provided @"bookable" bookingState` | stopwatch; flight-booker |
-| a list of displays rendered from the row | `ul $ ( li $ text lapLine ) # foreach @"number" lapRows` | stopwatch |
+| a list of displays rendered from the row | `ul $ ( li $ text lapLine ) # actedOf @"number" lapRows` | stopwatch |
 | a list of editors over an array the model stores | `( … ) # actedAt @"id" @"Setlist"` | reorder |
-| a list whose elements emit | `tile @"Key entered" @"key" ( … ) # anyOf @"key" (const keyPad)`; over a stored array `# anyOfAt @"key" @"cells"` | calculator, tic-tac-toe; cells |
-| a projected list whose elements are edited | `( listItem $ … iconToggle @"Favorite" … ) # anyEdit @"Favorite changed" @"title" visibleMovies # joined @"Favorite changed"` — the element stays an editor, a user's edit leaves as the case, the fold writes it back by key | movie-browser |
-| a list element echoing the row it shows | `( listItem $ text flightLine ) # dispatched …` | departures, scoreboard |
+| a list whose elements emit | `tile @"Key entered" @"key" ( … ) # gatheredOf @"key" (const keyPad)`; over a stored array `# gatheredAt @"key" @"cells"` | calculator, tic-tac-toe; cells |
+| a projected list whose elements are edited | `( listItem $ … iconToggle @"Favorite" … ) # editsOf @"Favorite changed" @"title" visibleMovies # joined @"Favorite changed"` — the element stays an editor, a user's edit leaves as the case, the fold writes it back by key | movie-browser |
+| one entity at a time, each shown by its key | `( listItem $ text flightLine ) # dispatchedOf @"code" arrival`; the array of them `# accumulatedOf @"team" goal` | departures, scoreboard |
 | a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, merged in `RecordToRecord.do` | here-and-now, incident-report |
 | content that waits for the user to confirm | `confirmed @"Refund a customer" $ …` — a `+→+` stage between the emitters and the folds: opened by its case, which captions its confirm button, the confirm re-emitting the case with the row shown, which its fold then takes (`fold @"Refund a customer" refundStandard`); its Cancel consumes it | cashbox, inbox, flight-booker |
 | a message the user must close | `acknowledged @"About this dashboard" $ …` — the `+→+` stage consuming its case, titled by it, closed by its "OK": the row less it goes on to the folds; a rejection and its reason (`acknowledged @"Total missing" $ …`), a reference to keep (`acknowledged @"Report filed" $ … text referenceLine`) | weather, order-form, incident-report |
@@ -231,10 +231,10 @@ takes a trailing word that says what it is for:
 A pane's content, a list's element and `confirmed`'s content release
 the row they are fed: a display does so by itself. An editor inside a
 pane edits the model (`inCase`); an editor inside a list of displays
-(`foreach`) or inside a `tile` is a mistake — its edits go nowhere —
+(`actedOf`) or inside a `tile` is a mistake — its edits go nowhere —
 and `npm run check-view-model` rejects the first; an editor whose edits
-must leave a projected list is `anyEdit`'s element. Nothing is discarded: a
-chain whose output is not the model — departures' `dispatched` stream —
+must leave a projected list is `editsOf`'s element. Nothing is discarded: a
+chain whose output is not the model — departures' `dispatchedOf` stream —
 ends the block, and what feeds it is a source (`clock`), not a loop.
 
 A display's policy is a business decision about how sure the business
@@ -341,7 +341,7 @@ compile error at `body` naming the missing fields.
 | a running maximum, a wizard's step, a counter: model fields | auction (`settled raiseTop`), checkout (`stepper @"step"`, its own selector), ticket-dispenser (`issue`) |
 | a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed @"Refund a customer" $ …`) |
 | an effect's outcome folded into the model it lands on | order-form (`… # joined @"Distance estimated"`, `fold @"Distance estimated" setDistance`) |
-| keyed event streams | departures (`dispatched`), scoreboard (`accumulated`) |
+| keyed event streams | departures (`dispatchedOf`), scoreboard (`accumulatedOf`) |
 
 ## Conditional visibility
 
@@ -413,16 +413,16 @@ the pick reaches the content directly (photo-gallery).
 
 ## Collections
 
-- **Keyed and kept.** `foreach @"key" rowsOf` and `listOf @l @k` render
+- **Keyed and kept.** `actedOf @"key" rowsOf` and `listOf @l @k` render
   one element per row, identified by a key field of the row; an array
-  the model stores is named instead of projected (`anyOfAt @"key"
+  the model stores is named instead of projected (`gatheredAt @"key"
   @"cells"`, `actedAt @"id" @"Setlist"`, `listOfAt @l @k @"messages"`). An element
   whose key survives a change is updated in place and keeps its focus
   and local state; a reordered list moves elements with their keys. Rows
   therefore need an id field — an array of bare strings cannot be
   edited in place.
 - **Fixed structure** (grids, canvases): feed the structure as data
-  through `foreach` and compute each element's attributes with
+  through `actedOf` and compute each element's attributes with
   `attrWith` (cells, circle-drawer). **Structure that varies with the
   data** (markdown blocks): `dynamic`, which rebuilds per value, with
   `each` for a constant list, built once (markdown-previewer).
@@ -433,7 +433,7 @@ the pick reaches the content directly (photo-gallery).
   key. Add, remove and reorder are sibling stages over the enclosing
   model, not part of the element.
 - A fixed catalogue is given through the word's own projection
-  argument, `# anyOf @"key" (const keyPad)` (calculator).
+  argument, `# gatheredOf @"key" (const keyPad)` (calculator).
 - An element whose content reads several things names that reading
   once, in a face function, typed at the element row and closed like
   every other function a view line names
@@ -544,7 +544,7 @@ accessor: a display shows it (`textAt @"title"`, todo-list), a decorator
 sets it (`attrAt @"x" "cx"`, circle-drawer), a click reports it
 (`doubleClickTile @"Cell double-clicked" @"key"`, cells), a pane is in one of its cases
 (`# providedAt @"halted" @"phase"`, stopwatch), a collection repeats it
-(`# anyOfAt @"key" @"cells"`, cells; `listOfAt' @"Message opened"
+(`# gatheredAt @"key" @"cells"`, cells; `listOfAt' @"Message opened"
 @"id" @"messages" { … }`, inbox). Each `…At` word is the sibling of a word
 that takes a function, and the function form is for what is derived —
 a copy function, a classifier, a projection, a read deeper than one
@@ -609,12 +609,12 @@ text is computed, a chrome line nothing.
 - **Closing parens and `#` chains never start a line.** A trailing
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
-  it closes over: `… ) # anyOf @"key" (const keyPad) ) # joined @"Key
+  it closes over: `… ) # gatheredOf @"key" (const keyPad) ) # joined @"Key
   entered"` (calculator). The
   exception is a seed closer, `) # looped # with seed` / `) # with seed`,
   on its own line.
   `#` binds tighter than `$`: where a chain must apply to a whole
-  wrapped element (a `foreach` multiplying a card), open the paren
+  wrapped element (a `actedOf` multiplying a card), open the paren
   before the wrapper.
 - **A long signature breaks.** A view model signature that does not fit
   100 columns puts the name on a line of its own, `::` and each `->`
@@ -642,7 +642,7 @@ text is computed, a chrome line nothing.
   (`lapRows :: … -> Array Lap`, `type Lap = { number :: Int, tenths ::
   Int }`, stopwatch).
   The view writes none of them (`# looped # with freshCount`, `# provided
-  @"asking" quizPhase`, `# foreach @"number" lapRows`), and every
+  @"asking" quizPhase`, `# actedOf @"number" lapRows`), and every
   editor, selector, list and field label it names is checked against
   them — so a stored field is read by its label (`listOfAt … @"messages"`,
   `# providedAt @"halted" @"phase"`). The view states only what is its
@@ -824,8 +824,8 @@ text is computed, a chrome line nothing.
   `Data.Profunctor`.** The words of `PUI`, `PUI.Web`, the design-system
   module and the merge blocks of `Data.Profunctor.Row.*` are vocabulary;
   raw `lcmap`/`rmap`/`dimap` are not. Every reshaping an app needs has
-  a home in a word's own argument — `foreach @l rowsOf`,
-  `dispatched @k @a arrival`, `settled normalize`, with `identity`
+  a home in a word's own argument — `actedOf @l rowsOf`,
+  `dispatchedOf @"code" arrival`, `settled normalize`, with `identity`
   meaning "the value as it is". A shape none fits is a gap to report,
   not a reason to reach below the vocabulary.
 - **State lives in the model.** No FFI stashes, no module-level mutable

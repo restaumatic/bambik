@@ -47,10 +47,18 @@
 -- | This module is the **pure algebra** — the class (whose primitive
 -- | `actedBy` takes the key as a function, the minimal carrier obligation),
 -- | the label forms `acted @l` and `actedAt @l @t`, and the `(->)` face.
--- | The carrier machinery lives with the carriers, exactly as the
--- | merge classes' instances do: `PUI` holds the shared keyed reconciler,
--- | the generic `Hosting m node => Acting (PUI m)` instance and the sibling
--- | collection combinators (`foreach`, `dispatched`, `accumulated`); each display carrier holds its own `Hosting` instance.
+-- | It is the `×→×` corner of the **keyed square**, `Strong`'s analogue
+-- | over a runtime key; its siblings are `Dispatching` (`+→+`, `Choice`'s),
+-- | `Gathering` (`×→+`, `Resolving`'s) and `Accumulating` (`+→×`,
+-- | `Retaining`'s), each with the same three forms — bare over the
+-- | element's row, `…Of @l proj` over a projection (`PUI`, hole-aware:
+-- | `actedOf @l proj`, the list of displays whose releases stay inside and
+-- | whose fed row passes on), and `…At @l @t` over a stored array for a
+-- | `×` input or `…On @l @c` over a case for a `+` input. The carrier
+-- | machinery lives with the carriers, exactly as the merge classes'
+-- | instances do: `PUI` holds the shared keyed reconciler and the four
+-- | generic `Hosting m node =>` instances; each display carrier holds its
+-- | own `Hosting` instance.
 module Data.Profunctor.Acting
   ( class Acting
   , actedBy

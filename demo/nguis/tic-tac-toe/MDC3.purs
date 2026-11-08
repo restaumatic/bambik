@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (anyOf, fold, joined, looped, reset, with)
+import PUI (gatheredOf, fold, joined, looped, reset, with)
 import PUI.Web (attrWith, inCase, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, button', headlineSmall, tile)
@@ -21,7 +21,7 @@ ticTacToe =
     ( headlineSmall $ text toMoveLine ) # inCase @"toMove" gameOutcome
     RecordToVariant.do
       ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-        ( tile @"Cell claimed" @"key" $ text cellMark ) # attrWith "style" cellFace # anyOf @"key" cells ) # joined @"Cell claimed"
+        ( tile @"Cell claimed" @"key" $ text cellMark ) # attrWith "style" cellFace # gatheredOf @"key" cells ) # joined @"Cell claimed"
       button' @"New game" { icon: "replay" }
     VariantToRecord.do
       fold @"Cell claimed" claimCell

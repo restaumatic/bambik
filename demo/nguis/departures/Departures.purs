@@ -1,4 +1,4 @@
-module Departures (Departure, Update, arrival, clockPeriod, flightLine, updateLine) where
+module Departures (Departure, arrival, clockPeriod, flightLine, updateLine) where
 
 import Prelude ((*), (+), (<>), div, mod)
 
@@ -7,25 +7,23 @@ import Data.Maybe (fromMaybe)
 
 type Departure = { code :: String, status :: String }
 
-type Update = { key :: String, value :: Departure }
-
 clockPeriod :: { ms :: Number }
 clockPeriod = { ms: 1000.0 }
 
-arrival :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } -> Update
+arrival :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } -> Departure
 arrival { time } =
   let
     beat = time.minutes * 60 + time.seconds
     code = pick flights beat
     status = pick statuses (beat `div` length flights + beat `mod` length flights)
   in
-    { key: code, value: { code, status } }
+    { code, status }
 
 flightLine :: Departure -> String
 flightLine { code, status } = code <> " — " <> status
 
-updateLine :: Update -> String
-updateLine { value: { code, status } } = "Last update: " <> code <> " → " <> status
+updateLine :: Departure -> String
+updateLine { code, status } = "Last update: " <> code <> " → " <> status
 
 pick :: Array String -> Int -> String
 pick options i = fromMaybe "" (index options (i `mod` length options))
