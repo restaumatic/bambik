@@ -6,7 +6,24 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-11-08, latest
+## 2026-11-09, latest
+- **`actedOf` derived.** The list of displays is now `first` around
+  `acted @l` with the gathered output dropped — `dimap (\a -> Tuple (rows
+  a) a) snd (first (acted @l w))` — instead of the body `foreach` had
+  carried since the container action was introduced: the gathering
+  reconciler with its emissions discarded and the fed value echoed
+  regardless of the elements. The twelve words of the keyed square are now
+  all derived from the four `…By` primitives through `Strong`, `Choice`
+  and `lcmap`, and the eleventh was the only one that was not. What
+  changes: the list's release is `acted`'s gather gate, so the fed row
+  passes once the elements have answered — once per feed over displays,
+  which answer every feed by the `×→×` laws, so no demo changed — and an
+  element that does not answer starves the list and is named by the
+  watchdog where it used to be passed over; an element emitting outside a
+  feed re-releases the fed row, a repetition. The value test's probe
+  became a display (it echoes its feed) and states the repetition.
+
+## 2026-11-08
 - **The keyed square: four classes, twelve words, one shape of
   derivation.** `Acting` (`×→×`) gets its three siblings, each the keyed
   analogue of a static strength and each a module beside it:

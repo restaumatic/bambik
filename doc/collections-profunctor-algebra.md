@@ -297,7 +297,7 @@ laxity has a price (the gate) that pure treatments never see.
 
   | Form | Shape | Behaviour |
   | --- | --- | --- |
-  | `actedOf @l` | `(a -> Array { \| r }) -> p { \| r } { \| r } -> p a a` | the list of displays: keyed, retaining reconciliation; the elements' releases stay inside and the fed row passes on, so the list is a stage |
+  | `actedOf @l` | `(a -> Array { \| r }) -> p { \| r } { \| r } -> p a a` | the list of displays, `dimap (\a -> Tuple (proj a) a) snd (first (acted @l w))`: `acted`'s keyed, retaining reconciliation and its gather gate, the elements' releases dropped and the fed row passing on once they answered, so the list is a stage |
   | `gatheredOf @l` | `(a -> Array { \| r }) -> p { \| r } [ \| v ] -> p a [ \| v ]` | the emitting list: the same reconciler, every element emission forwarded onto one channel, ungated, silent on empty (`gatheredAt @l @t` over a stored array) |
   | `acted @l` | `p { \| r } { \| r1 } -> p (Array { \| r }) (Array { \| r1 })` | the container action: the element typed at its whole row, key included, the carrier re-setting the key on every emission from the input row through the `Strong` state channel, so identity is unforgeable; output is the gather gate (`actedAt @l @t` over a stored array) |
   | `dispatched @l` | `p { \| r } { \| r1 } -> p { \| r } { \| r1 }` | `+→+`: one instance per value of field `l`, an unknown key instantiating a new one, a known key re-feeding exactly its instance, emissions leaving with the key they were fed under (`dispatchedOf @l proj` over a projection, `dispatchedOn @l @c` over a case) |

@@ -183,7 +183,7 @@ import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, unshown)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, focusCase, onCase)
-import Data.Profunctor.Strong (class Strong)
+import Data.Profunctor.Strong (class Strong, first)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -1883,8 +1883,8 @@ debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 --   Acting / acted     | Array {l::k|r} (×) | p {l::k|ra}  | Array {l::k|rb}  | element          | whole array, once      | emits []
 --                      |                    |   {l::k|rb}  |              (×) | emissions (gate) | every element spoke;   |
 --                      |                    |              |                  |                  | retain-last after      |
---   actedOf            | a (×), proj to     | p {l::k|r}   | a            (×) | — (releases      | the fed value, once    | passes it
---                      |   the array        |   {l::k|r}   |                  |   stay inside)   | per feed               |
+--   actedOf            | a (×), proj to     | p {l::k|r}   | a            (×) | element answers  | the fed value, once    | passes it
+--     (first . acted)  |   the array        |   {l::k|r}   |                  | (acted's gate)   | the elements answered  |
 --   Gathering /        | Array {l::k|r} (×) | p {l::k|r}   | [|v]         (+) | — (no slots)     | each emission, as it   | silent
 --     gathered         |                    |   [|v]       |                  |                  | happens                |
 --   Dispatching /      | {l::k|r}       (+) | p {l::k|ra}  | {l::k|rb}    (+) | — (no slots)     | the fed entity's       | unknown key =
@@ -2102,15 +2102,23 @@ attachedOn f w = fromHandles do
     }
 
 -- | The **list of displays** — `acted`'s `…Of` form, the `×→×` member over
--- | a projection. **Keyed and retaining** like every member of the keyed
--- | square: each element is identified by field `l` of its row, and on
--- | every fed array the list reconciles *by key* — matched elements are
+-- | a projection, and **derived**: `first` around `acted @l` with the
+-- | gathered output dropped, the fed value riding the `Strong` state
+-- | channel and leaving once the elements have answered. Nothing here is
+-- | bespoke: the reconciliation is `acted`'s — **keyed and retaining**,
+-- | each element identified by field `l` of its row, matched elements
 -- | re-fed in place (their carrier node kept), new keys built, absent keys
--- | removed, and nodes restacked only when the key sequence actually
--- | changed. So a fixed-key grid never rebuilds, a growing list only
--- | appends, and a reordered list **moves each element's node with it** —
--- | carrier-local state (focus, scroll, selection) follows the item, not
--- | the position. Keys must be unique.
+-- | removed, nodes restacked only when the key sequence changed, so a
+-- | fixed-key grid never rebuilds, a growing list only appends, and a
+-- | reordered list **moves each element's node with it** — and the
+-- | release is `acted`'s gather gate: every element's answer to the feed
+-- | is its slot, the empty array releasing at once. A display answers
+-- | every feed (the `×→×` laws), so a list of displays passes the row it
+-- | was fed once per feed; an element that does not answer starves the
+-- | list, and the watchdog names it — the list demands of its elements
+-- | exactly what the shape already demands. An element emitting outside a
+-- | feed re-releases the fed value, a repetition the law makes inert.
+-- | Keys must be unique.
 -- |
 -- | Written trailing, wrapped in a container ocular: `ul $ item # actedOf
 -- | @"id" rowsOf` — keyed by the row's **materialized identity field** (the
@@ -2124,18 +2132,9 @@ attachedOn f w = fromHandles do
 -- | elements **emit** is `gatheredOf`. A hole projection is an empty array
 -- | (guardrails L18).
 actedOf :: forall @l r m node k b a. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } { | r } -> PUI m a a
-actedOf f w = withStructuralOrd @k $ fromHandles do
-  hooks <- hosting w
-  liftEffect do
-    list <- collapsedWith (Record.get (Proxy @l)) hooks
-    list.fromUser \_ -> pure unit
-    propRef <- Ref.new Nothing
-    pure
-      { toUser: \a -> do
-          list.toUser (if isHole f then [] else let xs = f a in if isHole xs then [] else xs)
-          Ref.read propRef >>= traverse_ (_ $ a)
-      , fromUser: \prop -> Ref.write (Just prop) propRef
-      }
+actedOf f w = dimap (\a -> Tuple (rows a) a) snd (first (Adopters.acted @l w))
+  where
+  rows a = if isHole f then [] else let xs = f a in if isHole xs then [] else xs
 
 -- | The **emitting list** — `gathered`'s `…Of` form, the `×→+` member over
 -- | a projection: the same keyed and retaining reconciliation over elements

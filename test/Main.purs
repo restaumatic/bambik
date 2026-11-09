@@ -5,7 +5,7 @@ import Prelude
 import Data.Array (last, length, nub, uncons, (!!))
 import Data.String as String
 import Data.Either (Either(..))
-import Data.Foldable (foldl, for_)
+import Data.Foldable (foldl, for_, traverse_)
 import Data.Lens (over, set, view)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Choice (left, right)
@@ -157,6 +157,20 @@ elemProbe builds roster = fromHandles do
   Ref.modify_ (_ <> [ { ins, prop: propR } ]) roster
   pure
     { toUser: \i -> Ref.modify_ (_ <> [ i ]) ins
+    , fromUser: \prop -> Ref.write (Just prop) propR
+    }
+
+-- a display probe: echoes every feed (the ×→× law), re-emits on fireElem
+displayProbe :: forall i. Ref.Ref Int -> Ref.Ref (Array (ElemHandle i i)) -> PUI Effect i i
+displayProbe builds roster = fromHandles do
+  Ref.modify_ (_ + 1) builds
+  ins <- Ref.new []
+  propR <- Ref.new Nothing
+  Ref.modify_ (_ <> [ { ins, prop: propR } ]) roster
+  pure
+    { toUser: \i -> do
+        Ref.modify_ (_ <> [ i ]) ins
+        Ref.read propR >>= traverse_ (_ $ i)
     , fromUser: \prop -> Ref.write (Just prop) propR
     }
 
@@ -1029,22 +1043,25 @@ main = do
     m.toUser [ { k: "a", v: 2 } ]
     Ref.read builds >>= assertEqual "gathered: a surviving key is re-fed, not rebuilt" 1
 
-  -- actedOf (the list of displays): the elements are fed their rows, their
-  -- releases stay inside, and the list releases the row it was fed — once
-  -- per feed, the empty array included.
+  -- actedOf (the list of displays) is `first` around `acted` with the
+  -- gathered output dropped: the elements are fed their rows, their
+  -- releases stay inside, and the list releases the row it was fed once
+  -- the elements answered — once per feed over displays, which answer
+  -- every feed, the empty array included; an element emitting outside a
+  -- feed re-releases the fed row (Strong's retained channel), a repetition.
   do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
     outs <- Ref.new ([] :: Array { rows :: Array { k :: String, v :: Int } })
-    m <- handles (actedOf @"k" _.rows (elemProbe builds roster))
+    m <- handles (actedOf @"k" _.rows (displayProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { rows: [] }
     Ref.read outs >>= assertEqual "actedOf: the fed row passes, empty array included" [ { rows: [] } ]
     m.toUser { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] }
     Ref.read builds >>= assertEqual "actedOf: one element per key" 2
     fireElem roster 0 { k: "a", v: 99 }
-    Ref.read outs >>= assertEqual "actedOf: an element's release stays inside; the row passes once per feed"
-      [ { rows: [] }, { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] } ]
+    Ref.read outs >>= assertEqual "actedOf: an element's release stays inside; the fed row is repeated"
+      [ { rows: [] }, { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] }, { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] } ]
 
   -- == The +-input members — one entity at a time, identity read off the ==
   -- == entity's own key field, as the ×-members read it off each row.    ==
