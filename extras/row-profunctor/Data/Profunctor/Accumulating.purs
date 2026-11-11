@@ -1,18 +1,23 @@
 -- | The **accumulating collection**: the `+→×` member of the keyed square,
--- | `Retaining`'s analogue over a runtime key — entities fed one at a
--- | time, the array of every key's latest row released whole after each.
--- | A keyed Mealy machine: an unknown key appends a slot in
--- | first-appearance order, a known key updates its slot, an element's own
--- | emission writes its slot the same way, and the whole array leaves at
--- | once — **input-primed**, since the fed row is its slot's first value
--- | (which is why the element is `p a a`: a `+→×` operand owes no answer
--- | and must never starve, so there is no gate here), and so never `[]`
--- | before the first entity and never torn. **The key is a materialized
--- | identity field of the row** (`accumulated @l`), as for `acted @l`.
+-- | `Retaining`'s analogue over a runtime key — entities fed one at a time,
+-- | the array of every key's latest row released whole after each. A keyed
+-- | Mealy machine: an unknown key appends a slot, a known key updates its
+-- | slot, and an element's own emission writes its slot the same way. It is
+-- | **input-primed**: the fed row is its slot's first value, which is why
+-- | the element is `p a a` — a `+→×` operand owes no answer and must never
+-- | starve, so there is no gate here.
 -- |
--- | Laws:
+-- | ## The key
 -- |
--- |   * **nothing at registration** — no emission before the first entity.
+-- | **A materialized identity field of the row** (`accumulated @l`), as for
+-- | `acted @l`. The key is **re-set** on every emission from the fed row,
+-- | so a slot is its entity's and an element cannot forge or change
+-- | identity (the `Strong` state channel, as in `acted`).
+-- |
+-- | ## Laws
+-- |
+-- |   * **nothing at registration** — no emission before the first entity,
+-- |     so never `[]`.
 -- |   * **singleton** — fed one key only, `accumulatedBy k p` ≈ `p` with its
 -- |     releases wrapped in a one-element array.
 -- |   * **order** — slots in first-appearance order; a known key's entity
@@ -22,13 +27,24 @@
 -- |     never torn.
 -- |   * **no forgetting** — absence of a key is no signal; removal and
 -- |     ordering stay upstream, in the array a fold builds.
--- |   * **the slot is its entity's** — `accumulated @l` re-sets field `l`
--- |     from the fed row on every emission (the `Strong` state channel).
 -- |
--- | Three forms: `accumulated @l` over the entity's row;
--- | `accumulatedOf @l proj` (`PUI`, a hole-aware projection to the entity:
--- | `# accumulatedOf @"team" goal`, scoreboard); `accumulatedOn @l @c` for
--- | an entity arriving as case `c`, the `+→×` operand owning that case.
+-- | ## Forms
+-- |
+-- | Three, like every member of the keyed square:
+-- |
+-- |   * `accumulated @l` — over the entity's row.
+-- |   * `accumulatedOf @l proj` (`PUI`, a hole-aware projection to the
+-- |     entity) — `# accumulatedOf @"team" goal`, scoreboard.
+-- |   * `accumulatedOn @l @c` — for an entity arriving as case `c`, the
+-- |     `+→×` operand owning that case, closed to it like every fold.
+-- |
+-- | ## The carrier
+-- |
+-- | This module holds the class, whose primitive `accumulatedBy` takes the
+-- | key as a function, and the label forms. The instance is the carrier's:
+-- | `PUI` holds a generic `Hosting m node =>` instance, the other keys'
+-- | slots being state only a stateful carrier keeps, never detached or
+-- | restacked.
 module Data.Profunctor.Accumulating
   ( class Accumulating
   , accumulatedBy

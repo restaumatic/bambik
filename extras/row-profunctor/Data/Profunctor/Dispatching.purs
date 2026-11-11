@@ -1,32 +1,47 @@
 -- | The **keyed dispatch**: the `+→+` member of the keyed square, `Choice`'s
--- | analogue over a runtime key — one instance of a component per key
--- | value, each fed entity reaching exactly the instance its key names.
--- | Where `Choice` dispatches one *static* case to its one handler, this
--- | dispatches one *runtime* case: an unknown key instantiates a new
--- | instance (a new case, not an error), a known key re-feeds its instance,
--- | and the instance's emissions leave as they come. **The key is a
--- | materialized identity field of the row** (`dispatched @l`), as it is
--- | for `acted @l`: the entity is a data-model row and rows carry their
--- | identity, so no envelope is written.
+-- | analogue over a runtime key — entities fed one at a time, each reaching
+-- | exactly the instance its key names, that instance's emissions leaving
+-- | as they come. Where `Choice` dispatches one *static* case to its one
+-- | handler, this dispatches one *runtime* case: an unknown key
+-- | instantiates a new instance (a new case, not an error), a known key
+-- | re-feeds its instance.
 -- |
--- | Laws:
+-- | ## The key
+-- |
+-- | **A materialized identity field of the row** (`dispatched @l`), as for
+-- | `acted @l`: the entity is a data-model row and rows carry their
+-- | identity, so no envelope is written. The entity is typed at its whole
+-- | row on both sides, and the key is **re-set** on every emission from the
+-- | fed row, so an instance cannot forge or change identity (the `Strong`
+-- | state channel, as in `acted`).
+-- |
+-- | ## Laws
 -- |
 -- |   * **wire** — `dispatchedBy k identity ≈ identity`.
 -- |   * **naturality** — `dispatchedBy (k <<< f) (dimap f g p) ≈ dimap f g
 -- |     (dispatchedBy k p)`.
 -- |   * **singleton** — fed one key only, `dispatchedBy k p ≈ p`.
--- |   * **one instance per key** (stateful carriers) — a known key reaches
--- |     the registration its first appearance made; an unknown key makes a
--- |     new one; no key is ever forgotten, since absence is no signal.
--- |   * **the emission is its entity's** — `dispatched @l` re-sets field
--- |     `l` from the fed row on every emission, so an instance cannot forge
--- |     or change identity (the `Strong` state channel, as in `acted`).
+-- |   * **one instance per key** — a known key reaches the registration its
+-- |     first appearance made; an unknown key makes a new one.
+-- |   * **no forgetting** — absence of a key is no signal, so no instance
+-- |     is ever removed.
 -- |
--- | Three forms, like every member of the keyed square: `dispatched @l`
--- | over the entity's row; `dispatchedOf @l proj` (`PUI`, a hole-aware
--- | projection from the fed value to the entity: `# dispatchedOf @"code"
--- | arrival`, departures); `dispatchedOn @l @c` for an entity arriving as
--- | case `c` of the event, `focusCase @c` over the bare form.
+-- | ## Forms
+-- |
+-- | Three, like every member of the keyed square:
+-- |
+-- |   * `dispatched @l` — over the entity's row.
+-- |   * `dispatchedOf @l proj` (`PUI`, a hole-aware projection from the fed
+-- |     value to the entity) — `# dispatchedOf @"code" arrival`, departures.
+-- |   * `dispatchedOn @l @c` — for an entity arriving as case `c` of the
+-- |     event, every other case passing: `focusCase @c` over the bare form.
+-- |
+-- | ## The carrier
+-- |
+-- | This module holds the class, whose primitive `dispatchedBy` takes the
+-- | key as a function, and the label forms. The instance is the carrier's:
+-- | `PUI` holds a generic `Hosting m node =>` instance, one registration
+-- | per key value, never detached or restacked.
 module Data.Profunctor.Dispatching
   ( class Dispatching
   , dispatchedBy

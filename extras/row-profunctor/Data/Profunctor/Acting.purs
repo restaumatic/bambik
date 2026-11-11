@@ -1,63 +1,77 @@
--- | The **container action**: lift a UI component over a container of its focus —
--- | `p a b -> p (F a) (F b)` — here at `F = Array`, the container
+-- | The **container action**: the `×→×` member of the keyed square,
+-- | `Strong`'s analogue over a runtime key — the array fed whole, each
+-- | element fed its own row, the array of every element's latest output
+-- | released whole. It lifts a component over a container of its focus,
+-- | `p a b -> p (F a) (F b)`, here at `F = Array`, the container
 -- | `μ x. 1 + a × x`. Containers are generated from `×`, `+` and fixpoints,
--- | so this class is not a fifth merge shape: its *type* is the closure
--- | of `Strong` and `Choice` under `μ` (the profunctor traversal,
--- | Jaskelioff–O'Connor). The keyed, retaining semantics is genuine extra
--- | carrier structure beyond that closure — a Strong/Choice-derived
--- | traversal would rebuild per feed where this reconciles — keyed as the
--- | species refinement: on stateful carriers reconciliation is the functorial
--- | action along partial injections of key sets — survivors re-fed in place,
--- | entrants built, leavers removed. **The key is a materialized identity
--- | field of the row** (`acted @l` — the element is a data-model row, and
--- | rows carry their identity; `Ord k` is the reconciler's Map-indexing
--- | requirement — identity semantics remain equality, keys must be unique,
--- | never rendered).
--- | See doc/collections-profunctor-algebra.md.
+-- | so this is not a fifth merge shape: its *type* is the closure of
+-- | `Strong` and `Choice` under `μ` (the profunctor traversal,
+-- | Jaskelioff–O'Connor). The keyed, retaining semantics is extra carrier
+-- | structure beyond that closure — a derived traversal would rebuild per
+-- | feed where this reconciles: survivors re-fed in place, entrants built,
+-- | leavers removed (the functorial action along partial injections of key
+-- | sets, the species refinement). See doc/collections-profunctor-algebra.md.
 -- |
--- | Laws (the `Array b` output side is a product, so, like the record
--- | merges' output, it gates):
+-- | ## The key
+-- |
+-- | **A materialized identity field of the row** (`acted @l`): the element
+-- | is a data-model row, and rows carry their identity. `Ord k` is the
+-- | reconciler's Map-indexing requirement — identity semantics remain
+-- | equality; keys must be unique and are never rendered. The element is
+-- | typed at its whole row, key included, on both sides, and the key is
+-- | **re-set** on every emission from the element's *input* row, so an
+-- | element cannot forge or change identity: the input's key rides around
+-- | the element on the `Strong` state channel (`second`) and is written
+-- | over each emission.
+-- |
+-- | ## Laws
+-- |
+-- | The `Array b` output side is a product, so, like the record merges'
+-- | output, it gates.
 -- |
 -- |   * **empty** — fed `[]`, emits `[]` (the inhabited nullary of the `μ`;
 -- |     no starvation). No emission *before* the first feed: `[]` is not the
 -- |     only `Array b`, so announcing it at registration would fabricate
 -- |     knowledge (contrast `{}`, the only value there is, which the wire
 -- |     `identity @{}` may echo freely — it says nothing).
--- |   * **singleton retraction** — fed `[a]`, behaves as the element fed `a`
--- |     and emits `[b]` per element emission `b` (yanking at the container).
+-- |   * **singleton** — fed `[a]`, behaves as the element fed `a` and emits
+-- |     `[b]` per element emission `b` (yanking at the container).
 -- |   * **gather gate** — `Array b` is withheld until *every* element has
 -- |     emitted at least once; thereafter any element emission re-emits the
--- |     whole array from retained last outputs. This is the record merges'
--- |     knowledge gate with the row's labels supplied at runtime — on `PUI`
--- |     literally the one pure machine `PUI.Gate.gateStep`, enrolled with
--- |     the fed keys as its participants and rekeyed per feed, so a feed is
--- |     one step (a reconcile whose elements echo gathers once, whole) and
--- |     the empty law is the zero-participant release. Conformance to the
--- |     step over every script to a bound: test/Exhaustive.purs.
--- |   * **identity follows key** (stateful carriers) — re-feeding a surviving
--- |     key reuses its instance; permuting keys reorders without rebuilding.
+-- |     whole array from retained last outputs. A feed is one step: a
+-- |     reconcile whose elements echo gathers once, whole.
+-- |   * **identity follows key** — re-feeding a surviving key reuses its
+-- |     instance; permuting keys reorders without rebuilding.
 -- |   * **wire** — `actedBy k identity ≈ identity` at `Array` (elements are
--- |     echo wires, so every fed array gathers whole immediately; tested).
+-- |     echo wires, so every fed array gathers whole immediately).
 -- |     Composition is deliberately **not** preserved:
 -- |     `actedBy k (p >>> q) ≠ actedBy k p >>> actedBy k q` in general —
 -- |     the right side gathers twice and re-feeds every `q`-element per
 -- |     `p`-element emission — so lift whole element pipelines, not stages.
 -- |
--- | This module is the **pure algebra** — the class (whose primitive
--- | `actedBy` takes the key as a function, the minimal carrier obligation),
--- | and the label forms `acted @l` and `actedAt @l @t`.
--- | It is the `×→×` corner of the **keyed square**, `Strong`'s analogue
--- | over a runtime key; its siblings are `Dispatching` (`+→+`, `Choice`'s),
--- | `Gathering` (`×→+`, `Resolving`'s) and `Accumulating` (`+→×`,
--- | `Retaining`'s), each with the same three forms — bare over the
--- | element's row, `…Of @l proj` over a projection (`PUI`, hole-aware:
--- | `actedOf @l proj`, the list of displays whose releases stay inside and
--- | whose fed row passes on), and `…At @l @t` over a stored array for a
--- | `×` input or `…On @l @c` over a case for a `+` input. The carrier
--- | machinery lives with the carriers, exactly as the merge classes'
--- | instances do: `PUI` holds the shared keyed reconciler and the four
--- | generic `Hosting m node =>` instances; each display carrier holds its
--- | own `Hosting` instance.
+-- | ## Forms
+-- |
+-- | Three, like every member of the keyed square:
+-- |
+-- |   * `acted @l` — over the element's row.
+-- |   * `actedOf @l proj` (`PUI`, a hole-aware projection to the array) —
+-- |     the list of displays, whose releases stay inside and whose fed row
+-- |     passes on (`item # actedOf @"id" rowsOf`).
+-- |   * `actedAt @l @t` — over an array the model stores at field `t`
+-- |     (`item # actedAt @"id" @"Setlist"`, reorder).
+-- |
+-- | ## The carrier
+-- |
+-- | This module holds the class, whose primitive `actedBy` takes the key as
+-- | a function, and the label forms. The instance is the carrier's, as the
+-- | merge classes' are: `PUI` holds the shared keyed reconciler and a
+-- | generic `Hosting m node =>` instance, each display carrier its own
+-- | `Hosting`. The gather gate is the record merges' knowledge gate with
+-- | the row's labels supplied at runtime — literally the one pure machine
+-- | `PUI.Gate.gateStep`, enrolled with the fed keys as its participants and
+-- | rekeyed per feed, the empty law its zero-participant release.
+-- | Conformance to the step over every script to a bound:
+-- | test/Exhaustive.purs.
 module Data.Profunctor.Acting
   ( class Acting
   , actedBy
@@ -82,20 +96,11 @@ import Type.Proxy (Proxy(..))
 class Profunctor p <= Acting p where
   actedBy :: forall k a b. Ord k => (a -> k) -> p a b -> p (Array a) (Array b)
 
--- | Lift a UI component over the keyed `Array` container (see the module header
--- | for the laws), keyed by the row's materialized identity field `@l`.
--- | Written trailing, like the merges' operands: `row # acted @"id"`.
--- |
--- | The element is typed at its **whole row, key
--- | included**, on both sides — an item that reads its key beside a
--- | whole-row editor that echoes it needs exactly that — and the carrier
--- | **re-sets** the key on every emission from the element's *input* row,
--- | so an element cannot forge or change identity: whatever it emits in
--- | the key field is replaced. The guarantee is derived in the pure
--- | algebra: the input's key rides around the element on the `Strong`
--- | state channel (`second`) and is written over each emission
--- | (`Record.set`). An element's functions are typed at its row
--- | (guardrails L18).
+-- | The container action keyed by the element's identity field `l`, the
+-- | element typed at its whole row on both sides and the key re-set from
+-- | the input on every emission (see the header). Written trailing, like
+-- | the merges' operands: `row # acted @"id"`. An element's functions are
+-- | typed at its row (guardrails L18).
 acted :: forall @l r p k b1 b2 r1 . Acting p => Strong p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
 acted w = withStructuralOrd @k (actedBy (Record.get prox)
   (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.set prox k out) (second w)))

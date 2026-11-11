@@ -1,14 +1,19 @@
 -- | The **gathering collection**: the `×→+` member of the keyed square,
--- | `Resolving`'s analogue over a runtime key — the array fed whole, every
--- | element's emission leaving on the one shared channel as it happens,
--- | ungated. It shares `Acting`'s keyed, retaining reconciliation (survivors
--- | re-fed in place, entrants built, leavers removed), so a clickable row
--- | or a cell reporting its key keeps its node across feeds; what differs
--- | is the output side, a variant, which no gate can wait on. **The key is
--- | a materialized identity field of the row** (`gathered @l`), as for
--- | `acted @l`.
+-- | `Resolving`'s analogue over a runtime key — the array fed whole, each
+-- | element fed its own row, every element's emission leaving on the one
+-- | shared channel as it happens. It shares `Acting`'s keyed, retaining
+-- | reconciliation (survivors re-fed in place, entrants built, leavers
+-- | removed), so a clickable row or a cell reporting its key keeps its node
+-- | across feeds; what differs is the output side, a variant, which no gate
+-- | can wait on.
 -- |
--- | Laws:
+-- | ## The key
+-- |
+-- | **A materialized identity field of the row** (`gathered @l`), as for
+-- | `acted @l`. It is read from each fed element only: the output is an
+-- | event, not the element's row, so there is no key to re-set.
+-- |
+-- | ## Laws
 -- |
 -- |   * **empty** — fed `[]`, nothing: there is no event to fabricate.
 -- |   * **singleton** — fed `[a]`, behaves as the element fed `a`.
@@ -22,11 +27,23 @@
 -- |     forward each element's echo inside the feed.
 -- |   * **monotonicity** — `p ⊑ p'` implies `gatheredBy k p ⊑ gatheredBy k p'`.
 -- |
--- | Three forms: `gathered @l` over the element's row; `gatheredOf @l proj`
--- | (`PUI`, a hole-aware projection to the array: `tile @"Key entered"
--- | @"key" … # gatheredOf @"key" keyPad`); `gatheredAt @l @t` over an
--- | array the model stores at field `t` (cells). MDC2/MDC3's `listOf` is
--- | `gatheredOf` over picked rows.
+-- | ## Forms
+-- |
+-- | Three, like every member of the keyed square:
+-- |
+-- |   * `gathered @l` — over the element's row.
+-- |   * `gatheredOf @l proj` (`PUI`, a hole-aware projection to the array) —
+-- |     `tile @"Key entered" @"key" … # gatheredOf @"key" keyPad`;
+-- |     MDC2/MDC3's `listOf` is this over picked rows.
+-- |   * `gatheredAt @l @t` — over an array the model stores at field `t`
+-- |     (`# gatheredAt @"key" @"cells"`, cells).
+-- |
+-- | ## The carrier
+-- |
+-- | This module holds the class, whose primitive `gatheredBy` takes the key
+-- | as a function, and the label forms. The instance is the carrier's:
+-- | `PUI` holds a generic `Hosting m node =>` instance over the keyed
+-- | reconciler it shares with `Acting`, with passage where `Acting` gates.
 module Data.Profunctor.Gathering
   ( class Gathering
   , gatheredBy
