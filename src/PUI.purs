@@ -127,7 +127,7 @@ module PUI
   )
   where
 
-import Data.Profunctor.Row.Structural (withStructuralEq, withStructuralOrd)
+import Data.Profunctor.Row.Structural (withStructuralEq)
 import Prelude
 
 import Data.Array as Array
@@ -146,7 +146,6 @@ import Data.Profunctor.Gathering (class Gathering, gathered)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
-import Data.Profunctor.PointedCostrong (class PointedCostrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- the words a view writes beside the leaves, re-exported so demos need the
 -- row modules only for the `.do` merges and the knot. `focusField` is
@@ -590,25 +589,6 @@ instance Functor m => Costrong (PUI m) where
         tr "Costrong.unsecond: input withheld (state unprimed)" b
       Just a -> leg $ Tuple a b
 
--- | The **pointed** `×`-trace: `unfirst` with its state `Ref` starting at
--- | `c0`, so the first input joins the starting state instead of waiting on
--- | an emission. The pointed trace at the value level; a row form gave
--- | way to looping the state through the model, so no library word stands
--- | on it now.
-instance Functor m => PointedCostrong (PUI m) where
-  -- a hole start (guardrails L18) is absent: the state channel is unprimed
-  -- and every input is withheld, as under the gated `unfirst` — so a chain
-  -- whose seed is not written yet lets nothing through to the handlers that
-  -- are not written yet either
-  unfirstFrom c0 (PUI p) = PUI $ p <#> \reg prop -> do
-    cRef <- Ref.new (if isHole c0 then Nothing else Just c0)
-    leg <- reg \(Tuple b c) -> do
-      Ref.write (Just c) cRef
-      prop b
-    pure \a -> Ref.read cRef >>= case _ of
-      Nothing -> tr "PointedCostrong.unfirstFrom: input withheld (the start is a hole)" a
-      Just c -> leg $ Tuple a c
-
 -- | The `+`-diagonal **trace** (dual of `Choice`): a looped-branch emission
 -- | re-enters the UI component as input — feedback of **control**, i.e. iteration —
 -- | until an exit-branch emission passes through. The re-entry is a `toUser`,
@@ -788,7 +768,7 @@ with a w = lcmap (const {}) (announce a >>> w)
 -- | record junction, where the model row holds the state, and an event re-enters through its fold. (The variant side would need
 -- | no primitive — `Cochoice`'s `unleft` holds raw here, the carrier being
 -- | traced over `+` and pointed-traced over `×` — and a one-field `×`-knot
--- | would be seeded through `PointedCostrong`; neither has a word,
+-- | would be a seeded `unfirst`; neither has a word,
 -- | `Data.Profunctor.Row`, *What is deliberately not here*.)
 -- |
 -- | Laws — the trace axioms restricted to the diagonal, stated up to the

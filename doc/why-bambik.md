@@ -223,7 +223,7 @@ the channel is primed. This is the **trace quartet**:
 
 | strength | co-strength | ties into | co-optic | knot | example |
 |---|---|---|---|---|---|
-| `Strong` | `Costrong` / `unfirst` (pointed: `unfirstFrom`) | state feedback | `Colens` | `looped` (`PUI`'s own word — the gated `unfirst` cannot self-feed) | the model re-entering its own loop |
+| `Strong` | `Costrong` / `unfirst` | state feedback | `Colens` | `looped` (`PUI`'s own word — the gated `unfirst` cannot self-feed) | the model re-entering its own loop |
 | `Choice` | `Cochoice` / `unleft` | iteration | `Coprism` | — (holds raw; an event re-enters through its fold) | retrying a flaky charge, written inside the action |
 | `Resolving` | `Coresolving` / `coresolve` | terminating fold | `Coshutter` | — (`debounced` is its one seeded use) | an accumulating multi-step wizard, written as a model field folded per step |
 | `Retaining` | `Coretaining` / `coretain` | productive unfold | `Coreel` | — | an activity meter counting every event, written as a model field |

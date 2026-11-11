@@ -21,6 +21,15 @@ Before 2026-07 the history is the git log.
   With it go the only pure instances of `Gathering` and of the `×→+`
   merge (both under `Monoid r`), so those two are `PUI`-only; `(->)`
   remains the pure carrier the value-level laws run on.
+- **`PointedCostrong` deleted.** The class `unfirstFrom :: c -> p (Tuple a
+  c) (Tuple b c) -> p a b` — `unfirst` with its state channel started at
+  `c` — had been reached by its own two tests alone since the field-level
+  trace forms were retired (2026-10-05): no library word stood on it, the
+  one-field `×`-knot it would seed has no word by design (a looped state
+  is a model field), and the fact it named is already stated and tested on
+  plain `Costrong`, as the seeded retraction `unfirst (seeded (Tuple a0
+  c0) >>> first g) ≈ seeded a0 >>> g`. Its module, its `(->)` and `PUI`
+  instances and its tests go.
 
 ## 2026-11-09
 - **`actedOf` derived.** The list of displays is now `first` around

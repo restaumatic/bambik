@@ -31,8 +31,8 @@ import Data.Tuple (Tuple(..))
 -- | UI component's own last output** — the residual a lens would carry visibly in
 -- | the type is hidden, threaded through state instead. The collapsed form
 -- | shows why the `PUI` carrier gates it (there is no last output before the
--- | first emission); `Data.Profunctor.PointedCostrong` starts the state
--- | channel at a given value instead. It has no row form: a loop's state
+-- | first emission), so a raw colens needs its state channel primed
+-- | before it passes anything. It has no row form: a loop's state
 -- | is a model field under `looped` (`Data.Profunctor.Row`, *What is
 -- | deliberately not here*).
 type Colens s t a b = forall p. Costrong p => p a b -> p s t

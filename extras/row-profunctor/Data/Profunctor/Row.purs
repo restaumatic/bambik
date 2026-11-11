@@ -26,10 +26,7 @@
 -- | `Costrong`/`Cochoice` — whose optics `Colens`/`Coprism`, however, the
 -- | ecosystem never built). `**`: the raw `unfirst` composite is dead on
 -- | a gated carrier, so the knot at this shape needs a starting point —
--- | the whole-row `looped` (`PUI`'s, primed by its
--- | first feed; the pointed trace `PointedCostrong` *,
--- | `Data.Profunctor.PointedCostrong`, is the seeded `unfirst` it is
--- | stated against) — while the `+` side needs no class of its own,
+-- | the whole-row `looped` (`PUI`'s, primed by its first feed) — while the `+` side needs no class of its own,
 -- | `unleft` holding raw. For the ecosystem pairs the optics follow by
 -- | Pastro–Street (`Strong`/`Choice` are lawful Tambara modules, so
 -- | `Lens`/`Prism` — and, dually, `Colens`/`Coprism` — are representation
