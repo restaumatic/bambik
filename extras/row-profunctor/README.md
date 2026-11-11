@@ -40,7 +40,7 @@ how the `spago test` suite exercises them without a DOM.
 | `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase` |
 | `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `joined` |
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `unshown` |
-| `Data.Profunctor.Acting` | the container action `class Acting`/`actedBy`, `acted @l`, `actedAt @l @t` |
+| `Data.Profunctor.Acting` | the container action `class Acting`/`acting`, `acted @l`, `actedAt @l @t` |
 | `Data.Profunctor.Row.Structural` | structural `Eq`/`Ord` of plain values through `Foreign`, for options and keys no instance closes (holes) |
 
 ## What extraction would take

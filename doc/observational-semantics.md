@@ -194,8 +194,8 @@ background is the retained feed and the wire is echo (`focusField @l` re-attache
 it); with an occurrence there is no feed to re-attach, so wholeness is each
 operand's own — a fold releases the whole row it computed — and where a
 form carries state across occurrences the wire is retention (`retain`
-withholds until its state channel has a value, `accumulated` is
-input-primed). A variant
+withholds until its state channel has a value, `accumulated` until
+every key's element has spoken). A variant
 output cannot be re-said, so no echo can be mandated: from a feed it would be
 a fabricated event, forbidden; from an occurrence it is a response,
 permitted. The two off-diagonal "wires", replay and retention, are carrier

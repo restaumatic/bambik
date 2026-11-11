@@ -7,6 +7,29 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-11, latest
+- **The keyed square stated by one formula.** The four class primitives
+  are unary, `p a b -> p (⊗ₖ a) (⊕ₖ b)` with the tensors of the class's
+  strength: `acting :: p a b -> p (Array (Tuple k a)) (Array (Tuple k
+  b))`, `dispatching :: p a b -> p (Tuple k a) (Tuple k b)`, `gathering
+  :: p a b -> p (Array (Tuple k a)) (Tuple k b)`, `accumulating :: p a b
+  -> p (Tuple k a) (Array (Tuple k b))`. They took the key as a function
+  (`actedBy` and its three siblings) until now; with the key beside the
+  element and out of its reach, unforgeable identity is the type's, and
+  the label forms `acted @l`/`dispatched @l`/`gathered @l`/`accumulated
+  @l` are `dimap`s that pair the key and write it back — the `second`
+  around the element and the `Strong` constraint are gone from all of
+  them. `actedBy` stays as a derived function, the form the wire and
+  laxity laws are written in.
+- **`Accumulating` gathers through the gate.** Its hand-written slots
+  and busy flag are replaced by `PUI.Gate`, the keys enrolled in
+  first-appearance order: the array is withheld until every key's element
+  has spoken and re-released on every entity and emission after. With
+  that the element is `p a b` (it was `p a a`, the fed row priming its
+  slot), and `accumulated`/`accumulatedOf`/`accumulatedOn` take a separate
+  output row. One behaviour changes: an element that does not answer its
+  feed withholds the board where the fed row used to fill its slot; over
+  displays and editors, which answer every feed, each entity releases
+  once as before. No demo changed.
 - **`Data.Profunctor.Cont` deleted.** The CPS profunctor `Cont r a b =
   (b -> r) -> (a -> r)` was the one carrier under `extras/profunctor`, kept
   in the build glob for its header: an inventory of which classes a pure

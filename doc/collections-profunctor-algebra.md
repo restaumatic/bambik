@@ -244,7 +244,7 @@ inventory is:
 2. **Tambara modules per action** — `Strong`, `Choice` (ecosystem);
    `Resolving`, `Retaining` (the stateful carrier's extra actions).
 3. **One container-action class** in place of any collection shape:
-   `actedBy :: Ord k => (a -> k) -> p a b -> p (Array a) (Array b)` for the
+   `acting :: Ord k => p a b -> p (Array (Tuple k a)) (Array (Tuple k b))` for the
    keyed `Array` container, the species refinement for stateful carriers.
    Its laws (singleton retraction = yanking at the container, the empty
    release, the wire law) are value-tested on `PUI Effect` probes. The collapsed event form and the keyed Mealy remain
@@ -265,7 +265,7 @@ laxity has a price (the gate) that pure treatments never see.
 ## Where it lives
 
 - **`extras/row-profunctor/Data/Profunctor/Acting.purs`** holds the pure
-  algebra: `class Acting`/`actedBy` and the row forms `acted @l` and `actedAt @l @t`.
+  algebra: `class Acting`/`acting` and the row forms `acted @l` and `actedAt @l @t`.
   The carrier machinery lives with the carriers, like the merge instances:
   `PUI` carries `class Hosting` (instantiate one element at runtime, detach
   a leaver, restack survivors), the shared keyed reconciler and the one
@@ -282,9 +282,11 @@ laxity has a price (the gate) that pure treatments never see.
   `Dispatching` (`+→+`, `Choice`'s), `Gathering` (`×→+`, `Resolving`'s),
   `Accumulating` (`+→×`, `Retaining`'s). Every member is keyed by a
   **materialized identity field** `@l` of the element row (rows carry
-  their identity; the class primitives `actedBy`/`dispatchedBy`/
-  `gatheredBy`/`accumulatedBy` keep the function form as the minimal
-  carrier obligation), the `+`-members reading it off the one entity fed
+  their identity; the class primitives `acting`/`dispatching`/
+  `gathering`/`accumulating` are unary, each element riding beside its
+  key as `Tuple k a` — `p a b -> p (⊗ₖ a) (⊕ₖ b)`, the array the
+  `×`-power over the keys and the keyed entity the `+`-power — so the
+  label forms are `dimap`s over them), the `+`-members reading it off the one entity fed
   as the `×`-members read it off each element (they took a `{ key, value }`
   envelope until 2026-11-08). Each class has the same three forms: bare
   over the element's row, `…Of @l proj` over a projection (`PUI`,
@@ -295,9 +297,9 @@ laxity has a price (the gate) that pure treatments never see.
   | --- | --- | --- |
   | `actedOf @l` | `(a -> Array { \| r }) -> p { \| r } { \| r } -> p a a` | the list of displays, `dimap (\a -> Tuple (proj a) a) snd (first (acted @l w))`: `acted`'s keyed, retaining reconciliation and its gather gate, the elements' releases dropped and the fed row passing on once they answered, so the list is a stage |
   | `gatheredOf @l` | `(a -> Array { \| r }) -> p { \| r } [ \| v ] -> p a [ \| v ]` | the emitting list: the same reconciler, every element emission forwarded onto one channel, ungated, silent on empty (`gatheredAt @l @t` over a stored array) |
-  | `acted @l` | `p { \| r } { \| r1 } -> p (Array { \| r }) (Array { \| r1 })` | the container action: the element typed at its whole row, key included, the carrier re-setting the key on every emission from the input row through the `Strong` state channel, so identity is unforgeable; output is the gather gate (`actedAt @l @t` over a stored array) |
+  | `acted @l` | `p { \| r } { \| r1 } -> p (Array { \| r }) (Array { \| r1 })` | the container action: the element typed at its whole row, key included, the key re-set on every emission from the input row (it rides beside the element in the primitive's pair), so identity is unforgeable; output is the gather gate (`actedAt @l @t` over a stored array) |
   | `dispatched @l` | `p { \| r } { \| r1 } -> p { \| r } { \| r1 }` | `+→+`: one instance per value of field `l`, an unknown key instantiating a new one, a known key re-feeding exactly its instance, emissions leaving with the key they were fed under (`dispatchedOf @l proj` over a projection, `dispatchedOn @l @c` over a case) |
-  | `accumulated @l` | `p { \| r } { \| r } -> p { \| r } (Array { \| r })` | `+→×`, the keyed Mealy: grows per new key in first-appearance order, updates known slots, emits the whole array at once, input-primed (`accumulatedOf @l proj`, `accumulatedOn @l @c`) |
+  | `accumulated @l` | `p { \| r } { \| r1 } -> p { \| r } (Array { \| r1 })` | `+→×`, the keyed Mealy: grows per new key in first-appearance order, updates known slots, releases the whole array through the gather gate (`accumulatedOf @l proj`, `accumulatedOn @l @c`) |
 
   The `+`-members never detach or restack: absence of a key is no signal,
   so removal and ordering stay array-level concerns upstream.
@@ -309,9 +311,10 @@ laxity has a price (the gate) that pure treatments never see.
   `×`-output merge over a runtime row — `[]` is the zero-participant
   release, the empty law and L6's zero-field clause the same consequence
   of enrolling nothing, a feed one step at both (a reconcile whose elements
-  echo gathers once, whole). `accumulated` is input-primed and never
-  withholds, so it needs no gate; `gathered` and `dispatched` are
-  variant-output and gate nothing.
+  echo gathers once, whole). `accumulated` gathers through the same
+  machine, its keys enrolled in first-appearance order and never
+  forgotten; `gathered` and `dispatched` are variant-output and gate
+  nothing.
 - **Tests and demos.** Value-level laws run in `test/Main.purs` on
   `PUI Effect` probes (empty announces `[]` and nothing at registration,
   singleton retraction, gather gate, identity-follows-key, `gatheredOf` silent

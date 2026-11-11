@@ -1869,8 +1869,8 @@ debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 --     gathered         |                    |   [|v]       |                  |                  | happens                |
 --   Dispatching /      | {l::k|r}       (+) | p {l::k|ra}  | {l::k|rb}    (+) | — (no slots)     | the fed entity's       | unknown key =
 --     dispatched       |                    |   {l::k|rb}  |                  |                  | emissions, key re-set  | new instance
---   Accumulating /     | {l::k|r}       (+) | p {l::k|r}   | Array {l::k|r}   | the fed rows     | whole array, at once   | grows per new
---     accumulated      |                    |   {l::k|r}   |              (×) | (input-primed)   | per entity             | key; none before
+--   Accumulating /     | {l::k|ra}      (+) | p {l::k|ra}  | Array {l::k|rb}  | element          | whole array, once      | grows per new
+--     accumulated      |                    |   {l::k|rb}  |              (×) | emissions (gate) | every key spoke        | key; none before
 --
 -- Rule of thumb — ask what the stage means downstream, and how updates
 -- arrive: everything at once (a model projection) → ×-input; one entity at a
@@ -1884,8 +1884,8 @@ debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 -- restack: the absence of a key is no signal, so removal and ordering are
 -- array-level concerns of some ×-stage upstream. In the product-output
 -- members the carrier re-sets the key on every emission from the input
--- row, so identity is unforgeable (the `Strong` state channel in the
--- class modules' bare forms).
+-- row, so identity is unforgeable (the class primitives take each element
+-- beside its key, out of its reach; the bare forms write it back).
 
 
 -- | What a stateful carrier contributes to the container action: how to
@@ -2185,10 +2185,10 @@ dispatchedOf f w = fromHandles do
 
 -- | The **keyed Mealy over a projection** — `accumulated`'s `…Of` form, the
 -- | `+→×` member: retain the array, feed one entity, emit the whole. Each
--- | fed entity updates (or, on a new key, appends) its slot and the whole
--- | array leaves immediately — input-primed, so there is never a hole to
--- | withhold over; element emissions fold back into their slot the same
--- | way. The board/ledger shape for keyed streams, the aggregate as
+-- | fed entity re-feeds (or, on a new key, appends) its element, each
+-- | element emission writes its slot, and the whole array leaves once
+-- | every key's element has spoken — the gather gate, so over displays,
+-- | which answer every feed, once per entity. The board/ledger shape for keyed streams, the aggregate as
 -- | running state built one entity at a time, in first-appearance order:
 -- | `( listItem $ text scoreLine ) # accumulatedOf @"team" goal`
 -- | (scoreboard). A hole projection is absent (guardrails L18).
