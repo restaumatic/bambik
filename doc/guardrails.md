@@ -255,8 +255,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   (`joined2 @l1 @l2`) that closes it to those labels and widens it,
   and a handler's row, coming from a function, is the block's (an
   inclusive union could not be split back out under holes). A handler missing for a case is a type
-  error either way. Variant handling and
-  record production MUST be disjoint (responsibility never splits). Runtime evidence appears exactly where responsibility
+  error either way. The sharing is each merge's universal property
+  (`Data.Profunctor.Row`): the pairing at `×→×` (input shared, output
+  owned), the copairing at `+→+` and `+→×` (input owned, output
+  shared), the carrier's interleaving at `×→+` (both shared). Variant
+  handling MUST be disjoint, and so MUST record production where the
+  outputs are owned, at `×→×` (responsibility never splits). Runtime evidence appears exactly where responsibility
   does (`DispatchableVariants`, `MergeableRecords`) and nowhere else.
 - Merge operands' emissions MUST be runtime-exact: trimmed to their
   declared row before the gates combine them, so no stale sibling field
@@ -693,7 +697,7 @@ code below the UI) are algebra-layer material and exempt by location.
   the block's siblings).
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
   a keyed collection's keys are compared **structurally**
-  (`Data.Profunctor.Row.Structural`, a key read through the ecosystem's
+  (`Data.Structural`, a key read through the ecosystem's
   `Foreign`), so an option or key type only a logic function names
   leaves nothing to solve.
 - **Splits at labels the view names.** The knot splits nothing: `looped`

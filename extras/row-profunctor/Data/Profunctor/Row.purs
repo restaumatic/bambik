@@ -209,13 +209,42 @@
 -- | `splitVariant`, a plain function rather than a placement: the
 -- | dispatch the `+→+` merge splits with.
 -- |
--- | The merge's two obligations are per-side and dual, and they are what the
--- | constraint vocabulary below spells out: on an **input** side, where does
--- | each label's value come from; on an **output** side, who is allowed to
--- | produce it. Records share their input (every operand is fed the whole
--- | row) and own their output (each field has exactly one producer);
--- | variants own their input (each case has exactly one handler) and share
--- | their output (any operand may emit any case). A shared record input is
+-- | The merges are the **universal properties of the two tensors**, read
+-- | at labelled rows, and that is where each one's sharing comes from:
+-- |
+-- | ```
+-- | shape  merge                       input    output
+-- | -----  --------------------------  -------  ------
+-- | ×→×    pairing    ⟨f, g⟩ : C → A×B  shared   owned
+-- | +→+    copairing  [f, g] : A+B → C  owned    shared
+-- | +→×    copairing  [f, g] : A+B → C  owned    shared
+-- | ×→+    the carrier's interleaving  shared   shared
+-- | ```
+-- |
+-- | The **pairing** is the product's: a record can be copied, so every
+-- | operand is fed the whole row, and a field has no way to merge two
+-- | values, so each has exactly one producer. The **copairing** is the
+-- | coproduct's: a case cannot be copied, so each has exactly one handler,
+-- | and the target is whatever the handlers agree on, so the output is one
+-- | row every operand is typed at — at `+→+` any operand may emit any
+-- | case, at `+→×` each operand releases the whole row. `×→+` is neither:
+-- | its input is shared as the pairing's is and its output shared as the
+-- | copairing's is, so no universal property combines its operands; what
+-- | does is the carrier's interleaving of two emission streams, which is
+-- | why it is the one merge whose unit no wire reaches.
+-- |
+-- | Read per side: a `×` input is shared and a `+` input owned, always; a
+-- | `+` output is shared, always; a `×` output is owned under the pairing
+-- | and shared under the copairing, so the **input decides**. `+→×` is the
+-- | one shape where both readings type — owned fields completed from
+-- | retention, or the copairing — and the library takes the copairing:
+-- | with owned inputs one operand runs per occurrence, so owned outputs
+-- | would need the sibling's fields retained and a gate to wait on them
+-- | (it was that until 2026-10-04, CHANGELOG).
+-- |
+-- | The constraint vocabulary below spells the two obligations out per
+-- | side: on an **input** side, where does each label's value come from;
+-- | on an **output** side, who is allowed to produce it. A shared record input is
 -- | **one row** — the operands' inputs are the merge's, and an operand's
 -- | business functions are typed at that row (guardrails L18); a shared
 -- | variant output is **one row** too, every operand typed at the block's
@@ -236,8 +265,8 @@
 -- |     `DispatchableVariants` (runtime tag evidence for variant dispatch).
 -- |     Their meanings come from the row-profunctor reading: everyone may
 -- |     read a record field / offer a variant case, but each variant case
--- |     must have exactly one handler and each record field exactly one
--- |     producer. `MergeableRecords` adds the **runtime-exactness** evidence the
+-- |     must have exactly one handler and, under the pairing (`×→×`), each
+-- |     record field exactly one producer. `MergeableRecords` adds the **runtime-exactness** evidence the
 -- |     gated merge uses to trim operand emissions to their declared
 -- |     output rows (`exactRow`).
 -- |   * **the split** — `splitVariant`, the plain row function the `+→+`
@@ -561,13 +590,14 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 --
 -- The four merges' constraints factor exactly by side, under one law:
 -- **sharing is open, responsibility is exclusive** — a shared record input
--- is one row every operand is fed whole, a shared variant output an
--- inclusive union any emitter may emit into (`×→+`) or one row every
--- handler is typed at (`+→+`) — and runtime
+-- is one row every operand is fed whole, a shared output one row every
+-- operand is typed at (`×→+`, `+→+`, and the record output of `+→×`,
+-- the copairing) — and runtime
 -- label evidence appears only on the exclusive sides, where the merge's
 -- runtime action is label-driven (dispatch, union) rather than
--- label-blind (broadcast, expand). Records are read-shared but
--- write-owned; variants are emit-shared but handle-owned. A shared side
+-- label-blind (broadcast, passage). Records are read-shared, and
+-- write-owned under the pairing (`×→×`); variants are emit-shared but
+-- handle-owned. A shared side
 -- is one row, written as one row variable — no class states an equality
 -- — so each merge signature is its owned side's bundle and its shared
 -- side's row:

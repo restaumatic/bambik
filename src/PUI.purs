@@ -127,7 +127,7 @@ module PUI
   )
   where
 
-import Data.Profunctor.Row.Structural (withStructuralEq)
+import Data.Structural (withStructuralEq)
 import Prelude
 
 import Data.Array as Array

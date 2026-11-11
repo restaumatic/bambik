@@ -7,6 +7,21 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-11, latest
+- **The merges stated by universal property.** `Data.Profunctor.Row`
+  now gives each merge's sharing as a consequence, not a per-side rule
+  with an exception: `×→×` is the pairing (input shared, output owned),
+  `+→+` and `+→×` the copairing (input owned, output shared), `×→+` the
+  carrier's interleaving (shared on both sides, no universal property).
+  The old statement, "records own their output", was false of `+→×`
+  since 2026-10-04; the input decides what a `×` output is. Each shape
+  header names its construction. Documentation only.
+- **`Data.Structural`.** The structural `Eq`/`Ord` of plain values moves
+  from `Data.Profunctor.Row.Structural` to its own source root,
+  `extras/structural`: it mentions no row and no profunctor. Its header
+  states what it compares and its laws (agreement with lawful instances,
+  an order consistent with the equality), now tested in test/Main.purs,
+  and no longer says a selector uses it — none has since options became
+  leaves.
 - **The keyed square stated by one formula.** The four class primitives
   are unary, `p a b -> p (⊗ₖ a) (⊕ₖ b)` with the tensors of the class's
   strength: `acting :: p a b -> p (Array (Tuple k a)) (Array (Tuple k

@@ -54,7 +54,7 @@ import Prelude
 
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice)
-import Data.Profunctor.Row.Structural (withStructuralOrd)
+import Data.Structural (withStructuralOrd)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..))

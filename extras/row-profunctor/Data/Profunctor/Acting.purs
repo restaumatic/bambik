@@ -81,7 +81,7 @@ module Data.Profunctor.Acting
   , actedAt
   ) where
 
-import Data.Profunctor.Row.Structural (withStructuralOrd)
+import Data.Structural (withStructuralOrd)
 import Prelude
 
 import Data.Profunctor (class Profunctor, dimap)

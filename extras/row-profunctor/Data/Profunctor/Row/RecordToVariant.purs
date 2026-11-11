@@ -36,6 +36,10 @@
 -- | `i`: both operands fed the merge's whole row), outputs shared (one
 -- | row `o` every operand is typed at: an emitter open on its output
 -- | sits in it by its label, an action by the `joined` that closes it).
+-- | It is neither the pairing (its output is no product) nor the
+-- | copairing (its input is no coproduct): both operands are fed and both
+-- | may emit, so what combines them is the carrier's interleaving of two
+-- | emission streams, no universal property.
 -- |
 -- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`. A feed writes
 -- |      the replay slot; a second write of the same row changes nothing.

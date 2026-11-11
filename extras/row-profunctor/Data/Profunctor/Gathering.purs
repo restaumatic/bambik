@@ -55,7 +55,7 @@ module Data.Profunctor.Gathering
 import Prelude
 
 import Data.Profunctor (class Profunctor, dimap, lcmap)
-import Data.Profunctor.Row.Structural (withStructuralOrd)
+import Data.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), snd)
 import Prim.Row (class Cons)

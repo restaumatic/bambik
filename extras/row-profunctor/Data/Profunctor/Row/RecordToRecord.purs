@@ -123,7 +123,8 @@
 -- | The four merge laws of Data.Profunctor.Row read here, for
 -- | `m = recordToRecord w1 w2`, inputs shared (one row `i`: both
 -- | operands are fed the merge's whole row), outputs owned
--- | (`OwnedRecordOutputs`):
+-- | (`OwnedRecordOutputs`) — the **pairing** `⟨f, g⟩ : C -> A × B` of the
+-- | product:
 -- |
 -- |   3. **Symmetry and associativity** — up to `≈`.
 -- |   4. **Projection** — `π_k` is the whole row: every feed of `m`

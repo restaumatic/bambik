@@ -131,7 +131,7 @@ module PUI.Web.MDC2
   )
   where
 
-import Data.Profunctor.Row.Structural (withStructuralOrd)
+import Data.Structural (withStructuralOrd)
 import Prelude hiding (div)
 
 import Control.Monad.State (gets)

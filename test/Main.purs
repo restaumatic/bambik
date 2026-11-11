@@ -30,6 +30,10 @@ import Data.Profunctor.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
 import Data.Variant (expand, match)
 import Data.Variant.Case (caseText)
+import Data.Structural (withStructuralEq, withStructuralOrd)
+import Data.Ordering (invert)
+import Record as Record
+import Type.Proxy (Proxy(..))
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
@@ -275,6 +279,23 @@ main = do
   -- the case label of a variant value, verbatim, whichever case is inhabited.
   assertEqual "caseText" "Medium roast" (caseText (."Medium roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
   assertEqual "caseText/other case" "Light roast" (caseText (."Light roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
+
+  -- Data.Structural: equality and order by structure, no instance asked —
+  -- agreement with the lawful instances, records whatever order built them,
+  -- and an order consistent with the equality.
+  do
+    let
+      x = { k: "a", tags: [ 1, 2 ], kind: (.picked { n: 1 } :: [ picked :: { n :: Int }, none :: {} ]) }
+      y = x { tags = [ 1, 3 ] }
+    assertEqual "structural/eq agrees: equal" true (withStructuralEq @{ k :: String, tags :: Array Int, kind :: [ picked :: { n :: Int }, none :: {} ] } (x == x { k = "a" }))
+    assertEqual "structural/eq agrees: unequal" false (withStructuralEq @{ k :: String, tags :: Array Int, kind :: [ picked :: { n :: Int }, none :: {} ] } (x == y))
+    assertEqual "structural/eq: a variant's case matters" false
+      (withStructuralEq @[ picked :: { n :: Int }, none :: {} ] ((.picked { n: 1 } :: [ picked :: { n :: Int }, none :: {} ]) == .none {}))
+    assertEqual "structural/eq: field order does not" true
+      (withStructuralEq @{ a :: Int, b :: Int } ({ a: 1, b: 2 } == Record.insert (Proxy @"a") 1 { b: 2 }))
+    assertEqual "structural/ord: reflexive" EQ (withStructuralOrd @{ k :: String, tags :: Array Int, kind :: [ picked :: { n :: Int }, none :: {} ] } (compare x x))
+    assertEqual "structural/ord: EQ only where equal" true (withStructuralOrd @{ k :: String, tags :: Array Int, kind :: [ picked :: { n :: Int }, none :: {} ] } (compare x y) /= EQ)
+    assertEqual "structural/ord: antisymmetric" (invert (withStructuralOrd @String (compare "a" "b"))) (withStructuralOrd @String (compare "b" "a"))
 
   -- == Zero-field operands (L6): a contribution of zero fields is no ==
   -- == contribution, so a wire, a silent display and an announcing one ==
