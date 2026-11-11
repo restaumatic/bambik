@@ -20,9 +20,9 @@
 -- | equality; keys must be unique and are never rendered. The element is
 -- | typed at its whole row, key included, on both sides, and the key is
 -- | **re-set** on every emission from the element's *input* row, so an
--- | element cannot forge or change identity: the input's key rides around
--- | the element on the `Strong` state channel (`second`) and is written
--- | over each emission.
+-- | element cannot forge or change identity: in the class primitive the
+-- | key rides beside the element, `Array (Tuple k a)`, out of its reach,
+-- | and the label form writes it over each emission.
 -- |
 -- | ## Laws
 -- |
@@ -62,8 +62,9 @@
 -- |
 -- | ## The carrier
 -- |
--- | This module holds the class, whose primitive `actedBy` takes the key as
--- | a function, and the label forms. The instance is the carrier's, as the
+-- | This module holds the class, whose primitive `acting` takes each
+-- | element beside its key (`actedBy` is it with the pairing written from
+-- | a key function), and the label forms. The instance is the carrier's, as the
 -- | merge classes' are: `PUI` holds the shared keyed reconciler and a
 -- | generic `Hosting m node =>` instance, each display carrier its own
 -- | `Hosting`. The gather gate is the record merges' knowledge gate with
@@ -74,6 +75,7 @@
 -- | test/Exhaustive.purs.
 module Data.Profunctor.Acting
   ( class Acting
+  , acting
   , actedBy
   , acted
   , actedAt
@@ -84,26 +86,34 @@ import Prelude
 
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Profunctor.Strong (class Strong, second)
+import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), snd)
 import Prim.Row (class Cons)
 import Record (get, set) as Record
 import Type.Proxy (Proxy(..))
 
--- | The class primitive: lift a UI component over the `Array` container, keyed by
--- | a function. Carriers implement this; the vocabulary form is `acted @l`.
+-- | The class primitive: lift a UI component over the keyed `Array`
+-- | container, every element riding beside its key. The element never sees
+-- | the key, so it cannot forge it. Carriers implement this; the vocabulary
+-- | form is `acted @l`.
 class Profunctor p <= Acting p where
-  actedBy :: forall k a b. Ord k => (a -> k) -> p a b -> p (Array a) (Array b)
+  acting :: forall k a b. Ord k => p a b -> p (Array (Tuple k a)) (Array (Tuple k b))
+
+-- | `acting` keyed by a function of the element, the keys dropped from the
+-- | output: the primitive with its pairing written for it (`Profunctor`
+-- | alone).
+actedBy :: forall p k a b. Acting p => Ord k => (a -> k) -> p a b -> p (Array a) (Array b)
+actedBy key w = dimap (map \a -> Tuple (key a) a) (map snd) (acting w)
 
 -- | The container action keyed by the element's identity field `l`, the
 -- | element typed at its whole row on both sides and the key re-set from
 -- | the input on every emission (see the header). Written trailing, like
 -- | the merges' operands: `row # acted @"id"`. An element's functions are
 -- | typed at its row (guardrails L18).
-acted :: forall @l r p k b1 b2 r1 . Acting p => Strong p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
-acted w = withStructuralOrd @k (actedBy (Record.get prox)
-  (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.set prox k out) (second w)))
+acted :: forall @l r p k b1 b2 r1 . Acting p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
+acted w = withStructuralOrd @k
+  (dimap (map \r -> Tuple (Record.get prox r) r) (map \(Tuple k out) -> Record.set prox k out) (acting w))
   where
   prox = Proxy @l
 

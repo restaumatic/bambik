@@ -1065,13 +1065,14 @@ main = do
     Ref.read outs >>= assertEqual "dispatchedOf: emissions leave under the key they were fed, unforgeable" [ { k: "b", txt: "hello" } ]
 
   -- accumulatedOf (+→×): the keyed Mealy — grows per new key, updates per
-  -- known key, emits the whole array immediately (input-primed); element
-  -- emissions fold back into their slot; order is first appearance.
+  -- known key, releases the whole array once per entity over elements that
+  -- answer their feed (the ×→× law); element emissions fold back into their
+  -- slot; order is first appearance.
   do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
     outs <- Ref.new ([] :: Array (Array { k :: String, v :: Int }))
-    m <- handles (accumulatedOf @"k" identity (elemProbe builds roster))
+    m <- handles (accumulatedOf @"k" identity (displayProbe builds roster))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { k: "a", v: 1 }
     Ref.read outs >>= assertEqual "accumulatedOf: first case emits the singleton immediately" [ [ { k: "a", v: 1 } ] ]
@@ -1086,10 +1087,30 @@ main = do
     builds <- Ref.new 0
     roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
     outs <- Ref.new ([] :: Array (Array { k :: String, v :: Int }))
-    m <- handles (accumulatedOn @"k" @"c" (elemProbe builds roster) :: PUI Effect [ c :: { k :: String, v :: Int } ] (Array { k :: String, v :: Int }))
+    m <- handles (accumulatedOn @"k" @"c" (displayProbe builds roster) :: PUI Effect [ c :: { k :: String, v :: Int } ] (Array { k :: String, v :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser (.c { k: "a", v: 1 })
     Ref.read outs >>= assertEqual "accumulatedOn: the operand owning case c accumulates it" [ [ { k: "a", v: 1 } ] ]
+  -- accumulatedOf over an element that does not answer its feed: the gather
+  -- gate withholds the vector until every key's element has spoken, and the
+  -- element's output row is its own (no `p a a`).
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, txt :: String }))
+    outs <- Ref.new ([] :: Array (Array { k :: String, txt :: String }))
+    m <- handles (accumulatedOf @"k" identity (elemProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { k: "a", v: 1 }
+    m.toUser { k: "b", v: 2 }
+    Ref.read outs >>= assertEqual "accumulatedOf: withheld while no element has spoken" []
+    fireElem roster 0 { k: "a", txt: "one" }
+    Ref.read outs >>= assertEqual "accumulatedOf: withheld while one key is unheard" []
+    fireElem roster 1 { k: "forged", txt: "two" }
+    Ref.read outs >>= assertEqual "accumulatedOf: released whole once every key has spoken, key re-set"
+      [ [ { k: "a", txt: "one" }, { k: "b", txt: "two" } ] ]
+    m.toUser { k: "a", v: 3 }
+    Ref.read outs >>= assertEqual "accumulatedOf: a known key re-fed re-releases from retained slots"
+      [ [ { k: "a", txt: "one" }, { k: "b", txt: "two" } ], [ { k: "a", txt: "one" }, { k: "b", txt: "two" } ] ]
 
   -- == The seeded retraction laws (doc/observational-semantics.md): the ==
   -- == raw ×-side composites deadlock — each gate waits on the other — so ==

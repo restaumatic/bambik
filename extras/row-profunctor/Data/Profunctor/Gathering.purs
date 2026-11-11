@@ -10,8 +10,9 @@
 -- | ## The key
 -- |
 -- | **A materialized identity field of the row** (`gathered @l`), as for
--- | `acted @l`. It is read from each fed element only: the output is an
--- | event, not the element's row, so there is no key to re-set.
+-- | `acted @l`. The class primitive emits each event beside its element's
+-- | key, `Tuple k b`; the label form drops it, the output being an event
+-- | and not the element's row, so there is no key field to re-set.
 -- |
 -- | ## Laws
 -- |
@@ -23,9 +24,9 @@
 -- |     elements' to keep, so the class is lawful over operands that arm
 -- |     (emitters; `editsOf` makes an editor one by dropping its answers
 -- |     inside the feed) — as `Resolving` is lawful only at `PUI`'s
--- |     quiescence. There is no wire law: `gatheredBy k identity` would
+-- |     quiescence. There is no wire law: `gathering identity` would
 -- |     forward each element's echo inside the feed.
--- |   * **monotonicity** — `p ⊑ p'` implies `gatheredBy k p ⊑ gatheredBy k p'`.
+-- |   * **monotonicity** — `p ⊑ p'` implies `gathering p ⊑ gathering p'`.
 -- |
 -- | ## Forms
 -- |
@@ -40,35 +41,37 @@
 -- |
 -- | ## The carrier
 -- |
--- | This module holds the class, whose primitive `gatheredBy` takes the key
--- | as a function, and the label forms. The instance is the carrier's:
+-- | This module holds the class, whose primitive `gathering` takes each
+-- | element beside its key, and the label forms. The instance is the carrier's:
 -- | `PUI` holds a generic `Hosting m node =>` instance over the keyed
 -- | reconciler it shares with `Acting`, with passage where `Acting` gates.
 module Data.Profunctor.Gathering
   ( class Gathering
-  , gatheredBy
+  , gathering
   , gathered
   , gatheredAt
   ) where
 
 import Prelude
 
-import Data.Profunctor (class Profunctor, lcmap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Row.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol)
+import Data.Tuple (Tuple(..), snd)
 import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
 
--- | The class primitive: the array in, each element's emission out, keyed
--- | by a function. Carriers implement this; the vocabulary form is
--- | `gathered @l`.
+-- | The class primitive: the keyed array in, each element's emission out
+-- | beside its element's key. Carriers implement this; the vocabulary form
+-- | is `gathered @l`.
 class Profunctor p <= Gathering p where
-  gatheredBy :: forall k a b. Ord k => (a -> k) -> p a b -> p (Array a) b
+  gathering :: forall k a b. Ord k => p a b -> p (Array (Tuple k a)) (Tuple k b)
 
 -- | The gathering collection keyed by the element's identity field `l`.
 gathered :: forall @l r p k b v. Gathering p => IsSymbol l => Cons l k b r => p { | r } [ | v ] -> p (Array { | r }) [ | v ]
-gathered w = withStructuralOrd @k (gatheredBy (Record.get (Proxy @l)) w)
+gathered w = withStructuralOrd @k
+  (dimap (map \r -> Tuple (Record.get (Proxy @l) r) r) snd (gathering w))
 
 -- | `gathered` over an array the model stores: keyed by field `l` of each
 -- | element, the array field `t` of the fed row, both named by label

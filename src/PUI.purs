@@ -184,7 +184,7 @@ import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, unshown)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, focusCase, onCase)
 import Data.Profunctor.Strong (class Strong, first)
 import Data.Time.Duration (Milliseconds(..))
-import Data.Traversable (for, sequence, sequence_, traverse_)
+import Data.Traversable (for, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (class Contractable, case_, contract, inj, on, prj)
@@ -1932,33 +1932,33 @@ instance Hosting Effect Unit where
 -- | Keyed, retaining collection on any hosting carrier (laws in
 -- | `Data.Profunctor.Acting`'s header; the vocabulary form is `acted @l`).
 instance Hosting m node => Acting (PUI m) where
-  actedBy key w = fromHandles do
+  acting w = fromHandles do
     hooks <- hosting w
-    liftEffect $ actedWith key hooks
+    liftEffect $ actedWith hooks
 
 -- | One instance per key on any hosting carrier (laws in
 -- | `Data.Profunctor.Dispatching`'s header; the vocabulary forms are
 -- | `dispatched @l`, `dispatchedOf @l proj`, `dispatchedOn @l @c`).
 instance Hosting m node => Dispatching (PUI m) where
-  dispatchedBy key w = fromHandles do
+  dispatching w = fromHandles do
     hooks <- hosting w
-    liftEffect $ dispatchedWith key hooks
+    liftEffect $ dispatchedWith hooks
 
 -- | The emitting collection on any hosting carrier (laws in
 -- | `Data.Profunctor.Gathering`'s header; the vocabulary forms are
 -- | `gathered @l`, `gatheredOf @l proj`, `gatheredAt @l @t`).
 instance Hosting m node => Gathering (PUI m) where
-  gatheredBy key w = fromHandles do
+  gathering w = fromHandles do
     hooks <- hosting w
-    liftEffect $ collapsedWith key hooks
+    liftEffect $ collapsedWith hooks
 
 -- | The keyed Mealy on any hosting carrier (laws in
 -- | `Data.Profunctor.Accumulating`'s header; the vocabulary forms are
 -- | `accumulated @l`, `accumulatedOf @l proj`, `accumulatedOn @l @c`).
 instance Hosting m node => Accumulating (PUI m) where
-  accumulatedBy key w = fromHandles do
+  accumulating w = fromHandles do
     hooks <- hosting w
-    liftEffect $ accumulatedWith key hooks
+    liftEffect $ accumulatedWith hooks
 
 -- | The **pane**: a whole-row citizen — a display, an editor, or a pipeline
 -- | of them — that *exists* only while the classifier yields case `l`:
@@ -2192,7 +2192,7 @@ dispatchedOf f w = fromHandles do
 -- | running state built one entity at a time, in first-appearance order:
 -- | `( listItem $ text scoreLine ) # accumulatedOf @"team" goal`
 -- | (scoreboard). A hole projection is absent (guardrails L18).
-accumulatedOf :: forall @l r m node k b a. Hosting m node => IsSymbol l => Cons l k b r => (a -> { | r }) -> PUI m { | r } { | r } -> PUI m a (Array { | r })
+accumulatedOf :: forall @l r r1 m node k b1 b2 a. Hosting m node => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => (a -> { | r }) -> PUI m { | r } { | r1 } -> PUI m a (Array { | r1 })
 accumulatedOf f w = fromHandles do
   inner <- handles (accumulated @l w)
   pure
@@ -2202,52 +2202,50 @@ accumulatedOf f w = fromHandles do
 
 -- The dispatch mode: one instance per key, fed on its key, its emissions
 -- forwarded as they come; nothing is ever detached.
-dispatchedWith :: forall k a b node. Ord k => (a -> k) -> Hooks a b node -> Effect { toUser :: a -> Effect Unit, fromUser :: (b -> Effect Unit) -> Effect Unit }
-dispatchedWith key hooks = do
+dispatchedWith :: forall k a b node. Ord k => Hooks a b node -> Effect { toUser :: Tuple k a -> Effect Unit, fromUser :: (Tuple k b -> Effect Unit) -> Effect Unit }
+dispatchedWith hooks = do
   propRef <- Ref.new Nothing
   indexRef <- Ref.new Map.empty
   orderRef <- Ref.new []
   let
-    onEmit _ _ b = do
+    onEmit k _ b = do
       mProp <- Ref.read propRef
-      for_ mProp \prop -> prop b
+      for_ mProp \prop -> prop (Tuple k b)
   pure
-    { toUser: \a -> do
-        e <- ensureInstance hooks onEmit indexRef orderRef (key a)
+    { toUser: \(Tuple k a) -> do
+        e <- ensureInstance hooks onEmit indexRef orderRef k
         e.feed a
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
 
--- The accumulate mode: one slot per key holding its latest row, the fed
--- row written before the feed (input-primed) and every element emission
--- after, the whole vector released after each; the busy guard keeps an
--- element's answer inside a feed from releasing twice.
-accumulatedWith :: forall k a node. Ord k => (a -> k) -> Hooks a a node -> Effect { toUser :: a -> Effect Unit, fromUser :: (Array a -> Effect Unit) -> Effect Unit }
-accumulatedWith key hooks = do
-  propRef <- Ref.new Nothing
+-- The accumulate mode: the gather gate over the keys seen so far
+-- (`PUI.Gate`, run by `driveGate` as `actedWith` runs it), enrolled in
+-- first-appearance order. A feed is one step: it enrols its key if new,
+-- feeds the one instance, and the step's single release is the whole keyed
+-- vector once every key's element has spoken; between feeds each element
+-- emission contributes its slot and the gate re-releases the whole,
+-- retain-last. The key is enrolled before its instance is built, so an
+-- element speaking at registration finds its participant.
+accumulatedWith :: forall k a b node. Ord k => Hooks a b node -> Effect { toUser :: Tuple k a -> Effect Unit, fromUser :: (Array (Tuple k b) -> Effect Unit) -> Effect Unit }
+accumulatedWith hooks = do
+  gate <- newGate []
   indexRef <- Ref.new Map.empty
   orderRef <- Ref.new []
-  busyRef <- Ref.new false
   let
-    emitAll = do
-      entries <- Ref.read orderRef
-      slots <- for entries \e -> Ref.read e.slot
-      for_ (sequence slots) \values -> do
-        mProp <- Ref.read propRef
-        for_ mProp \prop -> prop values
-    onEmit _ slot a = do
-      Ref.write (Just a) slot
-      busy <- Ref.read busyRef
-      unless busy emitAll
+    traced = case _ of
+      Withheld missing -> tr "accumulated: vector withheld (elements not heard from yet)" missing
+      _ -> pure unit
+    onEmit k _ b = driveGate gate (Contributed [ Tuple k b ]) >>= traced
   pure
-    { toUser: \a -> do
-        Ref.write true busyRef
-        e <- ensureInstance hooks onEmit indexRef orderRef (key a)
-        Ref.write (Just a) e.slot
-        e.feed a
-        Ref.write false busyRef
-        emitAll
-    , fromUser: \prop -> Ref.write (Just prop) propRef
+    { toUser: \(Tuple k a) -> do
+        out <- steppedFeed Shared gate do
+          index <- Ref.read indexRef
+          keys <- map _.key <$> Ref.read orderRef
+          _ <- driveGate gate (Rekeyed (if Map.member k index then keys else keys <> [ k ]))
+          e <- ensureInstance hooks onEmit indexRef orderRef k
+          e.feed a
+        traced out
+    , fromUser: \prop -> Ref.write (Just prop) gate.prop
     }
 
 -- Look up the instance for a runtime case, instantiating it on first
@@ -2299,21 +2297,19 @@ type ActingEntry k a b node =
 reconcileKeyed
   :: forall k a b node
    . Ord k
-  => (a -> k)
-  -> Hooks a b node
+  => Hooks a b node
   -> (k -> Ref.Ref (Maybe b) -> b -> Effect Unit)
   -> Ref.Ref Boolean
   -> Ref.Ref (Array (ActingEntry k a b node))
-  -> Array a
+  -> Array (Tuple k a)
   -> Effect Unit
-reconcileKeyed key hooks onEmit busyRef entriesRef items = do
+reconcileKeyed hooks onEmit busyRef entriesRef items = do
   busy <- Ref.read busyRef
   unless busy do
     Ref.write true busyRef
     old <- Ref.read entriesRef
     let oldByKey = Map.fromFoldable (map (\e -> Tuple e.key e) old)
-    entries <- for items \a -> do
-      let k = key a
+    entries <- for items \(Tuple k a) ->
       case Map.lookup k oldByKey of
         Just e -> do
           e.feed a
@@ -2351,8 +2347,8 @@ actingGuarded busyRef act = do
 -- feeds each element emission contributes its one slot and the gate
 -- re-releases the whole, retain-last. Rekeying precedes the reconcile so
 -- that an entrant's echo finds its participant enrolled.
-actedWith :: forall k a b node. Ord k => (a -> k) -> Hooks a b node -> Effect { toUser :: Array a -> Effect Unit, fromUser :: (Array b -> Effect Unit) -> Effect Unit }
-actedWith key hooks = do
+actedWith :: forall k a b node. Ord k => Hooks a b node -> Effect { toUser :: Array (Tuple k a) -> Effect Unit, fromUser :: (Array (Tuple k b) -> Effect Unit) -> Effect Unit }
+actedWith hooks = do
   gate <- newGate []
   entriesRef <- Ref.new []
   busyRef <- Ref.new false
@@ -2364,26 +2360,26 @@ actedWith key hooks = do
   pure
     { toUser: \items -> actingGuarded busyRef do
         out <- steppedFeed Shared gate do
-          _ <- driveGate gate (Rekeyed (map key items))
-          reconcileKeyed key hooks onEmit busyRef entriesRef items
+          _ <- driveGate gate (Rekeyed (map fst items))
+          reconcileKeyed hooks onEmit busyRef entriesRef items
         traced out
-    , fromUser: \prop -> Ref.write (Just (prop <<< map snd)) gate.prop
+    , fromUser: \prop -> Ref.write (Just prop) gate.prop
     }
 
 -- The forward (collapsed) mode: element emissions exit onto the shared
 -- channel as they happen; the slot is kept written so a later gather-mode
 -- reading of the same core stays possible, but nothing gates.
-collapsedWith :: forall k a b node. Ord k => (a -> k) -> Hooks a b node -> Effect { toUser :: Array a -> Effect Unit, fromUser :: ((b -> Effect Unit) -> Effect Unit) }
-collapsedWith key hooks = do
+collapsedWith :: forall k a b node. Ord k => Hooks a b node -> Effect { toUser :: Array (Tuple k a) -> Effect Unit, fromUser :: ((Tuple k b -> Effect Unit) -> Effect Unit) }
+collapsedWith hooks = do
   propRef <- Ref.new Nothing
   entriesRef <- Ref.new []
   busyRef <- Ref.new false
   let
-    onEmit _ slot o = do
+    onEmit k slot o = do
       Ref.write (Just o) slot
       mProp <- Ref.read propRef
-      for_ mProp \prop -> prop o
+      for_ mProp \prop -> prop (Tuple k o)
   pure
-    { toUser: reconcileKeyed key hooks onEmit busyRef entriesRef
+    { toUser: reconcileKeyed hooks onEmit busyRef entriesRef
     , fromUser: \prop -> Ref.write (Just prop) propRef
     }
