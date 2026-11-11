@@ -7,8 +7,7 @@
 -- | and the instance's emissions leave as they come. **The key is a
 -- | materialized identity field of the row** (`dispatched @l`), as it is
 -- | for `acted @l`: the entity is a data-model row and rows carry their
--- | identity, so no envelope is written. Pure carriers have no instances
--- | to keep apart and ignore the key (`(->)`: `dispatchedBy _ = identity`).
+-- | identity, so no envelope is written.
 -- |
 -- | Laws:
 -- |
@@ -52,10 +51,6 @@ import Type.Proxy (Proxy(..))
 -- | Carriers implement this; the vocabulary form is `dispatched @l`.
 class Profunctor p <= Dispatching p where
   dispatchedBy :: forall k a b. Ord k => (a -> k) -> p a b -> p a b
-
--- | A function has no instances to tell apart.
-instance Dispatching (->) where
-  dispatchedBy _ = identity
 
 -- | One instance per value of the entity's identity field `l`, the entity
 -- | typed at its whole row on both sides and the key re-set from the input

@@ -123,7 +123,7 @@ import Control.Semigroupoid ((<<<))
 import Data.Lens.Prism.Existential (prismE)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice, left)
-import Data.Profunctor.Row (class OwnedVariantInputs, splitVariant)
+import Data.Profunctor.Row (class OwnedVariantInputs)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
 import Data.Variant (Variant, inj, on)
@@ -138,11 +138,6 @@ class Profunctor p <= VariantToVariant p where
     => p [ | i1 ] [ | o ]
     -> p [ | i2 ] [ | o ]
     -> p [ | i ] [ | o ]
-
-instance VariantToVariant (->) where
-  variantToVariant p1 p2 v = case splitVariant v of
-    Left v1 -> p1 v1
-    Right v2 -> p2 v2
 
 bind
   :: forall p i1 i2 i o i1l i2l

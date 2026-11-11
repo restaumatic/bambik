@@ -353,8 +353,7 @@
 -- | two, that a handler answers any number of times, that a fold releases
 -- | when its state allows, is the absence of a quotient at a variant
 -- | input, not an obligation. Broadcast, dispatch, gate and passage are
--- | how `PUI` satisfies 3–6 (below), not what the classes demand: `(->)`
--- | satisfies the two diagonal merges' laws with none of them.
+-- | how `PUI` satisfies 3–6 (below), not what the classes demand.
 -- |
 -- | **How `PUI` discharges them.** Input, law 4's first half: broadcast in
 -- | one step at `×`, dispatch to the one owner at `+`. Output: at `×→×`,

@@ -55,8 +55,7 @@ unit :: p 1_M 1_N
 ```
 
 with unit, associativity and symmetry coherence (all tested in
-test/Main.purs, on `PUI Effect` probes and — for the diagonal shapes — as
-pure equalities on `(->)`). **Interchange is observation-level-relative**:
+test/Main.purs, on `PUI Effect` probes). **Interchange is observation-level-relative**:
 on the gated merges `(f ⊗ g) ⊳ (h ⊗ k) = (f ⊳ h) ⊗ (g ⊳ k)` fails on the
 nose at the inner surfaces and holds there one-directionally as refinement
 `⊑` — the lax duoidal interchange of §0 — while at the boundary, for
@@ -247,9 +246,8 @@ inventory is:
 3. **One container-action class** in place of any collection shape:
    `actedBy :: Ord k => (a -> k) -> p a b -> p (Array a) (Array b)` for the
    keyed `Array` container, the species refinement for stateful carriers.
-   Its `(->)` instance is `map`, so the laws (singleton retraction =
-   yanking at the container, the empty release, the wire law) are
-   value-testable. The collapsed event form and the keyed Mealy remain
+   Its laws (singleton retraction = yanking at the container, the empty
+   release, the wire law) are value-tested on `PUI Effect` probes. The collapsed event form and the keyed Mealy remain
    carrier-level, typed as such — the same boundary that already separates
    `Strong`/`Choice` from `Resolving`/`Retaining`.
 4. **Traces** — the quartet as-is, plus their action-indexed lifts (ensemble,
@@ -267,8 +265,7 @@ laxity has a price (the gate) that pure treatments never see.
 ## Where it lives
 
 - **`extras/row-profunctor/Data/Profunctor/Acting.purs`** holds the pure
-  algebra: `class Acting`/`actedBy`, `instance Acting (->)`
-  (`actedBy _ = map`), and the row forms `acted @l` and `actedAt @l @t`.
+  algebra: `class Acting`/`actedBy` and the row forms `acted @l` and `actedAt @l @t`.
   The carrier machinery lives with the carriers, like the merge instances:
   `PUI` carries `class Hosting` (instantiate one element at runtime, detach
   a leaver, restack survivors), the shared keyed reconciler and the one

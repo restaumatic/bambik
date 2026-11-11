@@ -25,11 +25,7 @@
 -- |   * **the slot is its entity's** — `accumulated @l` re-sets field `l`
 -- |     from the fed row on every emission (the `Strong` state channel).
 -- |
--- | No pure instance, by the impossibility `Retaining` states: the other
--- | keys' slots are state, which a function does not hold.
--- | So this is the one keyed class with the carrier as its only member,
--- | kept because it completes the square — the stated hole, not an
--- | unwritten one. Three forms: `accumulated @l` over the entity's row;
+-- | Three forms: `accumulated @l` over the entity's row;
 -- | `accumulatedOf @l proj` (`PUI`, a hole-aware projection to the entity:
 -- | `# accumulatedOf @"team" goal`, scoreboard); `accumulatedOn @l @c` for
 -- | an entity arriving as case `c`, the `+→×` operand owning that case.

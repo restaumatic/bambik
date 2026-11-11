@@ -22,9 +22,7 @@
 -- |     forward each element's echo inside the feed.
 -- |   * **monotonicity** — `p ⊑ p'` implies `gatheredBy k p ⊑ gatheredBy k p'`.
 -- |
--- | No `(->)` instance: a function returns one value and cannot forward
--- | many elements' emissions, as it cannot carry the `×→+` merge. Three
--- | forms: `gathered @l` over the element's row; `gatheredOf @l proj`
+-- | Three forms: `gathered @l` over the element's row; `gatheredOf @l proj`
 -- | (`PUI`, a hole-aware projection to the array: `tile @"Key entered"
 -- | @"key" … # gatheredOf @"key" keyPad`); `gatheredAt @l @t` over an
 -- | array the model stores at field `t` (cells). MDC2/MDC3's `listOf` is

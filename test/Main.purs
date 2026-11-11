@@ -35,7 +35,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedOf, announce, dispatched, dispatchedOf, dispatchedOn, gathered, gatheredOf, cancelScope, capture, fold, folding, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
+import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedOf, announce, dispatchedOf, gathered, gatheredOf, cancelScope, capture, fold, folding, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -927,9 +927,6 @@ main = do
   -- == The container action (Data.Profunctor.Acting): the Array case of ==
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==
 
-  -- acted on (->): pure carriers have no identity — acted _ = map.
-  assertEqual "acted/(->) = map, key re-set" [ { k: "a", v: 2 }, { k: "b", v: 6 } ] (acted @"k" (\(r :: { k :: String, v :: Int }) -> r { v = r.v * 2 }) [ { k: "a", v: 1 }, { k: "b", v: 3 } ])
-
   -- empty: fed [], emits [] — the inhabited nullary of μx. 1 + a×x. And only
   -- on feed: registration alone announces nothing ([] is not the only Array b).
   do
@@ -1045,15 +1042,6 @@ main = do
 
   -- == The +-input members — one entity at a time, identity read off the ==
   -- == entity's own key field, as the ×-members read it off each row.    ==
-
-  -- dispatched on (->): a function has no instances to keep apart, and the
-  -- key is re-set from the input (unforgeable) as in acted.
-  assertEqual "dispatched/(->) = the function, key re-set" { k: "a", v: 2 }
-    (dispatched @"k" (\(r :: { k :: String, v :: Int }) -> r { k = "forged", v = r.v * 2 }) { k: "a", v: 1 })
-  assertEqual "dispatchedOn/(->): the case is dispatched" (.c { k: "a", v: 2 } :: [ c :: { k :: String, v :: Int }, d :: {} ])
-    (dispatchedOn @"k" @"c" (\(r :: { k :: String, v :: Int }) -> r { v = r.v * 2 }) (.c { k: "a", v: 1 }))
-  assertEqual "dispatchedOn/(->): every other case passes" (.d {} :: [ c :: { k :: String, v :: Int }, d :: {} ])
-    (dispatchedOn @"k" @"c" (\(r :: { k :: String, v :: Int }) -> r { v = r.v * 2 }) (.d {}))
 
   -- dispatchedOf (+→+): an unknown key instantiates (a new runtime case), a
   -- known key re-feeds exactly its instance, and emissions leave with the
@@ -1424,43 +1412,6 @@ main = do
     m.toUser [ { k: "b", v: 3 } ]
     Ref.read outs >>= assertEqual "actedBy identity: a re-feed with a leaver gathers only the fed vector"
       [ [ { k: "a", v: 1 }, { k: "b", v: 2 } ], [], [ { k: "b", v: 3 } ] ]
-
-  -- == The (->) instances of the diagonal merges: their laws as pure ==
-  -- == equalities. ==
-
-  assertEqual "recordToRecord/(->): the (×,×) zip"
-    { a: 10, b: "5" }
-    (recordToRecord (\(r :: { s :: Int }) -> { a: r.s * 2 }) (\(r :: { s :: Int }) -> { b: show r.s }) { s: 5 })
-  assertEqual "recordToRecord/(->): exactness — an echoing operand cannot shadow its sibling"
-    { a: 1, b: "x!" }
-    (recordToRecord (\(r :: { a :: Int, b :: String }) -> { a: r.a }) (\(r :: { a :: Int, b :: String }) -> { b: r.b <> "!" }) { a: 1, b: "x" })
-  do
-    let
-      fA = \(r :: { s :: Int }) -> { a: r.s }
-      fB = \(r :: { s :: Int }) -> { b: show r.s }
-      fC = \(r :: { s :: Int }) -> { c: r.s > 0 }
-    assertEqual "recordToRecord/(->): associativity"
-      (recordToRecord (recordToRecord fA fB) fC { s: 5 })
-      (recordToRecord fA (recordToRecord fB fC) { s: 5 })
-    assertEqual "recordToRecord/(->): symmetry"
-      (recordToRecord fA fB { s: 5 })
-      (recordToRecord fB fA { s: 5 })
-
-  assertEqual "variantToVariant/(->): dispatch, first handler"
-    (.ok 5 :: [ ok :: Int, err :: String ])
-    (variantToVariant (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int, err :: String ]) }) (match { y: \(s :: String) -> (.err s :: [ ok :: Int, err :: String ]) }) (.x 5))
-  assertEqual "variantToVariant/(->): dispatch, second handler"
-    (.err "boom" :: [ ok :: Int, err :: String ])
-    (variantToVariant (match { x: \(n :: Int) -> (.ok n :: [ ok :: Int, err :: String ]) }) (match { y: \(s :: String) -> (.err s :: [ ok :: Int, err :: String ]) }) (.y "boom"))
-  do
-    let
-      hx = match { x: \(n :: Int) -> (.ok (n + 1) :: [ ok :: Int ]) }
-      hy = match { y: \(n :: Int) -> (.ok (n * 2) :: [ ok :: Int ]) }
-      hz = match { z: \(n :: Int) -> (.ok (n - 1) :: [ ok :: Int ]) }
-      l = variantToVariant (variantToVariant hx hy) hz
-      r = variantToVariant hx (variantToVariant hy hz)
-    for_ ([ .x 5, .y 5, .z 5 ] :: Array [ x :: Int, y :: Int, z :: Int ]) \v ->
-      assertEqual "variantToVariant/(->): associativity" (l v) (r v)
 
   -- == Observation levels (doc/observational-semantics.md §2, §4): the same ==
   -- == interchange that fails at inner surfaces holds at the boundary on ==

@@ -12,8 +12,7 @@
 -- | field of the row** (`acted @l` — the element is a data-model row, and
 -- | rows carry their identity; `Ord k` is the reconciler's Map-indexing
 -- | requirement — identity semantics remain equality, keys must be unique,
--- | never rendered). Pure carriers
--- | have no identity to preserve and ignore it (`(->)`: `actedBy _ = map`).
+-- | never rendered).
 -- | See doc/collections-profunctor-algebra.md.
 -- |
 -- | Laws (the `Array b` output side is a product, so, like the record
@@ -46,7 +45,7 @@
 -- |
 -- | This module is the **pure algebra** — the class (whose primitive
 -- | `actedBy` takes the key as a function, the minimal carrier obligation),
--- | the label forms `acted @l` and `actedAt @l @t`, and the `(->)` face.
+-- | and the label forms `acted @l` and `actedAt @l @t`.
 -- | It is the `×→×` corner of the **keyed square**, `Strong`'s analogue
 -- | over a runtime key; its siblings are `Dispatching` (`+→+`, `Choice`'s),
 -- | `Gathering` (`×→+`, `Resolving`'s) and `Accumulating` (`+→×`,
@@ -82,11 +81,6 @@ import Type.Proxy (Proxy(..))
 -- | a function. Carriers implement this; the vocabulary form is `acted @l`.
 class Profunctor p <= Acting p where
   actedBy :: forall k a b. Ord k => (a -> k) -> p a b -> p (Array a) (Array b)
-
--- | Pure carriers have no element identity to preserve — the key is species
--- | bookkeeping for stateful instances, so `(->)` ignores it.
-instance Acting (->) where
-  actedBy _ = map
 
 -- | Lift a UI component over the keyed `Array` container (see the module header
 -- | for the laws), keyed by the row's materialized identity field `@l`.

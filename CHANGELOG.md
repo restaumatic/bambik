@@ -30,6 +30,18 @@ Before 2026-07 the history is the git log.
   plain `Costrong`, as the seeded retraction `unfirst (seeded (Tuple a0
   c0) >>> first g) ≈ seeded a0 >>> g`. Its module, its `(->)` and `PUI`
   instances and its tests go.
+- **The `(->)` instances deleted.** `RecordToRecord`, `VariantToVariant`,
+  `Acting` and `Dispatching` each had a function instance (`Record.union`,
+  the case split, `map`, the function itself) kept as the pure carrier
+  the diagonal laws ran on as equalities. No library word or demo reached
+  one; they go on `Cont`'s grounds, with their tests (the `×→×` zip,
+  exactness, symmetry and associativity, the `+→+` dispatch and
+  associativity, `acted`/`dispatched` on a function). The same laws stay
+  tested on `PUI Effect` probes and, over every script to a bound, in
+  test/Exhaustive.purs. Every class of the row algebra and the keyed
+  square now has `PUI m` as its one instance. The ecosystem's own `(->)`
+  instances (`Strong`, `Choice`) are untouched, so `focusField`,
+  `focusCase` and the single-label grid are still tested on functions.
 
 ## 2026-11-09
 - **`actedOf` derived.** The list of displays is now `first` around

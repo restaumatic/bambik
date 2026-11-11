@@ -49,7 +49,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 - The algebra layer (`Data.Profunctor.*`) MUST stay carrier-generic.
   `Web` is one carrier; the laws MUST be value-testable on a probe
-  carrier (`PUI Effect`, `(->)` where lawful) without a DOM.
+  carrier (`PUI Effect`) without a DOM.
 - A class MUST NOT be given an instance a carrier cannot honestly
   support. `(->)` has no `Retaining` (a stateless function has nowhere to
   keep memory), no `Resolving` (no notion of quiescence), no point or

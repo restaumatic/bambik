@@ -30,9 +30,8 @@ root defines is a general algebra:
   container grammar.
 
 Every one of those is stated for an arbitrary profunctor `p`. The laws are in
-the module headers and are **value-testable on `(->)`**, which is how the
-`spago test` suite exercises them without a UI at all — the clearest evidence
-that this layer does not depend on the one downstream of it.
+the module headers and are **value-testable on `PUI Effect` probes**, which is
+how the `spago test` suite exercises them without a DOM.
 
 | Module | Holds |
 |---|---|

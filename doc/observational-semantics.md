@@ -648,8 +648,8 @@ deadlocks, the knot's triple (yanking, conjugation with the `dimap f f`
 counterexample, idempotence with the feed-duplication quotient made
 visible), the Strong deviation, the interchange deviation at the inner
 surface and its refinement direction, merge symmetry (`×→×`, `+→×`) and
-mixed-merge associativity (`+→×`, `×→+`), the container action's wire law,
-and the `(->)` diagonal-merge instances' laws as pure equalities; then the
+mixed-merge associativity (`+→×`, `×→+`) and the container action's wire
+law; then the
 observation-level section — boundary interchange on the nose with the exact
 common stream, one-feed-one-release (a two-field broadcast releasing once
 with no torn row, a user emission releasing at once, nested merges

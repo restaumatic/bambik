@@ -165,12 +165,11 @@ module Data.Profunctor.Row.RecordToRecord
 
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Row (class OwnedRecordOutputs, exactRow)
+import Data.Profunctor.Row (class OwnedRecordOutputs)
 import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
 import Prim.Row (class Cons)
-import Record (union) as Record
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= RecordToRecord p where
@@ -180,9 +179,6 @@ class Profunctor p <= RecordToRecord p where
     => p { | i } { | o1 }
     -> p { | i } { | o2 }
     -> p { | i } { | o }
-
-instance RecordToRecord (->) where
-  recordToRecord p1 p2 i = Record.union (exactRow (p1 i)) (exactRow (p2 i))
 
 bind
   :: forall p i o1 o2 o o1l o2l
