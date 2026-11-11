@@ -91,8 +91,7 @@ inhabited*: it has a canonical global element, which is what **pointing**
 emits — `announce a`, `PUI`'s point, a map out of `1_×` — but pointing is
 not a unit's job, and the units carry no information. The one merge whose
 unit no wire reaches is `×→+` (terminal → initial), and its unit is the
-carrier's silent component — `PUI`'s private `silent`, `Cont`'s `mempty`
-— named by no class, law-tested per carrier. Every starvation symptom in
+carrier's silent component — `PUI`'s private `silent` — named by no class, law-tested per carrier. Every starvation symptom in
 the library's history is a use of a `+`-behaviour where a `×`-behaviour
 was required.
 

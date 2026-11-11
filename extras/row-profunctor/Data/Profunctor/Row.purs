@@ -115,7 +115,7 @@
 -- |     wire, since no wire fabricates a case (`{}` is terminal, `Variant
 -- |     ()` initial): over the algebra that merge is a semigroup, and a
 -- |     carrier with *nothing* in it supplies the unit as its own
--- |     structure — `PUI`'s silent component, `Cont`'s `mempty` — named
+-- |     structure — `PUI`'s silent component — named
 -- |     by no class. None of these is a law: the merge laws are symmetry
 -- |     and associativity (*The laws*).
 -- |   * **retention** (over `Strong`, `×→×`'s strength used at `×→+`) —

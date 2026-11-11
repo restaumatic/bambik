@@ -433,7 +433,7 @@ principle* (input residuals compose as `c × d`, output residuals as
 `c + d`; no single channel carries both). Consequences:
 
 - The classes alone are property-light — degenerate instances exist
-  (`Cont`'s always-`Done` `resolve`); their equational content is the
+  (a `resolve` that always takes `Left`); their equational content is the
   seeded retraction with their co-strengths (§5).
 - Pastro–Street does not apply to the four coined optics: `shutterE` &c.
   are **sound constructors**, completeness is not claimed, and the gap is

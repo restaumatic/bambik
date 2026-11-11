@@ -57,8 +57,8 @@ import Data.Tuple (Tuple)
 -- | output residuals as `c + d`, and no single channel carries both. So
 -- | this is a **single-application mixed strength**, not a Tambara module,
 -- | and the class alone is property-light: a carrier without a
--- | `Coresolving` half admits degenerate instances (`Cont`'s always-`Done`
--- | `resolve`). Its equational content lives in the seeded retraction with
+-- | `Coresolving` half admits degenerate instances (a `resolve` that
+-- | always takes `Left`, the loop never entered). Its equational content lives in the seeded retraction with
 -- | its co-strength (`Data.Profunctor.Coresolving`; tested in
 -- | test/Main.purs). The consequence for the optic is stated in
 -- | `Data.Lens.Shutter`: existential constructors are sound, completeness

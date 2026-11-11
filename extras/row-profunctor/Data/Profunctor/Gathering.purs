@@ -23,8 +23,7 @@
 -- |   * **monotonicity** — `p ⊑ p'` implies `gatheredBy k p ⊑ gatheredBy k p'`.
 -- |
 -- | No `(->)` instance: a function returns one value and cannot forward
--- | many elements' emissions; `Cont r` has one under `Monoid r`, every
--- | element's run combined, as its `RecordToVariant` instance is. Three
+-- | many elements' emissions, as it cannot carry the `×→+` merge. Three
 -- | forms: `gathered @l` over the element's row; `gatheredOf @l proj`
 -- | (`PUI`, a hole-aware projection to the array: `tile @"Key entered"
 -- | @"key" … # gatheredOf @"key" keyPad`); `gatheredAt @l @t` over an

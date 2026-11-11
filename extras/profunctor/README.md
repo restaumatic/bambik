@@ -21,19 +21,13 @@ The mixed shapes' background *crosses* carriers, which is not a Tambara
 action — hence the coinage, and hence `PUI m` instances but no `(->)`:
 `resolve` needs quiescence (time), `retain` needs memory (state).
 
-`Data.Profunctor.Cont` is the root's one member that is **not** liftable: a
-carrier rather than a class, the CPS profunctor `Cont r a b = (b -> r) -> (a -> r)`
-whose header inventories which of the library's classes it validly inhabits
-and which it provably cannot. Those impossibilities are why the seeded
-retractions take seeds and why `looped` is a primitive.
-
 The optics these classes generate live one root over, in
 [`extras/lenses`](../lenses/README.md). None of them has a row form in
 [`extras/row-profunctor`](../row-profunctor/README.md): a stage is typed at
 one row, and a loop's state is a model field, so the row layer reaches only
 `Lens` and `Prism` (`focusField`, `focusCase`). `PUI.debounced` is the one
 library word standing on `Resolving`/`Coresolving`; the rest are law-tested
-on the `PUI` and `Cont` carriers and exercised as business optics in
+on the `PUI` carrier and exercised as business optics in
 test/BusinessOptics.purs.
 
 ## Building
@@ -51,9 +45,7 @@ The goal for the four class modules is a single PR to
 batched exactly as [PR #13](https://github.com/purescript/purescript-profunctor/pull/13)
 batched `Closed`, `Costrong` and `Cochoice` in 2016. What follows is what the
 upstream repo and its governance actually require, checked against the live
-repo (2026-08), and what this code must change to be eligible. `Cont.purs`
-is **not part of the PR** — it is a carrier, it imports bambik's row algebra,
-and it stays here.
+repo (2026-08), and what this code must change to be eligible.
 
 ### Process — how core libraries accept changes
 
@@ -135,9 +127,10 @@ in review:
   `Star`, `Join`, `Split`. For each of the four classes, either supply a
   lawful instance or record the impossibility in the proposal (as issue #46
   did for `Costrong (->)`), so that "no instances" reads as a stated fact
-  about strict/stateless carriers, not an omission. `Cont.purs`'s inventory
-  here (degenerate `Resolving`/`Coretaining`, impossible
-  `Coresolving`/`Retaining` for CPS) is the raw material.
+  about strict/stateless carriers, not an omission. The class
+  headers here state each one (`Resolving`: no `(->)` instance, a timeless
+  carrier giving only the trivial one; `Retaining`: a stateless carrier
+  has no `b` for a `Right c`).
 - [ ] **Match house mechanics**: modules currently carry export lists —
   upstream modules are bare `module X where` (either passes CI; the style
   guide prefers explicit exports, so keeping them is defensible). No

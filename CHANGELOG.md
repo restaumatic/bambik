@@ -6,7 +6,23 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-11-09, latest
+## 2026-11-11, latest
+- **`Data.Profunctor.Cont` deleted.** The CPS profunctor `Cont r a b =
+  (b -> r) -> (a -> r)` was the one carrier under `extras/profunctor`, kept
+  in the build glob for its header: an inventory of which classes a pure
+  carrier inhabits and which it cannot. Nothing in the library, the demos
+  or the tests reached it, none of its instances ran a law, and its
+  impossibility half was prose the compiler never checked — while its
+  claim to be exhaustive made every change to a class a change here too
+  (24 commits in three months). The impossibilities that do work stay
+  where they are used: the class headers (`Resolving`, `Retaining`,
+  `Gathering`, `Accumulating`) state why `(->)` has no instance, and
+  `PUI`'s headers state why the knot and the point are carrier words.
+  With it go the only pure instances of `Gathering` and of the `×→+`
+  merge (both under `Monoid r`), so those two are `PUI`-only; `(->)`
+  remains the pure carrier the value-level laws run on.
+
+## 2026-11-09
 - **`actedOf` derived.** The list of displays is now `first` around
   `acted @l` with the gathered output dropped — `dimap (\a -> Tuple (rows
   a) a) snd (first (acted @l w))` — instead of the body `foreach` had

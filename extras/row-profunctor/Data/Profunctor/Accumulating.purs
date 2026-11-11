@@ -26,7 +26,7 @@
 -- |     from the fed row on every emission (the `Strong` state channel).
 -- |
 -- | No pure instance, by the impossibility `Retaining` states: the other
--- | keys' slots are state, which neither a function nor a CPS run holds.
+-- | keys' slots are state, which a function does not hold.
 -- | So this is the one keyed class with the carrier as its only member,
 -- | kept because it completes the square — the stated hole, not an
 -- | unwritten one. Three forms: `accumulated @l` over the entity's row;

@@ -732,7 +732,7 @@ instance Applicative m => Category (PUI m) where
 -- | asymmetry theorem (doc §5): `debounced` composes a `seeded` wire into a
 -- | positional loop no feed can reach, and primes it only because the
 -- | answer comes before the first input. It was a class, `Seeding`, with
--- | `(->)` and `Cont` instances, until the class was dropped as a carrier
+-- | a `(->)` instance, until the class was dropped as a carrier
 -- | fact dressed as algebra (CHANGELOG, 2026-10-14). The merge units are
 -- | *not* pointed: the record gates ignore a contribution of zero fields —
 -- | pointing is this word's business alone.

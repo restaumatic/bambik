@@ -11,8 +11,7 @@
 -- |     one genuine per-carrier primitive, with its qualified-do sugar
 -- |     (`bind`/`discard`). It carries no unit, like the other merge
 -- |     classes; theirs is `Category`'s `identity`, and this one, which no
--- |     wire reaches, is the carrier's silent component (`PUI`, `Cont`),
--- |     named by no class.
+-- |     wire reaches, is the carrier's silent component, named by no class.
 -- |   * **free functions** — over `Strong`: `joined`/`joined2` (a source's case joined
 -- |     with the row its emitter was fed — replay is this at the empty
 -- |     payload, `PUI.Web`'s click source dropping the `{}` event). No strength or co-strength row form: a

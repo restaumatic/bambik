@@ -278,7 +278,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   wire reaches is `×→+`'s (`{}` is terminal, `Variant ()` initial — nothing
   maps terminal→initial), and it is the carrier's silent component
   (parametricity, not policy), stated per carrier —
-  `PUI`'s private `silent`, `Cont`'s `mempty` — and named by no class:
+  `PUI`'s private `silent` — and named by no class:
   the algebra names no unit but `Category`'s `identity`, so no merge
   class carries a unit and no word names silence (a `Silencing` class
   was tried and withdrawn, CHANGELOG 2026-10-14). It is what an event
