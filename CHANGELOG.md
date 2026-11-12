@@ -6,7 +6,15 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-11-11, latest
+## 2026-11-12, latest
+- **`Data.Lens.Prism.Existential` deleted.** `prismE`, the existential
+  constructor of the ecosystem's `Prism`, had one caller, `focusCase`,
+  and was `dimap decon recon <<< left` by another name. `focusCase` and
+  `onCase` are now the ecosystem's own `Data.Lens.Prism.prism`, as
+  `focusField` is `prop`, so the row root no longer imports
+  `extras/lenses`, which the library does not reach at all.
+
+## 2026-11-11
 - **The merges stated by universal property.** `Data.Profunctor.Row`
   now gives each merge's sharing as a consequence, not a per-side rule
   with an exception: `×→×` is the pairing (input shared, output owned),

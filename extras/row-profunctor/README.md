@@ -52,13 +52,13 @@ knowing before cutting a package:
    and the keyed reconciler live in `PUI`; DOM placement in `PUI.Web`. That
    split is already enforced (this root has no `PUI` import), so extraction is
    a move, not a disentangling.
-2. **One dependency comes along**: `extras/lenses`, for `prismE` (the
-   existential `Prism` constructor `focusCase` stands on). `extras/profunctor`
-   is not imported here any more — the row layer has no row form of the
-   coined strengths or co-strengths — so the packaging question is whether
-   the two ship as one `purescript-row-profunctor` package or as a small
-   stack. (Each root here is named after the upstream package it belongs to
-   or would become, so the directory names already carry the answer's shape.)
+2. **One sibling root comes along**: `extras/structural`, for the keyed
+   classes' `withStructuralOrd`. The optics need none — `focusField` and
+   `focusCase` stand on the ecosystem's own `Data.Lens.Record.prop` and
+   `Data.Lens.Prism.prism` — and neither `extras/lenses` nor
+   `extras/profunctor` is imported here: the row layer has no row form of
+   the coined strengths, co-strengths or their optics. (Each root here is
+   named after the upstream package it belongs to or would become.)
 3. **The toolchain pins are milder than they look.** These modules import only
    the *standard* `Data.Variant` API (`inj`/`on`/`case_`/`expand`/`Contractable`)
    — no `Prim.Variant` reference anywhere — so the row layer itself is not
@@ -70,7 +70,7 @@ knowing before cutting a package:
    ergonomic surface for consumers would still want the fork until the sugar
    lands upstream. Worth measuring before publishing, not assuming.
 
-   (Its two dependency roots are cleaner still: `extras/profunctor` and
+   (Its two sibling roots are cleaner still: `extras/profunctor` and
    `extras/lenses` use no row sugar at all — positional `Tuple`/`Either`
    only — so they are fork-independent outright.)
 

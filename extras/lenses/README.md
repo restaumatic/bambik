@@ -32,11 +32,6 @@ are **already** the ecosystem's (`Data.Profunctor.Costrong`/`.Cochoice`) —
 class and optic alike, so each would travel upstream with its class from
 [`extras/profunctor`](../profunctor/README.md).
 
-`Data.Lens.Prism.Existential` is the purest complement in the whole tree:
-both the optic and its `Choice` are already `profunctor-lenses`', and only
-the one constructor `prismE` is missing. It **extends** that family rather
-than shadowing it, which is why it is not named `Data.Lens.Prism`.
-
 ## Building
 
 Covered by the single glob `extras/**/*.purs` in the repo's `spago.dhall`.
@@ -53,7 +48,7 @@ against the live repo (2026-08; default branch `main`, maintainer garyb) and
 the [purescript-contrib governance](https://github.com/purescript-contrib/governance)
 docs — and what this code must change to comply.
 
-- **PR 1 — eligible now**: `Colens` + `Coprism` (+ the `prismE` question).
+- **PR 1 — eligible now**: `Colens` + `Coprism`.
   Their generating classes (`Costrong`/`Cochoice`) have been upstream in core
   `purescript-profunctor` since 2016 — the situation is exactly `Grate`'s,
   which was built on the pre-existing `Closed`
@@ -105,12 +100,6 @@ keep everything in one file, so each must be split:
   the concrete carrier + `with*` eliminator, so keeping the `*E` functions is
   a departure to flag explicitly in the proposal issue (they are genuinely
   more general — the free `c` — so they may survive, but under review).
-- [ ] **`prismE` is not a new module upstream.** `Data.Lens.Prism.Existential`
-  exists here only because an external package cannot add exports to
-  `Data.Lens.Prism`; in-repo it becomes one new export **of**
-  `Data.Lens.Prism` (name subject to the same `*E`-convention discussion),
-  and the module here dissolves. Also its `import Data.Lens (Prism)` would
-  be an import cycle in-repo — the in-repo form imports `Data.Lens.Types`.
 - [ ] **Decide the `Data.Lens` re-export.** Precedent is split: `Grate` is
   re-exported from `Data.Lens`, `AffineTraversal` is not. Ask in the issue.
 - [ ] **Anticipate the `Re` question.** `Data.Lens.Internal.Re` already has
@@ -160,8 +149,8 @@ keep everything in one file, so each must be split:
 
 ### Sequencing
 
-1. Proposal issue on `profunctor-lenses`; PR 1 (`Colens`/`Coprism`, plus the
-   `prismE` export) can follow immediately.
+1. Proposal issue on `profunctor-lenses`; PR 1 (`Colens`/`Coprism`) can follow
+   immediately.
 2. PR 2 waits on `extras/profunctor`'s classes reaching a released
    `purescript-profunctor` — or goes the `Wander` route with classes and
    optics in one contrib PR, if the maintainer prefers it in the proposal

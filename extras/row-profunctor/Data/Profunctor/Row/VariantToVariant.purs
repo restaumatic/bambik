@@ -3,8 +3,7 @@
 -- |
 -- |   * **strength** — `Choice` (ecosystem, with a `(->)` instance): the
 -- |     unary power, the case prism. Its co-strength `Cochoice` is the
--- |     ecosystem's too, and their optics are `Data.Lens.Prism` (existential
--- |     constructor in `Data.Lens.Prism.Existential`) and
+-- |     ecosystem's too, and their optics are `Data.Lens.Prism` and
 -- |     `Data.Lens.Coprism` — neither the classes nor the optics mention a
 -- |     row, so none of them lives here, and the focus/background dispatch
 -- |     `splitVariant` sits on the floor, in `Data.Profunctor.Row`.
@@ -118,12 +117,12 @@ module Data.Profunctor.Row.VariantToVariant
   , onCase
   )
   where
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Control.Category (identity)
 import Control.Semigroupoid ((<<<))
-import Data.Lens.Prism.Existential (prismE)
-import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Choice (class Choice, left)
+import Data.Lens.Prism (prism)
+import Data.Profunctor (class Profunctor)
+import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Row (class OwnedVariantInputs)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
@@ -176,9 +175,9 @@ focusCase
   => p f f'
   -> p [ | v ] [ | v1 ]
 focusCase =
-  prismE
-    (on (Proxy @l) Left Right)
-    (either (inj (Proxy @l)) background)
+  prism
+    (inj (Proxy @l))
+    (on (Proxy @l) Right (Left <<< background))
   where
   -- a background value is one of `v1`'s cases other than `l`, which
   -- `Cons l f' b v1` states; `expand` would say the same under a
@@ -203,4 +202,4 @@ onCase
   => Choice p
   => p a [ | b ]
   -> p [ | v ] [ | b ]
-onCase = dimap (on (Proxy @l) Left Right) (either identity identity) <<< left
+onCase = prism identity (on (Proxy @l) Right Left)
