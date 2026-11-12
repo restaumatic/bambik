@@ -78,14 +78,15 @@ module Data.Profunctor.Keyed.Acting
 
 import Prelude
 
+import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Keyed (keyRestored, keyed)
-import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Strong (class Strong)
 import Data.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), snd)
 import Prim.Row (class Cons)
+import Type.Proxy (Proxy(..))
 
 -- | The class primitive: lift a UI component over the keyed `Array`
 -- | container, every element riding beside its key. The element never sees
@@ -110,9 +111,10 @@ acted w = withStructuralOrd @k (dimap (map (keyed @l)) (map (keyRestored @l)) (a
 
 -- | `acted` over an array the model stores: keyed by field `l` of each
 -- | element, the array field `t` of the fed row, both named by label
--- | (`item # actedAt @"id" @"Setlist"`), the rest of the row carried. The
+-- | (`item # actedAt @"id" @"Setlist"`), the rest of the row carried —
+-- | `Strong`'s field lens, the ecosystem's `prop`, over the bare form. The
 -- | MDC vocabularies' `group @t` does the same lift with its card and
 -- | heading; the plain-HTML floor names the field here (reorder-html).
 actedAt :: forall @l @t p k b1 b2 r1 r. Acting p => Strong p => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => p { | r1 } { | r1 } -> p { | r } { | r }
-actedAt w = focusField @t (acted @l w)
+actedAt w = prop (Proxy @t) (acted @l w)
 

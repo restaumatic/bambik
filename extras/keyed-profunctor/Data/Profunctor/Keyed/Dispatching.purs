@@ -32,7 +32,8 @@
 -- |   * `dispatchedOf @l proj` (`PUI`, a hole-aware projection from the fed
 -- |     value to the entity) — `# dispatchedOf @"code" arrival`, departures.
 -- |   * `dispatchedOn @l @c` — for an entity arriving as case `c` of the
--- |     event, every other case passing: `focusCase @c` over the bare form.
+-- |     event, every other case passing: `Choice`'s case prism over the
+-- |     bare form.
 -- |
 -- | ## The carrier
 -- |
@@ -49,14 +50,18 @@ module Data.Profunctor.Keyed.Dispatching
 
 import Prelude
 
+import Data.Either (Either(..))
+import Data.Lens.Prism (prism)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Keyed (keyRestored, keyed)
-import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Data.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple)
+import Data.Variant (Variant, inj, on)
 import Prim.Row (class Cons)
+import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 -- | The class primitive: one instance per key value, the entity riding
 -- | beside its key and each emission leaving beside the key it was fed
@@ -71,6 +76,12 @@ dispatched :: forall @l r p k b1 b2 r1. Dispatching p => IsSymbol l => Cons l k 
 dispatched w = withStructuralOrd @k (dimap (keyed @l) (keyRestored @l) (dispatching w))
 
 -- | `dispatched` for an entity arriving as case `c` of an event row, every
--- | other case passing: `focusCase @c` over the bare form.
+-- | other case passing: `Choice`'s case prism, the ecosystem's `prism`,
+-- | over the bare form.
 dispatchedOn :: forall @l @c r p k b1 b2 r1 b3 v1 v2. Dispatching p => Choice p => IsSymbol l => IsSymbol c => Cons l k b1 r => Cons l k b2 r1 => Cons c { | r } b3 v1 => Cons c { | r1 } b3 v2 => p { | r } { | r1 } -> p [ | v1 ] [ | v2 ]
-dispatchedOn w = focusCase @c (dispatched @l w)
+dispatchedOn w = prism (inj (Proxy @c)) (on (Proxy @c) Right (Left <<< background)) (dispatched @l w)
+  where
+  -- a background value is one of `v2`'s cases other than `c`, which
+  -- `Cons c { | r1 } b3 v2` states
+  background :: Variant b3 -> Variant v2
+  background = unsafeCoerce

@@ -255,7 +255,9 @@
 -- |
 -- | `Data.Profunctor.Keyed` extends the family one step past rows: rows
 -- | are the finitary μ-free fragment of the container grammar, and `Array`
--- | is one `μ` later — the keyed square, one class per shape.
+-- | is one `μ` later — the keyed square, one class per shape, in a root
+-- | of its own (`extras/keyed-profunctor`) that imports nothing from this
+-- | one.
 -- |
 -- | The shared floor of the row layer — what every shape's module
 -- | (`Data.Profunctor.Row.*`) stands on:

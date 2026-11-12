@@ -25,10 +25,10 @@ root defines is a general algebra:
   `(M, N)`-monoidal structure for `M, N ∈ {×, +}`, symmetric and
   associative, so every shape is a commutative semigroup on labelled rows
   (no unit law is stated).
-- **The keyed square** (`Data.Profunctor.Keyed.*`), one `μ` past the rows —
-  rows being the finitary, `μ`-free, label-strict fragment of the same
-  container grammar: one class per shape, each its strength's analogue over
-  a runtime key, `p a b -> p (⊗ₖ a) (⊕ₖ b)`.
+
+The same four shapes over a runtime key — the keyed square, one `μ` past the
+rows — are a sibling root, [`extras/keyed-profunctor`](../keyed-profunctor/README.md),
+which imports nothing from this one.
 
 Every one of those is stated for an arbitrary profunctor `p`. The laws are in
 the module headers and are **value-testable on `PUI Effect` probes**, which is
@@ -41,27 +41,19 @@ how the `spago test` suite exercises them without a DOM.
 | `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase` |
 | `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `joined` |
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `unshown` |
-| `Data.Profunctor.Keyed` | the keyed square's floor: the one formula, the key discipline, the three forms, and the label forms' two halves `keyed @l`/`keyRestored @l` |
-| `Data.Profunctor.Keyed.Acting` | `× → ×`: `class Acting`/`acting`, `acted @l`, `actedAt @l @t` |
-| `Data.Profunctor.Keyed.Dispatching` | `+ → +`: `class Dispatching`/`dispatching`, `dispatched @l`, `dispatchedOn @l @c` |
-| `Data.Profunctor.Keyed.Gathering` | `× → +`: `class Gathering`/`gathering`, `gathered @l`, `gatheredAt @l @t` |
-| `Data.Profunctor.Keyed.Accumulating` | `+ → ×`: `class Accumulating`/`accumulating`, `accumulated @l`, `accumulatedOn @l @c` |
-| `Data.Structural` (its own root, `extras/structural`) | structural `Eq`/`Ord` of plain values through `Foreign`, for keys no instance closes (holes) |
 
 ## What extraction would take
 
 Not a rewrite — the module boundary is already clean — but three things worth
 knowing before cutting a package:
 
-1. **The carrier instances stay behind.** The merge instances, `class Hosting`
-   and the keyed reconciler live in `PUI`; DOM placement in `PUI.Web`. That
+1. **The carrier instances stay behind.** The merge instances live in `PUI`. That
    split is already enforced (this root has no `PUI` import), so extraction is
    a move, not a disentangling.
-2. **One sibling root comes along**: `extras/structural`, for the keyed
-   classes' `withStructuralOrd`. The optics need none — `focusField` and
-   `focusCase` stand on the ecosystem's own `Data.Lens.Record.prop` and
-   `Data.Lens.Prism.prism` — and neither `extras/lenses` nor
-   `extras/profunctor` is imported here: the row layer has no row form of
+2. **No sibling root comes along.** `focusField` and `focusCase` stand on
+   the ecosystem's own `Data.Lens.Record.prop` and `Data.Lens.Prism.prism`,
+   and none of `extras/lenses`, `extras/profunctor`, `extras/structural` or
+   `extras/keyed-profunctor` is imported here: the row layer has no row form of
    the coined strengths, co-strengths or their optics. (Each root here is
    named after the upstream package it belongs to or would become.)
 3. **The toolchain pins are milder than they look.** These modules import only

@@ -36,7 +36,8 @@
 -- |
 -- | Rows are the finitary `μ`-free fragment of the container grammar, and
 -- | `Array = μ x. 1 + a × x` is one `μ` later, so the square stands beside
--- | the row shapes, not under them
+-- | the row shapes, not under them — in its own source root,
+-- | `extras/keyed-profunctor`, which imports nothing from the row root's
 -- | (doc/collections-profunctor-algebra.md).
 -- |
 -- | ## The key
@@ -73,7 +74,10 @@
 -- |
 -- | Each member's module carries its class, its laws and its bare and
 -- | stored forms; the instances are the carrier's, as the merge classes'
--- | are.
+-- | are. No keyed module imports a row shape's: a stored form that keeps
+-- | the rest of what it was fed is its strength's ecosystem optic over the
+-- | bare form (`actedAt` is `prop`, `dispatchedOn` is `prism`), the other
+-- | two a plain `lcmap`.
 module Data.Profunctor.Keyed
   ( keyed
   , keyRestored

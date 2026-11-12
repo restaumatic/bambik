@@ -17,6 +17,18 @@ Before 2026-07 the history is the git log.
   inline four times before. Each member's `## The key` section now
   states only what is its own. No word, signature or behaviour changed;
   the demos import the forms from `PUI` and are untouched.
+- **No keyed module imports a row shape's.** `actedAt` and
+  `dispatchedOn` were `focusField @t` and `focusCase @c` over their bare
+  forms, the only imports from `Data.Profunctor.Row.*` under `Keyed/`.
+  They are now the ecosystem's `prop` and `prism` directly, as
+  `focusField` and `focusCase` themselves are, so the square depends on
+  the strengths and not on the row shapes. The cost is `focusCase`'s
+  background coercion written a second time in `dispatchedOn`.
+- **`extras/keyed-profunctor`.** With that import gone the keyed square
+  and the row shapes are independent, so the square leaves
+  `extras/row-profunctor` for a root of its own, as `Data.Structural`
+  did. Module names are unchanged, and the one `extras/**/*.purs` glob
+  covers the new root for the build and for consuming apps.
 - **`Data.Lens.Prism.Existential` deleted.** `prismE`, the existential
   constructor of the ecosystem's `Prism`, had one caller, `focusCase`,
   and was `dimap decon recon <<< left` by another name. `focusCase` and
