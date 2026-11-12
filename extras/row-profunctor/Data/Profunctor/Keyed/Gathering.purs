@@ -9,10 +9,11 @@
 -- |
 -- | ## The key
 -- |
--- | **A materialized identity field of the row** (`gathered @l`), as for
--- | `acted @l`. The class primitive emits each event beside its element's
--- | key, `Tuple k b`; the label form drops it, the output being an event
--- | and not the element's row, so there is no key field to re-set.
+-- | The square's (`Data.Profunctor.Keyed`, *The key*): field `l` of the
+-- | element's row (`keyed @l` in). The class primitive emits each event
+-- | beside its element's key, `Tuple k b`; the label form drops it, the
+-- | output being an event and not the element's row, so there is no key
+-- | field to re-set.
 -- |
 -- | ## Laws
 -- |
@@ -45,7 +46,7 @@
 -- | element beside its key, and the label forms. The instance is the carrier's:
 -- | `PUI` holds a generic `Hosting m node =>` instance over the keyed
 -- | reconciler it shares with `Acting`, with passage where `Acting` gates.
-module Data.Profunctor.Gathering
+module Data.Profunctor.Keyed.Gathering
   ( class Gathering
   , gathering
   , gathered
@@ -55,9 +56,10 @@ module Data.Profunctor.Gathering
 import Prelude
 
 import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor.Keyed (keyed)
 import Data.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..), snd)
+import Data.Tuple (Tuple, snd)
 import Prim.Row (class Cons)
 import Record (get) as Record
 import Type.Proxy (Proxy(..))
@@ -70,8 +72,7 @@ class Profunctor p <= Gathering p where
 
 -- | The gathering collection keyed by the element's identity field `l`.
 gathered :: forall @l r p k b v. Gathering p => IsSymbol l => Cons l k b r => p { | r } [ | v ] -> p (Array { | r }) [ | v ]
-gathered w = withStructuralOrd @k
-  (dimap (map \r -> Tuple (Record.get (Proxy @l) r) r) snd (gathering w))
+gathered w = withStructuralOrd @k (dimap (map (keyed @l)) snd (gathering w))
 
 -- | `gathered` over an array the model stores: keyed by field `l` of each
 -- | element, the array field `t` of the fed row, both named by label

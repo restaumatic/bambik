@@ -264,7 +264,7 @@ laxity has a price (the gate) that pure treatments never see.
 
 ## Where it lives
 
-- **`extras/row-profunctor/Data/Profunctor/Acting.purs`** holds the pure
+- **`extras/row-profunctor/Data/Profunctor/Keyed/Acting.purs`** holds the pure
   algebra: `class Acting`/`acting` and the row forms `acted @l` and `actedAt @l @t`.
   The carrier machinery lives with the carriers, like the merge instances:
   `PUI` carries `class Hosting` (instantiate one element at runtime, detach

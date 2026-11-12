@@ -139,10 +139,10 @@ import Data.Newtype (class Newtype)
 import Data.Map as Map
 import Data.Set as Set
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
-import Data.Profunctor.Acting (class Acting)
-import Data.Profunctor.Accumulating (class Accumulating, accumulated)
-import Data.Profunctor.Dispatching (class Dispatching, dispatched)
-import Data.Profunctor.Gathering (class Gathering, gathered)
+import Data.Profunctor.Keyed.Acting (class Acting)
+import Data.Profunctor.Keyed.Accumulating (class Accumulating, accumulated)
+import Data.Profunctor.Keyed.Dispatching (class Dispatching, dispatched)
+import Data.Profunctor.Keyed.Gathering (class Gathering, gathered)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
@@ -166,10 +166,10 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- `lcmap (const {})`.
 import Data.Profunctor.Row (settled) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined, joined2, kept) as Adopters
-import Data.Profunctor.Acting (acted, actedAt) as Adopters
-import Data.Profunctor.Accumulating (accumulated, accumulatedOn) as Adopters
-import Data.Profunctor.Dispatching (dispatched, dispatchedOn) as Adopters
-import Data.Profunctor.Gathering (gathered, gatheredAt) as Adopters
+import Data.Profunctor.Keyed.Acting (acted, actedAt) as Adopters
+import Data.Profunctor.Keyed.Accumulating (accumulated, accumulatedOn) as Adopters
+import Data.Profunctor.Keyed.Dispatching (dispatched, dispatchedOn) as Adopters
+import Data.Profunctor.Keyed.Gathering (gathered, gatheredAt) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
@@ -1844,8 +1844,8 @@ action' arr w = fromHandles do
 debounced :: forall m. Applicative m => { ms :: Number } -> Ocular (PUI m)
 debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 
--- The keyed square on PUI (classes in Data.Profunctor.{Acting, Dispatching,
--- Gathering, Accumulating} — the pure algebra; instances live with the
+-- The keyed square on PUI (classes in Data.Profunctor.Keyed.{Acting,
+-- Dispatching, Gathering, Accumulating} — the pure algebra; instances live with the
 -- carriers, like the merge instances above).
 --
 -- Four classes, one per shape, share one instance discipline: the element
@@ -1930,14 +1930,14 @@ instance Hosting Effect Unit where
 
 
 -- | Keyed, retaining collection on any hosting carrier (laws in
--- | `Data.Profunctor.Acting`'s header; the vocabulary form is `acted @l`).
+-- | `Data.Profunctor.Keyed.Acting`'s header; the vocabulary form is `acted @l`).
 instance Hosting m node => Acting (PUI m) where
   acting w = fromHandles do
     hooks <- hosting w
     liftEffect $ actedWith hooks
 
 -- | One instance per key on any hosting carrier (laws in
--- | `Data.Profunctor.Dispatching`'s header; the vocabulary forms are
+-- | `Data.Profunctor.Keyed.Dispatching`'s header; the vocabulary forms are
 -- | `dispatched @l`, `dispatchedOf @l proj`, `dispatchedOn @l @c`).
 instance Hosting m node => Dispatching (PUI m) where
   dispatching w = fromHandles do
@@ -1945,7 +1945,7 @@ instance Hosting m node => Dispatching (PUI m) where
     liftEffect $ dispatchedWith hooks
 
 -- | The emitting collection on any hosting carrier (laws in
--- | `Data.Profunctor.Gathering`'s header; the vocabulary forms are
+-- | `Data.Profunctor.Keyed.Gathering`'s header; the vocabulary forms are
 -- | `gathered @l`, `gatheredOf @l proj`, `gatheredAt @l @t`).
 instance Hosting m node => Gathering (PUI m) where
   gathering w = fromHandles do
@@ -1953,7 +1953,7 @@ instance Hosting m node => Gathering (PUI m) where
     liftEffect $ collapsedWith hooks
 
 -- | The keyed Mealy on any hosting carrier (laws in
--- | `Data.Profunctor.Accumulating`'s header; the vocabulary forms are
+-- | `Data.Profunctor.Keyed.Accumulating`'s header; the vocabulary forms are
 -- | `accumulated @l`, `accumulatedOf @l proj`, `accumulatedOn @l @c`).
 instance Hosting m node => Accumulating (PUI m) where
   accumulating w = fromHandles do

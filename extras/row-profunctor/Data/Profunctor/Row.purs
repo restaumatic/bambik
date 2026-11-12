@@ -253,9 +253,9 @@
 -- | exclusive (`ExclusiveRows`) — so a merge signature is its owned side's
 -- | bundle and its shared side's one row.
 -- |
--- | `Data.Profunctor.Acting` extends the family one step past rows: rows are
--- | the finitary μ-free fragment of the container grammar, and `Array` is
--- | one `μ` later.
+-- | `Data.Profunctor.Keyed` extends the family one step past rows: rows
+-- | are the finitary μ-free fragment of the container grammar, and `Array`
+-- | is one `μ` later — the keyed square, one class per shape.
 -- |
 -- | The shared floor of the row layer — what every shape's module
 -- | (`Data.Profunctor.Row.*`) stands on:
@@ -398,7 +398,7 @@
 -- | pairs, so it appears exactly where a row is assembled from several
 -- | operands — the broadcast merge, and the container action's `Array b`,
 -- | gathered by the same machine over the fed keys as labels
--- | (`Data.Profunctor.Acting`) — and a zero-field side enrols no
+-- | (`Data.Profunctor.Keyed.Acting`) — and a zero-field side enrols no
 -- | participant, so it is born satisfied. Counting
 -- | renderings a gated merge is premonoidal — interchange at the inner
 -- | surfaces holds as `⊑` — and counting channels monoidal; at the

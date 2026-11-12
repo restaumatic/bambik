@@ -25,9 +25,10 @@ root defines is a general algebra:
   `(M, N)`-monoidal structure for `M, N ∈ {×, +}`, symmetric and
   associative, so every shape is a commutative semigroup on labelled rows
   (no unit law is stated).
-- **The container action** (`Data.Profunctor.Acting`), one `μ` past the rows —
+- **The keyed square** (`Data.Profunctor.Keyed.*`), one `μ` past the rows —
   rows being the finitary, `μ`-free, label-strict fragment of the same
-  container grammar.
+  container grammar: one class per shape, each its strength's analogue over
+  a runtime key, `p a b -> p (⊗ₖ a) (⊕ₖ b)`.
 
 Every one of those is stated for an arbitrary profunctor `p`. The laws are in
 the module headers and are **value-testable on `PUI Effect` probes**, which is
@@ -40,7 +41,11 @@ how the `spago test` suite exercises them without a DOM.
 | `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase` |
 | `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `joined` |
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `unshown` |
-| `Data.Profunctor.Acting` | the container action `class Acting`/`acting`, `acted @l`, `actedAt @l @t` |
+| `Data.Profunctor.Keyed` | the keyed square's floor: the one formula, the key discipline, the three forms, and the label forms' two halves `keyed @l`/`keyRestored @l` |
+| `Data.Profunctor.Keyed.Acting` | `× → ×`: `class Acting`/`acting`, `acted @l`, `actedAt @l @t` |
+| `Data.Profunctor.Keyed.Dispatching` | `+ → +`: `class Dispatching`/`dispatching`, `dispatched @l`, `dispatchedOn @l @c` |
+| `Data.Profunctor.Keyed.Gathering` | `× → +`: `class Gathering`/`gathering`, `gathered @l`, `gatheredAt @l @t` |
+| `Data.Profunctor.Keyed.Accumulating` | `+ → ×`: `class Accumulating`/`accumulating`, `accumulated @l`, `accumulatedOn @l @c` |
 | `Data.Structural` (its own root, `extras/structural`) | structural `Eq`/`Ord` of plain values through `Foreign`, for keys no instance closes (holes) |
 
 ## What extraction would take

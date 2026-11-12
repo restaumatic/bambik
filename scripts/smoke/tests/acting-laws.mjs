@@ -1,4 +1,4 @@
-// The container-action carrier laws (Data.Profunctor.Acting header), on the
+// The container-action carrier laws (Data.Profunctor.Keyed.Acting header), on the
 // reorder demo — the keyed-reconciliation showcase. The decisive assertion
 // is the retraction law: feeding a reordered array must REUSE the element
 // instance per surviving key, so DOM-node identity (and DOM-local state,

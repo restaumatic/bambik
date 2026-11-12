@@ -28,7 +28,7 @@ import Data.Array as Array
 import Data.Foldable (foldl, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor.Acting (actedBy)
+import Data.Profunctor.Keyed.Acting (actedBy)
 import Data.Profunctor.Row.RecordToRecord (recordToRecord)
 import Data.Profunctor.Row.RecordToVariant (joined, recordToVariant)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)

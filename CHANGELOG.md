@@ -7,6 +7,16 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-12, latest
+- **`Data.Profunctor.Keyed`.** The four keyed classes move from flat
+  modules beside `Row/` into a directory with a floor, as the row shapes
+  have: `Data.Profunctor.Keyed.{Acting,Dispatching,Gathering,Accumulating}`
+  over `Data.Profunctor.Keyed`, which states the square once (the one
+  formula `p a b -> p (⊗ₖ a) (⊕ₖ b)`, what each side's tensor decides,
+  the key discipline, the three forms) and holds the two halves every
+  label form is a `dimap` of, `keyed @l` and `keyRestored @l`, written
+  inline four times before. Each member's `## The key` section now
+  states only what is its own. No word, signature or behaviour changed;
+  the demos import the forms from `PUI` and are untouched.
 - **`Data.Lens.Prism.Existential` deleted.** `prismE`, the existential
   constructor of the ecosystem's `Prism`, had one caller, `focusCase`,
   and was `dimap decon recon <<< left` by another name. `focusCase` and

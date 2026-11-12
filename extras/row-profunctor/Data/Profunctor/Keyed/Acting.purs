@@ -14,15 +14,10 @@
 -- |
 -- | ## The key
 -- |
--- | **A materialized identity field of the row** (`acted @l`): the element
--- | is a data-model row, and rows carry their identity. `Ord k` is the
--- | reconciler's Map-indexing requirement — identity semantics remain
--- | equality; keys must be unique and are never rendered. The element is
--- | typed at its whole row, key included, on both sides, and the key is
--- | **re-set** on every emission from the element's *input* row, so an
--- | element cannot forge or change identity: in the class primitive the
--- | key rides beside the element, `Array (Tuple k a)`, out of its reach,
--- | and the label form writes it over each emission.
+-- | The square's (`Data.Profunctor.Keyed`, *The key*): field `l` of the
+-- | element's row. The element is typed at its whole row, key included, on
+-- | both sides, and the key is **re-set** on every emission from the
+-- | element's *input* row (`keyed @l` in, `keyRestored @l` out).
 -- |
 -- | ## Laws
 -- |
@@ -73,7 +68,7 @@
 -- | rekeyed per feed, the empty law its zero-participant release.
 -- | Conformance to the step over every script to a bound:
 -- | test/Exhaustive.purs.
-module Data.Profunctor.Acting
+module Data.Profunctor.Keyed.Acting
   ( class Acting
   , acting
   , actedBy
@@ -81,17 +76,16 @@ module Data.Profunctor.Acting
   , actedAt
   ) where
 
-import Data.Structural (withStructuralOrd)
 import Prelude
 
 import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor.Keyed (keyRestored, keyed)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Strong (class Strong)
+import Data.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple(..), snd)
 import Prim.Row (class Cons)
-import Record (get, set) as Record
-import Type.Proxy (Proxy(..))
 
 -- | The class primitive: lift a UI component over the keyed `Array`
 -- | container, every element riding beside its key. The element never sees
@@ -112,10 +106,7 @@ actedBy key w = dimap (map \a -> Tuple (key a) a) (map snd) (acting w)
 -- | the merges' operands: `row # acted @"id"`. An element's functions are
 -- | typed at its row (guardrails L18).
 acted :: forall @l r p k b1 b2 r1 . Acting p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
-acted w = withStructuralOrd @k
-  (dimap (map \r -> Tuple (Record.get prox r) r) (map \(Tuple k out) -> Record.set prox k out) (acting w))
-  where
-  prox = Proxy @l
+acted w = withStructuralOrd @k (dimap (map (keyed @l)) (map (keyRestored @l)) (acting w))
 
 -- | `acted` over an array the model stores: keyed by field `l` of each
 -- | element, the array field `t` of the fed row, both named by label

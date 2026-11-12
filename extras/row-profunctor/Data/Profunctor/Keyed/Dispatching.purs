@@ -8,13 +8,10 @@
 -- |
 -- | ## The key
 -- |
--- | **A materialized identity field of the row** (`dispatched @l`), as for
--- | `acted @l`: the entity is a data-model row and rows carry their
--- | identity, so no envelope is written. The entity is typed at its whole
--- | row on both sides, and the key is **re-set** on every emission from the
--- | fed row, so an instance cannot forge or change identity: in the class
--- | primitive the key rides beside the entity, `Tuple k a`, out of the
--- | instance's reach, as in `acting`.
+-- | The square's (`Data.Profunctor.Keyed`, *The key*): field `l` of the
+-- | entity's row, so no envelope is written. The entity is typed at its
+-- | whole row on both sides, and the key is **re-set** on every emission
+-- | from the fed row (`keyed @l` in, `keyRestored @l` out).
 -- |
 -- | ## Laws
 -- |
@@ -43,7 +40,7 @@
 -- | entity beside its key, and the label forms. The instance is the carrier's:
 -- | `PUI` holds a generic `Hosting m node =>` instance, one registration
 -- | per key value, never detached or restacked.
-module Data.Profunctor.Dispatching
+module Data.Profunctor.Keyed.Dispatching
   ( class Dispatching
   , dispatching
   , dispatched
@@ -54,13 +51,12 @@ import Prelude
 
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Choice (class Choice)
-import Data.Structural (withStructuralOrd)
+import Data.Profunctor.Keyed (keyRestored, keyed)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
+import Data.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple)
 import Prim.Row (class Cons)
-import Record (get, set) as Record
-import Type.Proxy (Proxy(..))
 
 -- | The class primitive: one instance per key value, the entity riding
 -- | beside its key and each emission leaving beside the key it was fed
@@ -72,10 +68,7 @@ class Profunctor p <= Dispatching p where
 -- | typed at its whole row on both sides and the key re-set from the input
 -- | on every emission (see the header).
 dispatched :: forall @l r p k b1 b2 r1. Dispatching p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p { | r } { | r1 }
-dispatched w = withStructuralOrd @k
-  (dimap (\r -> Tuple (Record.get prox r) r) (\(Tuple k out) -> Record.set prox k out) (dispatching w))
-  where
-  prox = Proxy @l
+dispatched w = withStructuralOrd @k (dimap (keyed @l) (keyRestored @l) (dispatching w))
 
 -- | `dispatched` for an entity arriving as case `c` of an event row, every
 -- | other case passing: `focusCase @c` over the bare form.

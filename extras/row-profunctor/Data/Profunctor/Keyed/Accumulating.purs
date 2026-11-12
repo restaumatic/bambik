@@ -7,11 +7,9 @@
 -- |
 -- | ## The key
 -- |
--- | **A materialized identity field of the row** (`accumulated @l`), as for
--- | `acted @l`. The key is **re-set** on every emission from the fed row,
--- | so a slot is its entity's and an element cannot forge or change
--- | identity: in the class primitive the key rides beside the entity,
--- | `Tuple k a`, out of the element's reach, as in `acting`.
+-- | The square's (`Data.Profunctor.Keyed`, *The key*): field `l` of the
+-- | entity's row. The key is **re-set** on every emission from the fed row
+-- | (`keyed @l` in, `keyRestored @l` out), so a slot is its entity's.
 -- |
 -- | ## Laws
 -- |
@@ -47,7 +45,7 @@
 -- | detached or restacked, its output the one pure machine
 -- | `PUI.Gate.gateStep` that `Acting` gathers with, the keys enrolled in
 -- | first-appearance order.
-module Data.Profunctor.Accumulating
+module Data.Profunctor.Keyed.Accumulating
   ( class Accumulating
   , accumulating
   , accumulated
@@ -57,12 +55,12 @@ module Data.Profunctor.Accumulating
 import Prelude
 
 import Data.Profunctor (class Profunctor, dimap, lcmap)
+import Data.Profunctor.Keyed (keyRestored, keyed)
 import Data.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple)
 import Data.Variant (case_, on)
 import Prim.Row (class Cons)
-import Record (get, set) as Record
 import Type.Proxy (Proxy(..))
 
 -- | The class primitive: entities in one at a time, each beside its key,
@@ -74,10 +72,7 @@ class Profunctor p <= Accumulating p where
 -- | The accumulating collection keyed by the entity's identity field `l`,
 -- | the key re-set from the input on every emission (see the header).
 accumulated :: forall @l r r1 p k b1 b2. Accumulating p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p { | r } (Array { | r1 })
-accumulated w = withStructuralOrd @k
-  (dimap (\r -> Tuple (Record.get prox r) r) (map \(Tuple k out) -> Record.set prox k out) (accumulating w))
-  where
-  prox = Proxy @l
+accumulated w = withStructuralOrd @k (dimap (keyed @l) (map (keyRestored @l)) (accumulating w))
 
 -- | `accumulated` for an entity arriving as case `c` of an event row: the
 -- | `+→×` operand owning that case, closed to it like every fold.

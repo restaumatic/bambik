@@ -550,11 +550,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 The codebase is three floors, each greppable:
 
-- **Algebra layer** (`PUI`, `Data.Profunctor.Row.*`, `Data.Profunctor.Acting`,
+- **Algebra layer** (`PUI`, `Data.Profunctor.Row.*`, `Data.Profunctor.Keyed.*`,
   and the optics) — the **only** importer of the ecosystem's
   `Data.Profunctor` (and `.Strong`/`.Choice`/`.Cochoice`/...). This is
   where instances live, so it is forced. (Bambik's own `Data.Profunctor.Row.*`
-  and `.Acting` namespaces are vocabulary, not the ecosystem — the greps
+  and `.Keyed.*` namespaces are vocabulary, not the ecosystem — the greps
   target `import Data.Profunctor (`/`.Strong`/... exactly.)
 - **Vocabulary layer** (the design-system modules, `PUI.Web.HTML`/`PUI.Web.SVG`,
   packaged control modules) — builds from the **carrier** (its license:

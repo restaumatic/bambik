@@ -26,7 +26,8 @@ import Data.Tuple (Tuple(..), fst)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
 import Data.Profunctor.Row (atCase, atField, toCase, toField)
-import Data.Profunctor.Acting (actedBy)
+import Data.Profunctor.Keyed (keyRestored, keyed)
+import Data.Profunctor.Keyed.Acting (actedBy)
 import Data.Profunctor.Retaining (retain)
 import Data.Variant (expand, match)
 import Data.Variant.Case (caseText)
@@ -280,6 +281,12 @@ main = do
   assertEqual "caseText" "Medium roast" (caseText (."Medium roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
   assertEqual "caseText/other case" "Light roast" (caseText (."Light roast" {} :: [ "Light roast" :: {}, "Medium roast" :: {} ]))
 
+  -- Data.Profunctor.Keyed: the label forms' two halves — a row beside its
+  -- identity field, and the key written back over whatever an element
+  -- emitted there.
+  assertEqual "keyed/pairs a row with its field" (Tuple 7 { id: 7, title: "a" }) (keyed @"id" { id: 7, title: "a" })
+  assertEqual "keyed/keyRestored <<< keyed = identity" { id: 7, title: "a" } (keyRestored @"id" (keyed @"id" { id: 7, title: "a" }))
+  assertEqual "keyed/a forged key is replaced" { id: 7, title: "b" } (keyRestored @"id" (Tuple 7 { id: 99, title: "b" }))
   -- Data.Structural: equality and order by structure, no instance asked —
   -- agreement with the lawful instances, records whatever order built them,
   -- and an order consistent with the equality.
@@ -945,7 +952,7 @@ main = do
     assertEqual "+→+ associativity: each case reached its handler, every emission left"
       { as: [ .x 2, .x 4 ], bs: [ .y 1 ], cs: [ .z 3 ], os: [ .ok "c", .ok "a", .ok "b" ] } left
 
-  -- == The container action (Data.Profunctor.Acting): the Array case of ==
+  -- == The container action (Data.Profunctor.Keyed.Acting): the Array case of ==
   -- == p a b -> p (F a) (F b), keyed. Laws from the module header. ==
 
   -- empty: fed [], emits [] — the inhabited nullary of μx. 1 + a×x. And only
