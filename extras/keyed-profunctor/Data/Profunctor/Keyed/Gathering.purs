@@ -34,7 +34,7 @@
 -- | Three, like every member of the keyed square:
 -- |
 -- |   * `gathered @l` — over the element's row.
--- |   * `gatheredOf @l proj` (`PUI`, a hole-aware projection to the array) —
+-- |   * `gatheredOf @l proj` (a projection to the array) —
 -- |     `tile @"Key entered" @"key" … # gatheredOf @"key" keyPad`;
 -- |     MDC2/MDC3's `listOf` is this over picked rows.
 -- |   * `gatheredAt @l @t` — over an array the model stores at field `t`
@@ -50,6 +50,7 @@ module Data.Profunctor.Keyed.Gathering
   ( class Gathering
   , gathering
   , gathered
+  , gatheredOf
   , gatheredAt
   ) where
 
@@ -74,9 +75,14 @@ class Profunctor p <= Gathering p where
 gathered :: forall @l r p k b v. Gathering p => IsSymbol l => Cons l k b r => p { | r } [ | v ] -> p (Array { | r }) [ | v ]
 gathered w = withStructuralOrd @k (dimap (map (keyed @l)) snd (gathering w))
 
+-- | `gathered` over a projection of the fed value — the **emitting list**
+-- | (`tile @"Key entered" @"key" cell # gatheredOf @"key" keyPad`).
+gatheredOf :: forall @l r p k b a v. Gathering p => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> p { | r } [ | v ] -> p a [ | v ]
+gatheredOf f w = lcmap f (gathered @l w)
+
 -- | `gathered` over an array the model stores: keyed by field `l` of each
 -- | element, the array field `t` of the fed row, both named by label
 -- | (`# gatheredAt @"key" @"cells"`, cells). An array derived from the row
 -- | is a projection, `gatheredOf`.
 gatheredAt :: forall @l @t p k b1 b2 r1 r v. Gathering p => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => p { | r1 } [ | v ] -> p { | r } [ | v ]
-gatheredAt w = lcmap (Record.get (Proxy @t)) (gathered @l w)
+gatheredAt = gatheredOf @l (Record.get (Proxy @t))

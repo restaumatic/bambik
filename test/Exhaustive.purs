@@ -28,7 +28,6 @@ import Data.Array as Array
 import Data.Foldable (foldl, for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor.Keyed.Acting (actedBy)
 import Data.Profunctor.Row.RecordToRecord (recordToRecord)
 import Data.Profunctor.Row.RecordToVariant (joined, recordToVariant)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)
@@ -504,7 +503,7 @@ echoElem = do
 actedRig :: (PUI Effect Item { v :: Int } -> PUI Effect Item { v :: Int }) -> Effect Rig
 actedRig fromHandles = do
   el <- echoElem
-  -- holey-weak-types: an item is typed at its whole row, key included, and the
+  -- an item is typed at its whole row, key included, and the
   -- carrier sets the key on each emission; this element emits `{ v }` only
   m' <- handles (acted @"k" (unsafeCoerce (fromHandles el.p) :: PUI Effect Item { k :: Int, v :: Int }) :: PUI Effect (Array Item) (Array { k :: Int, v :: Int }))
   outs <- Ref.new []
@@ -634,8 +633,8 @@ laws =
     , left: actedRig identity, right: pureGather }
   , { name: "acted monotonicity", alphabet: gatherAlphabet, len: two, rel: Refines
     , left: actedRig quieterP, right: actedRig identity }
-  , { name: "acted wire (actedBy k identity ≈ identity)", alphabet: gatherFeeds, len: two, rel: Equal
-    , left: arrayRig (actedBy _.k (identity :: PUI Effect Item Item)), right: arrayRig (identity :: PUI Effect (Array Item) (Array Item)) }
+  , { name: "acted wire (acted @l identity ≈ identity)", alphabet: gatherFeeds, len: two, rel: Equal
+    , left: arrayRig (acted @"k" (identity :: PUI Effect Item Item)), right: arrayRig (identity :: PUI Effect (Array Item) (Array Item)) }
   ]
 
 even :: Int -> Boolean

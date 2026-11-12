@@ -65,8 +65,10 @@
 -- |   * the **bare** word, over the element typed at its whole row, key
 -- |     field included — `acted @l`, `dispatched @l`, `gathered @l`,
 -- |     `accumulated @l`;
--- |   * `…Of @l proj`, over a projection of the fed value — written in
--- |     `PUI`, since a hole projection is absent (guardrails L18);
+-- |   * `…Of @l proj`, over a projection of the fed value — the bare
+-- |     form under `lcmap proj`, and for `actedOf`, whose array has
+-- |     nowhere to be written back, under the lens `lens proj const`: the
+-- |     gathered array stays inside and the fed value passes on;
 -- |   * the **stored** form: `…At @l @t` over an array the model stores at
 -- |     field `t`, for a `×` input (`actedAt`, `gatheredAt`); `…On @l @c`
 -- |     over the case `c` an entity arrives in, for a `+` input
@@ -76,8 +78,8 @@
 -- | stored forms; the instances are the carrier's, as the merge classes'
 -- | are. No keyed module imports a row shape's: a stored form that keeps
 -- | the rest of what it was fed is its strength's ecosystem optic over the
--- | bare form (`actedAt` is `prop`, `dispatchedOn` is `prism`), the other
--- | two a plain `lcmap`.
+-- | bare form (`actedAt` is `prop`, `dispatchedOn` is `prism`, `actedOf` is
+-- | `lens`), every other one a plain `lcmap`.
 module Data.Profunctor.Keyed
   ( keyed
   , keyRestored

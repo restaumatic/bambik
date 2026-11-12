@@ -289,8 +289,7 @@ laxity has a price (the gate) that pure treatments never see.
   label forms are `dimap`s over them), the `+`-members reading it off the one entity fed
   as the `×`-members read it off each element (they took a `{ key, value }`
   envelope until 2026-11-08). Each class has the same three forms: bare
-  over the element's row, `…Of @l proj` over a projection (`PUI`,
-  hole-aware), `…At @l @t` over a stored array (`×` input) or `…On @l @c`
+  over the element's row, `…Of @l proj` over a projection, `…At @l @t` over a stored array (`×` input) or `…On @l @c`
   over a case (`+` input).
 
   | Form | Shape | Behaviour |

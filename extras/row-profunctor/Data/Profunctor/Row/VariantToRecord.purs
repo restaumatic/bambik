@@ -121,5 +121,5 @@ discard first cont = bind first (\_ -> cont unit)
 -- | outcome case of an action that is only merged, never folded, where
 -- | the merge needs the case named and there is no face to name it
 -- | (`unshown @l # action f`). `lcmap (const {}) identity`, like `blank`.
-unshown :: forall @l p a v. Cons l a () v => Profunctor p => Category p => p [ | v ] {}
+unshown :: forall @l p a v. Cons l a () v => Category p => Profunctor p => p [ | v ] {}
 unshown = lcmap (const {}) identity

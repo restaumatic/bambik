@@ -516,16 +516,6 @@ export function afterTask(action) {
   };
 }
 
-const holeReached = (what) => {
-  globalThis.__bambikHoleReached = what;
-  throw new Error("bambik: a hole was reached (" + what + ") — data flowed into logic that is not written yet");
-};
-export const hole = new Proxy(function () {}, {
-  get: (_, p) => p === "__bambikHole" ? true : holeReached("read ." + String(p)),
-  apply: () => holeReached("called"),
-  construct: () => holeReached("constructed"),
-});
-
 // Sources (see `source` in PUI.Web): each watch returns the effect that ends it.
 
 // watchPosition :: ({ lat, lng } -> Effect Unit) -> Effect Unit -> Effect (Effect Unit)

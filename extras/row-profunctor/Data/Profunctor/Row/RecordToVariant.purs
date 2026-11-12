@@ -12,7 +12,7 @@
 -- |     (`bind`/`discard`). It carries no unit, like the other merge
 -- |     classes; theirs is `Category`'s `identity`, and this one, which no
 -- |     wire reaches, is the carrier's silent component, named by no class.
--- |   * **free functions** — over `Strong`: `joined`/`joined2` (a source's case joined
+-- |   * **free functions** — over `Strong`: `joined` (a source's cases joined
 -- |     with the row its emitter was fed — replay is this at the empty
 -- |     payload, `PUI.Web`'s click source dropping the `{}` event). No strength or co-strength row form: a
 -- |     stage is typed at one row, so no word narrows it to a sub-record
@@ -94,20 +94,19 @@ module Data.Profunctor.Row.RecordToVariant
   ( class RecordToVariant
   , recordToVariant
   , joined
-  , joined2
-  , kept
   , bind
   , discard
   )
   where
 
-import Data.Profunctor (class Profunctor, dimap)
-import Data.Profunctor.Strong (class Strong, first)
-import Data.Tuple (Tuple(..))
+import Control.Category (identity)
+import Data.Lens.Lens (lens)
+import Data.Profunctor (class Profunctor)
+import Data.Profunctor.Row (class JoinedCases)
+import Data.Profunctor.Strong (class Strong)
 import Data.Unit (Unit, unit)
 import Data.Variant.Internal (VariantRep(..))
 import Unsafe.Coerce (unsafeCoerce)
-import Prim.Row (class Cons)
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant
@@ -132,16 +131,18 @@ discard
   -> p { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
--- | **Case `l` joined with the row its emitter was fed** (`×→+`):
--- | `first` around the source, the fed row riding the state channel and
--- | leaving beside the occurrence's payload as one record, `{ event,
+-- | **Case `l` joined with the row its emitter was fed** (`×→+`): the
+-- | lens whose getter is `identity` — `Strong`'s `first` under the
+-- | diagonal, the fed row riding the state channel — and whose setter
+-- | distributes that row into the occurrence's case, so it leaves beside
+-- | the payload as one record, `{ event,
 -- | model }`, under the same case. So a
 -- | list pick, a canvas click or an action's outcome reaches the fold
 -- | with the model in hand, and its handler is one function of one
 -- | record (`listOf @"Todo toggled" … # joined @"Todo toggled"`,
 -- | `fold @"Todo toggled" toggleTodo` with `toggleTodo ::
 -- | { event :: Int, model :: { … } } -> { … }`, todo-list); an outcome
--- | whose fold keeps the model is `kept` (order-form's submit, joined with
+-- | whose fold keeps the model is `PUI`'s `kept` (order-form's submit, joined with
 -- | its button and action). The label **closes the source** to case `l`
 -- | and widens the joined case into the row the block shares: with every
 -- | emitter open on its output, nothing but the label says which case is
@@ -150,47 +151,21 @@ discard first cont = bind first (\_ -> cont unit)
 -- | `joined` over every case of a closed source row was the word from
 -- | 2026-10-14 to 2026-10-15; until 2026-10-16 the label left the
 -- | source's other cases passing, and the action declared its outcome
--- | row on its line; CHANGELOG). A two-outcome source is `joined2`. A click is the degenerate
+-- | row on its line; CHANGELOG). A source of several outcomes names them all, `joined @(l1 + l2)`. A click is the degenerate
 -- | case where the occurrence carries nothing of its own: `PUI.Web.clicked`
 -- | is this with the `{}` event dropped and the case renamed — a
 -- | derivation, so no word of its own (`Data.Profunctor.Row`, *Retention*).
 joined
-  :: forall @l p r e b v v1
-   . Strong p
-  => Cons l e () v
-  => Cons l { event :: e, model :: { | r } } b v1
+  :: forall @ls p r v v1
+   . JoinedCases ls r v v1
+  => Strong p
   => p { | r } [ | v ]
   -> p { | r } [ | v1 ]
 joined = joinedEvery
 
--- | **Both cases of a two-outcome source joined** with the row it was fed:
--- | `joined` for a source emitting exactly `l1` and `l2`, the action of
--- | two outcomes (`… # action @"Submit order" submitOrder ) # joined2
--- | @"Order submitted" @"Total missing"`, order-form). Its own
--- | word because one label closes one case: two `joined`s would leave the
--- | source's rest open to the block's other cases, and only both labels
--- | at once say the source has these two and no others.
-joined2
-  :: forall @l1 @l2 p r e1 e2 b v0 v v1 v2
-   . Strong p
-  => Cons l2 e2 () v0
-  => Cons l1 e1 v0 v
-  => Cons l2 { event :: e2, model :: { | r } } b v1
-  => Cons l1 { event :: e1, model :: { | r } } v1 v2
-  => p { | r } [ | v ]
-  -> p { | r } [ | v2 ]
-joined2 = joinedEvery
-
 joinedEvery :: forall p r v v1. Strong p => p { | r } [ | v ] -> p { | r } [ | v1 ]
-joinedEvery src = dimap (\r -> Tuple r r) (\(Tuple e r) -> withModel r e) (first src)
+joinedEvery = lens identity withModel
   where
   withModel :: { | r } -> [ | v ] -> [ | v1 ]
   withModel r e = case (unsafeCoerce e :: VariantRep _) of
     VariantRep rep -> unsafeCoerce (VariantRep { type: rep.type, value: { event: rep.value, model: r } })
-
--- | The fold that **keeps the model** a joined event arrived with:
--- | `kept = _.model`. For an outcome that is told and changes nothing —
--- | `snackbar @"Order submitted" kept` (order-form), the
--- | action joined with its button so the model is in hand.
-kept :: forall a r. { event :: a, model :: { | r } } -> { | r }
-kept = _.model

@@ -363,9 +363,9 @@ writing.md *What the laws guarantee*.
   `p ⊑ p′`). Without monotonicity the order would be a remark; with it,
   `PUI` is a poset-enriched category and every "lax" above is a real
   inequality in it.
-- **The container action is lax the same way.** `actedBy k p >>> actedBy k q`
+- **The container action is lax the same way.** `acted @l p >>> acted @l q`
   re-feeds every `q`-element whenever any `p`-element emits (the whole
-  array passes through the second reconciler), where `actedBy k (p >>> q)`
+  array passes through the second reconciler), where `acted @l (p >>> q)`
   feeds only the element that spoke — an inner-surface difference; the
   boundary agrees (tested). Every laxity in the library points the same way:
   more synchronization, more re-feeding, same boundary.
@@ -620,7 +620,7 @@ exactly its projection of the boundary feeds — the whole stream at a
 record input, its own cases at a variant one); and at the container action,
 over scripts whose feeds take every shape, **conformance** of `acted` to the
 step rekeyed per feed, `⊑`-monotonicity (each element instance minus its
-first emission), the wire law (`actedBy k identity` against `identity`),
+first emission), the wire law (`acted @l identity` against `identity`),
 feed-idempotence and the answer law with `[]` the empty array's one release.
 Twenty-eight laws, about three hundred and seventy thousand scripts, no
 distinguishing script. Because the pure step is the very function the

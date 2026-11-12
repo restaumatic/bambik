@@ -37,10 +37,10 @@
 -- |     reconcile whose elements echo gathers once, whole.
 -- |   * **identity follows key** — re-feeding a surviving key reuses its
 -- |     instance; permuting keys reorders without rebuilding.
--- |   * **wire** — `actedBy k identity ≈ identity` at `Array` (elements are
+-- |   * **wire** — `acted @l identity ≈ identity` at `Array` (elements are
 -- |     echo wires, so every fed array gathers whole immediately).
 -- |     Composition is deliberately **not** preserved:
--- |     `actedBy k (p >>> q) ≠ actedBy k p >>> actedBy k q` in general —
+-- |     `acted @l (p >>> q) ≠ acted @l p >>> acted @l q` in general —
 -- |     the right side gathers twice and re-feeds every `q`-element per
 -- |     `p`-element emission — so lift whole element pipelines, not stages.
 -- |
@@ -49,7 +49,7 @@
 -- | Three, like every member of the keyed square:
 -- |
 -- |   * `acted @l` — over the element's row.
--- |   * `actedOf @l proj` (`PUI`, a hole-aware projection to the array) —
+-- |   * `actedOf @l proj` (a projection to the array) —
 -- |     the list of displays, whose releases stay inside and whose fed row
 -- |     passes on (`item # actedOf @"id" rowsOf`).
 -- |   * `actedAt @l @t` — over an array the model stores at field `t`
@@ -58,8 +58,7 @@
 -- | ## The carrier
 -- |
 -- | This module holds the class, whose primitive `acting` takes each
--- | element beside its key (`actedBy` is it with the pairing written from
--- | a key function), and the label forms. The instance is the carrier's, as the
+-- | element beside its key, and the label forms. The instance is the carrier's, as the
 -- | merge classes' are: `PUI` holds the shared keyed reconciler and a
 -- | generic `Hosting m node =>` instance, each display carrier its own
 -- | `Hosting`. The gather gate is the record merges' knowledge gate with
@@ -71,20 +70,21 @@
 module Data.Profunctor.Keyed.Acting
   ( class Acting
   , acting
-  , actedBy
   , acted
+  , actedOf
   , actedAt
   ) where
 
 import Prelude
 
+import Data.Lens.Lens (lens)
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Keyed (keyRestored, keyed)
 import Data.Profunctor.Strong (class Strong)
 import Data.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..), snd)
+import Data.Tuple (Tuple)
 import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 
@@ -95,19 +95,22 @@ import Type.Proxy (Proxy(..))
 class Profunctor p <= Acting p where
   acting :: forall k a b. Ord k => p a b -> p (Array (Tuple k a)) (Array (Tuple k b))
 
--- | `acting` keyed by a function of the element, the keys dropped from the
--- | output: the primitive with its pairing written for it (`Profunctor`
--- | alone).
-actedBy :: forall p k a b. Acting p => Ord k => (a -> k) -> p a b -> p (Array a) (Array b)
-actedBy key w = dimap (map \a -> Tuple (key a) a) (map snd) (acting w)
-
 -- | The container action keyed by the element's identity field `l`, the
 -- | element typed at its whole row on both sides and the key re-set from
 -- | the input on every emission (see the header). Written trailing, like
 -- | the merges' operands: `row # acted @"id"`. An element's functions are
--- | typed at its row (guardrails L18).
-acted :: forall @l r p k b1 b2 r1 . Acting p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
+-- | typed at its row.
+acted :: forall @l r r1 p k b1 b2. Acting p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
 acted w = withStructuralOrd @k (dimap (map (keyed @l)) (map (keyRestored @l)) (acting w))
+
+-- | `acted` over a projection of the fed value — the **list of displays**:
+-- | the lens whose getter is the projection and whose setter keeps the
+-- | value fed, so the elements' gathered releases stay inside and the fed
+-- | value passes on once the gate releases (`ul $ item # actedOf @"id"
+-- | rowsOf`). A projected array is a view with nothing to write back; an
+-- | array the model stores is `actedAt`.
+actedOf :: forall @l r r1 p k b1 b2 a. Acting p => Strong p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => (a -> Array { | r }) -> p { | r } { | r1 } -> p a a
+actedOf f w = lens f const (acted @l w)
 
 -- | `acted` over an array the model stores: keyed by field `l` of each
 -- | element, the array field `t` of the fed row, both named by label
@@ -115,6 +118,6 @@ acted w = withStructuralOrd @k (dimap (map (keyed @l)) (map (keyRestored @l)) (a
 -- | `Strong`'s field lens, the ecosystem's `prop`, over the bare form. The
 -- | MDC vocabularies' `group @t` does the same lift with its card and
 -- | heading; the plain-HTML floor names the field here (reorder-html).
-actedAt :: forall @l @t p k b1 b2 r1 r. Acting p => Strong p => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons t (Array { | r1 }) b2 r => p { | r1 } { | r1 } -> p { | r } { | r }
+actedAt :: forall @l @t p k b1 b2 b3 r1 r2 r3 r. Acting p => Strong p => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons l k b2 r2 => Cons t (Array { | r1 }) b3 r3 => Cons t (Array { | r2 }) b3 r => p { | r1 } { | r2 } -> p { | r3 } { | r }
 actedAt w = prop (Proxy @t) (acted @l w)
 

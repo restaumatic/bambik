@@ -310,9 +310,7 @@ number.
 - **The view determines its view model.** `npm run check-determined`
   compiles every view with a typed hole for each imported value and
   checks that every exported signature is that hole's type with its open
-  row tails filled. The same view compiled over bare runtime `hole`s
-  mounts and runs (`npm run check-holes`), so the screen exists before the
-  logic.
+  row tails filled.
 - **Laws instead of conventions.** The four row merges, the knot and the
   container action have law tests: an exhaustive check over every event
   script up to length 8, plus a headless-Chrome bench running every published

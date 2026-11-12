@@ -32,8 +32,7 @@
 -- | Three, like every member of the keyed square:
 -- |
 -- |   * `accumulated @l` — over the entity's row.
--- |   * `accumulatedOf @l proj` (`PUI`, a hole-aware projection to the
--- |     entity) — `# accumulatedOf @"team" goal`, scoreboard.
+-- |   * `accumulatedOf @l proj` (a projection to the entity) — `# accumulatedOf @"team" goal`, scoreboard.
 -- |   * `accumulatedOn @l @c` — for an entity arriving as case `c`, the
 -- |     `+→×` operand owning that case, closed to it like every fold.
 -- |
@@ -49,6 +48,7 @@ module Data.Profunctor.Keyed.Accumulating
   ( class Accumulating
   , accumulating
   , accumulated
+  , accumulatedOf
   , accumulatedOn
   ) where
 
@@ -74,7 +74,13 @@ class Profunctor p <= Accumulating p where
 accumulated :: forall @l r r1 p k b1 b2. Accumulating p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p { | r } (Array { | r1 })
 accumulated w = withStructuralOrd @k (dimap (keyed @l) (map (keyRestored @l)) (accumulating w))
 
+-- | `accumulated` over a projection of the fed value to one entity
+-- | (`( listItem $ text scoreLine ) # accumulatedOf @"team" goal`,
+-- | scoreboard).
+accumulatedOf :: forall @l r r1 p k b1 b2 a. Accumulating p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => (a -> { | r }) -> p { | r } { | r1 } -> p a (Array { | r1 })
+accumulatedOf f w = lcmap f (accumulated @l w)
+
 -- | `accumulated` for an entity arriving as case `c` of an event row: the
 -- | `+→×` operand owning that case, closed to it like every fold.
 accumulatedOn :: forall @l @c r r1 p k b1 b2 v. Accumulating p => IsSymbol l => IsSymbol c => Cons l k b1 r => Cons l k b2 r1 => Cons c { | r } () v => p { | r } { | r1 } -> p [ | v ] (Array { | r1 })
-accumulatedOn w = lcmap (case_ # on (Proxy @c) identity) (accumulated @l w)
+accumulatedOn = accumulatedOf @l (case_ # on (Proxy @c) identity)

@@ -14,7 +14,8 @@
 -- |     (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusField` (the field
 -- |     lens — the leaf lift, making every label-indexed editor a whole-row
--- |     citizen). No co-strength row form: a loop's state is a model
+-- |     citizen) and `onField` (a field computed from the row and added
+-- |     to it, the mirror of `VariantToVariant.onCase`). No co-strength row form: a loop's state is a model
 -- |     field the whole-row `looped` carries, never a hidden one
 -- |     (`Data.Profunctor.Row`, *What is deliberately not here*). The
 -- |     one-sided words of this shape — `atField`/`toField` (the halves of
@@ -161,16 +162,20 @@ module Data.Profunctor.Row.RecordToRecord
   , bind
   , discard
   , focusField
+  , onField
   )
   where
 
+import Control.Category (identity)
+import Data.Lens.Lens (lens)
 import Data.Lens.Record (prop)
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Row (class OwnedRecordOutputs)
 import Data.Profunctor.Strong (class Strong)
 import Data.Symbol (class IsSymbol)
 import Data.Unit (Unit, unit)
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Lacks)
+import Record (insert) as Record
 import Type.Proxy (Proxy(..))
 
 class Profunctor p <= RecordToRecord p where
@@ -209,3 +214,22 @@ focusField
   => p f f'
   -> p { | r } { | r1 }
 focusField = prop (Proxy @l)
+
+-- | Field `l` computed by a stage that reads the row, every other field
+-- | passing through: the row **plus `l`** leaves — the `×→×` stage that
+-- | introduces a field, and the mirror of `VariantToVariant.onCase`,
+-- | which eliminates a case. As `onCase` is the prism whose builder is
+-- | `identity`, this is the lens whose getter is `identity`: `Strong`'s
+-- | `first` under the diagonal, the fed row riding beside the stage and
+-- | the stage's output inserted into it. Law: at `(->)`, `onField @l f r
+-- | = Record.insert l (f r) r`. `PUI.introduced` is this over the wire
+-- | read through its init, followed by its editor.
+onField
+  :: forall @l p a b r
+   . IsSymbol l
+  => Lacks l b
+  => Cons l a b r
+  => Strong p
+  => p { | b } a
+  -> p { | b } { | r }
+onField = lens identity (\b a -> Record.insert (Proxy @l) a b)

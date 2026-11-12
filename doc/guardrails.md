@@ -109,6 +109,20 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   | `PUI Web [ \| a ] { \| b }` | `+→×` | the folds (`fold @l f`, `reset @l x`, `capture @l`) and the statuses, each a fold with a face (`snackbar @l line f`); the action slot (`indeterminateLinearProgress`) owns `started`/`ended` only, so a status is never the slot |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
 
+  The four shapes are the four arrows of an application's **cycle**,
+  and the rows between them are named by it: `×→×` takes the **model**
+  to the **view model** (presentation, edits carried back), `×→+` the
+  view model to a **view event** (interaction), `+→+` a view event to a
+  **model event** (interpretation — a join with the model, an effect's
+  outcome, a dialog's decision) and `+→×` a model event to the model
+  (transition). The diagonal shapes translate within a kind, state to
+  state and event to event; the off-diagonal ones convert between
+  kinds. The names are positions in the loop, not types: the model and
+  the view model are one row wherever nothing narrows or derives.
+  Documentation MUST use these four names for these four positions and
+  for nothing else; the **view model module** is the module holding the
+  functions of all four arrows, named for the rows its signatures state.
+
   A closed row (`{}`, `[ event :: String ]`) is a row. A word that
   would need two shapes is two words, each lawful at its own: a pane is `provided` for emitters (a detached one's
   silence is `×→+`'s answer) and `inCase` for displays and editors (the
@@ -192,7 +206,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   It writes no row for an action either: `action @"Charge card" chargeFlaky` is
   typed at exactly the outcomes `chargeFlaky` names, and what tells them
   closes them — the statuses owning its cases, or among emitters the
-  `joined @l` / `joined2 @l1 @l2` naming its outcome labels (until
+  `joined @l` / `joined @(l1 + l2)` naming its outcome labels (until
   2026-10-16 the action declared them as a row, CHANGELOG). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
@@ -252,9 +266,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   typed at, at `×→+` and `+→+` alike (an equality): an emitter is open
   on its output and sits in the block's row by its label, an action
   is typed at exactly its outcomes and sits in it by the `joined @l`
-  (`joined2 @l1 @l2`) that closes it to those labels and widens it,
+  (`joined @(l1 + l2)` for two outcomes) that closes it to those labels and widens it,
   and a handler's row, coming from a function, is the block's (an
-  inclusive union could not be split back out under holes). A handler missing for a case is a type
+  inclusive union could not be split back out under a typed hole). A handler missing for a case is a type
   error either way. The sharing is each merge's universal property
   (`Data.Profunctor.Row`): the pairing at `×→×` (input shared, output
   owned), the copairing at `+→+` and `+→×` (input owned, output
@@ -653,24 +667,8 @@ code below the UI) are algebra-layer material and exempt by location.
   testability motivation and its `settled` half); the application-side
   statement is writing.md's *copy is a function, not a field*.
 
-### L18. A view runs before its view model exists — and determines its interface up to the tails.
+### L18. A view determines its view model's interface up to the tails.
 
-- The library MUST let every application view run with its view model
-  **deleted**: each view model module (the app's own module, `Counter`
-  beside its `Counter.MDC2`; registered in scripts/demos.mjs) replaced by
-  a stub whose every export
-  is a bare, untyped `hole` (no signature), **against the real library**
-  — no shadow modules, no changed import, nothing else touched. The
-  result MUST compile, mount clean and render the view's initial UI, and
-  reach no hole — at mount or under any input. This is the writing order
-  (writing.md, *Writing order*) made executable: the view is written
-  first, and it runs before a single business function exists.
-- `hole` (`PUI.Web`) is a value of every type that throws, and marks the
-  page, on any read or call — except the field `__bambikHole`, which
-  answers `true`, so `isHole` (`PUI`, beside the other development diagnostics) is a pure field
-  read. A run that reaches no hole proves what the rule wants: **no data
-  reaches logic that is not there**. A user's input stops at the
-  knowledge gates (L6), which have nothing to join it with.
 - **No `Union`: a business function is typed at the stage's row.** A
   stage is typed at **one row**: a read function, a handler, a
   classifier, a normalizer, an action's function all take the row the
@@ -691,10 +689,10 @@ code below the UI) are algebra-layer material and exempt by location.
   folds that own it; an action, whose row a function names, widens
   nothing: after it, the statuses owning its cases close its row; among
   emitters, `joined @l` closes its source to case `l` and widens it —
-  a hole names no outcome, so the labels on its followers are what the
-  row goes on, and a two-outcome source is `joined2 @l1 @l2`, since one
-  label closes one case (two `joined`s leave the source's rest open to
-  the block's siblings).
+  a typed hole names no outcome, so the labels on its followers are what
+  the row goes on, and a two-outcome source names both, `joined @(l1 +
+  l2)`, since one label closes one case (two `joined`s leave the
+  source's rest open to the block's siblings).
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
   a keyed collection's keys are compared **structurally**
   (`Data.Structural`, a key read through the ecosystem's
@@ -703,16 +701,10 @@ code below the UI) are algebra-layer material and exempt by location.
 - **Splits at labels the view names.** The knot splits nothing: `looped`
   re-feeds the whole row, and a sub-record is focused by the field that
   holds it (`group @l`).
-- **A hole consumed when built is absent.** A word that consumes a logic
-  value at build — a seed it announces, a period it schedules, a settle
-  time — or calls a business function on the `{}` `body` feeds once (a
-  load action standing before the knot) MUST treat a hole as
-  absent: `announce`, `ticks`, `clock`, `debouncedTextField`, `action`,
-  `actedOf`, `gatheredOf`, `dispatchedOf`, `accumulatedOf`, `each` and `text` do.
-  A new word of that kind MUST do the same.
 - The rule tightens the library itself: an exported signature MUST NOT
-  carry a constraint only a concrete row can discharge, because at a
-  hole the row is not concrete. (`listOf` and order-dashboard's `gauge`
+  carry a constraint only a concrete row or type can discharge, because
+  at a typed hole neither is concrete — a `Union`, or an `Eq`/`Ord` on a
+  key or field the view does not fix. (`listOf` and order-dashboard's `gauge`
   once passed `Union r () r` on to every caller — true at every row,
   provable only at a concrete one; with one row per stage no such
   constraint is left, and the lemma that discharged it is deleted.)
@@ -720,8 +712,7 @@ code below the UI) are algebra-layer material and exempt by location.
   view's hints, the export list exactly the names the views import,
   a view's own face functions closed at their element row,
   folds as record updates, no editor or selector as a merge operand, each
-  action's outcome cases named where the action is, the view handing its
-  logic only arguments called on data.
+  action's outcome cases named where the action is.
 - **A field is named, never picked** (application-side
   statement: writing.md's *The anchor invariant*). A line that reads one
   field the model stores MUST name it by its label, in the reading word's
@@ -775,11 +766,7 @@ code below the UI) are algebra-layer material and exempt by location.
   value; the view writes no row (`npm run check-view-model`). The
   record of the change (rows once declared on the view line, `looped @(
   … )`, so that nothing was unknown) is in CHANGELOG, 2026-10-15.
-- **Checkable form**: `node scripts/holes.mjs` stubs every demo's view
-  model into `.holey/` (gitignored) and builds it under holey.dhall;
-  `npm run bundle-demos` runs it, so L15's stack covers this rule
-  unchanged, and scripts/smoke/tests/holes.mjs mounts every holey view
-  and exercises every control. `npm run check-determined`
+- **Checkable form**: `npm run check-determined`
   (scripts/check-determined.mjs) compiles every demo's view with a typed
   hole for every imported value into `.determined/` and reads the hole
   list back, one declaration per compile round; a signature is compared
@@ -789,12 +776,11 @@ code below the UI) are algebra-layer material and exempt by location.
   that one filling of the tails turns every hint into its signature. It
   fails on an error that is not a hole, on a signature that is not its
   hint's instance or that quantifies, and on an export no view imports.
-- **Rejected**, each on a measured branch (CHANGELOG, 2026-09-30): shadow `.Holey`
-  modules a view imports instead (102 of 102, but a second vocabulary no
-  real build checks); leaving read rows and variant outputs free (96 of
-  102, but no footprint was checked anywhere, and it hid a real
-  partial-model bug); a compiler defaulting mode (the toolchain stays as
-  it is). doc/research-holey-weak-types.md has the record.
+- **There is no runtime hole.** Until 2026-11-12 the rule had a second
+  half: every view ran with its view model stubbed to a runtime `hole`,
+  and the words that consume a logic value when built treated one as
+  absent. It was removed with its sweep (CHANGELOG); the compiler's typed
+  hole is the only one. doc/research-holey-weak-types.md has the record.
 
 ---
 

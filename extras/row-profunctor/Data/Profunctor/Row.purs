@@ -185,6 +185,13 @@
 -- | variants +→+    focusCase       atCase       toCase
 -- | ```
 -- |
+-- | The halves are open where the tensor gives a map for free and closed
+-- | where it does not: a field is **read from** any record holding it and
+-- | a case **injected into** any variant holding it (`atField`, `toCase`:
+-- | the projection and the injection, `Cons l a b r`), while a record is
+-- | **built** and a variant **eliminated** only at the singleton
+-- | (`toField`, `atCase`: `Cons l a () r`).
+-- |
 -- | At the closed singleton the focus is its two halves, `focusField @l =
 -- | toField @l <<< atField @l` and likewise over cases; the halves are
 -- | not derivable from the focus (a two-sided wrap does not split), so
@@ -458,6 +465,9 @@ module Data.Profunctor.Row
   , atCase
   , toCase
   , settled
+  , class JoinedCases
+  , Or
+  , type (+)
   )
   where
 
@@ -610,11 +620,8 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 --   variantToRecord  : OwnedVariantInputs + one output row `o`
 --
 -- A shared record input is one row by L18 (guardrails): a business
--- function is typed at the stage's row, the view's hint with its tails
--- filled, and
--- checked by unification, which a bare hole never leaves stuck — an
--- inclusive input, each operand reading its sub-row, would leave the
--- hole's row undetermined. The one repeated variable carries the
+-- function is typed at the stage's row and checked by unification. The
+-- one repeated variable carries the
 -- context's row down into every operand, so an operand's owned evidence
 -- (a whole-row editor, a collection item) never sees an open row. The
 -- `+→+` output is one row for the same reason (CHANGELOG, 2026-10-07),
@@ -808,13 +815,15 @@ splitVariant v = case contract v of
     Just b -> Right b
     Nothing -> unsafeThrow "splitVariant: case in neither focus nor background"
 
--- | Adopt a bare-input component as the reader of input field `l`.
-atField :: forall @l p a b r. IsSymbol l => Row.Cons l a () r => Profunctor p => p a b -> p { | r } b
+-- | Adopt a bare-input component as the reader of input field `l`, the
+-- | rest of the row open: the field is read from whatever record holds it
+-- | (`Cons l a b r`), as `toCase` injects into whatever variant does.
+atField :: forall @l p a b c r. IsSymbol l => Row.Cons l a b r => Profunctor p => p a c -> p { | r } c
 atField = lcmap (Record.get (Proxy @l))
 
 -- | Emit a component's bare output as field `l`.
 toField
-  :: forall @l @a p c r
+  :: forall @l p a c r
    . IsSymbol l
   => Row.Cons l a () r
   => Profunctor p
@@ -830,7 +839,7 @@ atCase = lcmap (on (Proxy @l) identity case_)
 -- | the case sits in whatever row the block shares (`Cons l a b v`, as
 -- | every emitter's).
 toCase
-  :: forall @l @a p c b v
+  :: forall @l p a b c v
    . IsSymbol l
   => Row.Cons l a b v
   => Profunctor p
@@ -839,8 +848,8 @@ toCase
 toCase = rmap (inj (Proxy @l))
 
 -- | Normalize a stage's emissions with an idempotent function over the row.
--- | The normalizer is typed at the stage's row, its signature the view's
--- | hole hint verbatim (`{ "°C" :: String, "°F" :: String } -> { … }`).
+-- | The normalizer is typed at the stage's row (`{ "°C" :: String, "°F"
+-- | :: String } -> { … }`).
 settled
   :: forall p r a
    . Profunctor p
@@ -848,3 +857,34 @@ settled
   -> p a { | r }
   -> p a { | r }
 settled f = rmap f
+
+-- | **The cases a source is joined at**, one label or several: a source
+-- | of two outcomes names both, `joined @("Order submitted" + "Total
+-- | missing")` (order-form's submit, cells' two gestures), since only
+-- | every label at once says the source has these cases and no others —
+-- | two `joined`s would leave the source's rest open to the block's other
+-- | cases. A variant is a sum and `+` lists its summands, in any order and
+-- | to any length (until 2026-11-12 the two-outcome source had a numbered
+-- | word of its own, `joined2`; CHANGELOG).
+data Or :: forall k. Symbol -> k -> Type
+data Or l ls
+
+infixr 5 type Or as +
+
+-- | `JoinedCases ls r v v1`: `v` is exactly the cases `ls` names, and `v1`
+-- | holds each of them joined with the row `r`. Decided by the labels
+-- | alone.
+class JoinedCases :: forall k. k -> Row Type -> Row Type -> Row Type -> Constraint
+class JoinedCases ls r v v1
+
+instance
+  ( JoinedCases ls r v0 v1
+  , Row.Cons l e v0 v
+  , Row.Cons l { event :: e, model :: { | r } } b v1
+  ) =>
+  JoinedCases (Or l ls) r v v1
+else instance
+  ( Row.Cons l e () v
+  , Row.Cons l { event :: e, model :: { | r } } b v1
+  ) =>
+  JoinedCases l r v v1

@@ -100,7 +100,6 @@ module PUI.Web
   , setTextNodeValue
   , setValue
   , uniqueId
-  , hole
   , separating
   , geolocated
   , online
@@ -147,17 +146,9 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (inCase, inCaseAt, provided, providedAt) as Panes
-import PUI (class Interacting, Gesture(..), fromHandles, handles, recordToRecordWiring, source, class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, isHole, newScope, onCancel, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
+import PUI (class Interacting, Gesture(..), fromHandles, handles, recordToRecordWiring, source, class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
 import Prim.Row (class Cons)
 import Record as Record
-
--- | A value of any type standing for logic not written yet (guardrails L18):
--- | any read of it, or call, throws and marks the page (`__bambikHoleReached`),
--- | so a view run with its logic stubbed to holes that reaches none proves no
--- | data reached the logic. The one exception is the field `__bambikHole`,
--- | which answers `true` — what `PUI.isHole` reads, so a
--- | word consuming a logic value when built can skip a hole.
-foreign import hole :: forall a. a
 
 foreign import data Node :: Type
 
@@ -656,9 +647,7 @@ textLeaf f = fromHandles do
   -- stage after it is fed it (`confirmed`'s confirm replays what its
   -- content last answered). Nothing at registration, since an answer
   -- needs a feed. Every display follows this protocol (`recordToRecordWiring` with nothing reported).
-  -- a hole read renders nothing (guardrails L18): a row may reach a display
-  -- before its copy is written, as from a merge of sources
-  liftEffect $ recordToRecordWiring { show: \s -> setTextNodeValue node (if isHole f then "" else f s), held: pure false, reports: \_ -> pure unit, read: pure }
+  liftEffect $ recordToRecordWiring { show: \s -> setTextNodeValue node (f s), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | **Static copy**: text that is part of the structure — on screen before,
 -- | and regardless of, any model value — a value, never a label, since it
@@ -895,7 +884,7 @@ dynamic build = fromHandles do
 -- | it is the wire at its row: the elements are fed nothing, and the row
 -- | passes.
 each :: forall a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } { | r }
-each items0 build = let items = if isHole items0 then [] else items0 in built do
+each items build = built do
   w <- handles (foreachWith build)
   liftEffect do
     w.fromUser \_ -> pure unit
@@ -931,7 +920,7 @@ online = source @l (onlineCase <$> isOnline) \tell -> watchOnline (tell <<< onli
 
 -- | The wall clock as a fact — local hours, minutes and seconds, read every
 -- | `period` — the `×→×` sibling of `ticks`, which is the clock as an
--- | event. Known at registration; a hole period never ticks (L18).
+-- | event. Known at registration.
 clock
   :: forall @l r r1
    . IsSymbol l
@@ -939,7 +928,7 @@ clock
   => { ms :: Number }
   -> PUI Web { | r } { | r1 }
 clock period = source @l localTime \tell ->
-  if isHole period then pure (pure unit) else everyMs period.ms (localTime >>= tell)
+  everyMs period.ms (localTime >>= tell)
 
 -- | The colour scheme the user prefers, `light` or `dark`, followed as the
 -- | system setting changes.

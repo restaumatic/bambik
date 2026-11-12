@@ -34,6 +34,23 @@ matches your design system.
   | +→× | **status** | `snackbar @"Card charged" identity` |
   | +→+ | **handler** | `action @"Charge card" chargeFlaky` |
 
+- **the cycle** — what the four shapes are to an app: each is one arrow
+  of the loop from the model back to the model, and the two rows it
+  sits between have names:
+
+  | Shape | From → to | The arrow |
+  | --- | --- | --- |
+  | ×→× | **model** → **view model** | presentation: the state as the screen shows it, edits carried back |
+  | ×→+ | **view model** → **view event** | interaction: the state shown, an occurrence emitted |
+  | +→+ | **view event** → **model event** | interpretation: what happened on screen turned into what it means |
+  | +→× | **model event** → **model** | transition: the event folded into the next state |
+
+  The names are positions, not types. The model and the view model are
+  one row wherever nothing narrows or derives (a sub-record under
+  `group @l`, a projected list, a copy function do); a view event is a
+  button's case carrying the row it replayed, and it is a model event
+  once it carries what its fold needs — joined with the model, an
+  action's outcome, a dialog's decision.
 - **stage** — one step of the pipeline: its output is the next step's
   input.
 - **merge** — several components over one shared value, written as a
@@ -47,13 +64,12 @@ matches your design system.
 - **anchor** — the one model symbol a view line names: a field, a case,
   a copy function, or nothing (see [Code style](#code-style)).
 - **view model module** — the module beside the view holding the seed
-  and every function the view calls; the view determines its
+  and every function the view calls, for all four arrows of the cycle
+  (copy functions and classifiers as much as folds and actions); the view determines its
   signatures up to their tails ([Writing order](#writing-order)).
 - **copy function** — a pure function in the view model module from the
   row to the words on screen (`countLine`).
 - **chrome** — headings, cards and other parts that show no data.
-- **hole** — a stand-in for a value not written yet
-  ([Writing order](#writing-order)).
 
 ## The pipeline
 
@@ -253,7 +269,9 @@ address is edited" is not.
 
 ## App shape
 
-An app is one loop through the four shapes, tied once by `# looped # with seed`:
+An app is one loop through the four shapes — the model presented,
+interacted with, interpreted and folded back (the cycle,
+[Terms](#terms)) — tied once by `# looped # with seed`:
 
 ```purescript
 Semigroupoid.do
@@ -456,8 +474,7 @@ one-way dependency:
   other business functions call is private). It imports only the
   domain — `Prelude`, plain data modules, `Effect`, `Aff`,
   `Data.Variant.Case` — never `PUI`, `PUI.Web.*`, a design-system module
-  or the merges. The one exception is temporary: a stub `hole` while
-  the view model is not written ([Writing order](#writing-order)).
+  or the merges.
 
 **The view determines the view model module up to its tails.** A value
 lives there exactly when a view line calls it, and its signature is
@@ -485,7 +502,7 @@ Its outcome cases are typed by its `Aff` (`submitOrder :: Order -> Aff
 and the line names only the case it handles: the action is typed at
 exactly those outcomes, and what tells them closes them — the statuses
 after it, owning their cases, or among emitters the `joined @l` that
-joins it (`joined2 @l1 @l2` for two outcomes). With the `Aff` still a
+joins it (`joined @(l1 + l2)` for two outcomes). With the `Aff` still a
 hole, those followers are what type it. It is **opened by
 its progress indicator**: the slot owns the run's `started` and `ended`
 and nothing else — a status that tells an outcome is never the slot, and
@@ -505,7 +522,7 @@ no widening beside emitters. An outcome that is told but changes nothing
 is `kept`: the action is `joined` with its button in the event
 ensemble, so its outcome arrives as `{ event, model }`, and its status
 folds `kept` in the fold block (order-form's receipt; its submit, of two
-outcomes, `# joined2 @"Order submitted" @"Total missing"`).
+outcomes, `# joined @("Order submitted" + "Total missing")`).
 Where nothing loops after the action, it needs no join: its `Aff`
 returns the model under each outcome and the statuses fold `identity`
 (payment). The load before the knot is `load`
@@ -849,18 +866,13 @@ those values with their types: which share a row, what each returns,
 every field and case the lines name — and, as an unknown, the rest of
 each row, the **tail**. The tails are the model: many models fit one
 view, and the view model module is where one is chosen. Write the view
-first and the view model module to that list, filling the tails. Until it exists a **hole** stands in for each
-missing value, and there are two:
+first and the view model module to that list, filling the tails. Until it exists a **typed hole**, the compiler's, stands in for each
+missing value: `?countLine`, any name after `?`. It fails the build by
+design and reports the value's full inferred type; the app is finished
+when no `?name` is left and it runs
+([Finish by running it](#finish-by-running-it)).
 
-| Hole | Written | Compiles? | Gives you |
-| --- | --- | --- | --- |
-| typed hole (the compiler's) | `?countLine` — any name after `?` | **no**, by design | the value's full inferred type, reported at the hole |
-| runtime hole | `hole` (`import PUI.Web (hole)`), a value of every type | **yes** | a view that builds and runs; it throws only when data reaches it |
-
-Use `?name` to learn what a missing value must be and `hole` to see the
-view run before it exists. One `?name` fails the build, so to run the
-view, turn every remaining `?name` into `hole` or its definition. With
-the watch build running ([building.md](building.md)):
+With the watch build running ([building.md](building.md)):
 
 1. **Write the view**, each line naming its anchors
    ([Code style](#code-style)). Labels never need a hole, because writing
@@ -921,24 +933,6 @@ the watch build running ([building.md](building.md)):
    model exports the composite (color-mixer's `mixedColor`). The seed's
    signature is the model row, and its value is one business-named
    record (`freshCount`, `mondayMail`).
-5. **Run the view on holes, at any point.** Replace the typed holes
-   with `hole` — inline (`text hole`, `# with hole`) or as view model exports
-   stubbed without signatures (`countLine = hole`, the view importing
-   the names it will keep). The view builds and shows its initial UI —
-   chrome, editors, buttons — before any business function exists. A
-   seed, a period or an action that is still a hole counts as absent:
-   the pane it feeds stays blank rather than failing. While the seed is
-   a hole, input has nothing to join and reaches no hole; the starvation
-   warning may report that, which is expected while holes remain. Once
-   the seed is real, input reaches the next unwritten function and
-   throws: **`bambik: a hole was reached` in the console names the next
-   function to write.** A view that throws at mount applies a view model
-   value instead of handing it data — see
-   [View module and view model module](#view-module-and-view-model-module).
-6. **Finish with no hole left.** A runtime hole compiles, so nothing
-   stops one from shipping: the app is done only when
-   `grep -rnw hole src/` comes back empty, and then only once it runs
-   ([Finish by running it](#finish-by-running-it)).
 
 A design-system twin inverts the loop: its view model module already exists,
 so the view is written against known signatures.
@@ -1032,8 +1026,8 @@ screen.
 - **What a word does, its signature and options**: the module headers.
   Browse them all with `npx spago docs --open` in the app, or read the
   source under `.spago/bambik/<tag>/`: `src/PUI.purs` (stages and
-  collections), `src/PUI/Web.purs` (text, panes, clicks, attributes,
-  `hole`), `src/PUI/Web/HTML.purs` and `SVG.purs` (elements), and one
+  collections), `src/PUI/Web.purs` (text, panes, clicks, attributes),
+  `src/PUI/Web/HTML.purs` and `SVG.purs` (elements), and one
   module per design system under `src/PUI/Web/` (`MDC2`, `MDC3`,
   `Shoelace`, `Fluent`, `Bootstrap`) — the same concept keeps the same
   name across them.

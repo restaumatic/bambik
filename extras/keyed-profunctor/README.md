@@ -18,10 +18,10 @@ keyed entity:
 | Module | Shape | Strength | Holds |
 |---|---|---|---|
 | `Data.Profunctor.Keyed` | | | the floor: the formula, what each side's tensor decides, the key discipline, the three forms, and the label forms' two halves `keyed @l`/`keyRestored @l` |
-| `Data.Profunctor.Keyed.Acting` | `× → ×` | `Strong` | `class Acting`/`acting`, `actedBy`, `acted @l`, `actedAt @l @t` |
-| `Data.Profunctor.Keyed.Dispatching` | `+ → +` | `Choice` | `class Dispatching`/`dispatching`, `dispatched @l`, `dispatchedOn @l @c` |
-| `Data.Profunctor.Keyed.Gathering` | `× → +` | `Resolving` | `class Gathering`/`gathering`, `gathered @l`, `gatheredAt @l @t` |
-| `Data.Profunctor.Keyed.Accumulating` | `+ → ×` | `Retaining` | `class Accumulating`/`accumulating`, `accumulated @l`, `accumulatedOn @l @c` |
+| `Data.Profunctor.Keyed.Acting` | `× → ×` | `Strong` | `class Acting`/`acting`, `acted @l`, `actedOf @l proj`, `actedAt @l @t` |
+| `Data.Profunctor.Keyed.Dispatching` | `+ → +` | `Choice` | `class Dispatching`/`dispatching`, `dispatched @l`, `dispatchedOf @l proj`, `dispatchedOn @l @c` |
+| `Data.Profunctor.Keyed.Gathering` | `× → +` | `Resolving` | `class Gathering`/`gathering`, `gathered @l`, `gatheredOf @l proj`, `gatheredAt @l @t` |
+| `Data.Profunctor.Keyed.Accumulating` | `+ → ×` | `Retaining` | `class Accumulating`/`accumulating`, `accumulated @l`, `accumulatedOf @l proj`, `accumulatedOn @l @c` |
 
 Every class is stated for an arbitrary profunctor `p`. The laws are in the
 module headers and are value-tested on `PUI Effect` probes in `spago test`.
@@ -36,7 +36,7 @@ record. Its imports are:
 - [`extras/structural`](../structural), for the structural `Ord` the label
   forms supply for a key, so no instance is asked of its type;
 - the ecosystem's `profunctor`, `profunctor-lenses` (`prop` for `actedAt`,
-  `prism` for `dispatchedOn` — the strengths' own optics), `record` and
+  `prism` for `dispatchedOn`, `lens` for `actedOf` — the strengths' own optics), `record` and
   `variant`.
 
 The carrier instances stay behind, as the merge instances do: `PUI` holds

@@ -29,8 +29,8 @@
 -- | Three, like every member of the keyed square:
 -- |
 -- |   * `dispatched @l` — over the entity's row.
--- |   * `dispatchedOf @l proj` (`PUI`, a hole-aware projection from the fed
--- |     value to the entity) — `# dispatchedOf @"code" arrival`, departures.
+-- |   * `dispatchedOf @l proj` (a projection from the fed value to the
+-- |     entity) — `# dispatchedOf @"code" arrival`, departures.
 -- |   * `dispatchedOn @l @c` — for an entity arriving as case `c` of the
 -- |     event, every other case passing: `Choice`'s case prism over the
 -- |     bare form.
@@ -45,6 +45,7 @@ module Data.Profunctor.Keyed.Dispatching
   ( class Dispatching
   , dispatching
   , dispatched
+  , dispatchedOf
   , dispatchedOn
   ) where
 
@@ -52,7 +53,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Lens.Prism (prism)
-import Data.Profunctor (class Profunctor, dimap)
+import Data.Profunctor (class Profunctor, dimap, lcmap)
 import Data.Profunctor.Choice (class Choice)
 import Data.Profunctor.Keyed (keyRestored, keyed)
 import Data.Structural (withStructuralOrd)
@@ -72,13 +73,19 @@ class Profunctor p <= Dispatching p where
 -- | One instance per value of the entity's identity field `l`, the entity
 -- | typed at its whole row on both sides and the key re-set from the input
 -- | on every emission (see the header).
-dispatched :: forall @l r p k b1 b2 r1. Dispatching p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p { | r } { | r1 }
+dispatched :: forall @l r r1 p k b1 b2. Dispatching p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p { | r } { | r1 }
 dispatched w = withStructuralOrd @k (dimap (keyed @l) (keyRestored @l) (dispatching w))
+
+-- | `dispatched` over a projection of the fed value to one entity
+-- | (`( listItem $ text flightLine ) # dispatchedOf @"code" arrival`,
+-- | departures).
+dispatchedOf :: forall @l r r1 p k b1 b2 a. Dispatching p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => (a -> { | r }) -> p { | r } { | r1 } -> p a { | r1 }
+dispatchedOf f w = lcmap f (dispatched @l w)
 
 -- | `dispatched` for an entity arriving as case `c` of an event row, every
 -- | other case passing: `Choice`'s case prism, the ecosystem's `prism`,
 -- | over the bare form.
-dispatchedOn :: forall @l @c r p k b1 b2 r1 b3 v1 v2. Dispatching p => Choice p => IsSymbol l => IsSymbol c => Cons l k b1 r => Cons l k b2 r1 => Cons c { | r } b3 v1 => Cons c { | r1 } b3 v2 => p { | r } { | r1 } -> p [ | v1 ] [ | v2 ]
+dispatchedOn :: forall @l @c r r1 p k b1 b2 b3 v1 v2. Dispatching p => Choice p => IsSymbol l => IsSymbol c => Cons l k b1 r => Cons l k b2 r1 => Cons c { | r } b3 v1 => Cons c { | r1 } b3 v2 => p { | r } { | r1 } -> p [ | v1 ] [ | v2 ]
 dispatchedOn w = prism (inj (Proxy @c)) (on (Proxy @c) Right (Left <<< background)) (dispatched @l w)
   where
   -- a background value is one of `v2`'s cases other than `c`, which

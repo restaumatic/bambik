@@ -7,6 +7,92 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-12, latest
+- **The cycle named.** The four shapes are documented as the four arrows
+  of an application's loop, with one name for each row between them:
+  `×→×` model → view model (presentation), `×→+` view model → view event
+  (interaction), `+→+` view event → model event (interpretation), `+→×`
+  model event → model (transition). Stated in guardrails L3 (normative
+  for the docs), `PUI`'s header, CLAUDE.md and writing.md's *Terms*. The
+  view model module keeps its name, as the module holding the functions
+  of all four arrows. No code changed.
+- **The runtime hole removed.** Guardrails L18 had two halves: every
+  view runs with its view model stubbed to runtime `hole`s, and its
+  typed holes report the module's signatures up to their tails. The
+  first is gone: `PUI.Web.hole` and `PUI.isHole`; the hole-awareness of
+  `announce`, `ticks`, `clock`, `debouncedTextField`, `action`, `load`,
+  `introduced`, `text`, `each` and the four `…Of` forms;
+  scripts/holes.mjs, holey.dhall, the holey smoke sweep and `npm run
+  check-holes`. The second stays whole and checked: `npm run
+  check-determined` passes on every demo, and `Data.Structural` stays,
+  since an `Ord` or `Eq` asked of a key or field would be left unsolved
+  beside a typed hole (measured on inbox and signup-form by asking
+  them). check-determined stands a reported hole in with a coerced unit
+  of its own, and `--write` appends an unwritten name over a typed hole.
+  The skill's *Writing order* drops the runtime-hole steps.
+  doc/research-holey-weak-types.md is the record of what was built.
+- **The `…Of` forms are the keyed root's.** With no hole to skip,
+  `gatheredOf`, `dispatchedOf` and `accumulatedOf` are `lcmap proj` over
+  their bare forms and `actedOf` is `lens proj const` over `acted @l`
+  (the projection the getter, the fed value kept by the setter), all
+  four in `Data.Profunctor.Keyed.*` over any carrier; `PUI` re-exports
+  them and keeps only `editsOf`. `actedAt` is type-changing, as `prop`
+  and `dispatchedOn` are.
+- **The floor's halves are dual.** `toCase` was open on its row (a case
+  injected into whatever variant holds it) while `atField` was closed
+  to the singleton; `atField` is now open the same way (a field read
+  from whatever record holds it), so the two halves the tensors give
+  for free are open and the two they do not, `toField` and `atCase`,
+  are closed. `toField` and `toCase` lose a second visible type
+  argument no caller passed. Cosmetic, with it: the keyed bare forms
+  quantify their variables in one order, and `joined` states its row
+  constraint before its strength, as the other row words do.
+- **`introduced` derived.** It was one hand-written body. It is now
+  `onField @l (lcmap init identity) >>> keepingEdits @l editor`: the
+  insertion is `Strong`'s, and what is left to the carrier is one
+  plumbing word, `PUI.keepingEdits @l` (an editor that keeps the user's
+  value of field `l` across feeds that repeat the old one), with its
+  three laws in its header and a probe test. `introduced` asks
+  `Applicative m` where it asked `Functor m`, for the wire. `actedOf`
+  takes an element of any output row, as `actedAt` does, since its lens
+  discards it; `gatheredAt` and `accumulatedOn` are written as their
+  `…Of` forms over a field getter and a case eliminator.
+- **`onField @l`, `onCase`'s mirror.** `onCase` is the prism whose
+  builder is `identity` (a case eliminated, the rest passing); the lens
+  whose getter is `identity` was missing: `p { | b } a -> p { | b }
+  { l :: a | b }`, a field computed by a stage that reads the row. It is
+  `Data.Profunctor.Row.RecordToRecord.onField`, law-tested at `(->)`. `joined` is
+  the same lens with the fed row distributed into the case, and is now
+  written so. `JoinedCases` and its `+` move to the floor with the other
+  row-constraint classes.
+- **`joined2` deleted: `joined @(l1 + l2)`.** The two-outcome join was a
+  numbered word, the same private body as `joined` under a second `Cons`
+  chain. `joined` now takes its cases as one label or a `+`-list of them
+  (`joined @("Order submitted" + "Total missing")`, order-form and
+  cells), decided by a class over the label list, `JoinedCases`, whose
+  two instances are the old two signatures' constraints, so a source
+  over a hole is typed exactly as before (the holey sweep and
+  `check-determined` unchanged). `+` is a type operator a view imports
+  as `type (+)` from `PUI`; it lists a variant's summands and nothing
+  else. The alternatives fail as recorded: a label-free `joined` cannot
+  close an open emitter (2026-10-15), two chained `joined`s cannot both
+  close the source and widen it, and a row argument is the view writing
+  a row.
+- **`editsOf` derived; `unanswering`.** `editsOf` hand-wrote a
+  `toUser`/`fromUser` pair around a `feeding` flag. The flag is a word of
+  its own, `PUI.unanswering` (plumbing): a stage with its answers
+  dropped, what it emits inside its own feed withheld and the rest
+  passing, the bridge between `×→×`'s must-answer and `×→+`'s must-not.
+  `editsOf @l @k proj editor` is `gatheredOf @k proj` over `unanswering
+  editor` with its release injected as case `l`. Laws (silence, passage,
+  idempotence) in its header and in test/Main.purs.
+- **`actedBy` deleted.** `acting` with the key as a function, left from
+  the primitives that took one (2026-11-11) and reached by the law tests
+  alone; no sibling class had a `…By`. The wire law and the laxity
+  exhibit are stated and tested at `acted @l`.
+- **`kept` moves to `PUI`.** It is the plain function `_.model`, a fold
+  argument beside `reset`'s `const x` and `capture`'s `identity`, and
+  was the one export of the four shape modules that mentions no
+  profunctor. Views import it from `PUI` as before.
 - **`Data.Profunctor.Keyed`.** The four keyed classes move from flat
   modules beside `Row/` into a directory with a floor, as the row shapes
   have: `Data.Profunctor.Keyed.{Acting,Dispatching,Gathering,Accumulating}`

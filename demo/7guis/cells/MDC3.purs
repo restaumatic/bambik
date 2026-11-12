@@ -6,7 +6,7 @@ import Cells (columnHeaders, commit, edit, orderSheet, sheetRows)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (gatheredOf, gatheredAt, fold, actedOf, joined2, looped, with)
+import PUI (type (+), gatheredOf, gatheredAt, fold, actedOf, joined, looped, with)
 import PUI.Web (providedAt, textAt, (:=))
 import PUI.Web.HTML (div, inPlaceInput, table, td, tr)
 import PUI.Web.MDC3 (body, doubleClickTile)
@@ -22,7 +22,7 @@ cells =
           td >>> "style" := headerFace $ textAt @"rowKey"
           ( td >>> "style" := cellFace $ RecordToVariant.do
             ( doubleClickTile @"Cell double-clicked" @"key" $ textAt @"text" ) # providedAt @"shown" @"mode"
-            inPlaceInput @"Formula entered" @"Formula" # providedAt @"editing" @"mode" ) # gatheredAt @"key" @"cells" ) # gatheredOf @"rowKey" sheetRows ) # joined2 @"Cell double-clicked" @"Formula entered"
+            inPlaceInput @"Formula entered" @"Formula" # providedAt @"editing" @"mode" ) # gatheredAt @"key" @"cells" ) # gatheredOf @"rowKey" sheetRows ) # joined @("Cell double-clicked" + "Formula entered")
     VariantToRecord.do
       fold @"Cell double-clicked" edit
       fold @"Formula entered" commit

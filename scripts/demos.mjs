@@ -90,7 +90,7 @@ const camel = family => pascal(family).replace(/^./, c => c.toLowerCase())
 
 // Every demo as { set, name, family, variant, mod, fn, file, viewModel,
 // viewModelFile, dir, bundle, page }: `mod` and `fn` enter it, `file` is its
-// view's source, `viewModel` the module the view determines (null for a law
+// view's source, `viewModel` the view's view model module (null for a law
 // bench; hello-world, all view, has the name and no file) and
 // `viewModelFile` that module's source.
 export const all = Object.entries(sets).flatMap(([set, demos]) =>

@@ -152,11 +152,13 @@ if (lost.length) {
   for (const l of lost) console.error("  " + l);
   process.exit(1);
 }
-// The view restates no model row (guardrails L18): a row the view model's
+// The view restates no model row (guardrails L3): a row the view model's
 // signatures state — the model's, a classifier's cases, a projection's
 // element row, a payload — is read from them, never declared on a view line.
 // A view's type arguments are labels, and nothing else: an action's outcomes
-// are its function's signature, closed by what tells them.
+// are its function's signature, closed by what tells them. A list of labels
+// is labels still (`joined @("Order submitted" + "Total missing")`).
+const labelList = /^\(\s*"[^"]*"(\s*\+\s*"[^"]*")+\s*\)$/;
 const restated = [];
 for (const file of walk("demo")) {
   if (isViewModel(file)) continue;
@@ -164,6 +166,7 @@ for (const file of walk("demo")) {
   for (const m of src.matchAll(/@(?=[({A-Z_])/g)) {
     const line = src.slice(0, m.index).split("\n").length;
     const row = balancedAfter(src, m.index + 1);
+    if (labelList.test(row)) continue;
     restated.push(`${file}:${line}: @${row.split("\n")[0]}`);
   }
 }

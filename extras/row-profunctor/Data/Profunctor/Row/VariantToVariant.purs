@@ -57,9 +57,8 @@
 -- | (`OwnedVariantInputs`: exactly one handler per case), outputs **one
 -- | row** every operand is typed at — the **copairing** `[f, g] : A + B ->
 -- | C` of the coproduct, as at `+→×`; the shared row is an equality, as
--- | the `×→×` merge's inputs are (an inclusive union could not be split back out into an
--- | operand's row under holes, so two actions sharing an outcome had to
--- | name it on each line; CHANGELOG, 2026-10-07).
+-- | the `×→×` merge's inputs are (an inclusive union was the output until
+-- | 2026-10-07; CHANGELOG).
 -- |
 -- |   1–2. **Repetition, Answer** — not owed. A variant input is
 -- |      dispatched to one owner and `≈` counts every occurrence: a

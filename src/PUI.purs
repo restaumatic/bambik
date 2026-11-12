@@ -14,6 +14,17 @@
 -- | made into a pass-through stage precisely by its gate. See
 -- | doc/collections-profunctor-algebra.md §0.
 -- |
+-- | **The cycle.** Read as an application, the four shapes are the four
+-- | arrows of one loop, and the rows between them have names: `×→×`
+-- | takes the **model** to the **view model** (presentation, edits
+-- | carried back), `×→+` the view model to a **view event**
+-- | (interaction), `+→+` a view event to a **model event**
+-- | (interpretation) and `+→×` a model event to the model (transition);
+-- | `looped` closes it. The diagonal shapes translate within a kind, the
+-- | off-diagonal ones convert between kinds. Positions, not types: the
+-- | model and the view model are one row wherever nothing narrows or
+-- | derives (guardrails L3).
+-- |
 -- | **The carrier contract.** A `PUI` value denotes, per instantiation, one
 -- | process reached in three phases: constructed in `m`, then registered
 -- | once, which hands the downstream continuation over and returns the
@@ -76,7 +87,6 @@ module PUI
   , setTracing
   , setDiagnostics
   , diagnosticsOn
-  , isHole
   -- carrier plumbing the vocabularies and the law tests build on, not
   -- application vocabulary: no demo writes one (`with` closes over
   -- `announce`, `debounced` over `seeded` and `resolveFor`)
@@ -102,19 +112,18 @@ module PUI
   , Modal
   , confirmedOver
   , acknowledgedOver
+  , unanswering
+  , keepingEdits
   -- the vocabulary: what a view writes, with the words `Adopters` re-exports
   , action
   , load
   , fold
   , reset
   , capture
+  , kept
   , static
   , ticks
-  , accumulatedOf
   , debounced
-  , dispatchedOf
-  , actedOf
-  , gatheredOf
   , editsOf
   , with
   , looped
@@ -140,13 +149,13 @@ import Data.Map as Map
 import Data.Set as Set
 import Data.Profunctor (class Profunctor, dimap, lcmap, rmap)
 import Data.Profunctor.Keyed.Acting (class Acting)
-import Data.Profunctor.Keyed.Accumulating (class Accumulating, accumulated)
-import Data.Profunctor.Keyed.Dispatching (class Dispatching, dispatched)
-import Data.Profunctor.Keyed.Gathering (class Gathering, gathered)
+import Data.Profunctor.Keyed.Accumulating (class Accumulating)
+import Data.Profunctor.Keyed.Dispatching (class Dispatching)
+import Data.Profunctor.Keyed.Gathering (class Gathering)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, onField, recordToRecord)
 -- the words a view writes beside the leaves, re-exported so demos need the
 -- row modules only for the `.do` merges and the knot. `focusField` is
 -- deliberately absent: the leaf lift is design-system plumbing — every
@@ -164,12 +173,12 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, recordToRecord)
 -- a business case can name (an editor's release leaving as an event).
 -- `{}`-input chrome is placed by `eventLeaf` with a bare
 -- `lcmap (const {})`.
-import Data.Profunctor.Row (settled) as Adopters
-import Data.Profunctor.Row.RecordToVariant (joined, joined2, kept) as Adopters
-import Data.Profunctor.Keyed.Acting (acted, actedAt) as Adopters
-import Data.Profunctor.Keyed.Accumulating (accumulated, accumulatedOn) as Adopters
-import Data.Profunctor.Keyed.Dispatching (dispatched, dispatchedOn) as Adopters
-import Data.Profunctor.Keyed.Gathering (gathered, gatheredAt) as Adopters
+import Data.Profunctor.Row (settled, type (+)) as Adopters
+import Data.Profunctor.Row.RecordToVariant (joined) as Adopters
+import Data.Profunctor.Keyed.Acting (acted, actedAt, actedOf) as Adopters
+import Data.Profunctor.Keyed.Accumulating (accumulated, accumulatedOf, accumulatedOn) as Adopters
+import Data.Profunctor.Keyed.Dispatching (dispatched, dispatchedOf, dispatchedOn) as Adopters
+import Data.Profunctor.Keyed.Gathering (gathered, gatheredAt, gatheredOf) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
 import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
@@ -182,7 +191,7 @@ import Data.Profunctor.Coretaining (class Coretaining)
 import Data.Profunctor.Retaining (class Retaining)
 import Data.Profunctor.Row.VariantToRecord (class VariantToRecord, unshown)
 import Data.Profunctor.Row.VariantToVariant (class VariantToVariant, focusCase, onCase)
-import Data.Profunctor.Strong (class Strong, first)
+import Data.Profunctor.Strong (class Strong)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
@@ -199,7 +208,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
-import Record (get, insert) as Record
+import Record (get, insert, set) as Record
 import Record.Unsafe (unsafeGet, unsafeSet)
 
 --------------------------------------------------------------------------------
@@ -506,40 +515,57 @@ strictNumber s =
 -- | row, where the knot re-feeds the field's current value and a reset
 -- | lands as a feed of the whole row.
 -- |
--- | Not `lcmap (insert (init b))`: in a chain of such editors an upstream
--- | edit re-feeds every editor below it, which would re-show each init over
--- | the user's value. So the lift **retains** the user's last value and
--- | re-shows `init` only when `init` itself changed since the last feed
--- | (structural equality, so no `Eq` is demanded and a hole needs none).
--- | Consequences, accepted with the word (CHANGELOG, 2026-10-17): a state
--- | the row does not show, an init typed at the row the editors above it
--- | have built (screen order in the view model's signatures), and no
--- | introducing editor under a pane — a pane is `{ | r } → { | r }`, so a
--- | field whose editor exists sometimes is model state. A hole `init`
--- | (guardrails L18) introduces nothing: the feed is withheld.
+-- | It is two stages: `onField @l` over the wire read through `init` —
+-- | the pure insertion, `Strong`'s — and the editor under `keepingEdits
+-- | @l`, the carrier's part. The insertion alone would not do: in a chain
+-- | of such editors an upstream edit re-feeds every editor below it, which
+-- | would re-show each init over the user's value. Consequences, accepted
+-- | with the word (CHANGELOG, 2026-10-17): a state the row does not show,
+-- | an init typed at the row the editors above it have built (screen
+-- | order in the view model's signatures), and no introducing editor under
+-- | a pane — a pane is `{ | r } → { | r }`, so a field whose editor exists
+-- | sometimes is model state.
 introduced
   :: forall @l m a b r
-   . Functor m
+   . Applicative m
   => IsSymbol l
   => Lacks l b
   => Cons l a b r
   => ({ | b } -> a)
   -> PUI m { | r } { | r }
   -> PUI m { | b } { | r }
-introduced init (PUI p) = PUI $ p <#> \reg prop -> do
-  lastInit <- Ref.new Nothing
+introduced init editor = onField @l (lcmap init identity) >>> keepingEdits @l editor
+
+-- | An editor that **keeps the user's value of field `l`** across feeds
+-- | that bring nothing new for it: a feed whose `l` equals the last fed
+-- | `l` shows the value the editor last released instead, and a feed
+-- | whose `l` changed shows the new one. Laws: **first feed** — shown as
+-- | fed; **kept** — after an edit to `x`, a feed repeating the old `l`
+-- | reaches the editor with `l = x`; **replaced** — a feed with a new `l`
+-- | reaches it as fed. Structural equality, so no `Eq` is asked of the
+-- | field's type. Plumbing: the state it keeps is the one `introduced`
+-- | was accepted with, and no view writes it.
+keepingEdits
+  :: forall @l m a b r
+   . Functor m
+  => IsSymbol l
+  => Cons l a b r
+  => PUI m { | r } { | r }
+  -> PUI m { | r } { | r }
+keepingEdits (PUI p) = PUI $ p <#> \reg prop -> do
+  lastFed <- Ref.new Nothing
   current <- Ref.new Nothing
   leg <- reg \r -> do
     Ref.write (Just (Record.get (Proxy @l) r)) current
     prop r
-  pure \b -> if isHole init then pure unit else do
-    let i = init b
-    prev <- Ref.read lastInit
+  pure \r -> do
+    let i = Record.get (Proxy @l) r
+    prev <- Ref.read lastFed
     cur <- Ref.read current
-    Ref.write (Just i) lastInit
+    Ref.write (Just i) lastFed
     let shown = withStructuralEq @a (if prev == Just i then fromMaybe i cur else i)
     Ref.write (Just shown) current
-    leg (Record.insert (Proxy @l) shown b)
+    leg (Record.set (Proxy @l) shown r)
 
 -- | The `×`-diagonal **trace** (dual of `Strong`): the `c` a UI component emits is
 -- | retained and paired with its next input — feedback of **state**.
@@ -718,10 +744,7 @@ instance Applicative m => Category (PUI m) where
 -- | pointing is this word's business alone.
 announce :: forall m a. Applicative m => a -> PUI m {} a
 announce a = PUI $ pure \prop -> do
-    -- an `if`, not `unless`: the branch must not even be built for a hole,
-    -- since a downstream stage (a gated merge's `exactRow`) reads the value
-    -- while constructing its effect (holey twins of a fold beside a status)
-    if isHole a then pure unit else prop a
+    prop a
     pure mempty
 
 -- | The **seeded echo wire**: `identity`'s pass-through plus the point,
@@ -740,8 +763,7 @@ seeded a = dimap Right (either identity identity) (left (announce a))
 -- | stating the row. Never `{}`: `body`
 -- | feeds the terminal record once itself, so a load action standing
 -- | before the knot runs on that feed with no seed written. Its own input
--- | is ignored, so it sits at any row; a seed that is a hole is never
--- | announced (`announce`, guardrails L18). A pipeline's residual input row
+-- | is ignored, so it sits at any row. A pipeline's residual input row
 -- | *is* its initial-state obligation, discharged by `with` down to `{}`,
 -- | the one self-pointed record, which `body` demands.
 with :: forall a m b r. Applicative m => a -> PUI m a b -> PUI m { | r } b
@@ -1289,19 +1311,6 @@ setTracing on = Ref.write on tracingRef
 setDiagnostics :: Boolean -> Effect Unit
 setDiagnostics on = Ref.write on diagnosticsRef
 
--- | Whether a value is a **hole** — logic not written yet (guardrails L18):
--- | `PUI.Web.hole` answers `true` to this one field and throws on every
--- | other touch, and no other value has it. A word that consumes a logic
--- | value when built rather than on data — a seed it announces, a period
--- | it schedules — skips a hole, so a view runs before its logic exists.
--- | Pure: a field read. A development diagnostic like `tr` and
--- | `gateGuard`, and so the carrier's rather than the algebra's — it
--- | names a field the carrier's JavaScript invents, which no module under
--- | `Data.Profunctor` may know of (moved from `Data.Profunctor.Seeding`,
--- | CHANGELOG 2026-10-14).
-isHole :: forall a. a -> Boolean
-isHole a = (unsafeCoerce a :: { "__bambikHole" :: Boolean })."__bambikHole" == true
-
 -- | Whether development diagnostics are on — for a carrier's own
 -- | dev-only annotations (`PUI.Web.text`'s comment marker).
 diagnosticsOn :: Effect Boolean
@@ -1368,8 +1377,8 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | (`ticks @"Clock ticked" tickPeriod`, timer) — every `interval`, the
 -- | row it was last fed leaves as case `l`; replay is `Strong`'s
 -- | retention, the fed row riding the state channel as under `clicked`.
--- | Feeds are retained, never answered; nothing ticks before the first feed
--- | or while the period is a hole (guardrails L18). A beat in a suspended
+-- | Feeds are retained, never answered; nothing ticks before the first feed.
+-- | A beat in a suspended
 -- | scope (a detached pane) is skipped, and a cancelled scope ends the
 -- | loop. A tick that needs telling is told by the status that folds it
 -- | in the fold block, so the source opens with none.
@@ -1385,7 +1394,7 @@ ticks interval = fromHandles do
   lastRef <- liftEffect $ Ref.new Nothing
   pure
     { toUser: \r -> Ref.write (Just r) lastRef
-    , fromUser: \prop -> if isHole interval then pure unit else do
+    , fromUser: \prop -> do
         let
           loop = do
             delay (Milliseconds interval.ms)
@@ -1635,14 +1644,12 @@ static o = o identity
 -- | the row `t` the `Aff`'s signature names. Like a status it narrows its
 -- | input to its one case (`Cons l a () v`); its output is **exactly** its
 -- | outcomes, like `load`'s, so it widens nothing and the view writes no
--- | row for it (guardrails L18): what tells the outcomes closes `t` —
+-- | row for it: what tells the outcomes closes `t` —
 -- | the statuses or capture after it, which own their cases
 -- | (payment, weather), or, standing among emitters in a
--- | `RecordToVariant.do`, the `joined @l` (one outcome) or `joined2 @l1
--- | @l2` (two) it is joined by, which close its source to the labels
+-- | `RecordToVariant.do`, the `joined @l` (one outcome) or `joined @(l1 +
+-- | l2)` (two) it is joined by, which close its source to the labels
 -- | they name and widen it into the block's row (order-form, ticker).
--- | With its logic deleted the hole is typed by those followers, so the
--- | view still compiles and the hint carries the outcome labels.
 -- |
 -- | It is **opened by its progress indicator**: the slot is a `+→×`
 -- | citizen of the run's two lifecycle occurrences, `started` and
@@ -1660,9 +1667,7 @@ static o = o identity
 -- | A failing action is **reported, not swallowed**: `ended` is dispatched
 -- | whichever way the `Aff` ends — so a throw cannot strand the spinner —
 -- | and the error reaches the diagnostics sink by name. Nothing is posted
--- | onward, since there is no output to post. An action whose function is a
--- | hole never runs (guardrails L18): a view's own literal seed may reach
--- | it before its logic exists. An outcome that settles in a suspended or
+-- | onward, since there is no output to post. An outcome that settles in a suspended or
 -- | cancelled scope — the pane that held the action detached meanwhile — is
 -- | dropped: the case the model left gets no occurrence from it, so a
 -- | detached action is silent like a detached button; the slot is still
@@ -1676,7 +1681,7 @@ action
   => (a -> Aff [ | t ])
   -> PUI m [ | v1 ] {}
   -> PUI m [ | v ] [ | t ]
-action arr slot = atCase @l (running (\i -> if isHole arr then Nothing else Just (arr i)) slot)
+action arr slot = atCase @l (running arr slot)
 
 -- | The action a **feed** runs — `×→+`, the row fed is the `Aff`'s
 -- | argument and its outcome leaves as the case the `Aff` names: the
@@ -1685,7 +1690,7 @@ action arr slot = atCase @l (running (\i -> if isHole arr then Nothing else Just
 -- | loaded" identity`, order-form), its outcome the model the knot
 -- | loops. Its outcome row `t` is the `Aff`'s signature: unlike `action`
 -- | it widens nothing, so the case the capture or status after it takes
--- | needs no line of its own (guardrails L18). Opened by its progress indicator like `action`,
+-- | needs no line of its own. Opened by its progress indicator like `action`,
 -- | reported and scoped the same way; typed at exactly its outcomes.
 load
   :: forall t r v1 m
@@ -1694,33 +1699,30 @@ load
   => ({ | r } -> Aff [ | t ])
   -> PUI m [ | v1 ] {}
   -> PUI m { | r } [ | t ]
-load arr = running \i -> if isHole arr then Nothing else Just (arr i)
+load = running
 
--- The run behind `action`: `Nothing` is a hole, which
--- never runs (guardrails L18); otherwise `started` and `ended` are told to
--- the slot around the `Aff`, and its outcome is posted onward.
+-- The run behind `action`: `started` and `ended` are told to the slot
+-- around the `Aff`, and its outcome is posted onward.
 running
   :: forall t a v1 m
    . Scoped m
   => Contractable ( started :: {}, ended :: {} ) v1
-  => (a -> Maybe (Aff [ | t ]))
+  => (a -> Aff [ | t ])
   -> PUI m [ | v1 ] {}
   -> PUI m a [ | t ]
 running run w = action'
-  (\i pro post active -> case run i of
-    Nothing -> pure unit
-    Just aff -> do
-      let tell v = for_ (contract (v :: [ started :: {}, ended :: {} ]) :: Maybe _) pro
-      liftEffect $ tell (inj (Proxy @"started") {})
-      result <- attempt aff
-      liftEffect $ tell (inj (Proxy @"ended") {})
-      case result of
-        Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
-        Right o -> liftEffect do
-          on <- active
-          if on
-            then post o
-            else tr "action: outcome dropped, the scope is suspended or cancelled" o)
+  (\i pro post active -> do
+    let tell v = for_ (contract (v :: [ started :: {}, ended :: {} ]) :: Maybe _) pro
+    liftEffect $ tell (inj (Proxy @"started") {})
+    result <- attempt (run i)
+    liftEffect $ tell (inj (Proxy @"ended") {})
+    case result of
+      Left err -> liftEffect $ warn $ "action: the Aff failed and nothing was emitted — " <> message err
+      Right o -> liftEffect do
+        on <- active
+        if on
+          then post o
+          else tr "action: outcome dropped, the scope is suspended or cancelled" o)
   w
 
 -- | One case **folded into the record** (`+→×`): the faceless leaf owning
@@ -1782,6 +1784,14 @@ capture
   => Cons l { | r } () v
   => PUI m [ | v ] { | r }
 capture = fold @l identity
+
+-- | The fold that **keeps the model** a joined event arrived with:
+-- | `kept = _.model`, the third fold with a name beside `reset`'s `const
+-- | x` and `capture`'s `identity`. For an outcome that is told and changes
+-- | nothing — `snackbar @"Order submitted" kept` (order-form), the action
+-- | joined with its button so the model is in hand.
+kept :: forall a r. { event :: a, model :: { | r } } -> { | r }
+kept = _.model
 
 -- | The fold behind every `+→×` leaf — plumbing, not vocabulary: a status
 -- | face owning case `l` and the fold of its payload, in one leaf. The
@@ -1853,8 +1863,7 @@ debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 -- keyed by a **materialized identity field** `@l` of the row — a ×-input
 -- is the whole array, identity read off each row; a +-input is one entity
 -- at a time, identity read off that row. Each class has the same three
--- forms: bare over the element's row, `…Of @l proj` over a projection
--- (written here, where `isHole` is, since a hole projection is absent),
+-- forms: bare over the element's row, `…Of @l proj` over a projection,
 -- and `…At @l @t` over a stored array (× input) or `…On @l @c` over a
 -- case (+ input).
 --
@@ -2081,51 +2090,6 @@ attachedOn f w = fromHandles do
     , fromUser
     }
 
--- | The **list of displays** — `acted`'s `…Of` form, the `×→×` member over
--- | a projection, and **derived**: `first` around `acted @l` with the
--- | gathered output dropped, the fed value riding the `Strong` state
--- | channel and leaving once the elements have answered. Nothing here is
--- | bespoke: the reconciliation is `acted`'s — **keyed and retaining**,
--- | each element identified by field `l` of its row, matched elements
--- | re-fed in place (their carrier node kept), new keys built, absent keys
--- | removed, nodes restacked only when the key sequence changed, so a
--- | fixed-key grid never rebuilds, a growing list only appends, and a
--- | reordered list **moves each element's node with it** — and the
--- | release is `acted`'s gather gate: every element's answer to the feed
--- | is its slot, the empty array releasing at once. A display answers
--- | every feed (the `×→×` laws), so a list of displays passes the row it
--- | was fed once per feed; an element that does not answer starves the
--- | list, and the watchdog names it — the list demands of its elements
--- | exactly what the shape already demands. An element emitting outside a
--- | feed re-releases the fed value, a repetition the law makes inert.
--- | Keys must be unique.
--- |
--- | Written trailing, wrapped in a container ocular: `ul $ item # actedOf
--- | @"id" rowsOf` — keyed by the row's **materialized identity field** (the
--- | element is a data-model row; rows carry their identity). The element
--- | is a display of its row — it releases the row it shows — and the list
--- | is a display of the row it is fed: the elements' releases stay inside
--- | and the fed row passes, so a list of displays is a line of the
--- | pipeline like any display; a projection's array is a view with nothing
--- | to write back. An array the model stores is `actedAt`, the container
--- | action, which writes the elements' releases back; a list whose
--- | elements **emit** is `gatheredOf`. A hole projection is an empty array
--- | (guardrails L18).
-actedOf :: forall @l r m node k b a. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } { | r } -> PUI m a a
-actedOf f w = dimap (\a -> Tuple (rows a) a) snd (first (Adopters.acted @l w))
-  where
-  rows a = if isHole f then [] else let xs = f a in if isHole xs then [] else xs
-
--- | The **emitting list** — `gathered`'s `…Of` form, the `×→+` member over
--- | a projection: the same keyed and retaining reconciliation over elements
--- | that emit (a clickable row, a cell reporting its key). Every element's
--- | emission leaves on the one shared channel as it happens, ungated, and
--- | an empty array is lawfully silent (no event to fabricate):
--- | `tile @"Key entered" @"key" cell # gatheredOf @"key" keyPad`. A hole
--- | projection is an empty array (guardrails L18).
-gatheredOf :: forall @l r m node k b a v. Hosting m node => IsSymbol l => Cons l k b r => (a -> Array { | r }) -> PUI m { | r } [ | v ] -> PUI m a [ | v ]
-gatheredOf f w = lcmap (\r -> if isHole f then [] else let xs = f r in if isHole xs then [] else xs) (gathered @l w)
-
 -- | The **editing list** — `gatheredOf` over editors: the same keyed and
 -- | retaining reconciliation over elements that are `×→×` citizens (a row
 -- | holding a toggle, a field), a user's edit of an element leaving as
@@ -2150,55 +2114,29 @@ editsOf
   => (a -> Array { | r })
   -> PUI m { | r } { | r }
   -> PUI m a [ | v ]
-editsOf f editor = gatheredOf @k f $ fromHandles do
-  w' <- handles editor
-  feeding <- liftEffect $ Ref.new false
-  pure
-    { toUser: \i -> do
-        Ref.write true feeding
-        w'.toUser i
-        Ref.write false feeding
-    , fromUser: \prop -> w'.fromUser \o -> do
-        answering <- Ref.read feeding
-        if answering
-          then tr "editsOf: an element's answer to the feed is no edit" o
-          else prop (inj (Proxy @l) o)
-    }
+editsOf f editor = Adopters.gatheredOf @k f (rmap (inj (Proxy @l)) (unanswering editor))
 
--- | The **keyed dispatch over a projection** — `dispatched`'s `…Of` form,
--- | the `+→+` member: the fed value projected to one entity, which reaches
--- | exactly the instance its field `l` names — instantiated on first
--- | appearance (an unknown key is a new case, not an error) — and that
--- | instance's emissions leave as they come, the key re-set from the
--- | entity fed. The targeted-update direction: no whole-array re-feed, O(1)
--- | per entity, the shape for streams and pushes that arrive one entity at
--- | a time: `( listItem $ text flightLine ) # dispatchedOf @"code" arrival`
--- | (departures). A hole projection is absent: the feed reaches no instance
--- | (guardrails L18).
-dispatchedOf :: forall @l r r1 m node k b1 b2 a. Hosting m node => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => (a -> { | r }) -> PUI m { | r } { | r1 } -> PUI m a { | r1 }
-dispatchedOf f w = fromHandles do
-  inner <- handles (dispatched @l w)
-  pure
-    { toUser: \a -> if isHole f then pure unit else inner.toUser (f a)
-    , fromUser: inner.fromUser
-    }
-
--- | The **keyed Mealy over a projection** — `accumulated`'s `…Of` form, the
--- | `+→×` member: retain the array, feed one entity, emit the whole. Each
--- | fed entity re-feeds (or, on a new key, appends) its element, each
--- | element emission writes its slot, and the whole array leaves once
--- | every key's element has spoken — the gather gate, so over displays,
--- | which answer every feed, once per entity. The board/ledger shape for keyed streams, the aggregate as
--- | running state built one entity at a time, in first-appearance order:
--- | `( listItem $ text scoreLine ) # accumulatedOf @"team" goal`
--- | (scoreboard). A hole projection is absent (guardrails L18).
-accumulatedOf :: forall @l r r1 m node k b1 b2 a. Hosting m node => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => (a -> { | r }) -> PUI m { | r } { | r1 } -> PUI m a (Array { | r1 })
-accumulatedOf f w = fromHandles do
-  inner <- handles (accumulated @l w)
-  pure
-    { toUser: \a -> if isHole f then pure unit else inner.toUser (f a)
-    , fromUser: inner.fromUser
-    }
+-- | A stage with **its answers dropped**: what it emits inside its own
+-- | feed is withheld, what it emits outside one passes. It is the bridge
+-- | between the two musts of doc/observational-semantics.md §3.1 — a
+-- | `×→×` stage must answer every feed, a `×→+` one must not — so an
+-- | editor under it is an emitter of the user's edits and of nothing
+-- | else (`editsOf` is `gatheredOf` over it). Laws: **silence** — a feed
+-- | is answered by no emission; **passage** — an emission outside a feed
+-- | leaves unchanged; **idempotence** — `unanswering <<< unanswering ≈
+-- | unanswering`. Plumbing, not vocabulary.
+unanswering :: forall m a b. Functor m => PUI m a b -> PUI m a b
+unanswering (PUI p) = PUI $ p <#> \reg prop -> do
+  feeding <- Ref.new false
+  leg <- reg \o -> do
+    answering <- Ref.read feeding
+    if answering
+      then tr "unanswering: an answer to the feed is no event" o
+      else prop o
+  pure \i -> do
+    Ref.write true feeding
+    leg i
+    Ref.write false feeding
 
 -- The dispatch mode: one instance per key, fed on its key, its emissions
 -- forwarded as they come; nothing is ever detached.

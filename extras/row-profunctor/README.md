@@ -36,9 +36,9 @@ how the `spago test` suite exercises them without a DOM.
 
 | Module | Holds |
 |---|---|
-| `Data.Profunctor.Row` | the shared floor: the row-constraint vocabulary, the split `splitVariant` and `exactRow`, and every one-sided word — `atField`/`toField`, `atCase`/`toCase`, `settled` — so no shape module imports another |
-| `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, `focusField` |
-| `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase` |
+| `Data.Profunctor.Row` | the shared floor: the row-constraint vocabulary (`JoinedCases` and its label list `+` among it), the split `splitVariant` and `exactRow`, and every one-sided word — `atField`/`toField`, `atCase`/`toCase`, `settled` — so no shape module imports another |
+| `Data.Profunctor.Row.RecordToRecord` | the `× → ×` merge, `focusField`, `onField` |
+| `Data.Profunctor.Row.VariantToVariant` | the `+ → +` merge, `focusCase`, `onCase` |
 | `Data.Profunctor.Row.RecordToVariant` | the `× → +` merge, `joined` |
 | `Data.Profunctor.Row.VariantToRecord` | the `+ → ×` merge, `unshown` |
 

@@ -92,7 +92,7 @@ and emitters of a catalogue — are in the design-system module header
 | an editor that exists in one state | `# inCaseAt @"return flight" @"Flight type"` | flight-booker, meeting-booker | writing.md *Conditional visibility* |
 | an invariant among edited fields | `# settled fromCelsius` | temperature-converter, meeting-booker | writing.md *Stages* |
 | a choice whose cases carry their own fields | `tabBar @"Mode" (…)`, each case's field `# inCaseAt @"Dine in" @"Mode"` | order-form | writing.md *Conditional visibility* |
-| an effect's outcome folded into the model it lands on | `( Semigroupoid.do { button …; … # action @"Estimate distance" estimateDistance } ) # joined @"Distance estimated"`; two outcomes `# joined2 @"Order submitted" @"Total missing"` | order-form | writing.md *App shape* |
+| an effect's outcome folded into the model it lands on | `( Semigroupoid.do { button …; … # action @"Estimate distance" estimateDistance } ) # joined @"Distance estimated"`; two outcomes `# joined @("Order submitted" + "Total missing")`, `+` imported as `type (+)` from `PUI` | order-form | writing.md *App shape* |
 
 ## Events into state
 
@@ -139,7 +139,7 @@ and emitters of a catalogue — are in the design-system module header
 | --- | --- | --- | --- |
 | the array → each element shown, the row passing on | `# actedOf @"number" lapRows`; a stored array `# actedAt @"key" @"cells"` | stopwatch; cells | writing.md *Collections* |
 | the array → each element's event | `tile @"Key entered" @"key" ( … ) # gatheredOf @"key" (const keyPad)`; a stored array `# gatheredAt @"key" @"cells"` | calculator, tic-tac-toe, shopping-cart, color-mixer; cells | writing.md *Collections* |
-| the array → each element's edit | `( … iconToggle @"Favorite" … ) # editsOf @"Favorite changed" @"title" @( … ) visibleMovies # joined @"Favorite changed"` | movie-browser | writing.md *Collections* |
+| the array → each element's edit | `( … iconToggle @"Favorite" … ) # editsOf @"Favorite changed" @"title" visibleMovies # joined @"Favorite changed"` | movie-browser | writing.md *Collections* |
 | the array → the array, decided jointly or edited in place | `# acted @"name"`; `# acted @"id"`; a stored array `# actedAt @"id" @"Setlist"` | potluck; reorder; reorder (HTML) | writing.md *Collections* |
 | one entity at a time → that entity's instance, keyed by its field | `# dispatchedOf @"code" arrival`; arriving as a case, `# dispatchedOn @"code" @"Arrived"` | departures | writing.md *Collections* |
 | one entity at a time → the array of them | `# accumulatedOf @"team" goal`; arriving as a case, `# accumulatedOn @"team" @"Scored"` | scoreboard | writing.md *Collections* |
@@ -154,5 +154,3 @@ and emitters of a catalogue — are in the design-system module header
 | a knotless form, no seed | each editor's introducing form, its blank an init of the row above it: `filledTextFieldFrom @"Email" blankEmail` — every editor's name plus `From`, in every vocabulary that has the editor (`textFieldFrom`, `debouncedTextFieldFrom`, `radioButtonFrom`, `selectFrom`, `dropdownFrom`, `checkboxFrom`, HTML's `inputFrom`) | signup-form (MDC3) | writing.md *App shape*; `PUI` (`introduced`) |
 | the model row | the seed's signature, `# looped # with seed` on the view (counter, inbox); the load's `Aff` when a load stands before the knot (order-form) | writing.md *Types and values* |
 | a derived row | the signature of the function that brings it: a classifier's cases, a projection's element row, an action's outcomes (`# action @l f`, closed by the statuses or `joined` after it — payment) | writing.md *Types and values* |
-| the view running before its view model exists | `hole` (`PUI.Web`) | writing.md *Writing order* |
-| to know the app is finished | no hole left | writing.md *Writing order* |

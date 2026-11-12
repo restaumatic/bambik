@@ -26,7 +26,7 @@
 // leaves nothing unknown: every such exported signature becomes its hint in
 // the layout of scripts/signature-layout.mjs, a definition without one gets
 // one, and a name with no definition yet is appended as a signature over a
-// runtime `hole`, ready to be filled. A hint with unknowns is the author's
+// typed hole, ready to be filled. A hint with unknowns is the author's
 // to fill, so a missing signature for one is reported, hint and all.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
@@ -127,9 +127,9 @@ for (let round = 0; round < 12; round++) {
       r.seen = true; progressed = true; r.listed.push(...names)
       const file = `.determined/src/${d.mod}.purs`
       let src = readFileSync(file, 'utf8')
-      for (const n of new Set(names)) src = src.replace(new RegExp(`\\?${n}\\b`, 'g'), 'hole')
-      if (!/^import PUI\.Web \(.*\bhole\b/m.test(src)) src = src.replace(/^import PUI\.Web \(/m, 'import PUI.Web (hole, ')
-      if (!/^import PUI\.Web /m.test(src)) src = src.replace(/^import PUI /m, 'import PUI.Web (hole)\nimport PUI ')
+      // a reported hole is stood in for by a value of every type, so the next round reaches the next declaration
+      for (const n of new Set(names)) src = src.replace(new RegExp(`\\?${n}\\b`, 'g'), '(ProbeUnsafe.unsafeCoerce ProbeUnit.unit)')
+      if (!/^import Unsafe\.Coerce as ProbeUnsafe/m.test(src)) src = src.replace(/^import /m, 'import Unsafe.Coerce as ProbeUnsafe\nimport Data.Unit as ProbeUnit\nimport ')
       writeFileSync(file, src)
     }
   }
@@ -151,7 +151,7 @@ const signatureOf = (src, name) => {
   return m && oneLine(m[1])
 }
 // --write: the signature laid out from the hint, inserted above a definition
-// that has none, or appended with a `hole` body when the name is not written yet
+// that has none, or appended over a typed hole when the name is not written yet
 const writeSignature = (file, name, h) => {
   let src = readFileSync(file, 'utf8')
   const want = layoutSignature(name, h)
@@ -159,10 +159,9 @@ const writeSignature = (file, name, h) => {
   if (re.test(src)) src = src.replace(re, `${want}\n`)
   else if (new RegExp(`^${name}\\b`, 'm').test(src)) src = src.replace(new RegExp(`^(?=${name}\\b)`, 'm'), `${want}\n`)
   else {
-    src = `${src.replace(/\n*$/, '\n')}\n${want}\n${name} = hole\n`
+    src = `${src.replace(/\n*$/, '\n')}\n${want}\n${name} = ?${name}\n`
     src = src.replace(/^module ([\w.]+) \(([\s\S]*?)\) where/m, (m, mod, list) =>
       `module ${mod} (${[...list.split(',').map(x => x.trim()).filter(Boolean), name].sort((a, b) => a.localeCompare(b)).join(', ')}) where`)
-    if (!/^import PUI\.Web \(hole\)/m.test(src)) src = src.replace(/^(import .*\n)(?!import)/m, `$1import PUI.Web (hole)\n`)
   }
   const before = readFileSync(file, 'utf8')
   if (src !== before) { writeFileSync(file, src); return true }

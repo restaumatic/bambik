@@ -18,7 +18,7 @@ import Data.Lens.Coreel (coreel)
 import Data.Lens.Coshutter (coshutter)
 import Data.Profunctor.Coresolving (coresolve)
 import Data.Profunctor.Coretaining (coretain)
-import Data.Profunctor.Row.RecordToRecord (focusField, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (focusField, recordToRecord, onField)
 import Data.Profunctor.Row.VariantToRecord (variantToRecord)
 import Data.Profunctor.Row.RecordToVariant (joined, recordToVariant)
 import Data.Profunctor.Row.VariantToVariant (focusCase, onCase, variantToVariant)
@@ -27,20 +27,20 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Profunctor (dimap, lcmap, rmap)
 import Data.Profunctor.Row (atCase, atField, toCase, toField)
 import Data.Profunctor.Keyed (keyRestored, keyed)
-import Data.Profunctor.Keyed.Acting (actedBy)
+import Data.Ordering (invert)
+import Data.Structural (withStructuralEq, withStructuralOrd)
+import Record as Record
+import Type.Proxy (Proxy(..))
 import Data.Profunctor.Retaining (retain)
 import Data.Variant (expand, match)
 import Data.Variant.Case (caseText)
-import Data.Structural (withStructuralEq, withStructuralOrd)
-import Data.Ordering (invert)
-import Record as Record
-import Type.Proxy (Proxy(..))
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedOf, announce, dispatchedOf, gathered, gatheredOf, cancelScope, capture, fold, folding, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, with)
+import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedOf, announce, dispatchedOf, gathered, gatheredOf, cancelScope, capture, fold, folding, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, unanswering, with)
+import PUI (introduced) as PUI
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -190,6 +190,12 @@ main = do
   assertEqual "focusField/set" { foo: 9, bar: "x" } (set (focusField @"foo") 9 { foo: 7, bar: "x" })
   assertEqual "focusField/over" { foo: 14, bar: "x" } (over (focusField @"foo") (_ * 2) { foo: 7, bar: "x" })
 
+  -- onField: the stage's output inserted as field l, the fed row passing —
+  -- onCase's mirror (the lens whose getter is identity).
+  assertEqual "onField: the row plus the computed field"
+    { x: 1, n: 2 }
+    (onField @"n" (\r -> r.x + 1) { x: 1 })
+
   -- toCase: a bare output introduced as case l at the closed singleton row;
   -- over a record-reading component it is the ×→+ merge pinned at its unit.
   assertEqual "toCase over a record-reading component"
@@ -287,6 +293,7 @@ main = do
   assertEqual "keyed/pairs a row with its field" (Tuple 7 { id: 7, title: "a" }) (keyed @"id" { id: 7, title: "a" })
   assertEqual "keyed/keyRestored <<< keyed = identity" { id: 7, title: "a" } (keyRestored @"id" (keyed @"id" { id: 7, title: "a" }))
   assertEqual "keyed/a forged key is replaced" { id: 7, title: "b" } (keyRestored @"id" (Tuple 7 { id: 99, title: "b" }))
+
   -- Data.Structural: equality and order by structure, no instance asked —
   -- agreement with the lawful instances, records whatever order built them,
   -- and an order consistent with the equality.
@@ -1444,22 +1451,63 @@ main = do
     assertEqual "×→+ associativity: broadcast and shared exits agree" l r
     assertEqual "×→+ associativity: the script's stream" [ .y 2, .x 1, .z 3 ] l
 
-  -- == The container action's wire law: actedBy k identity ≈ identity at ==
+  -- == introduced: onField over the wire read through init, then the      ==
+  -- == editor under keepingEdits — first feed shown as init, an edit kept  ==
+  -- == across a feed that repeats the init, a changed init shown.         ==
+  do
+    ins <- Ref.new ([] :: Array { n :: Int, x :: Int })
+    propRef <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { n :: Int, x :: Int })
+    m <- handles (PUI.introduced @"n" (\r -> r.x * 10) (echoProbe identity ins propRef))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser { x: 1 }
+    fire propRef { n: 77, x: 1 }
+    m.toUser { x: 1 }
+    m.toUser { x: 2 }
+    Ref.read ins >>= assertEqual "introduced: init, then the edit kept, then the changed init"
+      [ { n: 10, x: 1 }, { n: 77, x: 1 }, { n: 20, x: 2 } ]
+    Ref.read outs >>= assertEqual "introduced: the editor's releases leave as they come"
+      [ { n: 10, x: 1 }, { n: 77, x: 1 }, { n: 77, x: 1 }, { n: 20, x: 2 } ]
+
+  -- == unanswering: a stage with its answers dropped — silence (a feed is ==
+  -- == answered by no emission), passage (an emission outside a feed    ==
+  -- == leaves unchanged), idempotence.                                   ==
+  do
+    let
+      run lifted = do
+        outs <- Ref.new ([] :: Array Int)
+        ins <- Ref.new []
+        propRef <- Ref.new Nothing
+        m <- handles (lifted (echoProbe identity ins propRef))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser 1
+        fire propRef 7
+        m.toUser 2
+        fire propRef 8
+        Ref.read outs
+    raw <- run identity
+    once <- run unanswering
+    twice <- run (unanswering <<< unanswering)
+    assertEqual "unanswering: the bare stage answers every feed" [ 1, 7, 2, 8 ] raw
+    assertEqual "unanswering: silence and passage" [ 7, 8 ] once
+    assertEqual "unanswering: idempotence" once twice
+
+  -- == The container action's wire law: acted @l identity ≈ identity at ==
   -- == Array — elements are echo wires, so every fed array gathers whole ==
   -- == immediately, and a mid-reconcile echo never gathers a torn vector ==
   -- == (the guarded onEmit). ==
   do
     outs <- Ref.new ([] :: Array (Array { k :: String, v :: Int }))
-    m <- handles (actedBy _.k (identity :: PUI Effect { k :: String, v :: Int } { k :: String, v :: Int }))
+    m <- handles (acted @"k" (identity :: PUI Effect { k :: String, v :: Int } { k :: String, v :: Int }))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser [ { k: "a", v: 1 }, { k: "b", v: 2 } ]
-    Ref.read outs >>= assertEqual "actedBy identity: the fed array echoes whole, once — no torn mid-reconcile gather"
+    Ref.read outs >>= assertEqual "acted identity: the fed array echoes whole, once — no torn mid-reconcile gather"
       [ [ { k: "a", v: 1 }, { k: "b", v: 2 } ] ]
     m.toUser []
-    Ref.read outs >>= assertEqual "actedBy identity: [] echoes []"
+    Ref.read outs >>= assertEqual "acted identity: [] echoes []"
       [ [ { k: "a", v: 1 }, { k: "b", v: 2 } ], [] ]
     m.toUser [ { k: "b", v: 3 } ]
-    Ref.read outs >>= assertEqual "actedBy identity: a re-feed with a leaver gathers only the fed vector"
+    Ref.read outs >>= assertEqual "acted identity: a re-feed with a leaver gathers only the fed vector"
       [ [ { k: "a", v: 1 }, { k: "b", v: 2 } ], [], [ { k: "b", v: 3 } ] ]
 
   -- == Observation levels (doc/observational-semantics.md §2, §4): the same ==
@@ -1907,13 +1955,13 @@ main = do
         fireElem qRoster 1 { k: "b", v: 200 }
         os <- Ref.read outs
         pure { q1Ins, os }
-    twoStage <- run \p q -> actedBy _.k p >>> actedBy _.k q
-    oneStage <- run \p q -> actedBy _.k (p >>> q)
-    assertEqual "actedBy laxity: the two-stage form re-feeds the untouched q-element on every gather"
+    twoStage <- run \p q -> acted @"k" p >>> acted @"k" q
+    oneStage <- run \p q -> acted @"k" (p >>> q)
+    assertEqual "acted laxity: the two-stage form re-feeds the untouched q-element on every gather"
       [ { k: "b", v: 20 }, { k: "b", v: 20 } ] twoStage.q1Ins
-    assertEqual "actedBy laxity: the one-stage form feeds only the element that spoke"
+    assertEqual "acted laxity: the one-stage form feeds only the element that spoke"
       [ { k: "b", v: 20 } ] oneStage.q1Ins
-    assertEqual "actedBy laxity: the boundary agrees" oneStage.os twoStage.os
+    assertEqual "acted laxity: the boundary agrees" oneStage.os twoStage.os
 
   -- == The Ocular admission law (PUI's header): ocular (first w) = first ==
   -- == (ocular w) for a node-wrapping ocular; a capturing decorator breaks ==
