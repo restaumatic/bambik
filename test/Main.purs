@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude
 
-import Data.Array (last, length, nub, uncons, (!!))
+import Data.Array (filter, last, length, nub, uncons, (!!))
 import Data.String as String
 import Data.Either (Either(..))
 import Data.Foldable (foldl, for_, traverse_)
@@ -32,17 +32,20 @@ import Data.Structural (withStructuralEq, withStructuralOrd)
 import Record as Record
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Retaining (retain)
-import Data.Variant (expand, match)
+import Data.Variant (expand, inj, match)
 import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedOf, announce, dispatchedOf, gathered, gatheredOf, cancelScope, capture, fold, folding, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, unanswering, with)
+import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedAt, actedOf, actedWithin, announce, dispatchedOf, edits, gathered, gatheredOf, cancelScope, capture, fold, folding, inScope, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, ticks, told, unanswering, with)
 import PUI (introduced) as PUI
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
+import Counter (counted)
+import Crud (catalogued)
+import Diner (opened)
 
 assertEqual :: forall a. Eq a => Show a => String -> a -> a -> Effect Unit
 assertEqual msg expected actual =
@@ -636,8 +639,8 @@ main = do
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
     m <- handles (recordToVariant
-      (probeIO ins1 p1Prop :: PUI Effect { a :: Int } [ x :: Int, y :: String ])
-      (probeIO ins2 p2Prop :: PUI Effect { a :: Int } [ x :: Int, y :: String ]))
+      (probeIO ins1 p1Prop :: PUI Effect { a :: Int } [ x :: Int ])
+      (probeIO ins2 p2Prop :: PUI Effect { a :: Int } [ y :: String ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { a: 1 }
     Ref.read ins1 >>= assertEqual "×→+ broadcast: left operand sees the record" [ { a: 1 } ]
@@ -1075,6 +1078,54 @@ main = do
     Ref.read outs >>= assertEqual "actedOf: an element's release stays inside; the fed row is repeated"
       [ { rows: [] }, { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] }, { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] } ]
 
+  -- actedWithin (the updatable selection) is the same lens over `acted`
+  -- with the setter that lands rows by key: the elements are the rows
+  -- `select` picks from the stored array, and a release replaces, in the
+  -- stored array, the row of its key and nothing else. Wire: rows written
+  -- back unchanged are the row fed. The key is the fed one, unforgeable.
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
+    outs <- Ref.new ([] :: Array { note :: String, rows :: Array { k :: String, v :: Int } })
+    let odd r = filter (\e -> e.v `mod` 2 == 1) r.rows
+    m <- handles (actedWithin @"k" @"rows" odd (displayProbe builds roster))
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    let fed = { note: "n", rows: [ { k: "a", v: 1 }, { k: "b", v: 2 }, { k: "c", v: 3 } ] }
+    m.toUser fed
+    Ref.read builds >>= assertEqual "actedWithin: one element per selected row" 2
+    handles <- Ref.read roster
+    for_ (handles !! 1) \h -> Ref.read h.ins >>= assertEqual "actedWithin: an element is fed its stored row" [ { k: "c", v: 3 } ]
+    Ref.read outs >>= assertEqual "actedWithin/wire: rows written back unchanged are the row fed, once" [ fed ]
+    fireElem roster 1 { k: "forged", v: 31 }
+    Ref.read outs >>= \os -> assertEqual "actedWithin/landing: a release replaces the row of its key and nothing else"
+      (Just { note: "n", rows: [ { k: "a", v: 1 }, { k: "b", v: 2 }, { k: "c", v: 31 } ] }) (last os)
+    m.toUser { note: "n", rows: [ { k: "a", v: 1 }, { k: "b", v: 2 }, { k: "c", v: 4 } ] }
+    Ref.read builds >>= assertEqual "actedWithin: a row that left the selection is no rebuild of the survivors" 2
+    Ref.read outs >>= \os -> assertEqual "actedWithin: the row that left the selection keeps its stored value"
+      (Just { note: "n", rows: [ { k: "a", v: 1 }, { k: "b", v: 2 }, { k: "c", v: 4 } ] }) (last os)
+    m.toUser { note: "n", rows: [ { k: "b", v: 2 } ] }
+    Ref.read outs >>= \os -> assertEqual "actedWithin: an empty selection passes the row fed"
+      (Just { note: "n", rows: [ { k: "b", v: 2 } ] }) (last os)
+
+  -- agreement: the whole array selected is the array stored —
+  -- `actedWithin @l @t (get t) ≈ actedAt @l @t`.
+  do
+    let
+      run lifted = do
+        builds <- Ref.new 0
+        roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
+        outs <- Ref.new ([] :: Array { note :: String, rows :: Array { k :: String, v :: Int } })
+        m <- handles (lifted (displayProbe builds roster))
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { note: "n", rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] }
+        fireElem roster 0 { k: "a", v: 10 }
+        m.toUser { note: "m", rows: [ { k: "b", v: 2 }, { k: "a", v: 10 } ] }
+        fireElem roster 1 { k: "b", v: 20 }
+        Ref.read outs
+    whole <- run (actedWithin @"k" @"rows" _.rows)
+    stored <- run (actedAt @"k" @"rows")
+    assertEqual "actedWithin/agreement: over the whole stored array it is actedAt" stored whole
+
   -- == The +-input members — one entity at a time, identity read off the ==
   -- == entity's own key field, as the ×-members read it off each row.    ==
 
@@ -1430,7 +1481,7 @@ main = do
       { as: [ .x 1 ], bs: [ .y 2 ], cs: [ .z 3 ]
       , os: [ { a: 0, b: 0, c: 9 }, { a: 1, b: 0, c: 9 }, { a: 1, b: 2, c: 9 }, { a: 3, b: 2, c: 9 } ] } l
 
-  -- ×→+ associativity: broadcast and shared exits agree under both
+  -- ×→+ associativity: broadcast and owned exits agree under both
   -- groupings.
   do
     let
@@ -1439,16 +1490,16 @@ main = do
         p2Prop <- Ref.new Nothing
         p3Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ x :: Int, y :: Int, z :: Int ])
-        m <- handles (grouping (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ])
-                              (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ])
-                              (probe p3Prop :: PUI Effect { s :: Int } [ x :: Int, y :: Int, z :: Int ]))
+        m <- handles (grouping (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int ])
+                              (probe p2Prop :: PUI Effect { s :: Int } [ y :: Int ])
+                              (probe p3Prop :: PUI Effect { s :: Int } [ z :: Int ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { s: 1 }
         fire p2Prop (.y 2) *> fire p1Prop (.x 1) *> fire p3Prop (.z 3)
         Ref.read outs
     l <- run \a b c -> recordToVariant (recordToVariant a b) c
     r <- run \a b c -> recordToVariant a (recordToVariant b c)
-    assertEqual "×→+ associativity: broadcast and shared exits agree" l r
+    assertEqual "×→+ associativity: broadcast and owned exits agree" l r
     assertEqual "×→+ associativity: the script's stream" [ .y 2, .x 1, .z 3 ] l
 
   -- == introduced: onField over the wire read through init, then the      ==
@@ -1491,6 +1542,125 @@ main = do
     assertEqual "unanswering: the bare stage answers every feed" [ 1, 7, 2, 8 ] raw
     assertEqual "unanswering: silence and passage" [ 7, 8 ] once
     assertEqual "unanswering: idempotence" once twice
+
+  -- == edits: an editor's edits as events — silence (a feed is answered ==
+  -- == by no emission) and passage (an edit leaves as its case).        ==
+  do
+    outs <- Ref.new ([] :: Array Int)
+    ins <- Ref.new []
+    propRef <- Ref.new Nothing
+    m <- handles (edits @"Edited" (echoProbe identity ins propRef) :: PUI Effect { n :: Int } [ "Edited" :: { n :: Int } ])
+    m.fromUser \o -> Ref.modify_ (_ <> [ match { "Edited": _.n } o ]) outs
+    m.toUser { n: 1 }
+    fire propRef { n: 7 }
+    m.toUser { n: 2 }
+    Ref.read ins >>= assertEqual "edits: the editor is shown every feed" [ { n: 1 }, { n: 2 } ]
+    Ref.read outs >>= assertEqual "edits: silence and passage" [ 7 ]
+
+  -- == The editing list: an emitting list over `edits` — the elements  ==
+  -- == are fed and answer, the list fires nothing on a feed (arming),  ==
+  -- == and a user's edit of one element leaves as the case, its row.   ==
+  do
+    builds <- Ref.new 0
+    roster <- Ref.new ([] :: Array (ElemHandle { k :: String, v :: Int } { k :: String, v :: Int }))
+    outs <- Ref.new ([] :: Array { k :: String, v :: Int })
+    m <- handles (gatheredOf @"k" _.rows (edits @"Edited" (displayProbe builds roster)) :: PUI Effect { rows :: Array { k :: String, v :: Int } } [ "Edited" :: { k :: String, v :: Int } ])
+    m.fromUser \o -> Ref.modify_ (_ <> [ match { "Edited": identity } o ]) outs
+    m.toUser { rows: [ { k: "a", v: 1 }, { k: "b", v: 2 } ] }
+    m.toUser { rows: [ { k: "a", v: 1 }, { k: "b", v: 3 } ] }
+    Ref.read outs >>= assertEqual "editing list: the elements' answers to a feed are no events" []
+    fireElem roster 1 { k: "b", v: 30 }
+    Ref.read outs >>= assertEqual "editing list: a user's edit leaves as the case, carrying its row" [ { k: "b", v: 30 } ]
+    Ref.read builds >>= assertEqual "editing list: a surviving key is re-fed, not rebuilt" 2
+
+  -- == In place is the operation that carries the next state: an editor ==
+  -- == and its edits folded by `capture` emit the same on every edit;  ==
+  -- == the editor also answers every feed, the pair answers none —      ==
+  -- == `edits @l e >>> capture @l ⊑ e`.                                 ==
+  do
+    let
+      run stage = do
+        outs <- Ref.new ([] :: Array { n :: Int })
+        ins <- Ref.new []
+        propRef <- Ref.new Nothing
+        m <- handles (stage (echoProbe identity ins propRef) :: PUI Effect { n :: Int } { n :: Int })
+        m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+        m.toUser { n: 1 }
+        fire propRef { n: 7 }
+        m.toUser { n: 2 }
+        fire propRef { n: 8 }
+        Ref.read outs
+    inPlace <- run identity
+    byOperation <- run (\editor -> edits @"Edited" editor >>> capture @"Edited")
+    assertEqual "in place: the editor answers every feed and emits every edit" [ { n: 1 }, { n: 7 }, { n: 2 }, { n: 8 } ] inPlace
+    assertEqual "by operation: the edits alone, each the next state" [ { n: 7 }, { n: 8 } ] byOperation
+
+  -- == told: a status told, its event passed on — passage (each event  ==
+  -- == leaves once, unchanged) while the status is shown every event.  ==
+  do
+    outs <- Ref.new ([] :: Array Int)
+    shown <- Ref.new ([] :: Array Int)
+    statusRef <- Ref.new Nothing
+    let status f = folding @"Done" f (lcmap (match { "Done": identity }) (probeIO shown statusRef))
+    m <- handles (told status :: PUI Effect [ "Done" :: Int ] [ "Done" :: Int ])
+    m.fromUser \o -> Ref.modify_ (_ <> [ match { "Done": identity } o ]) outs
+    m.toUser (inj (Proxy @"Done") 3)
+    m.toUser (inj (Proxy @"Done") 5)
+    Ref.read shown >>= assertEqual "told: the status is shown every event" [ 3, 5 ]
+    Ref.read outs >>= assertEqual "told: passage" [ 3, 5 ]
+
+  -- == An app's rest without a browser: counter's and crud's folds, knot ==
+  -- == and seed, written once for every twin, driven on the probe carrier ==
+  -- == by a view that only records what it is shown and fires by hand.   ==
+  do
+    shown <- Ref.new ([] :: Array Int)
+    clickRef <- Ref.new Nothing
+    m <- handles (counted (lcmap _.count (probeIO shown clickRef)))
+    m.fromUser \_ -> pure unit
+    m.toUser {}
+    fire clickRef (inj (Proxy @"Count") { count: 0 })
+    fire clickRef (inj (Proxy @"Count") { count: 1 })
+    Ref.read shown >>= assertEqual "rest: counter's view shown the seed, then each count" [ 0, 1, 2 ]
+  do
+    shown <- Ref.new []
+    eventRef <- Ref.new Nothing
+    m <- handles (catalogued (probeIO shown eventRef))
+    m.fromUser \_ -> pure unit
+    m.toUser {}
+    let latest = last <$> Ref.read shown
+    latest >>= traverse_ \c -> fire eventRef (inj (Proxy @"Entry edited") c { "Name" = "Ada", "Surname" = "Lovelace" })
+    latest >>= traverse_ \c -> fire eventRef (inj (Proxy @"Create") c)
+    feeds <- Ref.read shown
+    assertEqual "rest: crud's edit reaches the model before the Create that reads it"
+      [ { name: "", people: 3 }, { name: "Ada", people: 3 }, { name: "Ada", people: 4 } ]
+      (map (\c -> { name: c."Name", people: length c.people }) feeds)
+
+  -- A data application's transactions without a browser: diner's context
+  -- driven by the operations its stations emit. A transaction that
+  -- writes two arrays (a dish's portions, an order's lines) reaches the
+  -- view as one feed, and an order's stage moves it between stations.
+  do
+    shown <- Ref.new []
+    eventRef <- Ref.new Nothing
+    m <- handles (opened (probeIO shown eventRef))
+    m.fromUser \_ -> pure unit
+    m.toUser {}
+    let latest = last <$> Ref.read shown
+    latest >>= traverse_ \d -> fire eventRef (inj (Proxy @"Dish ordered") { event: "Risotto", model: d })
+    latest >>= traverse_ \d -> fire eventRef (inj (Proxy @"Dish ordered") { event: "Risotto", model: d })
+    latest >>= traverse_ \d -> fire eventRef (inj (Proxy @"Send to kitchen") d)
+    feeds <- Ref.read shown
+    let
+      risotto d = map _.portions (filter (\dish -> dish.name == "Risotto") d.dishes)
+      taken d = map (\o -> map _.quantity o.lines) (filter (\o -> o.stage == .taking {}) d.orders)
+      cooking d = length (filter (\o -> o.stage == .cooking {}) d.orders)
+    assertEqual "data context: one feed per transaction, every one a consistent state"
+      [ { risotto: [ 3 ], taken: [], cooking: 1 }
+      , { risotto: [ 2 ], taken: [ [ 1 ] ], cooking: 1 }
+      , { risotto: [ 1 ], taken: [ [ 2 ] ], cooking: 1 }
+      , { risotto: [ 1 ], taken: [], cooking: 2 }
+      ]
+      (map (\d -> { risotto: risotto d, taken: taken d, cooking: cooking d }) feeds)
 
   -- == The container action's wire law: acted @l identity ≈ identity at ==
   -- == Array — elements are echo wires, so every fed array gathers whole ==
@@ -1671,7 +1841,7 @@ main = do
         gProp <- Ref.new Nothing
         rProp <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-        m <- handles (recordToVariant (q (probe gProp :: PUI Effect { a :: Int } [ x :: Int, y :: String ])) (probe rProp :: PUI Effect { a :: Int } [ x :: Int, y :: String ]))
+        m <- handles (recordToVariant (q (probe gProp :: PUI Effect { a :: Int } [ x :: Int ])) (probe rProp :: PUI Effect { a :: Int } [ y :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { a: 0 }
         fire gProp (.x 1)
@@ -1829,7 +1999,7 @@ main = do
         p1Prop <- Ref.new Nothing
         p2Prop <- Ref.new Nothing
         outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-        m <- handles (wrapper (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
+        m <- handles (wrapper (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int ]) (probe p2Prop :: PUI Effect { s :: Int } [ y :: String ]))
         m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
         m.toUser { s: 1 }
         fire p1Prop (.x 1) *> fire p2Prop (.y "e") *> fire p1Prop (.x 2)
@@ -1861,17 +2031,17 @@ main = do
     assertEqual "+→+ symmetry: boundary streams agree under either operand order" ab ba
     assertEqual "+→+ symmetry: the script's streams" { i1: [ .x 1 ], i2: [ .y "b" ], o: [ .ok 1, .err "e", .ok 2 ] } ab
 
-  -- Projection at ×→+: `exact` is the identity — a case both operands declare exits
-  -- from either, unmarked, and nothing trims.
+  -- Projection at ×→+: `exact` is the identity — each operand's case enters
+  -- the merged row unmarked, and nothing trims.
   do
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
     outs <- Ref.new ([] :: Array [ x :: Int, y :: String ])
-    m <- handles (recordToVariant (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probe p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
+    m <- handles (recordToVariant (probe p1Prop :: PUI Effect { s :: Int } [ x :: Int ]) (probe p2Prop :: PUI Effect { s :: Int } [ y :: String ]))
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
     m.toUser { s: 0 }
-    fire p1Prop (.x 1) *> fire p2Prop (.x 2) *> fire p1Prop (.y "e")
-    Ref.read outs >>= assertEqual "exactness ×→+: a shared case exits from either operand, unmarked" [ .x 1, .x 2, .y "e" ]
+    fire p1Prop (.x 1) *> fire p2Prop (.y "e") *> fire p1Prop (.x 2)
+    Ref.read outs >>= assertEqual "exactness ×→+: an operand's case enters the merged row as it is, unmarked" [ .x 1, .y "e", .x 2 ]
 
   -- Projection's input half at all four shapes: an operand is fed only the merge's feeds;
   -- a sibling's emission never reaches it. `looped` is the contrast — the
@@ -1901,7 +2071,7 @@ main = do
     ins2 <- Ref.new ([] :: Array { s :: Int })
     p1Prop <- Ref.new Nothing
     p2Prop <- Ref.new Nothing
-    m <- handles (recordToVariant (probeIO ins1 p1Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } [ x :: Int, y :: String ]))
+    m <- handles (recordToVariant (probeIO ins1 p1Prop :: PUI Effect { s :: Int } [ x :: Int ]) (probeIO ins2 p2Prop :: PUI Effect { s :: Int } [ y :: String ]))
     m.fromUser \_ -> pure unit
     m.toUser { s: 1 }
     fire p1Prop (.x 1) *> fire p2Prop (.y "e")

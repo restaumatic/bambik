@@ -399,16 +399,16 @@ vrThree merge = do
   rig case3 (merge a.p b.p c.p) [ a.fire, b.fire, c.fire ]
 
 -- ×→+
-rvA :: Effect (Op { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)))
+rvA :: Effect (Op { s :: Int } (Variant (x :: Int)))
 rvA = armedOp \n -> .x n
 
-rvB :: Effect (Op { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)))
+rvB :: Effect (Op { s :: Int } (Variant (y :: Int)))
 rvB = armedOp \n -> .y n
 
-rvC :: Effect (Op { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)))
+rvC :: Effect (Op { s :: Int } (Variant (z :: Int)))
 rvC = armedOp \n -> .z n
 
-rvTwo :: (PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int))) -> Effect Rig
+rvTwo :: (PUI Effect { s :: Int } (Variant (x :: Int)) -> PUI Effect { s :: Int } (Variant (y :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int))) -> Effect Rig
 rvTwo merge = do
   a <- rvA
   b <- rvB
@@ -419,10 +419,10 @@ rvTwo merge = do
 -- withheld; a feed arms it; a click replays the row last fed.
 type Joined = { event :: Int, model :: { s :: Int } }
 
-rjA :: Effect (Op { s :: Int } (Variant (x :: Joined, y :: Joined)))
+rjA :: Effect (Op { s :: Int } (Variant (x :: Joined)))
 rjA = armedOp (\n -> .x n) <#> \a -> a { p = joined @"x" a.p }
 
-rjB :: Effect (Op { s :: Int } (Variant (x :: Joined, y :: Joined)))
+rjB :: Effect (Op { s :: Int } (Variant (y :: Joined)))
 rjB = armedOp (\n -> .y n) <#> \b -> b { p = joined @"y" b.p }
 
 rjTwo :: Effect Rig
@@ -431,7 +431,7 @@ rjTwo = do
   b <- rjB
   rig recordFeed (recordToVariant a.p b.p) [ a.fire, b.fire ]
 
-rvThree :: (PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int))) -> Effect Rig
+rvThree :: (PUI Effect { s :: Int } (Variant (x :: Int)) -> PUI Effect { s :: Int } (Variant (y :: Int)) -> PUI Effect { s :: Int } (Variant (z :: Int)) -> PUI Effect { s :: Int } (Variant (x :: Int, y :: Int, z :: Int))) -> Effect Rig
 rvThree merge = do
   a <- rvA
   b <- rvB

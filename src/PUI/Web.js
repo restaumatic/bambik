@@ -402,6 +402,22 @@ export function childCount(node) {
   };
 }
 
+// liveRun :: Array Node -> Effect (Array Node) — the siblings that stand
+// now from the first node of a run to its last: the run as it was built
+// plus whatever a pane attached between its placeholders since
+export function liveRun(nodes) {
+  return function () {
+    if (nodes.length === 0) return nodes;
+    const last = nodes[nodes.length - 1];
+    const run = [];
+    for (let node = nodes[0]; node; node = node.nextSibling) {
+      run.push(node);
+      if (node === last) return run;
+    }
+    return nodes;
+  };
+}
+
 // childrenFrom :: Int -> Node -> Effect (Array Node) — the children from
 // the given index on, in document order
 export function childrenFrom(index) {

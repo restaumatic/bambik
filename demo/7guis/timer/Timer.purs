@@ -1,8 +1,12 @@
-module Timer (Timer, elapsedFraction, progressLine, restarted, tenSecondFreshTimer, tick, tickPeriod) where
+module Timer (Timer, elapsedFraction, progressLine, timed) where
 
-import Prelude ((*), (+), (/), (<), (<=), (<>), min, show)
+import Prelude ((#), (*), (+), (/), (<), (<=), (<>), min, show)
 
 import Data.Int (toNumber)
+import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
+import PUI (class Scoped, PUI, capture, fold, looped, ticks, with)
+import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Timer =
   { "Duration" ::
@@ -13,6 +17,22 @@ type Timer =
       }
   , elapsedTenths :: Int
   }
+
+timed
+  :: forall m
+   . Scoped m
+  => PUI m Timer [ "Duration changed" :: Timer, "Reset" :: Timer ]
+  -> PUI m {} Timer
+timed view =
+  Semigroupoid.do
+    RecordToVariant.do
+      view
+      ticks @"Clock ticked" tickPeriod
+    VariantToRecord.do
+      capture @"Duration changed"
+      fold @"Clock ticked" tick
+      fold @"Reset" restarted
+  # looped # with tenSecondFreshTimer
 
 tenSecondFreshTimer :: Timer
 tenSecondFreshTimer =

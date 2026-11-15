@@ -232,7 +232,7 @@ such an operand: it is a stage, `{ | r } → { | r }`, releasing the row it
 shows (§3.2).
 The modality is also a **detector**: a `×→×` display whose field no model
 owns is a status in disguise. `action`'s progress slot is one —
-`[ started :: {}, ended :: {} ] → { | r }`, the run's two occurrences
+`[ started :: {}, ended :: {} ] → {}`, the run's two occurrences
 dispatched to an indicator that owes nothing back (it was once
 `{ busy :: Boolean } → {}`, fed `true` then `false` around the `Aff`, every
 `×→×` obligation vacuous; CHANGELOG 2026-09-13).

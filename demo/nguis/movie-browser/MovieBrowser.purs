@@ -1,6 +1,6 @@
-module MovieBrowser (Catalogue, Category, Listing, Movie, favoritesLine, isFavorite, listingLine, markFavorite, movieCatalogue, visibleMovies) where
+module MovieBrowser (Catalogue, Category, Movie, favoritesLine, isFavorite, listingLine, movieCatalogue, visibleMovies) where
 
-import Prelude ((&&), (||), (==), (<>), const, map, not, show)
+import Prelude ((&&), (||), (==), (<>), const, not, show)
 
 import Data.Array (any, filter, length)
 import Data.Number.Format (fixed, toStringWith)
@@ -25,8 +25,6 @@ type Movie =
 
 type Category = [ "Action" :: {}, "All" :: {}, "Comedy" :: {}, "Drama" :: {} ]
 
-type Listing = { "Favorite" :: Boolean, rating :: Number, title :: String, year :: Int }
-
 movieCatalogue :: Catalogue
 movieCatalogue =
   { "Category": ."All" {}
@@ -49,21 +47,17 @@ movieCatalogue =
     ]
   }
 
-visibleMovies :: Catalogue -> Array Listing
-visibleMovies { "Category": category, "Classic": classic, "Cult": cult, "Oscar": oscar, movies } = map listing (filter (\movie -> inCategory movie && taggedAsChosen movie) movies)
+visibleMovies :: Catalogue -> Array Movie
+visibleMovies { "Category": category, "Classic": classic, "Cult": cult, "Oscar": oscar, movies } = filter (\movie -> inCategory movie && taggedAsChosen movie) movies
   where
   inCategory movie = category == ."All" {} || movie.category == category
   taggedAsChosen movie = not (classic || cult || oscar) || any chosenTag movie.tags
   chosenTag = match { "Classic": const classic, "Cult": const cult, "Oscar": const oscar }
-  listing { title, year, rating, "Favorite": favorite } = { title, year, rating, "Favorite": favorite }
 
-markFavorite :: { event :: Listing, model :: Catalogue } -> Catalogue
-markFavorite { event: { title, "Favorite": favorite }, model: catalogue } = catalogue { movies = map (\movie -> if movie.title == title then movie { "Favorite" = favorite } else movie) catalogue.movies }
-
-isFavorite :: Listing -> Boolean
+isFavorite :: Movie -> Boolean
 isFavorite { "Favorite": favorite } = favorite
 
-listingLine :: Listing -> String
+listingLine :: Movie -> String
 listingLine { title, year, rating } = title <> " (" <> show year <> ") · ★ " <> toStringWith (fixed 1) rating
 
 favoritesLine :: Catalogue -> String

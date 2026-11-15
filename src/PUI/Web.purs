@@ -23,8 +23,8 @@
 -- |   editors), each fed the whole row; a pane over a variant the model
 -- |   stores names its field by label (`providedAt`, `inCaseAt`);
 -- | - **sources** — the browser's facts (`geolocated`, `online`, `clock`,
--- |   `colorScheme`) over `PUI`'s `source`, each owning one field the app
--- |   cannot seed;
+-- |   `colorScheme`) over `PUI`'s `source`, each `{} → { l :: a }`, owning
+-- |   one field the app cannot seed;
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
 -- |   tag;
 -- | - **leaf building blocks** — what every vocabulary's leaves are built
@@ -135,7 +135,6 @@ import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Array (concat)
 import Data.Variant (inj)
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
@@ -318,6 +317,7 @@ foreign import uniqueId :: Effect String
 foreign import lastChild :: Node -> Effect Node
 foreign import childCount :: Node -> Effect Int
 foreign import childrenFrom :: Int -> Node -> Effect (Array Node)
+foreign import liveRun :: Array Node -> Effect (Array Node)
 
 -- | Pointer-down emitter with coordinates mapped into the element's local
 -- | space (an SVG's viewBox units when present, CSS pixels otherwise) —
@@ -367,7 +367,11 @@ runDomInScope sc node (Web domBuilder) = fst <$> runStateT domBuilder { sibling:
 -- | node, detach removes it, restack re-appends in key order (`appendChild`
 -- | moves an existing node, so identity — focus, local state — travels with
 -- | it). Each element is built in a scope of its own under the collection's,
--- | cancelled when the element leaves.
+-- | cancelled when the element leaves. An element is a run of siblings, and
+-- | the run is read when it is moved or removed, from its first node to its
+-- | last: a pane standing among them attaches its content after the build,
+-- | between two placeholders of the run, and that content leaves and moves
+-- | with the element.
 instance Hosting Web (Array Node) where
   hosting w = do
     parent <- gets _.parent
@@ -381,8 +385,8 @@ instance Hosting Web (Array Node) where
           inst <- runDomInScope child parent (handles w)
           nodes <- childrenFrom before parent
           pure { feed: inst.toUser, subscribe: inst.fromUser, node: nodes, cancel: cancelScope child }
-      , detach: \nodes -> for_ nodes \node -> removeChild node parent
-      , restack: \runs -> for_ (concat runs) \node -> appendChild node parent
+      , detach: \nodes -> liveRun nodes >>= traverse_ \node -> removeChild node parent
+      , restack: \runs -> for_ runs \nodes -> liveRun nodes >>= traverse_ \node -> appendChild node parent
       }
   attachable = attachableWeb
 
@@ -804,7 +808,7 @@ attrAt name = attrWith name (Record.get (Proxy @l))
 -- | `svg >>> "viewBox" := "0 0 500 300" $ onClickedXY @"picked" $ …`. An event
 -- | source: the point leaves as an occurrence of case `l`. The primary button
 -- | only; a right click is `onContextMenuXY`'s.
-onClickedXY :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+onClickedXY :: forall @l r a v. IsSymbol l => Cons l { x :: Number, y :: Number } () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
 onClickedXY = pointedAt @l "pointerdown"
 
 -- | `onClickedXY`'s sibling for the pointer **moving** over the container:
@@ -813,16 +817,16 @@ onClickedXY = pointedAt @l "pointerdown"
 -- | pointer *is* the interaction (circle-drawer's nearest circle). Merged
 -- | beside the other sources of one container, `onHoveredXY @"Canvas
 -- | hovered" identity` when it has no content of its own.
-onHoveredXY :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+onHoveredXY :: forall @l r a v. IsSymbol l => Cons l { x :: Number, y :: Number } () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
 onHoveredXY = pointedAt @l "pointermove"
 
 -- | `onClickedXY`'s sibling for the **context-menu** gesture — a right
 -- | click, a long press — the point leaving as case `l` and the browser's
 -- | own menu kept away, so the app's popup takes its place.
-onContextMenuXY :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
+onContextMenuXY :: forall @l r a v. IsSymbol l => Cons l { x :: Number, y :: Number } () v => PUI Web { | r } a -> PUI Web { | r } [ | v ]
 onContextMenuXY = pointedAt @l "contextmenu"
 
-pointedAt :: forall @l r a b v. IsSymbol l => Cons l { x :: Number, y :: Number } b v => String -> PUI Web { | r } a -> PUI Web { | r } [ | v ]
+pointedAt :: forall @l r a v. IsSymbol l => Cons l { x :: Number, y :: Number } () v => String -> PUI Web { | r } a -> PUI Web { | r } [ | v ]
 pointedAt eventType content = fromHandles do
   w' <- handles content
   node <- gets _.parent
@@ -901,19 +905,19 @@ built build = fromHandles (build *> handles (identity :: PUI Web { | r } { | r }
 -- | answers, `unknown` until then, `denied` when the user refuses or the
 -- | platform has no geolocation. Follows the device thereafter.
 geolocated
-  :: forall @l r r1
+  :: forall @l r
    . IsSymbol l
-  => Cons l [ located :: { lat :: Number, lng :: Number }, unknown :: {}, denied :: {} ] () r1
-  => PUI Web { | r } { | r1 }
+  => Cons l [ located :: { lat :: Number, lng :: Number }, unknown :: {}, denied :: {} ] () r
+  => PUI Web {} { | r }
 geolocated = source @l (pure (inj (Proxy @"unknown") {})) \tell ->
   watchPosition (tell <<< inj (Proxy @"located")) (tell (inj (Proxy @"denied") {}))
 
 -- | Whether the browser is online, as it reports it, followed as it changes.
 online
-  :: forall @l r r1
+  :: forall @l r
    . IsSymbol l
-  => Cons l [ online :: {}, offline :: {} ] () r1
-  => PUI Web { | r } { | r1 }
+  => Cons l [ online :: {}, offline :: {} ] () r
+  => PUI Web {} { | r }
 online = source @l (onlineCase <$> isOnline) \tell -> watchOnline (tell <<< onlineCase)
   where
   onlineCase on = if on then inj (Proxy @"online") {} else inj (Proxy @"offline") {}
@@ -922,21 +926,21 @@ online = source @l (onlineCase <$> isOnline) \tell -> watchOnline (tell <<< onli
 -- | `period` — the `×→×` sibling of `ticks`, which is the clock as an
 -- | event. Known at registration.
 clock
-  :: forall @l r r1
+  :: forall @l r
    . IsSymbol l
-  => Cons l { hours :: Int, minutes :: Int, seconds :: Int } () r1
+  => Cons l { hours :: Int, minutes :: Int, seconds :: Int } () r
   => { ms :: Number }
-  -> PUI Web { | r } { | r1 }
+  -> PUI Web {} { | r }
 clock period = source @l localTime \tell ->
   everyMs period.ms (localTime >>= tell)
 
 -- | The colour scheme the user prefers, `light` or `dark`, followed as the
 -- | system setting changes.
 colorScheme
-  :: forall @l r r1
+  :: forall @l r
    . IsSymbol l
-  => Cons l [ light :: {}, dark :: {} ] () r1
-  => PUI Web { | r } { | r1 }
+  => Cons l [ light :: {}, dark :: {} ] () r
+  => PUI Web {} { | r }
 colorScheme = source @l (schemeCase <$> prefersDark) \tell -> watchColorScheme (tell <<< schemeCase)
   where
   schemeCase dark = if dark then inj (Proxy @"dark") {} else inj (Proxy @"light") {}

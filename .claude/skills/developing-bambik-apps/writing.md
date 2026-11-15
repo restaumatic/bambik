@@ -92,11 +92,19 @@ one value, one per shape:
   `online @"connection"`, `clock @"time" clockPeriod`, `colorScheme
   @"scheme"`, the capture `filePicked @"Photo"` — each owning its one
   field, merged into the row the lines below read (here-and-now,
-  incident-report). Every editor owns the whole row, so editors never
+  incident-report). A source reads nothing, so it is typed at `{}` and
+  the block of sources opens the flow: after a line that releases a field
+  it is a compile error. Every editor owns the whole row, so editors never
   merge, and a display owns the row it releases, so two displays
-  compose ([Components](#components)).
-- `RecordToVariant.do` (×→+) — a row of buttons over the model
-  (cashbox, stopwatch).
+  compose ([Components](#components)). The rule: **merge what writes
+  without reading, sequence everything else** — a component that reads
+  the row passes it on and is a line; one that only writes owns its
+  field and is an operand.
+- `RecordToVariant.do` (×→+) — a row of buttons over the model, each
+  owning the case it emits: the block lists the events that can occur,
+  and the fold block after it names exactly the same cases — a case
+  written twice, a fold for a case nothing emits and an emitted case
+  with no fold are all compile errors (cashbox, stopwatch).
 - `VariantToVariant.do` (+→+) — one handler per event case. No demo
   needs the block: an action handles its button's case inside the fold
   block ([Business functions](#business-functions)).
@@ -985,8 +993,10 @@ in the message, the one the line wants and the one it got, and look
 | --- | --- | --- | --- |
 | the model row against `()` | the whole app expression | the loop has no seed: the entry feeds only `{}` | close the loop with `# with seed` (counter) |
 | the model row against `( event :: …, model :: … )`, `while matching label "Start"` | the fold of that case | an emitter inside a pane is `# joined`, but it already replays the model: `joined` is for an emitter fed something narrower, a list element or a canvas | drop the `# joined` and take the model in the handler (stopwatch) |
-| `( "Cout" :: … )` against `( "Count" :: … )` | the fold | one case spelled two ways | spell the case the same on the emitter and its fold |
-| `( "Reset" :: … )` against `( … )` | the emitter | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `fold @"Clock ticked" tick`), or remove the emitter |
+| `( "Count" :: … )` against `( "Cout" :: … )` | the fold | one case spelled two ways | spell the case the same on the emitter and its fold |
+| `( "Reset" :: … )` against `( … )` | the first line of the emitter block | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `fold @"Clock ticked" tick`), or remove the emitter |
+| `( "Undo" :: … )` against `( … )` | the first line of the fold block | a fold for a case nothing emits | remove the fold, or add the emitter it was written for |
+| `Two merge operands own the label "Count"` | the first line of the block | a label written twice in one block: a case two emitters emit, a case two folds handle, a field two sources produce | two buttons are two business actions — give each its own case and fold both with the one handler (checkout's Next and Back) |
 | `( size :: Int … )` against `( … )` | the seed line | a business function names a field the model does not have | copy the signature from the hole its line reports ([Writing order](#writing-order)) |
 
 ## When it does not propagate

@@ -121,10 +121,11 @@ module PUI
   , reset
   , capture
   , kept
+  , told
   , static
   , ticks
   , debounced
-  , editsOf
+  , edits
   , with
   , looped
   , inCase
@@ -162,9 +163,9 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, onField, record
 -- vocabulary editor is `focusField @l`-lifted inside, the labelled group
 -- (`group @l`) carries sub-model nesting, so application code never lifts a
 -- focus itself. No placement word is here either: every leaf narrows its
--- input and widens its output itself — a status or an action owns the one
--- case its label names, an emitter is open on its output, an action is
--- typed at exactly its outcomes and `joined` widens it into its block — so a stage is typed at one
+-- input and its output itself — a status or an action owns the one
+-- case its label names, an emitter is closed to the case it emits, an action is
+-- typed at exactly its outcomes and `joined` names them in its block — so a stage is typed at one
 -- row (the gated displays, `settled`, `acted`) and a UI component's own
 -- row is always stated by a business function, never placed at another
 -- row at the call site. The floor's single-label adopters (`atField`/
@@ -175,7 +176,7 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, onField, record
 -- `lcmap (const {})`.
 import Data.Profunctor.Row (settled, type (+)) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined) as Adopters
-import Data.Profunctor.Keyed.Acting (acted, actedAt, actedOf) as Adopters
+import Data.Profunctor.Keyed.Acting (acted, actedAt, actedOf, actedWithin) as Adopters
 import Data.Profunctor.Keyed.Accumulating (accumulated, accumulatedOf, accumulatedOn) as Adopters
 import Data.Profunctor.Keyed.Dispatching (dispatched, dispatchedOf, dispatchedOn) as Adopters
 import Data.Profunctor.Keyed.Gathering (gathered, gatheredAt, gatheredOf) as Adopters
@@ -890,16 +891,22 @@ instance Apply m => RecordToRecord (PUI m) where
 
 instance Applicative m => RecordToVariant (PUI m) where
   -- broadcast in, passage out — the shape's projection law. A variant
-  -- output has nothing to gate, so the merge is a bare pass-through and
+  -- output has nothing to gate, and each operand owns its cases, so an
+  -- emission enters the merged row as it is: the merge is a bare pass-through and
   -- the one-thing-per-feed obligation falls on the operands (the answer
   -- law at ×→+, arming); hence `Applicative m`: no state here.
   recordToVariant (PUI p1) (PUI p2) = PUI ado
     reg1 <- p1
     reg2 <- p2
     in \prop -> do
-      leg1 <- reg1 prop
-      leg2 <- reg2 prop
+      leg1 <- reg1 (prop <<< widened)
+      leg2 <- reg2 (prop <<< widened)
       pure \new -> leg1 new *> leg2 new
+    where
+    -- an operand's case in the merged row: a variant carries its one tag,
+    -- and `OwnedVariantOutputs` makes the merged row the operands' union
+    widened :: forall v1 v. [ | v1 ] -> [ | v ]
+    widened = unsafeCoerce
 
 -- dispatch in, passage out — the shape's projection law: no
 -- broadcast, so nothing to step; a variant out, so nothing to gate. Hence
@@ -1383,10 +1390,10 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | loop. A tick that needs telling is told by the status that folds it
 -- | in the fold block, so the source opens with none.
 ticks
-  :: forall @l m r b v
+  :: forall @l m r v
    . Scoped m
   => IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => { ms :: Number }
   -> PUI m { | r } [ | v ]
 ticks interval = fromHandles do
@@ -1411,8 +1418,11 @@ ticks interval = fromHandles do
 
 -- | A **source**: a fact the platform knows and the app cannot seed — where
 -- | the device is, whether it is online, what time it is, which colour
--- | scheme is preferred. A source owns one field, `l`, reads nothing of the
--- | row it is fed, and is **pointed**: it announces its first value at
+-- | scheme is preferred. A source owns one field, `l`, and reads nothing,
+-- | so its input is `{}`: it stands where nothing has been released yet,
+-- | at the head of a flow, and one placed after a stage that releases any
+-- | field is a type error, where an open input would drop that row. It is
+-- | **pointed**: it announces its first value at
 -- | registration (`now`), so a merge of sources is a row the gate releases
 -- | at once and keeps current. Every feed is answered with the last value
 -- | known (Answer at `×→×`), and each change the platform reports is an
@@ -1425,13 +1435,13 @@ ticks interval = fromHandles do
 -- | (here-and-now, incident-report) — the one application use of the
 -- | `×→×` merge, since every editor owns the whole row.
 source
-  :: forall @l m a r r1
+  :: forall @l m a r
    . Scoped m
   => IsSymbol l
-  => Cons l a () r1
+  => Cons l a () r
   => Effect a
   -> ((a -> Effect Unit) -> Effect (Effect Unit))
-  -> PUI m { | r } { | r1 }
+  -> PUI m {} { | r }
 source now watch = fromHandles do
   sc <- scope
   first <- liftEffect now
@@ -1461,7 +1471,7 @@ source now watch = fromHandles do
 -- | it showed (`listOf @l @k`'s row, MDC3's `tile @l @k`): `replayed @l
 -- | (Record.get (Proxy @k)) (occurrencesOn Click content)`. Plumbing, not
 -- | vocabulary — an application's emitters are its vocabulary's.
-replayed :: forall @l m r k b v. Functor m => IsSymbol l => Cons l k b v => ({ | r } -> k) -> PUI m { | r } [ occurred :: {} ] -> PUI m { | r } [ | v ]
+replayed :: forall @l m r k v. Functor m => IsSymbol l => Cons l k () v => ({ | r } -> k) -> PUI m { | r } [ occurred :: {} ] -> PUI m { | r } [ | v ]
 replayed f src = Adopters.joined @"occurred" src # rmap (on (Proxy @"occurred") (inj (Proxy @l) <<< f <<< _.model) case_)
 
 -- | What a host tells about the user's hands on what it built, for the
@@ -1533,7 +1543,7 @@ departures = fromHandles do
 -- | the one row every row maps onto, so the placement is total), the
 -- | last-built element listening. Every vocabulary's `button` family
 -- | is this over its own chrome. Plumbing.
-eventLeaf :: forall @l m r b v. Interacting m => IsSymbol l => Cons l { | r } b v => PUI m {} {} -> PUI m { | r } [ | v ]
+eventLeaf :: forall @l m r v. Interacting m => IsSymbol l => Cons l { | r } () v => PUI m {} {} -> PUI m { | r } [ | v ]
 eventLeaf chrome = replayed @l identity (occurrencesOn Click (lcmap (const {}) chrome))
 
 -- | A status over its vocabulary's face: the face shown case `l`'s label,
@@ -1649,7 +1659,7 @@ static o = o identity
 -- | (payment, weather), or, standing among emitters in a
 -- | `RecordToVariant.do`, the `joined @l` (one outcome) or `joined @(l1 +
 -- | l2)` (two) it is joined by, which close its source to the labels
--- | they name and widen it into the block's row (order-form, ticker).
+-- | they name, the cases it owns in the block (order-form, ticker).
 -- |
 -- | It is **opened by its progress indicator**: the slot is a `+→×`
 -- | citizen of the run's two lifecycle occurrences, `started` and
@@ -1727,8 +1737,8 @@ running run w = action'
 
 -- | One case **folded into the record** (`+→×`): the faceless leaf owning
 -- | case `l`, releasing `f` of its payload as the whole next model —
--- | `fold @"Count" increment` (counter), `fold @"Todo toggled" toggleTodo`
--- | (todo-list). A loop's folds are one per event case, merged by
+-- | `fold @"Count" increment` (counter), `fold @"Message opened" openMessage`
+-- | (inbox). A loop's folds are one per event case, merged by
 -- | `VariantToRecord.do`, each releasing the whole next model. Memoryless:
 -- | a replaying emitter's payload is the row it was fed, an event with
 -- | something of its own arrives `joined` with that row as
@@ -1792,6 +1802,25 @@ capture = fold @l identity
 -- | joined with its button so the model is in hand.
 kept :: forall a r. { event :: a, model :: { | r } } -> { | r }
 kept = _.model
+
+-- | A status **told, its event passed on** (`+→+`): the status shows its
+-- | case as it does under a fold, and the event leaves unchanged, so a
+-- | view that ends at the model event can tell an outcome and leave its
+-- | folding to the rest — `snackbar @"Card charged" # told` (payment).
+-- | The status is handed the fold that keeps nothing, `const {}`.
+-- | **Derived**, as `folding` is: the wire and the status under the `×→×`
+-- | merge, fed the event in a one-field record — the status contributes
+-- | no field and is inert to the gate, the wire answers every feed with
+-- | the event. Law: **passage** — `told s ≈ identity` on the events, each
+-- | released once, whatever `s` shows.
+told
+  :: forall m a v
+   . Applicative m
+  => ((a -> {}) -> PUI m [ | v ] {})
+  -> PUI m [ | v ] [ | v ]
+told status = dimap { event: _ } _.event $ recordToRecord
+  (dimap _.event { event: _ } identity :: PUI m { event :: [ | v ] } { event :: [ | v ] })
+  (lcmap _.event (status (const {})) :: PUI m { event :: [ | v ] } {})
 
 -- | The fold behind every `+→×` leaf — plumbing, not vocabulary: a status
 -- | face owning case `l` and the fold of its payload, in one leaf. The
@@ -2058,7 +2087,7 @@ inCaseAt = inCase @c (Record.get (Proxy @l))
 -- | that is absent contributes nothing — so anything downstream waiting on
 -- | it waits, rather than showing a stale or invented value.
 -- |
--- | The pane names only its case (`# provided @"reading" messageView`):
+-- | The pane names only its case (`# provided @"asking" quizPhase`):
 -- | every state it chooses among is the classifier's signature, in the view
 -- | model module, and the view restates none of them (guardrails L18).
 -- | A variant the model stores is named by its label instead, `providedAt`.
@@ -2090,41 +2119,50 @@ attachedOn f w = fromHandles do
     , fromUser
     }
 
--- | The **editing list** — `gatheredOf` over editors: the same keyed and
--- | retaining reconciliation over elements that are `×→×` citizens (a row
--- | holding a toggle, a field), a user's edit of an element leaving as
--- | case `l` carrying the element's row, while an element's answer to the
--- | list's own feed — every editor echoes what it is shown — is no event
--- | and is dropped inside that feed. So the list is `×→+` by behaviour as
--- | by shape (Answer: a feed is answered by no emission) without leaning
--- | on the knot's re-entrancy guard, and the element stays the
--- | checkbox-like leaf it is: `( listItem $ Semigroupoid.do { …; iconToggle
--- | @"Favorite" … } ) # editsOf @"Favorite changed" @"title"
--- | visibleMovies # joined @"Favorite changed"` (movie-browser), the fold
--- | writing the edit back into the stored collection by key. The
--- | projection's array is a view, so nothing gathers — a stored array's
--- | editors are `acted`.
-editsOf
-  :: forall @l @k r m node key b1 b2 a v
-   . Hosting m node
+-- | An editor's **edits as events** (`×→+`): the user's edit of the stage
+-- | leaves as case `l` carrying the row it edited, and the stage's answer
+-- | to every feed — an editor echoes what it is shown — is no event and
+-- | is dropped inside that feed (`unanswering`). A form of several
+-- | editors is one source: `sliderLive @"Duration" # edits @"Duration
+-- | changed"` (timer), `( Semigroupoid.do { filledTextField @"Name";
+-- | filledTextField @"Surname" } ) # edits @"Entry edited"` (crud). Closed
+-- | to its case, like every emitter, so it merges with buttons, and as
+-- | the element of an emitting list it is the **editing list**: `( row #
+-- | edits @"Quantity changed" ) # gatheredOf @"product" cartLines`, a
+-- | user's edit of a projected row leaving with that row for a fold to
+-- | write back by key — the list for a projection that joins or reshapes
+-- | its rows, which has no canonical way back (one that only selects
+-- | rows of a stored array has: `actedWithin`).
+-- |
+-- | Laws are `unanswering`'s, read through the case: **silence** (a feed
+-- | is answered by no emission) and **passage** (an edit leaves as case
+-- | `l`, unchanged) — and so is its precondition: the stage answers
+-- | **within its feed**. Every leaf and every merge and sequence of
+-- | leaves does; a stage under `debounced` does not, and its late answer
+-- | would leave as an edit.
+edits
+  :: forall @l m r v
+   . Functor m
   => IsSymbol l
-  => IsSymbol k
-  => Cons k key b1 r
-  => Cons l { | r } b2 v
-  => (a -> Array { | r })
-  -> PUI m { | r } { | r }
-  -> PUI m a [ | v ]
-editsOf f editor = Adopters.gatheredOf @k f (rmap (inj (Proxy @l)) (unanswering editor))
+  => Cons l { | r } () v
+  => PUI m { | r } { | r }
+  -> PUI m { | r } [ | v ]
+edits editor = rmap (inj (Proxy @l)) (unanswering editor)
 
 -- | A stage with **its answers dropped**: what it emits inside its own
 -- | feed is withheld, what it emits outside one passes. It is the bridge
 -- | between the two musts of doc/observational-semantics.md §3.1 — a
 -- | `×→×` stage must answer every feed, a `×→+` one must not — so an
 -- | editor under it is an emitter of the user's edits and of nothing
--- | else (`editsOf` is `gatheredOf` over it). Laws: **silence** — a feed
--- | is answered by no emission; **passage** — an emission outside a feed
--- | leaves unchanged; **idempotence** — `unanswering <<< unanswering ≈
--- | unanswering`. Plumbing, not vocabulary.
+-- | else (`edits` is it, injected at a case). An answer is told from an
+-- | edit by **when** it comes, so the laws hold for a stage that answers
+-- | within its feed, as the leaf protocol does (`recordToRecordWiring`
+-- | echoes inside `toUser`): **silence** — a feed is answered by no
+-- | emission; **passage** — an emission outside a feed leaves unchanged;
+-- | **idempotence** — `unanswering <<< unanswering ≈ unanswering`. A
+-- | stage that answers later (one under `debounced`, whose every emission
+-- | waits out its window) is outside them: its answer passes as if the
+-- | user had made it. Plumbing, not vocabulary.
 unanswering :: forall m a b. Functor m => PUI m a b -> PUI m a b
 unanswering (PUI p) = PUI $ p <#> \reg prop -> do
   feeding <- Ref.new false

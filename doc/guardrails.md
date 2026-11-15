@@ -77,11 +77,11 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   face over the label is adopted `# atCase @l`), and an emitter emits its
   own case. The structural adopters `atField`/`atCase`, `toField`/`toCase`
   take no function and stay inside the vocabularies:
-  every leaf narrows its input and widens its output itself — a status
-  or an action owns the one case its label names, an emitter is open on
-  its output, an action is typed at exactly its outcomes (`action @l f`)
-  and the `joined @l` that joins it among emitters closes and widens
-  it, a dialog intercepts the case that opens it (`confirmed @l`,
+  every leaf narrows its input and its output itself — a status
+  or an action owns the one case its label names, an emitter is closed
+  to the case it emits, an action is typed at exactly its outcomes (`action @l f`)
+  and the `joined @l` that joins it among emitters names them,
+  a dialog intercepts the case that opens it (`confirmed @l`,
   `acknowledged @l`), an editor's release leaving as an event is the editing list's
   to say (`editsOf @l @k`) — so a view places nothing at a row and
   `PUI` re-exports no adopter. There is no rename adopter: re-labelling a
@@ -104,7 +104,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
   | Type | Shape | Sort |
   | --- | --- | --- |
-  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`actedOf`, `actedAt`), sources (`geolocated`, `clock`, `filePicked` — pointed, owning one field), stages |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`actedOf`, `actedAt`), sources (`geolocated`, `clock`, `filePicked` — pointed, fed `{}`, owning one field), stages |
   | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `tile`, `onClickedXY`), the emitter pane `provided`, the emitting lists `gatheredOf` and `editsOf` |
   | `PUI Web [ \| a ] { \| b }` | `+→×` | the folds (`fold @l f`, `reset @l x`, `capture @l`) and the statuses, each a fold with a face (`snackbar @l line f`); the action slot (`indeterminateLinearProgress`) owns `started`/`ended` only, so a status is never the slot |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
@@ -263,18 +263,22 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - A shared record input is **one row**: every operand is fed the merge's
   whole row (an equality), and its business functions are typed at that
   row (L18). A shared variant output is **one row** every operand is
-  typed at, at `×→+` and `+→+` alike (an equality): an emitter is open
-  on its output and sits in the block's row by its label, an action
-  is typed at exactly its outcomes and sits in it by the `joined @l`
-  (`joined @(l1 + l2)` for two outcomes) that closes it to those labels and widens it,
-  and a handler's row, coming from a function, is the block's (an
-  inclusive union could not be split back out under a typed hole). A handler missing for a case is a type
-  error either way. The sharing is each merge's universal property
-  (`Data.Profunctor.Row`): the pairing at `×→×` (input shared, output
-  owned), the copairing at `+→+` and `+→×` (input owned, output
-  shared), the carrier's interleaving at `×→+` (both shared). Variant
-  handling MUST be disjoint, and so MUST record production where the
-  outputs are owned, at `×→×` (responsibility never splits). Runtime evidence appears exactly where responsibility
+  typed at, at `+→+` (an equality): a handler's row, coming from a
+  function, is the block's (an inclusive union could not be split back
+  out under a typed hole). At `×→+` the variant output is **owned**: an
+  emitter is closed to the case its label names, an action to its
+  outcomes by the `joined @l` (`joined @(l1 + l2)` for two outcomes)
+  that names them, and the block's row is exactly the union of its
+  operands' cases — so an emitter block lists the events that can
+  occur, a case emitted by two operands is a compile error naming it,
+  and so is a handler for a case nothing emits. A handler missing for a
+  case is a type error either way. The sharing is each merge's
+  universal property (`Data.Profunctor.Row`): the pairing at `×→×` and
+  `×→+` (input shared, output owned — fields, and cases read as
+  occurrence sources), the copairing at `+→+` and `+→×` (input owned,
+  output shared). Variant handling MUST be disjoint, and so MUST
+  production where the outputs are owned: a record field at `×→×`, an
+  emitted case at `×→+` (responsibility never splits). Runtime evidence appears exactly where responsibility
   does (`DispatchableVariants`, `MergeableRecords`) and nowhere else.
 - Merge operands' emissions MUST be runtime-exact: trimmed to their
   declared row before the gates combine them, so no stale sibling field
@@ -684,11 +688,12 @@ code below the UI) are algebra-layer material and exempt by location.
   generalized to what they share, and only then carries a `forall`;
   `npm run check-determined` checks every exported signature is an
   instance of its hint. An emitter block's variant output
-  is one row like a handler block's: an emitter's case is fixed by its
-  label and its row left open, so the block's row reaches it from the
-  folds that own it; an action, whose row a function names, widens
+  is the union of its operands' cases: an emitter's case is fixed by
+  its label and its row closed to it, so the block's row is known from
+  its lines and the folds after it must own exactly those cases; an
+  action, whose row a function names, widens
   nothing: after it, the statuses owning its cases close its row; among
-  emitters, `joined @l` closes its source to case `l` and widens it —
+  emitters, `joined @l` closes its source to case `l` —
   a typed hole names no outcome, so the labels on its followers are what
   the row goes on, and a two-outcome source names both, `joined @(l1 +
   l2)`, since one label closes one case (two `joined`s leave the

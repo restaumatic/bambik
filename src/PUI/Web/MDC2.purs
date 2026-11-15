@@ -213,8 +213,8 @@ import Type.Proxy (Proxy(..))
 -- (decoration as implementation technique — and a necessity: abstract
 -- labels cannot flow through the merges' `Nub`, so a skolem-labeled
 -- operand can't be merged); all-chrome groups (button content, progress
--- bars) have concrete rows and stay literal `RecordToRecord.do` merges of
--- announcing chrome (`staticText`/`staticHTML`/`static`, `{}`-output at any row).
+-- bars) are `Semigroupoid.do` blocks of statics (`staticText`/`staticHTML`/
+-- `static`, each the wire at its row).
 -- Code order = DOM order throughout.
 --
 -- **The `dimap` round-trip contract for editors.** An editor bracketed by
@@ -238,9 +238,9 @@ import Type.Proxy (Proxy(..))
 -- | verbatim as its caption, so the case *is* the copy. `button'`
 -- | takes the face's options.
 button
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } [ | v ]
 button = buttonOf @l (Just "mdc-button--raised") {}
 
@@ -249,9 +249,9 @@ button = buttonOf @l (Just "mdc-button--raised") {}
 -- | "local_cafe" }`), `label:` overrides the caption with copy the case
 -- | cannot be.
 button'
-  :: forall @l provided r b v
+  :: forall @l provided r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
   -> PUI Web { | r } [ | v ]
@@ -260,9 +260,9 @@ button' = buttonOf @l (Just "mdc-button--raised")
 -- | `button` at medium emphasis — outlined, no fill: an important action
 -- | that is not *the* action of the screen.
 outlinedButton
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } [ | v ]
 outlinedButton = buttonOf @l (Just "mdc-button--outlined") {}
 
@@ -270,16 +270,16 @@ outlinedButton = buttonOf @l (Just "mdc-button--outlined") {}
 -- | dismissive or tertiary action (Cancel, Learn more), and what belongs in
 -- | dialogs and cards.
 textButton
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } [ | v ]
 textButton = buttonOf @l Nothing {}
 
 buttonOf
-  :: forall @l provided r b v
+  :: forall @l provided r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => Maybe String
   -> { | provided }
@@ -311,9 +311,9 @@ buttonOf mModifier provided = eventLeaf @l $
 -- | defaults to the case label verbatim (`label: Nothing` gives
 -- | the icon-only FAB, `label:` copy overrides).
 fab
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => String
   -> PUI Web { | r } [ | v ]
 fab icon = eventLeaf @l $
@@ -337,7 +337,7 @@ fab icon = eventLeaf @l $
 -- | it is what assistive technology announces, defaulting to
 -- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
-iconButton :: forall @l r b v. IsSymbol l => Cons l { | r } b v => String -> PUI Web { | r } [ | v ]
+iconButton :: forall @l r v. IsSymbol l => Cons l { | r } () v => String -> PUI Web { | r } [ | v ]
 iconButton icon = eventLeaf @l $
   el "button" >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
     static (div >>> cl "mdc-icon-button__ripple")
@@ -349,7 +349,7 @@ iconButton icon = eventLeaf @l $
 -- | One choice in a `menu`: reports the data it was showing when picked,
 -- | and the menu closes itself. The line's text defaults to
 -- | the case label verbatim (`label:` overrides with real copy).
-menuItem :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } [ | v ]
+menuItem :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
 menuItem = eventLeaf @l $
   li >>> cl "mdc-deprecated-list-item" >>> "role" := "menuitem" >>> "tabindex" := "-1" $ Semigroupoid.do
     static (span >>> cl "mdc-deprecated-list-item__ripple")
@@ -1142,8 +1142,11 @@ tabWith icon = fromHandles do
 -- | `PUI.action`'s slot dispatches (`indeterminateLinearProgress # action
 -- | submit`). No model owns a "busy" field, so nothing here is state, and
 -- | it carries no label: it names no field and no case, and a caption is
--- | copy, which is a function, not a label.
-indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
+-- | copy, which is a function, not a label. It releases nothing, so its
+-- | output is `{}`, the row `action` and `load` take their slot at: a
+-- | line after it that reads a field would never be fed, and is a type
+-- | error.
+indeterminateLinearProgress :: PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateLinearProgress = fromHandles do
   chrome $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
   node <- gets _.sibling
@@ -1180,7 +1183,7 @@ linearProgressInnards = Semigroupoid.do
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
 -- | the width would be too much.
-indeterminateCircularProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
+indeterminateCircularProgress :: PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateCircularProgress = fromHandles do
   chrome $ div >>> cl "mdc-circular-progress" >>> cl "mdc-circular-progress--indeterminate" >>> "style" := "width: 48px; height: 48px;" >>> "role" := "progressbar" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" $ staticHTML innards
   node <- gets _.sibling
@@ -1596,10 +1599,10 @@ listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: 
 -- | row each list item is drawn from is the projection's signature, in the
 -- | view model module (`listOf @"opened" @"id" messagesOf …`).
 listOf
-  :: forall @l @k r i b1 b2 o key v
+  :: forall @l @k r i b2 o key v
    . IsSymbol l
   => IsSymbol k
-  => Cons l key b1 v
+  => Cons l key () v
   => Cons k key b2 r
   => ({ | i } -> Array { | r })
   -> PUI Web { | r } o
@@ -1611,10 +1614,10 @@ listOf = listOf' @l @k {}
 -- | rows it holds take the catalogue's selected styling (`listOf'
 -- | @"Person picked" @"key" { selected: isSelected } entries item`).
 listOf'
-  :: forall @l @k r provided i b1 b2 o key v
+  :: forall @l @k r provided i b2 o key v
    . IsSymbol l
   => IsSymbol k
-  => Cons l key b1 v
+  => Cons l key () v
   => Cons k key b2 r
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
   => { | provided }
@@ -1643,11 +1646,11 @@ listOf' provided f item = withStructuralOrd @key $ fromHandles do
 -- | (`listOfAt @"Message opened" @"id" @"messages" item`). Rows derived
 -- | from the row are a projection, `listOf`.
 listOfAt
-  :: forall @l @k @t i r b1 b2 b3 o key v
+  :: forall @l @k @t i r b2 b3 o key v
    . IsSymbol l
   => IsSymbol k
   => IsSymbol t
-  => Cons l key b1 v
+  => Cons l key () v
   => Cons k key b2 r
   => Cons t (Array { | r }) b3 i
   => PUI Web { | r } o
@@ -1659,11 +1662,11 @@ listOfAt = listOfAt' @l @k @t {}
 -- | (`listOfAt' @"Message opened" @"id" @"messages" { selected:
 -- | highlighted } item`).
 listOfAt'
-  :: forall @l @k @t provided i r b1 b2 b3 o key v
+  :: forall @l @k @t provided i r b2 b3 o key v
    . IsSymbol l
   => IsSymbol k
   => IsSymbol t
-  => Cons l key b1 v
+  => Cons l key () v
   => Cons k key b2 r
   => Cons t (Array { | r }) b3 i
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }

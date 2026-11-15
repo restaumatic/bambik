@@ -1,22 +1,21 @@
 module ShoppingCart.MDC3 (shoppingCart) where
 
-import Prelude ((#), ($), Unit, const)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (gatheredOf, fold, joined, looped, reset, with)
+import PUI (gatheredOf, joined)
 import PUI.Web (text, textAt)
 import PUI.Web.MDC3 (body, bodyLarge, button, columnHeader, dataCell, dataRow, dataTable, iconButton, listOf)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import ShoppingCart (addUnit, cartLines, catalogueLine, emptyCart, lineTotalLine, productCatalogue, quantityLine, removeUnit, totalLine)
+import ShoppingCart (cartLines, lineTotalLine, quantityLine, shelf, shelfLine, stocked, totalLine)
 
 shoppingCart :: Effect Unit
 shoppingCart =
   body $ Semigroupoid.do
     bodyLarge $ text totalLine
     RecordToVariant.do
-      ( listOf @"Unit added" @"product" (const productCatalogue) $ text catalogueLine ) # joined @"Unit added"
+      ( listOf @"Unit added" @"name" shelf $ text shelfLine ) # joined @"Unit added"
       dataTable "Cart"
         ( Semigroupoid.do
           columnHeader "Product"
@@ -29,8 +28,4 @@ shoppingCart =
           dataCell $ text lineTotalLine
           dataCell $ iconButton @"Unit removed" "remove" ) # gatheredOf @"product" cartLines ) # joined @"Unit removed"
       button @"Empty cart"
-    VariantToRecord.do
-      fold @"Unit added" addUnit
-      fold @"Unit removed" removeUnit
-      reset @"Empty cart" emptyCart
-  # looped # with emptyCart
+  # stocked

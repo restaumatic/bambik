@@ -133,23 +133,24 @@ inputFrom init kind = introduced @l init (input @l kind)
 -- | (`inPlaceInput @"Formula entered" @"Formula" # providedAt @"editing"
 -- | @"mode"`, cells). `× → +`: a leaving is the commit.
 inPlaceInput
-  :: forall @l @k r b1 b2 v
+  :: forall @l @k r b1 v
    . IsSymbol l
   => IsSymbol k
   => Cons k String b1 r
-  => Cons l { | r } b2 v
+  => Cons l { | r } () v
   => PUI Web { | r } [ | v ]
 inPlaceInput = span $ input @k "text" >>> replayed @l identity departures
 
 -- | A **file picker** — a capture, not an editor: the user supplies the
 -- | file and the platform cannot be shown one, so it owns its field like a
--- | source (`PUI.source`): `none` until a file is chosen, then `picked`
+-- | source (`PUI.source`) and is fed `{}` like one: `none` until a file is
+-- | chosen, then `picked`
 -- | with its name, size and MIME type. Label-indexed, `name` stamped.
 filePicked
-  :: forall @l r r1
+  :: forall @l r
    . IsSymbol l
-  => Cons l [ picked :: { name :: String, size :: Number, mime :: String }, none :: {} ] () r1
-  => PUI Web { | r } { | r1 }
+  => Cons l [ picked :: { name :: String, size :: Number, mime :: String }, none :: {} ] () r
+  => PUI Web {} { | r }
 filePicked = "name" := reflectSymbol (Proxy @l) $ "type" := "file" $ fromHandles do
   element "input" (pure unit)
   node <- gets _.sibling
@@ -370,7 +371,7 @@ modal { title, decide, cancel } content = fromHandles do
 -- | value arrived has nothing to report. Like every vocabulary's button it
 -- | stays live after a click — a request a screen must not send twice is
 -- | its action's concern, not the button's.
-button :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } [ | v ]
+button :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
 button = fromHandles do
   w' <- handles (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticText config.label)
   -- a click before any value arrived has nothing valid to emit — withheld
@@ -639,7 +640,7 @@ runComponentInNode node initial callback ui = do
 -- | `ended`, shown between them — what `PUI.action`'s slot dispatches
 -- | (`indeterminateLinearProgress # action submit`). No label: it names no
 -- | field and no case.
-indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
+indeterminateLinearProgress :: PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateLinearProgress = fromHandles do
   element "progress" (pure unit)
   attribute "style" hiddenStyle

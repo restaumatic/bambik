@@ -1,14 +1,24 @@
-module Counter (Count, countLine, freshCount, increment) where
+module Counter (Count, countLine, counted) where
 
-import Prelude ((+), show)
+import Prelude ((#), (+), class Applicative, show)
 
-type Count = { counted :: Int }
+import PUI (PUI, fold, looped, with)
+import QualifiedDo.Semigroupoid as Semigroupoid
+
+type Count = { count :: Int }
+
+counted :: forall m. Applicative m => PUI m Count [ "Count" :: Count ] -> PUI m {} Count
+counted view =
+  Semigroupoid.do
+    view
+    fold @"Count" increment
+  # looped # with freshCount
 
 freshCount :: Count
-freshCount = { counted: 0 }
+freshCount = { count: 0 }
 
 countLine :: Count -> String
-countLine { counted } = show counted
+countLine { count } = show count
 
 increment :: Count -> Count
-increment m = m { counted = m.counted + 1 }
+increment m = m { count = m.count + 1 }

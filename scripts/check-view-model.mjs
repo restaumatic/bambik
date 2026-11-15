@@ -17,7 +17,7 @@ const walk = (dir) => readdirSync(dir).flatMap((n) => {
 const allow = new Set([
   ...['"Favorite"', '"Payment protection insurance"', '"Extra shot"', '"Decaf"', '"Uppercase letters"',
       '"Symbols"', '"Lowercase letters"', '"Teams link"', '"Digits"', '"Takeaway cup"',
-      '"Recommend to a friend"', '"Oscar"', '"Mark as favorite"', '"Cult"', '"Classic"']
+      '"Recommend to a friend"', '"Done"', '"Oscar"', '"Mark as favorite"', '"Cult"', '"Classic"']
     .map((l) => `${l} :: Boolean`),
 ]);
 

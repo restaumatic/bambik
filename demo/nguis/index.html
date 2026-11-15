@@ -12,7 +12,7 @@
     <p>Popular web demo problems implemented as Profunctor User Interfaces over Material Design Components 2 written in <a href="https://github.com/restaumatic/bambik">Bambik</a>. A companion to the <a href="../7guis/">7GUIs</a> tasks.</p>
     <ol>
       <li><a href="order-form/">Order Form</a> <small>(<a href="order-form/?mdc2">MDC2</a> | <a href="order-form/?mdc3">MDC3</a>)</small> <small>— all four row shapes in one pipeline</small></li>
-      <li><a href="todo-list/">Todo list</a> <small>(<a href="todo-list/?mdc2">MDC2</a> | <a href="todo-list/?mdc3">MDC3</a>)</small></li>
+      <li><a href="todo-list/">Todo list</a> <small>(<a href="todo-list/?mdc2">MDC2</a> | <a href="todo-list/?mdc3">MDC3</a>)</small> <small>— todos ticked in place through the visibility filter (<code>actedWithin</code>), added and cleared by operations</small></li>
       <li><a href="tip-calculator/">Tip Calculator</a> <small>(<a href="tip-calculator/?mdc2">MDC2</a> | <a href="tip-calculator/?mdc3">MDC3</a>)</small></li>
       <li><a href="quiz/">Quiz</a> <small>(<a href="quiz/?mdc2">MDC2</a> | <a href="quiz/?mdc3">MDC3</a>)</small></li>
       <li><a href="tic-tac-toe/">Tic-Tac-Toe</a> <small>(<a href="tic-tac-toe/?mdc2">MDC2</a> | <a href="tic-tac-toe/?mdc3">MDC3</a>)</small></li>
@@ -21,13 +21,13 @@
       <li><a href="calculator/">Calculator</a> <small>(<a href="calculator/?mdc2">MDC2</a> | <a href="calculator/?mdc3">MDC3</a>)</small></li>
       <li><a href="stopwatch/">Stopwatch</a> <small>(<a href="stopwatch/?mdc2">MDC2</a> | <a href="stopwatch/?mdc3">MDC3</a>)</small></li>
       <li><a href="ticker/">Ticker</a> <small>(MDC2)</small> <small>— a clock and an effect inside a pane: parked, the pane's content is silent (its scope is suspended), so no tick and no quote reaches the model while away</small></li>
-      <li><a href="shopping-cart/">Shopping Cart</a> <small>(<a href="shopping-cart/?mdc2">MDC2</a> | <a href="shopping-cart/?mdc3">MDC3</a>)</small></li>
+      <li><a href="shopping-cart/">Shopping Cart</a> <small>(<a href="shopping-cart/?mdc2">MDC2</a> | <a href="shopping-cart/?mdc3">MDC3</a>)</small> <small>— the shelf and its stock are data: a line refers to its product by key, read by a join, written by operations</small></li>
       <li><a href="password-generator/">Password Generator</a> <small>(<a href="password-generator/?mdc2">MDC2</a> | <a href="password-generator/?mdc3">MDC3</a>)</small></li>
       <li><a href="color-mixer/">Color Mixer</a> <small>(<a href="color-mixer/?mdc2">MDC2</a> | <a href="color-mixer/?mdc3">MDC3</a>)</small></li>
       <li><a href="signup-form/">Sign-Up Form</a> <small>(<a href="signup-form/?mdc2">MDC2</a> | <a href="signup-form/?mdc3">MDC3</a>)</small></li>
       <li><a href="photo-gallery/">Photo Gallery</a> <small>(<a href="photo-gallery/?mdc2">MDC2</a> | <a href="photo-gallery/?mdc3">MDC3</a>)</small></li>
       <li><a href="inbox/">Inbox</a> <small>(<a href="inbox/?mdc2">MDC2</a> | <a href="inbox/?mdc3">MDC3</a>)</small> <small>— a list, a banner, and a deletion confirmed by a dialog on its event</small></li>
-      <li><a href="movie-browser/">Movie Browser</a> <small>(<a href="movie-browser/?mdc2">MDC2</a> | <a href="movie-browser/?mdc3">MDC3</a>)</small></li>
+      <li><a href="movie-browser/">Movie Browser</a> <small>(<a href="movie-browser/?mdc2">MDC2</a> | <a href="movie-browser/?mdc3">MDC3</a>)</small> <small>— favourites edited in place through the filter (<code>actedWithin</code>): no event, no fold</small></li>
       <li><a href="weather/">Weather Dashboard</a> <small>(<a href="weather/?mdc2">MDC2</a> | <a href="weather/?mdc3">MDC3</a>)</small> <small>— an action's outcome captured, a notice the user closes (<code>acknowledged</code>)</small></li>
       <li><a href="reorder/">Reorder</a> <small>(<a href="reorder/?mdc2">MDC2</a> | <a href="reorder/?mdc3">MDC3</a> | <a href="reorder/?html">HTML</a>)</small> <small>— keyed reconciliation + the <code>edits</code> collection editor</small></li>
       <li><a href="auction/">Live Auction</a> <small>(<a href="auction/?mdc2">MDC2</a> | <a href="auction/?mdc3">MDC3</a>)</small> <small>— a running maximum as a model field (<code>settled</code>)</small></li>
@@ -47,6 +47,9 @@
       <li><a href="product-review/">Product Review</a> <small>(Shoelace)</small> <small>— the <code>PUI.Web.Shoelace</code> vocabulary: bambik as a design-system umbrella, Shoelace's star <code>rating</code> included</small></li>
       <li><a href="meeting-booker/">Meeting Booker</a> <small>(Fluent)</small> <small>— the <code>PUI.Web.Fluent</code> vocabulary over Microsoft's @fluentui/web-components, <code>ratingDisplay</code> and <code>messageBar</code> included</small></li>
       <li><a href="loan-calculator/">Loan Calculator</a> <small>(Bootstrap)</small> <small>— the <code>PUI.Web.Bootstrap</code> vocabulary: the CSS-only design system, native elements dressed in Bootstrap's classes</small></li>
+      <li><a href="venue/">Venue</a> <small>(<a href="venue/?mdc3">MDC3</a> | <a href="venue/?mdc2">MDC2</a>)</small> <small>— a document edited in place as deep as it nests: sub-records (<code>group</code>), stored arrays (<code>acted</code>, <code>actedAt</code>), a choice with its fields beside it, and a summary reading the same value</small></li>
+      <li><a href="contacts/">Contacts</a> <small>(<a href="contacts/?mdc3">MDC3</a> | <a href="contacts/?mdc2">MDC2</a>)</small> <small>— master and detail over one stored array: the form is the picked row, written back where its key is stored (<code>actedWithin</code>)</small></li>
+      <li><a href="diner/">Diner</a> <small>(<a href="diner/?mdc3">MDC3</a> | <a href="diner/?mdc2">MDC2</a>)</small> <small>— one data value, three stations reading and writing it: queries that join, operations that carry their path (<code>joined</code> at each level), an order's stage as its lifecycle</small></li>
     </ol>
   </body>
 </html>

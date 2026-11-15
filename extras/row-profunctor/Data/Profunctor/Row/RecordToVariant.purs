@@ -33,13 +33,17 @@
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
 -- | a component `w :: p { | i } [ | o ]` is an **emitter** fed a row;
 -- | the merge is `m = recordToVariant w1 w2`, inputs shared (one row
--- | `i`: both operands fed the merge's whole row), outputs shared (one
--- | row `o` every operand is typed at: an emitter open on its output
--- | sits in it by its label, an action by the `joined` that closes it).
--- | It is neither the pairing (its output is no product) nor the
--- | copairing (its input is no coproduct): both operands are fed and both
--- | may emit, so what combines them is the carrier's interleaving of two
--- | emission streams, no universal property.
+-- | `i`: both operands fed the merge's whole row), outputs owned (each
+-- | operand is closed to the cases it emits and the merged row is
+-- | exactly their union, `OwnedVariantOutputs`: an emitter owns the case
+-- | its label names, an action its outcomes). It is the **pairing**,
+-- | read at occurrences: an emitter's output is the occurrences of its
+-- | cases over time, and a record of occurrence sources is one stream
+-- | of tagged occurrences, so the product of the operands' outputs is
+-- | the variant of their cases. Both operands are fed and both may emit,
+-- | and a case has one emitter: a block of emitters lists the events
+-- | that can occur, a case written twice is a compile error naming it,
+-- | and so is a handler after the block for a case nothing emits.
 -- |
 -- |   1. **Repetition** — owed: `feed x ; feed x ≈ feed x`. A feed writes
 -- |      the replay slot; a second write of the same row changes nothing.
@@ -52,9 +56,9 @@
 -- |   3. **Symmetry and associativity** — up to `≈`.
 -- |   4. **Projection** — `π_k` is the whole row: every feed of `m`
 -- |      reaches each operand whole, arming it, and nothing else does.
--- |      `exact` is the identity: a variant carries its one tag, so two
--- |      operands may declare the same case and the merge forwards each,
--- |      unmarked.
+-- |      `exact` is the identity: a variant carries its one tag, so an
+-- |      operand's case enters the merged row as it is, unmarked, and no
+-- |      two operands emit the same case.
 -- |   5. **Preservation** — `m` obeys 1 and 2: a feed reaches both
 -- |      operands whole and writes each one's replay slot, so a repeated
 -- |      feed changes neither; neither answers it, so neither does their
@@ -102,7 +106,7 @@ module Data.Profunctor.Row.RecordToVariant
 import Control.Category (identity)
 import Data.Lens.Lens (lens)
 import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Row (class JoinedCases)
+import Data.Profunctor.Row (class JoinedCases, class OwnedVariantOutputs)
 import Data.Profunctor.Strong (class Strong)
 import Data.Unit (Unit, unit)
 import Data.Variant.Internal (VariantRep(..))
@@ -110,24 +114,27 @@ import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToVariant p where
   recordToVariant
-    :: forall i o
-     . p { | i } [ | o ]
-    -> p { | i } [ | o ]
+    :: forall i o1 o2 o o1l o2l
+     . OwnedVariantOutputs o1 o2 o o1l o2l
+    => p { | i } [ | o1 ]
+    -> p { | i } [ | o2 ]
     -> p { | i } [ | o ]
 
 bind
-  :: forall p i o
+  :: forall p i o1 o2 o o1l o2l
    . RecordToVariant p
-  => p { | i } [ | o ]
-  -> (p { | i } [ | o ] -> p { | i } [ | o ])
+  => OwnedVariantOutputs o1 o2 o o1l o2l
+  => p { | i } [ | o1 ]
+  -> (p { | i } [ | o1 ] -> p { | i } [ | o2 ])
   -> p { | i } [ | o ]
 bind first cont = recordToVariant first (cont first)
 
 discard
-  :: forall p i o
+  :: forall p i o1 o2 o o1l o2l
    . RecordToVariant p
-  => p { | i } [ | o ]
-  -> (Unit -> p { | i } [ | o ])
+  => OwnedVariantOutputs o1 o2 o o1l o2l
+  => p { | i } [ | o1 ]
+  -> (Unit -> p { | i } [ | o2 ])
   -> p { | i } [ | o ]
 discard first cont = bind first (\_ -> cont unit)
 
@@ -139,19 +146,20 @@ discard first cont = bind first (\_ -> cont unit)
 -- | model }`, under the same case. So a
 -- | list pick, a canvas click or an action's outcome reaches the fold
 -- | with the model in hand, and its handler is one function of one
--- | record (`listOf @"Todo toggled" … # joined @"Todo toggled"`,
--- | `fold @"Todo toggled" toggleTodo` with `toggleTodo ::
--- | { event :: Int, model :: { … } } -> { … }`, todo-list); an outcome
+-- | record (`listOfAt @"Message opened" … # joined @"Message opened"`,
+-- | `fold @"Message opened" openMessage` with `openMessage ::
+-- | { event :: Int, model :: { … } } -> { … }`, inbox); an outcome
 -- | whose fold keeps the model is `PUI`'s `kept` (order-form's submit, joined with
--- | its button and action). The label **closes the source** to case `l`
--- | and widens the joined case into the row the block shares: with every
--- | emitter open on its output, nothing but the label says which case is
--- | the source's, and an action, typed at exactly its outcomes, has its
--- | row closed here and nowhere else in an emitter block (a label-free
+-- | its button and action). The label **closes the source** to case `l`,
+-- | and the joined case leaves closed to it too, so the source stands in
+-- | an emitter block as the one emitter of `l`: an action, typed at
+-- | exactly its outcomes, has its row named here and nowhere else in
+-- | the block (a label-free
 -- | `joined` over every case of a closed source row was the word from
 -- | 2026-10-14 to 2026-10-15; until 2026-10-16 the label left the
 -- | source's other cases passing, and the action declared its outcome
--- | row on its line; CHANGELOG). A source of several outcomes names them all, `joined @(l1 + l2)`. A click is the degenerate
+-- | row on its line; until 2026-11-15 the joined case was widened into
+-- | a row the block shared; CHANGELOG). A source of several outcomes names them all, `joined @(l1 + l2)`. A click is the degenerate
 -- | case where the occurrence carries nothing of its own: `PUI.Web.clicked`
 -- | is this with the `{}` event dropped and the case renamed — a
 -- | derivation, so no word of its own (`Data.Profunctor.Row`, *Retention*).

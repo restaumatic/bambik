@@ -223,9 +223,9 @@
 -- | shape  merge                       input    output
 -- | -----  --------------------------  -------  ------
 -- | ×→×    pairing    ⟨f, g⟩ : C → A×B  shared   owned
+-- | ×→+    pairing    ⟨f, g⟩ : C → A×B  shared   owned
 -- | +→+    copairing  [f, g] : A+B → C  owned    shared
 -- | +→×    copairing  [f, g] : A+B → C  owned    shared
--- | ×→+    the carrier's interleaving  shared   shared
 -- | ```
 -- |
 -- | The **pairing** is the product's: a record can be copied, so every
@@ -234,15 +234,22 @@
 -- | coproduct's: a case cannot be copied, so each has exactly one handler,
 -- | and the target is whatever the handlers agree on, so the output is one
 -- | row every operand is typed at — at `+→+` any operand may emit any
--- | case, at `+→×` each operand releases the whole row. `×→+` is neither:
--- | its input is shared as the pairing's is and its output shared as the
--- | copairing's is, so no universal property combines its operands; what
--- | does is the carrier's interleaving of two emission streams, which is
--- | why it is the one merge whose unit no wire reaches.
+-- | case, at `+→×` each operand releases the whole row. `×→+` is the
+-- | pairing read at **occurrences**: an emitter's output is not a value
+-- | of its variant but the occurrences of its cases over time, and a
+-- | record of occurrence sources is one stream of tagged occurrences
+-- | (tag each going one way, filter by tag coming back), so the product
+-- | of the operands' outputs is the variant of their cases. Each case
+-- | has exactly one emitter, and the merged row is exactly the cases the
+-- | operands emit. Its unit is still the one no wire reaches: the
+-- | carrier's silent component, the source of no occurrence.
 -- |
--- | Read per side: a `×` input is shared and a `+` input owned, always; a
--- | `+` output is shared, always; a `×` output is owned under the pairing
--- | and shared under the copairing, so the **input decides**. `+→×` is the
+-- | Read per side: a `×` input is shared and a `+` input owned, always,
+-- | and the **input decides** the output: under a record input, the
+-- | pairing, each operand owns its part of the output (fields at `×→×`,
+-- | cases at `×→+`); under a variant input, the copairing, the output is
+-- | one row every operand is typed at. So every merge has one shared
+-- | side and one owned side. `+→×` is the
 -- | one shape where both readings type — owned fields completed from
 -- | retention, or the copairing — and the library takes the copairing:
 -- | with owned inputs one operand runs per occurrence, so owned outputs
@@ -254,11 +261,11 @@
 -- | on an **output** side, who is allowed to produce it. A shared record input is
 -- | **one row** — the operands' inputs are the merge's, and an operand's
 -- | business functions are typed at that row (guardrails L18); a shared
--- | variant output is **one row** too, every operand typed at the block's
--- | — an emitter open on its output (`Cons l a b v`) sits in it by its
--- | label, an action by the `joined` that closes it; ownership is
--- | exclusive (`ExclusiveRows`) — so a merge signature is its owned side's
--- | bundle and its shared side's one row.
+-- | variant output (`+→+`) is **one row** too, every operand typed at the
+-- | block's; ownership is exclusive (`ExclusiveRows`, and at `×→+` the
+-- | union `OwnedVariantOutputs` computes: an emitter is closed to its
+-- | case, `Cons l a () v`, an action to its outcomes) — so a merge
+-- | signature is its owned side's bundle and its shared side's one row.
 -- |
 -- | `Data.Profunctor.Keyed` extends the family one step past rows: rows
 -- | are the finitary μ-free fragment of the container grammar, and `Array`
@@ -364,11 +371,12 @@
 -- | 6 monotonicity  the same at every shape
 -- | ```
 -- |
--- | `exact` is the identity at the three shapes whose output row is
--- | shared: a variant carries its one tag, so the merge forwards it as it
--- | is (and `joined` widens an action's exact outcomes into the block's
--- | row), and at `+→×` every operand releases the whole row, so no sibling
--- | owns a field it could shadow. Only `×→×` owns its outputs, and there
+-- | `exact` is the identity at the three shapes that need no trim: a
+-- | variant carries its one tag, so an operand's case enters the merged
+-- | row as it is (`×→+`, where the row is the operands' union, and
+-- | `+→+`, where it is shared), and at `+→×` every operand releases the
+-- | whole row, so no sibling owns a field it could shadow. Only `×→×`
+-- | owns fields, and there
 -- | the trim is `exactRow`, the runtime evidence `OwnedRecordOutputs`
 -- | carries, so an operand's stale runtime copy of a sibling's field never
 -- | shadows the sibling. Law 2's liveness half is a **leaf** law (above): a stage
@@ -450,6 +458,7 @@ module Data.Profunctor.Row
   , class FieldNames
   , class OwnedVariantInputs
   , class OwnedRecordOutputs
+  , class OwnedVariantOutputs
   , class DisjointLabels
   , class LabelAbsent
   , class LabelAbsentK
@@ -481,7 +490,7 @@ import Data.Variant (class Contractable, case_, contract, inj, on)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Data.Variant.Internal (class VariantTags)
 import Prim.Ordering (Ordering, LT, EQ, GT)
-import Prim.Row (class Cons, class Lacks, class Union) as Row
+import Prim.Row (class Cons, class Lacks, class Nub, class Union) as Row
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList (Cons, Nil) as RL
 import Prim.Symbol (class Append, class Compare) as Symbol
@@ -603,19 +612,21 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- The four merges' constraints factor exactly by side, under one law:
 -- **sharing is open, responsibility is exclusive** — a shared record input
 -- is one row every operand is fed whole, a shared output one row every
--- operand is typed at (`×→+`, `+→+`, and the record output of `+→×`,
--- the copairing) — and runtime
--- label evidence appears only on the exclusive sides, where the merge's
+-- operand is typed at (`+→+`, and the record output of `+→×`, the
+-- copairing) — and runtime
+-- label evidence appears only where the merge's
 -- runtime action is label-driven (dispatch, union) rather than
--- label-blind (broadcast, passage). Records are read-shared, and
--- write-owned under the pairing (`×→×`); variants are emit-shared but
--- handle-owned. A shared side
+-- label-blind (broadcast, passage): the owned variant outputs of `×→+`
+-- carry none, a case entering the merged row as it is. Records are
+-- read-shared, and write-owned under the pairing (`×→×`); variants are
+-- handle-owned, emit-owned under the pairing (`×→+`) and emit-shared
+-- under the copairing (`+→+`). A shared side
 -- is one row, written as one row variable — no class states an equality
 -- — so each merge signature is its owned side's bundle and its shared
 -- side's row:
 --
 --   recordToRecord   : one input row `i`  + OwnedRecordOutputs
---   recordToVariant  : one input row `i`  + one output row `o`
+--   recordToVariant  : one input row `i`  + OwnedVariantOutputs
 --   variantToVariant : OwnedVariantInputs + one output row `o`
 --   variantToRecord  : OwnedVariantInputs + one output row `o`
 --
@@ -624,15 +635,15 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- one repeated variable carries the
 -- context's row down into every operand, so an operand's owned evidence
 -- (a whole-row editor, a collection item) never sees an open row. The
--- `+→+` output is one row for the same reason (CHANGELOG, 2026-10-07),
--- and the `×→+` output since 2026-10-15: an emitter is open on its
--- output (`Cons l a b v`, as an editor is `Cons l a b r`), so the
--- block's row reaches it from the folds that own it, and an action, the
--- one stage whose row a function names, declares it and widens itself.
--- Every shared side is thus open on the leaf and closed by the owning
--- side, in all four shapes. (An inclusive union computed bottom-up was
--- the `×→+` output until then; what it bought — a label-free `joined` —
--- is now `joined @l`; CHANGELOG, 2026-10-15.)
+-- `+→+` output is one row for the same reason (CHANGELOG, 2026-10-07).
+-- The `×→+` output is owned: an emitter is closed to its case
+-- (`Cons l a () v`), an action to its outcomes, the block's row is the
+-- union of its operands' cases, and the handlers after it own exactly
+-- those — so a case two operands emit and a handler for a case nothing
+-- emits are both compile errors. Every shared side is open on the leaf
+-- and closed by the owning side, and every merge has one of each. (The
+-- `×→+` output was one shared row, every emitter open on it, from
+-- 2026-10-15 to 2026-11-15; CHANGELOG.)
 --
 -- **What a shared input side obliges.** A shared record input is a
 -- *broadcast*: one feed reaches both operands, so both may answer it. That
@@ -711,8 +722,8 @@ instance
           (Above
             (Beside (Beside (Beside (Beside (Text "One operand owns { ") (Text ownDoc)) (Text " }, the other { ")) (Text otherDoc)) (Text " }."))
             (Above
-              (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `focusField`/`toField` or `focusCase`/`atCase` label in this `do` block.")))
+              (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler, every emitted case has ONE emitter.")
+              (Text "Look for the label written twice in this `do` block.")))
       )
   ) => LabelAbsentK EQ l rest own other
 instance LabelAbsent l rest own other => LabelAbsentK LT l rest own other
@@ -743,8 +754,8 @@ instance
           (Above
             (Beside (Beside (Text "The row is { ") (Text origDoc)) (Text " }."))
             (Above
-              (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler.")
-              (Text "Look for the duplicated `focusField`/`toField` or `focusCase`/`atCase` label in this `do` block.")))
+              (Text "On an owned merge side each label belongs to exactly one operand: every record-output field has ONE producer, every variant-input case has ONE handler, every emitted case has ONE emitter.")
+              (Text "Look for the label written twice in this `do` block.")))
       )
   ) => NoDuplicateLabelsK EQ l rest orig
 instance NoDuplicateLabels rest orig => NoDuplicateLabelsK LT l rest orig
@@ -794,6 +805,36 @@ instance
   , ExclusiveRows o1 o2 o
   , MergeableRecords o1 o2 o1l o2l
   ) => OwnedRecordOutputs o1 o2 o o1l o2l
+
+-- | A merge's **variant-output side** under the pairing (`×→+`): every
+-- | case has exactly one emitter (disjoint rows), and the merged row is
+-- | exactly the cases its operands emit — so a block of emitters lists
+-- | the events that can occur, a case written twice is the detector's
+-- | error, and a handler for a case nothing emits does not unify. No
+-- | runtime evidence: a variant carries its one tag, so an operand's
+-- | emission enters the merged row as it is.
+class OwnedVariantOutputs :: Row Type -> Row Type -> Row Type -> RowList Type -> RowList Type -> Constraint
+class
+  ( RowToList o1 o1l
+  , RowToList o2 o2l
+  , NoDuplicateLabels o1l o1l
+  , NoDuplicateLabels o2l o2l
+  , DisjointLabels o1l o2l o1l o2l
+  ) <= OwnedVariantOutputs o1 o2 o o1l o2l | o1 o2 -> o o1l o2l
+
+-- The merged row is the operands' union with its duplicates removed, so
+-- that a case two operands emit reaches the detector above and is named,
+-- where a bare `Union` against a row the handlers have already fixed
+-- would fail first, as an anonymous mismatch at the handlers.
+instance
+  ( RowToList o1 o1l
+  , RowToList o2 o2l
+  , NoDuplicateLabels o1l o1l
+  , NoDuplicateLabels o2l o2l
+  , DisjointLabels o1l o2l o1l o2l
+  , Row.Union o1 o2 u
+  , Row.Nub u o
+  ) => OwnedVariantOutputs o1 o2 o o1l o2l
 
 -- =====================================================================
 -- One-sided placements: a word constraining one side lives here
@@ -878,13 +919,13 @@ class JoinedCases :: forall k. k -> Row Type -> Row Type -> Row Type -> Constrai
 class JoinedCases ls r v v1
 
 instance
-  ( JoinedCases ls r v0 v1
+  ( JoinedCases ls r v0 v10
   , Row.Cons l e v0 v
-  , Row.Cons l { event :: e, model :: { | r } } b v1
+  , Row.Cons l { event :: e, model :: { | r } } v10 v1
   ) =>
   JoinedCases (Or l ls) r v v1
 else instance
   ( Row.Cons l e () v
-  , Row.Cons l { event :: e, model :: { | r } } b v1
+  , Row.Cons l { event :: e, model :: { | r } } () v1
   ) =>
   JoinedCases l r v v1

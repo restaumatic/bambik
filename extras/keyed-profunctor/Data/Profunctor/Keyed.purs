@@ -68,18 +68,26 @@
 -- |   * `…Of @l proj`, over a projection of the fed value — the bare
 -- |     form under `lcmap proj`, and for `actedOf`, whose array has
 -- |     nowhere to be written back, under the lens `lens proj const`: the
--- |     gathered array stays inside and the fed value passes on;
+-- |     gathered array stays inside and the fed value passes on — the
+-- |     one `…Of` form that passes it: `dispatchedOf` releases the
+-- |     entity and `accumulatedOf` the array, so the lines after them
+-- |     read those and not the row before;
 -- |   * the **stored** form: `…At @l @t` over an array the model stores at
 -- |     field `t`, for a `×` input (`actedAt`, `gatheredAt`); `…On @l @c`
 -- |     over the case `c` an entity arrives in, for a `+` input
 -- |     (`dispatchedOn`, `accumulatedOn`).
 -- |
+-- | `Acting` has one form more, its own, since only an array output can
+-- | be written back: `actedWithin @l @t select`, over the rows a function
+-- | selects from the stored array, each release landed where its key is
+-- | stored — the third setter of the lens `actedOf` and `actedAt` are.
+-- |
 -- | Each member's module carries its class, its laws and its bare and
 -- | stored forms; the instances are the carrier's, as the merge classes'
 -- | are. No keyed module imports a row shape's: a stored form that keeps
 -- | the rest of what it was fed is its strength's ecosystem optic over the
--- | bare form (`actedAt` is `prop`, `dispatchedOn` is `prism`, `actedOf` is
--- | `lens`), every other one a plain `lcmap`.
+-- | bare form (`actedAt` is `prop`, `dispatchedOn` is `prism`, `actedOf`
+-- | and `actedWithin` are `lens`), every other one a plain `lcmap`.
 module Data.Profunctor.Keyed
   ( keyed
   , keyRestored

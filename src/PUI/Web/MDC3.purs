@@ -239,9 +239,9 @@ import Type.Proxy (Proxy(..))
 -- | verbatim as its caption, so the case *is* the copy. `button'`
 -- | takes the face's options.
 button
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } [ | v ]
 button = buttonOf @l "md-filled-button" {}
 
@@ -250,9 +250,9 @@ button = buttonOf @l "md-filled-button" {}
 -- | "local_cafe" }`), `label:` overrides the caption with copy the case
 -- | cannot be.
 button'
-  :: forall @l provided r b v
+  :: forall @l provided r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => { | provided }
   -> PUI Web { | r } [ | v ]
@@ -262,27 +262,27 @@ button' = buttonOf @l "md-filled-button"
 -- | important action over a busy or patterned background, where a flat fill
 -- | would not separate.
 elevatedButton
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } [ | v ]
 elevatedButton = buttonOf @l "md-elevated-button" {}
 
 -- | `button` **tonal**: a softer fill, one step below filled — the second
 -- | action next to a filled one (Save beside Publish).
 tonalButton
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } [ | v ]
 tonalButton = buttonOf @l "md-filled-tonal-button" {}
 
 -- | `button` **outlined**: a border and no fill — an important action that
 -- | is not *the* action of the screen.
 outlinedButton
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } [ | v ]
 outlinedButton = buttonOf @l "md-outlined-button" {}
 
@@ -290,16 +290,16 @@ outlinedButton = buttonOf @l "md-outlined-button" {}
 -- | tertiary action (Cancel, Learn more), and what belongs in dialogs and
 -- | cards.
 textButton
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } [ | v ]
 textButton = buttonOf @l "md-text-button" {}
 
 buttonOf
-  :: forall @l provided r b v
+  :: forall @l provided r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
   => String
   -> { | provided }
@@ -321,9 +321,9 @@ buttonOf tag provided = eventLeaf @l $ el tag $ Semigroupoid.do
 -- | defaults to the case label verbatim (`label: Nothing` gives
 -- | the icon-only FAB, `label:` copy overrides).
 fab
-  :: forall @l r b v
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => String
   -> PUI Web { | r } [ | v ]
 fab icon = eventLeaf @l $
@@ -340,7 +340,7 @@ fab icon = eventLeaf @l $
 -- | it is what assistive technology announces, defaulting to
 -- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
-iconButton :: forall @l r b v. IsSymbol l => Cons l { | r } b v => String -> PUI Web { | r } [ | v ]
+iconButton :: forall @l r v. IsSymbol l => Cons l { | r } () v => String -> PUI Web { | r } [ | v ]
 iconButton icon = eventLeaf @l $
   el "md-icon-button" >>> "aria-label" := config.label $
     el "md-icon" $ staticText icon
@@ -350,7 +350,7 @@ iconButton icon = eventLeaf @l $
 -- | One choice in a `menu`: reports the data it was showing when picked,
 -- | and the menu closes itself. The line's text defaults to
 -- | the case label verbatim (`label:` overrides with real copy).
-menuItem :: forall @l r b v. IsSymbol l => Cons l { | r } b v => PUI Web { | r } [ | v ]
+menuItem :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
 menuItem = eventLeaf @l $
   el "md-menu-item" $
     div >>> "slot" := "headline" $ staticText config.label
@@ -948,8 +948,11 @@ tabBar options = fieldLeaf @l $ el "md-tabs" $ fromHandles (_.result <$> groupin
 -- | `PUI.action`'s slot dispatches (`indeterminateLinearProgress # action
 -- | submit`). No model owns a "busy" field, so nothing here is state, and
 -- | it carries no label: it names no field and no case, and a caption is
--- | copy, which is a function, not a label.
-indeterminateLinearProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
+-- | copy, which is a function, not a label. It releases nothing, so its
+-- | output is `{}`, the row `action` and `load` take their slot at: a
+-- | line after it that reads a field would never be fed, and is a type
+-- | error.
+indeterminateLinearProgress :: PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateLinearProgress = fromHandles do
   element "md-linear-progress" (pure unit)
   attribute "indeterminate" ""
@@ -980,7 +983,7 @@ linearProgress f = fromHandles do
 -- | The **spinner** — `indeterminateLinearProgress` in circular form, for
 -- | inline and compact places (a button, a card corner) where a bar across
 -- | the width would be too much.
-indeterminateCircularProgress :: forall r. PUI Web [ started :: {}, ended :: {} ] { | r }
+indeterminateCircularProgress :: PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateCircularProgress = fromHandles do
   element "md-circular-progress" (pure unit)
   attribute "indeterminate" ""
@@ -1321,10 +1324,10 @@ listItem = el "md-list-item"
 -- | row each list item is drawn from is the projection's signature, in the
 -- | view model module (`listOf @"opened" @"id" messagesOf …`).
 listOf
-  :: forall @l @k r i b1 b2 o key v
+  :: forall @l @k r i b2 o key v
    . IsSymbol l
   => IsSymbol k
-  => Cons l key b1 v
+  => Cons l key () v
   => Cons k key b2 r
   => ({ | i } -> Array { | r })
   -> PUI Web { | r } o
@@ -1336,10 +1339,10 @@ listOf = listOf' @l @k {}
 -- | rows it holds take the catalogue's selected styling (`listOf'
 -- | @"Person picked" @"key" { selected: isSelected } entries item`).
 listOf'
-  :: forall @l @k r provided i b1 b2 o key v
+  :: forall @l @k r provided i b2 o key v
    . IsSymbol l
   => IsSymbol k
-  => Cons l key b1 v
+  => Cons l key () v
   => Cons k key b2 r
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }
   => { | provided }
@@ -1367,11 +1370,11 @@ listOf' provided f item = withStructuralOrd @key $ fromHandles do
 -- | is its accessible name (a wordless swatch names itself with
 -- | `attrAt @"name" "aria-label"`).
 tile
-  :: forall @l @k r o b1 b2 key v
+  :: forall @l @k r o b1 key v
    . IsSymbol l
   => IsSymbol k
   => Cons k key b1 r
-  => Cons l key b2 v
+  => Cons l key () v
   => PUI Web { | r } o
   -> PUI Web { | r } [ | v ]
 tile = tileOn @l @k Click
@@ -1380,21 +1383,21 @@ tile = tileOn @l @k Click
 -- | (`doubleClickTile @"Cell double-clicked" @"key" $ textAt @"text"`,
 -- | cells), a single click left to selection and focus.
 doubleClickTile
-  :: forall @l @k r o b1 b2 key v
+  :: forall @l @k r o b1 key v
    . IsSymbol l
   => IsSymbol k
   => Cons k key b1 r
-  => Cons l key b2 v
+  => Cons l key () v
   => PUI Web { | r } o
   -> PUI Web { | r } [ | v ]
 doubleClickTile = tileOn @l @k DoubleClick
 
 tileOn
-  :: forall @l @k r o b1 b2 key v
+  :: forall @l @k r o b1 key v
    . IsSymbol l
   => IsSymbol k
   => Cons k key b1 r
-  => Cons l key b2 v
+  => Cons l key () v
   => Gesture
   -> PUI Web { | r } o
   -> PUI Web { | r } [ | v ]
@@ -1410,11 +1413,11 @@ tileCss = ".md3-tile { display: block; width: 100%; border: 0; padding: 0; margi
 -- | (`listOfAt @"Message opened" @"id" @"messages" item`). Rows derived
 -- | from the row are a projection, `listOf`.
 listOfAt
-  :: forall @l @k @t i r b1 b2 b3 o key v
+  :: forall @l @k @t i r b2 b3 o key v
    . IsSymbol l
   => IsSymbol k
   => IsSymbol t
-  => Cons l key b1 v
+  => Cons l key () v
   => Cons k key b2 r
   => Cons t (Array { | r }) b3 i
   => PUI Web { | r } o
@@ -1426,11 +1429,11 @@ listOfAt = listOfAt' @l @k @t {}
 -- | (`listOfAt' @"Message opened" @"id" @"messages" { selected:
 -- | highlighted } item`).
 listOfAt'
-  :: forall @l @k @t provided i r b1 b2 b3 o key v
+  :: forall @l @k @t provided i r b2 b3 o key v
    . IsSymbol l
   => IsSymbol k
   => IsSymbol t
-  => Cons l key b1 v
+  => Cons l key () v
   => Cons k key b2 r
   => Cons t (Array { | r }) b3 i
   => ConvertOptionsWithDefaults OptSelected { selected :: { | r } -> Boolean } { | provided } { selected :: { | r } -> Boolean }

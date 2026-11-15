@@ -6,7 +6,89 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-11-12, latest
+## 2026-11-15, latest
+- **A source is fed `{}`.** `source @l` and the facts over it
+  (`geolocated`, `online`, `clock`, `colorScheme`, HTML's `filePicked`)
+  were open on their input, `{ | r } → { l :: a }`, though they read
+  nothing of it: `editor >>> online @"connection"` compiled and dropped
+  the editor's row. Their input is now the empty record, so a source
+  after a stage that releases a row, or merged beside a stage that reads
+  one, is a compile error, and a block of sources opens its flow. No
+  demo changed: every source already stood at the head.
+- **A progress indicator releases `{}`.** `indeterminateLinearProgress`
+  and `indeterminateCircularProgress`, in every vocabulary, were open on
+  their output, `[ started, ended ] → { | r }`, though they release
+  nothing: `progress >>> display` compiled and the display was never
+  fed. Their output is now the empty record, the row `action` and `load`
+  already took their slot at. No demo changed.
+- **An emitter block owns its cases.** The `×→+` merge was the one merge
+  with no owned side: every emitter was open on its output and the
+  block's row came from the folds after it, so `button @"Deposit"`
+  written twice compiled, and so did a fold for a case nothing emitted.
+  Its output is now owned (`OwnedVariantOutputs`, `Data.Profunctor.Row`):
+  every emitter is closed to the case its label names (`Cons l a () v`,
+  42 signatures in `PUI`, `PUI.Web` and the six vocabularies), `joined
+  @l` leaves closed to the cases it names, and the block's row is the
+  union of its operands' cases with duplicates removed, so the detector
+  names a case written twice and the fold block must own exactly the
+  cases the block emits. The merge is read as the pairing at
+  occurrences — a record of event sources is one stream of tagged
+  events — so every merge has one shared side and one owned side, the
+  input deciding which. It reverses the 2026-10-15 entry that made the
+  `×→+` output one shared row. No demo view changed: none emitted a
+  case twice or folded a case nothing emits. timer's context word,
+  which merges its `ticks` beside the view, types the view at the two
+  cases the view emits. The law tests' `×→+` probes each own a case,
+  and "a shared case exits from either operand" is replaced by "an
+  operand's case enters the merged row as it is". writing.md's table
+  of compiler messages gains the two new mistakes.
+- **A line passes, an operand owns.** The placement rule the two changes
+  above follow from is stated: writing.md *The pipeline* (merge what
+  writes without reading, sequence everything else), CLAUDE.md
+  *Composition Patterns*, and the keyed floor's header says which `…Of`
+  form passes the fed value. No code changed.
+
+## 2026-11-14
+- **Applications over data** (doc/research-data-applications.md is the
+  record, its *Costs* and *Open* included). A UI over one stored value
+  is typed by how it reads (the state, or a change) and how it writes
+  (the next state in place, or an operation an event carries and a fold
+  applies). Three new apps, each MDC3 and MDC2: **venue** (a document
+  edited in place as deep as it nests, `Venue → Venue`, no event),
+  **contacts** (master and detail over one stored array) and **diner**
+  (one value, three stations, seven operations, a path two `joined`
+  deep). movie-browser, todo-list, shopping-cart and inbox were moved
+  onto their data. 105 demos on 46 pages.
+- **`actedWithin @l @t select`**, the updatable selection
+  (`Data.Profunctor.Keyed.Acting`): the lens between `actedOf` (nothing
+  written back) and `actedAt` (the array written back whole) — the rows
+  `select` chooses of stored array `t` are edited and land back by key.
+  Laws wire, landing and agreement, tested; movie-browser's in-row
+  toggle through the filter and contacts' form of the picked row are it.
+- **`edits @l` and `told`; `editsOf` deleted.** `edits @l editor` is an
+  editor's edits leaving as case `l`, its answers dropped
+  (`unanswering`); `told` is a status as a `+→+` stage, its event
+  passed on. `editsOf @l @k proj` went on subsumption: it is `gatheredOf
+  @k proj (edits @l editor)`, tested as the editing list. `edits`
+  rests on its stage answering within its feed, so a stage under
+  `debounced` is outside it; the header says so and nothing enforces it.
+- **The context form**, in eight apps (counter, crud, timer, payment,
+  todo-list, shopping-cart, contacts, diner): the view ends at its
+  events, `PUI m model [ events ]`, and the app's module exports one
+  word that closes it with the folds, the knot and the seed (`counted`,
+  `catalogued`, `timed`, …), so those are no longer the view's to
+  write. The other apps keep the four-shape loop in the view.
+  **Not synced**: writing.md's app shape and import rule, guardrails,
+  CLAUDE.md's demo tables and keyed bullet, vocabulary.md, SKILL.md and
+  demo/index.html's `#code-style` still describe the four-shape view
+  and `editsOf`.
+- **A keyed element's run is read when it moves** (`PUI.Web`'s
+  `Hosting`). An element that is a bare run of siblings with a pane
+  among them left the pane's content behind when its key left: the run
+  was recorded at build, and a pane attaches its content later. Found
+  by contacts; scripts/smoke/tests/updatable-selection.mjs holds it.
+
+## 2026-11-12
 - **The cycle named.** The four shapes are documented as the four arrows
   of an application's loop, with one name for each row between them:
   `×→×` model → view model (presentation), `×→+` view model → view event

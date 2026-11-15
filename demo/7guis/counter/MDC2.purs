@@ -2,9 +2,8 @@ module Counter.MDC2 (counter) where
 
 import Prelude ((#), ($), Unit)
 
-import Counter (countLine, freshCount, increment)
+import Counter (countLine, counted)
 import Effect (Effect)
-import PUI (fold, looped, with)
 import PUI.Web (text)
 import PUI.Web.MDC2 (body, button, headline4)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -14,5 +13,4 @@ counter =
   body $ Semigroupoid.do
     headline4 $ text countLine
     button @"Count"
-    fold @"Count" increment
-  # looped # with freshCount
+  # counted

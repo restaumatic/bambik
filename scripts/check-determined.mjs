@@ -16,7 +16,10 @@
 // declaration's hints, its unknowns quantified, to the module's values. It
 // fails on any error that is not a hole, on a signature that is not its
 // hint's instance or that quantifies (a name reported at two different rows
-// is the one case for a `forall`, and is not compared), and on an export no
+// is the one case for a `forall`, and is not compared; a signature quantified
+// over its carrier alone — an app's rest, `forall m. Applicative m => PUI m
+// … -> PUI m {} …`, written once for every twin — is an instance of the hint
+// the view reports at `PUI Web`, and the probe decides it), and on an export no
 // view imports (2026-10-03: the view determines the module, so a name no view
 // line types is private, not exported).
 // Runs over every registered demo (an all-view demo passes trivially);
@@ -51,8 +54,10 @@ const holed = chosen.flatMap(d => {
   if (!m) { console.log(`– ${d.name}: no view model module, all view`); return [] }
   const names = m[2].split(',').map(s => s.trim()).filter(Boolean)
   let out = src.replace(m[0], '').replace(/^module ([\w.]+)/m, 'module Determined.$1')
-  // a record label (`tick:` in a `match`) or a field accessor is not the value
-  for (const n of names) out = out.replace(new RegExp(`(?<![\\w."])${n}\\b(?!\\s*:(?!:))`, 'g'), `?${n}`)
+  // a record label (`tick:` in a `match`), a field accessor or a word of a
+  // quoted label (`"Card charged"`) is not the value
+  const holedOutside = code => names.reduce((c, n) => c.replace(new RegExp(`(?<![\\w."])${n}\\b(?!\\s*:(?!:))`, 'g'), `?${n}`), code)
+  out = out.split(/("(?:[^"\\\n]|\\.)*")/).map((part, i) => i % 2 ? part : holedOutside(part)).join('')
   writeFileSync(`.determined/src/${d.mod}.purs`, out)
   return [{ ...d, names, module: m[1], viewModel: existsSync(d.viewModelFile) && d.viewModelFile }]
 })
@@ -71,6 +76,13 @@ for (const d of demos) {
 const exportsOf = src => src.match(/^module [\w.]+ \(([\s\S]*?)\) where/)?.[1].split(',').map(s => s.trim()).filter(n => /^[a-z_]/.test(n)) ?? []
 const synonymsOf = src => [...src.matchAll(/^type (\w+)/gm)].map(m => m[1])
 const usesSynonym = (src, sig) => synonymsOf(src).some(t => new RegExp(`\\b${t}\\b`).test(sig))
+// quantified over nothing but the carriers it runs `PUI` at
+const carrierGeneric = sig => {
+  const m = sig?.match(/^forall ([\w ]+?)\.\s/)
+  if (!m) return false
+  const carriers = new Set([...sig.matchAll(/\bPUI (\w+)/g)].map(x => x[1]))
+  return m[1].trim().split(/\s+/).every(v => carriers.has(v))
+}
 
 const bin = n => `node_modules/.bin/${n}`
 const globs = spawnSync(bin('spago'), ['sources'], { encoding: 'utf8' }).stdout.trim().split('\n')
@@ -173,19 +185,23 @@ const writeSignature = (file, name, h) => {
 // group into its signature. The module's imports are copied, so the hints'
 // types resolve as its signatures' do.
 const probes = []
+const group0 = r => r.groups.flatMap(g => [...g.values()])
 for (const d of holed) {
   const r = results.get(d.name)
   if (!r.seen || r.problems.length || !d.viewModel) continue
   const src = readFileSync(d.viewModel, 'utf8')
   const imports = src.match(/^import .*(?:\n[ \t]+.*)*$/gm) ?? []
   const lines = [`module Determined.Probe.${d.mod} where`, '', ...imports,
-    `import ${d.module}`, `import ${d.module} as ProbeM`, 'import Data.Tuple as ProbeT', 'import Data.Unit as ProbeU', '']
+    `import ${d.module}`, `import ${d.module} as ProbeM`, 'import Data.Tuple as ProbeT', 'import Data.Unit as ProbeU',
+    // the carrier a view reports a rest at
+    ...([...group0(r)].some(t => /\bWeb\b/.test(t)) ? ['import PUI (PUI)', 'import PUI.Web (Web)'] : []), '']
   let n = 0
   for (const group of r.groups) {
     // a closed hint is compared verbatim, unless its signature is written
     // through a synonym: then the compiler decides, as for an open one
     const names = [...group.keys()].filter(name => r.hints.get(name)?.size === 1
-      && (unknownsOf(group.get(name)).length || usesSynonym(src, signatureOf(src, name) ?? '')))
+      && (unknownsOf(group.get(name)).length || usesSynonym(src, signatureOf(src, name) ?? '')
+        || carrierGeneric(signatureOf(src, name))))
     if (!names.length) continue
     const us = [...new Set(names.flatMap(name => unknownsOf(group.get(name))))]
     const quantified = us.length ? `forall ${us.join(' ')}. ` : ''
@@ -225,8 +241,8 @@ for (const d of holed) {
         const aliased = sig !== null && usesSynonym(src, sig)
         if (write && !open && !aliased) { if (writeSignature(d.viewModel, name, h)) r.written.push(name); continue }
         if (sig === null) r.problems.push(`${name}: no signature in ${d.viewModel}; the view reports ${h}${open ? ', its unknowns the model\'s to fill' : ''}`)
-        else if (/\bforall\b/.test(sig)) r.problems.push(`${name}: declared\n      ${sig}\n    quantified, but the view reports one type\n      ${h}`)
-        else if (!open && !aliased && sig !== h) r.problems.push(`${name}: declared\n      ${sig}\n    but the view reports\n      ${h}`)
+        else if (/\bforall\b/.test(sig) && !carrierGeneric(sig)) r.problems.push(`${name}: declared\n      ${sig}\n    quantified, but the view reports one type\n      ${h}`)
+        else if (!open && !aliased && !carrierGeneric(sig) && sig !== h) r.problems.push(`${name}: declared\n      ${sig}\n    but the view reports\n      ${h}`)
       }
     }
   }

@@ -113,12 +113,13 @@ sit side by side and become one:
 
 Look at the may-overlap/must-be-disjoint pattern for a moment, because it
 is a law, not a coincidence: **sharing is inclusive, responsibility is
-exclusive**. A record field may be *read* by everyone and a variant case
-may be *emitted* by anyone — data can be copied freely, so those rows may
-overlap. But a variant case must be *handled* by exactly one operand and a
-record field must be *produced* by exactly one operand — responsibility
-cannot be split, so those rows must be disjoint. Records are read-shared
-but write-owned; variants are emit-shared but handle-owned: the two shapes
+exclusive**. A record field may be *read* by everyone — data can be
+copied freely, so those rows may overlap. But a variant case must be
+*handled* by exactly one operand, a record field must be *produced* by
+exactly one operand, and an event must be *emitted* by exactly one
+emitter — responsibility cannot be split, so those rows must be
+disjoint. Records are read-shared but write-owned; variants are
+handle-owned, and emit-owned wherever emitters stand side by side: the two shapes
 swap polarity as you cross from input to output, which is why there are
 genuinely four shapes and not two with a flip.
 

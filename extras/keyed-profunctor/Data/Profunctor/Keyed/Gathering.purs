@@ -23,7 +23,7 @@
 -- |     and ungated; nothing is retained for the channel.
 -- |   * **arming** — a feed fires nothing: the `×→+` Answer law. It is the
 -- |     elements' to keep, so the class is lawful over operands that arm
--- |     (emitters; `editsOf` makes an editor one by dropping its answers
+-- |     (emitters; `edits` makes an editor one by dropping its answers
 -- |     inside the feed) — as `Resolving` is lawful only at `PUI`'s
 -- |     quiescence. There is no wire law: `gathering identity` would
 -- |     forward each element's echo inside the feed.

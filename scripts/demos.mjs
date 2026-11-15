@@ -64,6 +64,9 @@ export const sets = {
     'product-review': ['shoelace'],
     'meeting-booker': ['fluent'],
     'loan-calculator': ['bootstrap'],
+    'contacts': ['mdc3', 'mdc2'],
+    'venue': ['mdc3', 'mdc2'],
+    'diner': ['mdc3', 'mdc2'],
   },
   // the leaf-law bench (scripts/smoke/tests/leaf-laws.mjs): every published
   // component mounted alone and fed from outside — not a demo, never deployed
