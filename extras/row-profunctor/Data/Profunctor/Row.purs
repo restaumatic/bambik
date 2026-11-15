@@ -900,8 +900,7 @@ settled
 settled f = rmap f
 
 -- | **The cases a source is joined at**, one label or several: a source
--- | of two outcomes names both, `joined @("Order submitted" + "Total
--- | missing")` (order-form's submit, cells' two gestures), since only
+-- | of two outcomes names both, `joined @(l1 + l2)`, since only
 -- | every label at once says the source has these cases and no others —
 -- | two `joined`s would leave the source's rest open to the block's other
 -- | cases. A variant is a sum and `+` lists its summands, in any order and

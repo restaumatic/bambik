@@ -9,12 +9,13 @@ A bambik app is a view module and a view model module. The smallest one with
 a model, the counter (MDC2):
 
 ```purescript
-counterMDC2 :: Effect Unit
-counterMDC2 =
+counter :: Effect Unit
+counter =
   body $ Semigroupoid.do
     headline4 $ text countLine
-    button @"Count"
-    fold @"Count" increment
+    ( Semigroupoid.do
+      button @"Count"
+      fold @"Count" increment ) # stepped
   # looped # with freshCount
 ```
 
@@ -33,8 +34,9 @@ increment m = m { counted = m.counted + 1 }
 
 Read top to bottom, the view is the screen: a heading showing
 `countLine` of the model, then a `Count` button whose press `increment`
-folds silently (the heading already shows the count), the whole over the model `{ counted :: Int }` started at
-`freshCount`. The view names design
+folds silently (the heading already shows the count) — the button and
+its fold one line of the body, closed by `# stepped` — the whole over
+the model `{ counted :: Int }` started at `freshCount`. The view names design
 system words and view model values; the view model module is plain
 functions typed as the view reported them, unit-testable, importing no
 UI, its signatures read off the view (writing.md *Writing order*). What the screen reads is a

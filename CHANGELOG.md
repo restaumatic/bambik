@@ -7,6 +7,59 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-15, latest
+- **One knot, and the event path a line of it.** An application has one
+  `looped`, around every line that changes the model, and every line of
+  its body passes the row it is fed. The one line that did not was the
+  event path — `emitters >>> folds` answers no feed, so an edit above it never reached the knot,
+  and a form of editors therefore kept a `# looped` of its own. The path
+  is now wrapped, `( emitters; dialogs; folds ) # stepped`: fed a row it
+  passes the row on, and an event releases the next model. The inner
+  loops are gone (18 lines, 9 apps). Because the path is a line, a
+  display may stand below the buttons, and a body may hold several event
+  lines, each where its buttons are on the screen (todo-list, contacts,
+  diner, ticker). `stepped` is derived: the wire and the path under the
+  `×→+` merge, each owning its case (a feed, a step), landed by the
+  lens.
+- **A fold reads the model where its event lands.** `fold @l f` took
+  `f` of the event's payload as the next model, and the payload of a
+  button is the row it was last fed — the model as the click saw it. A
+  `+→×` leaf now releases a **step**, `model -> model`, which `stepped`
+  applies to the row the line was last fed: `fold @l f` applies `f` to
+  that model and reads no payload; `foldInto @l f` takes `{ event,
+  model }` for an event whose payload says what the model cannot (a
+  pick, a canvas click, an action's outcome); `capture @l` is `foldInto
+  @l captured`; a status takes its fold in `foldInto`'s shape
+  (`snackbar @"Card charged" captured`, `kept`). So the `+→×` merge's
+  shared output is any type, and no view joins an event with the model:
+  `# joined @l` went from every top-level emitter, and an action stands
+  after the emitters with its outcome's fold instead of being joined
+  with its button — an outcome lands on the model as it is then, so
+  order-form's estimate keeps an edit made while it ran with no join.
+  `joined @l` stays for an emitter inside a list element whose event
+  must carry that element's row (diner's plated line).
+- **`landed`**, the bare lens under `stepped` (the step applied to the
+  row its path was fed, no feed answered, the row's type free to
+  change): the landing of a path before the knot, order-form's load
+  onto the `{}` that `body` feeds.
+- **`edits`, `told` and the context form withdrawn; `editsOf` back.**
+  The context form (2026-11-14) typed a view as model in, events out,
+  so everything that wrote had to be an entry of the emitter block, and
+  `edits @l` turned editors into emitters: an update placed in a
+  literal, the one emitter that told an edit from an answer by when it
+  came, and seven cases that existed only to be captured. With the
+  event path a line, an editor is a line again (`sliderLive
+  @"Duration"`, crud's and contacts' forms, diner's table selector) and
+  the eight apps' views write their folds, knot and seed; their modules
+  import no `PUI` and hold the seed and the pure functions, as
+  writing.md asks. `told`, a status as `+→+`, had the context form as
+  its one use. `editsOf @l @k proj editor` returns as the editing list,
+  derived as before (`gatheredOf @k proj` over `unanswering editor`),
+  for a projection that joins or reshapes its rows; law-tested, no
+  demo. The tests that drove counter's, crud's and diner's context
+  words are gone with the words, and test/Main.purs imports no demo
+  module.
+
+## 2026-11-15
 - **A source is fed `{}`.** `source @l` and the facts over it
   (`geolocated`, `online`, `clock`, `colorScheme`, HTML's `filePicked`)
   were open on their input, `{ | r } → { l :: a }`, though they read

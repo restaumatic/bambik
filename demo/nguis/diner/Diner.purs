@@ -2,7 +2,6 @@ module Diner
   ( Bill
   , Diner
   , Dish
-  , Event
   , Line
   , Order
   , Stage
@@ -11,13 +10,19 @@ module Diner
   , billLine
   , bills
   , cooking
+  , dinnerService
   , isPlated
   , itemLine
   , lineTotalLine
+  , markReady
   , menuCard
   , offerLine
-  , opened
+  , orderDish
+  , plateLine
   , quantityLine
+  , returnUnit
+  , sendToKitchen
+  , settle
   , tableLine
   , tableLines
   , tableState
@@ -26,15 +31,12 @@ module Diner
   , ticketState
   ) where
 
-import Prelude ((#), (&&), (*), (+), (-), (/), (/=), (<), (<>), (==), (>), class Applicative, map, max, mod, show)
+import Prelude ((&&), (*), (+), (-), (/), (/=), (<), (<>), (==), (>), map, max, mod, show)
 
 import Data.Array (all, any, filter, find, foldl, length, mapMaybe, null, snoc)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
-import PUI (PUI, capture, fold, looped, with)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Diner =
   { "Table" :: Table
@@ -60,30 +62,6 @@ type Line = { dish :: String, quantity :: Int, state :: [ ordered :: {}, plated 
 type TableLine = { dish :: String, price :: Int, quantity :: Int }
 
 type Bill = { number :: Int, table :: Table, total :: Int }
-
-type Event =
-  [ "Dish ordered" :: { event :: String, model :: Diner }
-  , "Line plated" :: { event :: { event :: String, model :: Order }, model :: Diner }
-  , "Order ready" :: { event :: Order, model :: Diner }
-  , "Paid" :: { event :: Bill, model :: Diner }
-  , "Send to kitchen" :: Diner
-  , "Table chosen" :: Diner
-  , "Unit returned" :: { event :: TableLine, model :: Diner }
-  ]
-
-opened :: forall m. Applicative m => PUI m Diner Event -> PUI m {} Diner
-opened view =
-  Semigroupoid.do
-    view
-    VariantToRecord.do
-      capture @"Table chosen"
-      fold @"Dish ordered" orderDish
-      fold @"Unit returned" returnUnit
-      fold @"Send to kitchen" sendToKitchen
-      fold @"Line plated" plateLine
-      fold @"Order ready" markReady
-      fold @"Paid" settle
-  # looped # with dinnerService
 
 dinnerService :: Diner
 dinnerService =

@@ -39,8 +39,8 @@ openMessages { messages } = filter (isOpen <<< _.status) messages
 fromLine :: Message -> String
 fromLine { sender } = "From: " <> sender
 
-deletionLine :: { event :: Message, model :: Inbox } -> String
-deletionLine { event: { sender, subject } } = "“" <> subject <> "” from " <> sender <> " will be gone for good."
+deletionLine :: Message -> String
+deletionLine { sender, subject } = "“" <> subject <> "” from " <> sender <> " will be gone for good."
 
 inboxState :: Inbox -> [ empty :: {}, filled :: {} ]
 inboxState { messages } = if null messages then .empty {} else .filled {}

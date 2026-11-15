@@ -1,4 +1,4 @@
-module Weather (Bulletin, CityChoice, ForecastRequest, Report, aboutLine, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, servedLine, temperatureLine, warsawBulletin) where
+module Weather (Bulletin, CityChoice, ForecastRequest, Report, aboutLine, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, servedLine, temperatureLine, warsawBulletin) where
 
 import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (<>), (==))
 
@@ -69,15 +69,13 @@ firstWithCity city = fromMaybe unknownTerritory (find (\r -> r.city == city) cli
 unknownTerritory :: Report
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport
-  :: { event :: ForecastRequest, model :: Bulletin }
-  -> Aff [ "Forecast fetched" :: Bulletin ]
-fetchReport { event: { city, sample }, model: forecast } = do
+fetchReport :: ForecastRequest -> Aff [ "Forecast fetched" :: Report ]
+fetchReport { city, sample } = do
   delay (Milliseconds serviceDelay.ms)
-  pure (."Forecast fetched" (rememberReport { report: conditionsFor city sample } forecast))
+  pure (."Forecast fetched" (conditionsFor city sample))
 
-rememberReport :: { report :: Report } -> Bulletin -> Bulletin
-rememberReport { report } forecast = forecast { report = report, servedReports = forecast.servedReports + 1 }
+rememberReport :: { event :: Report, model :: Bulletin } -> Bulletin
+rememberReport { event: report, model: forecast } = forecast { report = report, servedReports = forecast.servedReports + 1 }
 
 forecastRequests :: Bulletin -> Array CityChoice
 forecastRequests { servedReports, report } = climateTable <#> \r ->

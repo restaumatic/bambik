@@ -1,13 +1,13 @@
 module OrderForm.MDC3 (orderForm) where
 
-import Prelude ((#), ($), identity, Unit)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, payingLine, printReceipt, setDistance, staleDistanceForgotten, submitOrder, summaryLine)
-import PUI (type (+), action, fold, joined, kept, load, looped, settled)
+import PUI (action, captured, foldInto, kept, landed, load, looped, settled, stepped)
 import PUI.Web (inCaseAt, provided, staticText, text)
 import PUI.Web.MDC3 (acknowledged, body, bodyLarge, button', card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segment, segmentedButton, snackbar, tab, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -15,48 +15,49 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 orderForm :: Effect Unit
 orderForm =
   body $ Semigroupoid.do
-    indeterminateLinearProgress # load loadOrder
-    snackbar @"Order loaded" identity
     ( Semigroupoid.do
-      ( Semigroupoid.do
-        headlineSmall $ text orderLine
-        group @"Identifier" $ Semigroupoid.do
-          filledTextField @"Short ID"
-          filledTextField @"Unique ID"
-        group @"Customer" $ Semigroupoid.do
-          filledTextField @"First name"
-          filledTextField @"Last name"
-        group @"Fulfillment" $ Semigroupoid.do
-          tabBar @"Mode" $ VariantToVariant.do
-            tab @"Dine in"
-            tab @"Takeaway"
-            tab @"Delivery"
-          filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"
-          filledTextField @"Time" # inCaseAt @"Takeaway" @"Mode"
-          ( Semigroupoid.do
-            filledTextField @"Address" # settled staleDistanceForgotten
-            ( bodyLarge $ text distanceLine ) # inCaseAt @"estimated" @"distance" ) # inCaseAt @"Delivery" @"Mode"
-        group @"Payment" $ Semigroupoid.do
-          filledTextField @"Total"
-          segmentedButton @"Method" $ VariantToVariant.do
-            segment @"Cash"
-            segment @"Card"
-          filledTextField @"Paid"
-          bodyLarge $ text payingLine
-        group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 } ) # looped
+      indeterminateLinearProgress # load loadOrder
+      snackbar @"Order loaded" captured ) # landed
+    ( Semigroupoid.do
+      headlineSmall $ text orderLine
+      group @"Identifier" $ Semigroupoid.do
+        filledTextField @"Short ID"
+        filledTextField @"Unique ID"
+      group @"Customer" $ Semigroupoid.do
+        filledTextField @"First name"
+        filledTextField @"Last name"
+      group @"Fulfillment" $ Semigroupoid.do
+        tabBar @"Mode" $ VariantToVariant.do
+          tab @"Dine in"
+          tab @"Takeaway"
+          tab @"Delivery"
+        filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"
+        filledTextField @"Time" # inCaseAt @"Takeaway" @"Mode"
+        ( Semigroupoid.do
+          filledTextField @"Address" # settled staleDistanceForgotten
+          ( bodyLarge $ text distanceLine ) # inCaseAt @"estimated" @"distance" ) # inCaseAt @"Delivery" @"Mode"
+      group @"Payment" $ Semigroupoid.do
+        filledTextField @"Total"
+        segmentedButton @"Method" $ VariantToVariant.do
+          segment @"Cash"
+          segment @"Card"
+        filledTextField @"Paid"
+        bodyLarge $ text payingLine
+      group @"Kitchen" $ filledTextArea @"Remarks" { columns: 80, rows: 3 }
       card $ bodyLarge $ text summaryLine
-      RecordToVariant.do
-        ( Semigroupoid.do
+      ( Semigroupoid.do
+        RecordToVariant.do
           button' @"Estimate distance" { icon: "near_me" } # provided @"Delivery" fulfillmentMode
-          indeterminateLinearProgress # action @"Estimate distance" estimateDistance ) # joined @"Distance estimated"
-        ( Semigroupoid.do
           button' @"Submit order" { icon: "save" }
-          indeterminateLinearProgress # action @"Submit order" submitOrder ) # joined @("Order submitted" + "Total missing")
-        ( Semigroupoid.do
           button' @"Receipt" { icon: "file" }
-          indeterminateLinearProgress # action @"Receipt" printReceipt ) # joined @"Receipt printed"
-      acknowledged @"Total missing" $ bodyLarge $ staticText "Enter the order's total before submitting it."
-      VariantToRecord.do
-        fold @"Distance estimated" setDistance
-        snackbar @"Order submitted" kept
-        snackbar @"Receipt printed" kept ) # looped
+        VariantToRecord.do
+          Semigroupoid.do
+            indeterminateLinearProgress # action @"Estimate distance" estimateDistance
+            foldInto @"Distance estimated" setDistance
+          Semigroupoid.do
+            indeterminateLinearProgress # action @"Submit order" submitOrder
+            acknowledged @"Total missing" $ bodyLarge $ staticText "Enter the order's total before submitting it."
+            snackbar @"Order submitted" kept
+          Semigroupoid.do
+            indeterminateLinearProgress # action @"Receipt" printReceipt
+            snackbar @"Receipt printed" kept ) # stepped ) # looped

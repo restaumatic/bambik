@@ -1,34 +1,15 @@
-module ShoppingCart (Cart, CartLine, Event, Product, cartLines, lineTotalLine, quantityLine, shelf, shelfLine, stocked, totalLine) where
+module ShoppingCart (Cart, CartLine, Product, addUnit, cartLines, lineTotalLine, morningShelf, quantityLine, removeUnit, returnEverything, shelf, shelfLine, totalLine) where
 
-import Prelude ((#), (&&), (*), (+), (-), (/), (<), (<>), (==), (>), class Applicative, map, mod, negate, otherwise, show)
+import Prelude ((&&), (*), (+), (-), (/), (<), (<>), (==), (>), map, mod, negate, otherwise, show)
 
 import Data.Array (any, find, foldl, filter, mapMaybe, snoc)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import PUI (PUI, fold, looped, with)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Product = { name :: String, stock :: Int, unitPrice :: Int }
 
 type Cart = { order :: Array { product :: String, quantity :: Int }, products :: Array Product }
 
 type CartLine = { product :: String, quantity :: Int, unitPrice :: Int }
-
-type Event =
-  [ "Empty cart" :: Cart
-  , "Unit added" :: { event :: String, model :: Cart }
-  , "Unit removed" :: { event :: CartLine, model :: Cart }
-  ]
-
-stocked :: forall m. Applicative m => PUI m Cart Event -> PUI m {} Cart
-stocked view =
-  Semigroupoid.do
-    view
-    VariantToRecord.do
-      fold @"Unit added" addUnit
-      fold @"Unit removed" removeUnit
-      fold @"Empty cart" returnEverything
-  # looped # with morningShelf
 
 morningShelf :: Cart
 morningShelf =

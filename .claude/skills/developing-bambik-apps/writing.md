@@ -31,7 +31,7 @@ matches your design system.
   | --- | --- | --- |
   | ×→× | **editor**, **display**, **stage** | `filledTextField @"Email"`, `headline4 $ text countLine` |
   | ×→+ | **emitter** | `button @"Count"` |
-  | +→× | **status** | `snackbar @"Card charged" identity` |
+  | +→× | **status** | `snackbar @"Card charged" captured` |
   | +→+ | **handler** | `action @"Charge card" chargeFlaky` |
 
 - **the cycle** — what the four shapes are to an app: each is one arrow
@@ -49,8 +49,8 @@ matches your design system.
   one row wherever nothing narrows or derives (a sub-record under
   `group @l`, a projected list, a copy function do); a view event is a
   button's case carrying the row it replayed, and it is a model event
-  once it carries what its fold needs — joined with the model, an
-  action's outcome, a dialog's decision.
+  once it is what its fold takes — an action's outcome, a dialog's
+  decision — the model joining it at the fold.
 - **stage** — one step of the pipeline: its output is the next step's
   input.
 - **merge** — several components over one shared value, written as a
@@ -77,14 +77,17 @@ The app is one pipeline composed with `Semigroupoid.do`
 (`import QualifiedDo.Semigroupoid as Semigroupoid`): each line's output
 is the next line's input, so code order is screen order *and* data
 order. Every line is a **stage**: an editor, a display, a static, a pane,
-a list, an event ensemble, a fold. A line that **shows data** — a
+a list, the event path. A line that **shows data** — a
 display, a static, a pane of displays, a list of displays — changes no
 data: it releases the row it was fed, so the next line is fed what it
 shows. It is written in its place on the screen and nothing else
 (counter's `headline4 $ text countLine` above its `button @"Count"`;
-tip-calculator's totals after its last slider; stopwatch's lap list after
-the folds). Four more qualified `do` blocks put several components over
-one value, one per shape:
+tip-calculator's totals after its last slider; stopwatch's lap list below
+its buttons). The **event path** — the emitters, then the folds of what
+they emit — is one line too, closed by `# stepped`: fed a row it passes
+the row on, and an event releases the next model
+([App shape](#app-shape)). Four more qualified `do` blocks put several
+components over one value, one per shape:
 
 - `RecordToRecord.do` (×→×) — components over one record side by
   side, each owning the fields it releases: **sources** — facts the
@@ -106,10 +109,11 @@ one value, one per shape:
   written twice, a fold for a case nothing emits and an emitted case
   with no fold are all compile errors (cashbox, stopwatch).
 - `VariantToVariant.do` (+→+) — one handler per event case. No demo
-  needs the block: an action handles its button's case inside the fold
-  block ([Business functions](#business-functions)).
-- `VariantToRecord.do` (+→×) — one fold or status per case (crud's
-  folds; order-form's statuses, one per outcome of an action).
+  needs the block: an action handles its button's case on the line
+  after its button or inside the fold block
+  ([Business functions](#business-functions)).
+- `VariantToRecord.do` (+→×) — one fold per case (crud's folds;
+  order-form's actions, each with its outcome's fold or statuses).
 
 Import the four from `Data.Profunctor.Row.RecordToRecord` and its
 siblings (`import Data.Profunctor.Row.RecordToRecord as
@@ -162,10 +166,9 @@ How each kind takes its business meaning:
   pipeline stage: fed the whole row, it edits its field and passes the
   rest on. A form is editors written as successive lines, never merge
   operands. Two controls writing one field are two lines in a row
-  (tip-calculator's slider and range input). Editors live inside a loop,
-  `# looped`, so every editor sees its siblings' latest values; a form
-  inside an app's loop of events keeps a `# looped` of its own
-  (order-form).
+  (tip-calculator's slider and range input). Editors live inside the
+  app's one loop, `# looped`, so every editor sees its siblings' latest
+  values (order-form).
 - **Selectors** are editors, and the word depends on what the model
   holds. The plain word when the field always holds an option; the
   `…Unpicked` word when a choice is owed but not yet made; the
@@ -188,13 +191,13 @@ How each kind takes its business meaning:
   `fold @"Stop" haltTiming`); no emitter takes a caption
   parameter to stand for two.
 - **Statuses** are labelled with the case they tell, and the label is
-  their whole copy: `snackbar @"Card charged" identity` shows the words
+  their whole copy: `snackbar @"Card charged" captured` shows the words
   "Card charged". A status takes no copy function — it is ephemeral,
   so it names what happened and nothing more; what the user must keep
   is a model field shown by a display, or an outcome's message the user
   closes (`acknowledged`, *Modals*). Mutually exclusive outcomes
-  are sibling cases, each owning its teller — a status in one
-  `VariantToRecord.do`, or a dialog before it for the one the user must
+  are sibling cases, each owning its teller — a status after the
+  action, or a dialog before that status for the one the user must
   read — so an action names its outcomes as the words the user reads
   (`Aff [ "Order submitted" :: {}, "Total missing" :: {} ]`);
   a run in progress is shown by the action's indicator, never by
@@ -236,28 +239,37 @@ takes a trailing word that says what it is for:
 | a list of displays rendered from the row | `ul $ ( li $ text lapLine ) # actedOf @"number" lapRows` | stopwatch |
 | a list of editors over an array the model stores | `( … ) # actedAt @"id" @"Setlist"` | reorder |
 | a list whose elements emit | `tile @"Key entered" @"key" ( … ) # gatheredOf @"key" (const keyPad)`; over a stored array `# gatheredAt @"key" @"cells"` | calculator, tic-tac-toe; cells |
-| a projected list whose elements are edited | `( listItem $ … iconToggle @"Favorite" … ) # editsOf @"Favorite changed" @"title" visibleMovies # joined @"Favorite changed"` — the element stays an editor, a user's edit leaves as the case, the fold writes it back by key | movie-browser |
+| a filter, a sort or a pick of a stored array, its rows edited in place | `( listItem $ … iconToggle @"Favorite" … ) # actedWithin @"title" @"movies" visibleMovies` — the element is an editor of the stored row, every edit written back where its key is stored; the one picked row's form, `( … ) # actedWithin @"id" @"contacts" pickedContact` | movie-browser, todo-list; contacts |
+| a projection that joins or reshapes its rows, its elements edited | `editsOf @l @k proj editor` — the element stays an editor, a user's edit leaves as case `l` carrying the element's row, and its fold (`foldInto @l f`) writes it back by key | no demo; `PUI` (`editsOf`) |
 | one entity at a time, each shown by its key | `( listItem $ text flightLine ) # dispatchedOf @"code" arrival`; the array of them `# accumulatedOf @"team" goal` | departures, scoreboard |
 | a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, merged in `RecordToRecord.do` | here-and-now, incident-report |
-| content that waits for the user to confirm | `confirmed @"Refund a customer" $ …` — a `+→+` stage between the emitters and the folds: opened by its case, which captions its confirm button, the confirm re-emitting the case with the row shown, which its fold then takes (`fold @"Refund a customer" refundStandard`); its Cancel consumes it | cashbox, inbox, flight-booker |
+| content that waits for the user to confirm | `confirmed @"Refund a customer" $ …` — a `+→+` stage between the emitters and the folds: opened by its case, which captions its confirm button, the confirm re-emitting the case with the row shown, its fold among the folds (`fold @"Refund a customer" refundStandard`); its Cancel consumes it | cashbox, inbox, flight-booker |
 | a message the user must close | `acknowledged @"About this dashboard" $ …` — the `+→+` stage consuming its case, titled by it, closed by its "OK": the row less it goes on to the folds; a rejection and its reason (`acknowledged @"Total missing" $ …`), a reference to keep (`acknowledged @"Report filed" $ … text referenceLine`) | weather, order-form, incident-report |
-| an event folded into the model | `fold @"Add" addTodo`, one per case, merged in `VariantToRecord.do` | todo-list |
-| an event carrying something of its own, joined with the model | `listOf @"Todo toggled" … # joined @"Todo toggled"` | todo-list, cells, inbox |
-| an action whose outcome is told and keeps the model | `( Semigroupoid.do { button' @"Receipt" { icon: "file" }; indeterminateLinearProgress # action @"Receipt" printReceipt } ) # joined @"Receipt printed"` in the event ensemble, its status folding `kept`; two outcomes `# joined2 @"Order submitted" @"Total missing"` | order-form |
+| the event path, one line of the body | `( Semigroupoid.do { button @"Count"; fold @"Count" increment } ) # stepped` — fed a row it passes the row on, an event releases the next model; several emitters and their folds are a `RecordToVariant.do` and a `VariantToRecord.do` inside it, the dialogs between | counter; crud, cashbox |
+| an event folded into the model it lands on | `fold @"Add" addTodo`, the handler `model -> model`, the payload unread; one fold per case | todo-list, counter |
+| an event whose payload the fold needs — a list pick, a canvas click, an action's outcome | `foldInto @"Person picked" pick`, the handler one record, `pick :: { event :: Int, model :: Catalogue } -> Catalogue` | crud, inbox, cells |
+| several event lines in one body, each where its buttons are | `( Semigroupoid.do { button @"Add"; fold @"Add" addTodo } ) # stepped` under the field, `( Semigroupoid.do { button @"Clear completed"; fold @"Clear completed" clearCompleted } ) # stepped` under the list | todo-list, contacts, diner, ticker |
+| a display below the buttons | the line after the event line: `ul $ ( li $ text lapLine ) # actedOf @"number" lapRows`; `( bodyMedium $ text placedLine ) # inCaseAt @"placed" @"status"` | stopwatch; checkout |
+| an event line that exists in one case | `( … ) # stepped # inCaseAt @"watching" @"phase"` | ticker |
+| an emitter inside a list element, its event carrying that element's row | `( listOfAt' @"Line plated" @"dish" @"lines" { selected: isPlated } $ text itemLine ) # joined @"Line plated"` inside `# gatheredOf @"number" cooking`, folded by `foldInto @"Line plated" plateLine`, its payload the dish and the order it was plated in | diner |
+| an action whose outcome is told and keeps the model | `Semigroupoid.do { indeterminateLinearProgress # action @"Receipt" printReceipt; snackbar @"Receipt printed" kept }`, an operand of the fold block | order-form |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"Celsius" # settled fromCelsius` | temperature-converter |
 | an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action @"Place order" placeOrder; snackbar @"Order placed" (const usualOrder) } )`, the pair owning the case in the fold block, the status owning the action's outcome | espresso-bar |
-| an effect whose outcome is the model | `( Semigroupoid.do { indeterminateCircularProgress # action @"Forecast requested" fetchReport; capture @"Forecast fetched" } )` | weather |
-| an effect whose outcome is told | `indeterminateCircularProgress # action @"Charge card" chargeFlaky`, then `snackbar @"Card charged" identity`; several outcomes, one status each in a `VariantToRecord.do` | payment; order-form |
-| the load before the knot | `indeterminateLinearProgress # load loadOrder`, then `snackbar @"Order loaded" identity` — run by `body`'s one feed of `{}` | order-form |
-| a fold told by a status | `snackbar @"Card charged" identity`, `snackbar @"Quote fetched" recordQuote`, `snackbar @"Order submitted" kept` — a status takes its fold like `fold @l f`, tells its case by its label, and stands only after an action whose outcome it is | payment, ticker, order-form |
+| an effect whose outcome is the model | `( Semigroupoid.do { indeterminateLinearProgress # action @"Shuffle" shuffleSetlist; capture @"Setlist shuffled" } )` | reorder, password-generator |
+| an effect whose outcome is folded into the model it lands on | `indeterminateCircularProgress # action @"Forecast requested" fetchReport`, then `foldInto @"Forecast fetched" rememberReport`; an edit made while the effect ran is kept (`foldInto @"Distance estimated" setDistance`) | weather; order-form |
+| an effect whose outcome is told | `indeterminateCircularProgress # action @"Charge card" chargeFlaky`, then `snackbar @"Card charged" captured`; two outcomes, each told on its line after the action (`acknowledged @"Total missing" $ …`, then `snackbar @"Order submitted" kept`) | payment; order-form |
+| the load before the knot | `( Semigroupoid.do { indeterminateLinearProgress # load loadOrder; snackbar @"Order loaded" captured } ) # landed` — run by `body`'s one feed of `{}`, its outcome the model the knot loops | order-form |
+| a fold told by a status | `snackbar @"Card charged" captured`, `snackbar @"Quote fetched" recordQuote`, `snackbar @"Order submitted" kept` — a status takes its fold like `foldInto @l f` (`captured`: the payload is the model; `kept`: the model as it is), tells its case by its label, and stands only after an action whose outcome it is | payment, ticker, order-form |
 
 A pane's content, a list's element and `confirmed`'s content release
 the row they are fed: a display does so by itself. An editor inside a
 pane edits the model (`inCase`); an editor inside a list of displays
 (`actedOf`) or inside a `tile` is a mistake — its edits go nowhere —
-and `npm run check-view-model` rejects the first; an editor whose edits
-must leave a projected list is `editsOf`'s element. Nothing is discarded: a
+and `npm run check-view-model` rejects the first; an editor over a
+selection of a stored array is `actedWithin`'s element, and one whose
+edits must leave a projection that joins or reshapes its rows is
+`editsOf`'s. Nothing is discarded: a
 chain whose output is not the model — departures' `dispatchedOf` stream —
 ends the block, and what feeds it is a source (`clock`), not a loop.
 
@@ -284,15 +296,17 @@ interacted with, interpreted and folded back (the cycle,
 ```purescript
 Semigroupoid.do
   headline4 $ text countLine                  -- ×→× a display: shows the row and passes it on
-  RecordToVariant.do                          -- ×→+ the event ensemble: every emitter and pane
-    button @"Add"
-    listOf @"Todo toggled" … # joined @"Todo toggled"  --   an event with a payload of its own, joined with the model
-  VariantToRecord.do                          -- +→× the folds, one per case
-    fold @"Add" addTodo
-    fold @"Todo toggled" toggleTodo
-    ( Semigroupoid.do                         --   an effect on a case, folded by its outcome's status
-      indeterminateLinearProgress # action @"Place order" placeOrder
-      snackbar @"Order placed" (const usualOrder) )
+  filledTextField @"Name"                     -- ×→× an editor: edits its field and passes the row on
+  ( Semigroupoid.do                           -- the event path, one line of the body
+    RecordToVariant.do                        -- ×→+ every emitter and pane
+      button @"Create"
+      listOf' @"Person picked" …
+    VariantToRecord.do                        -- +→× the folds, one per case
+      fold @"Create" createPerson             --   the model the event lands on
+      foldInto @"Person picked" pick          --   an event whose payload the fold needs
+      ( Semigroupoid.do                       --   an effect on a case, folded by its outcome's status
+        indeterminateLinearProgress # action @"Place order" placeOrder
+        snackbar @"Order placed" (const usualOrder) ) ) # stepped
 # looped # with seed
 ```
 
@@ -309,64 +323,73 @@ below, reading the row the editors built; edits flow down the page
 only. A field the logic writes, or one under a pane (`inCaseAt`), is
 model state: the lens editor in a `looped` row.
 
-A fold is one line per event case, `fold @l f` (`fold @"Count"
-increment`): the case is its label, `f` of the payload the whole next
-model. A fold with something to tell is a **status**, which takes its
-fold the same way: `snackbar @l f`. Every `+→×`
+A fold is one line per event case, and what it releases is a **step**
+from the model the event lands on to the next. `fold @l f` (`fold
+@"Count" increment`): the case is its label and `f` takes that model to
+the next; the event's payload is not read. `foldInto @l f` is the fold
+of an event whose payload says what the model cannot — a list pick, a
+canvas click, an action's outcome — `f` one function of one record,
+`{ event, model }` (`foldInto @"Person picked" pick`, crud). A fold
+with something to tell is a **status**, which takes its fold in
+`foldInto`'s shape: `snackbar @l f`. Every `+→×`
 line folds; nothing stands in the block releasing nothing.
 The status names the case — its label is the event's, human copy like
 `"Card charged"` — and that label is all it shows: it tells the
 **event**, never the fold's result, and reads nothing of the payload. A
 status therefore stands after an action whose outcome row names what
 happened (payment's `chargeFlaky` returns the order under `"Card
-charged"`, and the status's fold is `identity`). A command straight from an
-emitter has nothing to tell that the displays do not already show, and a
-heartbeat nobody needs told about has nothing at all: both are bare
-folds (`fold @"Count" increment`, `fold @"Clock ticked" tick`). A fold is memoryless: an emitter's payload is the row it was fed, an event
-with something of its own arrives `# joined @l` with that row as
-`{ event, model }`, and an effect returns the model. So every handler has
-the model in hand and the loop's memory stays at the emitters and in
-the knot. Each fold releases the whole next model, and the `+→×` merge
-forwards each release as it comes — its output row is shared, where the
-`×→×` merge's operands own their fields. The seed and every later model enter at the top, so everything that
-must be on screen at mount — displays, editors, the list a pick comes
-from — stands before the ensemble; a stage after the fold is fed only by
-events. Editors before the ensemble flow forward only, and the ensemble
-answers a feed with nothing, so the app's loop never sees an edit: **two
-or more editors before the ensemble are always `( … ) # looped`** inside
-the app's loop (order-form, espresso-bar, crud). Without it an editor
-keeps the row it was last fed, so its next edit writes back the values
-the fields below it held then — a roast picked below a size is undone
-by the next size pick. A single editor needs no loop of its own; an
-edit that must change a sibling's value keeps its own normalizer
-(`# settled`, temperature-converter). An event
-whose effect takes time is joined with the model when its outcome lands,
-not when it fired: `joined @l` wraps the emitter and its action together
-(`( Semigroupoid.do { button …; … # action @"Estimate distance" estimateDistance } )
-# joined @"Distance estimated"`), and the fold sets only what the effect
-produced on that model (`setDistance`), so an edit made while it ran is
-kept (order-form). A drawer feeds its nav and its content the same row;
-its nav is the list, `joined`, and its fold, a record stage of its own
-(photo-gallery). `# with seed` closes a
-flow with no loop of its own. Both close the app to what `body` accepts; a forgotten seed is a
-compile error at `body` naming the missing fields.
+charged"`, and the status's fold is `captured`: the payload becomes the
+model; an outcome that changes nothing folds `kept`). A command straight
+from an emitter has nothing to tell that the displays do not already
+show, and a heartbeat nobody needs told about has nothing at all: both
+are bare folds (`fold @"Count" increment`, `fold @"Clock ticked" tick`).
+A fold reads the model where its event lands, not the row its button
+replayed: the two differ once something waits between them, an effect
+or a dialog, so an outcome lands on the model as it is then and the fold
+sets only what the effect produced (`foldInto @"Distance estimated"
+setDistance`) — an edit made while it ran is kept (order-form). The
+`+→×` merge forwards each fold's step as it comes — its output is
+shared, where the `×→×` merge's operands own their fields.
+
+The event path — the emitters, the dialogs, the folds — is **one line
+of the body**, closed by `# stepped`: fed a row it passes the row on,
+like every other line, and an event releases the next model. So an edit
+made above it reaches the knot through it, and an app has **one knot**:
+no form keeps a `# looped` of its own. Because the path is a line, a
+display or an editor may stand below it (stopwatch's lap list below its
+buttons, checkout's `text placedLine`), and a body may hold **several
+event lines**, each where its buttons are on the screen: todo-list's
+Add under its field and Clear completed under its list; contacts' pick,
+then the form, then New and Delete; diner's one per station. An event
+line whose buttons exist in one case sits under a pane (ticker's
+`( … ) # stepped # inCaseAt @"watching" @"phase"`). An edit that must
+change a sibling's value keeps its own normalizer (`# settled`,
+temperature-converter). A drawer feeds its nav and its content the same
+row; its nav is the list and its fold, an event line of its own
+(photo-gallery). `# looped # with seed` closes the knot and `# with
+seed` a flow with no loop of its own (potluck); either closes the app
+to what `body` accepts, and a forgotten seed is a compile error at
+`body` naming the missing fields. A load before the knot is a path of
+its own, closed by `# landed`: its outcome is the model the knot loops,
+so that knot takes no seed (order-form).
 
 | Shape | Demos |
 | --- | --- |
 | the smallest loop: display, button, fold | counter |
-| a load action feeding a looped form, events, actions, statuses | order-form (all four shapes) |
+| a load before the knot, a form, events, actions, statuses | order-form (all four shapes) |
 | a loop plus fixed payloads | cashbox, inbox, tic-tac-toe, shopping-cart |
 | a fixed grid or canvas fed as data, updated in place | cells, circle-drawer, tic-tac-toe, calculator |
-| collections | todo-list, shopping-cart, reorder, potluck |
+| collections | todo-list, shopping-cart, reorder, potluck, venue, contacts, diner |
+| several event lines, each where its buttons are | todo-list, contacts, diner, ticker |
 | panes over one classifier | quiz, tic-tac-toe, potluck |
 | effects and time | password-generator, stopwatch, timer, weather |
 | structure that varies with the data | markdown-previewer |
 | no design system at all | restaurant-menu, hello-world |
-| a knot fed from upstream, no seed of its own | order-form (`looped` after the load action, which `body`'s one feed of `{}` runs) |
+| a knot fed from upstream, no seed of its own | order-form (`looped` after the load, `# landed`, which `body`'s one feed of `{}` runs) |
 | an action that retries until it succeeds | payment (`chargeFlaky`) |
 | a running maximum, a wizard's step, a counter: model fields | auction (`settled raiseTop`), checkout (`stepper @"step"`, its own selector), ticket-dispenser (`issue`) |
 | a reusable sub-form over a sub-record; an event intercepted by a dialog | parcel (`group @"Address" addressForm`), cashbox (`confirmed @"Refund a customer" $ …`) |
-| an effect's outcome folded into the model it lands on | order-form (`… # joined @"Distance estimated"`, `fold @"Distance estimated" setDistance`) |
+| an effect's outcome folded into the model it lands on | order-form (`foldInto @"Distance estimated" setDistance`), weather (`foldInto @"Forecast fetched" rememberReport`) |
 | keyed event streams | departures (`dispatchedOf`), scoreboard (`accumulatedOf`) |
 
 ## Conditional visibility
@@ -385,17 +408,17 @@ case and then the field, both by label — `providedAt`, `inCaseAt`
 `# inCaseAt @"return flight" @"Flight type"`) — typed by the model row the seed's
 signature states. When it is derived, one classifier derives it, its
 signature naming every case — flight-booker's `bookingState`, potluck's
-`menuState`, inbox's `messageView`, quiz's `quizPhase` — and each
-pane names only its own case (`# provided @"reading" messageView`). Two panes over one classifier
+`menuState`, inbox's `inboxState`, quiz's `quizPhase` — and each
+pane names only its own case (`# provided @"asking" quizPhase`). Two panes over one classifier
 can never both be on screen. A case carries a payload only where the
 business needs one; what a pane shows, its read functions read from the
-model (inbox's `subjectLine` finds the open message itself).
+model (quiz's `askedPrompt` finds the question asked itself).
 
 A `Maybe` a pane depends on is a two-case state with unnamed cases.
 Name them: order-form's distance is
 `[ estimated :: { km, to }, unknown :: {} ]`. `Maybe` stays below the
-UI — a lookup, an `Aff` result — and a classifier converts it (inbox's
-`messageView` turns `find`'s `Maybe` into `reading`/`browsing`).
+UI — a lookup, an `Aff` result — and a classifier converts it (quiz's
+`quizPhase` turns `index`'s `Maybe` into `asking`/`finished`).
 
 An editor that exists only in one mode is `# inCase`, not a pane whose
 edits you fold back by hand. Order-form's fulfillment fields,
@@ -419,8 +442,8 @@ message" $ bodyMedium $ text deletionLine` (inbox) opens on that case,
 shows its payload to the content — a display or editors over the row
 the button replayed, stating what is at stake — and re-emits the case
 carrying the content's row when the user presses the button the case
-captions, so the fold block folds it like any event (`fold @"Delete
-message" deleteOpened`); its Cancel consumes it and no fold runs.
+captions, so the fold block folds it like any event (`foldInto @"Delete
+message" deleteMessage`); its Cancel consumes it and no fold runs.
 `acknowledged @"About this dashboard" $ …` (weather) is the
 same dialog titled by its case, with an "OK" that only closes it: the
 case is consumed either way, so what follows is typed at the cases that
@@ -434,8 +457,9 @@ passes through both untouched, and a modal is never a model field — no
 remains for a dialog built by hand: it opens when fed and closes when
 its content emits.
 
-A drawer's navigation is the first stage and its content the second, so
-the pick reaches the content directly (photo-gallery).
+A drawer feeds its navigation and its content the same row; the
+navigation's pick is folded on an event line of its own, and the
+content shows the model it lands in (photo-gallery).
 
 ## Collections
 
@@ -458,6 +482,14 @@ the pick reaches the content directly (photo-gallery).
   selectors still unpicked (potluck). An element cannot change its own
   key. Add, remove and reorder are sibling stages over the enclosing
   model, not part of the element.
+- **A selection edited in place** is `actedWithin @"title" @"movies"
+  visibleMovies`: the rows a view model function selects from a stored
+  array — a filter, a sort, the one picked row — are the elements, and
+  every edit is written back where its key is stored, the other rows
+  kept (movie-browser's favourites, todo-list's ticks through the
+  visibility filter, contacts' form of the picked row, `# actedWithin
+  @"id" @"contacts" pickedContact`). The function chooses and orders
+  stored rows; it cannot reshape one.
 - A fixed catalogue is given through the word's own projection
   argument, `# gatheredOf @"key" (const keyPad)` (calculator).
 - An element whose content reads several things names that reading
@@ -509,14 +541,15 @@ Its outcome cases are typed by its `Aff` (`submitOrder :: Order -> Aff
 [ "Total missing" :: {}, "Order submitted" :: {} ]`, order-form),
 and the line names only the case it handles: the action is typed at
 exactly those outcomes, and what tells them closes them — the statuses
-after it, owning their cases, or among emitters the `joined @l` that
-joins it (`joined @(l1 + l2)` for two outcomes). With the `Aff` still a
+or folds after it, each owning its case. With the `Aff` still a
 hole, those followers are what type it. It is **opened by
 its progress indicator**: the slot owns the run's `started` and `ended`
 and nothing else — a status that tells an outcome is never the slot, and
-the types forbid it. An action lives in the fold block, **folded by its
-own outcome statuses** after it, the pair owning the button's case there
-through the action's label:
+the types forbid it. An action stands **after the emitters**: on the
+line after its button (payment, ticker), or, where its button sits in an
+emitter block, in the fold block, **folded by its own outcome statuses**
+after it, the pair owning the button's case there through the action's
+label:
 
 ```purescript
 ( Semigroupoid.do
@@ -526,18 +559,20 @@ through the action's label:
 
 So the action line reads as a noun phrase like every leaf — word, case,
 function — and nothing places it: no `atCase` under the button's case,
-no widening beside emitters. An outcome that is told but changes nothing
-is `kept`: the action is `joined` with its button in the event
-ensemble, so its outcome arrives as `{ event, model }`, and its status
-folds `kept` in the fold block (order-form's receipt; its submit, of two
-outcomes, `# joined @("Order submitted" + "Total missing")`).
-Where nothing loops after the action, it needs no join: its `Aff`
-returns the model under each outcome and the statuses fold `identity`
-(payment). The load before the knot is `load`
+no widening beside emitters. Its outcome lands on the model as it is
+when it lands: an outcome that is told but changes nothing folds `kept`
+(`snackbar @"Receipt printed" kept`, order-form's receipt; its submit,
+of two outcomes, tells one by a dialog and the other by `snackbar
+@"Order submitted" kept`), one whose `Aff` returns the model folds
+`captured` (`snackbar @"Card charged" captured`, payment), and one that
+sets part of the model is `foldInto @l f` (`foldInto @"Distance
+estimated" setDistance`, order-form's estimate). The load before the
+knot is `load`
 (`indeterminateLinearProgress # load loadOrder`), the `×→+`
 action `body`'s one feed of `{}` runs, its outcomes typed by its `Aff`
-and named by the capture or status after it. No word passes an event *around* a
-stage: every event reaches the fold block on its own.
+and named by the capture or status after it, the pair closed by
+`# landed`. No word passes an event *around* a
+stage: every event reaches its fold on its own.
 
 Design-system twins are two view modules over the same view model module, so
 anything that would differ between twins is view by definition. An app
@@ -556,7 +591,7 @@ the anchor's own position, and the anchor says what the line is:
   name"`, `group @"Customer" $ …`);
 - a **case** — the type argument of an emitter, pane or status
   (`button @"Submit order"`, `# provided @"bookable" bookingState`,
-  `snackbar @"Card charged" identity`);
+  `snackbar @"Card charged" captured`);
 - a **copy function** — the positional argument of a display
   (`text balanceLine`, `imagePane developedShot`);
 - **nothing** — chrome (`card`, `h1 >>> cl "restaurant-name" $ staticText
@@ -587,7 +622,7 @@ So every leaf reads as a noun phrase — word, anchor, positional
 arguments:
 
 ```purescript
-snackbar  @"Card charged" identity             -- the "Card charged" snackbar, folding identity
+snackbar  @"Card charged" captured             -- the "Card charged" snackbar, folding captured
 ticks     @"Clock ticked" tickPeriod           -- the "Clock ticked" source, beating every tickPeriod
 button'   @"Sign up" { icon: "person_add" }    -- the record: optional presentation
 ```
@@ -612,8 +647,8 @@ text is computed, a chrome line nothing.
   names each change touches.
 - **A one-line UI function is inlined.** A named function whose whole
   body is one pipeline expression is indirection: write the expression
-  where it is used (`snackbar @"Order submitted" kept` sits in
-  the status merge). A UI function earns its name only by spanning
+  where it is used (`snackbar @"Order submitted" kept` sits on its
+  line after the action). A UI function earns its name only by spanning
   lines.
 - **A line leads with what is seen, via `$`, and trails with data
   concerns, via `#`.** No data word leads a line. An element over one
@@ -634,10 +669,10 @@ text is computed, a chrome line nothing.
 - **Closing parens and `#` chains never start a line.** A trailing
   chain stays on one line at the end of the component's last line, and
   nested closers cascade onto that same line, each spaced from the chain
-  it closes over: `… ) # gatheredOf @"key" (const keyPad) ) # joined @"Key
-  entered"` (calculator). The
-  exception is a seed closer, `) # looped # with seed` / `) # with seed`,
-  on its own line.
+  it closes over: `… ) # gatheredAt @"key" @"cells" ) # gatheredOf
+  @"rowKey" sheetRows` (cells), `fold @"Count" increment ) # stepped`
+  (counter). The exception is the knot's closer, `# looped # with seed`
+  / `# with seed`, on its own line.
   `#` binds tighter than `$`: where a chain must apply to a whole
   wrapped element (a `actedOf` multiplying a card), open the paren
   before the wrapper.
@@ -652,9 +687,9 @@ text is computed, a chrome line nothing.
   opener's column. No four-space steps, no alignment to a token
   mid-line.
 - **The architecture reads off the pipeline**, in this order: load →
-  form (×→×) → live summary → events (×→+) → each action with its
-  statuses (+→+ then +→×), closed by the seed. No registries, config
-  objects or reflective assembly.
+  form (×→×) → live summary → the event line: events (×→+), then each
+  action with its statuses (+→+ then +→×) — closed by the knot. No
+  registries, config objects or reflective assembly.
 
 ### Types and values
 
@@ -672,8 +707,8 @@ text is computed, a chrome line nothing.
   them — so a stored field is read by its label (`listOfAt … @"messages"`,
   `# providedAt @"halted" @"phase"`). The view states only what is its
   own: the labels it names — an action's outcomes among them where its
-  followers name them (`snackbar @"Card charged" identity`, `joined
-  @"Receipt printed"`) — and an option block, closed by its merge
+  followers name them (`snackbar @"Card charged" captured`, `foldInto
+  @"Distance estimated" setDistance`) — and an option block, closed by its merge
   (`option @"one-way flight"` and `option @"return flight"` under
   `VariantToVariant.do`).
 
@@ -696,10 +731,11 @@ text is computed, a chrome line nothing.
   uses: `selected :: [ picked :: { index :: Int }, none :: {} ]`,
   `approval :: [ approved :: { attempt :: Int }, pending :: {} ]`.
 - **No `Boolean` unless a Boolean editor edits it** (a `toggleSwitch`
-  over `"Teams link"`). A flag nobody edits is a phase with
-  two states — `status :: [ active :: {}, completed :: {} ]`,
-  `drag :: [ adjusting :: {}, settled :: {} ]` — and a styling test over
-  it is a named predicate (`clWhen isCompleted "todo-done"`).
+  over `"Teams link"`, an `iconToggle` over `"Done"`). A flag nobody
+  edits is a phase with two states — `phase :: [ halted :: {},
+  timing :: {} ]` (stopwatch), `phase :: [ away :: {}, watching :: {} ]`
+  (ticker) — and a styling test is a named predicate
+  (`clWhen isCompleted "todo-done"`).
 - **Nominal types live below the UI**: a recursive type (cells' formula
   AST) or an ecosystem API (`Aff`, `Either`), entering the UI only
   through business functions.
@@ -797,35 +833,37 @@ text is computed, a chrome line nothing.
   game" openingPosition` (tic-tac-toe).
 - **One record per business function.** Records that travel together
   are one row; let field names carry the roles positional arguments
-  lose. A fold handler is no exception: a joined event arrives as one
-  record, the payload under `event` and the model under `model`:
+  lose. A fold handler is no exception: an event whose payload the fold
+  needs arrives as one record, the payload under `event` and the model
+  it lands on under `model`:
 
   ```purescript
-  fold @"Todo toggled" toggleTodo
-  toggleTodo :: { event :: Int, model :: { todos :: …, … } } -> { todos :: …, … }
-  toggleTodo { event: i, model: m@{ todos } } = m { todos = … }
+  foldInto @"Person picked" pick
+  pick :: { event :: Int, model :: Catalogue } -> Catalogue
+  pick { event: i, model: m@{ people } } = …
   ```
 
-  A button replaying the row it is fed is handled by the row update
-  itself (`"Add": addTodo`, `addTodo :: model -> model`); an event with
-  a payload of its own is `# joined @l` on its line and handled by one
-  function of one record (`toggleTodo :: { event :: Int, model :: … } ->
-  …`); a fixed payload is baked into its handler (cashbox's
-  `refundStandard`); an effect returns the model under its outcome case
-  (`chargeFlaky :: Order -> Aff [ "Card charged" :: Order ]`), so each
-  outcome's fold is `snackbar @"Card charged" identity` (the payload becomes the model;
-  `capture @l` where nothing needs telling); an outcome that changes
-  nothing folds `kept` over its joined event; a constant replacing the
-  model is `reset @"New game" openingPosition`, or `(const x)` on a
-  status. A status shows its case label, never the handler's result.
+  A button's event is handled by the row update itself, applied to the
+  model the event lands on (`fold @"Add" addTodo`, `addTodo :: Todos ->
+  Todos`); an event with a payload of its own is `foldInto @l f`,
+  handled by one function of one record (`pick :: { event :: Int,
+  model :: Catalogue } -> Catalogue`); a fixed payload is baked into its
+  handler (cashbox's `refundStandard`); an effect returns the model
+  under its outcome case (`chargeFlaky :: Order -> Aff [ "Card charged"
+  :: Order ]`), so its outcome's fold is `snackbar @"Card charged"
+  captured` (the payload becomes the model; `capture @l` where nothing
+  needs telling); an outcome that changes nothing folds `kept`; a
+  constant replacing the model is `reset @"New game" openingPosition`,
+  or `(const x)` on a status. A status shows its case label, never the
+  handler's result.
 - **A status only after an action.** A fold opens with a visible
   status where an action's outcome row names what the status tells
-  (payment's `snackbar @"Card charged" identity`, the action
+  (payment's `snackbar @"Card charged" captured`, the action
   returning the model under that case). A command straight from an
   emitter folds silently, whatever it does, since the screen already
   shows its result and its case is the button's caption (counter's
-  count, cashbox's till, inbox's list): `fold @"Todo toggled"
-  toggleTodo`. What a status would compute from its payload is not
+  count, cashbox's till, inbox's list): `foldInto @"Message opened"
+  openMessage`. What a status would compute from its payload is not
   copy: a value the user must keep is a model field shown by a display
   (payment's `text statusLine` carries the attempt) or what an
   `acknowledged` dialog shows until closed (incident-report's
@@ -836,12 +874,12 @@ text is computed, a chrome line nothing.
   event was never model data: show it with a display stage instead.
 - **Lossy conversions live in the model.** An editor round-trips its
   field; a normalization that loses information is `# settled` on the
-  stage (cells' formula field `# settled commit`), never hidden inside
-  the component.
+  stage (crud's prefix filter `# settled filterChanged`, dropping a
+  selection it hides), never hidden inside the component.
 - **No dispatcher.** A function that only `match`es event cases has no
-  place: each case is its own `fold @l f` line (`status @l line f`
-  where an action's outcome is told), `f` and `line` named business
-  functions in the view model module.
+  place: each case is its own `fold @l f` or `foldInto @l f` line (a
+  status, `snackbar @l f`, where an action's outcome is told), `f` a
+  named business function in the view model module.
 
 ### Wiring
 
@@ -887,7 +925,8 @@ With the watch build running ([building.md](building.md)):
    them is writing the view's part of the model; the view writes no row.
    Every other value — a copy function, a
    handler, a classifier, an action, the seed — starts as a typed hole
-   (`text ?countLine`, `# looped # with ?freshCount`).
+   (`text ?countLine`; `fold @"Count" ?increment` on the event line,
+   closed by `# stepped`; `# looped # with ?freshCount`).
 2. **Read the holes.** With several holes, a last message lists them
    all, placed on the declaration's name, with one numbering of the
    unknowns across them. Counter's three:
@@ -969,12 +1008,15 @@ give you while writing:
 - **Waiting is safe.** Putting a stage that holds things back —
   `confirmed`, `acted`, a debounce — anywhere only delays what flows; it
   never produces a new or inconsistent value.
-- **A blank pane is a missing seed — or a line after an event.** A
-  merge that shows nothing is waiting for a field nobody has given a
-  value; the watchdog names it (below). A line that shows nothing until
-  the first click stands after the loop's emitters and folds: that pair
-  is one stage that releases on events, not on the seed, so what must
-  show at mount stands before it ([App shape](#app-shape)).
+- **A blank pane is a missing seed.** A merge that shows nothing is
+  waiting for a field nobody has given a value; the watchdog names it
+  (below). An event line is never the cause: closed by `# stepped` it
+  passes on every row it is fed, so the lines below it show at mount
+  like the lines above ([App shape](#app-shape)).
+- **An event lands on the model as it is.** A fold is handed the model
+  at the moment its event arrives, not the row its button showed, so a
+  fold that sets only what its event brought keeps every edit made
+  while an effect ran.
 - **Design systems are interchangeable.** The laws are about shapes, so
   a twin over another design system behaves the same.
 
@@ -992,11 +1034,12 @@ in the message, the one the line wants and the one it got, and look
 | The message | Reported at | The mistake | The fix |
 | --- | --- | --- | --- |
 | the model row against `()` | the whole app expression | the loop has no seed: the entry feeds only `{}` | close the loop with `# with seed` (counter) |
-| the model row against `( event :: …, model :: … )`, `while matching label "Start"` | the fold of that case | an emitter inside a pane is `# joined`, but it already replays the model: `joined` is for an emitter fed something narrower, a list element or a canvas | drop the `# joined` and take the model in the handler (stopwatch) |
+| the model row against `( event :: …, model :: … )` | the event line | a handler and its fold word disagree: `fold @l f` hands `f` the model alone, `foldInto @l f` one record, `{ event, model }` | match the word to the handler: `fold` for `model -> model` (counter's `increment`), `foldInto` for `{ event, model } -> model` (crud's `pick`) |
+| a function type against a record | the event line or the line after it | the event path is not closed: bare folds release a step, `model -> model`, where the next line and the knot take a row | close the path, `( … ) # stepped` (counter) |
 | `( "Count" :: … )` against `( "Cout" :: … )` | the fold | one case spelled two ways | spell the case the same on the emitter and its fold |
 | `( "Reset" :: … )` against `( … )` | the first line of the emitter block | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `fold @"Clock ticked" tick`), or remove the emitter |
 | `( "Undo" :: … )` against `( … )` | the first line of the fold block | a fold for a case nothing emits | remove the fold, or add the emitter it was written for |
-| `Two merge operands own the label "Count"` | the first line of the block | a label written twice in one block: a case two emitters emit, a case two folds handle, a field two sources produce | two buttons are two business actions — give each its own case and fold both with the one handler (checkout's Next and Back) |
+| `Two merge operands own the label "Count"` | the first line of the block | a label written twice in one block: a case two emitters emit, a case two folds handle, a field two sources produce | two buttons are two business actions — give each its own case and its own fold (stopwatch's Start and Stop) |
 | `( size :: Int … )` against `( … )` | the seed line | a business function names a field the model does not have | copy the signature from the hole its line reports ([Writing order](#writing-order)) |
 
 ## When it does not propagate

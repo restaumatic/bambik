@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import LawBench (bench, runBench)
+import LawBench (bench, benchStep, runBench)
 import PUI (PUI)
 import PUI.Web (Web, staticText)
 import PUI.Web.Bootstrap (body, button, group, indeterminateLinearProgress, option, progress, select, selectOptional, selectUnpicked, sliderLive, textField, toast, toggleSwitch)
@@ -23,7 +23,7 @@ lawBenchBootstrap = do
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" options)
     , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
     , bench "button" "×→+" rows (button @"Go")
-    , bench "toast" "+→×" events (toast @"event" (const {}))
+    , benchStep "toast" "+→×" events (toast @"event" (const {}))
     ]
   where
   fractionOf { fraction } = fraction

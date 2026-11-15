@@ -20,16 +20,16 @@ the previous comparison (deleted 2026-10 as rotted; its history is in git).
 
 ## In one paragraph
 
-Bambik's 7GUIs is **9 329 tokens** — level with React+MobX (9 510), 2.2×
-smaller than Elm (20 672), 3.7× larger than Vue (2 537), and 3.5× larger
-than official Svelte on the six tasks both have (5 849 against 1 654). It
+Bambik's 7GUIs is **9 361 tokens** — level with React+MobX (9 510), 2.2×
+smaller than Elm (20 672), 3.7× larger than Vue (2 537), and 3.6× larger
+than official Svelte on the six tasks both have (5 891 against 1 654). It
 meets **22 of 23** spec requirements, ahead of Elm (21.5), React+MobX (17), Vue (14) and both
 Svelte corpora (12.5 each). Its wiring is the smallest
-part of it: the seven views' bodies are **1 347 tokens**, less than the
+part of it: the seven views' bodies are **1 358 tokens**, less than the
 official Svelte corpus whole; 76% of the corpus is business logic in view
 model modules (cells' alone is 2 990) and 17% is module
-headers and explicit imports. Its plain-HTML bundle floor (13.3 kB gz) is
-the smallest measured, level with Elm. What no other corpus has is that
+headers and explicit imports. Its plain-HTML bundle floor (13.7 kB gz) is
+level with Elm's, the smallest measured. What no other corpus has is that
 the same view model runs under six design systems unchanged, and that
 each view is mechanically checked to determine its view model's
 signatures. Its two remaining partial marks are one design position
@@ -173,16 +173,16 @@ generation cost.
 
 | Task | bambik (MDC3) | bambik (HTML) | Elm | React+MobX | Vue 3 | Svelte off. | Svelte joy |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Counter | 202 | 202 | 250 | 109 | 48 | 38 | 50 |
+| Counter | 214 | 214 | 250 | 109 | 48 | 38 | 50 |
 | Temperature | 464 | 514 | 1 299 | 786 | 165 | 148 | 165 |
-| Flight booker | 1 018 | 1 054 | 2 233 | 695 | 411 | 333 | 333 |
-| Timer | 585 | 593 | 1 110 | 673 | 282 | 185 | 236 |
-| CRUD | 1 127 | — | 3 258 | 849 | 442 | 440 | 526 |
+| Flight booker | 1 029 | 1 065 | 2 233 | 695 | 411 | 333 | 333 |
+| Timer | 597 | 605 | 1 110 | 673 | 282 | 185 | 236 |
+| CRUD | 1 134 | — | 3 258 | 849 | 442 | 440 | 526 |
 | Circle drawer | 2 453 | 2 474 | 4 558 | 3 075 | 599 | 510 | 541 |
-| Cells | 3 480 | — | 7 964 | 3 323 | 590 | — | 846 |
-| **Total** | **9 329** | — | **20 672** | **9 510** | **2 537** | **1 654** | **2 697** |
-| Total without cells | 5 849 | 4 837¹ | 12 708 | 6 187 | 1 947 | 1 654 | 1 851 |
-| Characters, total | 31 990 | — | 98 224 | 36 785 | 9 192 | 5 733 | 8 919 |
+| Cells | 3 470 | — | 7 964 | 3 323 | 590 | — | 846 |
+| **Total** | **9 361** | — | **20 672** | **9 510** | **2 537** | **1 654** | **2 697** |
+| Total without cells | 5 891 | 4 872¹ | 12 708 | 6 187 | 1 947 | 1 654 | 1 851 |
+| Characters, total | 32 221 | — | 98 224 | 36 785 | 9 192 | 5 733 | 8 919 |
 
 ¹ five tasks: crud has no plain-HTML twin either.
 
@@ -194,21 +194,22 @@ model modules and removing crud's simulated server, which the spec never
 asked for, brought it to 7 922; closing the spec gaps — circle-drawer's
 hover, popup and adjustment frame, cells' in-place editing, 100 rows and
 dependency-driven evaluation, flight-booker's calendar check and
-confirmation — brought it to 9 329.
+confirmation — brought it to 9 329, and writing each event path as one
+wrapped line of its view (`# stepped`) to 9 361.
 
 **Where bambik's tokens are.**
 
 | Part | Tokens | Share |
 |---|---:|---:|
-| view bodies — every stage, layout and wiring line of the seven apps | 1 347 | 14% |
-| view headers and imports | 897 | 10% |
-| view model modules (seeds, copy functions, handlers, parsers) | 7 080 | 76% |
-| of which module headers and imports, both kinds of module | 1 570 | 17% of all |
+| view bodies — every stage, layout and wiring line of the seven apps | 1 358 | 15% |
+| view headers and imports | 916 | 10% |
+| view model modules (seeds, copy functions, handlers, parsers) | 7 082 | 76% |
+| of which module headers and imports, both kinds of module | 1 589 | 17% of all |
 
-The view of a whole task is 43 tokens of body for counter and 336 for
+The view of a whole task is 53 tokens of body for counter and 326 for
 cells. The rest is the domain: cells' parser and dependency-driven
 evaluator (2 781 tokens), circle-drawer's hover, menu, adjustment and
-undo stacks (1 611), flight-booker's calendar check and copy (638).
+undo stacks (1 611), flight-booker's calendar check and copy (640).
 Module and import ceremony is 17% of bambik's corpus against 11% for Elm, 7% for React and under 5% for
 Vue and Svelte — the price of explicit import lists in two modules per
 app, set by the code style.
@@ -232,17 +233,17 @@ demo's bundle.
 
 | Counter | gz | raw |
 |---|---:|---:|
-| bambik, plain HTML | 13.3 kB | 48.5 kB |
+| bambik, plain HTML | 13.7 kB | 50.7 kB |
 | Elm 0.19.3 (`--optimize`) | 13.7 kB | 39.3 kB |
 | Svelte 5.57 | 16.8 kB | 45.0 kB |
 | Vue 3.5 (render function, no template compiler) | 26.0 kB | 65.9 kB |
 | React 19.3 | 68.9 kB | 222.9 kB |
 | React 19.3 + MobX 7 | 82.3 kB | 270.4 kB |
-| bambik, MDC3 (Material web components included) | 88.8 kB | 473.1 kB |
+| bambik, MDC3 (Material web components included) | 89.2 kB | 475.1 kB |
 
 Bambik's application code is nearly free after the floor: the plain-HTML
-twins go from 9.7 kB (temperature-converter) to 20.8 kB (circle-drawer),
-the MDC3 twins from 84 kB to 97 kB across all seven. The MDC3 figure buys a design
+twins go from 9.6 kB (temperature-converter) to 21.0 kB (circle-drawer),
+the MDC3 twins from 84 kB to 98 kB across all seven. The MDC3 figure buys a design
 system no other corpus here has; the plain-HTML one is the like-for-like
 number.
 

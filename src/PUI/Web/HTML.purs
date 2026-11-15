@@ -288,14 +288,15 @@ progress f = fromHandles do
 -- |
 -- | A status **tells its case**: its caption is the case label verbatim,
 -- | so the outcome is named as what it tells (`output @"Card charged"
--- | kept`) and the payload is read by nothing but the fold. A `+→×` leaf
--- | like `fold @l f`, it takes its fold of the payload.
+-- | captured`) and the payload is read by nothing but the fold. A `+→×` leaf
+-- | like `fold @l f`, it takes its fold, of the event and
+-- | the model it lands on.
 output
-  :: forall @l a v r
+  :: forall @l a v i o
    . IsSymbol l
   => Cons l a () v
-  => (a -> { | r })
-  -> PUI Web [ | v ] { | r }
+  => ({ event :: a, model :: i } -> o)
+  -> PUI Web [ | v ] (i -> o)
 output = statusOver @l outputFace
 
 outputFace :: forall a r. String -> PUI Web a { | r }

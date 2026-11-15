@@ -1494,17 +1494,18 @@ modal { title, decide, cancel } content = fromHandles do
 -- |
 -- | A status **tells its case**: its caption is the case label verbatim,
 -- | so the outcome is named as what it tells (`snackbar @"Card charged"
--- | kept`) and the payload is read by nothing but the fold. Mutually
+-- | captured`) and the payload is read by nothing but the fold. Mutually
 -- | exclusive outcomes are sibling snackbars, one per business case. A
--- | snackbar is a `+→×` leaf like `fold @l f`: it takes its fold of the
--- | payload — `identity` for an outcome that is the model, `kept` for a
--- | joined outcome that changes nothing, `(const x)` for a reset.
+-- | snackbar is a `+→×` leaf like `fold @l f`: it takes its fold, of the
+-- | event and the model it lands on — `captured` for an outcome that is
+-- | the model, `kept` for one that changes nothing, `(const x)` for a
+-- | reset.
 snackbar
-  :: forall @l a v r
+  :: forall @l a v i o
    . IsSymbol l
   => Cons l a () v
-  => (a -> { | r })
-  -> PUI Web [ | v ] { | r }
+  => ({ event :: a, model :: i } -> o)
+  -> PUI Web [ | v ] (i -> o)
 snackbar = statusOver @l snackbarFace
 
 snackbarFace :: forall a r. String -> PUI Web a { | r }
@@ -1732,9 +1733,9 @@ topAppBar title content = fromHandles do
 -- | The permanent **navigation drawer**: a titled nav panel pinned beside
 -- | the content, both fed what the drawer is fed. The nav is live, not a
 -- | static menu — it is the stage, so what it emits is the drawer's
--- | output: a selectable nav (a `listOf` of sections, `# joined`) reports
--- | its pick to the app's loop, which folds it into the model and feeds
--- | the drawer again, and the content shows that model beside it
+-- | output: a selectable nav (a `listOf` of sections with its fold, `#
+-- | stepped`) lands its pick on the row, the app's knot feeds the drawer
+-- | again, and the content shows that model beside it
 -- | (photo-gallery).
 drawer :: forall r o. { title :: String, subtitle :: String } -> PUI Web { | r } o -> PUI Web { | r } { | r } -> PUI Web { | r } o
 drawer config nav content = div >>> "style" := "display: flex;" $ fromHandles do

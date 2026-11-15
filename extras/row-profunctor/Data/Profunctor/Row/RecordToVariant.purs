@@ -143,18 +143,16 @@ discard first cont = bind first (\_ -> cont unit)
 -- | diagonal, the fed row riding the state channel — and whose setter
 -- | distributes that row into the occurrence's case, so it leaves beside
 -- | the payload as one record, `{ event,
--- | model }`, under the same case. So a
--- | list pick, a canvas click or an action's outcome reaches the fold
--- | with the model in hand, and its handler is one function of one
--- | record (`listOfAt @"Message opened" … # joined @"Message opened"`,
--- | `fold @"Message opened" openMessage` with `openMessage ::
--- | { event :: Int, model :: { … } } -> { … }`, inbox); an outcome
--- | whose fold keeps the model is `PUI`'s `kept` (order-form's submit, joined with
--- | its button and action). The label **closes the source** to case `l`,
--- | and the joined case leaves closed to it too, so the source stands in
--- | an emitter block as the one emitter of `l`: an action, typed at
--- | exactly its outcomes, has its row named here and nowhere else in
--- | the block (a label-free
+-- | model }`, under the same case. It is how an event carries the row
+-- | of the **element it happened in**: an emitter inside a list element,
+-- | joined there, leaves with that element's row — `( listOfAt' @"Line
+-- | plated" @"dish" @"lines" … ) # joined @"Line plated"` under `#
+-- | gatheredOf @"number" cooking` (diner), the plated dish with its
+-- | order. At an application's top level nothing is joined: the model
+-- | meets the event at its fold (`PUI`'s `foldInto`, `kept`). The label
+-- | **closes the source** to case `l`, and the joined case leaves closed
+-- | to it too, so the source stands in an emitter block as the one
+-- | emitter of `l` (a label-free
 -- | `joined` over every case of a closed source row was the word from
 -- | 2026-10-14 to 2026-10-15; until 2026-10-16 the label left the
 -- | source's other cases passing, and the action declared its outcome

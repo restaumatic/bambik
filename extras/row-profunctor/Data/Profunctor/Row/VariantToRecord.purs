@@ -29,10 +29,14 @@
 -- | ## Laws at `+→×`
 -- |
 -- | The six laws of Data.Profunctor.Row ("The laws") read at this shape:
--- | a component `w :: p [ | v ] { | r }` is a **fold** of occurrences into
--- | the record, or a **status**, which releases nothing and so is typed at
--- | every row like the silent component; the merge is `m = variantToRecord w1 w2`,
--- | inputs owned (`OwnedVariantInputs`), the output row **shared** — the
+-- | a component `w :: p [ | v ] o` is a **fold** of occurrences into
+-- | the record, or a **status** — a fold with a face, or one that releases
+-- | nothing and so is typed at every output like the silent component;
+-- | the merge is `m = variantToRecord w1 w2`,
+-- | inputs owned (`OwnedVariantInputs`), the output **shared** — one type
+-- | every operand releases, a record row or, for an application's folds
+-- | on `PUI`, the **step** to the next row (`model -> model`, which
+-- | `PUI.stepped` lands on the row its line was fed) — the
 -- | copairing `[f, g] : A + B -> R` of the coproduct. Each
 -- | operand releases the whole row, so the merge forwards releases as they
 -- | come and keeps no gate; the `×→×` merge, whose operands own fields, is
@@ -46,8 +50,8 @@
 -- |      and where a release needs retained state (`accumulated`) it is
 -- |      withheld, not invented, before that state exists.
 -- |   3. **Symmetry and associativity** — up to `≈`. A loop's folds merge
--- |      here one per case, each releasing the whole next model, the
--- |      statuses beside them releasing nothing.
+-- |      here one per case, each releasing its step to the next model,
+-- |      a status among them releasing its own fold's.
 -- |   4. **Projection** — `π_k` is the operand's own cases: an occurrence
 -- |      of case `l` reaches the one operand owning `l` and no other
 -- |      (`DisjointLabels`), and nothing else reaches an operand. `exact`
@@ -66,7 +70,7 @@
 -- | it occurs, nothing retained, no gate, no step (`Applicative m`
 -- | suffices, as at `+→+`). The outputs were once owned and the merge
 -- | gated like `×→×` (CHANGELOG, 2026-10-04); with a loop's folds one per
--- | case, each releasing the whole next model, the shared row is the
+-- | case, each releasing its step to the next model, the shared output is the
 -- | honest type and the copairing the honest mechanism. Releasing on every occurrence is
 -- | the fold's choice (no row needs `Eq`), not a law. A merge silent on an
 -- | occurrence has an operand that chose not to release — a status. Probes carry law and shape
@@ -92,26 +96,26 @@ class Profunctor p <= VariantToRecord p where
   variantToRecord
     :: forall i1 i2 i o i1l i2l
      . OwnedVariantInputs i1 i2 i i1l i2l
-    => p [ | i1 ] { | o }
-    -> p [ | i2 ] { | o }
-    -> p [ | i ] { | o }
+    => p [ | i1 ] o
+    -> p [ | i2 ] o
+    -> p [ | i ] o
 
 bind
   :: forall p i1 i2 i o i1l i2l
    . VariantToRecord p
   => OwnedVariantInputs i1 i2 i i1l i2l
-  => p [ | i1 ] { | o }
-  -> (p [ | i1 ] { | o } -> p [ | i2 ] { | o })
-  -> p [ | i ] { | o }
+  => p [ | i1 ] o
+  -> (p [ | i1 ] o -> p [ | i2 ] o)
+  -> p [ | i ] o
 bind first cont = variantToRecord first (cont first)
 
 discard
   :: forall p i1 i2 i o i1l i2l
    . VariantToRecord p
   => OwnedVariantInputs i1 i2 i i1l i2l
-  => p [ | i1 ] { | o }
-  -> (Unit -> p [ | i2 ] { | o })
-  -> p [ | i ] { | o }
+  => p [ | i1 ] o
+  -> (Unit -> p [ | i2 ] o)
+  -> p [ | i ] o
 discard first cont = bind first (\_ -> cont unit)
 
 -- | Case `l`, **unshown**: the faceless `+→×` leaf owning case `l` and

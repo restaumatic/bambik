@@ -6,7 +6,7 @@ import CircleDrawer (adjustDiameter, canvasCircles, circleFill, clickCanvas, clo
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, actedOf, joined, looped, settled, with)
+import PUI (actedOf, fold, foldInto, looped, settled, stepped, with)
 import PUI.Web (attrAt, attrWith, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, providedAt, staticText, text, (:=))
 import PUI.Web.HTML (body, button, div, label, p, rangeInput)
 import PUI.Web.SVG (circle, svg)
@@ -20,27 +20,28 @@ circleDrawer =
         label $ Semigroupoid.do
           staticText "Diameter "
           rangeInput @"Diameter" # settled resizeSelected ) # inCaseAt @"adjusting" @"mode"
-    RecordToVariant.do
-      button @"Close" # providedAt @"adjusting" @"mode"
-      ( div $ RecordToVariant.do
-        button @"Undo"
-        button @"Redo" )
-      ( div >>> "style" := "position: relative; max-width: 500px;" $ RecordToVariant.do
-        ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := canvasFace $ RecordToVariant.do
-          ( onClickedXY @"Canvas clicked" $
-            ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
-              >>> attrWith "fill" circleFill $ identity ) # actedOf @"key" canvasCircles ) # joined @"Canvas clicked"
-          onHoveredXY @"Canvas hovered" identity # joined @"Canvas hovered"
-          onContextMenuXY @"Canvas context menu" identity # joined @"Canvas context menu" )
-        ( div >>> attrWith "style" menuPlacement $ div >>> "style" := menuFace $ button @"Adjust diameter.." ) # providedAt @"menu" @"mode" )
-    VariantToRecord.do
-      fold @"Canvas clicked" clickCanvas
-      fold @"Canvas hovered" hover
-      fold @"Canvas context menu" openMenu
-      fold @"Adjust diameter.." adjustDiameter
-      fold @"Close" closeAdjustment
-      fold @"Undo" undo
-      fold @"Redo" redo
+    ( Semigroupoid.do
+      RecordToVariant.do
+        button @"Close" # providedAt @"adjusting" @"mode"
+        ( div $ RecordToVariant.do
+          button @"Undo"
+          button @"Redo" )
+        ( div >>> "style" := "position: relative; max-width: 500px;" $ RecordToVariant.do
+          ( svg >>> "viewBox" := "0 0 500 300" >>> "style" := canvasFace $ RecordToVariant.do
+            ( onClickedXY @"Canvas clicked" $
+              ( circle >>> "stroke" := "#333" >>> attrAt @"x" "cx" >>> attrAt @"y" "cy" >>> attrAt @"r" "r"
+                >>> attrWith "fill" circleFill $ identity ) # actedOf @"key" canvasCircles )
+            onHoveredXY @"Canvas hovered" identity
+            onContextMenuXY @"Canvas context menu" identity )
+          ( div >>> attrWith "style" menuPlacement $ div >>> "style" := menuFace $ button @"Adjust diameter.." ) # providedAt @"menu" @"mode" )
+      VariantToRecord.do
+        foldInto @"Canvas clicked" clickCanvas
+        foldInto @"Canvas hovered" hover
+        foldInto @"Canvas context menu" openMenu
+        fold @"Adjust diameter.." adjustDiameter
+        fold @"Close" closeAdjustment
+        fold @"Undo" undo
+        fold @"Redo" redo ) # stepped
   # looped # with emptyCanvas
 
 canvasFace :: String

@@ -121,11 +121,14 @@ module PUI
   , reset
   , capture
   , kept
-  , told
+  , captured
+  , foldInto
+  , stepped
+  , landed
   , static
   , ticks
   , debounced
-  , edits
+  , editsOf
   , with
   , looped
   , inCase
@@ -144,6 +147,7 @@ import Data.Array as Array
 import Data.Either (Either(..), either)
 import Data.Foldable (all, elem, foldl, for_)
 import Data.Lens (Optic)
+import Data.Lens.Lens (lens)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (class Newtype)
 import Data.Map as Map
@@ -165,13 +169,13 @@ import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, onField, record
 -- focus itself. No placement word is here either: every leaf narrows its
 -- input and its output itself — a status or an action owns the one
 -- case its label names, an emitter is closed to the case it emits, an action is
--- typed at exactly its outcomes and `joined` names them in its block — so a stage is typed at one
+-- typed at exactly its outcomes, which the statuses or folds after it own — so a stage is typed at one
 -- row (the gated displays, `settled`, `acted`) and a UI component's own
 -- row is always stated by a business function, never placed at another
 -- row at the call site. The floor's single-label adopters (`atField`/
 -- `atCase`, `toField`) stay inside the vocabularies, where a face is
--- adopted at its label; `toCase` alone is a view's, the one shape change
--- a business case can name (an editor's release leaving as an event).
+-- adopted at its label, and no view writes `toCase`: an editor's release
+-- leaving as an event is the editing list's to say (`editsOf`).
 -- `{}`-input chrome is placed by `eventLeaf` with a bare
 -- `lcmap (const {})`.
 import Data.Profunctor.Row (settled, type (+)) as Adopters
@@ -182,7 +186,7 @@ import Data.Profunctor.Keyed.Dispatching (dispatched, dispatchedOf, dispatchedOn
 import Data.Profunctor.Keyed.Gathering (gathered, gatheredAt, gatheredOf) as Adopters
 import Data.Profunctor.Coresolving (class Coresolving, coresolve)
 import Data.Profunctor.Resolving (class Resolving)
-import Data.Profunctor.Row.RecordToVariant (class RecordToVariant)
+import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVariant)
 import Data.Profunctor.Row (class RowLabels, atCase, exactRow, rowLabels)
 import Data.String (joinWith, trim)
 import Data.String.CodeUnits (toCharArray)
@@ -788,7 +792,7 @@ with a w = lcmap (const {}) (announce a >>> w)
 -- | row), stated by the seed's signature, not on the knot (`w # looped #
 -- | with freshCount`, `freshCount :: { counted :: Int }`). It is the app's
 -- | knot, and the only knot: a loop through the four shapes is cut at its
--- | record junction, where the model row holds the state, and an event re-enters through its fold. (The variant side would need
+-- | record junction, where the model row holds the state, and an event re-enters through its fold, as the step `stepped` lands on the row its line was fed — so every line of the knot's body passes the row it is fed, and an application has one knot. (The variant side would need
 -- | no primitive — `Cochoice`'s `unleft` holds raw here, the carrier being
 -- | traced over `+` and pointed-traced over `×` — and a one-field `×`-knot
 -- | would be a seeded `unfirst`; neither has a word,
@@ -831,9 +835,8 @@ with a w = lcmap (const {}) (announce a >>> w)
 -- | is what keeps exactness honest: each editor's `focusField @l` lift
 -- | re-attaches the background it retained at its last feed, and the loop
 -- | re-feeds every stage on every emission, so no editor can emit a stale
--- | sibling for longer than the turn in flight — which is why editor
--- | ensembles live inside `looped`, and a loop-free
--- | flow wraps its editor window in `looped` (order-form).
+-- | sibling for longer than the turn in flight — which is why editors
+-- | live inside the application's `looped`.
 looped :: forall r m. Functor m => PUI m { | r } { | r } -> PUI m { | r } { | r }
 looped (PUI p) = PUI $ p <#> \reg prop -> do
     busyRef <- Ref.new false
@@ -1551,13 +1554,13 @@ eventLeaf chrome = replayed @l identity (occurrencesOn Click (lcmap (const {}) c
 -- | vocabulary's `snackbar`/`toast`/`messageBar`/`output` is this over
 -- | its own face (`snackbar = statusOver @l snackbarFace`). Plumbing.
 statusOver
-  :: forall @l m a v r
+  :: forall @l m a v i o
    . Applicative m
   => IsSymbol l
   => Cons l a () v
   => (String -> PUI m a {})
-  -> (a -> { | r })
-  -> PUI m [ | v ] { | r }
+  -> ({ event :: a, model :: i } -> o)
+  -> PUI m [ | v ] (i -> o)
 statusOver face f = face (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
 -- | A vocabulary's modal, which both dialog leaves are built over:
@@ -1654,22 +1657,21 @@ static o = o identity
 -- | the row `t` the `Aff`'s signature names. Like a status it narrows its
 -- | input to its one case (`Cons l a () v`); its output is **exactly** its
 -- | outcomes, like `load`'s, so it widens nothing and the view writes no
--- | row for it: what tells the outcomes closes `t` —
--- | the statuses or capture after it, which own their cases
--- | (payment, weather), or, standing among emitters in a
--- | `RecordToVariant.do`, the `joined @l` (one outcome) or `joined @(l1 +
--- | l2)` (two) it is joined by, which close its source to the labels
--- | they name, the cases it owns in the block (order-form, ticker).
+-- | row for it: what tells the outcomes closes `t` — the statuses or
+-- | folds after it, which own their cases. It stands **after the
+-- | emitters**: on the line after its button (payment, ticker), or with
+-- | its outcome's statuses as one operand of the fold block, where it
+-- | owns its button's case (order-form, weather).
 -- |
 -- | It is **opened by its progress indicator**: the slot is a `+→×`
 -- | citizen of the run's two lifecycle occurrences, `started` and
 -- | `ended` (`indeterminateCircularProgress # action @"Charge card" …`), and of
 -- | nothing else — a status that tells an outcome is never the slot, and
 -- | the types forbid it. The outcome is folded after the action by the
--- | statuses that tell it (`snackbar @"Card charged" identity`, payment),
--- | or by `capture @l` where nothing needs telling (weather); an outcome
--- | whose fold keeps the model is `joined` with its button, so the fold
--- | has the model in hand (order-form's submit). No
+-- | statuses that tell it (`snackbar @"Card charged" captured`, payment;
+-- | `snackbar @"Order submitted" kept`, order-form), or by `foldInto @l
+-- | f` where nothing needs telling (weather), and it lands on the model
+-- | as it is when it lands, so an edit made while the `Aff` ran is kept. No
 -- | application owns a "busy": the indicator shows between `started` and
 -- | `ended` and, like every status, owes the channel nothing. The action
 -- | a mount runs, fed `body`'s one `{}` rather than a case, is `load`.
@@ -1696,9 +1698,9 @@ action arr slot = atCase @l (running arr slot)
 -- | The action a **feed** runs — `×→+`, the row fed is the `Aff`'s
 -- | argument and its outcome leaves as the case the `Aff` names: the
 -- | **load** standing before the knot, run by `body`'s one feed of `{}`
--- | (`indeterminateLinearProgress # load loadOrder; snackbar @"Order
--- | loaded" identity`, order-form), its outcome the model the knot
--- | loops. Its outcome row `t` is the `Aff`'s signature: unlike `action`
+-- | (`( indeterminateLinearProgress # load loadOrder; snackbar @"Order
+-- | loaded" captured ) # landed`, order-form), its outcome the model the
+-- | knot loops. Its outcome row `t` is the `Aff`'s signature: unlike `action`
 -- | it widens nothing, so the case the capture or status after it takes
 -- | needs no line of its own. Opened by its progress indicator like `action`,
 -- | reported and scoped the same way; typed at exactly its outcomes.
@@ -1735,120 +1737,144 @@ running run w = action'
           else tr "action: outcome dropped, the scope is suspended or cancelled" o)
   w
 
--- | One case **folded into the record** (`+→×`): the faceless leaf owning
--- | case `l`, releasing `f` of its payload as the whole next model —
--- | `fold @"Count" increment` (counter), `fold @"Message opened" openMessage`
--- | (inbox). A loop's folds are one per event case, merged by
--- | `VariantToRecord.do`, each releasing the whole next model. Memoryless:
--- | a replaying emitter's payload is the row it was fed, an event with
--- | something of its own arrives `joined` with that row as
--- | `{ event, model }` (`kept` is the fold that keeps it), and an effect
--- | returns the model (`capture @l`), so every handler has the model in
--- | hand and the loop's memory stays at the emitters and in the knot. A
--- | fold whose event needs telling is a **status**, which takes its fold
--- | the same way (`snackbar @"Card charged" identity`) and tells its
--- | case, the label its whole copy; this is that fold with no face,
--- | `folding @l f` over `unshown @l`.
+-- | The event path as **one line of the body** (`×→×` over `×→+ … +→×`):
+-- | fed a row it passes the row on, like every other line, and an event
+-- | releases the next model — the step its fold released, applied to the
+-- | row the line was last fed (`( Semigroupoid.do RecordToVariant.do …;
+-- | VariantToRecord.do … ) # stepped`).
 -- |
--- | A status is **named as what it tells**: its case label is the words on
--- | the screen, so it stands after an action whose outcome row names its
--- | outcomes (`"Card charged"`, `"Order placed"`), and a command straight
--- | from an emitter — whose case is the button's caption — folds here,
--- | silently, its result already on screen. Whatever the user must keep
--- | (a reference, an order number) is a model field shown by a display,
--- | never copy flashed by a status; an outcome's reasons are its cases,
--- | each told by a sibling status.
+-- | It is what **one knot per application** asks of an event path. The
+-- | model re-enters at one place, so whatever changes it must reach that
+-- | place: an edit above this line travels down the body as a row, and a
+-- | line that swallowed it — as a bare `emitters >>> folds` does, a
+-- | variant answering no feed — would leave the knot holding the row from
+-- | before the edit. So the path answers every feed with the row fed, and
+-- | the body is a pipeline of row-passing lines whatever their order:
+-- | every line holds the knot's row, and the model an event lands on is
+-- | the model.
+-- |
+-- | **Derived**: `landed` over the path merged (`×→+`) with the wire —
+-- | two sources, each owning its case, a feed and a step — the feed read
+-- | as the unit step, `identity`: steps are the endomorphisms of the row,
+-- | a feed changes nothing, an event applies its step.
+-- |
+-- | Laws: **passage** — a feed is answered with the row fed, once
+-- | (`stepped silent ≈ identity`); **landing** — a step released outside a
+-- | feed leaves as the step of the row last fed.
+stepped :: forall m r. Applicative m => PUI m { | r } ({ | r } -> { | r }) -> PUI m { | r } { | r }
+stepped path = landed $ rmap (on (Proxy @"fed") (const identity) (on (Proxy @"step") identity case_)) $ recordToVariant
+  (rmap (\_ -> inj (Proxy @"fed") {}) identity :: PUI m { | r } [ fed :: {} ])
+  (rmap (inj (Proxy @"step")) path :: PUI m { | r } [ step :: { | r } -> { | r } ])
+
+-- | A step **landed** on the row its path was fed — the lens whose getter
+-- | is `identity` and whose setter applies what the path releases, a
+-- | step, to that row: `Strong`'s `first` under the diagonal. Answers no
+-- | feed and may change the row's type, so it is the landing of a path
+-- | that stands **before** the knot and primes it: a load, landing on the
+-- | `{}` that `body` feeds (`( … # load loadOrder; snackbar @"Order
+-- | loaded" captured ) # landed`, order-form). Inside the knot a path is
+-- | `stepped`.
+landed :: forall m i o. Functor m => PUI m i (i -> o) -> PUI m i o
+landed = lens identity \model step -> step model
+
+-- | One case **folded into the model it lands on** (`+→×`): the faceless
+-- | leaf owning case `l`, releasing `f` as its step — the next model is
+-- | `f` of the row the event's path was last fed, `fold @"Count" increment`
+-- | (counter). A loop's folds are one per event case, merged by
+-- | `VariantToRecord.do`. The payload is not read: an emitter's event
+-- | carries the view model the user acted upon, which is the model only
+-- | until something waits — an effect, a dialog — so the fold reads the
+-- | model where it lands and not the row the click replayed. An event
+-- | whose payload the fold needs is `foldInto @l f`. What a `+→×` leaf
+-- | releases is a **step**, which `stepped` applies.
 fold
-  :: forall @l m a v r
+  :: forall @l m a v i o
    . Applicative m
   => IsSymbol l
   => Cons l a () v
-  => (a -> { | r })
-  -> PUI m [ | v ] { | r }
-fold f = folding @l f (unshown @l)
+  => (i -> o)
+  -> PUI m [ | v ] (i -> o)
+fold f = folding @l (\{ model } -> f model) (unshown @l)
+
+-- | One case **folded with its payload** into the model it lands on
+-- | (`+→×`): `f` of the event's payload and the row its path was last
+-- | fed, one record — `foldInto @"Person picked" pick`, `pick ::
+-- | { event :: Int, model :: Catalogue } -> Catalogue` (crud). The fold of
+-- | an event whose payload says what the model cannot: a list pick, a
+-- | canvas click, an action's outcome.
+foldInto
+  :: forall @l m a v i o
+   . Applicative m
+  => IsSymbol l
+  => Cons l a () v
+  => ({ event :: a, model :: i } -> o)
+  -> PUI m [ | v ] (i -> o)
+foldInto f = folding @l f (unshown @l)
 
 -- | One case folded into the record by **resetting** it to `x`
--- | (`reset @"New game" openingPosition`, tic-tac-toe): the row released is
--- | `x` whole, whatever the payload. `reset @l x = fold @l (const x)`; a
+-- | (`reset @"New game" openingPosition`, tic-tac-toe): the next model is
+-- | `x` whole, whatever the payload and the model it lands on. `reset @l x = fold @l (const x)`; a
 -- | status resets the same way, `snackbar @"Order placed" (const
 -- | usualOrder)` (espresso-bar).
 reset
-  :: forall @l m a v r
+  :: forall @l m a v i o
    . Applicative m
   => IsSymbol l
   => Cons l a () v
-  => { | r }
-  -> PUI m [ | v ] { | r }
+  => o
+  -> PUI m [ | v ] (i -> o)
 reset x = fold @l (const x)
 
 -- | One case folded into the record by **capturing** its payload as the
--- | model whole (`capture @"Forecast fetched"`, weather): the case an effect
+-- | model whole (`capture @"Password generated"`, password-generator): the case an effect
 -- | returns the model under — a load, a fetch, a server's answer — where
--- | nothing needs telling. `capture @l = fold @l identity`; a status
--- | captures with `identity` (`snackbar @"Order loaded" identity`,
+-- | nothing needs telling. `capture @l = foldInto @l captured`; a status
+-- | captures with `captured` (`snackbar @"Order loaded" captured`,
 -- | order-form).
 capture
-  :: forall @l m v r
+  :: forall @l m v i o
    . Applicative m
   => IsSymbol l
-  => Cons l { | r } () v
-  => PUI m [ | v ] { | r }
-capture = fold @l identity
+  => Cons l o () v
+  => PUI m [ | v ] (i -> o)
+capture = foldInto @l captured
 
--- | The fold that **keeps the model** a joined event arrived with:
--- | `kept = _.model`, the third fold with a name beside `reset`'s `const
--- | x` and `capture`'s `identity`. For an outcome that is told and changes
--- | nothing — `snackbar @"Order submitted" kept` (order-form), the action
--- | joined with its button so the model is in hand.
-kept :: forall a r. { event :: a, model :: { | r } } -> { | r }
+-- | The fold that **keeps the model** an event lands on: `kept =
+-- | _.model`. For an outcome that is told and changes nothing —
+-- | `snackbar @"Order submitted" kept` (order-form).
+kept :: forall a i. { event :: a, model :: i } -> i
 kept = _.model
 
--- | A status **told, its event passed on** (`+→+`): the status shows its
--- | case as it does under a fold, and the event leaves unchanged, so a
--- | view that ends at the model event can tell an outcome and leave its
--- | folding to the rest — `snackbar @"Card charged" # told` (payment).
--- | The status is handed the fold that keeps nothing, `const {}`.
--- | **Derived**, as `folding` is: the wire and the status under the `×→×`
--- | merge, fed the event in a one-field record — the status contributes
--- | no field and is inert to the gate, the wire answers every feed with
--- | the event. Law: **passage** — `told s ≈ identity` on the events, each
--- | released once, whatever `s` shows.
-told
-  :: forall m a v
-   . Applicative m
-  => ((a -> {}) -> PUI m [ | v ] {})
-  -> PUI m [ | v ] [ | v ]
-told status = dimap { event: _ } _.event $ recordToRecord
-  (dimap _.event { event: _ } identity :: PUI m { event :: [ | v ] } { event :: [ | v ] })
-  (lcmap _.event (status (const {})) :: PUI m { event :: [ | v ] } {})
+-- | The fold that **captures the event** as the model whole: `captured =
+-- | _.event`, `kept`'s sibling — `snackbar @"Card charged" captured`
+-- | (payment).
+captured :: forall a i. { event :: a, model :: i } -> a
+captured = _.event
 
 -- | The fold behind every `+→×` leaf — plumbing, not vocabulary: a status
 -- | face owning case `l` and the fold of its payload, in one leaf. The
 -- | vocabularies build their statuses with it, through `statusOver`
 -- | (`snackbar = statusOver @l snackbarFace`),
--- | and `fold @l f` is it over the faceless `unshown @l`. The status is fed
+-- | and `foldInto @l f` is it over the faceless `unshown @l`. The status is fed
 -- | the **event**, never the fold's result — it shows its case's label, so
--- | what a status says is the name of what happened — and `f` of the
--- | payload is the row released.
+-- | what a status says is the name of what happened — and what is released
+-- | is the **step**: `f` of the payload and the model `stepped` lands it on.
 -- |
 -- | **Derived**: the wire and the status under the `×→×` merge, fed the
--- | occurrence's outcome and the occurrence in one two-field record — the
+-- | occurrence's step and the occurrence in one two-field record — the
 -- | status contributes no field and is inert to the gate, the wire answers
--- | every feed with the row, released once per feed. (A carrier-free
--- | `fold @l f` once lived in `Data.Profunctor.Row.VariantToRecord`, the
--- | statuses standing beside the folds as sibling operands; CHANGELOG,
--- | 2026-10-07.)
+-- | every feed with the step, released once per feed.
 folding
-  :: forall @l m a v r
+  :: forall @l m a v i o
    . Applicative m
   => IsSymbol l
   => Cons l a () v
-  => (a -> { | r })
+  => ({ event :: a, model :: i } -> o)
   -> PUI m [ | v ] {}
-  -> PUI m [ | v ] { | r }
-folding f status = dimap (\v -> { event: v, model: on (Proxy @l) f case_ v }) _.model $ recordToRecord
-  (dimap _.model { model: _ } identity :: PUI m { event :: [ | v ], model :: { | r } } { model :: { | r } })
-  (lcmap _.event status :: PUI m { event :: [ | v ], model :: { | r } } {})
+  -> PUI m [ | v ] (i -> o)
+folding f status = dimap (\v -> { event: v, model: on (Proxy @l) (\event model -> f { event, model }) case_ v }) _.model $ recordToRecord
+  (dimap _.model { model: _ } identity :: PUI m { event :: [ | v ], model :: i -> o } { model :: i -> o })
+  (lcmap _.event status :: PUI m { event :: [ | v ], model :: i -> o } {})
 
 action' :: forall a b s t m. Scoped m => (s -> (a -> Effect Unit) -> (t -> Effect Unit) -> Effect Boolean -> Aff Unit) -> Optic (PUI m) s t a b
 action' arr w = fromHandles do
@@ -2091,12 +2117,12 @@ inCaseAt = inCase @c (Record.get (Proxy @l))
 -- | every state it chooses among is the classifier's signature, in the view
 -- | model module, and the view restates none of them (guardrails L18).
 -- | A variant the model stores is named by its label instead, `providedAt`.
-provided :: forall @l m node v r a b v1. Hosting m node => IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI m { | r } [ | v1 ] -> PUI m { | r } [ | v1 ]
+provided :: forall @l m node v r a b o. Hosting m node => IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI m { | r } o -> PUI m { | r } o
 provided = attachedOn @l
 
 -- | `provided` over a variant the model stores: the emitter exists in case
 -- | `c` of field `l`, both named by label (`# providedAt @"halted" @"phase"`).
-providedAt :: forall @c @l m node r a v v1 b1 b2. Hosting m node => IsSymbol c => IsSymbol l => Cons c a b1 v => Cons l [ | v ] b2 r => PUI m { | r } [ | v1 ] -> PUI m { | r } [ | v1 ]
+providedAt :: forall @c @l m node r a v o b1 b2. Hosting m node => IsSymbol c => IsSymbol l => Cons c a b1 v => Cons l [ | v ] b2 r => PUI m { | r } o -> PUI m { | r } o
 providedAt = provided @c (Record.get (Proxy @l))
 
 -- The pane mechanism every pane shares, at any content output: attach and
@@ -2119,42 +2145,40 @@ attachedOn f w = fromHandles do
     , fromUser
     }
 
--- | An editor's **edits as events** (`×→+`): the user's edit of the stage
--- | leaves as case `l` carrying the row it edited, and the stage's answer
--- | to every feed — an editor echoes what it is shown — is no event and
--- | is dropped inside that feed (`unanswering`). A form of several
--- | editors is one source: `sliderLive @"Duration" # edits @"Duration
--- | changed"` (timer), `( Semigroupoid.do { filledTextField @"Name";
--- | filledTextField @"Surname" } ) # edits @"Entry edited"` (crud). Closed
--- | to its case, like every emitter, so it merges with buttons, and as
--- | the element of an emitting list it is the **editing list**: `( row #
--- | edits @"Quantity changed" ) # gatheredOf @"product" cartLines`, a
--- | user's edit of a projected row leaving with that row for a fold to
--- | write back by key — the list for a projection that joins or reshapes
--- | its rows, which has no canonical way back (one that only selects
--- | rows of a stored array has: `actedWithin`).
--- |
--- | Laws are `unanswering`'s, read through the case: **silence** (a feed
--- | is answered by no emission) and **passage** (an edit leaves as case
--- | `l`, unchanged) — and so is its precondition: the stage answers
--- | **within its feed**. Every leaf and every merge and sequence of
--- | leaves does; a stage under `debounced` does not, and its late answer
--- | would leave as an edit.
-edits
-  :: forall @l m r v
-   . Functor m
+-- | The **editing list** — `gatheredOf` over editors: the same keyed and
+-- | retaining reconciliation over elements that are `×→×` citizens (a row
+-- | holding a toggle, a field), a user's edit of an element leaving as
+-- | case `l` carrying the element's row, while an element's answer to the
+-- | list's own feed — every editor echoes what it is shown — is no event
+-- | and is dropped inside that feed (`unanswering`). It is the list for a
+-- | projection that joins or reshapes its rows, which has no canonical
+-- | way back — `( row ) # editsOf @"Quantity changed" @"product"
+-- | cartLines`, the fold writing the edit back by key (`foldInto`); a
+-- | projection that only selects rows of a stored array has one, and is
+-- | edited in place (`actedWithin`), and a stored array's editors are
+-- | `acted`. **Derived**: `gatheredOf @k proj` over the editor under
+-- | `unanswering`, its release injected as case `l`; closed to that case,
+-- | like every emitter. `unanswering`'s precondition is its own: the
+-- | element answers **within its feed**, so an element under `debounced`
+-- | is outside it.
+editsOf
+  :: forall @l @k r m node key b a v
+   . Hosting m node
   => IsSymbol l
+  => IsSymbol k
+  => Cons k key b r
   => Cons l { | r } () v
-  => PUI m { | r } { | r }
-  -> PUI m { | r } [ | v ]
-edits editor = rmap (inj (Proxy @l)) (unanswering editor)
+  => (a -> Array { | r })
+  -> PUI m { | r } { | r }
+  -> PUI m a [ | v ]
+editsOf f editor = Adopters.gatheredOf @k f (rmap (inj (Proxy @l)) (unanswering editor))
 
 -- | A stage with **its answers dropped**: what it emits inside its own
 -- | feed is withheld, what it emits outside one passes. It is the bridge
 -- | between the two musts of doc/observational-semantics.md §3.1 — a
 -- | `×→×` stage must answer every feed, a `×→+` one must not — so an
 -- | editor under it is an emitter of the user's edits and of nothing
--- | else (`edits` is it, injected at a case). An answer is told from an
+-- | else (`editsOf` is `gatheredOf` over it). An answer is told from an
 -- | edit by **when** it comes, so the laws hold for a stage that answers
 -- | within its feed, as the leaf protocol does (`recordToRecordWiring`
 -- | echoes inside `toUser`): **silence** — a feed is answered by no

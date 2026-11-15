@@ -92,7 +92,10 @@ Each editor is fed the whole record and emits it with its own field
 changed. `looped # with plannedTrip` supplies the starting record and
 loops each change back to the top, so all three editors see every edit;
 it also closes the app's input to `{}`, which `body` requires (writing.md
-*App shape*).
+*App shape*). It is the app's one knot, and it closes the form alone
+because nothing below it changes the model: the button and the dialog
+fold nothing, so they stand after it. An event that folds is a line
+inside the knot, as counter's is.
 
 **Stage 2 — the button, `button' @"Book" { icon: "flight_takeoff" } #
 provided @"bookable" bookingState`.** The first shape change, `×→+`: fed
@@ -229,8 +232,8 @@ model module is the ordinary one.
 
 - **counter** — one display reading one function
   (`headline4 $ text countLine` above its `button @"Count"`), one fold
-  (`fold @"Count" increment`), over a
-  model of `{ counted :: Int }`.
+  (`fold @"Count" increment`), the button and its fold one line of the
+  body, closed by `# stepped`, over a model of `{ counted :: Int }`.
 - **timer** — two displays of different sorts,
   `linearProgress elapsedFraction` and `text progressLine`,
   both computed from the model, neither stored; `ticks @"Clock
@@ -241,27 +244,30 @@ model module is the ordinary one.
   the other only when the two disagree.
 - **payment** — an action and the status that tells its outcome:
   `indeterminateCircularProgress # action @"Charge card" chargeFlaky`,
-  then `snackbar @"Card charged" identity`, the fold that takes the
+  then `snackbar @"Card charged" captured`, the fold that takes the
   charged order as the model.
-- **todo-list** — a selectable list, `listOf @"Todo toggled" @"id"`, a filter
-  selector, and a count line, `text itemsLeftLine`, that says "1 item
-  left" or "3 items left" itself.
+- **todo-list** — a list ticked in place through its filter selector,
+  `# actedWithin @"id" @"todos" visibleEntries`, two event lines, Add
+  under the field and Clear completed under the list, and a count line,
+  `text itemsLeftLine`, that says "1 item left" or "3 items left"
+  itself.
 - **checkout** — a wizard: the step is a model field, each step's line a
   pane `# inCaseAt @c @"step"`, and Back and Next are the face of a
   selector the app packages itself, `stepper @"step"` over `step @"Cart"`,
   `step @"Shipping"`, `step @"Payment"`, editing that field in the order
   its steps are written.
-- **crud** — the list's pick `# joined @"Person picked"`, folded by
-  `pick`; Update and Delete exist only while a person is picked, `#
-  providedAt @"picked" @"selected"`; the prefix filter's `# settled
-  filterChanged` drops a selection it hides.
+- **crud** — the list's pick folded with its payload, `foldInto
+  @"Person picked" pick`; Update and Delete exist only while a person
+  is picked, `# providedAt @"picked" @"selected"`; the prefix filter's
+  `# settled filterChanged` drops a selection it hides.
 - **tic-tac-toe** — a reset is a restart: `openingPosition` is the seed and
   `reset @"New game" openingPosition` the reset.
-- **order-form** — all four shapes on one screen: a `looped` form in
-  labelled groups inside the app's loop, a choice with a field per case
-  (`tabBar @"Mode"` and its `inCaseAt` panes), the live summary, a
-  `RecordToVariant.do` of buttons, an estimate joined with the model it
-  lands on, and the folds and statuses.
+- **order-form** — all four shapes on one screen: a load landed before
+  the knot, a form in labelled groups, a choice with a field per case
+  (`tabBar @"Mode"` and its `inCaseAt` panes), the live summary, and one
+  event line: a `RecordToVariant.do` of buttons, then each action with
+  its outcome's fold or statuses, the estimate folded into the model as
+  it is when it lands.
 
 When the word for something is missing, [vocabulary.md](vocabulary.md)
 goes from the need to a word, a demo using it, and where to read more.

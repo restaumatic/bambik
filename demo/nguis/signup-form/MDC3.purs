@@ -1,10 +1,10 @@
 module SignupForm.MDC3 (signupForm) where
 
-import Prelude ((#), ($), identity, Unit)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (action)
+import PUI (action, captured)
 import PUI.Web (inCase, provided, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button', checkboxFrom, debouncedTextFieldFrom, filledTextFieldFrom, headlineLarge, indeterminateLinearProgress, option, radio, radioButtonFrom, selectFrom, snackbar, titleSmall, tooltip)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -31,4 +31,4 @@ signupForm =
     ( titleSmall $ text readyLine ) # inCase @"ready" validation
     button' @"Sign up" { icon: "person_add" } # provided @"ready" validation
     indeterminateLinearProgress # action @"Sign up" signUp
-    snackbar @"Account created" identity
+    snackbar @"Account created" captured

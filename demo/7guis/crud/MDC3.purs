@@ -2,23 +2,30 @@ module Crud.MDC3 (crud) where
 
 import Prelude ((#), ($), Unit)
 
-import Crud (catalogued, entries, isSelected, personLine)
+import Crud (createPerson, deletePerson, entries, filterChanged, freshCatalogue, isSelected, personLine, pick, updatePerson)
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (edits, joined)
+import PUI (fold, foldInto, looped, settled, stepped, with)
 import PUI.Web (providedAt, text)
 import PUI.Web.MDC3 (body, button, filledTextField, listOf')
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 crud :: Effect Unit
 crud =
-  body $ RecordToVariant.do
-    filledTextField @"Surname prefix" # edits @"Prefix changed"
+  body $ Semigroupoid.do
+    filledTextField @"Surname prefix" # settled filterChanged
+    filledTextField @"Name"
+    filledTextField @"Surname"
     ( Semigroupoid.do
-      filledTextField @"Name"
-      filledTextField @"Surname" ) # edits @"Entry edited"
-    ( listOf' @"Person picked" @"key" { selected: isSelected } entries $ text personLine ) # joined @"Person picked"
-    button @"Create"
-    button @"Update" # providedAt @"picked" @"selected"
-    button @"Delete" # providedAt @"picked" @"selected"
-  # catalogued
+      RecordToVariant.do
+        listOf' @"Person picked" @"key" { selected: isSelected } entries $ text personLine
+        button @"Create"
+        button @"Update" # providedAt @"picked" @"selected"
+        button @"Delete" # providedAt @"picked" @"selected"
+      VariantToRecord.do
+        foldInto @"Person picked" pick
+        fold @"Create" createPerson
+        fold @"Update" updatePerson
+        fold @"Delete" deletePerson ) # stepped
+  # looped # with freshCatalogue

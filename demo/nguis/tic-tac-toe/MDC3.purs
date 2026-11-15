@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Variant (match)
 import Effect (Effect)
-import PUI (gatheredOf, fold, joined, looped, reset, with)
+import PUI (foldInto, gatheredOf, looped, reset, stepped, with)
 import PUI.Web (attrWith, inCase, staticText, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, button', headlineSmall, tile)
@@ -19,13 +19,14 @@ ticTacToe =
     ( headlineSmall $ text wonLine ) # inCase @"won" gameOutcome
     ( headlineSmall $ staticText "Draw" ) # inCase @"drawn" gameOutcome
     ( headlineSmall $ text toMoveLine ) # inCase @"toMove" gameOutcome
-    RecordToVariant.do
-      ( div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
-        ( tile @"Cell claimed" @"key" $ text cellMark ) # attrWith "style" cellFace # gatheredOf @"key" cells ) # joined @"Cell claimed"
-      button' @"New game" { icon: "replay" }
-    VariantToRecord.do
-      fold @"Cell claimed" claimCell
-      reset @"New game" openingPosition
+    ( Semigroupoid.do
+      RecordToVariant.do
+        div >>> "style" := "display: grid; grid-template-columns: repeat(3, 72px); gap: 4px; width: max-content; margin-bottom: 10px;" $
+          ( tile @"Cell claimed" @"key" $ text cellMark ) # attrWith "style" cellFace # gatheredOf @"key" cells
+        button' @"New game" { icon: "replay" }
+      VariantToRecord.do
+        foldInto @"Cell claimed" claimCell
+        reset @"New game" openingPosition ) # stepped
   # looped # with openingPosition
 
 cellFace

@@ -93,7 +93,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 --       `×→+` events — `button @l` (`.btn.btn-primary`);
 --       `+→×` statuses — `toast` (`.toast` fixed at the bottom, shown
 --         on feed and dismissed by the hand-wired timer) — each taking
---         its business case and fold, the case label its copy (`toast @"Application received" identity`).
+--         its business case and fold, the case label its copy (`toast @"Application received" kept`).
 --   * **oculars** — shape-preserving decorators: `card`
 --     (`.card`, a plain surface), `listGroup`/`listGroupItem`
 --     (`.list-group`), `badge variant` (`.badge.text-bg-*`).
@@ -316,14 +316,15 @@ progress f = fromHandles do
 -- |
 -- | A status **tells its case**: its caption is the case label verbatim,
 -- | so the outcome is named as what it tells (`toast @"Application
--- | received" identity`) and the payload is read by nothing but the fold. A
--- | `+→×` leaf like `fold @l f`, it takes its fold of the payload.
+-- | received" kept`) and the payload is read by nothing but the fold. A
+-- | `+→×` leaf like `fold @l f`, it takes its fold, of the event and
+-- | the model it lands on.
 toast
-  :: forall @l a v r
+  :: forall @l a v i o
    . IsSymbol l
   => Cons l a () v
-  => (a -> { | r })
-  -> PUI Web [ | v ] { | r }
+  => ({ event :: a, model :: i } -> o)
+  -> PUI Web [ | v ] (i -> o)
 toast = statusOver @l toastFace
 
 toastFace :: forall a r. String -> PUI Web a { | r }

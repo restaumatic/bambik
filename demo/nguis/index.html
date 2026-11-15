@@ -29,7 +29,7 @@
       <li><a href="inbox/">Inbox</a> <small>(<a href="inbox/?mdc2">MDC2</a> | <a href="inbox/?mdc3">MDC3</a>)</small> <small>— a list, a banner, and a deletion confirmed by a dialog on its event</small></li>
       <li><a href="movie-browser/">Movie Browser</a> <small>(<a href="movie-browser/?mdc2">MDC2</a> | <a href="movie-browser/?mdc3">MDC3</a>)</small> <small>— favourites edited in place through the filter (<code>actedWithin</code>): no event, no fold</small></li>
       <li><a href="weather/">Weather Dashboard</a> <small>(<a href="weather/?mdc2">MDC2</a> | <a href="weather/?mdc3">MDC3</a>)</small> <small>— an action's outcome captured, a notice the user closes (<code>acknowledged</code>)</small></li>
-      <li><a href="reorder/">Reorder</a> <small>(<a href="reorder/?mdc2">MDC2</a> | <a href="reorder/?mdc3">MDC3</a> | <a href="reorder/?html">HTML</a>)</small> <small>— keyed reconciliation + the <code>edits</code> collection editor</small></li>
+      <li><a href="reorder/">Reorder</a> <small>(<a href="reorder/?mdc2">MDC2</a> | <a href="reorder/?mdc3">MDC3</a> | <a href="reorder/?html">HTML</a>)</small> <small>— keyed reconciliation + the <code>acted</code> collection editor</small></li>
       <li><a href="auction/">Live Auction</a> <small>(<a href="auction/?mdc2">MDC2</a> | <a href="auction/?mdc3">MDC3</a>)</small> <small>— a running maximum as a model field (<code>settled</code>)</small></li>
       <li><a href="checkout/">Checkout Wizard</a> <small>(<a href="checkout/?mdc2">MDC2</a> | <a href="checkout/?mdc3">MDC3</a>)</small> <small>— a wizard whose step is a model field, two buttons folded by one handler</small></li>
       <li><a href="payment/">Payment with Retry</a> <small>(<a href="payment/?mdc2">MDC2</a> | <a href="payment/?mdc3">MDC3</a>)</small> <small>— an action that retries until approved, narrated on its way in by <code>observed</code></small></li>
@@ -49,7 +49,7 @@
       <li><a href="loan-calculator/">Loan Calculator</a> <small>(Bootstrap)</small> <small>— the <code>PUI.Web.Bootstrap</code> vocabulary: the CSS-only design system, native elements dressed in Bootstrap's classes</small></li>
       <li><a href="venue/">Venue</a> <small>(<a href="venue/?mdc3">MDC3</a> | <a href="venue/?mdc2">MDC2</a>)</small> <small>— a document edited in place as deep as it nests: sub-records (<code>group</code>), stored arrays (<code>acted</code>, <code>actedAt</code>), a choice with its fields beside it, and a summary reading the same value</small></li>
       <li><a href="contacts/">Contacts</a> <small>(<a href="contacts/?mdc3">MDC3</a> | <a href="contacts/?mdc2">MDC2</a>)</small> <small>— master and detail over one stored array: the form is the picked row, written back where its key is stored (<code>actedWithin</code>)</small></li>
-      <li><a href="diner/">Diner</a> <small>(<a href="diner/?mdc3">MDC3</a> | <a href="diner/?mdc2">MDC2</a>)</small> <small>— one data value, three stations reading and writing it: queries that join, operations that carry their path (<code>joined</code> at each level), an order's stage as its lifecycle</small></li>
+      <li><a href="diner/">Diner</a> <small>(<a href="diner/?mdc3">MDC3</a> | <a href="diner/?mdc2">MDC2</a>)</small> <small>— one data value, three stations reading and writing it: queries that join, an event line per station whose operations meet the data at their folds (<code>foldInto</code>), one carrying the order it happened in (<code>joined</code>), an order's stage as its lifecycle</small></li>
     </ol>
   </body>
 </html>

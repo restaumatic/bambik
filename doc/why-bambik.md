@@ -231,8 +231,9 @@ the channel is primed. This is the **trace quartet**:
 
 A loop through the four shapes is cut at its record junction, so the knot
 an application ties is exactly one, `looped`, closed by `with` and the
-model its first stage takes; an event re-enters through its fold. The
-co-strengths keep their value-level laws and optics and have no row forms:
+model its first stage takes; an event re-enters through its fold, whose
+step `stepped` lands on the row, so the event path is one more line of
+the knot's body. The co-strengths keep their value-level laws and optics and have no row forms:
 a looped state is a model field (per-shape knots were carried and
 withdrawn; CHANGELOG 2026-10-14).
 

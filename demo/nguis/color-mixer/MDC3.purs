@@ -4,7 +4,7 @@ import Prelude ((#), ($), (<>), (>>>), Unit, const, identity)
 
 import ColorMixer (applyPreset, duskViolet, hexLine, mixedColor, palette, rgb, rgbLine)
 import Effect (Effect)
-import PUI (gatheredOf, fold, joined, looped, with)
+import PUI (foldInto, gatheredOf, looped, stepped, with)
 import PUI.Web (attrAt, attrWith, text, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, bodyMedium, sliderLive, tile)
@@ -13,17 +13,16 @@ import QualifiedDo.Semigroupoid as Semigroupoid
 colorMixer :: Effect Unit
 colorMixer =
   body $ Semigroupoid.do
-    ( Semigroupoid.do
-      sliderLive @"Red"
-      sliderLive @"Green"
-      sliderLive @"Blue"
-    ) # looped
+    sliderLive @"Red"
+    sliderLive @"Green"
+    sliderLive @"Blue"
     bodyMedium $ text hexLine
     bodyMedium $ text rgbLine
     div >>> attrWith "style" swatchStyle $ identity
-    ( div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
-      tile @"Preset applied" @"name" identity # attrAt @"name" "aria-label" # attrAt @"name" "title" # attrWith "style" chipFace # gatheredOf @"name" (const palette) ) # joined @"Preset applied"
-    fold @"Preset applied" applyPreset
+    ( Semigroupoid.do
+      div >>> "style" := "display: flex; gap: 8px; margin-top: 10px;" $
+        tile @"Preset applied" @"name" identity # attrAt @"name" "aria-label" # attrAt @"name" "title" # attrWith "style" chipFace # gatheredOf @"name" (const palette)
+      foldInto @"Preset applied" applyPreset ) # stepped
   # looped # with duskViolet
 
 chipFace :: { mix :: { "Blue" :: Number, "Green" :: Number, "Red" :: Number }, name :: String } -> String

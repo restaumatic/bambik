@@ -104,7 +104,7 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 --       `×→+` events — `button @l` (`<fluent-button appearance="primary">`);
 --       `+→×` statuses — `messageBar` (`<fluent-message-bar
 --         intent="success">` shown on feed, auto-dismissing) — each taking
---         its business case and fold, the case label its copy (`messageBar @"Room booked" identity`).
+--         its business case and fold, the case label its copy (`messageBar @"Room booked" kept`).
 --   * **oculars** — shape-preserving decorators: `card`
 --     (hand-rolled over the `--colorNeutral*`/`--shadow*` tokens — the
 --     Fluent card is a React-only catalog entry) and the type-ramp
@@ -412,14 +412,15 @@ ratingDisplay f = fromHandles do
 -- |
 -- | A status **tells its case**: its caption is the case label verbatim,
 -- | so the outcome is named as what it tells (`messageBar @"Room booked"
--- | identity`) and the payload is read by nothing but the fold. A `+→×`
--- | leaf like `fold @l f`, it takes its fold of the payload.
+-- | kept`) and the payload is read by nothing but the fold. A `+→×`
+-- | leaf like `fold @l f`, it takes its fold, of the event and
+-- | the model it lands on.
 messageBar
-  :: forall @l a v r
+  :: forall @l a v i o
    . IsSymbol l
   => Cons l a () v
-  => (a -> { | r })
-  -> PUI Web [ | v ] { | r }
+  => ({ event :: a, model :: i } -> o)
+  -> PUI Web [ | v ] (i -> o)
 messageBar = statusOver @l messageBarFace
 
 messageBarFace :: forall a r. String -> PUI Web a { | r }

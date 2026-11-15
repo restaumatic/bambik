@@ -1,21 +1,12 @@
-module Payment (Order, amountLine, charged, chargeFlaky, statusLine) where
+module Payment (Order, amountLine, chargeFlaky, statusLine, unpaidOrder) where
 
-import Prelude (class Applicative, discard, pure, show, (#), ($), (+), (<), (<>))
+import Prelude (discard, pure, show, ($), (+), (<), (<>))
 
 import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
-import PUI (PUI, capture, looped, with)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Order = { amount :: Number, approval :: [ approved :: { attempt :: Int }, pending :: {} ] }
-
-charged :: forall m. Applicative m => PUI m Order [ "Card charged" :: Order ] -> PUI m {} Order
-charged view =
-  Semigroupoid.do
-    view
-    capture @"Card charged"
-  # looped # with unpaidOrder
 
 unpaidOrder :: Order
 unpaidOrder = { amount: 42.0, approval: .pending {} }

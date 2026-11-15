@@ -4,7 +4,7 @@ import Prelude hiding (div)
 
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import LawBench (bench, runBench)
+import LawBench (bench, benchStep, runBench)
 import PUI (PUI)
 import PUI.Web (Web, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, online, provided, providedAt, staticText, text, textAt)
 import PUI.Web.HTML (acknowledged, confirmed, body, button, div, filePicked, group, inPlaceInput, indeterminateLinearProgress, input, output, option, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
@@ -36,7 +36,7 @@ lawBenchHTML = do
     , bench "onClickedXY" "×→+" units (onClickedXY @"at" (div (staticText "canvas")))
     , bench "onHoveredXY" "×→+" units (onHoveredXY @"at" (div (staticText "canvas")))
     , bench "onContextMenuXY" "×→+" units (onContextMenuXY @"at" (div (staticText "canvas")))
-    , bench "output" "+→×" events (output @"event" (const {}))
+    , benchStep "output" "+→×" events (output @"event" (const {}))
     , bench "geolocated" "×→×" units (geolocated @"position")
     , bench "online" "×→×" units (online @"connection")
     , bench "clock" "×→×" units (clock @"time" { ms: 60000.0 })

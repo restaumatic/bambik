@@ -4,7 +4,7 @@ import Prelude (const, (#), ($), (<>), (>>>), Unit)
 
 import Calculator (blankTally, isFunctionKey, isOperatorKey, keyPad, pressKey)
 import Effect (Effect)
-import PUI (gatheredOf, fold, joined, looped, with)
+import PUI (foldInto, gatheredOf, looped, stepped, with)
 import PUI.Web (attrWith, inCaseAt, staticText, textAt, (:=))
 import PUI.Web.HTML (div)
 import PUI.Web.MDC3 (body, tile)
@@ -16,9 +16,10 @@ calculator =
     div >>> "style" := readoutFace $ Semigroupoid.do
       staticText "Error" # inCaseAt @"faulty" @"condition"
       textAt @"entry" # inCaseAt @"sound" @"condition"
-    ( div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
-      ( tile @"Key entered" @"key" $ textAt @"key" ) # attrWith "style" keyFace # gatheredOf @"key" (const keyPad) ) # joined @"Key entered"
-    fold @"Key entered" pressKey
+    ( Semigroupoid.do
+      div >>> "style" := "display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" $
+        ( tile @"Key entered" @"key" $ textAt @"key" ) # attrWith "style" keyFace # gatheredOf @"key" (const keyPad)
+      foldInto @"Key entered" pressKey ) # stepped
   # looped # with blankTally
 
 readoutFace :: String

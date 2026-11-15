@@ -5,7 +5,7 @@ import Prelude
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import PUI (PUI)
-import LawBench (bench, runBench)
+import LawBench (bench, benchStep, runBench)
 import PUI.Web (Web, text, staticText, textAt)
 import PUI.Web.MDC3 (acknowledged, body, button, checkbox, confirmed, debouncedTextField, doubleClickTile, elevatedButton, fab, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, tile, toggleSwitch, tonalButton)
 
@@ -53,7 +53,7 @@ lawBenchMDC3 = do
     , bench "menuItem" "×→+" rows (menuItem @"Go")
     , bench "listOf" "×→+" lists (listOf @"picked" @"id" itemsOf (textAt @"title"))
     , bench "listOfAt" "×→+" lists (listOfAt @"picked" @"id" @"items" (textAt @"title"))
-    , bench "snackbar" "+→×" events (snackbar @"event" (const {}))
+    , benchStep "snackbar" "+→×" events (snackbar @"event" (const {}))
     , bench "indeterminateLinearProgress" "+→×" runs (indeterminateLinearProgress)
     , bench "indeterminateCircularProgress" "+→×" runs (indeterminateCircularProgress)
     -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them

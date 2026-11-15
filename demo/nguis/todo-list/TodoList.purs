@@ -1,13 +1,10 @@
-module TodoList (Event, Todo, Todos, isCompleted, itemsLeftLine, listed, visibleEntries) where
+module TodoList (Todo, Todos, addTodo, clearCompleted, isCompleted, itemsLeftLine, visibleEntries, weekendChores) where
 
-import Prelude ((#), (+), (<), (<>), (==), class Applicative, const, not, show)
+import Prelude ((+), (<), (<>), (==), const, not, show)
 
 import Data.Array (filter, foldl, length, snoc)
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (trim)
 import Data.Variant (match)
-import PUI (PUI, capture, fold, looped, with)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Todos =
   { "Todo" :: String
@@ -16,24 +13,6 @@ type Todos =
   }
 
 type Todo = { "Done" :: Boolean, id :: Int, title :: String }
-
-type Event =
-  [ "Add" :: Todos
-  , "Clear completed" :: Todos
-  , "List edited" :: Todos
-  , "Todo typed" :: Todos
-  ]
-
-listed :: forall m. Applicative m => PUI m Todos Event -> PUI m {} Todos
-listed view =
-  Semigroupoid.do
-    view
-    VariantToRecord.do
-      capture @"Todo typed"
-      fold @"Add" addTodo
-      capture @"List edited"
-      fold @"Clear completed" clearCompleted
-  # looped # with weekendChores
 
 weekendChores :: Todos
 weekendChores =

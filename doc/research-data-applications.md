@@ -1,12 +1,19 @@
 # Research: applications over data (branch model-data-manipulation, 2026-11-14)
 
-**Status.** An experiment in the worktree, uncommitted, on top of the
-pilot that was already there (the view ending at its events, the folds,
-knot and seed in the app module — `edits`, `told`). Green: `spago build`,
-`spago test`, `npm run bundle-demos`, `npm run smoke`, `npm run
-check-view-model`, `npm run check-determined`. Not synced: writing.md,
-guardrails, CLAUDE.md and the CHANGELOG say nothing of it yet
-([Not synced](#not-synced)).
+**Status.** Landed on main on 2026-11-15, in part. **Kept**: the
+reading of data applications below (how a UI over data reads and
+writes), `actedWithin`, the three apps (venue, contacts, diner) and the
+four moved onto their data (movie-browser, todo-list, shopping-cart,
+inbox). **Withdrawn** the same day (CHANGELOG, 2026-11-15): the data
+context — a view ending at its events, its folds, knot and seed in the
+app module — and its two words, `edits` and `told`. An application's
+event path is now one row-passing line of its view (`# stepped`), an
+editor is a line, an event meets the model at its fold (`foldInto`),
+and the editing list is `editsOf` again. So *Writing by operation*,
+*The law between them*, *The data context*, costs 2 to 5, and every
+example below that writes `edits`, `told`, a top-level `joined` or a
+context word (`filed`, `opened`, …) are the experiment's record and
+not the code; the demos are.
 
 ## The question
 
@@ -487,9 +494,6 @@ pages mount clean.
 
 ## Not synced
 
-writing.md (the app shape, the view-model module's imports, the stage
-table's row for `editsOf`, now deleted, a row for `actedWithin`), guardrails (L3's
-keyed forms, L13's note on editors in a derived list), CLAUDE.md (the
-demo tables, the keyed bullet) and vocabulary.md; the CHANGELOG has
-its entry (2026-11-14). The pilot was not synced either; both wait for a decision
-on the context form.
+Nothing: writing.md, vocabulary.md, guardrails, CLAUDE.md and the
+CHANGELOG were synced on 2026-11-15, to the form that replaced the data
+context.

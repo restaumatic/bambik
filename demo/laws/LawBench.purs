@@ -1,6 +1,7 @@
 module LawBench
   ( Bench
   , bench
+  , benchStep
   , runBench
   ) where
 
@@ -21,14 +22,21 @@ foreign import section :: String -> Effect Node
 foreign import register :: String -> String -> Array Emitted -> Array (Effect Unit) -> Effect (Emitted -> Effect Unit)
 
 bench :: forall i o. String -> String -> Array i -> PUI Web i o -> Bench
-bench name shape samples ui = Bench { name, mount }
+bench = benchWith identity
+
+-- A `+→×` leaf releases a step; the bench lands it on the empty row.
+benchStep :: forall i o. String -> String -> Array i -> PUI Web i ({} -> o) -> Bench
+benchStep = benchWith (_ $ {})
+
+benchWith :: forall i o a. (o -> a) -> String -> String -> Array i -> PUI Web i o -> Bench
+benchWith landed name shape samples ui = Bench { name, mount }
   where
   mount node = runDomInNode node (wire :: Web Unit)
   wire = do
     { toUser, fromUser } <- handles ui
     liftEffect do
       emit <- register name shape (map unsafeCoerce samples) (map toUser samples)
-      fromUser \o -> emit (unsafeCoerce o)
+      fromUser \o -> emit (unsafeCoerce (landed o))
 
 runBench :: Array Bench -> Effect Unit
 runBench benches = for_ benches \(Bench { name, mount }) -> section name >>= mount

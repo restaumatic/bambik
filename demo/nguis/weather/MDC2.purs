@@ -4,11 +4,11 @@ import Prelude (Unit, (#), ($))
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Effect (Effect)
-import PUI (action, capture, joined, looped, with)
+import PUI (action, foldInto, looped, stepped, with)
 import PUI.Web (text)
 import PUI.Web.MDC2 (acknowledged, body, body1, caption, headline1, headline5, iconButton, indeterminateCircularProgress, listOf')
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Weather (aboutLine, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, servedLine, temperatureLine, warsawBulletin)
+import Weather (aboutLine, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, servedLine, temperatureLine, warsawBulletin)
 
 weather :: Effect Unit
 weather =
@@ -17,10 +17,11 @@ weather =
     headline5 $ text conditionLine
     body1 $ text humidityWindLine
     caption $ text servedLine
-    RecordToVariant.do
-      iconButton @"About this dashboard" "info"
-      ( listOf' @"Forecast requested" @"request" { selected: isCurrent } forecastRequests $ text cityLine ) # joined @"Forecast requested"
-    acknowledged @"About this dashboard" $ body1 $ text aboutLine
-    indeterminateCircularProgress # action @"Forecast requested" fetchReport
-    capture @"Forecast fetched"
+    ( Semigroupoid.do
+      RecordToVariant.do
+        iconButton @"About this dashboard" "info"
+        listOf' @"Forecast requested" @"request" { selected: isCurrent } forecastRequests $ text cityLine
+      acknowledged @"About this dashboard" $ body1 $ text aboutLine
+      indeterminateCircularProgress # action @"Forecast requested" fetchReport
+      foldInto @"Forecast fetched" rememberReport ) # stepped
   # looped # with warsawBulletin

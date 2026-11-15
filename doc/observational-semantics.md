@@ -102,13 +102,14 @@ combinator laws below fail without them.
    releases once every element has spoken; the witness rung `confirmed`
    waits for the user too, but as a `+→+` stage since 2026-10-17, where
    nothing is owed) —
-   and is **not owed** by a `×→×` stage whose route passes through a
-   variant. `emitter >>> fold` is `×→×` by type and releases on
-   occurrences, never on a feed: it is every app's loop body, lawful as
-   the knot's body and after what must show at mount, and it owes
-   only row totality. Liveness is therefore a property of a stage's
-   *route*, not its type: a stage answers iff its route stays at `×`,
-   and `>>>` preserves liveness only there. (Its sibling, law 3, has no
+   and is **not owed** by a route that passes through a variant. A bare
+   `emitter >>> fold` releases on occurrences, never on a feed, and what
+   it releases is a step; `stepped` answers for it, each feed with the
+   row fed, and lands each step on that row, so an application's event
+   path is a `×→×` line like any other. Liveness is therefore a property
+   of a stage's *route*, not its type: a stage answers iff its route
+   stays at `×` or is closed by `stepped`, and `>>>` preserves liveness
+   only there. (Its sibling, law 3, has no
    such limit — §3.1.) There
    is no refinement in **value**: the selectors are plain editors,
    `{ l :: f | r } → { l :: f | r }`, answering every feed with the row,
@@ -182,10 +183,10 @@ by a feed, "release" the same act over retained state):
 
 | shape | on input | modality | what stays obligatory | unit |
 | --- | --- | --- | --- | --- |
-| `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) — a **leaf** law, kept along a route that stays at `×`; a route through a variant (`emitter >>> fold`, every loop's body) owes only wholeness | the `{}` wire at the merge's row, `lcmap (const {}) identity`; `identity` only at `{}` |
+| `×→×` | echo | **must** | every feed answered once, with the whole row (law 2) — a **leaf** law, kept along a route that stays at `×`, and restored across an event path by `stepped`, which answers each feed with the row fed; a bare `emitter >>> fold` answers none and owes only wholeness | the `{}` wire at the merge's row, `lcmap (const {}) identity`; `identity` only at `{}` |
 | `×→+` | emit | **must not** | a feed never emits; the fed row leaves only as **replay** on an occurrence (every emitter's replay protocol — `joined @l`, `first` around the source with the fed row on the state channel, so the replay is `Strong`'s retention and the protocol its primed law) or at quiescence (`resolve`) (law 3) — a law of **every** `×→+` stage, `>>>`-closed | the carrier's silent component (`PUI`'s private `silent`) |
 | `+→+` | emit | **may** | a handler may forward, transform or end the case; it never *originates* — every emission is caused by an input occurrence, which is the well-foundedness of any `unleft` re-entry | `identity`, the forward wire |
-| `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is the whole row, one operand's own — a fold's next model — so a change can never stay private; a status releases nothing and is typed at every row | `lcmap case_ identity`, the never-fed wire |
+| `+→×` | release | **may** | an occurrence may or may not change the state; whatever *is* released is whole, one operand's own — a fold's step to the next model, which `stepped` lands on the row — so a change can never stay private; a progress indicator releases nothing | `lcmap case_ identity`, the never-fed wire |
 
 The criterion behind the column: **the output shape decides whether anything
 is owed, the input shape decides how it is discharged.** A record output must

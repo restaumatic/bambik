@@ -95,7 +95,7 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 --       `×→+` events — `button @l` (`<sl-button variant="primary">`);
 --       `+→×` statuses — `toast` (`<sl-alert>` shown on feed,
 --         auto-dismissing via its own `duration`) — each taking
---         its business case and fold, the case label its copy (`toast @"Review submitted" identity`).
+--         its business case and fold, the case label its copy (`toast @"Review submitted" captured`).
 --   * **oculars** — shape-preserving decorators: `card` (`<sl-card>`, a
 --     plain surface). Typography is deliberately absent:
 --     Shoelace styles plain HTML through its tokens, so the `PUI.Web.HTML`
@@ -343,14 +343,15 @@ progressBar f = fromHandles do
 -- |
 -- | A status **tells its case**: its caption is the case label verbatim,
 -- | so the outcome is named as what it tells (`toast @"Review submitted"
--- | identity`) and the payload is read by nothing but the fold. A `+→×`
--- | leaf like `fold @l f`, it takes its fold of the payload.
+-- | captured`) and the payload is read by nothing but the fold. A `+→×`
+-- | leaf like `fold @l f`, it takes its fold, of the event and
+-- | the model it lands on.
 toast
-  :: forall @l a v r
+  :: forall @l a v i o
    . IsSymbol l
   => Cons l a () v
-  => (a -> { | r })
-  -> PUI Web [ | v ] { | r }
+  => ({ event :: a, model :: i } -> o)
+  -> PUI Web [ | v ] (i -> o)
 toast = statusOver @l toastFace
 
 toastFace :: forall a r. String -> PUI Web a { | r }

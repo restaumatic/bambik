@@ -1,13 +1,10 @@
-module Contacts (Contact, Directory, Entry, Event, entries, entryLine, filed, isPicked, pickedContact, summaryLine) where
+module Contacts (Contact, Directory, Entry, addContact, addressBook, entries, entryLine, isPicked, pick, pickedContact, removePicked, summaryLine) where
 
-import Prelude ((#), (+), (/=), (<>), (==), class Applicative, map, max, show)
+import Prelude ((+), (/=), (<>), (==), map, max, show)
 
 import Data.Array (filter, foldl, length, snoc)
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.String (joinWith)
 import Data.Variant (match)
-import PUI (PUI, capture, fold, looped, with)
-import QualifiedDo.Semigroupoid as Semigroupoid
 
 type Contact =
   { "Kind" :: [ "Company" :: {}, "Person" :: {} ]
@@ -23,24 +20,6 @@ type Directory =
   }
 
 type Entry = { id :: Int, name :: String, phone :: String, status :: [ selected :: {}, unselected :: {} ] }
-
-type Event =
-  [ "Contact edited" :: Directory
-  , "Contact picked" :: { event :: Int, model :: Directory }
-  , "Delete contact" :: Directory
-  , "New contact" :: Directory
-  ]
-
-filed :: forall m. Applicative m => PUI m Directory Event -> PUI m {} Directory
-filed view =
-  Semigroupoid.do
-    view
-    VariantToRecord.do
-      fold @"Contact picked" pick
-      capture @"Contact edited"
-      fold @"New contact" addContact
-      fold @"Delete contact" removePicked
-  # looped # with addressBook
 
 addressBook :: Directory
 addressBook =

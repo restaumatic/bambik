@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import LawBench (bench, runBench)
+import LawBench (bench, benchStep, runBench)
 import PUI (PUI)
 import PUI.Web (Web, text, staticText)
 import PUI.Web.Shoelace (acknowledged, confirmed, body, button, group, indeterminateLinearProgress, option, progressBar, rating, select, selectOptional, selectUnpicked, sliderLive, textArea, textField, toast, toggleSwitch)
@@ -25,7 +25,7 @@ lawBenchShoelace = do
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" options)
     , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" options)
     , bench "button" "×→+" rows (button @"Go")
-    , bench "toast" "+→×" events (toast @"event" (const {}))
+    , benchStep "toast" "+→×" events (toast @"event" (const {}))
     -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
     , bench "confirmed" "+→+" decisions (confirmed @"decision" (text nLine))
     , bench "acknowledged" "+→+" decisions (acknowledged @"decision" (text nLine))

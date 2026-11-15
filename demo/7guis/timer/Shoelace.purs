@@ -3,20 +3,26 @@ module Timer.Shoelace (timer) where
 import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
+import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (edits)
+import PUI (fold, looped, stepped, ticks, with)
 import PUI.Web (text)
 import PUI.Web.HTML (p)
 import PUI.Web.Shoelace (body, button, progressBar, sliderLive)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Timer (elapsedFraction, progressLine, timed)
+import Timer (elapsedFraction, progressLine, restarted, tenSecondFreshTimer, tick, tickPeriod)
 
 timer :: Effect Unit
 timer =
   body $ Semigroupoid.do
     progressBar elapsedFraction
     p $ text progressLine
-    RecordToVariant.do
-      sliderLive @"Duration" # edits @"Duration changed"
-      button @"Reset"
-  # timed
+    sliderLive @"Duration"
+    ( Semigroupoid.do
+      RecordToVariant.do
+        ticks @"Clock ticked" tickPeriod
+        button @"Reset"
+      VariantToRecord.do
+        fold @"Clock ticked" tick
+        fold @"Reset" restarted ) # stepped
+  # looped # with tenSecondFreshTimer

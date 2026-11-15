@@ -6,7 +6,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderDashboard (kitchenLoad, openingDay, orderFlow, ordersArrive, ordersCount, revenue, tickPeriod, topDishes)
 import OrderDashboard.ControlsMDC3 (board, gauge, leaderboard, rangePicker, statTile, trendChart)
-import PUI (fold, looped, ticks, with)
+import PUI (fold, looped, stepped, ticks, with)
 import PUI.Web.MDC3 (body, segment, topAppBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -23,6 +23,7 @@ orderDashboard =
       gauge "Kitchen load" kitchenLoad
       trendChart "Order flow" orderFlow
       leaderboard "Top dishes" topDishes
-    ticks @"Orders arrived" tickPeriod
-    fold @"Orders arrived" ordersArrive
+    ( Semigroupoid.do
+      ticks @"Orders arrived" tickPeriod
+      fold @"Orders arrived" ordersArrive ) # stepped
   # looped # with openingDay

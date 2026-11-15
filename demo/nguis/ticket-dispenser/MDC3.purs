@@ -3,7 +3,7 @@ module TicketDispenser.MDC3 (ticketDispenser) where
 import Prelude ((#), ($), Unit)
 
 import Effect (Effect)
-import PUI (fold, looped, with)
+import PUI (fold, looped, stepped, with)
 import PUI.Web (inCaseAt, staticText, text)
 import PUI.Web.MDC3 (body, bodyMedium, button, displaySmall)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -18,6 +18,7 @@ ticketDispenser =
     bodyMedium $ Semigroupoid.do
       staticText "Press the button to draw the first ticket." # inCaseAt @"waiting" @"display"
       text servingLine # inCaseAt @"serving" @"display"
-    button @"Take a number"
-    fold @"Take a number" issue
+    ( Semigroupoid.do
+      button @"Take a number"
+      fold @"Take a number" issue ) # stepped
   # looped # with emptyQueue

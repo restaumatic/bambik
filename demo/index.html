@@ -86,7 +86,7 @@
         <li>No <code>data</code> or <code>newtype</code> declarations in UI code; a shared row is named by a <code>type</code> synonym, a name for the structure (<code>type Trip = { … }</code>).</li>
         <li>A row holds records, variants, <code>String</code>, <code>Number</code>, <code>Int</code> and <code>Array</code>.</li>
         <li>No <code>Maybe</code> in the model: <code>selected :: [ none :: {}, picked :: { index :: Int } ]</code>.</li>
-        <li>No <code>Boolean</code> unless a Boolean editor edits it: <code>status :: [ active :: {}, completed :: {} ]</code>.</li>
+        <li>No <code>Boolean</code> unless a Boolean editor edits it: <code>phase :: [ halted :: {}, timing :: {} ]</code>.</li>
         <li>The model row is stated once, by the seed's signature: <code>freshCount :: Count</code>, <code>type Count = { counted :: Int }</code>, closed on the view by <code># looped # with freshCount</code>.</li>
         <li>The view writes no row: a classifier's cases, a projection's element row, a payload and an action's outcomes are their functions' signatures — <code>action @"Charge card" chargeFlaky</code>, its outcomes closed by the statuses that tell them.</li>
         <li>A stored field is named by its label, never picked with <code>_.</code>: <code>textAt @"title"</code>, <code>doubleClickTile @"Cell double-clicked" @"key"</code>, <code># providedAt @"halted" @"phase"</code>, <code>listOfAt @"Message opened" @"id" @"messages"</code>.</li>
@@ -99,18 +99,18 @@
         <li>A signature is the compiler's hint with its tails filled: the row the stage is fed, closed. <code>Record t0 -&gt; String</code> reported, <code>countLine :: Count -&gt; String</code> written, never narrowed, never left open.</li>
         <li>A handler updates the row it is given: <code>increment m = m { counted = m.counted + 1 }</code>.</li>
         <li>A constant replaces the model only whole, by a reset: <code>reset @"New game" openingPosition</code>.</li>
-        <li>Each event case has its own fold: <code>fold @"Count" increment</code>.</li>
-        <li>A status is a fold with a face, <code>snackbar @"Card charged" identity</code>; it shows its case label, never the fold's result, so it stands only after an action whose outcome it is. A command straight from an emitter folds silently: <code>fold @"Todo toggled" toggleTodo</code>. What the user must keep is a model field shown by a display, never copy flashed by a status.</li>
-        <li>An action is opened by its progress indicator alone; an outcome that is told and changes nothing is <code>joined @l</code> with its button, once per outcome, and folded <code>kept</code>.</li>
-        <li>An event with a payload of its own is <code># joined @l</code> and handled by one record: <code>toggleTodo :: { event :: Int, model :: … } -&gt; …</code>.</li>
-        <li>An action returns the model under its outcome case, folded by <code>identity</code>.</li>
+        <li>Each event case has its own fold, applied to the model the event lands on: <code>fold @"Count" increment</code>. Buttons and folds are one line of the view, <code>( … ) # stepped</code>.</li>
+        <li>A status is a fold with a face, <code>snackbar @"Card charged" captured</code>; it shows its case label, never the fold's result, so it stands only after an action whose outcome it is. A command straight from an emitter folds silently: <code>fold @"Add" addTodo</code>. What the user must keep is a model field shown by a display, never copy flashed by a status.</li>
+        <li>An action is opened by its progress indicator alone and stands after its button, followed by the statuses that tell its outcomes; an outcome that is told and changes nothing is folded <code>kept</code>.</li>
+        <li>An event with a payload of its own is folded by <code>foldInto @"Person picked" pick</code>, its handler one record: <code>pick :: { event :: Int, model :: Catalogue } -&gt; Catalogue</code>.</li>
+        <li>An action returns the model under its outcome case, folded by <code>captured</code>.</li>
         <li>A business function takes one record; field names carry the roles: <code>returnBetween { out, back }</code>.</li>
       </ul>
 
       <h3>Wiring</h3>
       <ul>
         <li>Never import the ecosystem's <code>Data.Profunctor</code>; a reshaping rides a word's argument: <code>actedOf @l rowsOf</code>, <code>dispatchedOf @l arrival</code>.</li>
-        <li>State lives in the model: no FFI stashes, window globals or hidden loop channels.</li>
+        <li>State lives in the model: no FFI stashes, window globals or hidden loop channels. An application has one knot, <code># looped</code>, around everything that changes the model.</li>
         <li>Stock components only; custom style only for data-driven graphics.</li>
       </ul>
 

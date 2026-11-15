@@ -73,14 +73,14 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   label (`value`/`clicked`/`event`) appears in application code: business
   functions are arguments of leaves, never adopters — a display takes its
   read function, a status its business case and fold, its case label its
-  whole copy (`snackbar @"Card charged" identity`; inside the vocabulary, the
+  whole copy (`snackbar @"Card charged" captured`; inside the vocabulary, the
   face over the label is adopted `# atCase @l`), and an emitter emits its
   own case. The structural adopters `atField`/`atCase`, `toField`/`toCase`
   take no function and stay inside the vocabularies:
   every leaf narrows its input and its output itself — a status
   or an action owns the one case its label names, an emitter is closed
   to the case it emits, an action is typed at exactly its outcomes (`action @l f`)
-  and the `joined @l` that joins it among emitters names them,
+  and the folds and statuses after it name them,
   a dialog intercepts the case that opens it (`confirmed @l`,
   `acknowledged @l`), an editor's release leaving as an event is the editing list's
   to say (`editsOf @l @k`) — so a view places nothing at a row and
@@ -100,22 +100,25 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   scalar or polymorphic model interfaces; raw scalar leaves stay private
   or in optic positions.
 - **Shape is the type.** Every exported component MUST end in exactly
-  one of the four row forms, each side a record or a variant:
+  one of the four row forms, each side a record or a variant (the
+  record a `+→×` word releases written as the step to it):
 
   | Type | Shape | Sort |
   | --- | --- | --- |
-  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`actedOf`, `actedAt`), sources (`geolocated`, `clock`, `filePicked` — pointed, fed `{}`, owning one field), stages |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`actedOf`, `actedAt`), the updatable selection (`actedWithin`), the event path as a line of the body (`stepped`), sources (`geolocated`, `clock`, `filePicked` — pointed, fed `{}`, owning one field), stages |
   | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `tile`, `onClickedXY`), the emitter pane `provided`, the emitting lists `gatheredOf` and `editsOf` |
-  | `PUI Web [ \| a ] { \| b }` | `+→×` | the folds (`fold @l f`, `reset @l x`, `capture @l`) and the statuses, each a fold with a face (`snackbar @l line f`); the action slot (`indeterminateLinearProgress`) owns `started`/`ended` only, so a status is never the slot |
+  | `PUI Web [ \| a ] ({ \| b } -> { \| b })` | `+→×` | the folds (`fold @l f`, `foldInto @l f`, `reset @l x`, `capture @l`) and the statuses, each a fold with a face (`snackbar @l f`) — the record side written as the **step** to it, which `stepped` applies to the row its line was last fed (`landed`, before the knot, to the row its path was fed, the step free to change the row's type); the action slot (`indeterminateLinearProgress`) owns `started`/`ended` only, so a status is never the slot |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
 
   The four shapes are the four arrows of an application's **cycle**,
   and the rows between them are named by it: `×→×` takes the **model**
   to the **view model** (presentation, edits carried back), `×→+` the
   view model to a **view event** (interaction), `+→+` a view event to a
-  **model event** (interpretation — a join with the model, an effect's
-  outcome, a dialog's decision) and `+→×` a model event to the model
-  (transition). The diagonal shapes translate within a kind, state to
+  **model event** (interpretation — an effect's outcome, a dialog's
+  decision, a nested path's join with its element's row) and `+→×` a
+  model event to the model (transition — the event folded into the
+  model it lands on, its payload beside it where the fold needs one).
+  The diagonal shapes translate within a kind, state to
   state and event to event; the off-diagonal ones convert between
   kinds. The names are positions in the loop, not types: the model and
   the view model are one row wherever nothing narrows or derives.
@@ -165,8 +168,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   record pun (the compiler forbids it); bind explicitly instead. An
   emitter MUST NOT be given a `label:` config: where two buttons would
   share one handler under different words, they are two business actions
-  — each emits its own case and the fold block applies the one handler to
-  both (checkout's `stepTo`). An editor takes no caption config at all:
+  — each emits its own case and has its own fold (stopwatch's Start and
+  Stop). An editor takes no caption config at all:
   the label is its caption and MUST be only the field's name — a format,
   an example or a unit is not the name and rides the primed sibling
   (`filledTextField' @"Start date" { hint: "DD.MM.YYYY" }`,
@@ -205,13 +208,13 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   published word MUST NOT take such a row as a visible type argument.
   It writes no row for an action either: `action @"Charge card" chargeFlaky` is
   typed at exactly the outcomes `chargeFlaky` names, and what tells them
-  closes them — the statuses owning its cases, or among emitters the
-  `joined @l` / `joined @(l1 + l2)` naming its outcome labels (until
+  closes them — the statuses, `foldInto` or `capture` after it, each
+  owning its case (until
   2026-10-16 the action declared them as a row, CHANGELOG). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
-  swap. Precedents: the statuses (`snackbar @"Card charged" identity`,
+  swap. Precedents: the statuses (`snackbar @"Card charged" captured`,
   replacing a per-case copy record and then the copy function), `acknowledged
   @"Total missing"` (the dialog telling its case as its title, its
   caption dropped like `confirmed`'s Cancel: the dismiss decides nothing,
@@ -266,9 +269,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   typed at, at `+→+` (an equality): a handler's row, coming from a
   function, is the block's (an inclusive union could not be split back
   out under a typed hole). At `×→+` the variant output is **owned**: an
-  emitter is closed to the case its label names, an action to its
-  outcomes by the `joined @l` (`joined @(l1 + l2)` for two outcomes)
-  that names them, and the block's row is exactly the union of its
+  emitter is closed to the case its label names, a `joined` source to
+  the cases its label list names (`joined @l`, `joined @(l1 + l2)`),
+  and the block's row is exactly the union of its
   operands' cases — so an emitter block lists the events that can
   occur, a case emitted by two operands is a compile error naming it,
   and so is a handler for a case nothing emits. A handler missing for a
@@ -276,7 +279,8 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   universal property (`Data.Profunctor.Row`): the pairing at `×→×` and
   `×→+` (input shared, output owned — fields, and cases read as
   occurrence sources), the copairing at `+→+` and `+→×` (input owned,
-  output shared). Variant handling MUST be disjoint, and so MUST
+  output shared — at `+→×` one type every operand releases, for a
+  loop's folds the step to the next model). Variant handling MUST be disjoint, and so MUST
   production where the outputs are owned: a record field at `×→×`, an
   emitted case at `×→+` (responsibility never splits). Runtime evidence appears exactly where responsibility
   does (`DispatchableVariants`, `MergeableRecords`) and nowhere else.
@@ -335,7 +339,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   the `×→×` merge and the container action's gather run the same pure
   machine (`PUI.Gate`), the merge enrolling its owned labels as its
   participants and `acted` the fed keys (the `+→×` merge has none — its
-  operands release the whole shared row, so it is the copairing) — so
+  operands each release the shared output whole, so it is the copairing) — so
   the zero-field clause above
   is a consequence of enrolling nothing, the collection's empty law the
   zero-participant release, and a gating rule proved on the step holds
@@ -371,18 +375,33 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   argument the caller cannot omit (`with`, after `looped`): a
   model into the record junction. The knot is exactly one, `looped`,
   and a looped state is a model field: a loop is cut at its record
-  junction and an event re-enters through its fold, because a variant
-  knot or a per-shape knot over a hidden field was a second way of
-  writing the same loop with a state the rows did not show
-  (CHANGELOG, 2026-10-06 and 2026-10-14). The point's *value* is row-forced (`announce a ≈
+  junction, because a variant knot or a per-shape knot over a hidden
+  field was a second way of writing the same loop with a state the rows
+  did not show (CHANGELOG, 2026-10-06 and 2026-10-14). An application
+  MUST NOT have more than **one knot** — one `looped`, around every
+  line that changes the model (what follows it reads the model and
+  changes nothing: flight-booker's Book button and its dialog) —
+  and every line of its body MUST pass the row it is fed: the model
+  re-enters at one place, so whatever changes it must reach that place,
+  and a line that swallowed a row would leave the knot holding the
+  model from before an edit above it. The event path is such a line and
+  MUST be written as one, `( emitters; dialogs; folds ) # stepped`: fed
+  a row it passes the row on, and an event releases the next model —
+  the step its fold released, applied to the row the line was last fed
+  — where a bare `emitters >>> folds` is a route through a variant,
+  answering no feed. So no `looped` stands inside another (a form of
+  editors is lines of the one body), and a body may hold several event
+  lines, each where its buttons are on the screen. A path that stands
+  before the knot and primes it is `landed`, not `stepped`: it answers
+  no feed and may change the row's type. The point's *value* is row-forced (`announce a ≈
   lcmap (const a) identity`, `PUI`'s `announce`); what the carrier
   adds is its *earliness*, the one moment a stateful carrier has and a
   timeless one lacks — so a proposal to derive `announce` from the wire is
   right about the value and wrong about the moment the knot needs.
 - An emitter MUST NOT be primed — no canonical first occurrence exists
   (events occur, they don't pre-exist); an application's opening act is
-  a model (`with seed`) or `{}` into a load action standing before the
-  knot (order-form), never an event. The carrier tells you the
+  a model (`with seed`) or `{}` into a load standing before the
+  knot and landed on it (`# landed`, order-form), never an event. The carrier tells you the
   shape axis, not the time axis:
   record-carried, event-natured channels (`select` before first pick,
   `acted`'s withheld aggregate) stay unpointed.
@@ -471,15 +490,21 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - **No silent information loss.** A combinator MUST NOT discard the
   emissions of the component it wraps unless they have nowhere to go.
   A display releases the row it shows, so it is a stage and nothing
-  discards it; a pane (`inCase`) releases what its content releases; a
+  discards it; a pane (`inCase`) releases what its content releases; the
+  event path passes the row it is fed (`stepped`), so an edit above it
+  reaches the knot; a
   list over a stored array is the container action (`actedAt`), which
-  writes its elements' releases back. Two slots discard by construction, because their
+  writes its elements' releases back, and over a selection of one the
+  updatable selection (`actedWithin`), which writes each back where its
+  key is stored. Two slots discard by construction, because their
   content's release has no row to land in: `actedOf` over a **derived**
   array and a `tile`'s or `listOf`'s content (a face, not a form). An editor
   placed in either is a mistake the type cannot catch, so `npm run
   check-view-model` rejects an editor word inside a `actedOf` element
-  in any demo view; an editor whose edits must leave a projected list is
-  `editsOf`'s element. Nothing discards deliberately
+  in any demo view; an editor over a projection that only selects rows
+  of a stored array is `actedWithin`'s element, and one over a
+  projection that joins or reshapes its rows, which has no way back but
+  a fold, is `editsOf`'s. Nothing discards deliberately
   either: there is no counit — a chain whose output is not the model
   ends the block (departures' `dispatched` stream, fed by the `clock`
   source); `muted` went with the last slot that demanded `{}`
@@ -520,8 +545,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   hold, nor fold events into a row beside the loop's `fold`. So a
   choice whose cases carry fields is a selector field with those fields
   beside it, each edited in its case (order-form's Fulfillment); an
-  event folds through `fold` in the app's loop, `joined` with the model
-  its outcome lands on when its effect takes time (order-form's
+  event folds through `fold` or `foldInto` on the app's event path,
+  landing on the model as it is then, so an outcome whose effect took
+  time keeps the edits made meanwhile (order-form's
   estimate); a keyed collection of editors is `acted`, the container
   action (reorder); and a reusable sub-form edits a sub-record under
   `group @l` (parcel). Each of these once had a word that kept the state
@@ -605,7 +631,7 @@ The consequence is the **mechanism-argument doctrine**: a projection is
 an argument of the mechanism that consumes it, never a loose `lcmap`/
 `rmap` stage — `provided @l classifierOf`, `actedOf @l rowsOf`, `listOf @l @k
 rowsOf item`, `dispatchedOf @l arrival`, a status's fold
-(`snackbar @"Card charged" identity`), `settled normalize` (`identity` says
+(`snackbar @"Card charged" captured`), `settled normalize` (`identity` says
 verbatim). A shape none of
 these fit is a missing-vocabulary signal addressed to the library —
 the next word waiting to be coined — never a reason to import the
@@ -650,8 +676,8 @@ code below the UI) are algebra-layer material and exempt by location.
   adopters anywhere in `demo/` and any lambda in a `text` read.
 - A status is label-indexed at its business case and **tells its case**:
   it takes no copy function, its case label is its whole copy
-  (`snackbar @"Card charged" identity`, `toast @"Review submitted"
-  identity`) — a status is ephemeral, and copy a status would compute
+  (`snackbar @"Card charged" captured`, `toast @"Review submitted"
+  captured`) — a status is ephemeral, and copy a status would compute
   from its payload is either data the user must keep (a reference, an
   order number), which is a model field shown by a display, or a reason,
   which is a sibling case told by its own status. Mutually exclusive
@@ -692,10 +718,11 @@ code below the UI) are algebra-layer material and exempt by location.
   its label and its row closed to it, so the block's row is known from
   its lines and the folds after it must own exactly those cases; an
   action, whose row a function names, widens
-  nothing: after it, the statuses owning its cases close its row; among
-  emitters, `joined @l` closes its source to case `l` —
+  nothing: it stands after the emitters, and the statuses, `foldInto`
+  or `capture` after it own its cases and close its row —
   a typed hole names no outcome, so the labels on its followers are what
-  the row goes on, and a two-outcome source names both, `joined @(l1 +
+  the row goes on. A `joined` source is closed by the labels it names,
+  and a source of two cases names both, `joined @(l1 +
   l2)`, since one label closes one case (two `joined`s leave the
   source's rest open to the block's siblings).
 - **No `Eq`/`Ord` a business type must close.** A selector's options and
@@ -762,8 +789,8 @@ code below the UI) are algebra-layer material and exempt by location.
   copy of a signature, and declared on the view line it would make the
   view state the model; there is no exception (an action's outcome
   labels were one until 2026-10-16: its own widening, `Union t b o`,
-  was stuck on a hole's `t`, so the widening moved to the `joined` that
-  names the labels anyway). An option block
+  was stuck on a hole's `t`; it widens nothing, and its followers name
+  the labels). An option block
   MUST close its row (the merge's owned inputs do), since its options
   are the view's. What it demands of the application: a stored variant
   field is named by label on its pane line (`providedAt`/`inCaseAt
