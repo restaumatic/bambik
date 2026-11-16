@@ -5,9 +5,9 @@ import Prelude hiding (div)
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import LawBench (bench, benchStep, runBench)
-import PUI (PUI)
+import PUI (acknowledged, PUI)
 import PUI.Web (Web, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, online, provided, providedAt, staticText, text, textAt)
-import PUI.Web.HTML (acknowledged, confirmed, body, button, div, filePicked, group, inPlaceInput, indeterminateLinearProgress, input, output, option, progress, rangeInput, select, selectOptional, selectUnpicked, textArea)
+import PUI.Web.HTML (confirmed, body, button, div, filePicked, group, inPlaceInput, indeterminateLinearProgress, input, output, option, progress, rangeInput, select, selectOptional, selectUnpicked, textArea, modal)
 
 lawBenchHTML :: Effect Unit
 lawBenchHTML = do
@@ -45,7 +45,8 @@ lawBenchHTML = do
     , bench "inPlaceInput" "×→+" texts (inPlaceInput @"entered" @"Name")
     -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
     , bench "confirmed" "+→+" decisions (confirmed @"decision" (text nLine))
-    , bench "acknowledged" "+→+" decisions (acknowledged @"decision" (text nLine))
+    , bench "modal" "+→+" decisions (modal @"decision" (text nLine))
+    , bench "acknowledged" "+→+" decisions (modal @"decision" (text nLine) # acknowledged)
     ]
   where
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]

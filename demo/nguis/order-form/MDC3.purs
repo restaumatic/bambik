@@ -7,9 +7,9 @@ import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import OrderForm (distanceLine, estimateDistance, fulfillmentMode, loadOrder, orderLine, payingLine, printReceipt, setDistance, staleDistanceForgotten, submitOrder, summaryLine)
-import PUI (action, captured, foldInto, kept, landed, load, looped, settled, stepped)
+import PUI (acknowledged, action, captured, foldInto, kept, landed, load, looped, settled, stepped)
 import PUI.Web (inCaseAt, provided, staticText, text)
-import PUI.Web.MDC3 (acknowledged, body, bodyLarge, button', card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, segment, segmentedButton, snackbar, tab, tabBar)
+import PUI.Web.MDC3 (body, bodyLarge, button', card, filledTextArea, filledTextField, group, headlineSmall, indeterminateLinearProgress, modal, segment, segmentedButton, snackbar, tab, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 orderForm :: Effect Unit
@@ -56,7 +56,7 @@ orderForm =
             foldInto @"Distance estimated" setDistance
           Semigroupoid.do
             indeterminateLinearProgress # action @"Submit order" submitOrder
-            acknowledged @"Total missing" $ bodyLarge $ staticText "Enter the order's total before submitting it."
+            ( modal @"Total missing" $ bodyLarge $ staticText "Enter the order's total before submitting it." ) # acknowledged
             snackbar @"Order submitted" kept
           Semigroupoid.do
             indeterminateLinearProgress # action @"Receipt" printReceipt

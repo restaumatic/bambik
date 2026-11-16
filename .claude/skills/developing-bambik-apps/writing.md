@@ -97,7 +97,10 @@ components over one value, one per shape:
   field, merged into the row the lines below read (here-and-now,
   incident-report). A source reads nothing, so it is typed at `{}` and
   the block of sources opens the flow: after a line that releases a field
-  it is a compile error. Every editor owns the whole row, so editors never
+  it is a compile error, and there it is followed by `# supplied`, the row
+  kept and the fact joining it (incident-report's photo, under the
+  description field: `( label $ Semigroupoid.do staticText "Photo ";
+  filePicked @"Photo" ) # supplied`). Every editor owns the whole row, so editors never
   merge, and a display owns the row it releases, so two displays
   compose ([Components](#components)). The rule: **merge what writes
   without reading, sequence everything else** — a component that reads
@@ -244,7 +247,8 @@ takes a trailing word that says what it is for:
 | one entity at a time, each shown by its key | `( listItem $ text flightLine ) # dispatchedOf @"code" arrival`; the array of them `# accumulatedOf @"team" goal` | departures, scoreboard |
 | a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, merged in `RecordToRecord.do` | here-and-now, incident-report |
 | content that waits for the user to confirm | `confirmed @"Refund a customer" $ …` — a `+→+` stage between the emitters and the folds: opened by its case, which captions its confirm button, the confirm re-emitting the case with the row shown, its fold among the folds (`fold @"Refund a customer" refundStandard`); its Cancel consumes it | cashbox, inbox, flight-booker |
-| a message the user must close | `acknowledged @"About this dashboard" $ …` — the `+→+` stage consuming its case, titled by it, closed by its "OK": the row less it goes on to the folds; a rejection and its reason (`acknowledged @"Total missing" $ …`), a reference to keep (`acknowledged @"Report filed" $ … text referenceLine`) | weather, order-form, incident-report |
+| a message the user must close | `( modal @"About this dashboard" $ … ) # acknowledged` — the vocabulary's `modal`, the leaf owning its case, titled by it and closed by its "OK", followed by `# acknowledged`, which reads the case off it and ends it there: the row less it goes on to the folds; a rejection and its reason (`( modal @"Total missing" $ … ) # acknowledged`), a reference to keep (`( modal @"Report filed" $ … text referenceLine ) # acknowledged`) | weather, order-form, incident-report |
+| a notice, then the flow goes on | `( modal @"Weather warning" $ … text warningLine ) # continued asForecast` — the modal's "OK" lets its case go on as the one the exit names, a view model function of the payload typed at the cases that follow (`asForecast :: Report -> [ "Forecast fetched" :: Report ]`); the fold after it folds that case as usual | weather |
 | the event path, one line of the body | `( Semigroupoid.do { button @"Count"; fold @"Count" increment } ) # stepped` — fed a row it passes the row on, an event releases the next model; several emitters and their folds are a `RecordToVariant.do` and a `VariantToRecord.do` inside it, the dialogs between | counter; crud, cashbox |
 | an event folded into the model it lands on | `fold @"Add" addTodo`, the handler `model -> model`, the payload unread; one fold per case | todo-list, counter |
 | an event whose payload the fold needs — a list pick, a canvas click, an action's outcome | `foldInto @"Person picked" pick`, the handler one record, `pick :: { event :: Int, model :: Catalogue } -> Catalogue` | crud, inbox, cells |
@@ -258,7 +262,7 @@ takes a trailing word that says what it is for:
 | an effect on a button's case, folded by its own outcomes | `( Semigroupoid.do { indeterminateLinearProgress # action @"Place order" placeOrder; snackbar @"Order placed" (const usualOrder) } )`, the pair owning the case in the fold block, the status owning the action's outcome | espresso-bar |
 | an effect whose outcome is the model | `( Semigroupoid.do { indeterminateLinearProgress # action @"Shuffle" shuffleSetlist; capture @"Setlist shuffled" } )` | reorder, password-generator |
 | an effect whose outcome is folded into the model it lands on | `indeterminateCircularProgress # action @"Forecast requested" fetchReport`, then `foldInto @"Forecast fetched" rememberReport`; an edit made while the effect ran is kept (`foldInto @"Distance estimated" setDistance`) | weather; order-form |
-| an effect whose outcome is told | `indeterminateCircularProgress # action @"Charge card" chargeFlaky`, then `snackbar @"Card charged" captured`; two outcomes, each told on its line after the action (`acknowledged @"Total missing" $ …`, then `snackbar @"Order submitted" kept`) | payment; order-form |
+| an effect whose outcome is told | `indeterminateCircularProgress # action @"Charge card" chargeFlaky`, then `snackbar @"Card charged" captured`; two outcomes, each told on its line after the action (`( modal @"Total missing" $ … ) # acknowledged`, then `snackbar @"Order submitted" kept`) | payment; order-form |
 | the load before the knot | `( Semigroupoid.do { indeterminateLinearProgress # load loadOrder; snackbar @"Order loaded" captured } ) # landed` — run by `body`'s one feed of `{}`, its outcome the model the knot loops | order-form |
 | a fold told by a status | `snackbar @"Card charged" captured`, `snackbar @"Quote fetched" recordQuote`, `snackbar @"Order submitted" kept` — a status takes its fold like `foldInto @l f` (`captured`: the payload is the model; `kept`: the model as it is), tells its case by its label, and stands only after an action whose outcome it is | payment, ticker, order-form |
 
@@ -313,12 +317,14 @@ Semigroupoid.do
 **A form is the exception to the loop.** When nothing in the logic
 writes into a field — no load fills it, no reset clears it, no fold or
 normalizer touches it, and every editor exists unconditionally — the
-form needs no knot and no seed: each editor states its own blank in its
-**introducing form**, `{ | b } → { l :: a | b }`, its init a function
-of the row the editors above it have built (signup-form's MDC3 view,
-`debouncedTextFieldFrom @"Username" blankUsername usernameSettleTime`,
-`radioButtonFrom @"Plan" freePlan …`, with `freePlan :: {
-"Username" :: String } -> Plan`). Displays, panes and the action follow
+form needs no knot and no seed: each editor is followed by `# introduced
+@l init`, which states its blank and makes it the **introducing form**,
+`{ | b } → { l :: a | b }`, its init a function of the row the editors
+above it have built (signup-form's MDC3 view, `debouncedTextField
+@"Username" usernameSettleTime # introduced @"Username" blankUsername`,
+`( radioButton @"Plan" $ … ) # introduced @"Plan" freePlan`, with
+`freePlan :: { "Username" :: String } -> Plan`). The label is the
+editor's own, written again. Displays, panes and the action follow
 below, reading the row the editors built; edits flow down the page
 only. A field the logic writes, or one under a pane (`inCaseAt`), is
 model state: the lens editor in a `looped` row.
@@ -444,13 +450,20 @@ the button replayed, stating what is at stake — and re-emits the case
 carrying the content's row when the user presses the button the case
 captions, so the fold block folds it like any event (`foldInto @"Delete
 message" deleteMessage`); its Cancel consumes it and no fold runs.
-`acknowledged @"About this dashboard" $ …` (weather) is the
-same dialog titled by its case, with an "OK" that only closes it: the
-case is consumed either way, so what follows is typed at the cases that
-go on. It is the teller of an outcome the user must read rather than
-glimpse — a rejection and its reason (order-form's `acknowledged
+`( modal @"About this dashboard" $ … ) # acknowledged` (weather) is the
+same dialog titled by its case, with an "OK" that only closes it: `modal`
+is the vocabulary's leaf owning that case, and `# acknowledged` after it
+ends the case there, whichever way the dialog closes, so what follows is
+typed at the cases that go on. `acknowledged` takes no label: it reads
+the case off the leaf it follows. Its sibling `# continued exit` is for
+the notice after which the flow goes on: `( modal @"Weather warning" $
+bodyLarge $ text warningLine ) # continued asForecast` (weather) shows
+the warning, and its "OK" lets the case go on as the one `asForecast ::
+Report -> [ "Forecast fetched" :: Report ]` names, folded like any
+forecast; closed any other way, nothing goes on. It is the teller of an outcome the user must read rather than
+glimpse — a rejection and its reason (order-form's `modal
 @"Total missing"`), a reference to keep (incident-report's
-`acknowledged @"Report filed" $ bodyMedium $ text referenceLine`,
+`( modal @"Report filed" $ bodyMedium $ text referenceLine ) # acknowledged`,
 its content reading the payload because it stays until closed). Every other case
 passes through both untouched, and a modal is never a model field — no
 `confirming` state, no `Delete`/`Keep` buttons. The bare `dialog` ocular

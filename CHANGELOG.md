@@ -6,7 +6,62 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
-## 2026-11-15, latest
+## 2026-11-16
+- **`acknowledged` is defined once, in `PUI`, as a trailing word that
+  takes no label.** Each of the five vocabularies with a dialog defined
+  `acknowledged @l content` as one line over `PUI`'s `acknowledgedOver`.
+  Those five and that name are gone. Each vocabulary exports `modal @l
+  content` instead — the `+→+` leaf owning case `l`, titled by it, its
+  "OK" releasing the case again (`PUI.modalOver` over its modal) — and
+  `acknowledged` is the carrier's word written after it: `( modal
+  @"Total missing" $ … ) # acknowledged` (order-form; weather,
+  incident-report). It ends the case of the leaf it follows and lets
+  every other case pass, and it reads that case off the leaf: a leaf
+  closed to one case has a row `RowToList` can read. A vocabulary with
+  no modal (Bootstrap) has none to write, so the gap stays a compile
+  error. `confirmed` is unchanged.
+- **Its body is `introduced`'s, turned round.** `onCase @l` over the
+  leaf followed by `rmap case_ silent`, where a private helper rewrote
+  the modal's registration to drop its release. `silent` (private) is
+  the carrier's silent component at `[]`, the variant with no case: the
+  point's mirror, needing no value. The counterpart of `init` is named
+  in the header, the **exit** (`payload → [ | b ]`, the case leaving as
+  one that goes on); an acknowledgement is the exit into `[]`.
+  Law-tested in test/Main.purs with the exit that names a case; the
+  bare `modal` joins the leaf-law bench.
+- **`continued` and `supplied`: the two missing corners.** `continued
+  exit` is `acknowledged`'s sibling and `introduced`'s exact mirror:
+  the leaf it follows is handed its case, and what the leaf releases
+  leaves as the case `exit :: payload → [ | b ]` names among those that
+  go on. Weather carries it — the fetch has a second outcome, a storm
+  warning the user must read, which then goes on as the forecast (`(
+  modal @"Weather warning" $ … ) # continued asForecast`); a modal
+  closed without its "OK" lets nothing go on
+  (scripts/smoke/tests/modal-exits.mjs). `supplied` is `introduced`'s
+  sibling and `acknowledged`'s exact mirror: the source it follows is
+  fed nothing and its field joins the row fed, so a source may stand
+  below a line that has
+  released a field. Incident-report carries it: a description field
+  introduced into the two facts, and the photo capture supplied under
+  it (scripts/smoke/tests/supplied.mjs). Both read their label off the
+  closed leaf they follow.
+- **`introduced` cannot read its label the same way.** The editor it
+  would follow is open on the rest of its row, and no solver rule
+  yields a label from an open row (`RowToList` wants a closed one,
+  `Cons` wants the label given): `filledTextField @"Email" # introduced
+  blankEmail` stops at `RowToList ( "Email" :: String | t )`. It keeps
+  its label.
+- **The `…From` editors are deleted.** Nineteen one-line wrappers over
+  `introduced`, one per editor per vocabulary (`filledTextFieldFrom`,
+  `debouncedTextFieldFrom`, `radioButtonFrom`, `selectFrom`,
+  `checkboxFrom` in MDC2 and MDC3; `textFieldFrom`, `selectFrom` in
+  Shoelace and Bootstrap; `textFieldFrom`, `dropdownFrom`,
+  `radioGroupFrom` in Fluent; `inputFrom`, `selectFrom` in HTML). A view
+  writes the carrier's word after the editor, its label restated:
+  `filledTextField @"Email" # introduced @"Email" blankEmail`
+  (signup-form MDC3).
+
+## 2026-11-15, later
 - **One knot, and the event path a line of it.** An application has one
   `looped`, around every line that changes the model, and every line of
   its body passes the row it is fed. The one line that did not was the

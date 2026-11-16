@@ -15,8 +15,9 @@ flight-booker (MDC3), as agreed.
   itself changed since the last feed (structural equality). That is a
   state the rows do not show plus a comparison — exactly the hidden-state
   shape the library deleted (`bracketed`, `edited`; guardrails L14).
-- MDC3 `filledTextFieldFrom`, `debouncedTextFieldFrom`, `radioButtonFrom`,
-  `selectFrom`, `checkboxFrom` — one primed sibling per editor used.
+- The view writes the lift after its editor, `filledTextField @"Email" #
+  introduced @"Email" blankEmail`; the per-editor siblings the pilot
+  shipped are in the CHANGELOG (2026-11-16).
 - signup-form MDC3 knotless, its seed taken apart into five init
   functions in `SignupForm.purs`; the MDC2 twin keeps the loop, so the
   twins no longer differ by vocabulary alone.

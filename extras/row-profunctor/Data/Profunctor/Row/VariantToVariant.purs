@@ -99,8 +99,9 @@
 -- | **wait**: the `action`s, and the dialogs, which wait for the user —
 -- | `confirmed @l` (`focusCase @l` over a modal whose content is a stage
 -- | over the payload: confirm re-emits the case with the content's row,
--- | cancel consumes it) and `acknowledged @l` (`onCase @l` over a modal
--- | that dismisses: the case consumed, the row less it leaving). These are
+-- | cancel consumes it) and `modal @l` under `acknowledged` (`onCase @l`
+-- | over the leaf it follows, its release dropped: the case consumed, the
+-- | row less it leaving). These are
 -- | the two words that pass background cases through a `+→+` stage, each
 -- | over its strength form and never over the merge, so a dialog among
 -- | events names only its own case and the fold block stays typed at
@@ -188,7 +189,7 @@ focusCase =
 -- | row **less `l`** leaves, so what the handler does not re-emit is
 -- | consumed — the `+→+` stage that eliminates a case. The handler's
 -- | output is the background row, where a status face, releasing nothing,
--- | is typed at any row (`acknowledged @l`, every vocabulary with a dialog: a modal that
+-- | is typed at any row (`PUI.acknowledged` after a vocabulary's `modal @l`: a modal that
 -- | dismisses, the event dying with its copy read). `focusCase @l` keeps
 -- | the case in the row; `onCase @l` is for the stage that may not re-emit
 -- | it, so the fold block after it is typed at exactly what folds.

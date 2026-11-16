@@ -17,8 +17,8 @@
 -- | and the type ramp (`title3`, `body1`, `caption1`) for structure, and
 -- | `body` to mount the app.
 module PUI.Web.Fluent
-  ( acknowledged
-  , confirmed
+  ( confirmed
+  , modal
   , body
   , body1
   , button
@@ -27,7 +27,6 @@ module PUI.Web.Fluent
   , group
   , divider
   , dropdown
-  , dropdownFrom
   , dropdownUnpicked
   , dropdownOptional
   , option
@@ -35,7 +34,6 @@ module PUI.Web.Fluent
   , indeterminateLinearProgress
   , progressBar
   , radioGroup
-  , radioGroupFrom
   , radioGroupUnpicked
   , radioGroupOptional
   , radio
@@ -43,7 +41,6 @@ module PUI.Web.Fluent
   , slider
   , slider'
   , textField
-  , textFieldFrom
   , textField'
   , title3
   , toggleSwitch
@@ -61,12 +58,12 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
-import PUI (introduced, fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
+import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, statusOver, confirmedOver, modalOver, eventLeaf)
 import PUI.Web.HTML (div)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, grouping, member, clearedByRepress, Node, Web, attribute, autoDismiss, cl, el, element, ensureStyle, getChecked, getValue, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, separating, invokeMethod, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons)
 import Data.Variant (inj)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 
@@ -140,12 +137,6 @@ fieldWith position lbl editor = el "fluent-field" >>> "label-position" := positi
 -- | edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textField = fieldLeaf @l $ textInputLeaf (reflectSymbol (Proxy @l)) ""
-
--- | `textField` in its **introducing form**: the field is not in the row fed
--- | but stated here, `init` of the rest of the row its blank, for a
--- | knotless form with no seed. See `PUI.introduced`.
-textFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> PUI Web { | b } { | r }
-textFieldFrom init = introduced @l init (textField @l)
 
 -- | `textField` with a `hint` under it — a format or an example the label
 -- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
@@ -251,10 +242,6 @@ sliderLeaf lbl measure = el "fluent-field" >>> "label-position" := "above" $ fro
 dropdown :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 dropdown options = fieldLeaf @l $ dropdownOf @l false options
 
--- | `dropdown` in its introducing form, as `textFieldFrom`.
-dropdownFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
-dropdownFrom init options = introduced @l init (dropdown @l options)
-
 -- | `dropdown` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
 -- | is checked until the user picks, and a pick cannot be taken back.
@@ -317,10 +304,6 @@ option = fromHandles do
 -- | `radioGroup @"Duration" $ VariantToVariant.do radio @"30 min"; radio @"1 hour"`.
 radioGroup :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 radioGroup options = fieldLeaf @l $ radioGroupOf @l options
-
--- | `radioGroup` in its introducing form, as `textFieldFrom`.
-radioGroupFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
-radioGroupFrom init options = introduced @l init (radioGroup @l options)
 
 -- | `radioGroup` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
@@ -456,32 +439,32 @@ confirmed
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed = confirmedOver @l modal
+confirmed = confirmedOver @l modalFace
 
--- | The **dismissed rung** — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
--- | over the modal, the `+→+` stage consuming case `l`, telling it as its
--- | title and showing its payload until the user closes it, dismissed
--- | by its "OK"; the row less `l` leaves.
-acknowledged
-  :: forall @l r b v
+-- | The **modal** — see `PUI.Web.MDC2.modal`: the leaf owning case `l`,
+-- | telling it as its title and showing its payload until the user
+-- | closes it with its "OK", which releases the case again; followed on
+-- | an event path by `# acknowledged`. Over `<fluent-dialog>`.
+modal
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } { | r }
-  -> PUI Web [ | v ] [ | b ]
-acknowledged = acknowledgedOver @l modal
+  -> PUI Web [ | v ] [ | v ]
+modal = modalOver @l modalFace
 
--- the modal both dialog leaves are built over: `variantToVariantWiring`
+-- the modal the dialog leaves are built over: `variantToVariantWiring`
 -- over `<fluent-dialog>` and its `<fluent-dialog-body>` (v3's markup
 -- contract: title, content and action slots), an optional title, an
 -- optional cancel button and the deciding button in the action slot,
 -- named by the title or else by the decision; Escape closes the element
 -- by itself, releasing nothing
-modal
+modalFace
   :: forall r
    . { title :: Maybe String, decide :: String, cancel :: Maybe String }
   -> PUI Web { | r } { | r }
   -> PUI Web { | r } { | r }
-modal { title, decide, cancel } content = fromHandles do
+modalFace { title, decide, cancel } content = fromHandles do
   decideRef <- liftEffect $ Ref.new Nothing
   cancelRef <- liftEffect $ Ref.new Nothing
   shown <- handles $ el "fluent-dialog" >>> "aria-label" := fromMaybe decide title $ el "fluent-dialog-body" $ fromHandles do

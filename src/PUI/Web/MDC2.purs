@@ -22,7 +22,7 @@
 -- |   * **act** — `button`, with `outlinedButton` and `textButton` at the
 -- |     lower emphasis levels; `fab`; `iconButton`; `menu`/`menuItem`
 -- |   * **be told something** — `snackbar` (passing), `banner` (until
--- |     dismissed), `dialog`/`confirmed`/`acknowledged` (must be answered),
+-- |     dismissed), `dialog`/`confirmed`/`modal` (must be answered),
 -- |     `linearProgress`, `indeterminateLinearProgress`,
 -- |     `indeterminateCircularProgress`, `tooltip`
 -- |   * **structure and surface** — `card`/`cardActions`, `list`/`listItem`,
@@ -47,14 +47,12 @@ module PUI.Web.MDC2
   , card
   , cardActions
   , checkbox
-  , checkboxFrom
   , chipSet
   , dataCell
   , dataRow
   , columnHeader
   , dataTable
   , debouncedTextField
-  , debouncedTextFieldFrom
   , dialog
   , divider
   , drawer
@@ -65,7 +63,6 @@ module PUI.Web.MDC2
   , filledTextArea
   , filledNumberField
   , filledTextField
-  , filledTextFieldFrom
   , filledTextField'
   , filterChip
   , group
@@ -99,7 +96,6 @@ module PUI.Web.MDC2
   , outlinedTextField'
   , overline
   , radioButton
-  , radioButtonFrom
   , radio
   , radioButtonUnpicked
   , radioButtonOptional
@@ -110,12 +106,11 @@ module PUI.Web.MDC2
   , rangeSlider
   , rangeSliderLive
   , select
-  , selectFrom
   , option
   , selectUnpicked
   , selectOptional
   , confirmed
-  , acknowledged
+  , modal
   , slider
   , sliderLive
   , snackbar
@@ -143,12 +138,12 @@ import Data.Variant (inj, match, prj) as Variant
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (introduced, numeral, fromHandles, handles, gatheredOf, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, acknowledgedOver, eventLeaf)
+import PUI (numeral, fromHandles, handles, gatheredOf, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, modalOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, grouping, member, unpickAll, clearedByRepress, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons)
 import Data.Structural (withStructuralOrd)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Record as Record
@@ -368,12 +363,6 @@ menuItem = eventLeaf @l $
 filledTextField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 filledTextField = let config = { floatingLabel: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (textFieldLeaf "filled" Nothing config.floatingLabel "")
 
--- | `filledTextField` in its **introducing form**: the field is not in the row fed
--- | but stated here, `init` of the rest of the row its blank, for a
--- | knotless form with no seed. See `PUI.introduced`.
-filledTextFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> PUI Web { | b } { | r }
-filledTextFieldFrom init = introduced @l init (filledTextField @l)
-
 -- | `filledTextField` with a `hint` under it — a format or an example the
 -- | label is not (`filledTextField' @"Start date" { hint: "DD.MM.YYYY" }`),
 -- | so the label stays the field's name. Shown as MD2's persistent helper
@@ -466,10 +455,6 @@ textFieldWiring comp inputNode mDebounce = recordToRecordWiring
   , read: \_ -> getValue inputNode
   }
 
--- | `debouncedTextField` in its introducing form, as `filledTextFieldFrom`.
-debouncedTextFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> { ms :: Number } -> PUI Web { | b } { | r }
-debouncedTextFieldFrom init settleTime = introduced @l init (debouncedTextField @l settleTime)
-
 -- | The **multi-line text field**, sized in `rows` and `columns` of text (4 by 40 unless given) —
 -- | a note, a description, a message. Otherwise `filledTextField`: the label
 -- | floats (`floatingLabel` overrides it for real copy), shows a string,
@@ -554,10 +539,6 @@ checkbox = fieldLeaf @l $ fromHandles do
         pure (if checked then Variant.inj (Proxy @c) a else Variant.inj (Proxy @n) {})
     }
 
--- | `checkbox` in its introducing form, as `filledTextFieldFrom`.
-checkboxFrom :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Lacks l b => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => ({ | b } -> [ | v ]) -> PUI Web { | b } { | r }
-checkboxFrom init = introduced @l init (checkbox @l @c @n)
-
 -- | The Material **radio group**: one choice among a handful, every option
 -- | visible and comparable at a glance. Beyond about five options, or where
 -- | the options don't deserve the space, use `select`.
@@ -581,10 +562,6 @@ checkboxFrom init = introduced @l init (checkbox @l @c @n)
 -- gesture stores.
 radioButton :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 radioButton options = fieldLeaf @l $ radioGroupOf options
-
--- | `radioButton` in its introducing form, as `filledTextFieldFrom`.
-radioButtonFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
-radioButtonFrom init options = introduced @l init (radioButton @l options)
 
 -- | `radioButton` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` holds the options' case, seeded at an unpicked case;
@@ -858,10 +835,6 @@ rangeSliderLeaf live label = fromHandles do
 -- | (`selectUnpicked`, `selectOptional`); its options are `option` leaves.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf @l false options
-
--- | `select` in its introducing form, as `filledTextFieldFrom`.
-selectFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
-selectFrom init options = introduced @l init (select @l options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` holds the options' case, seeded at an unpicked case;
@@ -1405,49 +1378,45 @@ dialog title content = fromHandles do
 -- | shown, and replay is lawful over **records** only — an entity's last
 -- | value may be re-said, a one-shot event may not (the `looped`
 -- | argument) — so a dialog is opened by an event and shows a row. For a
--- | reading that changes nothing, `acknowledged`.
+-- | reading that changes nothing, `modal`.
 confirmed
   :: forall @l r b v
    . IsSymbol l
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed = confirmedOver @l modal
+confirmed = confirmedOver @l modalFace
 
--- | The **dismissed rung**: `dialog` with a **dismiss button** built in,
--- | for the outcome the user must read and can only close — a rejection
--- | and its reason, a notice. `onCase @l` over the modal: opened by case
--- | `l`, which it tells as its title, its content shown the payload for
--- | as long as the user wants it, and the case **consumed** — the row
--- | less `l` leaves, so what follows is typed at the cases that go on
--- | (`acknowledged @"About this dashboard" $ body1 $ text aboutLine`,
--- | weather, between the emitters and the fold). The dismiss is captioned
--- | "OK" and decides nothing — closing it, Escape and the scrim all
--- | consume the case — so, like `confirmed`'s Cancel, it is chrome and
--- | takes no caption. The persistent member of the status family: a
--- | `snackbar` tells its case and is gone, so it carries no copy; a
--- | message the user closes is not ephemeral, so its content may read
--- | the payload. Every other case
--- | passes through untouched.
-acknowledged
-  :: forall @l r b v
+-- | The **modal**: the leaf owning case `l` — opened by it, which it
+-- | tells as its title, its content shown the payload for as long as the
+-- | user wants it, closed by its "OK", which releases the case again
+-- | with the content's row; Escape and the scrim close it releasing
+-- | nothing. The "OK" decides nothing, so, like `confirmed`'s Cancel, it
+-- | is chrome and takes no caption. It is closed to its case, so on an
+-- | event path it is followed by the word that says what becomes of the
+-- | case: `# acknowledged` (`PUI`) ends it there and lets every other
+-- | case pass — the message the user must read and can only close
+-- | (`( modal @"About this dashboard" $ body1 $ text aboutLine ) #
+-- | acknowledged`, weather, between the emitters and the fold).
+modal
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } { | r }
-  -> PUI Web [ | v ] [ | b ]
-acknowledged = acknowledgedOver @l modal
+  -> PUI Web [ | v ] [ | v ]
+modal = modalOver @l modalFace
 
--- the modal both dialog leaves are built over: `variantToVariantWiring`
+-- the modal the dialog leaves are built over: `variantToVariantWiring`
 -- over the MDCDialog foundation's markup, an optional title, the content
 -- stage, an optional cancel button and the deciding button, named by the
 -- title or else by the decision; Escape and the scrim close the
 -- foundation by itself, releasing nothing
-modal
+modalFace
   :: forall r
    . { title :: Maybe String, decide :: String, cancel :: Maybe String }
   -> PUI Web { | r } { | r }
   -> PUI Web { | r } { | r }
-modal { title, decide, cancel } content = fromHandles do
+modalFace { title, decide, cancel } content = fromHandles do
   contentId <- liftEffect uniqueId
   decideRef <- liftEffect $ Ref.new Nothing
   cancelRef <- liftEffect $ Ref.new Nothing

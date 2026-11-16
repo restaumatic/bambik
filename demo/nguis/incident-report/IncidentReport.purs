@@ -1,6 +1,6 @@
-module IncidentReport (Incident, clockPeriod, fileReport, referenceLine, reportLine) where
+module IncidentReport (Incident, Position, Time, clockPeriod, fileReport, noDescription, referenceLine, reportLine) where
 
-import Prelude (const, discard, pure, show, (/), (<), (<>))
+import Prelude (const, discard, pure, show, (/), (<), (<>), (==))
 
 import Data.Int (round)
 import Data.Number.Format (fixed, toStringWith)
@@ -8,18 +8,27 @@ import Data.Variant (match)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 
 type Incident =
-  { "Photo" :: [ none :: {}, picked :: { mime :: String, name :: String, size :: Number } ]
-  , position :: [ denied :: {}, located :: { lat :: Number, lng :: Number }, unknown :: {} ]
-  , time :: { hours :: Int, minutes :: Int, seconds :: Int }
+  { "Description" :: String
+  , "Photo" :: [ none :: {}, picked :: { mime :: String, name :: String, size :: Number } ]
+  , position :: Position
+  , time :: Time
   }
+
+type Position = [ denied :: {}, located :: { lat :: Number, lng :: Number }, unknown :: {} ]
+
+type Time = { hours :: Int, minutes :: Int, seconds :: Int }
+
+noDescription :: { position :: Position, time :: Time } -> String
+noDescription _ = ""
 
 clockPeriod :: { ms :: Number }
 clockPeriod = { ms: 1000.0 }
 
 reportLine :: Incident -> String
-reportLine { "Photo": photo, position, time } =
-  "Reporting " <> whereabouts <> " at " <> clockText ":" time <> attachment <> "."
+reportLine { "Description": description, "Photo": photo, position, time } =
+  "Reporting " <> subject <> " " <> whereabouts <> " at " <> clockText ":" time <> attachment <> "."
   where
+  subject = if description == "" then "an incident" else description
   whereabouts = match
     { located: \{ lat, lng } -> "from " <> coordinate lat <> ", " <> coordinate lng
     , unknown: const "from a location not yet known"
@@ -44,7 +53,7 @@ filingDelay = { ms: 800.0 }
 coordinate :: Number -> String
 coordinate = toStringWith (fixed 2)
 
-clockText :: String -> { hours :: Int, minutes :: Int, seconds :: Int } -> String
+clockText :: String -> Time -> String
 clockText separator { hours, minutes, seconds } = padded hours <> separator <> padded minutes <> separator <> padded seconds
 
 padded :: Int -> String

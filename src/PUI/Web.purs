@@ -32,7 +32,7 @@
 -- |   `variantToRecordWiring`, `variantToVariantWiring`, `optionWiring` —
 -- |   the leaf protocol, host-neutral, so it lives with the carrier, as
 -- |   do the click emitter `eventLeaf`, the status `statusOver` and the
--- |   dialogs `confirmedOver`/`acknowledgedOver`): `fieldLeaf`, `chrome`,
+-- |   dialogs `confirmedOver`/`modalOver`): `fieldLeaf`, `chrome`,
 -- |   `listenNode`/`listenNodeDeferred`/
 -- |   `listenCapture`, `ensureStyle`, `autoDismiss`, the selector-group
 -- |   helpers (`grouping`, `member`, `Member`, `unpickAll`, `hasClass`, `clearedByRepress` —

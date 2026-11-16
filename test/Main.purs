@@ -40,7 +40,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
 import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedAt, actedOf, actedWithin, announce, dispatchedOf, editsOf, gathered, gatheredOf, cancelScope, capture, fold, foldInto, folding, inScope, landed, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, stepped, ticks, unanswering, with)
-import PUI (introduced) as PUI
+import PUI (acknowledged, continued, introduced, modalOver, supplied) as PUI
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
 
@@ -1602,6 +1602,61 @@ main = do
       [ { n: 10, x: 1 }, { n: 77, x: 1 }, { n: 20, x: 2 } ]
     Ref.read outs >>= assertEqual "introduced: the editor's releases leave as they come"
       [ { n: 10, x: 1 }, { n: 77, x: 1 }, { n: 77, x: 1 }, { n: 20, x: 2 } ]
+
+  -- == acknowledged: introduced's mirror — onCase over the leaf it       ==
+  -- == follows, its case read off that leaf's closed row, then the exit   ==
+  -- == into [], the silent component: the case shown and consumed,        ==
+  -- == whatever the leaf releases, every other case passing. The exit     ==
+  -- == that names a case is init's mirror: the case leaves as that one.   ==
+  do
+    shown <- Ref.new ([] :: Array { n :: Int })
+    propRef <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array [ passed :: Int ])
+    m <- handles (PUI.acknowledged (PUI.modalOver @"told" (\_ content -> content) (echoProbe identity shown propRef)) :: PUI Effect [ told :: { n :: Int }, passed :: Int ] [ passed :: Int ])
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (.told { n: 1 })
+    fire propRef { n: 5 }
+    m.toUser (.passed 2)
+    Ref.read shown >>= assertEqual "acknowledged: its case is shown to the content" [ { n: 1 } ]
+    Ref.read outs >>= assertEqual "acknowledged: its case is consumed, every other case passes" [ .passed 2 ]
+    exits <- Ref.new ([] :: Array [ passed :: Int ])
+    e <- handles (onCase @"told" (lcmap (\r -> .passed r.n) identity) :: PUI Effect [ told :: { n :: Int }, passed :: Int ] [ passed :: Int ])
+    e.fromUser \o -> Ref.modify_ (_ <> [ o ]) exits
+    e.toUser (.told { n: 1 })
+    e.toUser (.passed 2)
+    Ref.read exits >>= assertEqual "exit, init's mirror: the case leaves as the case its exit names" [ .passed 1, .passed 2 ]
+
+  -- == continued: introduced's exact mirror — onCase over the leaf it     ==
+  -- == follows, then the exit: what the leaf releases leaves as the case  ==
+  -- == the exit names, every other case passing.                          ==
+  do
+    shown <- Ref.new ([] :: Array { n :: Int })
+    propRef <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array [ passed :: Int ])
+    m <- handles (PUI.continued (\r -> .passed (r.n * 10)) (PUI.modalOver @"told" (\_ content -> content) (echoProbe identity shown propRef)) :: PUI Effect [ told :: { n :: Int }, passed :: Int ] [ passed :: Int ])
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    m.toUser (.told { n: 1 })
+    fire propRef { n: 5 }
+    m.toUser (.passed 2)
+    Ref.read shown >>= assertEqual "continued: its case is shown to the leaf" [ { n: 1 } ]
+    Ref.read outs >>= assertEqual "continued: each release leaves as the case its exit names, every other case passes" [ .passed 10, .passed 50, .passed 2 ]
+
+  -- == supplied: acknowledged's exact mirror — onField over a stage out   ==
+  -- == of {}: every feed answered with the row fed plus the source's      ==
+  -- == value, a report outside a feed leaving as the row last fed with    ==
+  -- == the new value, a report before any feed withheld.                  ==
+  do
+    fed <- Ref.new ([] :: Array {})
+    propRef <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { n :: Int, x :: Int })
+    m <- handles (PUI.supplied (echoProbe (\_ -> { n: 1 }) fed propRef :: PUI Effect {} { n :: Int }) :: PUI Effect { x :: Int } { n :: Int, x :: Int })
+    m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    fire propRef { n: 0 }
+    m.toUser { x: 1 }
+    fire propRef { n: 2 }
+    m.toUser { x: 5 }
+    Ref.read outs >>= assertEqual "supplied: the row fed plus the field, a report landing on the row last fed, none before a feed"
+      [ { n: 1, x: 1 }, { n: 2, x: 1 }, { n: 1, x: 5 } ]
 
   -- == unanswering: a stage with its answers dropped — silence (a feed is ==
   -- == answered by no emission), passage (an emission outside a feed    ==

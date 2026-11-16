@@ -18,7 +18,8 @@
 // to register and accept a feed, and the +→+ dialogs for the modal
 // protocol: a feed opens the dialog and fires nothing, then its deciding
 // button is clicked once — `confirmed` re-emits the fed case carrying the
-// row its content showed, `acknowledged` emits nothing (the case consumed);
+// row its content showed, as `modal`'s dismiss does, and the modal
+// `acknowledged` emits nothing (the case consumed);
 // `confirmed`'s cancel, clicked first, closes it emitting nothing, and the
 // next feed opens it again.
 // Emitters are then clicked once to
@@ -264,7 +265,8 @@ export const run = async ({ ev, session, assertEq, sleep, page }) => {
         assertEq(r.decided.cancelled?.reopened, true, `${at} Modal: the next feed opens it again`)
         assertEq(r.decided.emitted, [fed], `${at} Modal: the confirm re-emits the fed case with the row shown`)
       }
-      if (name === 'acknowledged') assertEq(r.decided.cancelled, null, `${at} Modal: the dismiss is its only button`)
+      if (name === 'acknowledged' || name === 'modal') assertEq(r.decided.cancelled, null, `${at} Modal: the dismiss is its only button`)
+      if (name === 'modal') assertEq(r.decided.emitted, [fed], `${at} Modal: the dismiss releases the fed case with the row shown`)
       if (name === 'acknowledged') assertEq(r.decided.emitted, [], `${at} Modal: the dismiss emits nothing, the case consumed`)
     }
   }

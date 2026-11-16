@@ -45,7 +45,7 @@ interruption ranking (snackbar < banner < dialog):
 | --- | --- | --- | --- |
 | ambient | stay visible, always current | none | `text`/`textAt`, the progress bars (stages releasing the row they show); the indeterminate progress, ambient over an **occurrence** input — a status showing between `action`'s `started` and `ended` |
 | salient-transient | interrupt attention, briefly | none | `snackbar`, `toast` |
-| persistent-until-acted | remain until superseded or dismissed | the dismiss | `banner`, `output`; `acknowledged @l` — the modal message, the `+→+` stage opened by its case and telling it, the case consumed when the user closes it |
+| persistent-until-acted | remain until superseded or dismissed | the dismiss | `banner`, `output`; `modal @l` under `# acknowledged` — the modal message, the `+→+` stage opened by its case and telling it, the case consumed when the user closes it |
 | modal-witnessed | block everything until confirmed | the confirm | `confirmed @l` — the witness rung, the `+→+` prism opened by its case and telling it, the event withheld until the user confirms and re-emitted carrying the row its content answered; `dialog` — open on feed, close on emission |
 
 Escalating assurance is a business decision made by **choosing the

@@ -16,8 +16,8 @@
 -- | and the structure builders (`dynamic`, `each`, `el`) — lives in the
 -- | parent module, `PUI.Web`, shared with SVG and the design systems.
 module PUI.Web.HTML
-  ( acknowledged
-  , confirmed
+  ( confirmed
+  , modal
   , a
   , article
   , aside
@@ -43,7 +43,6 @@ module PUI.Web.HTML
   , i
   , img
   , input
-  , inputFrom
   , inPlaceInput
   , filePicked
   , group
@@ -60,7 +59,6 @@ module PUI.Web.HTML
   , runComponentInNode
   , section
   , select
-  , selectFrom
   , selectUnpicked
   , selectOptional
   , span
@@ -87,11 +85,11 @@ import Data.Variant (inj, match)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
-import PUI (introduced, fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, replayed, source, departures, statusOver, confirmedOver, acknowledgedOver)
+import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, replayed, source, departures, statusOver, confirmedOver, modalOver)
 import PUI.Web (chrome, fieldLeaf, Node, Web, adoptHostDiagnostics, onFilePicked, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, setAttribute, setValue, staticText, statusText, separating, invokeMethod, showModalOnce, (:=), (:=>))
 
 -- UIs
@@ -118,12 +116,6 @@ input type_ = fieldLeaf @l $ "type" := type_ $ fromHandles do
     , reports: listenNode node "input"
     , read: \_ -> getValue node
     }
-
--- | `input` in its **introducing form**: the field is not in the row fed
--- | but stated here, `init` of the rest of the row its blank, for a
--- | knotless form with no seed. See `PUI.introduced`.
-inputFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> String -> PUI Web { | b } { | r }
-inputFrom init kind = introduced @l init (input @l kind)
 
 -- | The **in-place text input** of a grid or a list — a sheet's cell
 -- | while it is edited: `input @k` over field `k`, its edits kept until
@@ -182,10 +174,6 @@ textArea = fieldLeaf @l $ fromHandles do
 -- | in the order written.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf false options
-
--- | `select` in its introducing form, as `inputFrom`.
-selectFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
-selectFrom init options = introduced @l init (select @l options)
 
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` is the made choice, seeded at an unpicked case; nothing
@@ -313,31 +301,31 @@ confirmed
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed = confirmedOver @l modal
+confirmed = confirmedOver @l modalFace
 
--- | The **dismissed rung** — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
--- | over the modal, the `+→+` stage consuming case `l`, telling it as its
--- | title and showing its payload until the user closes it, dismissed
--- | by its "OK"; the row less `l` leaves.
-acknowledged
-  :: forall @l r b v
+-- | The **modal** — see `PUI.Web.MDC2.modal`: the leaf owning case `l`,
+-- | telling it as its title and showing its payload until the user
+-- | closes it with its "OK", which releases the case again; followed on
+-- | an event path by `# acknowledged`. Over the native `<dialog>`.
+modal
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } { | r }
-  -> PUI Web [ | v ] [ | b ]
-acknowledged = acknowledgedOver @l modal
+  -> PUI Web [ | v ] [ | v ]
+modal = modalOver @l modalFace
 
--- the modal both dialog leaves are built over: `variantToVariantWiring`
+-- the modal the dialog leaves are built over: `variantToVariantWiring`
 -- over the native `<dialog>`, opened modal, an optional heading, the
 -- content stage, an optional cancel button and the deciding button, named
 -- by the heading or else by the decision; Escape closes the element by
 -- itself, releasing nothing
-modal
+modalFace
   :: forall r
    . { title :: Maybe String, decide :: String, cancel :: Maybe String }
   -> PUI Web { | r } { | r }
   -> PUI Web { | r } { | r }
-modal { title, decide, cancel } content = fromHandles do
+modalFace { title, decide, cancel } content = fromHandles do
   decideRef <- liftEffect $ Ref.new Nothing
   cancelRef <- liftEffect $ Ref.new Nothing
   shown <- handles $ el "dialog" >>> "aria-label" := fromMaybe decide title $ fromHandles do

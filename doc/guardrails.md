@@ -82,7 +82,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   to the case it emits, an action is typed at exactly its outcomes (`action @l f`)
   and the folds and statuses after it name them,
   a dialog intercepts the case that opens it (`confirmed @l`,
-  `acknowledged @l`), an editor's release leaving as an event is the editing list's
+  `modal @l` under `# acknowledged`), an editor's release leaving as an event is the editing list's
   to say (`editsOf @l @k`) — so a view places nothing at a row and
   `PUI` re-exports no adopter. There is no rename adopter: re-labelling a
   component built at a fixed internal label is exactly what this
@@ -215,7 +215,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
   swap. Precedents: the statuses (`snackbar @"Card charged" captured`,
-  replacing a per-case copy record and then the copy function), `acknowledged
+  replacing a per-case copy record and then the copy function), `modal
   @"Total missing"` (the dialog telling its case as its title, its
   caption dropped like `confirmed`'s Cancel: the dismiss decides nothing,
   so it is chrome — every call passed "OK" or "Got it"), `confirmed @"Refund a customer"` (its caption

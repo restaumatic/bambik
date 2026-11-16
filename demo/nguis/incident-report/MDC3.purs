@@ -4,11 +4,11 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
-import IncidentReport (clockPeriod, fileReport, referenceLine, reportLine)
-import PUI (action)
+import IncidentReport (clockPeriod, fileReport, noDescription, referenceLine, reportLine)
+import PUI (acknowledged, action, introduced, supplied)
 import PUI.Web (clock, geolocated, staticText, text)
 import PUI.Web.HTML (filePicked, label)
-import PUI.Web.MDC3 (acknowledged, body, bodyMedium, button, indeterminateLinearProgress)
+import PUI.Web.MDC3 (body, bodyMedium, button, filledTextField, indeterminateLinearProgress, modal)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 incidentReport :: Effect Unit
@@ -17,10 +17,11 @@ incidentReport =
     RecordToRecord.do
       geolocated @"position"
       clock @"time" clockPeriod
-      label $ Semigroupoid.do
-        staticText "Photo "
-        filePicked @"Photo"
+    filledTextField @"Description" # introduced @"Description" noDescription
+    ( label $ Semigroupoid.do
+      staticText "Photo "
+      filePicked @"Photo" ) # supplied
     bodyMedium $ text reportLine
     button @"File the report"
     indeterminateLinearProgress # action @"File the report" fileReport
-    acknowledged @"Report filed" $ bodyMedium $ text referenceLine
+    ( modal @"Report filed" $ bodyMedium $ text referenceLine ) # acknowledged

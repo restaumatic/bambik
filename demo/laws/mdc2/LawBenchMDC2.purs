@@ -4,10 +4,10 @@ import Prelude
 
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
-import PUI (PUI)
+import PUI (acknowledged, PUI)
 import LawBench (bench, benchStep, runBench)
 import PUI.Web (Web, text, staticText, textAt)
-import PUI.Web.MDC2 (acknowledged, body, confirmed, button, checkbox, debouncedTextField, fab, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, toggleSwitch)
+import PUI.Web.MDC2 (body, confirmed, button, checkbox, debouncedTextField, fab, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, toggleSwitch, modal)
 
 lawBenchMDC2 :: Effect Unit
 lawBenchMDC2 = do
@@ -54,7 +54,8 @@ lawBenchMDC2 = do
     , bench "indeterminateCircularProgress" "+→×" runs (indeterminateCircularProgress)
     -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
     , bench "confirmed" "+→+" decisions (confirmed @"decision" (text nLine))
-    , bench "acknowledged" "+→+" decisions (acknowledged @"decision" (text nLine))
+    , bench "modal" "+→+" decisions (modal @"decision" (text nLine))
+    , bench "acknowledged" "+→+" decisions (modal @"decision" (text nLine) # acknowledged)
     ]
   where
   fractionOf { fraction } = fraction

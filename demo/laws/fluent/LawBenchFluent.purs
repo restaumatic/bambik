@@ -5,9 +5,9 @@ import Prelude
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import LawBench (bench, benchStep, runBench)
-import PUI (PUI)
+import PUI (acknowledged, PUI)
 import PUI.Web (Web, text, staticText)
-import PUI.Web.Fluent (acknowledged, confirmed, body, button, dropdown, dropdownOptional, dropdownUnpicked, group, indeterminateLinearProgress, messageBar, option, progressBar, radio, radioGroup, radioGroupOptional, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch)
+import PUI.Web.Fluent (confirmed, body, button, dropdown, dropdownOptional, dropdownUnpicked, group, indeterminateLinearProgress, messageBar, option, progressBar, radio, radioGroup, radioGroupOptional, radioGroupUnpicked, ratingDisplay, slider, textField, toggleSwitch, modal)
 
 lawBenchFluent :: Effect Unit
 lawBenchFluent = do
@@ -30,7 +30,8 @@ lawBenchFluent = do
     , benchStep "messageBar" "+→×" events (messageBar @"event" (const {}))
     -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them
     , bench "confirmed" "+→+" decisions (confirmed @"decision" (text nLine))
-    , bench "acknowledged" "+→+" decisions (acknowledged @"decision" (text nLine))
+    , bench "modal" "+→+" decisions (modal @"decision" (text nLine))
+    , bench "acknowledged" "+→+" decisions (modal @"decision" (text nLine) # acknowledged)
     ]
   where
   fractionOf { fraction } = fraction

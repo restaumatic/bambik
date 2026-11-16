@@ -1,4 +1,4 @@
-module Weather (Bulletin, CityChoice, ForecastRequest, Report, aboutLine, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, servedLine, temperatureLine, warsawBulletin) where
+module Weather (Bulletin, CityChoice, ForecastRequest, Report, aboutLine, asForecast, cityLine, conditionLine, fetchReport, forecastRequests, humidityWindLine, isCurrent, rememberReport, servedLine, temperatureLine, warningLine, warsawBulletin) where
 
 import Prelude (discard, mod, pure, show, (*), (+), (-), (<#>), (<>), (==))
 
@@ -50,7 +50,7 @@ climateTable =
   , { city: "Lisbon", temperature: 27.0, condition: "Sunny", humidity: 48, wind: 18.0 }
   , { city: "Reykjavik", temperature: 11.0, condition: "Drizzle", humidity: 82, wind: 26.0 }
   , { city: "Cairo", temperature: 36.0, condition: "Clear sky", humidity: 22, wind: 9.0 }
-  , { city: "Singapore", temperature: 31.0, condition: "Thunderstorm", humidity: 88, wind: 7.0 }
+  , { city: "Singapore", temperature: 31.0, condition: stormCondition, humidity: 88, wind: 7.0 }
   , { city: "Sydney", temperature: 17.0, condition: "Showers", humidity: 64, wind: 21.0 }
   ]
 
@@ -69,10 +69,20 @@ firstWithCity city = fromMaybe unknownTerritory (find (\r -> r.city == city) cli
 unknownTerritory :: Report
 unknownTerritory = { city: "Unknown", temperature: 0.0, condition: "No data", humidity: 0, wind: 0.0 }
 
-fetchReport :: ForecastRequest -> Aff [ "Forecast fetched" :: Report ]
+fetchReport :: ForecastRequest -> Aff [ "Forecast fetched" :: Report, "Weather warning" :: Report ]
 fetchReport { city, sample } = do
   delay (Milliseconds serviceDelay.ms)
-  pure (."Forecast fetched" (conditionsFor city sample))
+  let report = conditionsFor city sample
+  pure (if report.condition == stormCondition then ."Weather warning" report else ."Forecast fetched" report)
+
+stormCondition :: String
+stormCondition = "Thunderstorm"
+
+warningLine :: Report -> String
+warningLine { city, condition } = condition <> " over " <> city <> ". Stay indoors if you can; the forecast follows."
+
+asForecast :: Report -> [ "Forecast fetched" :: Report ]
+asForecast report = ."Forecast fetched" report
 
 rememberReport :: { event :: Report, model :: Bulletin } -> Bulletin
 rememberReport { event: report, model: forecast } = forecast { report = report, servedReports = forecast.servedReports + 1 }

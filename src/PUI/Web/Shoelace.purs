@@ -18,8 +18,8 @@
 -- | Typography is deliberately absent: Shoelace styles plain HTML, so the
 -- | `PUI.Web.HTML` elements are the type scale.
 module PUI.Web.Shoelace
-  ( acknowledged
-  , confirmed
+  ( confirmed
+  , modal
   , body
   , button
   , card
@@ -30,14 +30,12 @@ module PUI.Web.Shoelace
   , progressBar
   , rating
   , select
-  , selectFrom
   , selectUnpicked
   , selectOptional
   , sliderLive
   , sliderLive'
   , textArea
   , textField
-  , textFieldFrom
   , textField'
   , toast
   , toggleSwitch
@@ -54,12 +52,12 @@ import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Effect.Ref as Ref
 import Data.Foldable (for_)
-import PUI (introduced, fromHandles, handles, Ocular, PUI, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, statusOver, confirmedOver, acknowledgedOver, eventLeaf)
+import PUI (fromHandles, handles, Ocular, PUI, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, statusOver, confirmedOver, modalOver, eventLeaf)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), Web, attribute, el, element, getChecked, getValue, isFocused, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, statusText, separating, invokeMethod, uniqueId, (:=))
 import Type.Proxy (Proxy(..))
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithDefaults)
 
@@ -124,12 +122,6 @@ button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 -- | edits field `l` and carries the rest.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textField = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) ""
-
--- | `textField` in its **introducing form**: the field is not in the row fed
--- | but stated here, `init` of the rest of the row its blank, for a
--- | knotless form with no seed. See `PUI.introduced`.
-textFieldFrom :: forall @l r b. IsSymbol l => Lacks l b => Cons l String b r => ({ | b } -> String) -> PUI Web { | b } { | r }
-textFieldFrom init = introduced @l init (textField @l)
 
 -- | `textField` with a `hint` under it — a format or an example the label
 -- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
@@ -262,10 +254,6 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l 
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf @l false options
 
--- | `select` in its introducing form, as `textFieldFrom`.
-selectFrom :: forall @l w b r. IsSymbol l => Lacks l b => Cons l [ | w ] b r => ({ | b } -> [ | w ]) -> PUI Web [ | w ] [ | w ] -> PUI Web { | b } { | r }
-selectFrom init options = introduced @l init (select @l options)
-
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` holds the made choice, seeded at an unpicked case;
 -- | nothing is checked until the user picks, and a pick cannot be taken
@@ -380,31 +368,31 @@ confirmed
   => Cons l { | r } b v
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
-confirmed = confirmedOver @l modal
+confirmed = confirmedOver @l modalFace
 
--- | The **dismissed rung** — see `PUI.Web.MDC2.acknowledged`: `onCase @l`
--- | over the modal, the `+→+` stage consuming case `l`, telling it as its
--- | title and showing its payload until the user closes it, dismissed
--- | by its "OK"; the row less `l` leaves.
-acknowledged
-  :: forall @l r b v
+-- | The **modal** — see `PUI.Web.MDC2.modal`: the leaf owning case `l`,
+-- | telling it as its title and showing its payload until the user
+-- | closes it with its "OK", which releases the case again; followed on
+-- | an event path by `# acknowledged`. Over `<sl-dialog>`.
+modal
+  :: forall @l r v
    . IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => PUI Web { | r } { | r }
-  -> PUI Web [ | v ] [ | b ]
-acknowledged = acknowledgedOver @l modal
+  -> PUI Web [ | v ] [ | v ]
+modal = modalOver @l modalFace
 
--- the modal both dialog leaves are built over: `variantToVariantWiring`
+-- the modal the dialog leaves are built over: `variantToVariantWiring`
 -- over `<sl-dialog>`, its title the `label` (its header hidden when there
 -- is none, the label naming it still), the content stage, an optional
 -- cancel button and the deciding button in the footer; Escape and the
 -- overlay close the element by itself, releasing nothing
-modal
+modalFace
   :: forall r
    . { title :: Maybe String, decide :: String, cancel :: Maybe String }
   -> PUI Web { | r } { | r }
   -> PUI Web { | r } { | r }
-modal { title, decide, cancel } content = fromHandles do
+modalFace { title, decide, cancel } content = fromHandles do
   decideRef <- liftEffect $ Ref.new Nothing
   cancelRef <- liftEffect $ Ref.new Nothing
   shown <- handles $ el "sl-dialog" >>> "label" := fromMaybe decide title >>> maybe ("no-header" := "") (const identity) title $ fromHandles do

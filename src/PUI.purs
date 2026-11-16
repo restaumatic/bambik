@@ -111,7 +111,7 @@ module PUI
   , statusOver
   , Modal
   , confirmedOver
-  , acknowledgedOver
+  , modalOver
   , unanswering
   , keepingEdits
   -- the vocabulary: what a view writes, with the words `Adopters` re-exports
@@ -136,6 +136,9 @@ module PUI
   , provided
   , providedAt
   , introduced
+  , supplied
+  , acknowledged
+  , continued
   , module Adopters
   )
   where
@@ -201,9 +204,10 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (for, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Variant (class Contractable, case_, contract, inj, on, prj)
+import Data.Variant (class Contractable, Variant, case_, contract, inj, on, prj)
 import Prim.Row (class Cons, class Lacks)
 import Prim.RowList (class RowToList)
+import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 import Effect (Effect)
@@ -514,7 +518,8 @@ strictNumber s =
 -- | The **introducing form of an editor**: field `l` inserted into the
 -- | row fed, from `init` of the rest, in front of the lens editor — `{ | b }
 -- | → { l :: a | b }`. For a knotless form, which states each field's
--- | blank at its leaf (`filledTextFieldFrom @"Email" blankEmail`, MDC3)
+-- | blank after its editor (`filledTextField @"Email" # introduced @"Email"
+-- | blankEmail`, signup-form)
 -- | instead of in a seed, so it needs no `looped` and no `with`; a document
 -- | whose logic writes into its fields keeps the lens editor in a `looped`
 -- | row, where the knot re-feeds the field's current value and a reset
@@ -530,6 +535,11 @@ strictNumber s =
 -- | order in the view model's signatures), and no introducing editor under
 -- | a pane — a pane is `{ | r } → { | r }`, so a field whose editor exists
 -- | sometimes is model state.
+-- |
+-- | It is given its label, the editor's own: the editor is open on the
+-- | rest of its row, and a label can be read off a closed row only — as
+-- | its siblings `supplied`, `acknowledged` and `continued` do off the
+-- | closed leaf they follow.
 introduced
   :: forall @l m a b r
    . Applicative m
@@ -540,6 +550,38 @@ introduced
   -> PUI m { | r } { | r }
   -> PUI m { | b } { | r }
 introduced init editor = onField @l (lcmap init identity) >>> keepingEdits @l editor
+
+-- | A field **supplied**: the source it follows is fed nothing and what
+-- | it releases is inserted into the row — `{ | b } → { l :: a | b }`,
+-- | every other field passing untouched. It is how a source stands
+-- | **below** a line that has released a field, where the bare source,
+-- | typed `{} → { l :: a }`, is a compile error: the row is kept and the
+-- | fact joins it (`( label $ Semigroupoid.do staticText "Photo ";
+-- | filePicked @"Photo" ) # supplied`, under the description field of
+-- | incident-report). Every feed
+-- | is answered with the row fed and the source's last value, and each
+-- | change the platform reports leaves as the row last fed with the new
+-- | value; a report before any feed is withheld (`Strong`'s). Sources
+-- | that open a flow together are merged, `RecordToRecord.do`.
+-- |
+-- | It takes no label: the source it follows is closed to its one field,
+-- | so the field is read off its row. It is `acknowledged`'s **exact
+-- | mirror**, and `introduced`'s sibling whose `init` no function names:
+-- | `onField @l` over a stage out of `{}`, the record that says nothing,
+-- | where `acknowledged` is `onCase @l` over a stage into `[]`, the
+-- | variant in which nothing happens. Out of `{}` there is still a value
+-- | to give, and the source is what gives it.
+supplied
+  :: forall m l a b r s
+   . Functor m
+  => RowToList s (RL.Cons l a RL.Nil)
+  => IsSymbol l
+  => Lacks l b
+  => Cons l a () s
+  => Cons l a b r
+  => PUI m {} { | s }
+  -> PUI m { | b } { | r }
+supplied leaf = onField @l $ dimap (const {}) (Record.get (Proxy @l)) leaf
 
 -- | An editor that **keeps the user's value of field `l`** across feeds
 -- | that bring nothing new for it: a feed whose `l` equals the last fed
@@ -1563,7 +1605,7 @@ statusOver
   -> PUI m [ | v ] (i -> o)
 statusOver face f = face (reflectSymbol (Proxy @l)) # atCase @l # folding @l f
 
--- | A vocabulary's modal, which both dialog leaves are built over:
+-- | A vocabulary's modal, which the dialog leaves are built over:
 -- | `variantToVariantWiring` over the catalogue's dialog, an optional
 -- | title, the content stage, an optional cancel button and the deciding
 -- | button, releasing the content's row once on the decision and nothing
@@ -1589,25 +1631,103 @@ confirmedOver
 confirmedOver modal content = focusCase @l $ modal
   { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just "Cancel" } content
 
--- | The **dismissed rung** over a vocabulary's modal: `onCase @l`, titled
--- | by case `l`, dismissed by its "OK", the case consumed either way and
--- | the row less `l` leaving. Every vocabulary's `acknowledged` is this
--- | over its `modal` (the contract is stated at
--- | `PUI.Web.MDC2.acknowledged`). Plumbing.
-acknowledgedOver
-  :: forall @l m r b v
+-- | The **modal leaf** over a vocabulary's modal: the `+→+` leaf owning
+-- | case `l` — opened by it, titled by it, its content shown the payload
+-- | for as long as the user wants it, closed by its "OK", which releases
+-- | the case again with the content's row; Escape and the scrim close it
+-- | releasing nothing. The "OK" decides nothing, so, like `confirmed`'s
+-- | Cancel, it is chrome and takes no caption. Every vocabulary's `modal`
+-- | is this over its own (the contract is stated at
+-- | `PUI.Web.MDC2.modal`). Plumbing.
+modalOver
+  :: forall @l m r v
    . Functor m
   => IsSymbol l
-  => Cons l { | r } b v
+  => Cons l { | r } () v
   => Modal m r
   -> PUI m { | r } { | r }
-  -> PUI m [ | v ] [ | b ]
-acknowledgedOver modal content = onCase @l $ dismissed $ modal
+  -> PUI m [ | v ] [ | v ]
+modalOver modal content = focusCase @l $ modal
   { title: Just (reflectSymbol (Proxy @l)), decide: "OK", cancel: Nothing } content
-  where
-  -- the dismiss decides nothing: the modal's release is written off
-  dismissed :: forall a c. PUI m a { | r } -> PUI m a c
-  dismissed (PUI w) = PUI (map (\reg _ -> reg \_ -> pure unit) w)
+
+-- | A case **acknowledged**: the leaf it follows is handed its case and
+-- | the case ends there — `[ l :: a | b ] → [ | b ]`, every other case
+-- | passing untouched, so what follows is typed at the cases that go on.
+-- | Written after a modal, it is the dialog for the outcome the user must
+-- | read and can only close — a rejection and its reason, a notice —
+-- | (`( modal @"About this dashboard" $ bodyLarge $ text aboutLine ) #
+-- | acknowledged`, weather, between the emitters and the fold; `( modal
+-- | @"Total missing" $ … ) # acknowledged` after its action, order-form):
+-- | the persistent member of the status family. A `snackbar` tells its
+-- | case and is gone, so it carries no copy; a message the user closes
+-- | is not ephemeral, so its content may read the payload.
+-- |
+-- | It takes no label: the leaf it follows is closed to its one case, so
+-- | the case is read off its row (`RowToList` of a closed singleton).
+-- |
+-- | It is `introduced`'s mirror, the row made more definite from the
+-- | other side — a case removed where that adds a field — and it is
+-- | built the same way, turned round: `onCase @l` where that has `onField
+-- | @l`, the vocabulary's modal where that has its editor, and after the
+-- | modal what that has before the editor. There it is `init`, the field
+-- | computed from the rest of the row; here it is the **exit**, the case
+-- | leaving as one of the cases that go on, `payload → [ | b ]`
+-- | (`continued`). An acknowledgement is the exit into `[]`, the variant
+-- | with no case: no function names it and none is needed, since a stage
+-- | typed at `[]` emits nothing (`silent`) — where an `init` out of `{}`
+-- | is still a value somebody has to give. A record must be whole, an
+-- | event may end.
+acknowledged
+  :: forall m l a b v s x
+   . Applicative m
+  => RowToList s (RL.Cons l a RL.Nil)
+  => IsSymbol l
+  => Cons l a () s
+  => Cons l a b v
+  => PUI m [ | s ] x
+  -> PUI m [ | v ] [ | b ]
+acknowledged leaf = onCase @l $ lcmap (inj (Proxy @l)) leaf >>> rmap case_ silent
+
+-- | A case **continued**: the leaf it follows is handed its case, and
+-- | what the leaf releases leaves as the case `exit` names among the
+-- | cases that go on — `[ l :: a | b ] → [ | b ]`, every other case
+-- | passing untouched. Written after a modal, it is the notice the user
+-- | must read before the flow goes on as it would have: a warning that
+-- | comes with a forecast, which then is the forecast (`( modal
+-- | @"Weather warning" $ bodyLarge $ text warningLine ) # continued
+-- | asForecast`, then `foldInto @"Forecast fetched" rememberReport`,
+-- | weather). `exit` is a view model function of the payload,
+-- | `asForecast :: Report -> [ "Forecast fetched" :: Report ]`, typed at
+-- | exactly the cases the stages after it handle. Closing the modal any
+-- | other way than its "OK" releases nothing, so nothing goes on.
+-- |
+-- | It takes no label, like `acknowledged`: the leaf it follows is closed
+-- | to its one case. It is `introduced`'s **exact mirror**: `exit ::
+-- | payload → [ | b ]` after the leaf where that has `init :: { | b } →
+-- | a` before its editor — the case leaving as one of the rest, the
+-- | field computed from the rest. `acknowledged` is the sibling whose
+-- | exit no function names, as `supplied` is `introduced`'s whose `init`
+-- | none does.
+continued
+  :: forall m l a b v s
+   . Functor m
+  => RowToList s (RL.Cons l a RL.Nil)
+  => IsSymbol l
+  => Cons l a () s
+  => Cons l a b v
+  => (a -> [ | b ])
+  -> PUI m [ | s ] [ | s ]
+  -> PUI m [ | v ] [ | b ]
+continued exit leaf = onCase @l $ dimap (inj (Proxy @l)) (exit <<< on (Proxy @l) identity case_) leaf
+
+-- | The carrier's **silent component**: fed anything, emitting nothing —
+-- | the one stage into `[]`, the variant with no case, which has no value
+-- | to emit. It is the point's mirror: `announce a` leaves `{}`, the
+-- | record that says nothing, and needs a value; this enters `[]`, the
+-- | variant in which nothing can happen, and needs none. `rmap case_`
+-- | places it at any variant row (`acknowledged`'s exit).
+silent :: forall m a. Applicative m => PUI m a (Variant ())
+silent = PUI $ pure \_ -> pure mempty
 
 -- Optics
 
