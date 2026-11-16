@@ -6,6 +6,15 @@ implementation read against the verbatim task statements at
 <https://eugenkiss.github.io/7guis/tasks/>. Nothing is carried over from
 the previous comparison (deleted 2026-10 as rotted; its history is in git).
 
+Re-evaluated 2026-11-16, after the event path became a `stepped` line
+of the one knot and the modal words arrived: every corpus re-cloned at
+its pin (vuejs/docs and svelte.dev have moved on, but not in the
+measured example directories), every size figure and bambik's bundle
+sizes re-measured — all identical — and bambik's marks re-checked by
+walking the six MDC3 twins against the task statements in headless
+Chrome (45 checks, all passing). The third-party bundle floors were not
+re-measured.
+
 ## The corpora
 
 | Corpus | Source, commit | Notes |
@@ -257,7 +266,8 @@ number.
 - **Elm** propagates by re-running `view` over one model after each
   `update`.
 - **Bambik** propagates by data flow along a pipeline. The model is one
-  record, re-entering whole through `looped`. A derived value is a copy
+  record, re-entering whole through `looped`, and an event lands on the
+  model as it is when it lands (`stepped`). A derived value is a copy
   function on the line that shows it (`text personLine`), and an
   invariant between fields is `settled` on the editor that owns them
   (`# settled fromCelsius`).
@@ -294,8 +304,9 @@ number.
   function (`text personLine`) or nothing. Code order is screen order and
   data order. Two buttons are two cases, each with its own
   `fold @l handler`, and an action's outcomes are named by its `Aff`'s
-  type and told by statuses that own exactly those cases
-  (order-form's `"Order submitted"` / `"Total missing"`).
+  type and told by the statuses and dialogs after it, which own exactly
+  those cases (order-form's `snackbar @"Order submitted"` and its
+  `modal @"Total missing"` under `acknowledged`).
 
   The compiler checks the whole round trip: an emitter with no fold, a
   fold for a case no one emits, or a missing seed is a type error at the
@@ -326,8 +337,9 @@ number.
   others leave it to the author.
 
 **What bambik costs.**
-- **A vocabulary:** a few dozen words (`looped`, `with`, `fold`,
-  `joined`, `inCase`, `provided`, `settled`, `actedOf`, `gatheredOf`, …), each
+- **A vocabulary:** a few dozen words (`looped`, `with`, `stepped`,
+  `fold`, `foldInto`, `inCase`, `provided`, `settled`, `actedOf`,
+  `gatheredOf`, …), each
   with a shape.
 - **A PureScript fork** for its variant-row sugar.
 - **17% ceremony** in imports.
@@ -350,8 +362,10 @@ Two partial marks are left:
 2. **Circle drawer's adjustment frame** is a panel above the canvas, its
    Close button beneath it, rather than a window of its own. A modal
    holding a *live* editor needs the editor's releases to reach the
-   loop while the dialog is open; `confirmed`'s content is released only
-   on confirm, so this is library vocabulary, not an application change.
+   loop while the dialog is open. Every dialog word releases its content
+   once, on the user's decision — `confirmed` on confirm, `modal` on its
+   "OK" under `acknowledged` or `continued` — so this is library
+   vocabulary, not an application change.
 
 ## Reproduce
 

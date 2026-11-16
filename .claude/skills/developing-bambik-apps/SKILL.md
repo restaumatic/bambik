@@ -55,10 +55,6 @@ copy function (`countLine`), taken by the display at the leaf.
    *Business functions*, *Wiring*), *Writing order* (view first; its holes list the
    view model's signatures), *What the laws guarantee*, *When it does not
    compile*, *When it does not propagate*, *Finish by running it*, *Looking things up*.
-   Companions, stating no rules of their own:
-   [walkthrough.md](walkthrough.md) (flight-booker read line by line —
-   read it after the counter) and [vocabulary.md](vocabulary.md) (from
-   what the screen needs to the word and the demo that uses it).
 3. **[building.md](building.md)** — run dev mode, verify in a headless
    browser, bundle for deploy, open the API reference.
 
@@ -75,5 +71,7 @@ reference) and its demos under `demo/7guis/` and `demo/nguis/`. A view
 module is named by its design system (`MDC2.purs`, `HTML.purs`, …,
 the modules `Counter.MDC2`, `Counter.HTML`) and twins share one view
 model module, the app itself (`Counter.purs`), all in the app's one
-directory (`demo/7guis/counter/`). Switching an app's design system is its vocabulary import
-plus the page's links ([bootstrap.md](bootstrap.md), step 1).
+directory (`demo/7guis/counter/`). Switching an app's design system is its vocabulary import,
+the words that catalogue names differently (counter's heading is
+`headline4` in MDC2, `headlineLarge` in MDC3, `title3` in Fluent) and
+the page's links ([bootstrap.md](bootstrap.md), step 1).

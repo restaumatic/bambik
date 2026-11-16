@@ -111,9 +111,12 @@ components over one value, one per shape:
   and the fold block after it names exactly the same cases — a case
   written twice, a fold for a case nothing emits and an emitted case
   with no fold are all compile errors (cashbox, stopwatch).
-- `VariantToVariant.do` (+→+) — one handler per event case. No demo
-  needs the block: an action handles its button's case on the line
-  after its button or inside the fold block
+- `VariantToVariant.do` (+→+) — one handler per case. Its one use in
+  an app is a selector's options, one leaf per case in the order shown
+  (`select @"Flight type" $ VariantToVariant.do` over `option @"one-way
+  flight"` and `option @"return flight"`, flight-booker). Events need
+  no such block: an action handles its button's case on the line after
+  its button or inside the fold block
   ([Business functions](#business-functions)).
 - `VariantToRecord.do` (+→×) — one fold per case (crud's folds;
   order-form's actions, each with its outcome's fold or statuses).
@@ -184,8 +187,8 @@ How each kind takes its business meaning:
   data, never part of its name.
 - **Displays** take a copy function, not a label:
   `headline4 $ text countLine` (counter). A number shown as a
-  bar or gauge takes a function too, and keeps its label only as the
-  accessible name (`linearProgress elapsedFraction`, timer).
+  bar or gauge takes a function too, and no label
+  (`linearProgress elapsedFraction`, timer).
   See *Copy is a function* in [Types and values](#types-and-values).
 - **Emitters** emit their own case. Whatever the business decides about
   it is decided where the case is consumed — the fold's handler, the
@@ -269,8 +272,8 @@ takes a trailing word that says what it is for:
 A pane's content, a list's element and `confirmed`'s content release
 the row they are fed: a display does so by itself. An editor inside a
 pane edits the model (`inCase`); an editor inside a list of displays
-(`actedOf`) or inside a `tile` is a mistake — its edits go nowhere —
-and `npm run check-view-model` rejects the first; an editor over a
+(`actedOf`) or inside a `tile` is a mistake — its edits go nowhere,
+and the compiler cannot tell; an editor over a
 selection of a stored array is `actedWithin`'s element, and one whose
 edits must leave a projection that joins or reshapes its rows is
 `editsOf`'s. Nothing is discarded: a
@@ -571,8 +574,8 @@ label:
 ```
 
 So the action line reads as a noun phrase like every leaf — word, case,
-function — and nothing places it: no `atCase` under the button's case,
-no widening beside emitters. Its outcome lands on the model as it is
+function — and no other word places it under the button's case or
+widens it beside the emitters. Its outcome lands on the model as it is
 when it lands: an outcome that is told but changes nothing folds `kept`
 (`snackbar @"Receipt printed" kept`, order-form's receipt; its submit,
 of two outcomes, tells one by a dialog and the other by `snackbar
@@ -699,10 +702,12 @@ text is computed, a chrome line nothing.
   than its opener, `( Semigroupoid.do` included; a closer returns to its
   opener's column. No four-space steps, no alignment to a token
   mid-line.
-- **The architecture reads off the pipeline**, in this order: load →
-  form (×→×) → live summary → the event line: events (×→+), then each
-  action with its statuses (+→+ then +→×) — closed by the knot. No
-  registries, config objects or reflective assembly.
+- **The architecture reads off the pipeline**: a load, if there is
+  one, before the knot; inside it, lines in screen order — editors,
+  displays, and each event line where its buttons are, its events
+  (×→+), then its dialogs and actions (+→+), then its folds and
+  statuses (+→×); the knot closing them. No registries, config objects
+  or reflective assembly.
 
 ### Types and values
 
@@ -1099,5 +1104,6 @@ screen.
   name across them.
 - **How it is written in a real app**: the demos under
   `.spago/bambik/<tag>/demo/`.
-- **Which word fits a situation**: [vocabulary.md](vocabulary.md).
-- **One demo read line by line**: [walkthrough.md](walkthrough.md).
+- **Which word fits a situation**: the [Stages](#stages) table, from
+  the line you need to the word and a demo; for a design system's
+  editors, emitters, statuses and typography, its module header.

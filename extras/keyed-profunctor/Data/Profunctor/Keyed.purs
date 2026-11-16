@@ -48,7 +48,8 @@
 -- | carrier's Map-indexing requirement — identity semantics remain
 -- | equality — and the label forms supply it structurally
 -- | (`Data.Structural`), so no instance is asked of the key's type. Keys
--- | must be unique and are never rendered.
+-- | must be unique; a key may be shown where it is itself business copy,
+-- | but identity is never read back from what an element shows.
 -- |
 -- | In the class primitives the key rides **beside** the element, in a
 -- | `Tuple`, out of the element's reach: an element cannot forge or change

@@ -66,7 +66,7 @@ grep CONSOLE chrome.log                  # must print nothing
 - `--virtual-time-budget=5000` runs the page's clock 5 s past load
   (instantly), so the check covers the 3 s warning.
 - `dom.html`'s body must hold the app's elements and the seeded values
-  (for the starter: an `<h4>` showing `0` and a `Count` button). An
+  (for the starter: a heading showing `0` and a `Count` button). An
   empty `<body>` means the bundle failed — read `dev.log` and the
   `CONSOLE` lines.
 - Every `CONSOLE` line is a message the page logged (errors, warnings,
@@ -85,7 +85,9 @@ running.
 npm run bundle
 ```
 
-Writes the minified `public/bundle.js` (about 0.5 MB for the starter).
+Writes the minified `public/bundle.js` (for the starter, about 50 kB
+over plain HTML and 0.5 MB over MDC3, whose Material components it
+includes).
 `public/` is then the whole deployable site: static files, no server.
 This is a deploy step, not part of the dev loop, and it does not end a
 task.

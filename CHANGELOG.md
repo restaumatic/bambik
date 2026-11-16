@@ -7,6 +7,52 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-16
+- **Guardrail L19: what is drawn leads; what is wired trails.** The
+  line form writing.md asks of applications, `uiElement # plumbing`, is
+  now a library obligation. A published word that draws nothing takes
+  the stage it acts on last and is written trailing; only a word that
+  draws leads. The rule had been applied twice already without being
+  written down, when `prefixed`/`suffixed` went (2026-10-13) and when
+  `acknowledged` and `introduced` became trailing (this date).
+- **Guardrail L20: design systems are interchangeable**, and L3 gains
+  **conditions are cases**. Both had been stated only as application
+  rules or in CLAUDE.md, and both are now library obligations: the same
+  concept gets the same name and signature in every vocabulary, a
+  catalogue's gaps stay gaps, and no word may need a `Maybe` or an
+  unedited `Boolean` in the model.
+- **The skill's vocabulary.md is deleted.** It was a third statement of
+  what writing.md's *Stages* table and the module headers already say,
+  from need to word to demo, and the statement that drifted: its
+  composition rows had grown into copies of *Stages*, and it listed
+  words no demo uses. The lookup is now *Stages* plus the module
+  headers. The demo pages' "New in this demo" note links each word to
+  the source of the module it is imported from instead.
+- **The skill's walkthrough.md is deleted** for the same reason. It
+  copied flight-booker's two modules whole and restated writing.md's
+  rules one line at a time, and its reading list repeated the README's.
+  A guided read of a real app is a demo's own source, with SKILL.md's
+  counter and demo/workflow.html's writing session for orientation. The
+  skill is now SKILL.md, bootstrap.md, writing.md and building.md.
+- **doc/why-bambik.md is folded into CLAUDE.md, and CLAUDE.md is cut
+  from 154 kB to 34 kB.** The long-form introduction became CLAUDE.md's
+  *Why at all* paragraph and *The algebra in brief* (shapes, merges,
+  units, strengths, the trace quartet, the keyed square, `Category`,
+  what the laws buy). The rest of CLAUDE.md had grown into a restatement
+  of the module headers word by word, of guardrails.md, of writing.md
+  and of every demo, with history inline. It now keeps what only it
+  says: where each kind of statement lives, how to build, watch, verify,
+  bundle, deploy and release, the core type and the cycle, a map of the
+  source tree pointing at the headers, the vocabularies' differences,
+  and the demo conventions. Its Core Type block showed the carrier
+  before registration returned the input leg; it is now the current
+  type.
+- **Demo pages lose two notes**: the "See the code style note and how
+  an app is written" line under the source listing, and the list of
+  words the view imports beyond the reading order's earlier demos. The
+  code style note and workflow.html stay reachable from the landing
+  page; a word's contract is its module header. The tracing note under
+  each running demo stays, trimmed to how to see the trace (DevTools'
+  Verbose level) and what the accessibility tree shows.
 - **`acknowledged` is defined once, in `PUI`, as a trailing word that
   takes no label.** Each of the five vocabularies with a dialog defined
   `acknowledged @l content` as one line over `PUI`'s `acknowledgedOver`.

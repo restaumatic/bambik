@@ -179,70 +179,9 @@ const offerDesignSystemSwitch = () => {
 }
 
 // Every listing shows its file verbatim, highlighted and nothing else.
-const escapeHtml = (t) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c])
-
 const renderListing = (code, text) => {
   code.textContent = text
   if (window.hljs) hljs.highlightElement(code)
-}
-
-const wordsStyle = () => {
-  if (document.getElementById("words-style")) return
-  const style = document.createElement("style")
-  style.id = "words-style"
-  style.textContent = ".words a { font-family: monospace; font-style: normal; }"
-  document.head.append(style)
-}
-
-// The words a demo adds. README's reading order is counter,
-// temperature-converter, flight-booker, todo-list, checkout, order-form:
-// on those pages the note lists the vocabulary the view imports that no
-// earlier demo in the order imported, in the same design system; on every
-// other page, what it imports beyond the whole order. Each word links to
-// its place in the skill's vocabulary.md index.
-const readingOrder = [["7guis", "counter"], ["7guis", "temperature-converter"], ["7guis", "flight-booker"],
-  ["nguis", "todo-list"], ["nguis", "checkout"], ["nguis", "order-form"]]
-const vocabularyIndex = "https://github.com/restaumatic/bambik/blob/main/.claude/skills/developing-bambik-apps/vocabulary.md"
-
-const wordsOf = (src) => {
-  const words = []
-  for (const m of src.matchAll(/^import PUI(?:\.[\w.]+)? \((.*)\)[ \t]*$/gm))
-    words.push(...m[1].split(",").map((w) => w.trim().replace(/^\((.*)\)$/, "$1")).filter((w) => w && !w.startsWith("type ")))
-  for (const m of src.matchAll(/^import (?:Data\.Profunctor\.Row\.\w+|QualifiedDo\.\w+) as (\w+)/gm))
-    words.push(m[1] + ".do")
-  return words
-}
-
-// a view's file is named by its design system alone (`counter/MDC2.purs`)
-const viewPath = (suite, family, suffix) => "../../" + suite + "/" + family + "/" + labels[suffix] + ".purs"
-
-
-const showNewWords = (viewSource) => {
-  const m = location.pathname.match(/\/(7guis|nguis)\/([a-z0-9-]+)\/(index\.html)?$/)
-  const panel = document.getElementById("source-panel")
-  if (!m || !panel || !currentVariant) return
-  const family = m[2]
-  const suffix = currentVariant
-  const at = readingOrder.findIndex(([, f]) => f === family)
-  const earlier = (at >= 0 ? readingOrder.slice(0, at) : readingOrder)
-    .filter(([suite]) => suite === "7guis" || suffix === "mdc2" || suffix === "mdc3")
-  Promise.all(earlier.map(([suite, f]) =>
-    fetch(viewPath(suite, f, suffix), { cache: "no-cache" })
-      .then((r) => r.ok ? r.text() : "").catch(() => "")
-  )).then((sources) => {
-    const known = new Set(sources.flatMap(wordsOf))
-    const fresh = [...new Set(wordsOf(viewSource))].filter((w) => !known.has(w))
-    const lead = at === 0 ? "Words in this demo"
-      : at > 0 ? "New in this demo, over the earlier demos of the reading order"
-      : "Beyond the reading order's demos"
-    if (!fresh.length && at < 0) return
-    const note = document.createElement("p")
-    note.className = "note words"
-    note.innerHTML = lead + ": " + (fresh.length
-      ? fresh.map((w) => '<a href="' + vocabularyIndex + "#:~:text=" + encodeURIComponent(w) + '">' + escapeHtml(w) + "</a>").join(", ")
-      : "none") + "."
-    panel.prepend(note)
-  })
 }
 
 // data-source names the demo's source files, space-separated: the view module
@@ -252,7 +191,6 @@ const showNewWords = (viewSource) => {
 // path), and the header readout sums their sizes.
 const showSource = (files) => {
   const names = files.trim().split(/\s+/)
-  wordsStyle()
   return Promise.all([
     Promise.all(names.map(f => fetch(f, { cache: "no-cache" }).then(r => r.text()))),
     fetch(bundleFile, { method: "HEAD", cache: "no-cache" }).then(r => r.headers.get("content-length")),
@@ -267,17 +205,15 @@ const showSource = (files) => {
     if (names.length > 1) el.parentElement.before(heading(names[0]))
     renderListing(el, sources[0])
     if (names.length > 1) {
-      const anchor = panel.querySelector("p.note:not(.words)")
       names.slice(1).forEach((name, i) => {
         const pre = document.createElement("pre")
         const code = document.createElement("code")
         code.className = "language-haskell"
         pre.append(code)
-        anchor ? anchor.before(heading(name), pre) : panel.append(heading(name), pre)
+        panel.append(heading(name), pre)
         renderListing(code, sources[i + 1])
       })
     }
-    showNewWords(sources[0])
     const total = sources.reduce((n, s) => n + new TextEncoder().encode(s).length, 0)
     document.getElementById("src-size").innerHTML =
       '<a href="' + names[0] + '">source</a> (' + fmt(total) + ')'

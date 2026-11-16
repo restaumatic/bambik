@@ -1,6 +1,6 @@
 # Guardrails
 
-*The normative document. [why-bambik.md](why-bambik.md) tells the story;
+*The normative document. [CLAUDE.md](../CLAUDE.md) tells the story (*Overview*, *The algebra in brief*);
 this states the rules. Every MUST and MUST NOT below is strict: a change
 that violates one is wrong even if it works, ships, and demos well. Each
 rule cites its grounding — a design note, a law, or a precedent where the
@@ -22,8 +22,13 @@ Every guardrail is a consequence of taking that seriously.
 ### L1. One core type. Everything is structure on it.
 
 ```purescript
-newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effect Unit) -> Effect Unit })
+newtype PUI m i o = PUI (m (Registration i o))
+type Registration i o = (o -> Effect Unit) -> Effect (i -> Effect Unit)
 ```
+
+Registration hands the output continuation over and returns the input
+leg, so a feed cannot precede it and every cell a component keeps is
+allocated there, once per instantiation (CHANGELOG, 2026-10-16).
 
 - Every feature MUST be an instance of a class on `PUI m`, a plain
   combinator over such instances, or a law relating them. There MUST NOT
@@ -35,8 +40,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   A bespoke concept is admitted only with a proof of irreducibility.
   *Precedents:* the `Sequencing` shape was rejected for the standard
   container action (`Acting`); `synced`/`latch` dissolved into `looped`;
-  debouncing turned out to be a theorem (`coresolve (resolve g) =
-  debounced g`), not a gadget. `looped` is the model irreducibility proof
+  debouncing turned out to be a theorem (`coresolve (resolve g >>>
+  seeded (Right c0)) ≈ debounced g` — seeded, since the raw composite
+  is input-dead), not a gadget. `looped` is the model irreducibility proof
   (a gated `unfirst` cannot self-feed), and `Resolving`/`Retaining` the
   model honest coinage (Tambara-like structures for actions only a
   temporal, stateful carrier supports).
@@ -105,10 +111,10 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
   | Type | Shape | Sort |
   | --- | --- | --- |
-  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), displays, panes (`inCase`), lists of displays (`actedOf`, `actedAt`), the updatable selection (`actedWithin`), the event path as a line of the body (`stepped`), sources (`geolocated`, `clock`, `filePicked` — pointed, fed `{}`, owning one field), stages |
-  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `tile`, `onClickedXY`), the emitter pane `provided`, the emitting lists `gatheredOf` and `editsOf` |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included — each a word with `…Unpicked` and `…Optional` siblings), the introducing form (`introduced @l init`), the labelled group (`group @l`), displays, panes (`inCase`), lists of displays (`actedOf`, `actedAt`), the updatable selection (`actedWithin`), the event path as a line of the body (`stepped`), sources (`geolocated`, `clock`, `filePicked` — pointed, fed `{}`, owning one field) and a source below a line (`# supplied`), stages |
+  | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `tile`, `onClickedXY`), the tick source (`ticks @l`), the load a feed runs (`load f`), a source joined with its row (`joined @l`), the emitter pane `provided`, the emitting lists `gatheredOf` and `editsOf` |
   | `PUI Web [ \| a ] ({ \| b } -> { \| b })` | `+→×` | the folds (`fold @l f`, `foldInto @l f`, `reset @l x`, `capture @l`) and the statuses, each a fold with a face (`snackbar @l f`) — the record side written as the **step** to it, which `stepped` applies to the row its line was last fed (`landed`, before the knot, to the row its path was fed, the step free to change the row's type); the action slot (`indeterminateLinearProgress`) owns `started`/`ended` only, so a status is never the slot |
-  | `PUI Web [ \| a ] [ \| b ]` | `+→+` | handlers (`action`) |
+  | `PUI Web [ \| a ] [ \| b ]` | `+→+` | actions (`action @l f`), the dialogs — `confirmed @l` (re-emitting its case on confirm) and `modal @l` under `# acknowledged` (its case ended) or `# continued exit` (its case going on as `exit` names) |
 
   The four shapes are the four arrows of an application's **cycle**,
   and the rows between them are named by it: `×→×` takes the **model**
@@ -158,6 +164,24 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   value (`dynamic`, since fed the row). The type cannot enforce this — `forall i o` compiles —
   so it is a review rule: a new or changed signature MUST be read against
   this table before it is accepted.
+- **Conditions are cases.** No published word may need the application
+  to store a `Maybe`, or a `Boolean` that no Boolean editor edits. A
+  word whose behaviour turns on a condition takes it as a variant with
+  named cases, either a stored variant field named by label (`inCaseAt
+  @c @l`, `providedAt @c @l`) or a classifier returning one (`inCase @l
+  f`, `provided @l f`), each pane naming only its own case. A choice
+  not yet made, or cleared, is a case too (`…Unpicked @l @c`,
+  `…Optional @l @c @n`). A fact the platform may withhold arrives as
+  a variant (`geolocated`'s `[ located, unknown, denied ]`,
+  `filePicked`'s `[ picked, none ]`), never as a `Maybe`, so no gate
+  starves on it. A `Boolean` enters a row only through the editors that
+  edit one (`checkbox`, `toggleSwitch`, `iconToggle`). A decorator may
+  take a named predicate (`clWhen isCompleted "todo-done"`), because it
+  styles an element and never decides whether that element exists.
+  Precedents: the selector's unmade state, once a leaf silent on
+  `Nothing` (CHANGELOG, 2026-09-23 to 2026-09-26), and `optioned`, the
+  action over a `Maybe` field, deleted as unreachable by design
+  (CHANGELOG, 2026-10-14; L14).
 - A **label is the copy it draws**: a captioned leaf's caption defaults
   to its label verbatim — nothing derives copy from an identifier — so
   labels are written as the words they render and are therefore usually
@@ -282,8 +306,13 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   output shared — at `+→×` one type every operand releases, for a
   loop's folds the step to the next model). Variant handling MUST be disjoint, and so MUST
   production where the outputs are owned: a record field at `×→×`, an
-  emitted case at `×→+` (responsibility never splits). Runtime evidence appears exactly where responsibility
-  does (`DispatchableVariants`, `MergeableRecords`) and nowhere else.
+  emitted case at `×→+` (responsibility never splits). Runtime evidence
+  appears exactly where a merge's action is driven by labels — splitting
+  a variant input among its owners (`DispatchableVariants`), assembling
+  owned fields into a row (`MergeableRecords`) — and nowhere else: the
+  owned cases at `×→+` are only forwarded, so `OwnedVariantOutputs`
+  carries no evidence, its disjointness checked at compile time alone
+  (`DisjointLabels`).
 - Merge operands' emissions MUST be runtime-exact: trimmed to their
   declared row before the gates combine them, so no stale sibling field
   can shadow a fresh value. Exactness is enforced by the merges, never
@@ -292,8 +321,9 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 ### L5. Units are forced, not designed.
 
 - A merge MUST NOT carry a unit of its own where a wire fits. No unit law
-  is stated — the merge laws are symmetry and associativity
-  (`Data.Profunctor.Row`, "The laws"; CHANGELOG 2026-10-17) — but where `p`
+  is stated — the merge laws (symmetry and associativity, projection,
+  preservation, monotonicity: `Data.Profunctor.Row`, "The laws"; CHANGELOG
+  2026-10-17) make a merge a commutative semigroup, no more — but where `p`
   is also a `Category` the wire at the unit object is the unit by
   construction — the `{}` wire at the merge's row, `lcmap (const {})
   identity`, for `×→×` (the operands share one input row, so the
@@ -371,9 +401,12 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
   `PUI.Web.HTML.body`'s signature — and MUST feed it `{}` exactly once
   after registration (the terminal record's one value, so "closed" is
   literal; a point has answered already and by Repetition at `{}` answers
-  no further). The knot MUST be closed by its seed as an
-  argument the caller cannot omit (`with`, after `looped`): a
-  model into the record junction. The knot is exactly one, `looped`,
+  no further). The knot MUST be primed by a term the caller supplies: a
+  seed after it (`# looped # with seed`, a model into the record
+  junction), or a load standing before it and landed on `body`'s `{}`
+  (`# landed`, order-form), whose outcome is the model. Neither can be
+  omitted silently: an unprimed knot leaves its row as the app's
+  residual input, a compile error at `body` naming the fields. The knot is exactly one, `looped`,
   and a looped state is a model field: a loop is cut at its record
   junction, because a variant knot or a per-shape knot over a hidden
   field was a second way of writing the same loop with a state the rows
@@ -421,20 +454,23 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - Collection identity MUST be materialized: a field `@l` of the element
   row, on the `×`-members (the array fed whole) and the `+`-members (one
   entity at a time) alike — never a DOM annotation (`data-*`), never a
-  render index, never carrier-private guesswork. (The `+`-members took a
+  render index, never carrier-private guesswork, and never derived from
+  what an element shows. (The `+`-members took a
   `{ key, value }` envelope until 2026-11-08, CHANGELOG.)
 - Identity MUST be unforgeable where the carrier owns it: in
   `acted` the element is typed at its whole row, key included,
   and the carrier **re-sets** the key on every emission, so whatever an
   element emits in the key field is replaced. Stateful carriers MUST make identity follow
   the key (nodes move with their keys; matched elements re-feed in
-  place). Keys are labels, never rendered content.
+  place). A key is data the row holds: it may also be shown where it is
+  itself business copy (calculator's keys, `tile @"Key entered" @"key" $
+  textAt @"key"`), but identity is never read back from the screen.
 
 ### L10. Direct wiring. No virtual DOM, ever.
 
 - The library MUST NOT diff trees, re-render to reconcile, or
   reconstruct at runtime a correspondence the program already wrote
-  down. `toUser` updates exactly what the wiring reaches; code order is
+  down. A feed updates exactly what the wiring reaches; code order is
   DOM order.
 - Structure computed from data stays in the algebra: fixed structure fed
   as data through the retaining collection members (build once, update
@@ -450,10 +486,16 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 - No global state store, no dispatcher, no message bus, no subscription
   registry, no context providers, no portals, no ref escape hatches.
   All communication travels the wires: composition (`⊳`), merges (`⊗`),
-  and the sanctioned loops (the trace quartet, `looped`). Local state
-  exists only as the algebra's residuals (`Retaining`'s durable `c`,
-  `Resolving`'s ephemeral `c`, the seeded knot) — invisible in the
-  pipeline's types by co-optic hiding, never by side channel.
+  and the sanctioned loops — the one knot, `looped`, and `debounced`'s
+  seeded quiescence loop. State the application needs is a model field
+  (L7, L14), never hidden. What a component keeps beside it is protocol,
+  not application state, allocated in registration (L1): a leaf's cells
+  (the replay of the row last fed, a focus guard), a gate's known slots,
+  the knot's re-entrancy guard, `debounced`'s window. The trace quartet's
+  residuals (`Retaining`'s durable `c`, `Coretaining`'s unfold) are
+  law-tested and reached by no word; the per-shape knots that kept
+  state the rows did not show were deleted for it (CHANGELOG,
+  2026-10-14).
 - A vocabulary MUST NOT act on the page at import time: page-level setup
   (a theme, a stylesheet, an icon base path, a typography baseline) is the
   work of its `body`, run at mount, so a bundle that merely links a
@@ -462,7 +504,7 @@ newtype PUI m i o = PUI (m { toUser :: i -> Effect Unit, fromUser :: (o -> Effec
 
 ### L12. The vocabulary never forces a nominal type.
 
-- Canonical rows adopted by label; anonymous-record options
+- Rows speak business labels, never a canonical one (L3); anonymous-record options
   (`button' @l { icon }`); durations as `{ ms :: Number }` (never
   `Milliseconds` in a UI component signature); unit payloads as `{}` (no
   `Default Unit` instance, deliberately); selector options carry
@@ -655,10 +697,15 @@ code below the UI) are algebra-layer material and exempt by location.
 - A display that renders a **number** — `progressBar`,
   `linearProgress`, `progress`, `gauge`, `ratingDisplay` — MUST take a
   read function too: a fraction is *derived* (a ratio of source
-  fields), and derivation is the same act as formatting. Its label
-  survives as the **accessible name only** (a bar showing 42% must
-  announce *what* is 42%), so it is copy like an editor's caption, not
-  a field reference: `progressBar elapsedFraction`.
+  fields), and derivation is the same act as formatting. It takes
+  **only** its read function, `progressBar elapsedFraction`, and no
+  label: a visible `@"…"` names a row label and nothing else (L3), and
+  what a bar measures is no field. Its label once survived as an
+  accessible name and went with that rule (CHANGELOG, 2026-10-07), so
+  what the bar measures is told by the copy beside it and the bar itself
+  carries no accessible name — a known gap. A name would be copy with no
+  content position, so it comes back as a String value (as `tooltip "…"`
+  and `topAppBar "…"` take theirs), never as a label.
   Quantity *editors* are untouched — a slider genuinely edits a field,
   so `sliderLive @l` keeps label-as-field.
 - A model field MUST exist because the app's state needs it, never
@@ -814,6 +861,85 @@ code below the UI) are algebra-layer material and exempt by location.
   absent. It was removed with its sweep (CHANGELOG); the compiler's typed
   hole is the only one. doc/research-holey-weak-types.md has the record.
 
+### L19. What is drawn leads; what is wired trails.
+
+- Every view line is written as **the element it draws, then its data
+  words**: `uiElement # plumbing` (writing.md, *Layout*). The library
+  MUST make that form available for every word it publishes: the API is
+  shaped by the line, not the line by the API. The code is found from
+  the screen and the screen from the code only if a line opens with what
+  the user sees.
+- A word that **draws nothing** — a pane (`inCase`, `provided`), a
+  collection (`actedOf`, `actedAt`, `actedWithin`, `gatheredOf`,
+  `gatheredAt`, `editsOf`), the event path's landing (`stepped`,
+  `landed`), the knot and its seed (`looped`, `with`), a normalizer
+  (`settled`), an action over its progress face (`action`, `load`), a
+  nested path's join (`joined`), and the four words of the square
+  (`introduced`, `supplied`, `continued`, `acknowledged`) — MUST take the
+  stage it acts on as its **last** argument and MUST be written trailing,
+  `stage # word …`. It MUST NOT be published in a form that can only lead
+  the line with the stage as an argument, however derivable that form is.
+- A word that **draws** — an ocular (`card`, `div`, `svg`), a component
+  whose argument is the content it frames (`group @l`, `confirmed @l`,
+  `modal @l`, `listOf @l @k … item`, `onClickedXY @l`), a design system's
+  `body` — leads with `$`, because it is what is seen. A decorator rides
+  its element, composed with `>>>` or trailing with `#`, and never leads.
+  The one exception is `static (…)`, whose ocular argument is
+  polymorphic and so cannot pass through `$`. The qualified-do blocks are
+  composition, not words, and open their lines like layout.
+- When a behaviour cannot be written trailing, the fix is in the
+  leaves, not in a leading word: give the element the behaviour (as
+  displays became stages), or close the leaf so a trailing word can read
+  what it needs off it (as `acknowledged` reads its case off a
+  `modal @l` closed to one case).
+- Precedents: `prefixed d $ stage` and `# suffixed d` were deleted
+  two days after they were added (CHANGELOG, 2026-10-13): neither let a
+  line begin with the element it draws, and the fix was to make displays
+  release the row they show. `acknowledged @l content` became
+  `( modal @l content ) # acknowledged`, and the nineteen `…From`
+  editors became `editor @l # introduced @l init` (CHANGELOG,
+  2026-11-16).
+- **Checkable form**: none yet. No line of a demo view opens with a
+  word from the list above, but only review enforces it.
+
+### L20. Design systems are interchangeable.
+
+- bambik is a design-system umbrella: one view model runs under every
+  vocabulary (`PUI.Web.HTML`, `PUI.Web.MDC2`, `PUI.Web.MDC3`,
+  `PUI.Web.Shoelace`, `PUI.Web.Fluent`, `PUI.Web.Bootstrap`), and a
+  twin over another design system MUST be a view-only diff. So, wherever
+  two catalogues have the same concept, their vocabularies MUST give it
+  the **same name and the same signature**: the same label arguments,
+  the same row (a bounded quantity is `{ current, min, max, step }` in
+  every vocabulary) and the same primed siblings for the same
+  presentation. Changing design system is then changing one import,
+  plus the words the catalogues themselves name differently.
+- A catalogue's differences MUST appear **under its own names, never
+  papered over**. Its renames arrive as the catalogue makes them (MD3's
+  typescale, `headlineLarge` where MD2 has `headline4`; Shoelace's
+  `toast` and `textField`). Its exclusives keep their names (Shoelace's
+  star `rating`, Fluent's `messageBar`). Its gaps stay gaps: a word the
+  catalogue lacks is absent rather than invented (MDC3 has no `banner`,
+  since MD3 dropped it; Fluent has `ratingDisplay` but no star editor;
+  Bootstrap, CSS-only, has no dialog). An app needing a missing leaf has
+  no twin in that vocabulary. A twin MUST NOT build the leaf from a bare
+  element.
+- Every vocabulary MUST keep the leaf protocols identical, each leaf
+  built over the shared wirings, so the same view model behaves the same
+  under each. Each vocabulary is entered through its own `body`, of the
+  plain one's type (`PUI Web {} o -> Effect Unit`), which does that
+  catalogue's page setup at mount (L11).
+- Precedents: the twelve twins deleted with `clicked`, rather than
+  giving every vocabulary the leaves it lacked (CHANGELOG, 2026-10-15),
+  and MDC3's `banner` gap, shown in inbox's MDC3 twin as plain
+  typography.
+- **Checkable form**: twins share their view model module verbatim, so
+  a vocabulary whose signature differs fails `spago build` for every
+  twin that uses it. The leaf-law bench (demo/laws/, one page per
+  vocabulary) checks each vocabulary's leaves against the same shape
+  laws on the real DOM. Agreement of names is checked only where a demo
+  has twins; elsewhere it rests on review.
+
 ---
 
 ## Part II — The approach (applications built on bambik)
@@ -844,6 +970,9 @@ The library's obligations to it are one-way and concrete:
 - When a library change alters what application code should look like,
   writing.md is the file that changes, and the demos change with it.
 
+---
+
+## Admission gates
 
 Any proposed change — combinator, class, component, demo idiom — passes
 these gates in order:
@@ -864,9 +993,12 @@ these gates in order:
    ecosystem already names (coin — `Resolving`, `Shutter`, `Reel` —
    only where the literature is genuinely silent).
 5. **Reachability.** A demo (or law test) reaches it, or it doesn't
-   merge. Demos are the executable form of the rules — exactly one type
-   declaration (cells' recursive `Expr`) survives in some 8,500 demo
+   merge. Demos are the executable form of the rules — exactly one
+   nominal type (cells' recursive `Expr`) survives in some 7,500 demo
    lines, and that ratio is a regression test on this whole document.
+   Type synonyms are not nominal and are welcome in view models (`type
+   Count = { counted :: Int }`, L18); the law bench's `Bench` newtype is
+   harness, not application.
 6. **Green stack.** The obligatory verification suite of L15 passes in
    full — `spago build`, `spago test`, `npm run bundle-demos`,
    `npm run smoke` — with no demo edited except where the demo is the

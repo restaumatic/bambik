@@ -3,7 +3,7 @@
 
 This is a prototype of the idea of *profunctor user interfaces* for Web/Material Design Component-based UIs written in [PureScript](https://www.purescript.org/).
 
-[Why Bambik? — a long-form introduction](/doc/why-bambik.md)
+[Why Bambik? — the idea and the algebra in brief](/CLAUDE.md#overview)
 
 [20 minutes-long presentation of the idea](/doc/presentation-20min.md)
 
@@ -35,10 +35,6 @@ its own if you would rather follow the procedure by hand.
 
 Read the demos in this order — counter, temperature-converter, flight-booker,
 todo-list, checkout, order-form — each adding one idea to the last.
-[walkthrough.md](/.claude/skills/developing-bambik-apps/walkthrough.md) reads
-flight-booker line by line, and
-[vocabulary.md](/.claude/skills/developing-bambik-apps/vocabulary.md) is the
-lookup index from what the screen needs to the word for it, and
 [writing.md's *What the laws guarantee*](/.claude/skills/developing-bambik-apps/writing.md)
 says what the six shape laws buy you when composing. The toolchain is
 one command: `npm install` fetches the forked compiler as a pinned GitHub

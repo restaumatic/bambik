@@ -2400,7 +2400,7 @@ ensureInstance hooks onEmit indexRef orderRef k = do
 -- carrier node. Both emission modes are wired through `onEmit` at build time.
 -- `Ord k` is an indexing requirement (the reconciler keeps a `Map` for
 -- O(log n) lookups); identity semantics remain equality — keys must be
--- unique, never rendered.
+-- unique, and identity is never read back from what an element shows.
 type ActingEntry k a b node =
   { key :: k
   , feed :: a -> Effect Unit
