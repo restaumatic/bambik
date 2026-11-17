@@ -242,7 +242,9 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   replacing a per-case copy record and then the copy function), `modal
   @"Total missing"` (the dialog telling its case as its title, its
   caption dropped like `confirmed`'s Cancel: the dismiss decides nothing,
-  so it is chrome — every call passed "OK" or "Got it"), `confirmed @"Refund a customer"` (its caption
+  so it is chrome — every call passed "OK" or "Got it"; a Cancel whose
+  screen speaks another language takes its copy as optional presentation,
+  `confirmed' { cancel }`, CHANGELOG 2026-11-17), `confirmed @"Refund a customer"` (its caption
   dropped: every one restated the case it confirms, so the case captions
   the confirm, as an emitter draws its label), and the one-field ocular
   configs made positional (`tooltip`, `dialog`, `topAppBar`, `menu`,

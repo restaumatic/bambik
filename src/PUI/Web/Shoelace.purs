@@ -19,6 +19,7 @@
 -- | `PUI.Web.HTML` elements are the type scale.
 module PUI.Web.Shoelace
   ( confirmed
+  , confirmed'
   , modal
   , body
   , button
@@ -52,7 +53,7 @@ import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Effect.Ref as Ref
 import Data.Foldable (for_)
-import PUI (fromHandles, handles, Ocular, PUI, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, statusOver, confirmedOver, modalOver, eventLeaf)
+import PUI (fromHandles, handles, Ocular, PUI, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, statusOver, confirmedOver, confirmedOver', modalOver, eventLeaf)
 import PUI.Web.HTML (div, span)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), Web, attribute, el, element, getChecked, getValue, isFocused, listenNode, removeAttribute, setAttribute, setChecked, setValue, staticHTML, staticText, statusText, separating, invokeMethod, uniqueId, (:=))
@@ -369,6 +370,18 @@ confirmed
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
 confirmed = confirmedOver @l modalFace
+
+-- | `confirmed` with options: `cancel:` captions its Cancel with the copy
+-- | the screen speaks (`confirmed' @"Usuń danie" { cancel: "Nie, nie
+-- | usuwaj dania" } $ …`, diner); the Cancel still consumes the case.
+confirmed'
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => { cancel :: String }
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | v ]
+confirmed' { cancel } = confirmedOver' @l cancel modalFace
 
 -- | The **modal** — see `PUI.Web.MDC2.modal`: the leaf owning case `l`,
 -- | telling it as its title and showing its payload until the user

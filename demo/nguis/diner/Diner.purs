@@ -23,11 +23,14 @@ module Diner
   , dinnerService
   , dishSales
   , isPlated
+  , isSoldOut
+  , noneLeft
   , itemLine
   , kitchenState
   , lineTotalLine
   , markReady
   , menuCard
+  , offerFace
   , offerLine
   , orderDish
   , orderItemsLine
@@ -45,6 +48,7 @@ module Diner
   , salesAmountLine
   , salesQuantityLine
   , soldQuantityLine
+  , removalLine
   , removeDish
   , returnUnit
   , sendToKitchen
@@ -98,7 +102,7 @@ type Time = { hours :: Int, minutes :: Int }
 
 type Line = { dish :: String, quantity :: Int, state :: [ ordered :: {}, plated :: {} ] }
 
-type TableLine = { dish :: String, price :: Int, quantity :: Int }
+type TableLine = { dish :: String, left :: Int, price :: Int, quantity :: Int }
 
 type DishSales = { amount :: Int, dish :: String, quantity :: Int }
 
@@ -157,15 +161,26 @@ dinnerService =
   }
 
 menuCard :: Diner -> Array Dish
-menuCard { dishes } = filter (\d -> portionsOf d > 0) dishes
+menuCard { dishes } = dishes
 
 offerLine :: Dish -> String
-offerLine dish@{ name, price } = name <> " · " <> money price <> " · dostępne: " <> show (portionsOf dish)
+offerLine dish@{ price } = money price <> " · " <> availability
+  where
+  availability = if portionsOf dish > 0 then "dostępne: " <> show (portionsOf dish) else "niedostępne"
+
+isSoldOut :: Dish -> Boolean
+isSoldOut dish = portionsOf dish == 0
+
+noneLeft :: TableLine -> Boolean
+noneLeft { left } = left == 0
+
+offerFace :: Dish -> String
+offerFace dish = if portionsOf dish > 0 then "" else "opacity: 0.38;"
 
 tableLines :: Diner -> Array TableLine
 tableLines diner = maybe [] (\order -> mapMaybe priced order.lines) (takenAt diner)
   where
-  priced { dish, quantity } = map (\d -> { dish, quantity, price: d.price }) (find (\d -> d.name == dish) diner.dishes)
+  priced { dish, quantity } = map (\d -> { dish, quantity, price: d.price, left: portionsOf d }) (find (\d -> d.name == dish) diner.dishes)
 
 quantityLine :: TableLine -> String
 quantityLine { quantity } = show quantity
@@ -277,8 +292,11 @@ paidTotal { stage } = match
   , ready: \_ -> Nothing
   } stage
 
-orderDish :: { event :: String, model :: Diner } -> Diner
-orderDish { event: name, model: diner } =
+orderDish :: { event :: Dish, model :: Diner } -> Diner
+orderDish { event: { name }, model } = withOneMore name model
+
+withOneMore :: String -> Diner -> Diner
+withOneMore name diner =
   if any (\d -> d.name == name && portionsOf d > 0) diner.dishes then
     diner
       { dishes = map (\d -> if d.name == name then withPortions (_ - 1) d else d) diner.dishes
@@ -314,7 +332,10 @@ returnUnit { event: { dish: name }, model: diner } = case takenAt diner of
     | true = Just l { quantity = l.quantity - 1 }
 
 addUnit :: { event :: TableLine, model :: Diner } -> Diner
-addUnit { event: { dish }, model } = orderDish { event: dish, model }
+addUnit { event: { dish }, model } = withOneMore dish model
+
+removalLine :: TableLine -> String
+removalLine { dish, quantity } = "Usunąć " <> show quantity <> " × " <> dish <> " z zamówienia?"
 
 removeDish :: { event :: TableLine, model :: Diner } -> Diner
 removeDish { event: { dish: name }, model: diner } = case takenAt diner of
@@ -398,7 +419,7 @@ clockText :: Time -> String
 clockText { hours, minutes } = show hours <> ":" <> pad minutes
 
 money :: Int -> String
-money cents = show (cents / 100) <> "," <> pad (mod cents 100) <> " zł"
+money cents = show (cents / 100) <> "," <> pad (mod cents 100) <> "\x00a0zł"
 
 pad :: Int -> String
 pad r = if r < 10 then "0" <> show r else show r

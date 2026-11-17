@@ -7,6 +7,17 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-17
+- **`confirmed'`**, every vocabulary with `confirmed`: `{ cancel }`
+  captions the Cancel with the screen's own copy; `confirmed` keeps the
+  chrome "Cancel". Diner's trash icon asks before removing an order line,
+  its Cancel "Nie, nie usuwaj dania".
+- **`button'`'s `disabled` option and `iconButton'`**, MDC2 and MDC3: a
+  predicate on the row; while it holds for the row last fed the button is
+  drawn disabled and the platform reports no click. A decoration of the
+  button, so `disabled: const false` is the button itself; walked with
+  real clicks in scripts/smoke/tests/disabled-buttons.mjs. Diner's dish
+  cards stay drawn when a dish sells out, their add button disabled, as
+  is the + of the dish's order row.
 - **`select'`: options the model rules out.** MDC2 and MDC3 gain
   `select' @l { unavailable }`, a `select` whose cases
   `unavailable :: { | r } -> Array [ | w ]` returns for the fed row are

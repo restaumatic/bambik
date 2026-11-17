@@ -1,16 +1,16 @@
 module Diner.MDC2 (diner) where
 
-import Prelude ((#), ($), Unit)
+import Prelude ((#), ($), (>>>), Unit)
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Diner (addUnit, billNumberLine, billPlacedLine, billTableLine, billTotalLine, bills, billsState, busyTables, cooking, dinnerService, dishSales, isPlated, itemLine, kitchenState, lineTotalLine, markReady, menuCard, offerLine, orderDish, orderItemsLine, orderNumberLine, orderTableLine, paidOrders, paidState, paidTotalLine, placeOrder, placedLine, plateLine, portionAdded, portionRemoved, quantityLine, removeDish, returnUnit, salesAmountLine, salesQuantityLine, sendToKitchen, settle, soldQuantityLine, tableLines, tableState, takingsLine, ticketLine, ticketState)
+import Diner (addUnit, billNumberLine, billPlacedLine, billTableLine, billTotalLine, bills, billsState, busyTables, cooking, dinnerService, dishSales, isPlated, isSoldOut, noneLeft, itemLine, kitchenState, lineTotalLine, markReady, menuCard, offerFace, offerLine, orderDish, orderItemsLine, orderNumberLine, orderTableLine, paidOrders, paidState, paidTotalLine, placeOrder, placedLine, plateLine, portionAdded, portionRemoved, quantityLine, removalLine, removeDish, returnUnit, salesAmountLine, salesQuantityLine, sendToKitchen, settle, soldQuantityLine, tableLines, tableState, takingsLine, ticketLine, ticketState)
 import Effect (Effect)
 import PUI (actedAt, actedOf, action, fold, foldInto, gatheredOf, joined, looped, stepped, with)
-import PUI.Web (inCase, inCaseAt, provided, staticText, text, textAt)
+import PUI.Web ((:=), attrWith, inCase, inCaseAt, provided, staticText, text, textAt)
 import PUI.Web.HTML (div, strong)
-import PUI.Web.MDC2 (body, body1, button, button', card, columnHeader, dataCell, dataRow, dataTable, filledIntegerField, iconButton, indeterminateLinearProgress, icon, listOf, listOfAt', option, select', tab, tabBar, subtitle1)
+import PUI.Web.MDC2 (body, body1, body2, button, button', card, columnHeader, confirmed', dataCell, dataRow, dataTable, filledIntegerField, iconButton, iconButton', indeterminateLinearProgress, icon, listOfAt', option, select', tab, tabBar, subtitle1)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 diner :: Effect Unit
@@ -49,7 +49,11 @@ diner =
         option @"6"
       ( Semigroupoid.do
         RecordToVariant.do
-          listOf @"Zamówiono danie" @"name" menuCard $ text offerLine
+          div >>> "style" := "display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); column-gap: 12px; align-self: stretch;" $
+            ( card $ Semigroupoid.do
+              ( subtitle1 $ textAt @"name" ) # attrWith "style" offerFace
+              ( body2 $ text offerLine ) # attrWith "style" offerFace
+              button' @"Dodaj" { icon: "add", disabled: isSoldOut } ) # gatheredOf @"name" menuCard
           ( dataTable "Zamówienie"
             ( Semigroupoid.do
               columnHeader "Danie"
@@ -64,16 +68,17 @@ diner =
               dataCell $ text lineTotalLine
               RecordToVariant.do
                 dataCell $ iconButton @"Zwrócono porcję" "remove"
-                dataCell $ iconButton @"Dodano porcję" "add"
-                dataCell $ iconButton @"Usunięto danie" "delete" ) # gatheredOf @"dish" tableLines ) ) # provided @"taking" tableState
+                dataCell $ iconButton' @"Dodano porcję" "add" { disabled: noneLeft }
+                dataCell $ iconButton @"Usuń danie" "delete" ) # gatheredOf @"dish" tableLines ) ) # provided @"taking" tableState
           Semigroupoid.do
-            ( body1 $ staticText "Nic jeszcze nie zamówiono" ) # inCase @"idle" tableState
+            ( body1 $ staticText "Żadnych dań jeszcze nie wybrano" ) # inCase @"idle" tableState
             button' @"Wyślij do kuchni" { icon: "restaurant" } # provided @"taking" tableState
+        confirmed' @"Usuń danie" { cancel: "Nie, nie usuwaj dania" } $ body2 $ text removalLine
         VariantToRecord.do
-          foldInto @"Zamówiono danie" orderDish
+          foldInto @"Dodaj" orderDish
           foldInto @"Zwrócono porcję" returnUnit
           foldInto @"Dodano porcję" addUnit
-          foldInto @"Usunięto danie" removeDish
+          foldInto @"Usuń danie" removeDish
           ( Semigroupoid.do
             indeterminateLinearProgress # action @"Wyślij do kuchni" placeOrder
             foldInto @"Zamówienie złożone" sendToKitchen ) ) # stepped ) # inCaseAt @"Sala" @"Stanowisko"

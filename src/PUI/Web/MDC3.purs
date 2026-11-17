@@ -82,6 +82,7 @@ module PUI.Web.MDC3
   , headlineMedium
   , headlineSmall
   , iconButton
+  , iconButton'
   , icon
   , iconToggle
   , imageList
@@ -123,6 +124,7 @@ module PUI.Web.MDC3
   , selectUnpicked
   , selectOptional
   , confirmed
+  , confirmed'
   , modal
   , slider
   , slider'
@@ -162,7 +164,7 @@ import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (integral, static, fromHandles, handles, gatheredOf, numeral, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, modalOver, eventLeaf)
+import PUI (integral, static, fromHandles, handles, gatheredOf, numeral, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, confirmedOver', modalOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), hasClass, listenCapture, grouping, member, unpickAll, clearedByRepress)
@@ -247,12 +249,15 @@ button = buttonOf @l "md-filled-button" {}
 -- | `button` with options for its face: `icon: "add"` puts a Material
 -- | Symbols glyph before the label (`button' @"Place order" { icon:
 -- | "local_cafe" }`), `label:` overrides the caption with copy the case
--- | cannot be.
+-- | cannot be, and `disabled:` takes a predicate on the row — while it
+-- | holds for the row last fed, the button is drawn disabled and reports
+-- | no click (`button' @"Add" { icon: "add", disabled: isSoldOut }`,
+-- | diner). A decoration: `disabled: const false` is the button itself.
 button'
   :: forall @l provided r v
    . IsSymbol l
   => Cons l { | r } () v
-  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String, disabled :: { | r } -> Boolean } { | provided } { label :: Maybe String, icon :: Maybe String, disabled :: { | r } -> Boolean }
   => { | provided }
   -> PUI Web { | r } [ | v ]
 button' = buttonOf @l "md-filled-button"
@@ -299,11 +304,11 @@ buttonOf
   :: forall @l provided r v
    . IsSymbol l
   => Cons l { | r } () v
-  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String } { | provided } { label :: Maybe String, icon :: Maybe String }
+  => ConvertOptionsWithDefaults OptLabelIcon { label :: Maybe String, icon :: Maybe String, disabled :: { | r } -> Boolean } { | provided } { label :: Maybe String, icon :: Maybe String, disabled :: { | r } -> Boolean }
   => String
   -> { | provided }
   -> PUI Web { | r } [ | v ]
-buttonOf tag provided = eventLeaf @l $ el tag $ Semigroupoid.do
+buttonOf tag provided = disabledWhen config.disabled $ eventLeaf @l $ el tag $ Semigroupoid.do
   case config.icon of
     Just icon' -> el "md-icon" >>> "slot" := "icon" $ staticText icon'
     Nothing -> identity
@@ -311,7 +316,21 @@ buttonOf tag provided = eventLeaf @l $ el tag $ Semigroupoid.do
     Just label' -> staticText label'
     Nothing -> identity
   where
-  config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing } provided :: { label :: Maybe String, icon :: Maybe String }
+  config = convertOptionsWithDefaults OptLabelIcon { label: Just (reflectSymbol (Proxy @l)), icon: Nothing, disabled: const false } provided :: { label :: Maybe String, icon :: Maybe String, disabled :: { | r } -> Boolean }
+
+
+-- The `disabled` attribute of the element just built, set while `holds`
+-- is true of the row fed: a disabled control reports no click.
+disabledWhen :: forall r a. ({ | r } -> Boolean) -> PUI Web { | r } a -> PUI Web { | r } a
+disabledWhen holds w = fromHandles do
+  w' <- handles w
+  node <- gets _.sibling
+  pure
+    { toUser: \row -> do
+        if holds row then setAttribute node "disabled" "" else removeAttribute node "disabled"
+        w'.toUser row
+    , fromUser: w'.fromUser
+    }
 
 -- | The **floating action button**: the one action a screen is *for*, kept
 -- | in view above the content. Reports on click carrying what it was
@@ -354,6 +373,23 @@ iconButton glyph = eventLeaf @l $
     el "md-icon" $ staticText glyph
   where
   config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
+
+-- | `iconButton` with options: `disabled:` takes a predicate on the row,
+-- | as `button'`'s does — while it holds for the row last fed, the button
+-- | is drawn disabled and reports no click (`iconButton' @"Add a portion"
+-- | "add" { disabled: noneLeft }`, diner). `disabled: const false` is the
+-- | button itself.
+iconButton'
+  :: forall @l provided r v
+   . IsSymbol l
+  => Cons l { | r } () v
+  => ConvertOptionsWithDefaults OptLabelIcon { disabled :: { | r } -> Boolean } { | provided } { disabled :: { | r } -> Boolean }
+  => String
+  -> { | provided }
+  -> PUI Web { | r } [ | v ]
+iconButton' glyph provided = disabledWhen config.disabled (iconButton @l glyph)
+  where
+  config = convertOptionsWithDefaults OptLabelIcon { disabled: const false } provided :: { disabled :: { | r } -> Boolean }
 
 -- | One choice in a `menu`: reports the data it was showing when picked,
 -- | and the menu closes itself. The line's text defaults to
@@ -1204,6 +1240,18 @@ confirmed
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
 confirmed = confirmedOver @l modalFace
+
+-- | `confirmed` with options: `cancel:` captions its Cancel with the copy
+-- | the screen speaks (`confirmed' @"Usuń danie" { cancel: "Nie, nie
+-- | usuwaj dania" } $ …`, diner); the Cancel still consumes the case.
+confirmed'
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => { cancel :: String }
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | v ]
+confirmed' { cancel } = confirmedOver' @l cancel modalFace
 
 -- | The **modal** — see `PUI.Web.MDC2.modal`: the leaf owning case `l`,
 -- | telling it as its title and showing its payload until the user

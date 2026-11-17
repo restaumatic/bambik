@@ -17,6 +17,7 @@
 -- | parent module, `PUI.Web`, shared with SVG and the design systems.
 module PUI.Web.HTML
   ( confirmed
+  , confirmed'
   , modal
   , a
   , article
@@ -89,7 +90,7 @@ import Prim.Row (class Cons)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
-import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, replayed, source, departures, statusOver, confirmedOver, modalOver)
+import PUI (fromHandles, handles, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, optionWiring, replayed, source, departures, statusOver, confirmedOver, confirmedOver', modalOver)
 import PUI.Web (chrome, fieldLeaf, Node, Web, adoptHostDiagnostics, onFilePicked, appendChild, attribute, createElementNS, documentBody, el, element, getValue, htmlNS, isFocused, listenNode, runDomInNode, setAttribute, setValue, staticText, statusText, separating, invokeMethod, showModalOnce, (:=), (:=>))
 
 -- UIs
@@ -302,6 +303,18 @@ confirmed
   => PUI Web { | r } { | r }
   -> PUI Web [ | v ] [ | v ]
 confirmed = confirmedOver @l modalFace
+
+-- | `confirmed` with options: `cancel:` captions its Cancel with the copy
+-- | the screen speaks (`confirmed' @"Usuń danie" { cancel: "Nie, nie
+-- | usuwaj dania" } $ …`, diner); the Cancel still consumes the case.
+confirmed'
+  :: forall @l r b v
+   . IsSymbol l
+  => Cons l { | r } b v
+  => { cancel :: String }
+  -> PUI Web { | r } { | r }
+  -> PUI Web [ | v ] [ | v ]
+confirmed' { cancel } = confirmedOver' @l cancel modalFace
 
 -- | The **modal** — see `PUI.Web.MDC2.modal`: the leaf owning case `l`,
 -- | telling it as its title and showing its payload until the user

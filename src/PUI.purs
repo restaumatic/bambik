@@ -112,6 +112,7 @@ module PUI
   , statusOver
   , Modal
   , confirmedOver
+  , confirmedOver'
   , modalOver
   , unanswering
   , keepingEdits
@@ -1660,15 +1661,28 @@ confirmedOver
   => Modal m r
   -> PUI m { | r } { | r }
   -> PUI m [ | v ] [ | v ]
-confirmedOver modal content = focusCase @l $ modal
-  { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just "Cancel" } content
+confirmedOver = confirmedOver' @l "Cancel"
+
+-- | `confirmedOver` with its Cancel captioned `cancel` — every
+-- | vocabulary's `confirmed'`. Plumbing.
+confirmedOver'
+  :: forall @l m r b v
+   . Functor m
+  => IsSymbol l
+  => Cons l { | r } b v
+  => String
+  -> Modal m r
+  -> PUI m { | r } { | r }
+  -> PUI m [ | v ] [ | v ]
+confirmedOver' cancel modal content = focusCase @l $ modal
+  { title: Nothing, decide: reflectSymbol (Proxy @l), cancel: Just cancel } content
 
 -- | The **modal leaf** over a vocabulary's modal: the `+→+` leaf owning
 -- | case `l` — opened by it, titled by it, its content shown the payload
 -- | for as long as the user wants it, closed by its "OK", which releases
 -- | the case again with the content's row; Escape and the scrim close it
 -- | releasing nothing. The "OK" decides nothing, so, like `confirmed`'s
--- | Cancel, it is chrome and takes no caption. Every vocabulary's `modal`
+-- | Cancel left uncaptioned, it is chrome and takes no caption. Every vocabulary's `modal`
 -- | is this over its own (the contract is stated at
 -- | `PUI.Web.MDC2.modal`). Plumbing.
 modalOver
