@@ -59,6 +59,7 @@ module PUI.Web.MDC3
   , dataRow
   , columnHeader
   , dataTable
+  , dataTable'
   , debouncedTextField
   , dialog
   , displayLarge
@@ -1517,9 +1518,16 @@ md-list-item.md3-list-item--selected { background: var(--md-sys-color-secondary-
 -- | body is `dataRow`s of `dataCell`s, usually one row per element of a
 -- | collection.
 dataTable :: String -> PUI Web {} {} -> Ocular (PUI Web)
-dataTable tableName headerCells content = fromHandles do
+dataTable tableName = dataTable' tableName { fullWidth: false }
+
+-- | `dataTable` with options: `fullWidth: true` stretches the table across
+-- | the width its container gives it, its columns spread out, instead of
+-- | hugging its content (`dataTable' "Statystyki" { fullWidth: true }`,
+-- | diner). `fullWidth: false` is `dataTable`.
+dataTable' :: String -> { fullWidth :: Boolean } -> PUI Web {} {} -> Ocular (PUI Web)
+dataTable' tableName { fullWidth } headerCells content = fromHandles do
   liftEffect $ ensureStyle "md3-data-table" dataTableCss
-  handles $ div >>> cl "md3-data-table" $
+  handles $ div >>> cl "md3-data-table" >>> (if fullWidth then cl "md3-data-table--full" else identity) $
     table >>> "aria-label" := tableName $ fromHandles do
       chrome (thead $ tr $ headerCells)
       handles (tbody $ content)
@@ -1532,6 +1540,7 @@ columnHeader heading = th >>> "role" := "columnheader" >>> "scope" := "col" $ st
 dataTableCss :: String
 dataTableCss = """
 .md3-data-table { border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; overflow: hidden; display: inline-block; }
+.md3-data-table--full { display: block; align-self: stretch; }
 .md3-data-table table { border-collapse: collapse; width: 100%; font: 400 14px/20px Roboto, sans-serif; color: var(--md-sys-color-on-surface, #1d1b20); }
 .md3-data-table th { font-weight: 500; text-align: left; height: 56px; padding: 0 16px; }
 .md3-data-table td { height: 52px; padding: 0 16px; border-top: 1px solid var(--md-sys-color-outline-variant, #cac4d0); }

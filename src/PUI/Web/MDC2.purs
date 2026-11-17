@@ -52,6 +52,7 @@ module PUI.Web.MDC2
   , dataRow
   , columnHeader
   , dataTable
+  , dataTable'
   , debouncedTextField
   , dialog
   , divider
@@ -1744,8 +1745,15 @@ listOfAt' provided = listOf' @l @k provided (Record.get (Proxy @t))
 -- | body is `dataRow`s of `dataCell`s, usually one row per element of a
 -- | collection.
 dataTable :: String -> PUI Web {} {} -> Ocular (PUI Web)
-dataTable tableName headerCells content =
-  div >>> cl "mdc-data-table" $
+dataTable tableName = dataTable' tableName { fullWidth: false }
+
+-- | `dataTable` with options: `fullWidth: true` stretches the table across
+-- | the width its container gives it, its columns spread out, instead of
+-- | hugging its content (`dataTable' "Statystyki" { fullWidth: true }`,
+-- | diner). `fullWidth: false` is `dataTable`.
+dataTable' :: String -> { fullWidth :: Boolean } -> PUI Web {} {} -> Ocular (PUI Web)
+dataTable' tableName { fullWidth } headerCells content =
+  div >>> cl "mdc-data-table" >>> (if fullWidth then "style" := "display: flex; width: 100%; align-self: stretch;" else identity) $
     div >>> cl "mdc-data-table__table-container" $
       table >>> cl "mdc-data-table__table" >>> "aria-label" := tableName $ fromHandles do
         chrome (thead $ tr >>> cl "mdc-data-table__header-row" $ headerCells)

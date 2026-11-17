@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (acknowledged, PUI)
 import LawBench (bench, benchStep, runBench)
 import PUI.Web (Web, text, staticText, textAt)
-import PUI.Web.MDC3 (body, button, checkbox, confirmed, debouncedTextField, doubleClickTile, elevatedButton, fab, filledIntegerField, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, modal, option, outlinedButton, outlinedIntegerField, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, select', selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, tile, toggleSwitch, tonalButton)
+import PUI.Web.MDC3 (body, button, button', checkbox, confirmed, debouncedTextField, doubleClickTile, elevatedButton, fab, filledIntegerField, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconButton', iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, modal, option, outlinedButton, outlinedIntegerField, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, select', selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, tile, toggleSwitch, tonalButton)
 
 lawBenchMDC3 :: Effect Unit
 lawBenchMDC3 = do
@@ -51,6 +51,8 @@ lawBenchMDC3 = do
     , bench "tonalButton" "×→+" rows (tonalButton @"Go")
     , bench "fab" "×→+" rows (fab @"Go" "add")
     , bench "iconButton" "×→+" rows (iconButton @"Go" "add")
+    , bench "iconButton'" "×→+" rows (iconButton' @"Go" "add" { disabled: const false })
+    , bench "button'" "×→+" rows (button' @"Go" { icon: "add", disabled: const false })
     , bench "tile" "×→+" rows (tile @"Go" @"n" (staticText "Go"))
     , bench "doubleClickTile" "×→+" rows (doubleClickTile @"Go" @"n" (staticText "Go"))
     , bench "menuItem" "×→+" rows (menuItem @"Go")

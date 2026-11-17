@@ -186,7 +186,7 @@ How each kind takes its business meaning:
   `option`, `tab`). A fact about an option (a room's seats) is model
   data, never part of its name. Options the model rules out stay drawn
   but disabled, given as a function from the row to the cases it rules
-  out (diner: `select' @"Table" { unavailable: busyTables }`); the
+  out (diner: `select' @"Stolik" { unavailable: busyTables }`); the
   options themselves never read the model.
 - **Displays** take a copy function, not a label:
   `headline4 $ text countLine` (counter). A number shown as a
@@ -262,7 +262,7 @@ takes a trailing word that says what it is for:
 | several event lines in one body, each where its buttons are | `( Semigroupoid.do { button @"Add"; fold @"Add" addTodo } ) # stepped` under the field, `( Semigroupoid.do { button @"Clear completed"; fold @"Clear completed" clearCompleted } ) # stepped` under the list | todo-list, contacts, diner, ticker |
 | a display below the buttons | the line after the event line: `ul $ ( li $ text lapLine ) # actedOf @"number" lapRows`; `( bodyMedium $ text placedLine ) # inCaseAt @"placed" @"status"` | stopwatch; checkout |
 | an event line that exists in one case | `( … ) # stepped # inCaseAt @"watching" @"phase"` | ticker |
-| an emitter inside a list element, its event carrying that element's row | `( listOfAt' @"Line plated" @"dish" @"lines" { selected: isPlated } $ text itemLine ) # joined @"Line plated"` inside `# gatheredOf @"number" cooking`, folded by `foldInto @"Line plated" plateLine`, its payload the dish and the order it was plated in | diner |
+| an emitter inside a list element, its event carrying that element's row | `( listOfAt' @"Pozycja wydana" @"dish" @"lines" { selected: isPlated } ticketItem ) # joined @"Pozycja wydana"` inside `# gatheredOf @"number" cooking`, folded by `foldInto @"Pozycja wydana" plateDish`, its payload the dish and the order it was plated in | diner |
 | an action whose outcome is told and keeps the model | `Semigroupoid.do { indeterminateLinearProgress # action @"Receipt" printReceipt; snackbar @"Receipt printed" kept }`, an operand of the fold block | order-form |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"Celsius" # settled fromCelsius` | temperature-converter |
@@ -526,7 +526,16 @@ one-way dependency:
 - **The view module** (`<Suffix>.purs`, module `<App>.<Suffix>`) exports the one entry function and
   keeps UI-wiring functions that span several lines (a `dynamic`/`each`
   builder, a reusable sub-form like parcel's `addressForm`). It imports
-  the design system, the library's words and the view model module.
+  the design system, the library's words and the view model module. A
+  view too long to read as one declaration splits into **submodules of
+  its module**, `<App>.<Suffix>.<Part>` in `<Suffix>/<Part>.purs` (diner's
+  `Diner.MDC3.Hall` in `MDC3/Hall.purs`, one per station, the entry left
+  with the tab bar and one line per station): each part is a view of the
+  same view model, importing exactly what its lines type, its functions
+  signed over the view model's synonyms (`hall :: PUI Web Diner Diner`),
+  and determined as the entry is. A part that reads nothing of the model
+  (diner's `Layout`: the note, the card grid, the total cells) imports
+  none.
 - **The view model module** (`<App>.purs`, module `<App>`) exports business
   functions and named business values: seed models, tick periods, fixed
   payloads, copy functions, parsers, `Aff` actions — exactly the names

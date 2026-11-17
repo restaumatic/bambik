@@ -7,6 +7,44 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-17
+- **`dataTable'`**, MDC2 and MDC3: `{ fullWidth: true }` stretches a
+  table across its container instead of hugging its content; `dataTable`
+  is `dataTable' { fullWidth: false }`. Diner's Statystyki uses it.
+- **Diner review applied.** The menu cards sit on the vocabulary's
+  `layoutGrid`/`layoutCell` instead of an inline grid, and the sold-out
+  fade is gone (the disabled button says it). Unreadable or negative stock
+  is left as it is by every return. − is disabled at one portion, so only
+  the bin, which asks first, removes a line. `markReady` and `settle`
+  advance the stage the order has in the model, and the send to the
+  kitchen carries the order's number. One copy function each for the
+  number, the table and the quantity, over every row that has the field
+  (check-determined pools a name's hints across a view's parts, so a
+  `forall` over two parts is the two-row case it already allowed). Stage
+  predicates replace the echoing `phaseOf`, `plateLine` is `plateDish`,
+  the icon columns have headers (Mniej, Więcej, Usuń, Płatność), and the
+  view model's exports are sorted and grouped by station.
+- **Part tests (`npm run part`)**: one part of a demo's view run in
+  isolation from prepared initial data — tests beside each part
+  (`MDC3/Hall.test.mjs`, a list of `{ name, seed, run }`), the seed a value
+  of `<App>.Fixtures` or the view model, the part mounted on its own and
+  driven with real clicks, typing and picks in headless Chrome
+  (scripts/part-test.mjs). Diner gets `Diner.Fixtures` (`rushHour`,
+  `soldOut`, `emptyDiner`) and a test file per station, 16 tests. Chrome
+  discovery and launch moved to scripts/smoke/chrome.mjs, shared with the
+  smoke harness.
+- **Diner is MDC3-only and split into parts.** Its MDC2 twin is gone
+  (MDC2's `select'`, `button'` `disabled`, `iconButton'` and integer fields
+  keep their law-bench rows). The view is now an entry with the tab bar and
+  one line per station, each station a submodule of the view
+  (`Diner.MDC3.Stock`, `Hall`, `Kitchen`, `Pass`, `Report`, `Statistics`,
+  plus the model-free `Layout`); check-determined learned to determine view
+  submodules and to keep the view model's types a view imports. Review
+  fixes: a table with an order in the kitchen or at the pass can no longer
+  take a second order (its menu hidden, a note instead, and the fold
+  refuses), the kitchen queue follows the order orders were sent in rather
+  than the time of day, the report sorts by number, Statystyki's total sums
+  its rows, the menu names the stored dishes (`gatheredAt`), and writing.md
+  cites diner's current labels.
 - **`confirmed'`**, every vocabulary with `confirmed`: `{ cancel }`
   captions the Cancel with the screen's own copy; `confirmed` keeps the
   chrome "Cancel". Diner's trash icon asks before removing an order line,

@@ -1,6 +1,7 @@
-// `button'`'s and `iconButton'`'s `disabled` predicate (MDC3, MDC2): while it holds for the row
-// last fed, the button is drawn disabled and a real click reports nothing;
-// once the row changes so it no longer holds, the button reports again.
+// `button'`'s and `iconButton'`'s `disabled` predicate (MDC3, on diner;
+// MDC2's keep their law-bench rows): while it holds for the row last fed,
+// the button is drawn disabled and a real click reports nothing; once the
+// row changes so it no longer holds, the button reports again.
 // Walks diner's dish cards: ordering the last portions of a dish disables
 // its add button and the + of its order row, a click on it adds nothing,
 // taking one portion back enables the + again, and removing the dish from
@@ -8,10 +9,9 @@
 // usuwaj dania", keeps the line, the confirm removes it — gives the portions back and enables the add button.
 import { byName } from '../../demos.mjs'
 
-export const demos = ['diner-mdc3', 'diner-mdc2']
+export const demos = ['diner-mdc3']
 export const pages = [
   { url: `/${byName('diner-mdc3').page}`, label: 'mdc3' },
-  { url: `/${byName('diner-mdc2').page}`, label: 'mdc2' },
 ]
 
 const addButton = (dish) => `(() => {

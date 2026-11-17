@@ -1,15 +1,14 @@
-// `select'`'s unavailable options (MDC3, MDC2): the cases the model rules
-// out are drawn disabled, re-read on every feed, and a real click on one
-// picks nothing. Walks diner's table select: the seeded tables with an
+// `select'`'s unavailable options (MDC3, on diner; MDC2's `select'` keeps
+// its law-bench row): the cases the model rules out are drawn disabled,
+// re-read on every feed, and a real click on one picks nothing. Walks diner's table select: the seeded tables with an
 // order in the kitchen or at the pass are disabled; a click on one leaves
 // the picked table unchanged, a click on a free one stores it; paying the
 // ready bill frees its table.
 import { byName } from '../../demos.mjs'
 
-export const demos = ['diner-mdc3', 'diner-mdc2']
+export const demos = ['diner-mdc3']
 export const pages = [
   { url: `/${byName('diner-mdc3').page}`, label: 'mdc3' },
-  { url: `/${byName('diner-mdc2').page}`, label: 'mdc2' },
 ]
 
 const faces = {
@@ -21,15 +20,6 @@ const faces = {
     option: (c) => `[...document.querySelectorAll('md-select-option')].find(o => o.value === ${JSON.stringify(c)})`,
     tab: (c) => `[...document.querySelectorAll('md-primary-tab')].find(t => t.textContent.trim() === ${JSON.stringify(c)})`,
     pay: `[...document.querySelectorAll('md-text-button, md-filled-button, md-outlined-button')].find(b => b.textContent.includes('Zapłacono'))`,
-  },
-  mdc2: {
-    unavailable: `[...document.querySelectorAll('.mdc-select li[data-value]')].filter(o => o.getAttribute('aria-disabled') === 'true').map(o => o.dataset.value)`,
-    anchor: `document.querySelector('.mdc-select__anchor')`,
-    picked: `document.querySelector('.mdc-select__selected-text').textContent`,
-    open: `document.querySelector('.mdc-select').classList.contains('mdc-select--activated')`,
-    option: (c) => `document.querySelector('.mdc-select li[data-value=${JSON.stringify(c)}]')`,
-    tab: (c) => `document.querySelector('.mdc-tab[aria-label=${JSON.stringify(c)}]')`,
-    pay: `[...document.querySelectorAll('button')].find(b => b.textContent.toLowerCase().includes('zapłacono'))`,
   },
 }
 

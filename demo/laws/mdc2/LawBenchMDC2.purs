@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (acknowledged, PUI)
 import LawBench (bench, benchStep, runBench)
 import PUI.Web (Web, text, staticText, textAt)
-import PUI.Web.MDC2 (body, confirmed, button, checkbox, debouncedTextField, fab, filledIntegerField, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedIntegerField, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, select', selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, toggleSwitch, modal)
+import PUI.Web.MDC2 (body, confirmed, button, button', checkbox, debouncedTextField, fab, filledIntegerField, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconButton', iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedIntegerField, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, select', selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, toggleSwitch, modal)
 
 lawBenchMDC2 :: Effect Unit
 lawBenchMDC2 = do
@@ -49,6 +49,8 @@ lawBenchMDC2 = do
     , bench "textButton" "×→+" rows (textButton @"Go")
     , bench "fab" "×→+" rows (fab @"Go" "add")
     , bench "iconButton" "×→+" rows (iconButton @"Go" "add")
+    , bench "iconButton'" "×→+" rows (iconButton' @"Go" "add" { disabled: const false })
+    , bench "button'" "×→+" rows (button' @"Go" { icon: "add", disabled: const false })
     , bench "menuItem" "×→+" rows (menuItem @"Go")
     , bench "listOf" "×→+" lists (listOf @"picked" @"id" itemsOf (textAt @"title"))
     , bench "listOfAt" "×→+" lists (listOfAt @"picked" @"id" @"items" (textAt @"title"))

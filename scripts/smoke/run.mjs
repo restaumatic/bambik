@@ -14,13 +14,13 @@
 // Chrome is discovered from $BAMBIK_CHROME, google-chrome, chromium, or
 // chromium-browser, and always launched headless on an ephemeral debug port
 // with an isolated throwaway profile — never the user's own browser.
-import { spawn, spawnSync } from 'node:child_process'
 import { createServer } from 'node:http'
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { openSession } from './cdp.mjs'
+import { launchChrome } from './chrome.mjs'
 import { byName } from '../demos.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -49,38 +49,6 @@ const serve = () => new Promise(resolve => {
 
 const readdirSyncSafe = dir => {
   try { return readdirSync(dir).length >= 0 } catch { return false }
-}
-
-const findChrome = () => {
-  const candidates = [process.env.BAMBIK_CHROME, 'google-chrome', 'chromium', 'chromium-browser'].filter(Boolean)
-  for (const c of candidates) {
-    try {
-      const { status } = spawnSyncQuiet(c)
-      if (status === 0) return c
-    } catch { /* keep looking */ }
-  }
-  console.error('No Chrome found — install google-chrome/chromium or set $BAMBIK_CHROME')
-  process.exit(1)
-}
-
-const spawnSyncQuiet = c => spawnSync('which', [c], { stdio: 'ignore' })
-
-const launchChrome = async profileDir => {
-  const chrome = findChrome()
-  const proc = spawn(chrome, [
-    '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profileDir}`,
-    '--no-first-run', '--no-default-browser-check', 'about:blank',
-  ], { stdio: 'ignore' })
-  const portFile = path.join(profileDir, 'DevToolsActivePort')
-  for (let i = 0; i < 150; i++) {
-    await new Promise(r => setTimeout(r, 100))
-    if (existsSync(portFile)) {
-      const port = readFileSync(portFile, 'utf8').split('\n')[0].trim()
-      if (port) return { proc, cdpBase: `http://127.0.0.1:${port}` }
-    }
-  }
-  proc.kill()
-  throw new Error('Chrome did not open its DevTools port within 15s')
 }
 
 const main = async () => {

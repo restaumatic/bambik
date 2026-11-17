@@ -22,6 +22,9 @@
 // the view reports at `PUI Web`, and the probe decides it), and on an export no
 // view imports (2026-10-03: the view determines the module, so a name no view
 // line types is private, not exported).
+// A view split into submodules of its module (`Diner.MDC3.Hall`) is
+// determined part by part, each reported as `demo:Part`, and what any part
+// imports counts as imported by the view.
 // Runs over every registered demo (an all-view demo passes trivially);
 // `node scripts/check-determined.mjs inbox-mdc3 …` narrows to named demos.
 // About a minute for all, ten seconds for a few. `SHOW=all` prints every hint.
@@ -31,17 +34,31 @@
 // one, and a name with no definition yet is appended as a signature over a
 // typed hole, ready to be filled. A hint with unknowns is the author's
 // to fill, so a missing signature for one is reported, hint and all.
-import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { all } from './demos.mjs'
 import { layoutSignature } from './signature-layout.mjs'
 
 // the view's one import of its view model module, the module named by the registry
 const importRe = d => d.viewModel && new RegExp(`^import (${d.viewModel.replace(/\./g, '\\.')}) \\(([^)]*)\\)[ \\t]*\\n`, 'm')
-const demos = all
+// the values a view imports; the types it names in its own signatures stay imported
+const valuesOf = list => list.split(',').map(s => s.trim()).filter(n => /^[a-z_]/.test(n))
+const typesOf = list => list.split(',').map(s => s.trim()).filter(n => /^[A-Z]/.test(n))
+// A view may be split into submodules of its module (`Diner.MDC3.Hall` in
+// `MDC3/Hall.purs`), each a view of the same view model: every one is
+// determined as the view is.
+const walk = dir => readdirSync(dir).flatMap(n => {
+  const p = join(dir, n)
+  return statSync(p).isDirectory() ? walk(p) : p.endsWith('.purs') ? [p] : []
+})
+const moduleOf = file => readFileSync(file, 'utf8').match(/^module ([\w.]+)/m)?.[1]
+const viewsOf = d => [d, ...walk(d.dir).filter(f => f !== d.file && moduleOf(f)?.startsWith(`${d.mod}.`))
+  .map(f => ({ ...d, file: f, mod: moduleOf(f), name: `${d.name}:${moduleOf(f).slice(d.mod.length + 1)}` }))]
+const demos = all.flatMap(viewsOf)
 const write = process.argv.includes('--write')
 const wanted = process.argv.slice(2).filter(a => a !== '--write')
-const chosen = wanted.length ? demos.filter(d => wanted.includes(d.name)) : demos
+const chosen = wanted.length ? demos.filter(d => wanted.includes(d.name.split(':')[0])) : demos
 if (chosen.length === 0) { console.error('check-determined: no demo selected'); process.exit(2) }
 
 rmSync('.determined', { recursive: true, force: true })
@@ -52,8 +69,9 @@ const holed = chosen.flatMap(d => {
   const src = readFileSync(d.file, 'utf8')
   const m = d.viewModel && importRe(d).exec(src)
   if (!m) { console.log(`– ${d.name}: no view model module, all view`); return [] }
-  const names = m[2].split(',').map(s => s.trim()).filter(Boolean)
-  let out = src.replace(m[0], '').replace(/^module ([\w.]+)/m, 'module Determined.$1')
+  const names = valuesOf(m[2])
+  const types = typesOf(m[2])
+  let out = src.replace(m[0], types.length ? `import ${m[1]} (${types.join(', ')})\n` : '').replace(/^module ([\w.]+)/m, 'module Determined.$1')
   // a record label (`tick:` in a `match`), a field accessor or a word of a
   // quoted label (`"Card charged"`) is not the value
   const holedOutside = code => names.reduce((c, n) => c.replace(new RegExp(`(?<![\\w."])${n}\\b(?!\\s*:(?!:))`, 'g'), `?${n}`), code)
@@ -70,7 +88,7 @@ for (const d of demos) {
   const m = d.viewModel && importRe(d).exec(readFileSync(d.file, 'utf8'))
   if (!m) continue
   if (!importedBy.has(m[1])) importedBy.set(m[1], new Set())
-  for (const n of m[2].split(',').map(s => s.trim()).filter(Boolean)) importedBy.get(m[1]).add(n)
+  for (const n of valuesOf(m[2])) importedBy.get(m[1]).add(n)
 }
 // values only: a type synonym the signatures share is exported for them, not for a view
 const exportsOf = src => src.match(/^module [\w.]+ \(([\s\S]*?)\) where/)?.[1].split(',').map(s => s.trim()).filter(n => /^[a-z_]/.test(n)) ?? []
@@ -151,6 +169,18 @@ for (let round = 0; round < 12; round++) {
   }
 }
 
+// A view's parts are one view: a name each part reports at its own row is
+// a name the view reports at two, so the hints are pooled per demo
+const baseOf = d => d.name.split(':')[0]
+const pooled = new Map()
+for (const d of holed) for (const [name, hints] of results.get(d.name).hints) {
+  if (!pooled.has(baseOf(d))) pooled.set(baseOf(d), new Map())
+  const p = pooled.get(baseOf(d))
+  if (!p.has(name)) p.set(name, new Map())
+  for (const [k, v] of hints) p.get(name).set(k, v)
+}
+const hintsOf = (d, name) => pooled.get(baseOf(d))?.get(name)
+
 // The signature is the hint with its tails filled (writing.md *Business
 // functions*): a name reported at one type everywhere a view uses it is
 // declared at that type — verbatim, whitespace aside, where the view leaves
@@ -199,7 +229,7 @@ for (const d of holed) {
   for (const group of r.groups) {
     // a closed hint is compared verbatim, unless its signature is written
     // through a synonym: then the compiler decides, as for an open one
-    const names = [...group.keys()].filter(name => r.hints.get(name)?.size === 1
+    const names = [...group.keys()].filter(name => hintsOf(d, name)?.size === 1
       && (unknownsOf(group.get(name)).length || usesSynonym(src, signatureOf(src, name) ?? '')
         || carrierGeneric(signatureOf(src, name))))
     if (!names.length) continue
@@ -233,7 +263,7 @@ for (const d of holed) {
       for (const name of exportsOf(src)) if (!importedBy.get(d.module).has(name))
         r.problems.push(`${name}: exported from ${d.module} but no view imports it; the view determines the module, so it is private or gone`)
       for (const name of d.names) {
-        const hints = r.hints.get(name)
+        const hints = hintsOf(d, name)
         if (!hints || hints.size !== 1) continue
         const [h] = hints.values()
         const open = unknownsOf(h).length > 0

@@ -14,7 +14,13 @@
 // compiles under one `spago build`), and the entry function is the app's
 // name (`counter`) in every view. Any further module of the app is named
 // the same way, the file its module minus the app prefix (order-dashboard's
-// `ControlsMDC3.purs` is `OrderDashboard.ControlsMDC3`). A plain-HTML app
+// `ControlsMDC3.purs` is `OrderDashboard.ControlsMDC3`); a view split into
+// parts keeps them as submodules of its module, each in a directory named
+// by the design system (diner's `Diner.MDC3.Hall` in `MDC3/Hall.purs`),
+// and scripts/check-determined.mjs determines every part; a part's tests
+// sit beside it (`MDC3/Hall.test.mjs`) and `npm run part` runs them, the
+// part alone over prepared data from the app's `<App>.Fixtures` (diner's
+// `Fixtures.purs`). A plain-HTML app
 // is one `html` variant (hello-world, restaurant-menu). A law bench is a
 // plain [module, fn] pair in a directory of its own.
 export const sets = {
@@ -66,7 +72,7 @@ export const sets = {
     'loan-calculator': ['bootstrap'],
     'contacts': ['mdc3', 'mdc2'],
     'venue': ['mdc3', 'mdc2'],
-    'diner': ['mdc3', 'mdc2'],
+    'diner': ['mdc3'],
   },
   // the leaf-law bench (scripts/smoke/tests/leaf-laws.mjs): every published
   // component mounted alone and fed from outside — not a demo, never deployed

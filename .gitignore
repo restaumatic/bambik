@@ -13,3 +13,4 @@ demo/**/bundle-*.js
 .claude/*.tmp.*
 /generated-docs/
 /.determined/
+/.part/
