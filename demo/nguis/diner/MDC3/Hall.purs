@@ -9,7 +9,7 @@ import Diner (Diner, Dish, TableLine, addUnit, busyTables, isLineSoldOut, isSing
 import Diner.MDC3.Layout (note)
 import PUI (action, foldInto, gatheredAt, gatheredOf, PUI, stepped)
 import PUI.Web (Web, inCase, provided, text, textAt)
-import PUI.Web.MDC3 (bodyMedium, button', card, columnHeader, confirmed', dataCell, dataRow, dataTable, iconButton, iconButton', indeterminateLinearProgress, layoutCell, layoutGrid, option, select', titleMedium)
+import PUI.Web.MDC3 (bodyMedium, button', card, columnHeader, confirmed', dataCell, dataRow, dataTable', iconButton, iconButton', indeterminateLinearProgress, layoutCell, layoutGrid, option, select', titleMedium)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 hall :: PUI Web Diner Diner
@@ -59,7 +59,7 @@ order = Semigroupoid.do
 
 orderTable :: PUI Web Diner [ "Dodano porcję" :: TableLine, "Usuń danie" :: TableLine, "Zwrócono porcję" :: TableLine ]
 orderTable =
-  dataTable "Zamówienie"
+  dataTable' "Zamówienie" { fullWidth: true }
     ( Semigroupoid.do
       columnHeader "Danie"
       columnHeader "Ilość"

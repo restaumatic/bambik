@@ -6,7 +6,7 @@ import Diner (Diner, Order, numberLine, orderItemsLine, paidOrders, paidState, p
 import Diner.MDC3.Layout (blankCell, note, totalCell, totalLabelCell)
 import PUI (actedOf, PUI)
 import PUI.Web (Web, inCase, text)
-import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable)
+import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable')
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 report :: PUI Web Diner Diner
@@ -16,7 +16,7 @@ report = Semigroupoid.do
 
 paidTable :: PUI Web Diner Diner
 paidTable =
-  dataTable "Raport"
+  dataTable' "Raport" { fullWidth: true }
     ( Semigroupoid.do
       columnHeader "Nr"
       columnHeader "Godzina"

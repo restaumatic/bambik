@@ -28,7 +28,7 @@ writeFileSync(`${out}/index.html`, `<!doctype html>
     <title>${title}</title>
     ${head}
     <style>
-      body { margin: 0 auto; max-width: 960px; padding: 16px; box-sizing: border-box; font-family: Roboto, sans-serif; background: var(--md-sys-color-surface, #fef7ff); color: var(--md-sys-color-on-surface, #1d1b20); }
+      body { margin: 0 auto; max-width: 960px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; font-family: Roboto, sans-serif; background: var(--md-sys-color-surface, #fef7ff); color: var(--md-sys-color-on-surface, #1d1b20); }
     </style>
     <script type="module" src="bundle.js"></script>
   </head>

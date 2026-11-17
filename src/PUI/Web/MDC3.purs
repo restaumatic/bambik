@@ -990,7 +990,7 @@ tabWith glyph = fromHandles do
     }
 
 tabBar :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
-tabBar options = fieldLeaf @l $ el "md-tabs" $ fromHandles (_.result <$> grouping (handles options))
+tabBar options = fieldLeaf @l $ el "md-tabs" >>> "style" := "align-self: stretch;" $ fromHandles (_.result <$> grouping (handles options))
 
 -- | The **indeterminate progress bar**: work is under way and there is no
 -- | telling how long — a request in flight, a file being processed. A
@@ -1167,7 +1167,8 @@ card content = fromHandles do
 cardCss :: String
 cardCss = """
 .md3-card { background: var(--md-sys-color-surface-container-low, #f7f2fa); color: var(--md-sys-color-on-surface, #1d1b20); border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15); padding: 16px; margin: 15px 0; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
-.md3-card > p { margin: 0; }
+.md3-card > :is(p, h1, h2, h3, h4, h5, h6) { margin: 0; }
+.md3-card > md-list { align-self: stretch; }
 """
 
 -- | The card's **action row**: the buttons belonging to the card, side by
@@ -1539,7 +1540,7 @@ columnHeader heading = th >>> "role" := "columnheader" >>> "scope" := "col" $ st
 
 dataTableCss :: String
 dataTableCss = """
-.md3-data-table { border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; overflow: hidden; display: inline-block; }
+.md3-data-table { border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; overflow-x: auto; display: inline-block; max-width: 100%; box-sizing: border-box; }
 .md3-data-table--full { display: block; align-self: stretch; }
 .md3-data-table table { border-collapse: collapse; width: 100%; font: 400 14px/20px Roboto, sans-serif; color: var(--md-sys-color-on-surface, #1d1b20); }
 .md3-data-table th { font-weight: 500; text-align: left; height: 56px; padding: 0 16px; }
@@ -1572,13 +1573,28 @@ imageListCss = """
 """
 
 -- | The twelve-column **layout grid** a screen's regions are placed on,
--- | holding `layoutCell`s.
+-- | holding `layoutCell`s. It spans the width its container gives it and
+-- | adds no margin of its own — the surface or the page it sits on owns
+-- | the margins — so its cells line up with whatever stands above and
+-- | below it. In a grid narrower than 600 px (MD3's compact window)
+-- | every cell takes the whole row.
 layoutGrid :: Ocular (PUI Web)
-layoutGrid = div >>> "style" := "display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; padding: 16px;"
+layoutGrid content = fromHandles do
+  liftEffect $ ensureStyle "md3-layout-grid" layoutGridCss
+  handles $ div >>> cl "md3-layout-grid" $ content
 
--- | One region of a `layoutGrid`, `span` columns wide out of twelve.
+-- | One region of a `layoutGrid`, `span` columns wide out of twelve. A
+-- | `card` in a cell fills it, the grid's gap spacing the cards.
 layoutCell :: Int -> Ocular (PUI Web)
-layoutCell cellSpan = div >>> "style" := ("grid-column: span " <> show cellSpan <> ";")
+layoutCell cellSpan = div >>> cl "md3-layout-cell" >>> "style" := ("grid-column: span " <> show cellSpan <> ";")
+
+layoutGridCss :: String
+layoutGridCss = """
+.md3-layout-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-self: stretch; container-type: inline-size; }
+.md3-layout-cell { display: flex; flex-direction: column; min-width: 0; }
+.md3-layout-cell > .md3-card { margin: 0; flex: 1; }
+@container (max-width: 599px) { .md3-layout-cell { grid-column: 1 / -1 !important; } }
+"""
 
 -- | The **top app bar**: the band carrying the screen's title, with the
 -- | content laid out beneath it.

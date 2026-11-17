@@ -6,7 +6,7 @@ import Diner (Bill, Diner, billPlacedLine, billTotalLine, bills, billsState, num
 import Diner.MDC3.Layout (note)
 import PUI (foldInto, gatheredOf, PUI, stepped)
 import PUI.Web (Web, inCase, provided, text)
-import PUI.Web.MDC3 (button, columnHeader, dataCell, dataRow, dataTable)
+import PUI.Web.MDC3 (button, columnHeader, dataCell, dataRow, dataTable')
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 pass :: PUI Web Diner Diner
@@ -18,7 +18,7 @@ pass = Semigroupoid.do
 
 billTable :: PUI Web Diner [ "Zapłacono" :: Bill ]
 billTable =
-  dataTable "Wydawka"
+  dataTable' "Wydawka" { fullWidth: true }
     ( Semigroupoid.do
       columnHeader "Nr"
       columnHeader "Godzina"

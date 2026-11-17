@@ -24,6 +24,7 @@ module Diner
   , isPlated
   , isSinglePortion
   , isSoldOut
+  , isStockEmpty
   , itemLine
   , kitchenState
   , lineTotalLine
@@ -49,6 +50,7 @@ module Diner
   , settle
   , soldAmountLine
   , soldQuantityLine
+  , stockZeroed
   , tableAvailability
   , tableLine
   , tableLines
@@ -189,6 +191,12 @@ portionAdded = withPortions (_ + 1)
 
 portionRemoved :: Dish -> Dish
 portionRemoved = withPortions (_ - 1)
+
+isStockEmpty :: Diner -> Boolean
+isStockEmpty { dishes } = all (\d -> d."Porcje" == .count 0) dishes
+
+stockZeroed :: Diner -> Diner
+stockZeroed diner = diner { dishes = map (_ { "Porcje" = .count 0 }) diner.dishes }
 
 -- Sala
 

@@ -8,15 +8,14 @@ import Diner (Diner, Line, Order, cooking, isPlated, itemLine, kitchenState, mar
 import Diner.MDC3.Layout (note)
 import PUI (foldInto, gatheredOf, joined, PUI, stepped)
 import PUI.Web (Web, inCase, inCaseAt, provided, text)
-import PUI.Web.HTML (div)
-import PUI.Web.MDC3 (button', card, icon, listOfAt', titleMedium)
+import PUI.Web.MDC3 (button', card, icon, layoutCell, layoutGrid, listOfAt', titleMedium)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 kitchen :: PUI Web Diner Diner
 kitchen = Semigroupoid.do
   note "Wszystko ugotowane, kuchnia czeka na zamówienia" # inCase @"cleared" kitchenState
   ( Semigroupoid.do
-    div $ ticket # gatheredOf @"number" cooking
+    layoutGrid $ ( layoutCell 6 $ ticket ) # gatheredOf @"number" cooking
     VariantToRecord.do
       foldInto @"Pozycja wydana" plateDish
       foldInto @"Zamówienie gotowe" markReady ) # stepped

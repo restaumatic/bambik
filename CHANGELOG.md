@@ -7,6 +7,16 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-17
+- **MDC3 layout refined.** `layoutGrid` is a stylesheet class, spans its
+  container and adds no padding of its own (the surface or page owns the
+  margins), its cells hold a card edge to edge, and in a grid narrower
+  than 600 px every cell takes the whole row. `tabBar` spans its
+  container. A card's headings carry no margin (the card's gap is its rhythm) and a list in a
+  card spans it. A data table scrolls sideways inside its border rather
+  than overflowing the page. Diner's tables are all full width, its
+  kitchen tickets sit on the layout grid, the standalone page stacks the
+  app like the demo surface (a flex column, 16 px apart), and Magazyn
+  gains **Wyzeruj**, zeroing every dish's stock after a confirmation.
 - **`dataTable'`**, MDC2 and MDC3: `{ fullWidth: true }` stretches a
   table across its container instead of hugging its content; `dataTable`
   is `dataTable' { fullWidth: false }`. Diner's Statystyki uses it.
