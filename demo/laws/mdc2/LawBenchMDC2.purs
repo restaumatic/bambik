@@ -7,7 +7,7 @@ import Effect (Effect)
 import PUI (acknowledged, PUI)
 import LawBench (bench, benchStep, runBench)
 import PUI.Web (Web, text, staticText, textAt)
-import PUI.Web.MDC2 (body, confirmed, button, checkbox, debouncedTextField, fab, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, toggleSwitch, modal)
+import PUI.Web.MDC2 (body, confirmed, button, checkbox, debouncedTextField, fab, filledIntegerField, filledNumberField, filledTextArea, filledTextField, filterChip, group, iconButton, iconToggle, imagePane, indeterminateCircularProgress, indeterminateLinearProgress, linearProgress, listOf, listOfAt, menuItem, option, outlinedButton, outlinedIntegerField, outlinedNumberField, outlinedTextField, radio, radioButton, radioButtonOptional, radioButtonUnpicked, rangeSlider, rangeSliderLive, segment, segmentedButton, segmentedButtonOptional, segmentedButtonUnpicked, select, select', selectOptional, selectUnpicked, slider, sliderLive, snackbar, tab, tab', tabBar, textButton, toggleSwitch, modal)
 
 lawBenchMDC2 :: Effect Unit
 lawBenchMDC2 = do
@@ -17,6 +17,8 @@ lawBenchMDC2 = do
     , bench "outlinedTextField" "×→×" texts (outlinedTextField @"Name")
     , bench "filledNumberField" "×→×" numerals (filledNumberField @"Amount" @"number" @"invalid")
     , bench "outlinedNumberField" "×→×" numerals (outlinedNumberField @"Amount" @"number" @"invalid")
+    , bench "filledIntegerField" "×→×" integers (filledIntegerField @"Amount" @"number" @"invalid")
+    , bench "outlinedIntegerField" "×→×" integers (outlinedIntegerField @"Amount" @"number" @"invalid")
     , bench "debouncedTextField" "×→×" texts (debouncedTextField @"Name" { ms: 200.0 })
     , bench "filledTextArea" "×→×" texts (filledTextArea @"Name" { columns: 20, rows: 2 })
     , bench "checkbox" "×→×" ticks (checkbox @"Terms" @"accepted" @"declined")
@@ -33,6 +35,7 @@ lawBenchMDC2 = do
     , bench "imagePane" "×→×" images (imagePane identity)
     , bench "group" "×→×" grouped (group @"Customer" (filledTextField @"Name"))
     , bench "select" "×→×" chosen (select @"Pick" selectOptions)
+    , bench "select'" "×→×" chosen (select' @"Pick" { unavailable: const [] } selectOptions)
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" selectOptions)
     , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" selectOptions)
     , bench "radioButton" "×→×" chosen (radioButton @"Pick" radioOptions)
@@ -62,6 +65,7 @@ lawBenchMDC2 = do
   itemsOf { items } = items
   texts = [ { "Name": "alpha", other: 1 }, { "Name": "beta", other: 2 } ]
   numerals = [ { "Amount": .number 3.0, other: 1 }, { "Amount": .invalid "abc", other: 2 } ]
+  integers = [ { "Amount": .number 3, other: 1 }, { "Amount": .invalid "abc", other: 2 } ]
   ticks = [ { "Terms": .accepted {}, other: 1 }, { "Terms": .declined {}, other: 2 } ]
   flags = [ { "On": true, other: 1 }, { "On": false, other: 2 } ]
   quantity current = { current, min: 1.0, max: 10.0, step: .discrete 1.0 }

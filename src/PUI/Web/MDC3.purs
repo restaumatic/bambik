@@ -73,6 +73,7 @@ module PUI.Web.MDC3
   , fab
   , filledTextArea
   , filledNumberField
+  , filledIntegerField
   , filledTextField
   , filledTextField'
   , filterChip
@@ -81,6 +82,7 @@ module PUI.Web.MDC3
   , headlineMedium
   , headlineSmall
   , iconButton
+  , icon
   , iconToggle
   , imageList
   , imageListItem
@@ -103,6 +105,7 @@ module PUI.Web.MDC3
   , menuItem
   , outlinedButton
   , outlinedNumberField
+  , outlinedIntegerField
   , outlinedTextField
   , outlinedTextField'
   , radioButton
@@ -116,6 +119,7 @@ module PUI.Web.MDC3
   , rangeSliderLive
   , rangeSliderLive'
   , select
+  , select'
   , selectUnpicked
   , selectOptional
   , confirmed
@@ -154,10 +158,11 @@ import Data.Number.Format (toString)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Data.Variant (inj, match, prj) as Variant
+import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (static, fromHandles, handles, gatheredOf, numeral, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, modalOver, eventLeaf)
+import PUI (integral, static, fromHandles, handles, gatheredOf, numeral, Ocular, PUI, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), optionWiring, statusOver, confirmedOver, modalOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, img, label, p, span, table, tbody, td, th, thead, tr)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, attrWith, attribute, autoDismiss, cl, clWhen, el, element, ensureStyle, getChecked, getValue, init, isFocused, listenNode, listenNodeDeferred, onInputDebounced, removeAttribute, separating, setAttribute, setChecked, setValue, staticHTML, staticText, text, statusText, uniqueId, (:=), hasClass, listenCapture, grouping, member, unpickAll, clearedByRepress)
@@ -320,14 +325,23 @@ fab
   => Cons l { | r } () v
   => String
   -> PUI Web { | r } [ | v ]
-fab icon = eventLeaf @l $
-  el "md-fab" >>> "aria-label" := fromMaybe icon config.label >>> extended $
-    el "md-icon" >>> "slot" := "icon" $ staticText icon
+fab glyph = eventLeaf @l $
+  el "md-fab" >>> "aria-label" := fromMaybe glyph config.label >>> extended $
+    el "md-icon" >>> "slot" := "icon" $ staticText glyph
   where
   config = { label: Just (reflectSymbol (Proxy @l)) } :: { label :: Maybe String }
   extended = case config.label of
     Just label' -> "label" := label'
     Nothing -> identity
+
+-- | A **Material icon** as chrome: `icon "check_circle"` draws the named
+-- | glyph inline, spaced from the copy after it, and reads and changes
+-- | nothing — decoration a pane can show by case (`icon "check_circle" #
+-- | inCaseAt @"plated" @"state"`, diner's kitchen). Hidden from assistive
+-- | technology: what it marks is said by the copy beside it or by the
+-- | row's own state.
+icon :: forall r. String -> PUI Web { | r } { | r }
+icon name = el "md-icon" >>> "aria-hidden" := "true" >>> "style" := "vertical-align: middle; margin-inline-end: 8px;" $ staticText name
 
 -- | A compact **icon-only action**, for toolbars, list rows and card
 -- | corners where a labelled button would not fit. `label` is not drawn —
@@ -335,9 +349,9 @@ fab icon = eventLeaf @l $
 -- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
 iconButton :: forall @l r v. IsSymbol l => Cons l { | r } () v => String -> PUI Web { | r } [ | v ]
-iconButton icon = eventLeaf @l $
+iconButton glyph = eventLeaf @l $
   el "md-icon-button" >>> "aria-label" := config.label $
-    el "md-icon" $ staticText icon
+    el "md-icon" $ staticText glyph
   where
   config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 
@@ -390,6 +404,17 @@ filledNumberField = fieldLeaf @l $ numeral @n @i (textFieldLeaf "md-filled-text-
 -- | `outlinedTextField` read as a number, as `filledNumberField`.
 outlinedNumberField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Number nr v => Cons i String ir v => PUI Web { | r } { | r }
 outlinedNumberField = fieldLeaf @l $ numeral @n @i (textFieldLeaf "md-outlined-text-field" Nothing (reflectSymbol (Proxy @l)) "")
+
+-- | `filledTextField` read as a **whole number**: `filledIntegerField
+-- | @"Portions" @"count" @"invalid"` edits a field `[ count :: Int, invalid
+-- | :: String ]`, as `filledNumberField` does a `Number`; a fraction is
+-- | invalid text. `PUI.integral` states the parse.
+filledIntegerField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Int nr v => Cons i String ir v => PUI Web { | r } { | r }
+filledIntegerField = fieldLeaf @l $ integral @n @i (textFieldLeaf "md-filled-text-field" Nothing (reflectSymbol (Proxy @l)) "")
+
+-- | `outlinedTextField` read as a whole number, as `filledIntegerField`.
+outlinedIntegerField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Int nr v => Cons i String ir v => PUI Web { | r } { | r }
+outlinedIntegerField = fieldLeaf @l $ integral @n @i (textFieldLeaf "md-outlined-text-field" Nothing (reflectSymbol (Proxy @l)) "")
 
 -- | `filledTextField` that waits `ms` after the last keystroke before
 -- | reporting — for a field that drives expensive work (a search, a
@@ -733,6 +758,24 @@ option = fromHandles do
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf @l false options
 
+-- | `select` whose options the model may rule out: `select' @"Table"
+-- | { unavailable: busyTables }` draws every option and disables the cases
+-- | `unavailable` returns for the row it is fed, re-read on every feed — a
+-- | disabled option is shown, never pickable. A decoration of `select`,
+-- | so its editor laws are `select`'s, and `select' { unavailable: const
+-- | [] } ≈ select`; a disabled case already stored stays shown, the
+-- | model's to change.
+select' :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => { unavailable :: { | r } -> Array [ | w ] } -> PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+select' { unavailable } options = fromHandles do
+  inner <- handles (select @l options)
+  node <- gets _.sibling
+  pure
+    { toUser: \row -> do
+        disableOptions node (map caseText (unavailable row))
+        inner.toUser row
+    , fromUser: inner.fromUser
+    }
+
 selectUnpicked :: forall @l @c w b1 v b r. IsSymbol l => IsSymbol c => Cons c [ | w ] b1 v => Cons l [ | v ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 selectUnpicked options = fieldLeaf @l $ selectGroupOf @l false (focusCase @c options)
 
@@ -891,13 +934,13 @@ tab = tabWith @c Nothing
 
 -- | `tab` with an icon beside its caption.
 tab' :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => { icon :: String } -> PUI Web [ | v ] [ | o ]
-tab' { icon } = tabWith @c (Just icon)
+tab' { icon: glyph } = tabWith @c (Just glyph)
 
 tabWith :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => Maybe String -> PUI Web [ | v ] [ | o ]
-tabWith icon = fromHandles do
+tabWith glyph = fromHandles do
   tabs <- gets _.parent
   chrome $ el "md-primary-tab" $ Semigroupoid.do
-    maybe identity (\i -> el "md-icon" >>> "slot" := "icon" $ staticText i) icon
+    maybe identity (\i -> el "md-icon" >>> "slot" := "icon" $ staticText i) glyph
     staticText (reflectSymbol (Proxy @c))
   node <- gets _.sibling
   members <- member { node, picked: getBoolProp "active" node, unpick: setBoolProp "active" node false }
@@ -1593,6 +1636,7 @@ imagePaneFace picture = fromHandles do
 
 -- Private
 
+foreign import disableOptions :: Node -> Array String -> Effect Unit
 foreign import setNumberProp :: String -> Node -> Number -> Effect Unit
 foreign import setStringProp :: String -> Node -> String -> Effect Unit
 foreign import getNumberProp :: String -> Node -> Effect Number

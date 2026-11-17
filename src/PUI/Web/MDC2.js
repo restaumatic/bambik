@@ -295,3 +295,11 @@ export const activateTabNode = component => tab => () => {
   const index = [...component.root.querySelectorAll('.mdc-tab')].indexOf(tab);
   if (index >= 0) component.activateTab(index);
 };
+
+export const disableOptions = node => tags => () => {
+  for (const item of node.querySelectorAll("li[data-value]")) {
+    const off = tags.includes(item.dataset.value);
+    item.classList.toggle("mdc-deprecated-list-item--disabled", off);
+    item.setAttribute("aria-disabled", String(off));
+  }
+};

@@ -62,6 +62,7 @@ module PUI.Web.MDC2
   , fab
   , filledTextArea
   , filledNumberField
+  , filledIntegerField
   , filledTextField
   , filledTextField'
   , filterChip
@@ -73,6 +74,7 @@ module PUI.Web.MDC2
   , headline5
   , headline6
   , iconButton
+  , icon
   , iconToggle
   , imageList
   , imageListItem
@@ -92,6 +94,7 @@ module PUI.Web.MDC2
   , menuItem
   , outlinedButton
   , outlinedNumberField
+  , outlinedIntegerField
   , outlinedTextField
   , outlinedTextField'
   , overline
@@ -106,6 +109,7 @@ module PUI.Web.MDC2
   , rangeSlider
   , rangeSliderLive
   , select
+  , select'
   , option
   , selectUnpicked
   , selectOptional
@@ -135,10 +139,11 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Profunctor.Row.RecordToRecord (focusField)
 import Data.Profunctor.Row.VariantToVariant (focusCase)
 import Data.Variant (inj, match, prj) as Variant
+import Data.Variant.Case (caseText)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import PUI (numeral, fromHandles, handles, gatheredOf, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, modalOver, eventLeaf)
+import PUI (integral, numeral, fromHandles, handles, gatheredOf, Ocular, PUI, static, optionWiring, recordToRecordWiring, variantToRecordWiring, variantToVariantWiring, replayed, occurrencesOn, Gesture(..), statusOver, confirmedOver, modalOver, eventLeaf)
 import PUI.Web.HTML (aside, div, h1, h2, h3, h4, h5, h6, i, img, label, li, p, span, table, tbody, td, th, thead, tr, ul)
 import PUI.Web.HTML (body) as HTML
 import PUI.Web (chrome, fieldLeaf, grouping, member, unpickAll, clearedByRepress, hasClass, listenCapture, Node, OptCaption(..), OptLabelIcon(..), OptSelected(..), Web, addClass, attribute, attrWith, cl, clazz, clWhen, documentBody, el, element, getChecked, getValue, init, isFocused, listenNode, onInputDebounced, setAttribute, setChecked, staticHTML, staticText, text, statusText, uniqueId, separating, (:=))
@@ -311,13 +316,13 @@ fab
   => Cons l { | r } () v
   => String
   -> PUI Web { | r } [ | v ]
-fab icon = eventLeaf @l $
+fab glyph = eventLeaf @l $
   -- the announced name is the CASE label even for the glyph-only face —
   -- the business action's word, never the icon ligature
   el "button" >>> cl "mdc-fab" >>> extended >>> "aria-label" := fromMaybe (reflectSymbol (Proxy @l)) config.label >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
     static (div >>> cl "mdc-fab__ripple")
     static (span >>> cl "mdc-fab__focus-ring")
-    span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticText icon
+    span >>> cl "mdc-fab__icon" >>> cl "material-icons" $ staticText glyph
     case config.label of
       Just label' -> span >>> cl "mdc-fab__label" $ staticText label'
       Nothing -> identity
@@ -327,17 +332,26 @@ fab icon = eventLeaf @l $
     Just _ -> cl "mdc-fab--extended"
     Nothing -> identity
 
+-- | A **Material icon** as chrome: `icon "check_circle"` draws the named
+-- | glyph inline, spaced from the copy after it, and reads and changes
+-- | nothing — decoration a pane can show by case (`icon "check_circle" #
+-- | inCaseAt @"plated" @"state"`, diner's kitchen). Hidden from assistive
+-- | technology: what it marks is said by the copy beside it or by the
+-- | row's own state.
+icon :: forall r. String -> PUI Web { | r } { | r }
+icon name = el "span" >>> cl "material-icons" >>> "aria-hidden" := "true" >>> "style" := "vertical-align: middle; margin-inline-end: 8px;" $ staticText name
+
 -- | A compact **icon-only action**, for toolbars, list rows and card
 -- | corners where a labelled button would not fit. `label` is not drawn —
 -- | it is what assistive technology announces, defaulting to
 -- | the case label verbatim. For an icon that stays pressed
 -- | (favourite, mute), use `iconToggle` instead.
 iconButton :: forall @l r v. IsSymbol l => Cons l { | r } () v => String -> PUI Web { | r } [ | v ]
-iconButton icon = eventLeaf @l $
+iconButton glyph = eventLeaf @l $
   el "button" >>> cl "mdc-icon-button" >>> cl "material-icons" >>> "aria-label" := config.label >>> "data-mdc-ripple-is-unbounded" := "" >>> init (newComponent material.ripple."MDCRipple") mempty mempty $ Semigroupoid.do
     static (div >>> cl "mdc-icon-button__ripple")
     static (span >>> cl "mdc-icon-button__focus-ring")
-    staticText icon
+    staticText glyph
   where
   config = { label: reflectSymbol (Proxy @l) } :: { label :: String }
 
@@ -393,6 +407,17 @@ filledNumberField = fieldLeaf @l $ numeral @n @i (textFieldLeaf "filled" Nothing
 -- | `outlinedTextField` read as a number, as `filledNumberField`.
 outlinedNumberField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Number nr v => Cons i String ir v => PUI Web { | r } { | r }
 outlinedNumberField = fieldLeaf @l $ numeral @n @i (textFieldLeaf "outlined" Nothing (reflectSymbol (Proxy @l)) "")
+
+-- | `filledTextField` read as a **whole number**: `filledIntegerField
+-- | @"Portions" @"count" @"invalid"` edits a field `[ count :: Int, invalid
+-- | :: String ]`, as `filledNumberField` does a `Number`; a fraction is
+-- | invalid text. `PUI.integral` states the parse.
+filledIntegerField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Int nr v => Cons i String ir v => PUI Web { | r } { | r }
+filledIntegerField = fieldLeaf @l $ integral @n @i (textFieldLeaf "filled" Nothing (reflectSymbol (Proxy @l)) "")
+
+-- | `outlinedTextField` read as a whole number, as `filledIntegerField`.
+outlinedIntegerField :: forall @l @n @i r b v nr ir. IsSymbol l => IsSymbol n => IsSymbol i => Cons l [ | v ] b r => Cons n Int nr v => Cons i String ir v => PUI Web { | r } { | r }
+outlinedIntegerField = fieldLeaf @l $ integral @n @i (textFieldLeaf "outlined" Nothing (reflectSymbol (Proxy @l)) "")
 
 -- the field and its helper line are siblings in MD2's markup, so a hinted
 -- field is wrapped to stay one element under the label's stamp
@@ -836,6 +861,24 @@ rangeSliderLeaf live label = fromHandles do
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf @l false options
 
+-- | `select` whose options the model may rule out: `select' @"Table"
+-- | { unavailable: busyTables }` draws every option and disables the cases
+-- | `unavailable` returns for the row it is fed, re-read on every feed — a
+-- | disabled option is shown, never pickable. A decoration of `select`,
+-- | so its editor laws are `select`'s, and `select' { unavailable: const
+-- | [] } ≈ select`; a disabled case already stored stays shown, the
+-- | model's to change.
+select' :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => { unavailable :: { | r } -> Array [ | w ] } -> PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
+select' { unavailable } options = fromHandles do
+  inner <- handles (select @l options)
+  node <- gets _.sibling
+  pure
+    { toUser: \row -> do
+        disableOptions node (map caseText (unavailable row))
+        inner.toUser row
+    , fromUser: inner.fromUser
+    }
+
 -- | `select` for a choice owed but not yet made: field `l` is a variant
 -- | whose case `c` holds the options' case, seeded at an unpicked case;
 -- | nothing is picked until the user picks, and a pick cannot be taken back.
@@ -1083,17 +1126,17 @@ tab = tabWith @c Nothing
 
 -- | `tab` with a Material icon drawn above its caption.
 tab' :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => { icon :: String } -> PUI Web [ | v ] [ | o ]
-tab' { icon } = tabWith @c (Just icon)
+tab' { icon: glyph } = tabWith @c (Just glyph)
 
 -- A programmatic activation fires MDCTabBar:activated too; the wiring's
 -- busy guard drops it.
 tabWith :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => Maybe String -> PUI Web [ | v ] [ | o ]
-tabWith icon = fromHandles do
+tabWith glyph = fromHandles do
   -- aria-label = the case verbatim: MD2 uppercases the rendered tab
   -- text, and the computed name follows rendering without the stamp
   chrome $ el "button" >>> cl "mdc-tab" >>> "role" := "tab" >>> "aria-selected" := "false" >>> "tabindex" := "-1" >>> "aria-label" := tag $ Semigroupoid.do
     span >>> cl "mdc-tab__content" $ Semigroupoid.do
-      maybe identity (\icn -> span >>> cl "mdc-tab__icon" >>> cl "material-icons" >>> "aria-hidden" := "true" $ staticText icn) icon
+      maybe identity (\icn -> span >>> cl "mdc-tab__icon" >>> cl "material-icons" >>> "aria-hidden" := "true" $ staticText icn) glyph
       span >>> cl "mdc-tab__text-label" $ staticText tag
     staticHTML tabRest
   node <- gets _.sibling
@@ -1775,6 +1818,7 @@ imagePaneFace picture =
 
 -- Private
 
+foreign import disableOptions :: Node -> Array String -> Effect Unit
 foreign import data Component :: Type
 foreign import data ComponentClass :: Type
 

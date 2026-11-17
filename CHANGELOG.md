@@ -7,6 +7,28 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-17
+- **`select'`: options the model rules out.** MDC2 and MDC3 gain
+  `select' @l { unavailable }`, a `select` whose cases
+  `unavailable :: { | r } -> Array [ | w ]` returns for the fed row are
+  drawn disabled and cannot be picked, re-read on every feed. A
+  decoration of `select`: its editor laws are `select`'s and
+  `select' { unavailable: const [] } ≈ select` (bench row on both law
+  pages; the disabling walked in scripts/smoke/tests/unavailable-options.mjs).
+  Diner's table select reaches it, disabling tables whose order is in the
+  kitchen or at the pass. The other vocabularies have no `select'` yet.
+- **Integer fields.** MDC2 and MDC3 gain `filledIntegerField` and
+  `outlinedIntegerField @l @n @i`, the number fields' whole-number
+  siblings over `[ n :: Int, i :: String ]` (`PUI.integral`, the strict
+  parse of digits and a leading minus; a fraction stays invalid text).
+  Bench rows on both law pages; diner's stock portions reach them.
+- **`icon`**, MDC2 and MDC3: a Material icon as chrome, drawn inline
+  before its copy and hidden from assistive technology; diner's kitchen
+  marks each line plated or still cooking with one, by case
+  (`inCaseAt @"plated" @"state"`). A static, so it carries no laws of its
+  own and no bench row.
+- **`now` joins the dependency list**, for diner's order timestamp: the
+  stamp is read inside the action that sends an order to the kitchen
+  (`Effect.Now`), the time carried by the order's stage from then on.
 - **MDC3's selected list rows are visible again.** `listOf'`/`listOfAt'`
   styled a selected row through `--md-list-item-container-color`, a token
   `@material/web` 2.5's list item does not read, so `selected` rows looked

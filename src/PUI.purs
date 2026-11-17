@@ -99,6 +99,7 @@ module PUI
   , variantToVariantWiring
   , optionWiring
   , numeral
+  , integral
   , replayed
   , source
   , class Interacting
@@ -193,6 +194,7 @@ import Data.Profunctor.Row.RecordToVariant (class RecordToVariant, recordToVaria
 import Data.Profunctor.Row (class RowLabels, atCase, exactRow, rowLabels)
 import Data.String (joinWith, trim)
 import Data.String.CodeUnits (toCharArray)
+import Data.Int (fromString) as Int
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Coretaining (class Coretaining)
@@ -504,6 +506,36 @@ numeral = dimap render parse
     Just x -> toString x
     Nothing -> fromMaybe "" (prj (Proxy @i) va)
   parse s = maybe (inj (Proxy @i) s) (inj (Proxy @n)) (strictNumber s)
+
+-- | `numeral` for a **whole number**: case `n` holds an `Int`, and text
+-- | that is not one — a fraction included — stays as case `i`. Shown a
+-- | number, the leaf renders it with `show`; the parse is strict — digits
+-- | and a leading minus. Plumbing: a vocabulary's integer field is this
+-- | over its text leaf (`filledIntegerField @l @n @i`, MDC2/MDC3).
+integral
+  :: forall @n @i m v nr ir
+   . Functor m
+  => IsSymbol n
+  => IsSymbol i
+  => Cons n Int nr v
+  => Cons i String ir v
+  => PUI m String String
+  -> PUI m [ | v ] [ | v ]
+integral = dimap render parse
+  where
+  render va = case prj (Proxy @n) va of
+    Just k -> show k
+    Nothing -> fromMaybe "" (prj (Proxy @i) va)
+  parse s = maybe (inj (Proxy @i) s) (inj (Proxy @n)) (strictInt s)
+
+strictInt :: String -> Maybe Int
+strictInt s =
+  let
+    t = trim s
+    chars = toCharArray t
+    wellFormed = all (\c -> c == '-' || (c >= '0' && c <= '9')) chars && Array.elemIndex '-' chars `elem` [ Nothing, Just 0 ]
+  in
+    if t == "" || t == "-" || not wellFormed then Nothing else Int.fromString t
 
 strictNumber :: String -> Maybe Number
 strictNumber s =

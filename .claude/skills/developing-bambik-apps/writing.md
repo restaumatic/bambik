@@ -184,7 +184,10 @@ How each kind takes its business meaning:
   VariantToVariant.do` over `option @"Focus pod"`, `option @"Boardroom"`,
   …, one per line); the selector names its leaf (`radio`, `segment`,
   `option`, `tab`). A fact about an option (a room's seats) is model
-  data, never part of its name.
+  data, never part of its name. Options the model rules out stay drawn
+  but disabled, given as a function from the row to the cases it rules
+  out (diner: `select' @"Table" { unavailable: busyTables }`); the
+  options themselves never read the model.
 - **Displays** take a copy function, not a label:
   `headline4 $ text countLine` (counter). A number shown as a
   bar or gauge takes a function too, and no label

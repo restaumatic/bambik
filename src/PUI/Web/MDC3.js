@@ -139,3 +139,7 @@ export function openMenuAnchoredTo(menu) {
 
 
 export const getStringProp = name => node => () => String(node[name] ?? "");
+
+export const disableOptions = node => tags => () => {
+  for (const o of node.querySelectorAll("md-select-option")) o.disabled = tags.includes(o.value);
+};

@@ -27,6 +27,7 @@ to generate this file without the comments in this block.
   , "integers"
   , "maybe"
   , "newtype"
+  , "now"
   , "numbers"
   , "ordered-collections"
   , "prelude"
