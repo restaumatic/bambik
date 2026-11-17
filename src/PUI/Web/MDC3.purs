@@ -1416,7 +1416,7 @@ listOfAt' provided = listOf' @l @k provided (Record.get (Proxy @t))
 
 listCss :: String
 listCss = """
-md-list-item.md3-list-item--selected { --md-list-item-container-color: var(--md-sys-color-secondary-container, #e8def8); }
+md-list-item.md3-list-item--selected { background: var(--md-sys-color-secondary-container, #e8def8); }
 """
 
 -- | A **data table**: values in rows and columns, where the column a value

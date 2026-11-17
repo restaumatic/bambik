@@ -6,6 +6,13 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
+## 2026-11-17
+- **MDC3's selected list rows are visible again.** `listOf'`/`listOfAt'`
+  styled a selected row through `--md-list-item-container-color`, a token
+  `@material/web` 2.5's list item does not read, so `selected` rows looked
+  like every other row. The selected row now takes the secondary-container
+  colour as its background.
+
 ## 2026-11-16
 - **Guardrail L19: what is drawn leads; what is wired trails.** The
   line form writing.md asks of applications, `uiElement # plumbing`, is

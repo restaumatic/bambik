@@ -4,20 +4,32 @@ module Diner
   , Dish
   , Line
   , Order
+  , Portions
   , Stage
+  , Station
   , Table
   , TableLine
   , billLine
   , bills
+  , billsState
   , cooking
   , dinnerService
   , isPlated
   , itemLine
+  , kitchenState
   , lineTotalLine
   , markReady
   , menuCard
   , offerLine
   , orderDish
+  , orderItemsLine
+  , orderNumberLine
+  , orderTableLine
+  , paidOrders
+  , paidState
+  , paidTotalLine
+  , portionAdded
+  , portionRemoved
   , plateLine
   , quantityLine
   , returnUnit
@@ -33,20 +45,28 @@ module Diner
 
 import Prelude ((&&), (*), (+), (-), (/), (/=), (<), (<>), (==), (>), map, max, mod, show)
 
+import Data.Int (floor, toNumber)
 import Data.Array (all, any, filter, find, foldl, length, mapMaybe, null, snoc)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.String (joinWith)
 import Data.Variant (match)
 import Data.Variant.Case (caseText)
 
 type Diner =
-  { "Table" :: Table
+  { "Stanowisko" :: Station
+  , "Stolik" :: Table
   , dishes :: Array Dish
   , orders :: Array Order
   }
 
-type Table = [ "Table 1" :: {}, "Table 2" :: {}, "Table 3" :: {} ]
+type Station = [ "Magazyn" :: {}, "Sala" :: {}, "Kuchnia" :: {}, "Wydawka" :: {}, "Raport" :: {} ]
 
-type Dish = { name :: String, portions :: Int, price :: Int }
+type Table =
+  [ "Stolik 1" :: {}, "Stolik 2" :: {}, "Stolik 3" :: {}, "Stolik 4" :: {}, "Stolik 5" :: {}, "Stolik 6" :: {} ]
+
+type Dish = { name :: String, "Porcje" :: Portions, price :: Int }
+
+type Portions = [ count :: Number, invalid :: String ]
 
 type Order =
   { lines :: Array Line
@@ -65,16 +85,17 @@ type Bill = { number :: Int, table :: Table, total :: Int }
 
 dinnerService :: Diner
 dinnerService =
-  { "Table": ."Table 1" {}
+  { "Stanowisko": ."Sala" {}
+  , "Stolik": ."Stolik 1" {}
   , dishes:
-    [ { name: "Carbonara", price: 1050, portions: 6 }
-    , { name: "Margherita", price: 950, portions: 8 }
-    , { name: "Risotto", price: 1200, portions: 3 }
-    , { name: "Tiramisu", price: 650, portions: 2 }
+    [ { name: "Carbonara", price: 1050, "Porcje": .count 6.0 }
+    , { name: "Margherita", price: 950, "Porcje": .count 8.0 }
+    , { name: "Risotto", price: 1200, "Porcje": .count 3.0 }
+    , { name: "Tiramisu", price: 650, "Porcje": .count 2.0 }
     ]
   , orders:
     [ { number: 1
-      , table: ."Table 3" {}
+      , table: ."Stolik 3" {}
       , stage: .cooking {}
       , lines:
         [ { dish: "Margherita", quantity: 2, state: .plated {} }
@@ -85,10 +106,10 @@ dinnerService =
   }
 
 menuCard :: Diner -> Array Dish
-menuCard { dishes } = filter (\d -> d.portions > 0) dishes
+menuCard { dishes } = filter (\d -> portionsOf d > 0) dishes
 
 offerLine :: Dish -> String
-offerLine { name, price, portions } = name <> " · " <> money price <> " · " <> show portions <> " left"
+offerLine dish@{ name, price } = name <> " · " <> money price <> " · dostępne: " <> show (portionsOf dish)
 
 tableLines :: Diner -> Array TableLine
 tableLines diner = maybe [] (\order -> mapMaybe priced order.lines) (takenAt diner)
@@ -102,8 +123,8 @@ lineTotalLine :: TableLine -> String
 lineTotalLine { price, quantity } = money (price * quantity)
 
 tableLine :: Diner -> String
-tableLine diner = caseText diner."Table" <> " · " <> case tableLines diner of
-  [] -> "nothing ordered yet"
+tableLine diner = caseText diner."Stolik" <> " · " <> case tableLines diner of
+  [] -> "nic jeszcze nie zamówiono"
   lines -> money (foldl (\sum l -> sum + l.price * l.quantity) 0 lines)
 
 tableState :: Diner -> [ idle :: {}, taking :: {} ]
@@ -111,6 +132,9 @@ tableState diner = if null (tableLines diner) then .idle {} else .taking {}
 
 cooking :: Diner -> Array Order
 cooking { orders } = filter (\o -> o.stage == .cooking {}) orders
+
+kitchenState :: Diner -> [ busy :: {}, cleared :: {} ]
+kitchenState diner = if null (cooking diner) then .cleared {} else .busy {}
 
 ticketLine :: Order -> String
 ticketLine { number, table } = "#" <> show number <> " · " <> caseText table
@@ -133,29 +157,50 @@ bills { dishes, orders } = map bill (filter (\o -> o.stage == .ready {}) orders)
 billLine :: Bill -> String
 billLine { number, table, total } = "#" <> show number <> " · " <> caseText table <> " · " <> money total
 
+billsState :: Diner -> [ pending :: {}, settled :: {} ]
+billsState diner = if null (bills diner) then .settled {} else .pending {}
+
+paidOrders :: Diner -> Array Order
+paidOrders { orders } = filter (\o -> isJust (paidTotal o)) orders
+
+paidState :: Diner -> [ none :: {}, some :: {} ]
+paidState diner = if null (paidOrders diner) then .none {} else .some {}
+
+orderNumberLine :: Order -> String
+orderNumberLine { number } = "#" <> show number
+
+orderTableLine :: Order -> String
+orderTableLine { table } = caseText table
+
+orderItemsLine :: Order -> String
+orderItemsLine { lines } = joinWith ", " (map itemLine lines)
+
+paidTotalLine :: Order -> String
+paidTotalLine order = money (fromMaybe 0 (paidTotal order))
+
 takingsLine :: Diner -> String
 takingsLine { orders } = case mapMaybe paidTotal orders of
-  [] -> "Nothing paid yet"
-  [ total ] -> "1 order paid · " <> money total
-  totals -> show (length totals) <> " orders paid · " <> money (foldl (+) 0 totals)
-  where
-  paidTotal { stage } = match
-    { paid: \{ total } -> Just total
-    , taking: \_ -> Nothing
-    , cooking: \_ -> Nothing
-    , ready: \_ -> Nothing
-    } stage
+  [] -> "Nic jeszcze nie zapłacono"
+  totals -> "Zapłacone zamówienia: " <> show (length totals) <> " · " <> money (foldl (+) 0 totals)
+
+paidTotal :: Order -> Maybe Int
+paidTotal { stage } = match
+  { paid: \{ total } -> Just total
+  , taking: \_ -> Nothing
+  , cooking: \_ -> Nothing
+  , ready: \_ -> Nothing
+  } stage
 
 orderDish :: { event :: String, model :: Diner } -> Diner
 orderDish { event: name, model: diner } =
-  if any (\d -> d.name == name && d.portions > 0) diner.dishes then
+  if any (\d -> d.name == name && portionsOf d > 0) diner.dishes then
     diner
-      { dishes = map (\d -> if d.name == name then d { portions = d.portions - 1 } else d) diner.dishes
+      { dishes = map (\d -> if d.name == name then withPortions (_ - 1) d else d) diner.dishes
       , orders = case takenAt diner of
         Just order -> map (\o -> if o.number == order.number then o { lines = oneMore o.lines } else o) diner.orders
         Nothing -> snoc diner.orders
           { number: foldl max 0 (map _.number diner.orders) + 1
-          , table: diner."Table"
+          , table: diner."Stolik"
           , stage: .taking {}
           , lines: oneMore []
           }
@@ -169,7 +214,7 @@ orderDish { event: name, model: diner } =
 returnUnit :: { event :: TableLine, model :: Diner } -> Diner
 returnUnit { event: { dish: name }, model: diner } = case takenAt diner of
   Just order -> diner
-    { dishes = map (\d -> if d.name == name then d { portions = d.portions + 1 } else d) diner.dishes
+    { dishes = map (\d -> if d.name == name then withPortions (_ + 1) d else d) diner.dishes
     , orders = mapMaybe (\o -> if o.number == order.number then fewer o else Just o) diner.orders
     }
   Nothing -> diner
@@ -181,6 +226,12 @@ returnUnit { event: { dish: name }, model: diner } = case takenAt diner of
     | l.dish /= name = Just l
     | l.quantity < 2 = Nothing
     | true = Just l { quantity = l.quantity - 1 }
+
+portionAdded :: Dish -> Dish
+portionAdded = withPortions (_ + 1)
+
+portionRemoved :: Dish -> Dish
+portionRemoved = withPortions (_ - 1)
 
 sendToKitchen :: Diner -> Diner
 sendToKitchen diner = case takenAt diner of
@@ -200,12 +251,18 @@ settle :: { event :: Bill, model :: Diner } -> Diner
 settle { event: { number, total }, model: diner } = staged number (.paid { total }) diner
 
 takenAt :: Diner -> Maybe Order
-takenAt { "Table": table, orders } = find (\o -> o.table == table && o.stage == .taking {}) orders
+takenAt { "Stolik": table, orders } = find (\o -> o.table == table && o.stage == .taking {}) orders
+
+portionsOf :: Dish -> Int
+portionsOf dish = match { count: \n -> max 0 (floor n), invalid: \_ -> 0 } dish."Porcje"
+
+withPortions :: (Int -> Int) -> Dish -> Dish
+withPortions f dish = dish { "Porcje" = .count (toNumber (max 0 (f (portionsOf dish)))) }
 
 staged :: Int -> Stage -> Diner -> Diner
 staged number stage diner = diner { orders = map (\o -> if o.number == number then o { stage = stage } else o) diner.orders }
 
 money :: Int -> String
-money cents = "€" <> show (cents / 100) <> "." <> pad (mod cents 100)
+money cents = show (cents / 100) <> "," <> pad (mod cents 100) <> " zł"
   where
   pad r = if r < 10 then "0" <> show r else show r
