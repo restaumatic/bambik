@@ -4,28 +4,21 @@ import Prelude ((#), ($))
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
-import Diner (Diner, Dish, isSoldOut, isStockEmpty, portionAdded, portionRemoved, stockZeroed)
+import Diner (Diner, Dish, isSoldOut, isZeroed, portionAdded, portionRemoved, portionsZeroed, zeroingLine)
 import PUI (actedAt, fold, PUI, stepped)
-import PUI.Web (Web, staticText, textAt)
-import PUI.Web.MDC3 (bodyMedium, button', columnHeader, confirmed', dataCell, dataRow, dataTable', filledIntegerField, iconButton, iconButton')
+import PUI.Web (Web, text, textAt)
+import PUI.Web.MDC3 (bodyMedium, columnHeader, confirmed', dataCell, dataRow, dataTable', filledIntegerField, iconButton, iconButton')
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 stock :: PUI Web Diner Diner
-stock = Semigroupoid.do
-  stockTable
-  ( Semigroupoid.do
-    button' @"Wyzeruj" { icon: "restart_alt", disabled: isStockEmpty }
-    confirmed' @"Wyzeruj" { cancel: "Nie, nie zeruj" } $ bodyMedium $ staticText "Wyzerować porcje wszystkich dań?"
-    fold @"Wyzeruj" stockZeroed ) # stepped
-
-stockTable :: PUI Web Diner Diner
-stockTable =
+stock =
   dataTable' "Magazyn" { fullWidth: true }
     ( Semigroupoid.do
       columnHeader "Danie"
       columnHeader "Porcje"
       columnHeader "Mniej"
-      columnHeader "Więcej" )
+      columnHeader "Więcej"
+      columnHeader "Wyzeruj" )
     ( stockRow # actedAt @"name" @"dishes" )
 
 stockRow :: PUI Web Dish Dish
@@ -37,6 +30,9 @@ stockRow =
       RecordToVariant.do
         dataCell $ iconButton' @"Ubyła porcja" "remove" { disabled: isSoldOut }
         dataCell $ iconButton @"Przybyła porcja" "add"
+        dataCell $ iconButton' @"Wyzeruj" "restart_alt" { disabled: isZeroed }
+      confirmed' @"Wyzeruj" { cancel: "Nie, nie zeruj" } $ bodyMedium $ text zeroingLine
       VariantToRecord.do
         fold @"Ubyła porcja" portionRemoved
-        fold @"Przybyła porcja" portionAdded ) # stepped
+        fold @"Przybyła porcja" portionAdded
+        fold @"Wyzeruj" portionsZeroed ) # stepped

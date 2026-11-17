@@ -15,8 +15,9 @@ Before 2026-07 the history is the git log.
   card spans it. A data table scrolls sideways inside its border rather
   than overflowing the page. Diner's tables are all full width, its
   kitchen tickets sit on the layout grid, the standalone page stacks the
-  app like the demo surface (a flex column, 16 px apart), and Magazyn
-  gains **Wyzeruj**, zeroing every dish's stock after a confirmation.
+  app like the demo surface (a flex column, 16 px apart), and each
+  Magazyn row gains **Wyzeruj**, zeroing that dish's stock after a
+  confirmation.
 - **`dataTable'`**, MDC2 and MDC3: `{ fullWidth: true }` stretches a
   table across its container instead of hugging its content; `dataTable`
   is `dataTable' { fullWidth: false }`. Diner's Statystyki uses it.

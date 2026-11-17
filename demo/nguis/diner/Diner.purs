@@ -24,7 +24,7 @@ module Diner
   , isPlated
   , isSinglePortion
   , isSoldOut
-  , isStockEmpty
+  , isZeroed
   , itemLine
   , kitchenState
   , lineTotalLine
@@ -41,6 +41,7 @@ module Diner
   , plateDish
   , portionAdded
   , portionRemoved
+  , portionsZeroed
   , quantityLine
   , removalLine
   , removeDish
@@ -50,7 +51,6 @@ module Diner
   , settle
   , soldAmountLine
   , soldQuantityLine
-  , stockZeroed
   , tableAvailability
   , tableLine
   , tableLines
@@ -58,6 +58,7 @@ module Diner
   , takingsLine
   , ticketLine
   , ticketState
+  , zeroingLine
   ) where
 
 import Prelude (bind, const, negate, not, pure, (&&), (*), (+), (-), (/), (/=), (<), (<$>), (<>), (==), (>), (||), map, max, mod, show)
@@ -192,11 +193,14 @@ portionAdded = withPortions (_ + 1)
 portionRemoved :: Dish -> Dish
 portionRemoved = withPortions (_ - 1)
 
-isStockEmpty :: Diner -> Boolean
-isStockEmpty { dishes } = all (\d -> d."Porcje" == .count 0) dishes
+isZeroed :: Dish -> Boolean
+isZeroed dish = dish."Porcje" == .count 0
 
-stockZeroed :: Diner -> Diner
-stockZeroed diner = diner { dishes = map (_ { "Porcje" = .count 0 }) diner.dishes }
+portionsZeroed :: Dish -> Dish
+portionsZeroed dish = dish { "Porcje" = .count 0 }
+
+zeroingLine :: Dish -> String
+zeroingLine { name } = "Wyzerować porcje dania " <> name <> "?"
 
 -- Sala
 

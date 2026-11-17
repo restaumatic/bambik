@@ -24,18 +24,19 @@ export const tests = [
     },
   },
   {
-    name: 'Wyzeruj zeroes every dish once confirmed, then is disabled',
+    name: 'Wyzeruj zeroes its row once confirmed, then is disabled',
     seed: 'dinnerService',
     run: async ({ click, disabled, ev, text, assert }) => {
       const counts = () => ev(`[...document.querySelectorAll('[name="Porcje"]')].map(f => f.value).join(' ')`)
-      await click('Wyzeruj')
-      assert.includes(await text(), 'Wyzerować porcje wszystkich dań?', 'the dialog asks')
+      await click('Wyzeruj', 'Risotto')
+      assert.includes(await text(), 'Wyzerować porcje dania Risotto?', 'the dialog asks')
       await click('Nie, nie zeruj')
       assert.equal(await counts(), '6 8 3 2', 'the stock is kept')
-      await click('Wyzeruj')
-      await click('Wyzeruj', 'Wyzerować')
-      assert.equal(await counts(), '0 0 0 0', 'the stock is zeroed')
-      assert.equal(await disabled('Wyzeruj'), true, 'nothing left to zero')
+      await click('Wyzeruj', 'Risotto')
+      await click('Wyzeruj', 'Wyzerować porcje dania Risotto?')
+      assert.equal(await counts(), '6 8 0 2', 'only Risotto is zeroed')
+      assert.equal(await disabled('Wyzeruj', 'Risotto'), true, 'nothing left to zero')
+      assert.equal(await disabled('Wyzeruj', 'Carbonara'), false, 'the other rows still can')
     },
   },
 ]
