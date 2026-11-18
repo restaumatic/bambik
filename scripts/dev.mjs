@@ -21,9 +21,9 @@
 import { context } from 'esbuild'
 import { spawn } from 'node:child_process'
 import { createServer } from 'node:http'
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { all, entryFor, matching } from './demos.mjs'
+import { all, appPage, entryFor, matching } from './demos.mjs'
 
 const PORT = 1234
 
@@ -31,7 +31,7 @@ const filters = process.argv.slice(2)
 const demos = matching(filters)
 if (!demos.length) {
   console.error(`no demo matches ${filters.join(' ')}\n` +
-    `demos: ${all.map(d => d.name).join(', ')}\nsets: 7guis, nguis, laws`)
+    `demos: ${all.map(d => d.name).join(', ')}\nsets: 7guis, nguis, apps, laws`)
   process.exit(1)
 }
 
@@ -113,6 +113,7 @@ const reloadPlugin = name => ({
 })
 
 await Promise.all(demos.map(async d => {
+  if (d.set === 'apps') writeFileSync(`${d.dir}/index.html`, appPage(d))
   const ctx = await context({
     stdin: { contents: entryFor(d), resolveDir: process.cwd() },
     bundle: true,

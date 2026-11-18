@@ -12,7 +12,9 @@
 -- | stylesheet to link; theming is the `--md-sys-color-*` and
 -- | `--md-sys-typescale-*` custom properties on the page. The app enters
 -- | through this vocabulary's `body`, which adopts the typescale stylesheet
--- | before mounting; nothing happens at import time.
+-- | and sets the page's base typeface to the type scale's plain face before
+-- | mounting; nothing happens at import time. Every entry hand-rolled here
+-- | sets its text in a typescale role (`.md-typescale-*`), never a font of its own.
 -- |
 -- | The catalogue, by what the user does with it:
 -- |
@@ -854,7 +856,7 @@ blankEmits options = fromHandles do
 -- | the segment already selected picks nothing new.
 segment :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
 segment = fromHandles do
-  chrome $ el "button" >>> cl "md3-segmented-button__segment" >>> "role" := "radio" >>> "aria-checked" := "false" $ Semigroupoid.do
+  chrome $ el "button" >>> cl "md3-segmented-button__segment" >>> cl "md-typescale-label-large" >>> "role" := "radio" >>> "aria-checked" := "false" $ Semigroupoid.do
     static (span >>> cl "md3-segmented-button__check" >>> "aria-hidden" := "true")
     span $ staticText (reflectSymbol (Proxy @c))
   node <- gets _.sibling
@@ -907,7 +909,7 @@ segmentGroupOf options = div >>> cl "md3-segmented-button" >>> "role" := "radiog
 segmentedButtonCss :: String
 segmentedButtonCss = """
 .md3-segmented-button { display: inline-flex; border: 1px solid var(--md-sys-color-outline, #79747e); border-radius: 100px; overflow: hidden; }
-.md3-segmented-button__segment { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border: none; border-right: 1px solid var(--md-sys-color-outline, #79747e); background: transparent; color: var(--md-sys-color-on-surface, #1d1b20); font: 500 14px/20px Roboto, sans-serif; cursor: pointer; }
+.md3-segmented-button__segment { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border: none; border-right: 1px solid var(--md-sys-color-outline, #79747e); background: transparent; color: var(--md-sys-color-on-surface, #1d1b20); cursor: pointer; }
 .md3-segmented-button__segment:last-child { border-right: none; }
 .md3-segmented-button__segment--selected { background: var(--md-sys-color-secondary-container, #e8def8); color: var(--md-sys-color-on-secondary-container, #1d192b); }
 .md3-segmented-button__segment--selected .md3-segmented-button__check::before { content: "✓"; }
@@ -1328,7 +1330,7 @@ snackbar = statusOver @l snackbarFace
 snackbarFace :: forall a r. String -> PUI Web a { | r }
 snackbarFace caseLabel = fromHandles do
   liftEffect $ ensureStyle "md3-snackbar" snackbarCss
-  w <- handles $ div >>> cl "md3-snackbar" >>> "role" := "status" $
+  w <- handles $ div >>> cl "md3-snackbar" >>> cl "md-typescale-body-medium" >>> "role" := "status" $
     statusText caseLabel
   node <- gets _.sibling
   pure
@@ -1340,7 +1342,7 @@ snackbarFace caseLabel = fromHandles do
 
 snackbarCss :: String
 snackbarCss = """
-.md3-snackbar { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--md-sys-color-inverse-surface, #322f35); color: var(--md-sys-color-inverse-on-surface, #f5eff7); font: 400 14px/20px Roboto, sans-serif; padding: 14px 16px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 8px 3px rgba(0,0,0,.15); visibility: hidden; opacity: 0; transition: opacity .15s; z-index: 1000; }
+.md3-snackbar { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--md-sys-color-inverse-surface, #322f35); color: var(--md-sys-color-inverse-on-surface, #f5eff7); padding: 14px 16px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 8px 3px rgba(0,0,0,.15); visibility: hidden; opacity: 0; transition: opacity .15s; z-index: 1000; }
 .md3-snackbar--open { visibility: visible; opacity: 1; }
 """
 
@@ -1537,21 +1539,21 @@ dataTable' tableName { fullWidth } headerCells content = fromHandles do
 -- | One **column header** of a `dataTable` — static copy naming the column,
 -- | its text a value like every static: `columnHeader "Qty"`.
 columnHeader :: forall r. String -> PUI Web { | r } { | r }
-columnHeader heading = th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText heading
+columnHeader heading = th >>> cl "md-typescale-title-small" >>> "role" := "columnheader" >>> "scope" := "col" $ staticText heading
 
 -- | The **row header** of a `dataRow`, in its first cell — static copy
 -- | naming the row, as `columnHeader` names a column: `rowHeader "Total"`
 -- | heads a totals row, its values in `dataCell`s beside it (diner's
 -- | `rowHeader "Łącznie"`).
 rowHeader :: forall r. String -> PUI Web { | r } { | r }
-rowHeader heading = th >>> "role" := "rowheader" >>> "scope" := "row" $ staticText heading
+rowHeader heading = th >>> cl "md-typescale-title-small" >>> "role" := "rowheader" >>> "scope" := "row" $ staticText heading
 
 dataTableCss :: String
 dataTableCss = """
 .md3-data-table { border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; overflow-x: auto; display: inline-block; max-width: 100%; box-sizing: border-box; }
 .md3-data-table--full { display: block; align-self: stretch; }
-.md3-data-table table { border-collapse: collapse; width: 100%; font: 400 14px/20px Roboto, sans-serif; color: var(--md-sys-color-on-surface, #1d1b20); }
-.md3-data-table th { font-weight: 500; text-align: left; height: 56px; padding: 0 16px; }
+.md3-data-table table { border-collapse: collapse; width: 100%; color: var(--md-sys-color-on-surface, #1d1b20); }
+.md3-data-table th { text-align: left; height: 56px; padding: 0 16px; }
 .md3-data-table td, .md3-data-table tbody th { height: 52px; padding: 0 16px; border-top: 1px solid var(--md-sys-color-outline-variant, #cac4d0); }
 """
 
@@ -1562,7 +1564,7 @@ dataRow = tr
 -- | One cell of a `dataRow`: the value under one column heading. Cells are
 -- | written in the same order as the table's `columns`.
 dataCell :: Ocular (PUI Web)
-dataCell = td
+dataCell = td >>> cl "md-typescale-body-medium"
 
 -- | An **image list**: pictures laid out in `columns` masonry columns, each
 -- | one an `imageListItem` — a gallery, where the pictures are the content
@@ -1577,7 +1579,7 @@ imageListCss = """
 .md3-image-list { list-style: none; padding: 0; }
 .md3-image-list__item { margin-bottom: 16px; break-inside: avoid; }
 .md3-image-list__image { width: 100%; border-radius: 12px; display: block; }
-.md3-image-list__label { font: 500 14px/20px Roboto, sans-serif; color: var(--md-sys-color-on-surface, #1d1b20); }
+.md3-image-list__label { color: var(--md-sys-color-on-surface, #1d1b20); }
 """
 
 -- | The twelve-column **layout grid** a screen's regions are placed on,
@@ -1609,12 +1611,12 @@ layoutGridCss = """
 topAppBar :: String -> Ocular (PUI Web)
 topAppBar title content = fromHandles do
   liftEffect $ ensureStyle "md3-top-app-bar" topAppBarCss
-  chrome $ el "header" >>> cl "md3-top-app-bar" $ span >>> cl "md3-top-app-bar__title" $ staticText title
+  chrome $ el "header" >>> cl "md3-top-app-bar" >>> cl "md-typescale-title-large" $ span >>> cl "md3-top-app-bar__title" $ staticText title
   handles (div >>> cl "md3-top-app-bar-content" $ content)
 
 topAppBarCss :: String
 topAppBarCss = """
-.md3-top-app-bar { display: flex; align-items: center; height: 64px; padding: 0 16px; background: var(--md-sys-color-surface-container, #f3edf7); color: var(--md-sys-color-on-surface, #1d1b20); font: 400 22px/28px Roboto, sans-serif; }
+.md3-top-app-bar { display: flex; align-items: center; height: 64px; padding: 0 16px; background: var(--md-sys-color-surface-container, #f3edf7); color: var(--md-sys-color-on-surface, #1d1b20); }
 .md3-top-app-bar-content { padding: 16px; }
 """
 
@@ -1630,8 +1632,8 @@ drawer config nav content = div >>> "style" := "display: flex;" $ fromHandles do
   liftEffect $ ensureStyle "md3-drawer" drawerCss
   nav' <- handles $ aside >>> cl "md3-drawer" $ fromHandles do
     chrome $ div >>> cl "md3-drawer__header" $ Semigroupoid.do
-      h3 >>> cl "md3-drawer__title" $ staticText config.title
-      el "h6" >>> cl "md3-drawer__subtitle" $ staticText config.subtitle
+      h3 >>> cl "md3-drawer__title" >>> cl "md-typescale-title-medium" $ staticText config.title
+      el "h6" >>> cl "md3-drawer__subtitle" >>> cl "md-typescale-body-medium" $ staticText config.subtitle
     handles (div $ nav)
   content' <- handles (div >>> "style" := "flex: 1; padding: 16px;" $ content)
   -- the content is a display: its echoes are the row the nav already has
@@ -1642,8 +1644,8 @@ drawerCss :: String
 drawerCss = """
 .md3-drawer { width: 256px; flex: none; box-sizing: border-box; background: var(--md-sys-color-surface, #fef7ff); border-right: 1px solid var(--md-sys-color-outline-variant, #cac4d0); padding: 12px; }
 .md3-drawer__header { padding: 16px 12px; }
-.md3-drawer__title { font: 500 16px/24px Roboto, sans-serif; margin: 0; color: var(--md-sys-color-on-surface, #1d1b20); }
-.md3-drawer__subtitle { font: 400 14px/20px Roboto, sans-serif; margin: 0; color: var(--md-sys-color-on-surface-variant, #49454f); }
+.md3-drawer__title { margin: 0; color: var(--md-sys-color-on-surface, #1d1b20); }
+.md3-drawer__subtitle { margin: 0; color: var(--md-sys-color-on-surface-variant, #49454f); }
 """
 
 -- | Attach a **tooltip** to a control: the short explanation that appears
@@ -1659,7 +1661,7 @@ tooltip tipText content =
     liftEffect $ ensureStyle "md3-tooltip" tooltipCss
     tipId <- liftEffect uniqueId
     w <- handles ("aria-describedby" := tipId $ content)
-    chrome $ div >>> "id" := tipId >>> cl "md3-tooltip" >>> "role" := "tooltip" $ staticText tipText
+    chrome $ div >>> "id" := tipId >>> cl "md3-tooltip" >>> cl "md-typescale-body-small" >>> "role" := "tooltip" $ staticText tipText
     pure w
 
 
@@ -1669,7 +1671,7 @@ tooltip tipText content =
 tooltipCss :: String
 tooltipCss = """
 .md3-tooltip-anchor { position: relative; display: inline-block; }
-.md3-tooltip { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px; background: var(--md-sys-color-inverse-surface, #322f35); color: var(--md-sys-color-inverse-on-surface, #f5eff7); font: 400 12px/16px Roboto, sans-serif; padding: 4px 8px; border-radius: 4px; white-space: nowrap; visibility: hidden; opacity: 0; transition: opacity .15s; z-index: 1000; pointer-events: none; }
+.md3-tooltip { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px; background: var(--md-sys-color-inverse-surface, #322f35); color: var(--md-sys-color-inverse-on-surface, #f5eff7); padding: 4px 8px; border-radius: 4px; white-space: nowrap; visibility: hidden; opacity: 0; transition: opacity .15s; z-index: 1000; pointer-events: none; }
 .md3-tooltip-anchor:hover .md3-tooltip, .md3-tooltip-anchor:has(:focus-visible) .md3-tooltip { visibility: visible; opacity: 1; }
 """
 
@@ -1691,7 +1693,7 @@ imageListItem config = fromHandles do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   handles $ el "li" >>> cl "md3-image-list__item" $ Semigroupoid.do
     static (img >>> cl "md3-image-list__image" >>> "src" := config.src >>> "alt" := config.alt)
-    span >>> cl "md3-image-list__label" $ staticText config.alt
+    span >>> cl "md3-image-list__label" >>> cl "md-typescale-title-small" $ staticText config.alt
 
 
 -- | One picture in an `imageList`, **fed through the channel**: like any
@@ -1709,7 +1711,7 @@ imagePaneFace picture = fromHandles do
   liftEffect $ ensureStyle "md3-image-list" imageListCss
   handles $ el "li" >>> cl "md3-image-list__item" $ Semigroupoid.do
     img >>> cl "md3-image-list__image" >>> attrWith "src" (_.src <<< picture) >>> attrWith "alt" (_.alt <<< picture) $ identity
-    span >>> cl "md3-image-list__label" $ text (_.alt <<< picture)
+    span >>> cl "md3-image-list__label" >>> cl "md-typescale-title-small" $ text (_.alt <<< picture)
 
 -- the element adapter for the index-keyed internal collection: reads the
 -- item out of the reconciler's { ix, item } row at the wiring level (the
@@ -1736,7 +1738,9 @@ foreign import openMenuAnchoredTo :: Node -> Node -> Effect Unit
 -- | Mount the app in the page's `<body>`, dressed for Material 3: the MD3
 -- | typescale stylesheet — what gives the `md-typescale-*` classes the
 -- | typography oculars wear their meaning — is adopted by the document
--- | here, once, and the app then mounts exactly as `PUI.Web.HTML.body`
+-- | here, once, the page's base typeface set to the type scale's plain
+-- | face (so text outside every typography word is not the browser's
+-- | serif), and the app then mounts exactly as `PUI.Web.HTML.body`
 -- | does — same signature, same closed-app demand (`PUI Web {} o`). The
 -- | entry is a word of the vocabulary like any other, so a screen changes
 -- | design system at its first line by changing the import, and nothing
@@ -1744,6 +1748,12 @@ foreign import openMenuAnchoredTo :: Node -> Node -> Effect Unit
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
   adoptTypescale
+  ensureStyle "md3-body" bodyCss
   HTML.body ui
+
+-- the page's base typeface: text outside every typography word still
+-- reads in the type scale's plain face
+bodyCss :: String
+bodyCss = "body { font-family: var(--md-ref-typeface-plain, Roboto), sans-serif; }"
 
 foreign import adoptTypescale :: Effect Unit

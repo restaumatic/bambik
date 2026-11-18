@@ -6,9 +6,9 @@
 // ready bill frees its table.
 import { byName } from '../../demos.mjs'
 
-export const demos = ['diner-mdc3']
+export const demos = ['diner']
 export const pages = [
-  { url: `/${byName('diner-mdc3').page}`, label: 'mdc3' },
+  { url: `/${byName('diner').page}`, label: 'mdc3' },
 ]
 
 const faces = {
@@ -26,7 +26,7 @@ const faces = {
 export const run = async ({ ev, session, assertEq, sleep, page }) => {
   const face = faces[page]
   await sleep(600)
-  for (let i = 0; i < 25 && !(await ev(`!!document.querySelector('#demo-column')`)); i++) await sleep(200)
+  for (let i = 0; i < 25 && !(await ev(`document.body.querySelector('md-tabs, [role=tablist]') !== null`)); i++) await sleep(200)
   await sleep(500)
 
   const mouse = (type, x, y) => session.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1 })

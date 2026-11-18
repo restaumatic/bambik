@@ -97,4 +97,5 @@ task.
 The module headers are the reference: `npm run docs` (`spago docs
 --open`) generates and opens them as browsable HTML under
 `generated-docs/html/`. The sources and the demos that use them are
-under `.spago/bambik/<tag>/` (`src/`, `demo/7guis/`, `demo/nguis/`).
+under `.spago/bambik/<tag>/` (`src/`, `demo/7guis/`, `demo/nguis/`,
+`demo/diner/`).

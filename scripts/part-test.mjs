@@ -6,8 +6,8 @@
 //   npm run part -- diner Hall       # the tests of one part
 //
 // A part is a submodule of the view (`Diner.View.Hall` in View/Hall.purs), a
-// stage from the model to the model; its tests sit beside it, in
-// `View/Hall.test.mjs`:
+// stage from the model to the model; its tests sit in the app's test/
+// directory at the part's own path, `test/View/Hall.test.mjs`:
 //
 //   export const tests = [
 //     { name: 'an order sent makes its table busy', seed: 'dinnerService',
@@ -48,7 +48,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { build } from 'esbuild'
-import { all, labels } from './demos.mjs'
+import { all, labels, linksFor } from './demos.mjs'
 import { openSession } from './smoke/cdp.mjs'
 import { launchChrome } from './smoke/chrome.mjs'
 
@@ -72,19 +72,21 @@ const seedModule = seed =>
     : exportsOf(viewModel.src).includes(seed) ? viewModel.mod
       : fail(`seed "${seed}" is neither in ${demo.viewModel}.Fixtures nor exported by ${demo.viewModel}`)
 
-// the part tests: `<Part>.test.mjs` beside each part
+// the part tests: test/<path of the part>.test.mjs
+const testDir = path.join(demo.dir, 'test')
 const suites = []
-for (const file of walk(demo.dir).filter(f => f.endsWith('.test.mjs'))) {
+for (const file of existsSync(testDir) ? walk(testDir).filter(f => f.endsWith('.test.mjs')) : []) {
   const partName = path.basename(file, '.test.mjs')
   if (partFilter && partName !== partFilter) continue
-  const part = sources.find(s => s.file === file.replace(/\.test\.mjs$/, '.purs'))
-  if (!part || !part.mod?.startsWith(`${demo.mod}.`)) fail(`${file} sits beside no part of ${demo.mod}`)
+  const partFile = path.join(demo.dir, path.relative(testDir, file).replace(/\.test\.mjs$/, '.purs'))
+  const part = sources.find(s => s.file === partFile)
+  if (!part || !part.mod?.startsWith(`${demo.mod}.`)) fail(`${file} tests no part of ${demo.mod} (no ${partFile})`)
   const exported = exportsOf(part.src)
   if (exported.length !== 1) fail(`${part.mod} exports ${exported.join(', ') || 'no value'}; a part exports its one stage`)
   const { tests } = await import(pathToFileURL(path.resolve(file)))
   suites.push({ file, partName, part: part.mod, fn: exported[0], tests })
 }
-if (!suites.length) fail(`no part tests${partFilter ? ` for ${partFilter}` : ''} under ${demo.dir}`)
+if (!suites.length) fail(`no part tests${partFilter ? ` for ${partFilter}` : ''} under ${testDir}`)
 
 // one mount per (part, seed), compiled together
 const out = '.part'
@@ -112,8 +114,10 @@ const globs = spawnSync(bin('spago'), ['sources'], { encoding: 'utf8' }).stdout.
 const purs = spawnSync(bin('purs'), ['compile', ...globs, `${out}/src/*.purs`, '-o', `${out}/output`], { encoding: 'utf8', maxBuffer: 1 << 28 })
 const errors = (purs.stdout + purs.stderr).split(/^(?=Error \d+ of \d+:|Error found:|Warning \d+ of \d+:|Warning found:)/m).filter(b => /^Error/.test(b))
 if (errors.length) fail(`compile failed:\n${errors.join('\n')}`)
-const page = readFileSync(path.join(demo.dir, 'index.html'), 'utf8')
-const head = page.match(new RegExp(`<template data-variant="${demo.variant}"[^>]*>([\\s\\S]*?)</template>`))?.[1] ?? ''
+// the stylesheets the app's page loads: an application's design system's
+// links, a demo page's template for its variant
+const head = demo.set === 'apps' ? linksFor(demo.variant).join('\n')
+  : readFileSync(path.join(demo.dir, 'index.html'), 'utf8').match(new RegExp(`<template data-variant="${demo.variant}"[^>]*>([\\s\\S]*?)</template>`))?.[1] ?? ''
 for (const name of mounts.keys()) {
   await build({
     stdin: { contents: `import { main } from './${out}/output/PartMain.${name}/index.js'; main();`, resolveDir: process.cwd() },

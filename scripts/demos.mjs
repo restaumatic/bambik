@@ -14,18 +14,23 @@
 // compiles under one `spago build`), and the entry function is the app's
 // name (`counter`) in every view. Any further module of the app is named
 // the same way, the file its module minus the app prefix (order-dashboard's
-// `ControlsMDC3.purs` is `OrderDashboard.ControlsMDC3`). An app with one
-// design system for good may name its view otherwise, its entry an object
-// from the variant to the view's suffix (diner's `{ mdc3: 'View' }` is
-// `Diner.View` in `View.purs`). A view split into parts keeps them as
-// submodules of its module, each in a directory named by the view's suffix
-// (diner's `Diner.View.Hall` in `View/Hall.purs`), and
-// scripts/check-determined.mjs determines every part; a part's tests sit
-// beside it (`View/Hall.test.mjs`) and `npm run part` runs them, the part
-// alone over prepared data from the app's `<App>.Fixtures` (diner's
-// `Fixtures.purs`). A plain-HTML app is one `html` variant (hello-world,
-// restaurant-menu). A law bench is a plain [module, fn] pair in a directory
-// of its own.
+// `ControlsMDC3.purs` is `OrderDashboard.ControlsMDC3`). A plain-HTML app
+// is one `html` variant (hello-world, restaurant-menu). A law bench is a
+// plain [module, fn] pair in a directory of its own.
+//
+// An application (`apps`) is no demo: its own directory beside the suites
+// (`demo/diner/`), one design system, named by its family alone (`diner`).
+// Its entry names the variant, the view's suffix and the page's language
+// (diner's `{ variant: 'mdc3', view: 'View', lang: 'pl' }` is `Diner.View`
+// in `View.purs`), and its index.html is a build product (`appPage`,
+// gitignored): the bare page loading bundle.js, the design system's links
+// and nothing else. A view split into parts keeps them as submodules of its
+// module, each in a directory named by the view's suffix (diner's
+// `Diner.View.Hall` in `View/Hall.purs`), and scripts/check-determined.mjs
+// determines every part; a part's tests sit in the app's test/ directory at
+// the part's path (`test/View/Hall.test.mjs`) and `npm run part` runs them,
+// the part alone over prepared data from the app's `<App>.Fixtures`
+// (diner's `Fixtures.purs`).
 export const sets = {
   '7guis': {
     'counter': ['mdc2', 'mdc3', 'shoelace', 'fluent', 'bootstrap', 'html'],
@@ -75,7 +80,9 @@ export const sets = {
     'loan-calculator': ['bootstrap'],
     'contacts': ['mdc3', 'mdc2'],
     'venue': ['mdc3', 'mdc2'],
-    'diner': { mdc3: 'View' },
+  },
+  apps: {
+    'diner': { variant: 'mdc3', view: 'View', lang: 'pl' },
   },
   // the leaf-law bench (scripts/smoke/tests/leaf-laws.mjs): every published
   // component mounted alone and fed from outside — not a demo, never deployed
@@ -107,13 +114,16 @@ const camel = family => pascal(family).replace(/^./, c => c.toLowerCase())
 // `viewModelFile` that module's source.
 export const all = Object.entries(sets).flatMap(([set, demos]) =>
   Object.entries(demos).flatMap(([family, entry]) => {
-    const dir = `demo/${set}/${family}`
+    const dir = set === 'apps' ? `demo/${family}` : `demo/${set}/${family}`
     const app = pascal(family)
-    const views = !Array.isArray(entry) ? Object.entries(entry)
-      : entry.every(v => v in labels) ? entry.map(variant => [variant, labels[variant]]) : null
-    if (views) return views.map(([variant, suffix]) => ({
-      set, name: `${family}-${variant}`, family, variant, mod: `${app}.${suffix}`, fn: camel(family),
-      file: `${dir}/${suffix}.purs`, viewModel: app, viewModelFile: `${dir}/${app}.purs`, dir,
+    if (set === 'apps') return [{
+      set, name: family, family, variant: entry.variant, mod: `${app}.${entry.view}`, fn: camel(family),
+      file: `${dir}/${entry.view}.purs`, viewModel: app, viewModelFile: `${dir}/${app}.purs`, dir,
+      bundle: `${dir}/bundle.js`, page: `${dir}/`, title: app, lang: entry.lang,
+    }]
+    if (Array.isArray(entry) && entry.every(v => v in labels)) return entry.map(variant => ({
+      set, name: `${family}-${variant}`, family, variant, mod: `${app}.${labels[variant]}`, fn: camel(family),
+      file: `${dir}/${labels[variant]}.purs`, viewModel: app, viewModelFile: `${dir}/${app}.purs`, dir,
       bundle: `${dir}/bundle-${variant}.js`, page: `${dir}/?${variant}`,
     }))
     const [mod, fn] = entry
@@ -139,3 +149,27 @@ export const byName = name => {
 
 export const entryFor = ({ mod, fn }) =>
   `import { ${fn} } from './output/${mod}/index.js'; ${fn}();`
+
+// the stylesheets a design system's page links (the skill's bootstrap.md, step 1)
+export const pageLinks = {
+  mdc2: ['https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.min.css',
+    'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap',
+    'https://fonts.googleapis.com/icon?family=Material+Icons'],
+  mdc3: ['https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap',
+    'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap'],
+  shoelace: ['https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css'],
+  fluent: [],
+  bootstrap: ['https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css'],
+  html: [],
+}
+export const linksFor = variant => pageLinks[variant].map(href => `<link rel="stylesheet" href="${href}">`)
+
+// an application's index.html, written beside its bundle
+export const appPage = d => `<!doctype html>
+<html lang="${d.lang}">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${d.title}</title>
+${linksFor(d.variant).join('\n')}
+<script type="module" src="bundle.js"></script>
+`

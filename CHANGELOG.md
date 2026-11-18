@@ -7,6 +7,31 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-18
+- **MDC3 sets every text in its type scale.** `body` also sets the page's
+  base typeface to the type scale's plain face, so text outside every
+  typography word is no longer the browser's serif on a page with no
+  styles of its own. The hand-rolled entries carry a `.md-typescale-*`
+  role instead of a hardcoded `Roboto` font, so a page's
+  `--md-sys-typescale-*` theming reaches them: data table cells
+  body-medium, column and row headers title-small, segmented button
+  label-large, snackbar body-medium, top app bar title-large, drawer
+  title title-medium and subtitle body-medium, tooltip body-small, image
+  list labels title-small. Diner's `totalCell` is `labelLarge` (14/500, as
+  `rowHeader`) instead of HTML's `strong` (700, outside the type scale).
+- **Diner is an application, not a demo.** It leaves nGUIs for its own
+  directory beside the suites, `demo/diner/`, registered under a new set
+  `apps` and named `diner`: a plain page (index.html loading bundle.js) with
+  no source listing, switcher, demo chrome or styles, linked from
+  demo/index.html. The page is a build product, gitignored: the bundler and
+  the dev server write it from the registry (`appPage`: language, title, the
+  design system's links, bundle.js). scripts/standalone.mjs is gone;
+  `deploy-diner` copies the page and bundle to `/diner/`, `deploy-demos`
+  carries them under `/bambik/demo/diner/`. The mount check reads a plain
+  page as well as a demo page, and part tests take an application's links
+  from the registry.
+- **Part tests live in the app's `test/` directory**, at the path of the
+  part they test (`test/View/Hall.test.mjs` tests `View/Hall.purs`),
+  apart from the sources; scripts/part-test.mjs reads them from there.
 - **`rowHeader "…"`**, MDC2 and MDC3: the header cell naming a row, as
   `columnHeader` names a column (`th`, `scope="row"`, role `rowheader`) —
   the label of a totals row. Diner's Raport and Statystyki head their

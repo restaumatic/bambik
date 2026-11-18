@@ -14,3 +14,5 @@ demo/**/bundle-*.js
 /generated-docs/
 /.determined/
 /.part/
+# an application's page is written by the bundler (scripts/demos.mjs, appPage)
+demo/diner/index.html

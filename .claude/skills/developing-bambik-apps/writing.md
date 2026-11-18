@@ -12,7 +12,8 @@ This file never documents a component. What a word does, its signature
 and its options are in the library's module headers — see
 [Looking things up](#looking-things-up). Words appear here only as
 examples, each from a demo you can open under
-`.spago/bambik/<tag>/demo/7guis/` or `demo/nguis/`. A view module is
+`.spago/bambik/<tag>/demo/7guis/`, `demo/nguis/` or `demo/diner/` (an
+application of one design system, its view `Diner.View`). A view module is
 named by its design system (`MDC2.purs`, …, `HTML.purs`, the modules
 `Counter.MDC2`, …, `Counter.HTML`), and the twins share one view model
 module, the app itself (`Counter.purs`, module `Counter`), all in the

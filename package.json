@@ -11,8 +11,8 @@
     "api-docs": "spago docs --format markdown",
     "presentation": "marp doc/presentation-20min.md --pdf --allow-local-files && marp doc/presentation-20min.md",
     "bundle-demos": "spago build && node scripts/bundle.mjs",
-    "deploy-diner": "node scripts/standalone.mjs diner && ssh xyz mkdir -p /var/www/html/diner && scp dist/diner/index.html dist/diner/bundle.js xyz:/var/www/html/diner/",
-    "deploy-demos": "scp -r demo/index.html demo/workflow.html demo/page.js demo/7guis/ demo/nguis/ xyz:/var/www/html/bambik/demo/",
+    "deploy-diner": "ssh xyz mkdir -p /var/www/html/diner && scp demo/diner/index.html demo/diner/bundle.js xyz:/var/www/html/diner/",
+    "deploy-demos": "scp -r demo/index.html demo/workflow.html demo/page.js demo/7guis/ demo/nguis/ demo/diner/ xyz:/var/www/html/bambik/demo/",
     "check-view-model": "node scripts/check-view-model.mjs",
     "check-determined": "node scripts/check-determined.mjs"
   },

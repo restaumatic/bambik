@@ -105,6 +105,8 @@ type Order =
   , table :: Table
   }
 
+type Line = { dish :: String, quantity :: Int, state :: [ ordered :: {}, plated :: {} ] }
+
 type Stage =
   [ cooking :: { placed :: Time }
   , paid :: { placed :: Time, total :: Int }
@@ -114,13 +116,11 @@ type Stage =
 
 type Time = { hours :: Int, minutes :: Int }
 
-type Line = { dish :: String, quantity :: Int, state :: [ ordered :: {}, plated :: {} ] }
-
 type TableLine = { dish :: String, left :: Int, price :: Int, quantity :: Int }
 
-type DishSales = { amount :: Int, dish :: String, quantity :: Int }
-
 type Bill = { number :: Int, placed :: Time, table :: Table, total :: Int }
+
+type DishSales = { amount :: Int, dish :: String, quantity :: Int }
 
 dinnerService :: Diner
 dinnerService =
@@ -174,18 +174,19 @@ dinnerService =
     ]
   }
 
--- Shared copy
+isSoldOut :: Dish -> Boolean
+isSoldOut dish = portionsOf dish == 0
 
-numberLine :: forall r. { number :: Int | r } -> String
-numberLine { number } = show number
+isZeroed :: Dish -> Boolean
+isZeroed dish = dish."Porcje" == .count 0
 
-tableLine :: forall r. { table :: Table | r } -> String
-tableLine { table } = caseText table
+offerLine :: Dish -> String
+offerLine dish@{ price } = money price <> " · " <> availability
+  where
+  availability = if portionsOf dish > 0 then "dostępne: " <> show (portionsOf dish) else "niedostępne"
 
-quantityLine :: forall r. { quantity :: Int | r } -> String
-quantityLine { quantity } = show quantity
-
--- Magazyn
+zeroingLine :: Dish -> String
+zeroingLine { name } = "Wyzerować porcje dania " <> name <> "?"
 
 portionAdded :: Dish -> Dish
 portionAdded = withPortions (_ + 1)
@@ -193,24 +194,8 @@ portionAdded = withPortions (_ + 1)
 portionRemoved :: Dish -> Dish
 portionRemoved = withPortions (_ - 1)
 
-isZeroed :: Dish -> Boolean
-isZeroed dish = dish."Porcje" == .count 0
-
 portionsZeroed :: Dish -> Dish
 portionsZeroed dish = dish { "Porcje" = .count 0 }
-
-zeroingLine :: Dish -> String
-zeroingLine { name } = "Wyzerować porcje dania " <> name <> "?"
-
--- Sala
-
-offerLine :: Dish -> String
-offerLine dish@{ price } = money price <> " · " <> availability
-  where
-  availability = if portionsOf dish > 0 then "dostępne: " <> show (portionsOf dish) else "niedostępne"
-
-isSoldOut :: Dish -> Boolean
-isSoldOut dish = portionsOf dish == 0
 
 busyTables :: Diner -> Array Table
 busyTables { orders } = map _.table (filter (\o -> isCooking o || isReady o) orders)
@@ -229,14 +214,14 @@ tableLines diner = maybe [] (\order -> mapMaybe priced order.lines) (takenAt din
   where
   priced { dish, quantity } = map (\d -> { dish, quantity, price: d.price, left: portionsOf d }) (find (\d -> d.name == dish) diner.dishes)
 
-lineTotalLine :: TableLine -> String
-lineTotalLine { price, quantity } = money (price * quantity)
-
 isSinglePortion :: TableLine -> Boolean
 isSinglePortion { quantity } = quantity == 1
 
 isLineSoldOut :: TableLine -> Boolean
 isLineSoldOut { left } = left == 0
+
+lineTotalLine :: TableLine -> String
+lineTotalLine { price, quantity } = money (price * quantity)
 
 removalLine :: TableLine -> String
 removalLine { dish, quantity } = "Usunąć " <> show quantity <> " × " <> dish <> " z zamówienia?"
@@ -288,25 +273,23 @@ sendToKitchen { event: { number, placed }, model: diner } = case find (\o -> o.n
   Just order -> diner { orders = snoc (filter (\o -> o.number /= number) diner.orders) order { stage = .cooking { placed } } }
   Nothing -> diner
 
--- Kuchnia
-
 cooking :: Diner -> Array Order
 cooking { orders } = filter isCooking orders
 
 kitchenState :: Diner -> [ busy :: {}, cleared :: {} ]
 kitchenState diner = if null (cooking diner) then .cleared {} else .busy {}
 
+ticketState :: Order -> [ plated :: {}, plating :: {} ]
+ticketState { lines } = if all isPlated lines then .plated {} else .plating {}
+
+isPlated :: Line -> Boolean
+isPlated { state } = state == .plated {}
+
 ticketLine :: Order -> String
 ticketLine order@{ number, table } = "#" <> show number <> " · Stolik " <> caseText table <> " · " <> placedLine order
 
 itemLine :: Line -> String
 itemLine { dish, quantity } = show quantity <> " × " <> dish
-
-isPlated :: Line -> Boolean
-isPlated { state } = state == .plated {}
-
-ticketState :: Order -> [ plated :: {}, plating :: {} ]
-ticketState { lines } = if all isPlated lines then .plated {} else .plating {}
 
 plateDish :: { event :: { event :: String, model :: Order }, model :: Diner } -> Diner
 plateDish { event: { event: dish, model: { number } }, model: diner } = diner
@@ -318,8 +301,6 @@ markReady :: { event :: Order, model :: Diner } -> Diner
 markReady { event: { number }, model } = advanced number ready model
   where
   ready = on (Proxy @"cooking") (\{ placed } -> Just (.ready { placed })) (default Nothing)
-
--- Wydawka
 
 bills :: Diner -> Array Bill
 bills { dishes, orders } = mapMaybe bill orders
@@ -344,8 +325,6 @@ settle { event: { number, total }, model } = advanced number paid model
   where
   paid = on (Proxy @"ready") (\{ placed } -> Just (.paid { placed, total })) (default Nothing)
 
--- Raport
-
 paidOrders :: Diner -> Array Order
 paidOrders { orders } = sortWith (\o -> negate o.number) (filter (\o -> isJust (paidTotal o)) orders)
 
@@ -369,8 +348,6 @@ paidTotalLine order = money (fromMaybe 0 (paidTotal order))
 takingsLine :: Diner -> String
 takingsLine diner = money (foldl (+) 0 (mapMaybe paidTotal (paidOrders diner)))
 
--- Statystyki
-
 dishSales :: Diner -> Array DishSales
 dishSales diner = sortWith _.dish (filter (\s -> s.quantity > 0) (map sales diner.dishes))
   where
@@ -388,7 +365,30 @@ soldAmountLine diner = money (foldl (+) 0 (map _.amount (dishSales diner)))
 soldQuantityLine :: Diner -> String
 soldQuantityLine diner = show (foldl (+) 0 (map _.quantity (dishSales diner)))
 
--- Private
+numberLine :: forall r. { number :: Int | r } -> String
+numberLine { number } = show number
+
+tableLine :: forall r. { table :: Table | r } -> String
+tableLine { table } = caseText table
+
+quantityLine :: forall r. { quantity :: Int | r } -> String
+quantityLine { quantity } = show quantity
+
+-- unreadable or negative stock is left as it is: what is really there is unknown
+portionsOf :: Dish -> Int
+portionsOf dish = match { count: max 0, invalid: \_ -> 0 } dish."Porcje"
+
+withPortions :: (Int -> Int) -> Dish -> Dish
+withPortions f dish = match
+  { count: \n -> if n < 0 then dish else dish { "Porcje" = .count (max 0 (f n)) }
+  , invalid: \_ -> dish
+  } dish."Porcje"
+
+isBusy :: Diner -> Boolean
+isBusy diner = elem diner."Stolik" (busyTables diner)
+
+takenAt :: Diner -> Maybe Order
+takenAt { "Stolik": table, orders } = find (\o -> o.table == table && isTaking o) orders
 
 withOneMore :: String -> Diner -> Diner
 withOneMore name diner =
@@ -410,12 +410,6 @@ withOneMore name diner =
     if any (\l -> l.dish == name) lines then map (\l -> if l.dish == name then l { quantity = l.quantity + 1 } else l) lines
     else snoc lines { dish: name, quantity: 1, state: .ordered {} }
 
-isBusy :: Diner -> Boolean
-isBusy diner = elem diner."Stolik" (busyTables diner)
-
-takenAt :: Diner -> Maybe Order
-takenAt { "Stolik": table, orders } = find (\o -> o.table == table && isTaking o) orders
-
 isTaking :: Order -> Boolean
 isTaking { stage } = on (Proxy @"taking") (const true) (default false) stage
 
@@ -425,24 +419,14 @@ isCooking { stage } = on (Proxy @"cooking") (const true) (default false) stage
 isReady :: Order -> Boolean
 isReady { stage } = on (Proxy @"ready") (const true) (default false) stage
 
-paidTotal :: Order -> Maybe Int
-paidTotal { stage } = on (Proxy @"paid") (\{ total } -> Just total) (default Nothing) stage
-
 -- an advance of the order's stage as it stands in the model, if `step` allows one
 advanced :: Int -> (Stage -> Maybe Stage) -> Diner -> Diner
 advanced number step diner = diner { orders = map advance diner.orders }
   where
   advance o = if o.number == number then maybe o (\stage -> o { stage = stage }) (step o.stage) else o
 
--- unreadable or negative stock is left as it is: what is really there is unknown
-portionsOf :: Dish -> Int
-portionsOf dish = match { count: max 0, invalid: \_ -> 0 } dish."Porcje"
-
-withPortions :: (Int -> Int) -> Dish -> Dish
-withPortions f dish = match
-  { count: \n -> if n < 0 then dish else dish { "Porcje" = .count (max 0 (f n)) }
-  , invalid: \_ -> dish
-  } dish."Porcje"
+paidTotal :: Order -> Maybe Int
+paidTotal { stage } = on (Proxy @"paid") (\{ total } -> Just total) (default Nothing) stage
 
 clockText :: Time -> String
 clockText { hours, minutes } = show hours <> ":" <> pad minutes

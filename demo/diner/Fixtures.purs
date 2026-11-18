@@ -8,7 +8,7 @@ import Prelude (map)
 
 import Diner (Diner, dinnerService)
 
--- Initial models the part tests (`View/*.test.mjs`, `npm run part --
+-- Initial models the part tests (`test/View/*.test.mjs`, `npm run part --
 -- diner`) run a part of the view from; `dinnerService` is the app's own.
 
 -- | No order anywhere: every station shows its empty state.

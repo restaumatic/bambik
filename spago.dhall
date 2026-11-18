@@ -50,6 +50,7 @@ to generate this file without the comments in this block.
   , "test/**/*.purs"
   , "demo/7guis/**/*.purs"
   , "demo/nguis/**/*.purs"
+  , "demo/diner/**/*.purs"
   , "demo/laws/**/*.purs"
   ]
 }

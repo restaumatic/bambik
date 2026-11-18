@@ -5,13 +5,14 @@
 //   node scripts/bundle.mjs               (all demos)
 //   node scripts/bundle.mjs 7guis         (a set, an app, or single demos by name)
 //
+// An application's index.html is written beside its bundle (`appPage`).
 // It also stamps every demo page's `page.js?v=` with a hash of demo/page.js:
 // the server sends no cache headers, so an unchanged URL lets a browser keep
 // running a stale page.js after a deploy.
 import { build } from 'esbuild'
 import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { entryFor, matching } from './demos.mjs'
+import { appPage, entryFor, matching } from './demos.mjs'
 
 const filters = process.argv.slice(2)
 const demos = matching(filters)
@@ -28,6 +29,7 @@ for (const d of demos) {
     format: 'esm',
     outfile: d.bundle,
   })
+  if (d.set === 'apps') writeFileSync(`${d.dir}/index.html`, appPage(d))
   console.log(`bundled ${d.name} (${d.mod}.${d.fn})`)
 }
 

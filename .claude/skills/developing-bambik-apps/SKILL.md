@@ -67,7 +67,8 @@ missing value is invisible to the compiler and obvious on screen.
 
 Spago fetches the library whole, so after the first build
 `.spago/bambik/<tag>/` holds its module headers under `src/` (the API
-reference) and its demos under `demo/7guis/` and `demo/nguis/`. A view
+reference) and its demos under `demo/7guis/` and `demo/nguis/`, beside
+the application `demo/diner/`. A view
 module is named by its design system (`MDC2.purs`, `HTML.purs`, …,
 the modules `Counter.MDC2`, `Counter.HTML`) and twins share one view
 model module, the app itself (`Counter.purs`), all in the app's one

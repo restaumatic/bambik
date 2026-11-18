@@ -22,9 +22,10 @@ const dressed = {
   fluent: `getComputedStyle(document.documentElement).getPropertyValue('--colorNeutralBackground1').trim() !== ''`,
 }
 
+// a demo mounts into the demo column, an application's plain page into its body
 const mounted = `(() => {
-  const column = document.getElementById('demo-column')
-  return !!column && [...column.childNodes].some(n => n.id !== 'demo-note' && (n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim() !== '')))
+  const host = document.getElementById('demo-column') ?? (document.getElementById('page-header') ? null : document.body)
+  return !!host && [...host.childNodes].some(n => n.id !== 'demo-note' && !['SCRIPT', 'STYLE', 'TEMPLATE'].includes(n.nodeName) && (n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim() !== '')))
 })()`
 
 export const run = async ({ open, assertEq, sleep }) => {
@@ -35,7 +36,7 @@ export const run = async ({ open, assertEq, sleep }) => {
     for (const [k, d] of chunk.entries()) {
       const s = sessions[k]
       const at = d.page
-      assertEq(await s.ev(mounted), true, `${at} mounts into the demo column`)
+      assertEq(await s.ev(mounted), true, `${at} mounts`)
       assertEq(s.events, [], `${at} runs clean: no exception, warning or error`)
       if (dressed[d.variant]) assertEq(await s.ev(dressed[d.variant]), true, `${at} is dressed by its vocabulary's body`)
       await s.close()
