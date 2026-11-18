@@ -675,7 +675,13 @@ text is computed, a chrome line nothing.
 
 ### Layout
 
-- **No comments.** Code reads on its own.
+- **No comments in view code; business code is commented.** A view
+  reads on its own: its lines are the screen, in screen order. The view
+  model module is the domain, and says what it means: each type and each
+  function carries a `-- |` comment stating the rule it implements in the
+  domain's terms (`-- | One portion fewer, back in stock; the last
+  portion of a line removes the line`, diner), never the screen or the
+  station that shows it.
 - **Imports are 100% explicit, `Prelude` included.** Add and remove the
   names each change touches.
 - **A one-line UI function is inlined.** A named function whose whole

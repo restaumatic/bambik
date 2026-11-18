@@ -45,7 +45,7 @@
 
       <h3>Layout</h3>
       <ul>
-        <li>No comments.</li>
+        <li>No comments in a view; the view model says in comments what each type and function means in the domain, never which screen shows it.</li>
         <li>Explicit imports, <code>Prelude</code> included.</li>
         <li>A line leads with what is seen, via <code>$</code>, and trails with data concerns, via <code>#</code>. An element over one leaf applies it with <code>$</code>, never parentheses: <code>headline4 $ text countLine</code>; a chain on the wrapped element opens the paren before the wrapper: <code>( headlineSmall $ text wonLine ) # inCase @"won" gameOutcome</code>.</li>
         <li>A decorator trails its element: <code>checkbox @"Loyalty member" … # tooltip "Members get 10% off"</code>, never <code>tooltip … $ checkbox …</code>.</li>

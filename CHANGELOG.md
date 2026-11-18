@@ -7,6 +7,11 @@ withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
 ## 2026-11-18
+- **No comments is a rule for view code only.** writing.md (and the
+  `#code-style` note in demo/index.html) now asks the opposite of the view
+  model: each type and function carries a `-- |` comment stating its rule
+  in the domain's terms, never the screen that shows it. Diner's view model
+  is commented throughout; the other demos' view models are not yet.
 - **MDC3 sets every text in its type scale.** `body` also sets the page's
   base typeface to the type scale's plain face, so text outside every
   typography word is no longer the browser's serif on a page with no
