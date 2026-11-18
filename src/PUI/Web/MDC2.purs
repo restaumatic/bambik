@@ -51,6 +51,7 @@ module PUI.Web.MDC2
   , dataCell
   , dataRow
   , columnHeader
+  , rowHeader
   , dataTable
   , dataTable'
   , debouncedTextField
@@ -1763,6 +1764,12 @@ dataTable' tableName { fullWidth } headerCells content =
 -- | its text a value like every static: `columnHeader "Qty"`.
 columnHeader :: forall r. String -> PUI Web { | r } { | r }
 columnHeader heading = th >>> cl "mdc-data-table__header-cell" >>> "role" := "columnheader" >>> "scope" := "col" $ staticText heading
+
+-- | The **row header** of a `dataRow`, in its first cell — static copy
+-- | naming the row, as `columnHeader` names a column: `rowHeader "Total"`
+-- | heads a totals row, its values in `dataCell`s beside it.
+rowHeader :: forall r. String -> PUI Web { | r } { | r }
+rowHeader heading = th >>> cl "mdc-data-table__cell" >>> "role" := "rowheader" >>> "scope" := "row" $ staticText heading
 
 -- | One row of a `dataTable` — a single record's line across the columns.
 dataRow :: Ocular (PUI Web)

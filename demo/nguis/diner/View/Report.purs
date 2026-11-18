@@ -1,12 +1,12 @@
-module Diner.MDC3.Report (report) where
+module Diner.View.Report (report) where
 
-import Prelude ((#), ($))
+import Prelude (identity, (#), ($))
 
 import Diner (Diner, Order, numberLine, orderItemsLine, paidOrders, paidState, paidTotalLine, placedLine, tableLine, takingsLine)
-import Diner.MDC3.Layout (blankCell, note, totalCell, totalLabelCell)
+import Diner.DesignSystem (note, totalCell)
 import PUI (actedOf, PUI)
 import PUI.Web (Web, inCase, text)
-import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable')
+import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable', rowHeader)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 report :: PUI Web Diner Diner
@@ -25,10 +25,10 @@ paidTable =
       columnHeader "Kwota" )
     ( Semigroupoid.do
       dataRow $ Semigroupoid.do
-        totalLabelCell
-        blankCell
-        blankCell
-        blankCell
+        rowHeader "Łącznie"
+        dataCell identity
+        dataCell identity
+        dataCell identity
         totalCell takingsLine
       paidRow # actedOf @"number" paidOrders )
 

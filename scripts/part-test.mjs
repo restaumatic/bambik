@@ -5,9 +5,9 @@
 //   npm run part -- diner            # every part test of the app
 //   npm run part -- diner Hall       # the tests of one part
 //
-// A part is a submodule of the view (`Diner.MDC3.Hall` in MDC3/Hall.purs), a
+// A part is a submodule of the view (`Diner.View.Hall` in View/Hall.purs), a
 // stage from the model to the model; its tests sit beside it, in
-// `MDC3/Hall.test.mjs`:
+// `View/Hall.test.mjs`:
 //
 //   export const tests = [
 //     { name: 'an order sent makes its table busy', seed: 'dinnerService',

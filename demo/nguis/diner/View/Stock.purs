@@ -1,4 +1,4 @@
-module Diner.MDC3.Stock (stock) where
+module Diner.View.Stock (stock) where
 
 import Prelude ((#), ($))
 

@@ -1,11 +1,11 @@
-module Diner.MDC3.Kitchen (kitchen) where
+module Diner.View.Kitchen (kitchen) where
 
 import Prelude ((#), ($))
 
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Diner (Diner, Line, Order, cooking, isPlated, itemLine, kitchenState, markReady, plateDish, ticketLine, ticketState)
-import Diner.MDC3.Layout (note)
+import Diner.DesignSystem (note)
 import PUI (foldInto, gatheredOf, joined, PUI, stepped)
 import PUI.Web (Web, inCase, inCaseAt, provided, text)
 import PUI.Web.MDC3 (button', card, icon, layoutCell, layoutGrid, listOfAt', titleMedium)

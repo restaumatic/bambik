@@ -58,6 +58,7 @@ module PUI.Web.MDC3
   , dataCell
   , dataRow
   , columnHeader
+  , rowHeader
   , dataTable
   , dataTable'
   , debouncedTextField
@@ -1538,13 +1539,20 @@ dataTable' tableName { fullWidth } headerCells content = fromHandles do
 columnHeader :: forall r. String -> PUI Web { | r } { | r }
 columnHeader heading = th >>> "role" := "columnheader" >>> "scope" := "col" $ staticText heading
 
+-- | The **row header** of a `dataRow`, in its first cell — static copy
+-- | naming the row, as `columnHeader` names a column: `rowHeader "Total"`
+-- | heads a totals row, its values in `dataCell`s beside it (diner's
+-- | `rowHeader "Łącznie"`).
+rowHeader :: forall r. String -> PUI Web { | r } { | r }
+rowHeader heading = th >>> "role" := "rowheader" >>> "scope" := "row" $ staticText heading
+
 dataTableCss :: String
 dataTableCss = """
 .md3-data-table { border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; overflow-x: auto; display: inline-block; max-width: 100%; box-sizing: border-box; }
 .md3-data-table--full { display: block; align-self: stretch; }
 .md3-data-table table { border-collapse: collapse; width: 100%; font: 400 14px/20px Roboto, sans-serif; color: var(--md-sys-color-on-surface, #1d1b20); }
 .md3-data-table th { font-weight: 500; text-align: left; height: 56px; padding: 0 16px; }
-.md3-data-table td { height: 52px; padding: 0 16px; border-top: 1px solid var(--md-sys-color-outline-variant, #cac4d0); }
+.md3-data-table td, .md3-data-table tbody th { height: 52px; padding: 0 16px; border-top: 1px solid var(--md-sys-color-outline-variant, #cac4d0); }
 """
 
 -- | One row of a `dataTable` — a single record's line across the columns.

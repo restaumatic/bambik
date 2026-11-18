@@ -22,7 +22,7 @@
 // the view reports at `PUI Web`, and the probe decides it), and on an export no
 // view imports (2026-10-03: the view determines the module, so a name no view
 // line types is private, not exported).
-// A view split into submodules of its module (`Diner.MDC3.Hall`) is
+// A view split into submodules of its module (`Diner.View.Hall`) is
 // determined part by part, each reported as `demo:Part`, and what any part
 // imports counts as imported by the view.
 // Runs over every registered demo (an all-view demo passes trivially);
@@ -45,8 +45,8 @@ const importRe = d => d.viewModel && new RegExp(`^import (${d.viewModel.replace(
 // the values a view imports; the types it names in its own signatures stay imported
 const valuesOf = list => list.split(',').map(s => s.trim()).filter(n => /^[a-z_]/.test(n))
 const typesOf = list => list.split(',').map(s => s.trim()).filter(n => /^[A-Z]/.test(n))
-// A view may be split into submodules of its module (`Diner.MDC3.Hall` in
-// `MDC3/Hall.purs`), each a view of the same view model: every one is
+// A view may be split into submodules of its module (`Diner.View.Hall` in
+// `View/Hall.purs`), each a view of the same view model: every one is
 // determined as the view is.
 const walk = dir => readdirSync(dir).flatMap(n => {
   const p = join(dir, n)

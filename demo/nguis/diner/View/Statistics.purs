@@ -1,12 +1,12 @@
-module Diner.MDC3.Statistics (statistics) where
+module Diner.View.Statistics (statistics) where
 
 import Prelude ((#), ($))
 
 import Diner (Diner, DishSales, dishSales, paidState, quantityLine, salesAmountLine, soldAmountLine, soldQuantityLine)
-import Diner.MDC3.Layout (note, totalCell, totalLabelCell)
+import Diner.DesignSystem (note, totalCell)
 import PUI (actedOf, PUI)
 import PUI.Web (Web, inCase, text, textAt)
-import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable')
+import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable', rowHeader)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 statistics :: PUI Web Diner Diner
@@ -23,7 +23,7 @@ salesTable =
       columnHeader "Kwota" )
     ( Semigroupoid.do
       dataRow $ Semigroupoid.do
-        totalLabelCell
+        rowHeader "Łącznie"
         totalCell soldQuantityLine
         totalCell soldAmountLine
       salesRow # actedOf @"dish" dishSales )

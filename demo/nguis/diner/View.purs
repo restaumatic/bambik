@@ -1,15 +1,15 @@
-module Diner.MDC3 (diner) where
+module Diner.View (diner) where
 
 import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Diner (dinnerService)
-import Diner.MDC3.Hall (hall)
-import Diner.MDC3.Kitchen (kitchen)
-import Diner.MDC3.Pass (pass)
-import Diner.MDC3.Report (report)
-import Diner.MDC3.Statistics (statistics)
-import Diner.MDC3.Stock (stock)
+import Diner.View.Hall (hall)
+import Diner.View.Kitchen (kitchen)
+import Diner.View.Pass (pass)
+import Diner.View.Report (report)
+import Diner.View.Statistics (statistics)
+import Diner.View.Stock (stock)
 import Effect (Effect)
 import PUI (looped, with)
 import PUI.Web (inCaseAt)

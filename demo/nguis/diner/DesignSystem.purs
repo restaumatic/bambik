@@ -1,8 +1,7 @@
-module Diner.MDC3.Layout
-  ( blankCell
-  , note
+-- | Diner's own components, over MDC3: what every station draws the same way.
+module Diner.DesignSystem
+  ( note
   , totalCell
-  , totalLabelCell
   ) where
 
 import Prelude (($))
@@ -16,11 +15,5 @@ import PUI.Web.MDC3 (bodyLarge, dataCell)
 note :: forall r. String -> PUI Web { | r } { | r }
 note copy = bodyLarge $ staticText copy
 
-totalLabelCell :: forall r. PUI Web { | r } { | r }
-totalLabelCell = dataCell $ strong $ staticText "Łącznie"
-
 totalCell :: forall r. ({ | r } -> String) -> PUI Web { | r } { | r }
 totalCell copy = dataCell $ strong $ text copy
-
-blankCell :: forall r. PUI Web { | r } { | r }
-blankCell = dataCell $ staticText ""

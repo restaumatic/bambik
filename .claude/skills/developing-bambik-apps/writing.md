@@ -529,13 +529,16 @@ one-way dependency:
   the design system, the library's words and the view model module. A
   view too long to read as one declaration splits into **submodules of
   its module**, `<App>.<Suffix>.<Part>` in `<Suffix>/<Part>.purs` (diner's
-  `Diner.MDC3.Hall` in `MDC3/Hall.purs`, one per station, the entry left
+  `Diner.View.Hall` in `View/Hall.purs`, one per station, the entry left
   with the tab bar and one line per station): each part is a view of the
   same view model, importing exactly what its lines type, its functions
   signed over the view model's synonyms (`hall :: PUI Web Diner Diner`),
-  and determined as the entry is. A part that reads nothing of the model
-  (diner's `Layout`: the note, the card grid, the total cells) imports
-  none.
+  and determined as the entry is. Components the app draws the same way
+  in several places, reading nothing of the model, are **the app's own
+  design system**, `<App>.DesignSystem` in `DesignSystem.purs` beside the
+  view (diner's: the empty-station note, the total cells): phrases over
+  the vocabulary's words, never a leaf built from a bare element, and no
+  import of the view model module.
 - **The view model module** (`<App>.purs`, module `<App>`) exports business
   functions and named business values: seed models, tick periods, fixed
   payloads, copy functions, parsers, `Aff` actions — exactly the names

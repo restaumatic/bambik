@@ -1,4 +1,4 @@
-module Diner.MDC3.Hall (hall) where
+module Diner.View.Hall (hall) where
 
 import Prelude ((#), ($))
 
@@ -6,7 +6,7 @@ import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Diner (Diner, Dish, TableLine, addUnit, busyTables, isLineSoldOut, isSinglePortion, isSoldOut, lineTotalLine, offerLine, orderDish, placeOrder, quantityLine, removalLine, removeDish, returnUnit, sendToKitchen, tableAvailability, tableLines, tableState)
-import Diner.MDC3.Layout (note)
+import Diner.DesignSystem (note)
 import PUI (action, foldInto, gatheredAt, gatheredOf, PUI, stepped)
 import PUI.Web (Web, inCase, provided, text, textAt)
 import PUI.Web.MDC3 (bodyMedium, button', card, columnHeader, confirmed', dataCell, dataRow, dataTable', iconButton, iconButton', indeterminateLinearProgress, layoutCell, layoutGrid, option, select', titleMedium)

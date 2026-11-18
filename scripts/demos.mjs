@@ -14,15 +14,18 @@
 // compiles under one `spago build`), and the entry function is the app's
 // name (`counter`) in every view. Any further module of the app is named
 // the same way, the file its module minus the app prefix (order-dashboard's
-// `ControlsMDC3.purs` is `OrderDashboard.ControlsMDC3`); a view split into
-// parts keeps them as submodules of its module, each in a directory named
-// by the design system (diner's `Diner.MDC3.Hall` in `MDC3/Hall.purs`),
-// and scripts/check-determined.mjs determines every part; a part's tests
-// sit beside it (`MDC3/Hall.test.mjs`) and `npm run part` runs them, the
-// part alone over prepared data from the app's `<App>.Fixtures` (diner's
-// `Fixtures.purs`). A plain-HTML app
-// is one `html` variant (hello-world, restaurant-menu). A law bench is a
-// plain [module, fn] pair in a directory of its own.
+// `ControlsMDC3.purs` is `OrderDashboard.ControlsMDC3`). An app with one
+// design system for good may name its view otherwise, its entry an object
+// from the variant to the view's suffix (diner's `{ mdc3: 'View' }` is
+// `Diner.View` in `View.purs`). A view split into parts keeps them as
+// submodules of its module, each in a directory named by the view's suffix
+// (diner's `Diner.View.Hall` in `View/Hall.purs`), and
+// scripts/check-determined.mjs determines every part; a part's tests sit
+// beside it (`View/Hall.test.mjs`) and `npm run part` runs them, the part
+// alone over prepared data from the app's `<App>.Fixtures` (diner's
+// `Fixtures.purs`). A plain-HTML app is one `html` variant (hello-world,
+// restaurant-menu). A law bench is a plain [module, fn] pair in a directory
+// of its own.
 export const sets = {
   '7guis': {
     'counter': ['mdc2', 'mdc3', 'shoelace', 'fluent', 'bootstrap', 'html'],
@@ -72,7 +75,7 @@ export const sets = {
     'loan-calculator': ['bootstrap'],
     'contacts': ['mdc3', 'mdc2'],
     'venue': ['mdc3', 'mdc2'],
-    'diner': ['mdc3'],
+    'diner': { mdc3: 'View' },
   },
   // the leaf-law bench (scripts/smoke/tests/leaf-laws.mjs): every published
   // component mounted alone and fed from outside — not a demo, never deployed
@@ -106,9 +109,11 @@ export const all = Object.entries(sets).flatMap(([set, demos]) =>
   Object.entries(demos).flatMap(([family, entry]) => {
     const dir = `demo/${set}/${family}`
     const app = pascal(family)
-    if (Array.isArray(entry) && entry.every(v => v in labels)) return entry.map(variant => ({
-      set, name: `${family}-${variant}`, family, variant, mod: `${app}.${labels[variant]}`, fn: camel(family),
-      file: `${dir}/${labels[variant]}.purs`, viewModel: app, viewModelFile: `${dir}/${app}.purs`, dir,
+    const views = !Array.isArray(entry) ? Object.entries(entry)
+      : entry.every(v => v in labels) ? entry.map(variant => [variant, labels[variant]]) : null
+    if (views) return views.map(([variant, suffix]) => ({
+      set, name: `${family}-${variant}`, family, variant, mod: `${app}.${suffix}`, fn: camel(family),
+      file: `${dir}/${suffix}.purs`, viewModel: app, viewModelFile: `${dir}/${app}.purs`, dir,
       bundle: `${dir}/bundle-${variant}.js`, page: `${dir}/?${variant}`,
     }))
     const [mod, fn] = entry
