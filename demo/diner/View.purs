@@ -4,6 +4,7 @@ import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Diner (dinnerService)
+import Diner.Design (station)
 import Diner.View.Hall (hall)
 import Diner.View.Kitchen (kitchen)
 import Diner.View.Pass (pass)
@@ -26,10 +27,10 @@ diner =
       tab @"Wydawka"
       tab @"Raport"
       tab @"Statystyki"
-    stock # inCaseAt @"Magazyn" @"Stanowisko"
-    hall # inCaseAt @"Sala" @"Stanowisko"
-    kitchen # inCaseAt @"Kuchnia" @"Stanowisko"
-    pass # inCaseAt @"Wydawka" @"Stanowisko"
-    report # inCaseAt @"Raport" @"Stanowisko"
-    statistics # inCaseAt @"Statystyki" @"Stanowisko"
+    ( station $ stock ) # inCaseAt @"Magazyn" @"Stanowisko"
+    ( station $ hall ) # inCaseAt @"Sala" @"Stanowisko"
+    ( station $ kitchen ) # inCaseAt @"Kuchnia" @"Stanowisko"
+    ( station $ pass ) # inCaseAt @"Wydawka" @"Stanowisko"
+    ( station $ report ) # inCaseAt @"Raport" @"Stanowisko"
+    ( station $ statistics ) # inCaseAt @"Statystyki" @"Stanowisko"
   # looped # with dinnerService
