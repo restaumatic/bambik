@@ -3,7 +3,7 @@ module Diner.View.Pass (pass) where
 import Prelude ((#), ($))
 
 import Diner (Bill, Diner, billPlacedLine, billTotalLine, bills, billsState, numberLine, settle, tableLine)
-import Diner.DesignSystem (note)
+import Diner.Design (note)
 import PUI (foldInto, gatheredOf, PUI, stepped)
 import PUI.Web (Web, inCase, provided, text)
 import PUI.Web.MDC3 (button, columnHeader, dataCell, dataRow, dataTable')

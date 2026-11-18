@@ -3,7 +3,7 @@ module Diner.View.Statistics (statistics) where
 import Prelude ((#), ($))
 
 import Diner (Diner, DishSales, dishSales, paidState, quantityLine, salesAmountLine, soldAmountLine, soldQuantityLine)
-import Diner.DesignSystem (note, totalCell)
+import Diner.Design (note, totalCell)
 import PUI (actedOf, PUI)
 import PUI.Web (Web, inCase, text, textAt)
 import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable', rowHeader)

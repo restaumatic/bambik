@@ -11,7 +11,7 @@ Before 2026-07 the history is the git log.
   `columnHeader` names a column (`th`, `scope="row"`, role `rowheader`) —
   the label of a totals row. Diner's Raport and Statystyki head their
   totals with `rowHeader "Łącznie"`, and Raport's empty totals cells are
-  `dataCell identity`; `Diner.DesignSystem` keeps `note` and `totalCell`
+  `dataCell identity`; `Diner.Design` keeps `note` and `totalCell`
   only, the copy back in the views.
 - **Diner's view is `Diner.View`.** With MDC3 its only design system, the
   view and its parts drop the design system from their names:
@@ -20,10 +20,10 @@ Before 2026-07 the history is the git log.
   object from variant to the view's suffix for such an app
   (`'diner': { mdc3: 'View' }`); the page, its `?mdc3` variant and
   `bundle-mdc3.js` are unchanged.
-- **Diner's design system is `Diner.DesignSystem`.** The model-free
+- **Diner's design system is `Diner.Design`.** The model-free
   `Layout` part (the empty-station note, the total cells) is no part of
   the view but the app's own components over MDC3, so it moves beside the
-  view as `DesignSystem.purs`; writing.md names the module.
+  view as `Design.purs`; writing.md names the module.
 
 ## 2026-11-17
 - **MDC3 layout refined.** `layoutGrid` is a stylesheet class, spans its

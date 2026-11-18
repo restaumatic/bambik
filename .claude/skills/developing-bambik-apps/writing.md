@@ -535,7 +535,7 @@ one-way dependency:
   signed over the view model's synonyms (`hall :: PUI Web Diner Diner`),
   and determined as the entry is. Components the app draws the same way
   in several places, reading nothing of the model, are **the app's own
-  design system**, `<App>.DesignSystem` in `DesignSystem.purs` beside the
+  design system**, `<App>.Design` in `Design.purs` beside the
   view (diner's: the empty-station note, the total cells): phrases over
   the vocabulary's words, never a leaf built from a bare element, and no
   import of the view model module.

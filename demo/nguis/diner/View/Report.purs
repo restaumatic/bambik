@@ -3,7 +3,7 @@ module Diner.View.Report (report) where
 import Prelude (identity, (#), ($))
 
 import Diner (Diner, Order, numberLine, orderItemsLine, paidOrders, paidState, paidTotalLine, placedLine, tableLine, takingsLine)
-import Diner.DesignSystem (note, totalCell)
+import Diner.Design (note, totalCell)
 import PUI (actedOf, PUI)
 import PUI.Web (Web, inCase, text)
 import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable', rowHeader)

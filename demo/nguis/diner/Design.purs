@@ -1,5 +1,5 @@
 -- | Diner's own components, over MDC3: what every station draws the same way.
-module Diner.DesignSystem
+module Diner.Design
   ( note
   , totalCell
   ) where
