@@ -143,7 +143,7 @@
 -- | re-entering case, a fold's accumulator, an unfold's resume case) is
 -- | **subsumed** by a model field under `looped` — state the app needs is
 -- | a model field (guardrails L14). Each of these had a word once and
--- | each went on exactly those grounds (CHANGELOG, 2026-10-14, the
+-- | each went on exactly those grounds (git log, 2026-10-14, the
 -- | precedent); the optics they encoded (`Shutter`/`Reel`,
 -- | `Colens`/`Coprism`/`Coshutter`/`Coreel`) stay stated in extras/lenses
 -- | at arbitrary `s t a b`, as business optics (test/BusinessOptics.purs).
@@ -254,7 +254,7 @@
 -- | retention, or the copairing — and the library takes the copairing:
 -- | with owned inputs one operand runs per occurrence, so owned outputs
 -- | would need the sibling's fields retained and a gate to wait on them
--- | (it was that until 2026-10-04, CHANGELOG).
+-- | (it was that until 2026-10-04, git log).
 -- |
 -- | The constraint vocabulary below spells the two obligations out per
 -- | side: on an **input** side, where does each label's value come from;
@@ -635,7 +635,7 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- one repeated variable carries the
 -- context's row down into every operand, so an operand's owned evidence
 -- (a whole-row editor, a collection item) never sees an open row. The
--- `+→+` output is one row for the same reason (CHANGELOG, 2026-10-07).
+-- `+→+` output is one row for the same reason (git log, 2026-10-07).
 -- The `×→+` output is owned: an emitter is closed to its case
 -- (`Cons l a () v`), an action to its outcomes, the block's row is the
 -- union of its operands' cases, and the handlers after it own exactly
@@ -643,7 +643,7 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- emits are both compile errors. Every shared side is open on the leaf
 -- and closed by the owning side, and every merge has one of each. (The
 -- `×→+` output was one shared row, every emitter open on it, from
--- 2026-10-15 to 2026-11-15; CHANGELOG.)
+-- 2026-10-15 to 2026-11-15; git log.)
 --
 -- **What a shared input side obliges.** A shared record input is a
 -- *broadcast*: one feed reaches both operands, so both may answer it. That
@@ -905,7 +905,7 @@ settled f = rmap f
 -- | two `joined`s would leave the source's rest open to the block's other
 -- | cases. A variant is a sum and `+` lists its summands, in any order and
 -- | to any length (until 2026-11-12 the two-outcome source had a numbered
--- | word of its own, `joined2`; CHANGELOG).
+-- | word of its own, `joined2`; git log).
 data Or :: forall k. Symbol -> k -> Type
 data Or l ls
 

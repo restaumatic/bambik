@@ -85,7 +85,7 @@
 -- | scope suspended, its emitters silent — which is the only safe form of
 -- | withholding, and why a classifier is a pane's argument and never a
 -- | stage. A validating stage `p { l :: String } { l' :: Number }` was
--- | considered and rejected on these grounds (CHANGELOG, 2026-11-06).
+-- | considered and rejected on these grounds (git log, 2026-11-06).
 -- |
 -- | ## The two laws
 -- |

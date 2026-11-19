@@ -2,7 +2,7 @@
 // reorder demo's plain-HTML twin a track is a bare `dt`/`dd` pair in a `dl`
 // — nothing wraps the pair — so keyed reconciliation must move both nodes
 // with the track id, in order, and keep each term beside its own
-// description. Before (CHANGELOG, 2026-10-11) the parent's last child stood
+// description. Before (git log, 2026-10-11) the parent's last child stood
 // for the element, and a rotation would have carried the `dd` alone.
 import { byName } from '../../demos.mjs'
 export const demos = ['reorder-html']

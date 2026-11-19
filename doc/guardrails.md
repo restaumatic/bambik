@@ -28,7 +28,7 @@ type Registration i o = (o -> Effect Unit) -> Effect (i -> Effect Unit)
 
 Registration hands the output continuation over and returns the input
 leg, so a feed cannot precede it and every cell a component keeps is
-allocated there, once per instantiation (CHANGELOG, 2026-10-16).
+allocated there, once per instantiation (git log, 2026-10-16).
 
 - Every feature MUST be an instance of a class on `PUI m`, a plain
   combinator over such instances, or a law relating them. There MUST NOT
@@ -92,7 +92,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   to say (`editsOf @l @k`) — so a view places nothing at a row and
   `PUI` re-exports no adopter. There is no rename adopter: re-labelling a
   component built at a fixed internal label is exactly what this
-  guardrail forbids, which is why `asField`/`asCase` went (CHANGELOG,
+  guardrail forbids, which is why `asField`/`asCase` went (git log,
   2026-10-14), as the view-side read adopters had before
   (doc/research-presentation-model.md). Nor do the vocabulary's own row **field**
   names: a leaf reading structured data MUST NOT make the application
@@ -138,13 +138,13 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   wire while detached); a list is `actedOf` for displays and `gatheredOf` for
   emitters. A display is `×→×` like an editor: it releases the row it
   shows (a `{}` output made every display line a decorator of its
-  neighbour and the display pane a word of its own; CHANGELOG,
+  neighbour and the display pane a word of its own; git log,
   2026-10-13).
   A selector is one word because it is one shape: the widget stores
   the option it shows, so it is an editor (`×→×`, every feed answered
   with the row) — a split into a `×→+` picker plus a completing stage
   misread a stored value as an occurrence, and was undone once the
-  unmade state was a value (CHANGELOG, 2026-09-26). What the field
+  unmade state was a value (git log, 2026-09-26). What the field
   holds is three words, all editors: the selector's field holds the
   option itself; its `…Unpicked` sibling's (`selectUnpicked @l @c`) a
   variant whose case `c` is the made choice, a choice owed and never
@@ -160,7 +160,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   just built and keep whatever shape they decorate, an emitter's or an
   editor's alike. A bare `i`/`a`/`Maybe a` side on an exported word is a
   violation, whether a scalar leaf left public (HTML's scalar
-  `radioButton`, CHANGELOG 2026-09-23) or a combinator reading a bare
+  `radioButton`, git log 2026-09-23) or a combinator reading a bare
   value (`dynamic`, since fed the row). The type cannot enforce this — `forall i o` compiles —
   so it is a review rule: a new or changed signature MUST be read against
   this table before it is accepted.
@@ -179,9 +179,9 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   take a named predicate (`clWhen isCompleted "todo-done"`), because it
   styles an element and never decides whether that element exists.
   Precedents: the selector's unmade state, once a leaf silent on
-  `Nothing` (CHANGELOG, 2026-09-23 to 2026-09-26), and `optioned`, the
+  `Nothing` (git log, 2026-09-23 to 2026-09-26), and `optioned`, the
   action over a `Maybe` field, deleted as unreachable by design
-  (CHANGELOG, 2026-10-14; L14).
+  (git log, 2026-10-14; L14).
 - A **label is the copy it draws**: a captioned leaf's caption defaults
   to its label verbatim — nothing derives copy from an identifier — so
   labels are written as the words they render and are therefore usually
@@ -234,7 +234,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   typed at exactly the outcomes `chargeFlaky` names, and what tells them
   closes them — the statuses, `foldInto` or `capture` after it, each
   owning its case (until
-  2026-10-16 the action declared them as a row, CHANGELOG). Every leaf therefore reads as a noun phrase — word, anchor,
+  2026-10-16 the action declared them as a row, git log). Every leaf therefore reads as a noun phrase — word, anchor,
   then its positional arguments — and a published leaf MUST NOT take an anchor or
   a required value inside a record: records carry only optional
   presentation or same-typed values whose field names prevent a silent
@@ -244,7 +244,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   caption dropped like `confirmed`'s Cancel: the dismiss decides nothing,
   so it is chrome — every call passed "OK" or "Got it"; a Cancel whose
   screen speaks another language takes its copy as optional presentation,
-  `confirmed' { cancel }`, CHANGELOG 2026-11-17), `confirmed @"Refund a customer"` (its caption
+  `confirmed' { cancel }`, git log 2026-11-17), `confirmed @"Refund a customer"` (its caption
   dropped: every one restated the case it confirms, so the case captions
   the confirm, as an emitter draws its label), and the one-field ocular
   configs made positional (`tooltip`, `dialog`, `topAppBar`, `menu`,
@@ -324,7 +324,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
 
 - A merge MUST NOT carry a unit of its own where a wire fits. No unit law
   is stated — the merge laws (symmetry and associativity, projection,
-  preservation, monotonicity: `Data.Profunctor.Row`, "The laws"; CHANGELOG
+  preservation, monotonicity: `Data.Profunctor.Row`, "The laws"; git log
   2026-10-17) make a merge a commutative semigroup, no more — but where `p`
   is also a `Category` the wire at the unit object is the unit by
   construction — the `{}` wire at the merge's row, `lcmap (const {})
@@ -339,7 +339,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   `PUI`'s private `silent` — and named by no class:
   the algebra names no unit but `Category`'s `identity`, so no merge
   class carries a unit and no word names silence (a `Silencing` class
-  was tried and withdrawn, CHANGELOG 2026-10-14). It is what an event
+  was tried and withdrawn, git log 2026-10-14). It is what an event
   source removed by `provided` observationally *is*; its variant-only
   output type is the honesty boundary: silent at an inhabited record
   output is a starved gate, which the record-side panes avoid by
@@ -347,7 +347,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   copairing with silence routes the input but leaves the source's
   emission channel connected (verified on the probe carrier), so absence
   is `Hosting`'s and `provided` stays a carrier primitive (deleted and
-  restored on that argument; CHANGELOG, 2026-09-11). Pointing — one emission at registration — is
+  restored on that argument; git log, 2026-09-11). Pointing — one emission at registration — is
   `announce`, never a unit's: units carry no information and add none.
   No future combinator may invert this. Every starvation bug in the
   library's history was a `+`-behaviour where a `×`-behaviour was
@@ -412,7 +412,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   and a looped state is a model field: a loop is cut at its record
   junction, because a variant knot or a per-shape knot over a hidden
   field was a second way of writing the same loop with a state the rows
-  did not show (CHANGELOG, 2026-10-06 and 2026-10-14). An application
+  did not show (git log, 2026-10-06 and 2026-10-14). An application
   MUST NOT have more than **one knot** — one `looped`, around every
   line that changes the model (what follows it reads the model and
   changes nothing: flight-booker's Book button and its dialog) —
@@ -458,7 +458,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   entity at a time) alike — never a DOM annotation (`data-*`), never a
   render index, never carrier-private guesswork, and never derived from
   what an element shows. (The `+`-members took a
-  `{ key, value }` envelope until 2026-11-08, CHANGELOG.)
+  `{ key, value }` envelope until 2026-11-08, git log.)
 - Identity MUST be unforgeable where the carrier owns it: in
   `acted` the element is typed at its whole row, key included,
   and the carrier **re-sets** the key on every emission, so whatever an
@@ -496,7 +496,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   the knot's re-entrancy guard, `debounced`'s window. The trace quartet's
   residuals (`Retaining`'s durable `c`, `Coretaining`'s unfold) are
   law-tested and reached by no word; the per-shape knots that kept
-  state the rows did not show were deleted for it (CHANGELOG,
+  state the rows did not show were deleted for it (git log,
   2026-10-14).
 - A vocabulary MUST NOT act on the page at import time: page-level setup
   (a theme, a stylesheet, an icon base path, a typography baseline) is the
@@ -552,7 +552,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   either: there is no counit — a chain whose output is not the model
   ends the block (departures' `dispatched` stream, fed by the `clock`
   source); `muted` went with the last slot that demanded `{}`
-  (CHANGELOG, 2026-10-13). Information is never lost.
+  (git log, 2026-10-13). Information is never lost.
 
 ### L14. The library stays small by rule, not by accident.
 
@@ -565,9 +565,9 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   - **Subsumption:** when a new form makes an old one derivable, the
     old one is deleted, not deprecated alongside (`synced`/`latch` into
     `looped`, `Sequencing` into `Acting`, `labeled`, `constantly`,
-    `humanizeLabel`; the hidden-state words of CHANGELOG 2026-10-11; the
+    `humanizeLabel`; the hidden-state words of git log 2026-10-11; the
     per-shape knots and traces, each keeping a state a model field
-    under `looped` carries, CHANGELOG 2026-10-14). Convergence is the
+    under `looped` carries, git log 2026-10-14). Convergence is the
     health metric: a design is right when the algebra starts subsuming
     its own features. `humanizeLabel` is the sharpest case: once a
     label *is* the copy it draws, deriving copy from an identifier has
@@ -577,13 +577,13 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
     coercion, never vocabulary, since a stage is typed at one row (L18):
     it is inlined where the library needs it (`lcmap (const {})`, `rmap
     expand`) and no demo writes it (the sub-row strengths and the
-    floor's coercion words, CHANGELOG 2026-10-14). The model-side idioms
+    floor's coercion words, git log 2026-10-14). The model-side idioms
     are `group @l` for a nested sub-record and a pane for a case.
   - **Unreachable by design:** a word whose only use another guardrail
     forbids is deleted even though it is lawful — a rename of a fixed
     internal label (L3), an action on a `Maybe` field (the view-model
     rule) — and the reachability clause's exception for catalogue words
-    does not apply (CHANGELOG, 2026-10-14).
+    does not apply (git log, 2026-10-14).
 - **State the app needs is a model field; an event folds in the app's
   loop.** A word MUST NOT keep application state the model does not
   hold, nor fold events into a row beside the loop's `fold`. So a
@@ -596,7 +596,7 @@ allocated there, once per instantiation (CHANGELOG, 2026-10-16).
   action (reorder); and a reusable sub-form edits a sub-record under
   `group @l` (parcel). Each of these once had a word that kept the state
   or folded beside the loop, and lost edits or payloads on a
-  re-broadcast (CHANGELOG, 2026-10-11).
+  re-broadcast (git log, 2026-10-11).
 - **Scope:** bambik owns model↔UI wiring and its algebra. It MUST NOT
   grow a router, an animation system, a theme engine, a CSS-in-PS
   layer, a state-management add-on, or an HTTP client. Styling is
@@ -703,7 +703,7 @@ code below the UI) are algebra-layer material and exempt by location.
   **only** its read function, `progressBar elapsedFraction`, and no
   label: a visible `@"…"` names a row label and nothing else (L3), and
   what a bar measures is no field. Its label once survived as an
-  accessible name and went with that rule (CHANGELOG, 2026-10-07), so
+  accessible name and went with that rule (git log, 2026-10-07), so
   what the bar measures is told by the copy beside it and the bar itself
   carries no accessible name — a known gap. A name would be copy with no
   content position, so it comes back as a String value (as `tooltip "…"`
@@ -759,7 +759,7 @@ code below the UI) are algebra-layer material and exempt by location.
   never stuck on a hole, where a `Union small rest big` is. An open-row footprint (`forall r. { counted :: Int | r } ->
   String`, narrowed by hand from the hint) was tried and withdrawn: the
   hint never suggested the quantifier, so the view did not determine it
-  (CHANGELOG, 2026-10-03). A name two lines call at different rows is
+  (git log, 2026-10-03). A name two lines call at different rows is
   generalized to what they share, and only then carries a `forall`;
   `npm run check-determined` checks every exported signature is an
   instance of its hint. An emitter block's variant output
@@ -846,7 +846,7 @@ code below the UI) are algebra-layer material and exempt by location.
   @case @field`); a view helper applies one view model function per
   value; the view writes no row (`npm run check-view-model`). The
   record of the change (rows once declared on the view line, `looped @(
-  … )`, so that nothing was unknown) is in CHANGELOG, 2026-10-15.
+  … )`, so that nothing was unknown) is in git log, 2026-10-15.
 - **Checkable form**: `npm run check-determined`
   (scripts/check-determined.mjs) compiles every demo's view with a typed
   hole for every imported value into `.determined/` and reads the hole
@@ -860,7 +860,7 @@ code below the UI) are algebra-layer material and exempt by location.
 - **There is no runtime hole.** Until 2026-11-12 the rule had a second
   half: every view ran with its view model stubbed to a runtime `hole`,
   and the words that consume a logic value when built treated one as
-  absent. It was removed with its sweep (CHANGELOG); the compiler's typed
+  absent. It was removed with its sweep (git log); the compiler's typed
   hole is the only one. doc/research-holey-weak-types.md has the record.
 
 ### L19. What is drawn leads; what is wired trails.
@@ -895,11 +895,11 @@ code below the UI) are algebra-layer material and exempt by location.
   what it needs off it (as `acknowledged` reads its case off a
   `modal @l` closed to one case).
 - Precedents: `prefixed d $ stage` and `# suffixed d` were deleted
-  two days after they were added (CHANGELOG, 2026-10-13): neither let a
+  two days after they were added (git log, 2026-10-13): neither let a
   line begin with the element it draws, and the fix was to make displays
   release the row they show. `acknowledged @l content` became
   `( modal @l content ) # acknowledged`, and the nineteen `…From`
-  editors became `editor @l # introduced @l init` (CHANGELOG,
+  editors became `editor @l # introduced @l init` (git log,
   2026-11-16).
 - **Checkable form**: none yet. No line of a demo view opens with a
   word from the list above, but only review enforces it.
@@ -932,7 +932,7 @@ code below the UI) are algebra-layer material and exempt by location.
   plain one's type (`PUI Web {} o -> Effect Unit`), which does that
   catalogue's page setup at mount (L11).
 - Precedents: the twelve twins deleted with `clicked`, rather than
-  giving every vocabulary the leaves it lacked (CHANGELOG, 2026-10-15),
+  giving every vocabulary the leaves it lacked (git log, 2026-10-15),
   and MDC3's `banner` gap, shown in inbox's MDC3 twin as plain
   typography.
 - **Checkable form**: twins share their view model module verbatim, so

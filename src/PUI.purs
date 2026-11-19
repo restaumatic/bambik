@@ -563,7 +563,7 @@ strictNumber s =
 -- | @l`, the carrier's part. The insertion alone would not do: in a chain
 -- | of such editors an upstream edit re-feeds every editor below it, which
 -- | would re-show each init over the user's value. Consequences, accepted
--- | with the word (CHANGELOG, 2026-10-17): a state the row does not show,
+-- | with the word (git log, 2026-10-17): a state the row does not show,
 -- | an init typed at the row the editors above it have built (screen
 -- | order in the view model's signatures), and no introducing editor under
 -- | a pane — a pane is `{ | r } → { | r }`, so a field whose editor exists
@@ -819,7 +819,7 @@ instance Applicative m => Category (PUI m) where
 -- | positional loop no feed can reach, and primes it only because the
 -- | answer comes before the first input. It was a class, `Seeding`, with
 -- | a `(->)` instance, until the class was dropped as a carrier
--- | fact dressed as algebra (CHANGELOG, 2026-10-14). The merge units are
+-- | fact dressed as algebra (git log, 2026-10-14). The merge units are
 -- | *not* pointed: the record gates ignore a contribution of zero fields —
 -- | pointing is this word's business alone.
 announce :: forall m a. Applicative m => a -> PUI m {} a
@@ -900,7 +900,7 @@ with a w = lcmap (const {}) (announce a >>> w)
 -- | no seed of its own: it exposes the whole row and is primed by its
 -- | first feed (`with seed`) — a looped state is a model field, never a
 -- | hidden channel. It was a class, `Looping`, with this one instance,
--- | until the class was dropped (CHANGELOG, 2026-10-14).
+-- | until the class was dropped (git log, 2026-10-14).
 -- |
 -- | Wrapped around a record merge it
 -- | supplies the sibling cross-feed the gated merge deliberately omits —

@@ -69,7 +69,7 @@
 -- | On `PUI`: dispatch in, passage out — each operand's release exits as
 -- | it occurs, nothing retained, no gate, no step (`Applicative m`
 -- | suffices, as at `+→+`). The outputs were once owned and the merge
--- | gated like `×→×` (CHANGELOG, 2026-10-04); with a loop's folds one per
+-- | gated like `×→×` (git log, 2026-10-04); with a loop's folds one per
 -- | case, each releasing its step to the next model, the shared output is the
 -- | honest type and the copairing the honest mechanism. Releasing on every occurrence is
 -- | the fold's choice (no row needs `Eq`), not a law. A merge silent on an

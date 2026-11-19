@@ -58,7 +58,7 @@
 -- | row** every operand is typed at — the **copairing** `[f, g] : A + B ->
 -- | C` of the coproduct, as at `+→×`; the shared row is an equality, as
 -- | the `×→×` merge's inputs are (an inclusive union was the output until
--- | 2026-10-07; CHANGELOG).
+-- | 2026-10-07; git log).
 -- |
 -- |   1–2. **Repetition, Answer** — not owed. A variant input is
 -- |      dispatched to one owner and `≈` counts every occurrence: a
@@ -93,7 +93,7 @@
 -- | It was admitted briefly (as `handler @l f`, the wire at the wrap)
 -- | when counter's four-shape loop wanted a `+→+` stage that was a pure
 -- | function of the occurrence, and deleted when that function moved onto
--- | the fold (CHANGELOG, 2026-10-03): a pure
+-- | the fold (git log, 2026-10-03): a pure
 -- | handling of an occurrence is applied where the occurrence is consumed,
 -- | so the `+→+` shape keeps no pure leaf. Its leaves are the ones that
 -- | **wait**: the `action`s, and the dialogs, which wait for the user —
@@ -107,7 +107,7 @@
 -- | events names only its own case and the fold block stays typed at
 -- | exactly the model-changing cases. Until 2026-10-17 `confirmed` was a
 -- | `+→×` leaf folding on confirm, and an informational dialog folded
--- | `identity` (CHANGELOG).
+-- | `identity` (git log).
 module Data.Profunctor.Row.VariantToVariant
   ( class VariantToVariant
   , variantToVariant

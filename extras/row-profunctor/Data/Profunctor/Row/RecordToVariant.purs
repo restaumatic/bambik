@@ -93,7 +93,7 @@
 -- | the component silences it, and removal is `Hosting`'s — the DOM's —
 -- | not the algebra's. So `provided` stays a carrier primitive, and
 -- | the silent component is the *value* of what it removes, not an operand it is
--- | built from. (Deleted and restored on this argument; CHANGELOG, 2026-09-11.)
+-- | built from. (Deleted and restored on this argument; git log, 2026-09-11.)
 module Data.Profunctor.Row.RecordToVariant
   ( class RecordToVariant
   , recordToVariant
@@ -157,7 +157,7 @@ discard first cont = bind first (\_ -> cont unit)
 -- | 2026-10-14 to 2026-10-15; until 2026-10-16 the label left the
 -- | source's other cases passing, and the action declared its outcome
 -- | row on its line; until 2026-11-15 the joined case was widened into
--- | a row the block shared; CHANGELOG). A source of several outcomes names them all, `joined @(l1 + l2)`. A click is the degenerate
+-- | a row the block shared; git log). A source of several outcomes names them all, `joined @(l1 + l2)`. A click is the degenerate
 -- | case where the occurrence carries nothing of its own: `PUI.Web.clicked`
 -- | is this with the `{}` event dropped and the case renamed — a
 -- | derivation, so no word of its own (`Data.Profunctor.Row`, *Retention*).
