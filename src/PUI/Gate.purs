@@ -69,17 +69,22 @@ module PUI.Gate
 import Prelude
 
 import Data.Array (filter, null) as Array
-import Data.Foldable (elem, foldl)
+import Data.Foldable (foldl)
 import Data.Map (Map)
 import Data.Map (empty, filterKeys, insert, lookup, member) as Map
 import Data.Maybe (Maybe(..))
+import Data.Set (Set)
+import Data.Set (fromFoldable, member) as Set
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 
 -- | The control state plus the retained slots: `order` is the participant
--- | sequence, `known` the slots that have spoken (always a subset of it).
+-- | sequence, `known` the slots that have spoken (always a subset of it),
+-- | `members` the participants as a set, so a membership test is a lookup
+-- | rather than a scan of `order`.
 type GateState k v =
   { order :: Array k
+  , members :: Set k
   , known :: Map k v
   , depth :: Int
   , pending :: Boolean
@@ -116,8 +121,8 @@ instance (Show k, Show v) => Show (GateOutput k v) where
 -- | The state before any input: the participants enrolled, none known. A
 -- | record merge enrols its owned labels; a collection enrols nothing and
 -- | is rekeyed by its first feed.
-initialGate :: forall k v. Array k -> GateState k v
-initialGate order = { order, known: Map.empty, depth: 0, pending: false }
+initialGate :: forall k v. Ord k => Array k -> GateState k v
+initialGate order = { order, members: Set.fromFoldable order, known: Map.empty, depth: 0, pending: false }
 
 -- | One transition. Total, and the only place the gate's behaviour is
 -- | decided.
@@ -133,14 +138,15 @@ gateStep s = case _ of
       [] -> Tuple s Quiet
       mine -> landed s { known = foldl (\m (Tuple k v) -> Map.insert k v m) s.known mine }
   Rekeyed order ->
-    landed s { order = order, known = Map.filterKeys (_ `elem` order) s.known }
+    let members = Set.fromFoldable order
+    in landed s { order = order, members = members, known = Map.filterKeys (_ `Set.member` members) s.known }
   StepBegun -> Tuple s { depth = s.depth + 1 } Quiet
   StepEnded kind
     | s.depth > 1 -> Tuple s { depth = s.depth - 1 } Quiet
     | s.pending || kind == Shared && Array.null s.order -> release s { depth = 0, pending = false }
     | otherwise -> Tuple s { depth = 0 } Quiet
   where
-  participant k = k `elem` s.order
+  participant k = Set.member k s.members
   -- knowledge that changed inside a step is held for the step's single
   -- release; outside one it releases at once
   landed s'

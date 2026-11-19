@@ -986,7 +986,7 @@ type Gate k v =
   , prop :: Ref.Ref (Maybe (Array (Tuple k v) -> Effect Unit))
   }
 
-newGate :: forall k v. Array k -> Effect (Gate k v)
+newGate :: forall k v. Ord k => Array k -> Effect (Gate k v)
 newGate order = { state: _, prop: _ } <$> Ref.new (initialGate order) <*> Ref.new Nothing
 
 -- | One transition of the gate machine (`PUI.Gate.gateStep`), run: read the

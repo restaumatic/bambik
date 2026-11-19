@@ -664,7 +664,7 @@ in the message, the one the line wants and the one it got, and look
 | --- | --- | --- | --- |
 | the model row against `()` | the whole app expression | the loop has no seed: the entry feeds only `{}` | close the loop with `# with seed` (counter) |
 | the model row against `( event :: …, model :: … )` | the event line | a handler and its fold word disagree: `fold @l f` hands `f` the model alone, `foldInto @l f` one record, `{ event, model }` | match the word to the handler: `fold` for `model -> model` (counter's `increment`), `foldInto` for `{ event, model } -> model` (crud's `pick`) |
-| `Function t0` against `Record`, at `looped` | the knot | the event path is not closed: bare folds release a step, `model -> model`, where the next line and the knot take a row | close the path, `( … ) # stepped` (counter) |
+| `Function …` against `Record` | the line after the event path, or the knot (`looped`) when the path is the body's last line | the event path is not closed: bare folds release a step, `model -> model`, where the next line and the knot take a row | close the path, `( … ) # stepped` (counter) |
 | `( "Count" :: … )` against `( "Cout" :: … )` | the fold | one case spelled two ways | spell the case the same on the emitter and its fold |
 | `( "Reset" :: … )` against `( … )` | the first line of the emitter block | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `fold @"Clock ticked" tick`), or remove the emitter |
 | `( "Undo" :: … )` against `( … )` | the first line of the fold block | a fold for a case nothing emits | remove the fold, or add the emitter it was written for |
