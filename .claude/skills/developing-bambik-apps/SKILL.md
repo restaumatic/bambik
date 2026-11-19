@@ -55,7 +55,8 @@ copy function (`countLine`), taken by the display at the leaf.
    contract for application code: *Layout*, *Types and values*,
    *Business functions*, *Wiring*), *Writing order* (view first; its holes list the
    view model's signatures), *What the laws guarantee*, *When it does not
-   compile*, *When it does not propagate*, *Looking things up*.
+   compile*, *When it does not propagate*, *Looking things up*, and
+   *Formatting* (house style: how lines break, indent and import).
 3. **[building.md](building.md)** — run dev mode, verify in a headless
    browser, bundle for deploy, open the API reference.
 

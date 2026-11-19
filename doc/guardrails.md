@@ -866,7 +866,7 @@ code below the UI) are algebra-layer material and exempt by location.
 ### L19. What is drawn leads; what is wired trails.
 
 - Every view line is written as **the element it draws, then its data
-  words**: `uiElement # plumbing` (writing.md, *Layout*). The library
+  words**: `uiElement # plumbing` (writing.md, *Formatting*). The library
   MUST make that form available for every word it publishes: the API is
   shaped by the line, not the line by the API. The code is found from
   the screen and the screen from the code only if a line opens with what
