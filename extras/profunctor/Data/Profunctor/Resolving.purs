@@ -1,18 +1,11 @@
 -- | The coined **product→sum** strength `Resolving` — the `× → +` analogue of
--- | the ecosystem's `Data.Profunctor.Strong`, and the reason it lives in its
--- | own module: like `Strong`/`Choice` it is stated **positionally**
--- | (`Tuple`/`Either`), with no row in sight. Its co-strength is
--- | `Data.Profunctor.Coresolving`, one module over exactly as `Costrong` sits
--- | beside `Strong`. The row layer that builds on it is
+-- | the ecosystem's `Data.Profunctor.Strong`, stated **positionally**
+-- | (`Tuple`/`Either`) with no row in sight. Its co-strength is
+-- | `Data.Profunctor.Coresolving`; the row layer on it is
 -- | `Data.Profunctor.Row.RecordToVariant`; the optic it generates is
--- | `Data.Lens.Shutter`.
--- |
--- | This module is a **complement of the ecosystem's own**, not bambik's: it
--- | claims a `Data.Profunctor.*` name because it belongs in that family
--- | beside `Strong`/`Choice`/`Costrong`/`Cochoice`, and it lives under the
--- | separate `extras/profunctor` source root to say so — nothing here
--- | mentions `PUI`, a row, or a carrier, so it could be lifted into
--- | `purescript-profunctor` unchanged.
+-- | `Data.Lens.Shutter`. A complement of the ecosystem's `Data.Profunctor`
+-- | family, mentioning no `PUI`, row or carrier, liftable into
+-- | `purescript-profunctor` unchanged — hence the `extras/profunctor` root.
 module Data.Profunctor.Resolving
   ( class Resolving
   , resolve
@@ -35,19 +28,17 @@ import Data.Tuple (Tuple)
 -- |
 -- | State enters guaranteed (product input) and leaves optionally (a branch of
 -- | the sum output), so the step may *halt*; closing the `c` channel gives `p`
--- | a terminating iteration (`tailRec`-style). It is the `identity`-pinned form
--- | of the positional product→sum base merge
--- | `p a b -> p c d -> p (Tuple a c) (Either b d)` (its second operand fixed
--- | to `identity`) — the product→sum analogue of the unary form of
--- | `recordToRecord`.
+-- | a terminating iteration (`tailRec`-style). It is the positional
+-- | product→sum merge `p a b -> p c d -> p (Tuple a c) (Either b d)` with
+-- | its second operand fixed to `identity`.
 -- |
--- | With no out-of-band loop signal in the wire protocol (values are just
--- | values), the `PUI` instance derives the branch **from time**: every
--- | emission loops (`Right`) while the UI component is still moving, and the last
--- | emission resolves (`Left`) at quiescence — so the seeded retraction
--- | reads `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g`.
--- | (No `(->)` instance: a timeless carrier could only give the trivial
--- | always-`Done` step, which carries no iteration.)
+-- | With no out-of-band loop signal on the wire (values are just values),
+-- | the `PUI` instance derives the branch **from time**: every emission
+-- | loops (`Right`) while the component is still moving, and the last
+-- | resolves (`Left`) at quiescence — so the seeded retraction reads
+-- | `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g`, and
+-- | `debounced` stands on it. No `(->)` instance: a timeless carrier could
+-- | only give the trivial always-`Done` step, which carries no iteration.
 -- |
 -- | **Laws.** Naturality in `a`, `b` and dinaturality in `c` come free
 -- | (parametricity); the Tambara coherences are **deliberately absent and
@@ -58,15 +49,11 @@ import Data.Tuple (Tuple)
 -- | this is a **single-application mixed strength**, not a Tambara module,
 -- | and the class alone is property-light: a carrier without a
 -- | `Coresolving` half admits degenerate instances (a `resolve` that
--- | always takes `Left`, the loop never entered). Its equational content lives in the seeded retraction with
--- | its co-strength (`Data.Profunctor.Coresolving`; tested in
--- | test/Main.purs). The consequence for the optic is stated in
--- | `Data.Lens.Shutter`: existential constructors are sound, completeness
--- | is not claimed.
--- |
--- | This is the **bare strength** for the `× → +` shape (the analogue of
--- | `Strong`/`Choice`). It has no row form — a stage is typed at one row
--- | (`Data.Profunctor.Row`, *What is deliberately not here*) — and
--- | `debounced` stands on it.
+-- | always takes `Left`). Its equational content is the seeded retraction
+-- | with its co-strength (`Data.Profunctor.Coresolving`; test/Main.purs);
+-- | the consequence for the optic is `Data.Lens.Shutter`'s: existential
+-- | constructors are sound, completeness is not claimed. It has no row
+-- | form — a stage is typed at one row (`Data.Profunctor.Row`, *What is
+-- | deliberately not here*).
 class Profunctor p <= Resolving p where
   resolve :: forall a b c. p a b -> p (Tuple a c) (Either b c)

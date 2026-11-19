@@ -21,9 +21,8 @@
 -- | Why it exists (guardrails L18): a keyed collection indexes its keys
 -- | and an introducing editor compares its initial values, and neither may
 -- | demand an instance, since the key's type is closed only by a business
--- | function that a holey build does not have. It mentions no row and no
--- | profunctor, hence its own source root beside `extras/variant`; it
--- | keeps no JavaScript of its own.
+-- | function a holey build does not have. It mentions no row and no
+-- | profunctor, hence its own source root, and keeps no JavaScript.
 module Data.Structural (withStructuralEq, withStructuralOrd) where
 
 import Prelude (class Eq, class Ord, compare, map, otherwise, show, (<>), (==), (||), (<<<))

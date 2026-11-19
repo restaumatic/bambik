@@ -1,32 +1,19 @@
--- | `Record → Variant` (× → +) row profunctors, organized (uniformly across
--- | the four shape modules) as:
+-- | `Record → Variant` (× → +) row profunctors:
 -- |
 -- |   * **strength** — `Resolving` (`Data.Profunctor.Resolving`; `PUI m`
--- |     instances only, no `(->)`): the unary power, a loop/iteration step.
--- |     Its co-strength `Coresolving` is in `Data.Profunctor.Coresolving`,
--- |     and their optics are `Data.Lens.Shutter` and `Data.Lens.Coshutter`
--- |     — neither the classes nor the optics mention a row, so none of them
--- |     lives here.
--- |   * **shape class** — `RecordToVariant`, the binary **merge**: the
--- |     one genuine per-carrier primitive, with its qualified-do sugar
--- |     (`bind`/`discard`). It carries no unit, like the other merge
--- |     classes; theirs is `Category`'s `identity`, and this one, which no
--- |     wire reaches, is the carrier's silent component, named by no class.
--- |   * **free functions** — over `Strong`: `joined` (a source's cases joined
--- |     with the row its emitter was fed — replay is this at the empty
--- |     payload, `PUI.Web`'s click source dropping the `{}` event). No strength or co-strength row form: a
--- |     stage is typed at one row, so no word narrows it to a sub-record
--- |     with the rest escaping as a case, and a fold's state is a model
--- |     field, never a hidden one (`Data.Profunctor.Row`, *What is
--- |     deliberately not here*).
--- |
--- | A word lives where the sides it constrains do: one constraining both
--- | sides in its shape's module, one constraining a single side on the
--- | floor (`Data.Profunctor.Row`)
--- | — so no shape module imports another, and every module holds only
--- | its merge, its strength and trace forms, and the words that genuinely
--- | span both of its sides.
--- | `joined` takes `toCase` from the floor.
+-- |     instances only, no `(->)`): a loop/iteration step. Its co-strength
+-- |     is `Data.Profunctor.Coresolving`, their optics `Data.Lens.Shutter`
+-- |     and `Data.Lens.Coshutter`; none mentions a row, so none lives here.
+-- |   * **shape class** — `RecordToVariant`, the binary **merge**, with its
+-- |     qualified-do sugar (`bind`/`discard`). It carries no unit, like the
+-- |     other merge classes; this one, which no wire reaches, is the
+-- |     carrier's silent component, named by no class.
+-- |   * **free functions** — over `Strong`: `joined` (a source's cases
+-- |     joined with the row its emitter was fed; replay is this at the
+-- |     empty payload, `PUI.Web`'s click source dropping the `{}` event).
+-- |     No strength or co-strength row form: a stage is typed at one row,
+-- |     and a fold's state is a model field (`Data.Profunctor.Row`, *What
+-- |     is deliberately not here*).
 -- |
 -- | ## Laws at `×→+`
 -- |
@@ -77,23 +64,20 @@
 -- | to a bound in test/Exhaustive.purs.
 -- |
 -- | The carrier's silent component — fed nothing, emitting nothing — is
--- | what an **absent emitter is**. A `×→+` component that
--- | exists in one state and not in another
--- | (`button @"Start" # provided @"halted" phaseOf`) is, in the state
--- | where it is absent, observationally silent: fed nothing, emitting
--- | nothing. That is why the type is variant-output only — silent at
--- | *variant* output is an emitter with nothing to say, while silent at an
--- | inhabited *record* output would be a starved gate, which is why the
--- | record-side pane answers every feed instead — `inCase`, with the fed
--- | row. But absence is **not a copairing**: routing the input away
--- | from `w` leaves `w`'s own emission channel connected, so
--- | `lcmap f' (left w >>> right silent)` still emits when the emitter
--- | fires in the "absent" case (checked on the probe carrier: a Start
--- | button clicked while `timing` still emitted). Only removing
--- | the component silences it, and removal is `Hosting`'s — the DOM's —
--- | not the algebra's. So `provided` stays a carrier primitive, and
--- | the silent component is the *value* of what it removes, not an operand it is
--- | built from. (Deleted and restored on this argument; git log, 2026-09-11.)
+-- | what an **absent emitter is**: a `×→+` component that exists in one
+-- | state and not in another (`button @"Start" # provided @"halted"
+-- | phaseOf`) is, where absent, observationally silent. That is why the
+-- | type is variant-output only — silent at an inhabited *record* output
+-- | would be a starved gate, which is why the record-side pane answers
+-- | every feed instead (`inCase`, with the fed row). But absence is **not
+-- | a copairing**: routing the input away from `w` leaves `w`'s own
+-- | emission channel connected, so `lcmap f' (left w >>> right silent)`
+-- | still emits when the emitter fires in the "absent" case (checked on
+-- | the probe carrier). Only removing the component silences it, and
+-- | removal is `Hosting`'s — the DOM's — not the algebra's. So `provided`
+-- | stays a carrier primitive, and the silent component is the *value* of
+-- | what it removes, not an operand it is built from (deleted and restored
+-- | on this argument, 2026-09-11).
 module Data.Profunctor.Row.RecordToVariant
   ( class RecordToVariant
   , recordToVariant
@@ -152,15 +136,12 @@ discard first cont = bind first (\_ -> cont unit)
 -- | meets the event at its fold (`PUI`'s `foldInto`, `kept`). The label
 -- | **closes the source** to case `l`, and the joined case leaves closed
 -- | to it too, so the source stands in an emitter block as the one
--- | emitter of `l` (a label-free
--- | `joined` over every case of a closed source row was the word from
--- | 2026-10-14 to 2026-10-15; until 2026-10-16 the label left the
--- | source's other cases passing, and the action declared its outcome
--- | row on its line; until 2026-11-15 the joined case was widened into
--- | a row the block shared; git log). A source of several outcomes names them all, `joined @(l1 + l2)`. A click is the degenerate
--- | case where the occurrence carries nothing of its own: `PUI.Web.clicked`
--- | is this with the `{}` event dropped and the case renamed — a
--- | derivation, so no word of its own (`Data.Profunctor.Row`, *Retention*).
+-- | emitter of `l` (closed since 2026-11-15); a source of several
+-- | outcomes names them all, `joined @(l1 + l2)`. A click is the
+-- | degenerate case where the occurrence carries nothing of its own:
+-- | `PUI.replayed` is this with the `{}` event dropped and the case
+-- | renamed — a derivation, so no word of its own (`Data.Profunctor.Row`,
+-- | *retention*).
 joined
   :: forall @ls p r v v1
    . JoinedCases ls r v v1

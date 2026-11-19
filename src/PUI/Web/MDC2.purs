@@ -160,66 +160,24 @@ import Type.Proxy (Proxy(..))
 
 -- Implementation notes — the reference above is the contract.
 --
--- Material Design 2 (https://m2.material.io) components implemented as
--- PUI Web/UIOcular (PUI Web) datatypes — the MD2 sibling of `PUI.Web.MDC3`,
--- built on the MDC Web foundation classes from `material-components-web`:
+-- Built on the MDC Web foundation classes from `material-components-web`:
 -- a component leaf is the catalog's documented DOM markup plus a foundation
 -- instance (`newComponent material.x."MDCX"`) wired through its documented
 -- properties and events — the foundation owns ripples, label float,
--- activation and aria, exactly as the MDC Web docs prescribe. The
--- vocabulary is two-sorted, with the same citizenship and (where the
--- concept exists in both design systems) the same names and signatures as
--- `PUI.Web.MDC3`, so a demo switches design systems by switching the import:
+-- activation and aria. Every component is a citizen of exactly one row
+-- shape (guardrails L3), with the same names and signatures as
+-- `PUI.Web.MDC3` where the concept exists in both (L20); the oculars
+-- (`card`, `dialog`, `menu`, the type scale, the elevations, …) keep
+-- whatever shape they decorate, and `divider`/`imageListItem` are statics.
+-- Statuses are `[ started, ended ] → { | r }` (the progress slots) or
+-- `+→×` folds with a face (`snackbar`).
 --
---   * **components** — UI components with a model interface, every one a citizen
---     of exactly one row shape:
---       `×→×` editors — `filledTextField @l`, `outlinedTextField @l` (the
---         MD2 variant pair), `filledTextArea @l`, `checkbox @l`,
---         `radioButton @l`, `toggleSwitch @l` (the MD2 Switch),
---         `slider @l`, `select @l` (the MD2 exposed dropdown),
---         `segmentedButton @l`, `tabBar @l` (the same-type selector — the
---         `looped`-ensemble citizen), `filterChip @l`, `iconToggle @l`;
---       `×→×` displays — the determinate `linearProgress`
---         (`{ | reads } → {}` over a read function);
---       `×→+` events — `button @l` (the contained/raised button — the
---         high-emphasis default; `outlinedButton`, `textButton` are the
---         other two MD2 emphasis levels), `fab @l`, `iconButton @l`,
---         `menuItem @l`;
---       `+→×` statuses — `snackbar`, `banner` (MD2 still has the banner;
---         MD3 dropped it, so `PUI.Web.MDC3` has no citizen for it), and
---         `indeterminateLinearProgress`/`indeterminateCircularProgress`
---         (`[ started, ended ] → { | r }` — the run's two occurrences, the shape
---         `PUI.action`'s progress slot dispatches).
---     No scalar or polymorphic component interfaces. Variant *editing* has
---     no `+→+` component citizens: the selection is a model field and each
---     case's payload fields sit beside it — a selection component followed
---     by editor panes, each `# inCaseAt @c @l` existing while the selection
---     sits at its case (order-form); `+→+` remains the dispatch shape
---     (`VariantToVariant.do` of action stages).
---   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
---     `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/`dataCell`,
---     `imageList`, `layoutGrid`/`layoutCell`, `topAppBar`, `drawer`,
---     `tooltip`, the MD2 typography — `headline1` ... `overline` — and
---     elevations): no model of their own, any polarity.
---   * plus **announcing statics** (`{}`-output chrome with a face, at any row):
---     `divider`, `imageListItem`.
---
--- MD2 catalog entries with no MDC Web implementation (backdrop, bottom app
--- bar, bottom navigation, date pickers, navigation rail, sheets) are
--- absent here too.
---
--- Internally the live leaf of a compound is `focusField @l`-lifted — `focusField`
--- is the `Strong` field lens, so every editor is a whole-row citizen
--- `p { l | b } { l | b }`: fed the wide row it edits its field, and
--- each emission re-attaches the background the lens retains (runtime
--- completeness by construction; freshness rests on the enclosing loop's
--- re-broadcast) — and its chrome is hand-fused in the `Web` monad
--- (decoration as implementation technique — and a necessity: abstract
--- labels cannot flow through the merges' `Nub`, so a skolem-labeled
--- operand can't be merged); all-chrome groups (button content, progress
--- bars) are `Semigroupoid.do` blocks of statics (`staticText`/`staticHTML`/
--- `static`, each the wire at its row).
--- Code order = DOM order throughout.
+-- Internally the live leaf of a compound is `focusField @l`-lifted, so
+-- every editor is a whole-row citizen `p { l | b } { l | b }` whose
+-- emissions re-attach the background the lens retains; its chrome is
+-- hand-fused in the `Web` monad, and all-chrome groups (button content,
+-- progress bars) are `Semigroupoid.do` blocks of statics. Code order =
+-- DOM order throughout.
 --
 -- **The `dimap` round-trip contract for editors.** An editor bracketed by
 -- `dimap f g` behaves as an iso lens: `f` maps the model into the editor's
@@ -227,9 +185,8 @@ import Type.Proxy (Proxy(..))
 -- on the values the user actually enters, the field visibly *normalizes*
 -- input on each echo — the focus guard suppresses this only for the field
 -- currently being typed in. Conversions that can fail or lose information
--- (parse-then-format, unit conversion over strings) belong in the model
--- (a `settled` normalization on the whole-row stage), not in a leaf
--- bracket — see the temperature-converter demo.
+-- belong in the model (a `settled` normalization on the whole-row stage),
+-- not in a leaf bracket (temperature-converter).
 
 -- UIs
 
@@ -550,13 +507,11 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | whole line is a comfortable target.
 -- |
 -- | The field is a **named two-case variant** the application spells:
--- | `checkbox @"Terms" @"accepted" @"declined"
--- | is ticked exactly while `"Terms"` sits at `accepted`; ticking reports
--- | `.accepted {}`, clearing reports `.declined {}` — so an optional part
--- | of the model *is* the box's state under its own names, with no second
--- | flag to keep in step and no `Maybe`. Use a checkbox for a fact the user
--- | states as part of a form; use `toggleSwitch` for a setting that takes
--- | effect at once.
+-- | `checkbox @"Terms" @"accepted" @"declined"` is ticked exactly while
+-- | `"Terms"` sits at `accepted`; ticking reports `.accepted {}`, clearing
+-- | reports `.declined {}`. Use a checkbox for a fact the user states as
+-- | part of a form; use `toggleSwitch` for a setting that takes effect at
+-- | once.
 checkbox :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => PUI Web { | r } { | r }
 checkbox = fieldLeaf @l $ fromHandles do
   checkboxId <- liftEffect uniqueId
@@ -614,8 +569,7 @@ checkbox = fieldLeaf @l $ fromHandles do
 -- | `radioButtonUnpicked @l @c` for a choice owed but not yet made,
 -- | `radioButtonOptional @l @c @n` for one the user may leave unmade. Every
 -- | one is an editor: every feed is answered with the row, every pick
--- | stored. The options — the value and the words shown for it — belong to
--- | the control, not to the model.
+-- | stored.
 -- A selector group in three forms, over one clearing of its options:
 -- every feed first shows nothing picked, then the one option owning the
 -- fed case shows itself, so a case no option owns (an unpicked one) shows
@@ -727,13 +681,10 @@ switchLeaf lbl = div >>> "style" := "display: flex; align-items: center; gap: 8p
 -- | The **slider**: a quantity chosen by feel, where the range matters more
 -- | than the exact number — a volume, a tip, a budget.
 -- |
--- | The range is part of the quantity, not part of the screen:
--- | `{ current, min, max, step }` travels together as one business datum, so
--- | limits come from the data and can change while the app runs (a room's
--- | capacity, a plan's ceiling) — a slider is never silently out of range,
--- | and a range nobody supplied is a compile error rather than a wrong
--- | screen. `step` is `.discrete n`
--- | or `.continuous {}`, named like every other two-state field.
+-- | The range is part of the quantity: `{ current, min, max, step }` is one
+-- | business datum, so the limits come from the data and may change while
+-- | the app runs, and a range nobody supplied is a compile error. `step` is
+-- | `.discrete n` or `.continuous {}`.
 -- |
 -- | It reports on **release**, once per adjustment, so one drag is one
 -- | entry in the history — one undo step, one audit line. For a readout
@@ -1192,14 +1143,11 @@ tabWith glyph = fromHandles do
 -- | The **indeterminate progress bar**: work is under way and there is no
 -- | telling how long — a request in flight, a file being processed. A
 -- | **status**, not a display: it is fed the run's two occurrences,
--- | `started` and `ended`, and shows between them — exactly what
--- | `PUI.action`'s slot dispatches (`indeterminateLinearProgress # action
--- | submit`). No model owns a "busy" field, so nothing here is state, and
--- | it carries no label: it names no field and no case, and a caption is
--- | copy, which is a function, not a label. It releases nothing, so its
--- | output is `{}`, the row `action` and `load` take their slot at: a
--- | line after it that reads a field would never be fed, and is a type
--- | error.
+-- | `started` and `ended`, and shows between them — what `PUI.action`'s
+-- | slot dispatches (`indeterminateLinearProgress # action submit`). It
+-- | carries no label (it names no field and no case) and releases nothing,
+-- | so its output is `{}`, the row `action` and `load` take their slot at:
+-- | a line after it that reads a field is a type error.
 indeterminateLinearProgress :: PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateLinearProgress = fromHandles do
   chrome $ div >>> "role" := "progressbar" >>> cl "mdc-linear-progress" >>> cl "mdc-linear-progress--indeterminate" >>> "aria-valuemin" := "0" >>> "aria-valuemax" := "1" >>> "aria-valuenow" := "0" $ linearProgressInnards
@@ -1210,10 +1158,9 @@ indeterminateLinearProgress = fromHandles do
 
 -- | The **determinate progress bar**: how far along something is, `value`
 -- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
--- | position, a budget's use, a quota — written as
--- | `linearProgress progressFraction`: the value is a **read
--- | function** like every display's, since a fraction is derived (a ratio
--- | of source fields), not state.
+-- | position, a budget's use, a quota — written as `linearProgress
+-- | progressFraction`: the value is a **read function** like every
+-- | display's (guardrails L17).
 linearProgress
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
@@ -1356,13 +1303,10 @@ elevation20 w = div w # cl "mdc-elevation--z20" # "style" := "padding: 25px"
 -- | — an order, a product, a summary. Takes any content; put a row of
 -- | buttons in `cardActions`.
 -- |
--- | A plain ocular, with no config of its own: MD2 defines a card as a
--- | *surface* and gives it no title (every `mdc-card__*` class in the spec
--- | is optional structure, none of them a heading), so a card's heading is
--- | ordinary typography placed in its content — `headline6`, `subtitle1`,
--- | `caption` — exactly as MD2's own examples write it. A card whose
--- | content is one model sub-record is not chrome but the labelled group,
--- | `group @l`.
+-- | A plain ocular with no config: MD2 defines a card as a *surface* with
+-- | no title, so a card's heading is typography in its content
+-- | (`headline6`, `subtitle1`, `caption`). A card whose content is one
+-- | model sub-record is the labelled group, `group @l`.
 card :: Ocular (PUI Web)
 card content =
   div >>> cl "mdc-card" >>> "style" := "padding: 10px; margin: 15px 0 15px 0; text-align: justify;" $ content
@@ -1372,17 +1316,11 @@ card content =
 cardActions :: Ocular (PUI Web)
 cardActions = div >>> cl "mdc-card__actions"
 
--- | A **labelled model group** — the card as visual wrapper *and*
--- | presentation-model wrapper, one word. `group @l w` renders `w` on a
--- | `card` headed by the label verbatim (`subtitle1`) and nests `w`'s model
--- | under field `l`, stamping the label as the accessible group name
--- | (`role="group"`, `aria-labelledby` the heading) — so the group's view
--- | line anchors at its field like every labelled leaf, and the words
--- | appear once. It draws the surface, so it **leads its lines like any
--- | container** (`group @"Customer" $ …`), never trailing as a `#` chain.
--- | Without it a labelled group is three hand-aligned spellings — the
--- | `card`, a `staticText` heading, a trailing `# focusField @l` — free to
--- | drift apart.
+-- | A **labelled model group**: `group @l w` renders `w` on a `card` headed
+-- | by the label verbatim (`subtitle1`) and nests `w`'s model under field
+-- | `l`, stamping the label as the accessible group name (`role="group"`,
+-- | `aria-labelledby` the heading). It draws the surface, so it leads its
+-- | lines like any container (`group @"Customer" $ …`).
 -- |
 -- | Derived, not primitive:
 -- |
@@ -1391,15 +1329,12 @@ cardActions = div >>> cl "mdc-card__actions"
 -- | ```
 -- |
 -- | well-defined because chrome commutes with the strengths (`Ocular`'s
--- | admission law): `card w # focusField @l = card (w # focusField @l)`, so fusing
--- | surface and lens loses nothing. The focus is any type `focusField @l`
--- | accepts — an editor ensemble (`group @"Customer" $ …`, order-form's
--- | `group @"Fulfillment"` with its case panes), a collection's array
--- | (potluck's `group @"Guests"` over `acted`, reorder's
--- | `group @"Setlist"` over `acted`). Fusion is earned by the
--- | leaf criterion — the label does work a trailing `# focusField @l` cannot
--- | (heading copy, accessible name) — so a card grouping no model (a
--- | display card, a button row) stays the blind `card`.
+-- | admission law): `card w # focusField @l = card (w # focusField @l)`.
+-- | The focus is any type `focusField @l` accepts — an editor ensemble
+-- | (order-form's `group @"Fulfillment"` with its case panes), a
+-- | collection's array (reorder's `group @"Setlist"` over `acted`). A card
+-- | grouping no model stays the blind `card` (guardrails L3, the
+-- | leaf-fusion criterion).
 group
   :: forall @l f f' b s t
    . IsSymbol l
@@ -1434,33 +1369,24 @@ dialog title content = fromHandles do
     chrome (static (div >>> cl "mdc-dialog__scrim"))
     pure result
 
--- | The **witness rung** of the assurance ladder, baked in as a
--- | component: `dialog` with a **confirm button** built in, the `+→+`
--- | dual of the lens editor. As an editor is `focusField @l` over a leaf
--- | that shows a field and lets the user change it, this is `focusCase
--- | @l` over a modal that shows an event's payload and lets the user
--- | decide its fate: opened by case `l`, its content — a stage over the
--- | payload, a display or editors — shown the row the button that opened
--- | it replayed, the flow **withheld until the user confirms** with the
--- | button the case **captions**, verbatim, as an emitter draws its
--- | label, when the case leaves again carrying the row the content last
--- | answered, to be folded in the fold block like any event (`confirmed
--- | @"Refund a customer" $ body1 $ text refundLine` among the stages,
--- | `fold @"Refund a customer" refundStandard` among the folds — cashbox;
--- | inbox's `"Delete message"`). The content states what is at stake, so
--- | the dialog has no title of its own; the case names it. Cancel (or
--- | Escape, or the scrim) consumes the case: a declined decision reaches
--- | no fold. Its caption is chrome, "Cancel", unless `confirmed'` gives
--- | the copy the screen speaks. Every other case passes through
--- | untouched, so the dialog names only its own case and the fold block
--- | stays typed at exactly what folds. The content needs no button of
--- | its own: a display releases the row it shows, so there is something
--- | to confirm; editors inside amend the payload before it goes on. Not
--- | an `Ocular`, deliberately: the confirm **replays** the row last
--- | shown, and replay is lawful over **records** only — an entity's last
--- | value may be re-said, a one-shot event may not (the `looped`
--- | argument) — so a dialog is opened by an event and shows a row. For a
--- | reading that changes nothing, `modal`.
+-- | `dialog` with a **confirm button** built in — `focusCase @l` over a
+-- | modal, the `+→+` dual of the lens editor: opened by case `l`, its
+-- | content (a display or editors over the payload) shown the row the
+-- | button that opened it replayed, the flow **withheld until the user
+-- | confirms** with the button the case **captions** verbatim, when the
+-- | case leaves again carrying the row the content last answered, folded
+-- | in the fold block like any event (`confirmed @"Refund a customer" $
+-- | body1 $ text refundLine` among the stages, `fold @"Refund a customer"
+-- | refundStandard` among the folds, cashbox). The dialog has no title of
+-- | its own; the content states what is at stake. Cancel (or Escape, or
+-- | the scrim) consumes the case, so a declined decision reaches no fold;
+-- | its caption is chrome, "Cancel", unless `confirmed'` gives the copy
+-- | the screen speaks. Every other case passes through untouched. The
+-- | content needs no button of its own: a display releases the row it
+-- | shows, and editors inside amend the payload before it goes on. Not an
+-- | `Ocular`: the confirm replays the row last shown, and replay is lawful
+-- | over records only, so a dialog is opened by an event and shows a row.
+-- | For a reading that changes nothing, `modal`.
 confirmed
   :: forall @l r b v
    . IsSymbol l
@@ -1485,13 +1411,12 @@ confirmed' { cancel } = confirmedOver' @l cancel modalFace
 -- | tells as its title, its content shown the payload for as long as the
 -- | user wants it, closed by its "OK", which releases the case again
 -- | with the content's row; Escape and the scrim close it releasing
--- | nothing. The "OK" decides nothing, so, like `confirmed`'s Cancel by
--- | default, it is chrome and takes no caption. It is closed to its case, so on an
--- | event path it is followed by the word that says what becomes of the
--- | case: `# acknowledged` (`PUI`) ends it there and lets every other
--- | case pass — the message the user must read and can only close
--- | (`( modal @"About this dashboard" $ body1 $ text aboutLine ) #
--- | acknowledged`, weather, between the emitters and the fold).
+-- | nothing. The "OK" decides nothing, so it is chrome and takes no
+-- | caption. It is closed to its case, so on an event path it is followed
+-- | by the word that says what becomes of the case — `# acknowledged`
+-- | (`PUI`) ends it there and lets every other case pass (`( modal @"About
+-- | this dashboard" $ body1 $ text aboutLine ) # acknowledged`, weather),
+-- | `# continued exit` lets it go on.
 modal
   :: forall @l r v
    . IsSymbol l
@@ -1555,14 +1480,13 @@ modalFace { title, decide, cancel } content = fromHandles do
 -- | reply ("Order placed"). It never interrupts — for something the user
 -- | must acknowledge, use `banner` or a `dialog`.
 -- |
--- | A status **tells its case**: its caption is the case label verbatim,
--- | so the outcome is named as what it tells (`snackbar @"Card charged"
--- | captured`) and the payload is read by nothing but the fold. Mutually
--- | exclusive outcomes are sibling snackbars, one per business case. A
--- | snackbar is a `+→×` leaf like `fold @l f`: it takes its fold, of the
--- | event and the model it lands on — `captured` for an outcome that is
--- | the model, `kept` for one that changes nothing, `(const x)` for a
--- | reset.
+-- | A status **tells its case** (guardrails L17): its caption is the case
+-- | label verbatim (`snackbar @"Card charged" captured`), the payload read
+-- | by nothing but the fold; mutually exclusive outcomes are sibling
+-- | snackbars, one per case. A `+→×` leaf like `fold @l f`, it takes its
+-- | fold of the event and the model it lands on — `captured` for an
+-- | outcome that is the model, `kept` for one that changes nothing,
+-- | `(const x)` for a reset.
 snackbar
   :: forall @l a v i o
    . IsSymbol l
@@ -1587,14 +1511,10 @@ snackbarContainer content =
 -- | The **banner**: a prominent message at the top of the content for
 -- | something the user should actually read — an outage, an empty inbox, a
 -- | required action — where a `snackbar` would slip past unnoticed. A
--- | banner stays while its state holds, so it is a surface over a display,
+-- | banner stays while its state holds, so it is an ocular over a display,
 -- | shown by a pane on the model (`( banner $ staticText "Inbox zero!" ) #
--- | inCase @"empty" inboxState`, inbox) and gone when the state resolves:
--- | an ocular, like `card`, with no model interface and no dismiss of its
--- | own — what resolves the state is the app's own emitter beside it.
--- |
--- | Material Design 2 only — MD3 dropped the banner, so `PUI.Web.MDC3` has
--- | none.
+-- | inCase @"empty" inboxState`, inbox), with no dismiss of its own. MD3
+-- | dropped the banner, so `PUI.Web.MDC3` has none.
 banner :: Ocular (PUI Web)
 banner content =
   -- the foundation would size the root to its absolutely positioned content
@@ -1656,12 +1576,10 @@ listItem content = li >>> cl "mdc-deprecated-list-item" >>> "style" := "height: 
 -- | both how a collection is shown and how the user picks from it.
 -- |
 -- | The key is a field the projection builds into each row, named rather
--- | than computed: the UI decides its view model, so whatever a pick must
--- | carry is a field of the row. Rows are keyed by it — matched keys are
--- | updated in place, and a row's node moves with its key — so the list
--- | can refresh under the user without flicker; keys must be unique. The
--- | row each list item is drawn from is the projection's signature, in the
--- | view model module (`listOf @"opened" @"id" messagesOf …`).
+-- | than computed, and must be unique: matched keys are updated in place
+-- | and a row's node moves with its key, so the list refreshes under the
+-- | user without flicker. The row each item is drawn from is the
+-- | projection's signature, in the view model module.
 listOf
   :: forall @l @k r i b2 o key v
    . IsSymbol l
@@ -1861,12 +1779,11 @@ imageListItem config = li >>> cl "mdc-image-list__item" >>> "style" := "margin-b
 
 
 -- | One picture in an `imageList`, **fed through the channel**: like any
--- | display it takes its read function — the business row in, the picture's
--- | `{ src, alt }` out — so a gallery is the retaining `actedOf` over the
--- | pictures rather than a wholesale rebuild —
--- | `imagePane developedShot # actedOf @"shot" albumShots`, each item built once and its
--- | source and caption updated in place. `imageListItem`'s sibling, for the
--- | collection case; `imageListItem` stays the closure-known static.
+-- | display it takes its read function, the row in and the picture's
+-- | `{ src, alt }` out, so a gallery is `actedOf` over the pictures
+-- | (`imagePane developedShot # actedOf @"shot" albumShots`), each item
+-- | built once and updated in place. `imageListItem` is its static
+-- | sibling.
 imagePane :: forall r. ({ | r } -> { src :: String, alt :: String }) -> PUI Web { | r } { | r }
 imagePane picture = imagePaneFace picture
 
@@ -1875,10 +1792,6 @@ imagePaneFace picture =
   li >>> cl "mdc-image-list__item" >>> "style" := "margin-bottom: 16px;" $ Semigroupoid.do
     img >>> cl "mdc-image-list__image" >>> attrWith "src" (_.src <<< picture) >>> attrWith "alt" (_.alt <<< picture) $ identity
     div >>> cl "mdc-image-list__supporting" $ span >>> cl "mdc-image-list__label" $ text (_.alt <<< picture)
-
--- the element adapter for the index-keyed internal collection: reads the
--- item out of the reconciler's { ix, item } row at the wiring level (the
--- closed-singleton adopters deliberately do not read from wider rows)
 
 -- Private
 
@@ -1947,12 +1860,10 @@ foreign import material
 -- Entry point
 
 -- | Mount the app in the page's `<body>`, dressed for Material 2: the MD2
--- | typography baseline (`mdc-typography`) goes on the page body, so the
--- | plain text between components rides the type scale too, and the app
--- | then mounts exactly as `PUI.Web.HTML.body` does — same signature, same
--- | closed-app demand (`PUI Web {} o`). The entry is a word of the
--- | vocabulary like any other, so a screen changes design system at its
--- | first line by changing the import, and nothing runs at import time.
+-- | typography baseline (`mdc-typography`) goes on the page body, so plain
+-- | text between components rides the type scale too, and the app then
+-- | mounts as `PUI.Web.HTML.body` does — same signature, same closed-app
+-- | demand (`PUI Web {} o`). Nothing runs at import time (guardrails L11).
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
   page <- documentBody

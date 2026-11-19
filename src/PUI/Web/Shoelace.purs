@@ -1,15 +1,15 @@
 -- | The **Shoelace** vocabulary (https://shoelace.style, continued as Web
--- | Awesome) — one of the non-Material design systems, and the evidence
--- | that they are interchangeable: names and signatures match the Material
--- | modules wherever both catalogues have the concept, so a screen changes
--- | design system by changing this one import. What a catalogue has of its
--- | own appears under its own name — here the star `rating`, which Material
--- | has no counterpart for.
+-- | Awesome), over the `@shoelace-style/shoelace` custom elements: the
+-- | same names and signatures as the Material modules wherever both
+-- | catalogues have the concept (guardrails L20), and its own names where
+-- | the concept differs (`textField` with Shoelace's plain `label`,
+-- | `toast`, `progressBar`). Its exclusive is the star `rating`, which
+-- | Material has no counterpart for.
 -- |
--- | **The page must load** the Shoelace light theme stylesheet, from the
+-- | **The page must load** the Shoelace light theme stylesheet from the
 -- | same release as the bundled components; icons load from the matching
--- | CDN, whose base path this vocabulary's `body` sets at mount. No webfont
--- | is needed — Shoelace uses the system font stack.
+-- | CDN, whose base path `body` sets at mount. No webfont: Shoelace uses
+-- | the system font stack.
 -- |
 -- | The catalogue: `textField`/`textArea`, `rating`, `sliderLive` and
 -- | `toggleSwitch` to enter values, `select` to choose one, `button` to
@@ -64,69 +64,32 @@ import ConvertableOptions (class ConvertOptionsWithDefaults, convertOptionsWithD
 
 -- Implementation notes — the reference above is the contract.
 --
--- Shoelace (https://shoelace.style — the design system continued as Web
--- Awesome) components implemented as PUI Web/Ocular (PUI Web) datatypes —
--- a design-system vocabulary beside `PUI.Web.MDC2`/`PUI.Web.MDC3`, proving the
--- vocabularies interchangeable: built on the framework-agnostic
--- `@shoelace-style/shoelace` custom elements (`<sl-button>`, `<sl-rating>`,
--- ...), registered by importing the FFI module, so a component leaf is just
--- `element "sl-..."` plus property/event wiring — exactly the `PUI.Web.MDC3`
--- recipe, and the leaf-echo protocols are the same (focus-guarded text
--- fields, per-feed display echo, a selection editor answering every feed with its row). Two-sorted, same citizenship, and — where the concept exists
--- in both catalogs — the same names and signatures (`textField` carries
--- Shoelace's plain `label` instead of MD's `floatingLabel`; the catalog has
--- no fill/outline split), so a demo switches design systems by switching
--- the import:
---
---   * **components** — UI components with a model interface, every one a citizen
---     of exactly one row shape:
---       `×→×` editors — `textField @l`, `textArea @l`, `rating @l` (the
---         star editor, `{ value :: Number }` — Shoelace's distinctive
---         catalog entry), `sliderLive @l` (`<sl-range>` — reports per drag
---         step, the value shown by the control's own tooltip),
---         `toggleSwitch @l` (`<sl-switch>`), and the
---         type-changing `select @l` (`{ l :: f } → { l :: f }`, `f` the option itself, or a
---         variant around it for the `…Unpicked`/`…Optional` siblings), a
---         group over `option @c` leaves (`<sl-option>`, `+→+` over its one
---         case) merged `VariantToVariant.do`;
---       `×→×` displays — `progressBar` (`<sl-progress-bar>`,
---         `{ value :: Number } → {}`, the filled fraction 0–1);
---       `×→+` events — `button @l` (`<sl-button variant="primary">`);
---       `+→×` statuses — `toast` (`<sl-alert>` shown on feed,
---         auto-dismissing via its own `duration`) — each taking
---         its business case and fold, the case label its copy (`toast @"Review submitted" captured`).
---   * **oculars** — shape-preserving decorators: `card` (`<sl-card>`, a
---     plain surface). Typography is deliberately absent:
---     Shoelace styles plain HTML through its tokens, so the `PUI.Web.HTML`
---     element oculars are the typography.
---   * plus **announcing statics** (`{}`-output chrome with a face, at any row):
---     `divider` (`<sl-divider>`).
---
--- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
--- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
--- that can fail or lose information belong in the model (a `settled`
--- normalization on the whole-row stage), not in a leaf bracket.
+-- The `PUI.Web.MDC3` recipe over Shoelace's custom elements, registered by
+-- importing the FFI module: a leaf is `element "sl-..."` plus
+-- property/event wiring, and the leaf protocols are the shared ones
+-- (focus-guarded text fields, per-feed display echo, a selection editor
+-- answering every feed with its row). The catalogue has no fill/outline
+-- split, so there is one `textField`. The `dimap` round-trip contract for
+-- editors holds as in `PUI.Web.MDC2`.
 
 -- UIs
 
--- | The **primary button**: the screen's action. It reports on click,
--- | carrying the data it was showing, under the name the app gives the
--- | action — `button @"Submit the review"`. The label defaults to
--- | the case label verbatim (`label:` overrides with real copy).
+-- | The **primary button** (`<sl-button variant="primary">`): on click it
+-- | emits the row it was showing as its case, which captions it —
+-- | `button @"Submit the review"`.
 button :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
 button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String } in eventLeaf @l $
   el "sl-button" >>> "variant" := "primary" $ staticText config.label
 
--- | The **text field**: a labelled single-line input. Shows the string it
--- | is given and reports each edit; typing is never interrupted by values
--- | arriving from elsewhere. A whole-row citizen: fed the wide row, it
--- | edits field `l` and carries the rest.
+-- | The **text field** (`<sl-input>`): a labelled single-line input
+-- | editing field `l`. Shows the string it is given and reports each
+-- | edit; typing is never interrupted by values arriving from elsewhere.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textField = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `textField` with a `hint` under it — a format or an example the label
--- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
--- | label stays the field's name. Shown as Shoelace's help text.
+-- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), shown as
+-- | Shoelace's help text.
 textField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
 textField' { hint } = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) hint
 
@@ -145,8 +108,8 @@ inputLeaf lbl hint = fromHandles do
     , read: \_ -> getValue node
     }
 
--- | The **multi-line text field**, `rows` lines tall — a note, a review, a
--- | message. Otherwise `textField`.
+-- | The **multi-line text field** (`<sl-textarea>`), `rows` lines tall
+-- | — a note, a review, a message. Otherwise `textField`.
 textArea :: forall @l r b provided. IsSymbol l => Cons l String b r => ConvertOptionsWithDefaults OptCaption { label :: String } { | provided } { label :: String, rows :: Int } => { | provided } -> PUI Web { | r } { | r }
 textArea provided = let config = convertOptionsWithDefaults OptCaption { label: reflectSymbol (Proxy @l) } provided in fieldLeaf @l $ fromHandles do
   element "sl-textarea" (pure unit)
@@ -160,15 +123,11 @@ textArea provided = let config = convertOptionsWithDefaults OptCaption { label: 
     , read: \_ -> getValue node
     }
 
--- | The **star rating** — Shoelace's distinctive control, with no Material
--- | counterpart: a judgement given by picking a point on a scale the user
--- | recognises at a glance.
--- |
--- | The scale is part of the rating, not part of the screen:
--- | `{ current, max }` travels together as one business datum, so how many
--- | stars there are comes from the data and can differ between contexts —
--- | and a scale nobody supplied is a compile error rather than a wrong
--- | screen. The label is drawn above the stars.
+-- | The **star rating** (`<sl-rating>`) — Shoelace's exclusive, the star
+-- | *editor* Material lacks: a judgement given by picking a point on a
+-- | scale. The field is `{ current, max }`, one business datum, so how
+-- | many stars there are comes from the data and may differ between
+-- | contexts. The label is drawn above the stars.
 rating :: forall @l r b. IsSymbol l => Cons l { current :: Number, max :: Int } b r => PUI Web { | r } { | r }
 rating = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $
   div >>> "style" := "display: inline-flex; flex-direction: column; gap: var(--sl-spacing-3x-small);" $ fromHandles do
@@ -185,25 +144,19 @@ rating = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $
       , read: \q -> getNumberProp "value" node <#> \v -> q { current = v }
       }
 
--- | The **slider**: a quantity chosen by feel, where the range matters more
--- | than the exact number.
--- |
--- | The range is part of the quantity, not part of the screen:
--- | `{ current, min, max, step }` travels together as one business datum, so
--- | limits come from the data and can change while the app runs — a slider
--- | is never silently out of range, and a range nobody supplied is a
--- | compile error rather than a wrong screen. `step` is `.discrete n`
--- | or `.continuous {}`, named like every other two-state field.
--- |
--- | It reports on **every change**, following the drag — so whatever it
--- | drives should be cheap to redo, or be `debounced` downstream. The
--- | current number shows in the control's own tooltip while dragging.
+-- | The **live slider** (`<sl-range>`): a quantity chosen by feel. The
+-- | field is the bounded quantity `{ current, min, max, step }`, one
+-- | business datum, so the limits come from the data and may change while
+-- | the app runs; `step` is `.discrete n` or `.continuous {}`. It reports
+-- | on **every change**, following the drag — hence the name; the
+-- | catalogue has no commit-only slider — so what it drives should be
+-- | cheap to redo or `debounced`. The current number shows in the
+-- | control's own tooltip while dragging.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
 sliderLive = fieldLeaf @l $ rangeLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `sliderLive` whose value is read in a `unit` (`sliderLive' @"Amount"
--- | { unit: "€" }`), shown after the number in the control's tooltip, so
--- | the label stays the quantity's name.
+-- | { unit: "€" }`), shown after the number in the tooltip.
 sliderLive' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
 sliderLive' config = fieldLeaf @l $ rangeLeaf (reflectSymbol (Proxy @l)) config.unit
 
@@ -225,9 +178,9 @@ rangeLeaf lbl measure = fromHandles do
     , read: \q -> getNumberProp "value" node <#> \v -> q { current = v }
     }
 
--- | The **switch**: a setting that takes effect the moment it is flipped.
--- | The label sits beside it and is part of the target, so clicking the
--- | words toggles it too.
+-- | The **switch** (`<sl-switch>`): a Boolean setting that takes effect
+-- | the moment it is flipped. The label sits beside it and is part of the
+-- | target, so clicking the words toggles it too.
 toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
 toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ fromHandles do
   element "sl-switch" (chrome (staticText config.label))
@@ -239,16 +192,16 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l 
     , read: \_ -> getChecked node
     }
 
--- | The **dropdown**: one choice out of a list too long to lay out in the
--- | open. Its options are `option` leaves, one per case of the field,
--- | merged `VariantToVariant.do` in the order they are shown:
--- | `select @"Owned for" $ VariantToVariant.do option @"Under a month"; option @"Over a year"`.
--- | The block closes the field's cases; the select lifts it onto field `l`,
--- | which holds the option itself, so the model always has one.
--- | Two siblings hold a variant instead: `selectUnpicked @l @c` for a
--- | choice owed but not yet made, `selectOptional @l @c @n` for one
--- | the user may leave unmade. Every one is an editor: every feed is
--- | answered with the row, every pick stored.
+-- | The **select** (`<sl-select>`): one choice out of a list too long to
+-- | lay out in the open. Its options are `option` leaves, one per case of
+-- | the field, merged `VariantToVariant.do` in the order shown: `select
+-- | @"Owned for" $ VariantToVariant.do option @"Under a month"; option
+-- | @"Over a year"`. The block closes the field's cases and the select
+-- | lifts it onto field `l`, which holds the option itself. Two siblings
+-- | hold a variant instead: `selectUnpicked @l @c` for a choice owed but
+-- | not yet made, `selectOptional @l @c @n` for one the user may leave
+-- | unmade. All three are editors: every feed is answered with the row,
+-- | every pick stored.
 -- A selector group over one clearing of its options: every feed first
 -- shows nothing picked, then the one option owning the fed case shows
 -- itself, so a case no option owns (an unpicked one) shows nothing.
@@ -295,7 +248,7 @@ clearEmits options = fromHandles do
           when (value == "") $ prop (Variant.inj (Proxy @n) {})
     }
 
--- | One option of a `select`: an `sl-option` captioned by its case. A
+-- | One option of a `select`: an `<sl-option>` captioned by its case. A
 -- | Shoelace option value holds no space (values are space-separated for
 -- | multiple selection), so the case rides it URI-encoded.
 option :: forall @c v b o. IsSymbol c => Cons c {} () v => Cons c {} b o => PUI Web [ | v ] [ | o ]
@@ -311,11 +264,10 @@ option = fromHandles do
   where
   value = optionValue (reflectSymbol (Proxy @c))
 
--- | The **progress bar**: how far along something is, `value` running 0 to
--- | 1. As much a gauge as a progress indicator — a quota, a share, a
--- | rating out of five — `progressBar progressFraction`: the
--- | value is a **read function** like every display's, since a fraction is
--- | derived (a ratio of source fields), not state.
+-- | The **progress bar** (`<sl-progress-bar>`): a fraction 0–1 of how
+-- | far along something is — as much a gauge as a progress indicator.
+-- | Takes a read function and no label (guardrails L17):
+-- | `progressBar progressFraction`.
 progressBar
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
@@ -326,15 +278,11 @@ progressBar f = fromHandles do
   -- sl-progress-bar runs 0–100
   liftEffect $ recordToRecordWiring { show: \r -> setNumberProp "value" node (f r * 100.0), held: pure false, reports: \_ -> pure unit, read: pure }
 
--- | The **toast**: a brief message at the bottom of the screen that
--- | dismisses itself, for something that has just happened and needs no
--- | reply. It never interrupts.
--- |
--- | A status **tells its case**: its caption is the case label verbatim,
--- | so the outcome is named as what it tells (`toast @"Review submitted"
--- | captured`) and the payload is read by nothing but the fold. A `+→×`
--- | leaf like `fold @l f`, it takes its fold, of the event and
--- | the model it lands on.
+-- | The **toast** (`<sl-alert>`, fixed at the bottom, dismissing itself
+-- | through its own `duration`): a brief message that never interrupts.
+-- | A status, it tells its case — the case label is its whole copy — and
+-- | takes its fold, of the event and the model it lands on (`toast
+-- | @"Review submitted" captured`; see `PUI.Web.MDC2.snackbar`).
 toast
   :: forall @l a v i o
    . IsSymbol l
@@ -359,10 +307,7 @@ toastFace caseLabel = fromHandles do
 
 -- UIOculars
 
--- | The **witness rung** — see `PUI.Web.MDC2.confirmed`: `focusCase @l`
--- | over the modal, the `+→+` stage of case `l`, its confirm button
--- | captioned by the case and re-emitting it with the row its content
--- | answered, a cancel consuming it, every other case passing. Over `<sl-dialog>`.
+-- | `confirmed` — see `PUI.Web.MDC2.confirmed`; over `<sl-dialog>`.
 confirmed
   :: forall @l r b v
    . IsSymbol l
@@ -371,9 +316,9 @@ confirmed
   -> PUI Web [ | v ] [ | v ]
 confirmed = confirmedOver @l modalFace
 
--- | `confirmed` with options: `cancel:` captions its Cancel with the copy
--- | the screen speaks (`confirmed' @"Usuń danie" { cancel: "Nie, nie
--- | usuwaj dania" } $ …`, diner); the Cancel still consumes the case.
+-- | `confirmed` with options: `cancel:` captions its Cancel
+-- | (`confirmed' @"Usuń danie" { cancel: "Nie, nie usuwaj dania" } $ …`,
+-- | diner); the Cancel still consumes the case.
 confirmed'
   :: forall @l r b v
    . IsSymbol l
@@ -383,10 +328,7 @@ confirmed'
   -> PUI Web [ | v ] [ | v ]
 confirmed' { cancel } = confirmedOver' @l cancel modalFace
 
--- | The **modal** — see `PUI.Web.MDC2.modal`: the leaf owning case `l`,
--- | telling it as its title and showing its payload until the user
--- | closes it with its "OK", which releases the case again; followed on
--- | an event path by `# acknowledged`. Over `<sl-dialog>`.
+-- | The **modal** — see `PUI.Web.MDC2.modal`; over `<sl-dialog>`.
 modal
   :: forall @l r v
    . IsSymbol l
@@ -429,29 +371,21 @@ modalFace { title, decide, cancel } content = fromHandles do
     , cancels: \cancelled -> for_ cancelNode \node -> listenNode node "click" cancelled
     }
 
--- | A **card**: a surface holding one subject's content. The body stacks
--- | its children with even spacing, so a form or a summary can be dropped
--- | in without spacing each row by hand.
--- |
--- | A plain ocular, with no config of its own: a card is a *surface*, and a
--- | heading of its own is ordinary typography placed in its content —
--- | Shoelace styles plain HTML, so the HTML oculars are that type scale.
+-- | A **card** (`<sl-card>`): a surface holding one subject's content,
+-- | its body stacking the children with even spacing. A plain ocular with
+-- | no config: a heading is typography in its content (the HTML oculars,
+-- | Shoelace's type scale).
 card :: Ocular (PUI Web)
 card content = el "sl-card" $ div >>> "style" := cardBodyStyle $ content
 
 cardBodyStyle :: String
 cardBodyStyle = "display: flex; flex-direction: column; align-items: flex-start; gap: var(--sl-spacing-medium);"
 
--- | A **labelled model group** — the contract is `PUI.Web.MDC2.group`'s:
--- | `focusField @l` fused with the `card` surface, `group @l w` rendering
--- | `w` on an `sl-card` whose `header` slot holds the label verbatim and
--- | nesting `w`'s model under field `l`, the label stamped as the
--- | accessible group name (`role="group"`, `aria-labelledby` the
--- | heading). Derived, not primitive:
--- |
--- | ```
--- | group @l w = card (heading >>> focusField @l w)      -- + the a11y stamp
--- | ```
+-- | The **labelled group** — the contract is `PUI.Web.MDC2.group`'s:
+-- | `w` on an `<sl-card>` whose `header` slot holds the label verbatim,
+-- | its model nested under field `l`, the label the accessible group
+-- | name. Derived: `group @l w = card (heading >>> focusField @l w)` plus
+-- | the a11y stamp.
 group
   :: forall @l f f' b s t
    . IsSymbol l
@@ -467,11 +401,12 @@ group w = fromHandles do
 
 -- statics (chrome with a face, the wire at any row)
 
--- | A **divider**: the hairline rule between sections of a surface. Fixed
--- | decoration, carrying no data.
+-- the divider's face, a `{}`-static
 dividerExact :: PUI Web {} {}
 dividerExact = staticHTML "<sl-divider style=\"width: 100%;\"></sl-divider>"
 
+-- | A **divider** (`<sl-divider>`): the hairline rule between sections,
+-- | shown only between things (`separating`). Carries no data.
 divider :: Ocular (PUI Web)
 divider = separating dividerExact
 
@@ -485,14 +420,11 @@ foreign import optionValue :: String -> String
 
 -- Entry point
 
--- | Mount the app in the page's `<body>`, dressed for Shoelace: the icon
--- | base path — where `sl-rating`'s stars and the alert icons are fetched
--- | from, the CDN release matching the bundled components — is set here,
--- | and the app then mounts exactly as `PUI.Web.HTML.body` does — same
--- | signature, same closed-app demand (`PUI Web {} o`). The entry is a
--- | word of the vocabulary like any other, so a screen changes design
--- | system at its first line by changing the import, and nothing runs at
--- | import time.
+-- | Mount the app in the page's `<body>` as `PUI.Web.HTML.body` does (same
+-- | signature, same closed-app demand), after setting the icon base path
+-- | — where `sl-rating`'s stars and the alert icons are fetched from, the
+-- | CDN release matching the bundled components. Nothing runs at import
+-- | time (guardrails L11).
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
   adoptIconBasePath
@@ -500,9 +432,9 @@ body ui = do
 
 foreign import adoptIconBasePath :: Effect Unit
 
--- | The **indeterminate progress bar**: a status fed a run's `started` and
--- | `ended`, shown between them — what `PUI.action`'s slot dispatches
--- | (`indeterminateLinearProgress # action submit`). No label: it names no
+-- | The **indeterminate progress bar**: the action slot, fed a run's
+-- | `started` and `ended` and shown between them
+-- | (`indeterminateLinearProgress # action @l f`). No label: it names no
 -- | field and no case.
 indeterminateLinearProgress :: PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateLinearProgress = fromHandles do

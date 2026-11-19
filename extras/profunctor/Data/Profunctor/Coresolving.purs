@@ -1,13 +1,10 @@
 -- | The **co-strength** of `Data.Profunctor.Resolving` — the `× → +` analogue
 -- | of the ecosystem's `Data.Profunctor.Costrong`, stated **positionally**
--- | (`Tuple`/`Either`) with no row in sight, and living beside its strength
--- | exactly as `Costrong` lives beside `Strong`. It has no row form (a
--- | fold's state is a model field under `looped`); `PUI.debounced`
--- | stands on it, and the optic it generates is `Data.Lens.Coshutter`.
--- |
--- | Like its strength, a **complement of the ecosystem's own** — hence the
--- | `Data.Profunctor.*` name and the separate `extras/profunctor` source
--- | root: nothing here mentions `PUI`, a row, or a carrier.
+-- | (`Tuple`/`Either`). It has no row form (a fold's state is a model field
+-- | under `looped`); `PUI.debounced` stands on it, and the optic it
+-- | generates is `Data.Lens.Coshutter`. Like its strength, a complement of
+-- | the ecosystem's own, mentioning no `PUI`, row or carrier — hence the
+-- | `extras/profunctor` root.
 module Data.Profunctor.Coresolving
   ( class Coresolving
   , coresolve

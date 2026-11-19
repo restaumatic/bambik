@@ -1,30 +1,18 @@
--- | `Variant → Record` (+ → ×) row profunctors, organized (uniformly across
--- | the four shape modules) as:
+-- | `Variant → Record` (+ → ×) row profunctors:
 -- |
 -- |   * **strength** — `Retaining` (`Data.Profunctor.Retaining`; `PUI m`
--- |     instances only, no `(->)`): the unary power, a Mealy/coroutine step.
--- |     Its co-strength `Coretaining` is in `Data.Profunctor.Coretaining`,
--- |     and their optics are `Data.Lens.Reel` and `Data.Lens.Coreel` —
--- |     neither the classes nor the optics mention a row, so none of them
--- |     lives here.
--- |   * **shape class** — `VariantToRecord`, the binary **merge**: the
--- |     one genuine per-carrier primitive, with its qualified-do sugar
--- |     (`bind`/`discard`).
+-- |     instances only, no `(->)`): a Mealy/coroutine step. Its
+-- |     co-strength is `Data.Profunctor.Coretaining`, their optics
+-- |     `Data.Lens.Reel` and `Data.Lens.Coreel`; none mentions a row, so
+-- |     none lives here.
+-- |   * **shape class** — `VariantToRecord`, the binary **merge**, with
+-- |     its qualified-do sugar (`bind`/`discard`).
 -- |   * **free functions** — over `Category`: `unshown @l` (the faceless
 -- |     leaf owning case `l`, the status a silent fold opens with). The
--- |     fold itself is `PUI`'s, an optic over its
--- |     status. No strength or co-strength row form: a stage is typed at
--- |     one row, so no word narrows it to a sub-variant with the other
--- |     cases retained as a field, and an unfold's state is a model
--- |     field, never a hidden one (`Data.Profunctor.Row`, *What is
+-- |     fold itself is `PUI`'s, an optic over its status. No strength or
+-- |     co-strength row form: a stage is typed at one row, and an
+-- |     unfold's state is a model field (`Data.Profunctor.Row`, *What is
 -- |     deliberately not here*).
--- |
--- | A word lives where the sides it constrains do: one constraining both
--- | sides in its shape's module, one constraining a single side on the
--- | floor (`Data.Profunctor.Row`)
--- | — so no shape module imports another, and every module holds only
--- | its merge, its strength and trace forms, and the words that genuinely
--- | span both of its sides.
 -- |
 -- | ## Laws at `+→×`
 -- |
@@ -69,13 +57,13 @@
 -- | On `PUI`: dispatch in, passage out — each operand's release exits as
 -- | it occurs, nothing retained, no gate, no step (`Applicative m`
 -- | suffices, as at `+→+`). The outputs were once owned and the merge
--- | gated like `×→×` (git log, 2026-10-04); with a loop's folds one per
--- | case, each releasing its step to the next model, the shared output is the
--- | honest type and the copairing the honest mechanism. Releasing on every occurrence is
--- | the fold's choice (no row needs `Eq`), not a law. A merge silent on an
--- | occurrence has an operand that chose not to release — a status. Probes carry law and shape
--- | in test/Main.purs; 3, 4 and 6 run over every script to a bound in
--- | test/Exhaustive.purs.
+-- | gated like `×→×` (2026-10-04); with a loop's folds one per case, each
+-- | releasing its step to the next model, the shared output is the honest
+-- | type and the copairing the honest mechanism. Releasing on every
+-- | occurrence is the fold's choice (no row needs `Eq`), not a law; a
+-- | merge silent on an occurrence has an operand that chose not to
+-- | release — a status. Probes carry law and shape in test/Main.purs; 3, 4
+-- | and 6 run over every script to a bound in test/Exhaustive.purs.
 module Data.Profunctor.Row.VariantToRecord
   ( class VariantToRecord
   , variantToRecord

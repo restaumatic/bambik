@@ -7,13 +7,10 @@
 -- | across feeds; what differs is the output side, a variant, which no gate
 -- | can wait on.
 -- |
--- | ## The key
--- |
--- | The square's (`Data.Profunctor.Keyed`, *The key*): field `l` of the
--- | element's row (`keyed @l` in). The class primitive emits each event
--- | beside its element's key, `Tuple k b`; the label form drops it, the
--- | output being an event and not the element's row, so there is no key
--- | field to re-set.
+-- | The key is the square's (`Data.Profunctor.Keyed`, *The key*): field
+-- | `l` of the element's row. The class primitive emits each event beside
+-- | its element's key; the label form drops it, the output being an event
+-- | and not the element's row, so there is no key field to re-set.
 -- |
 -- | ## Laws
 -- |
@@ -31,21 +28,14 @@
 -- |
 -- | ## Forms
 -- |
--- | Three, like every member of the keyed square:
--- |
--- |   * `gathered @l` — over the element's row.
--- |   * `gatheredOf @l proj` (a projection to the array) —
--- |     `tile @"Key entered" @"key" … # gatheredOf @"key" keyPad`;
--- |     MDC2/MDC3's `listOf` is this over picked rows.
--- |   * `gatheredAt @l @t` — over an array the model stores at field `t`
--- |     (`# gatheredAt @"key" @"cells"`, cells).
+-- | `gathered @l`, `gatheredOf @l proj` (MDC2/MDC3's `listOf` is this over
+-- | picked rows) and `gatheredAt @l @t`, each described at its definition.
 -- |
 -- | ## The carrier
 -- |
--- | This module holds the class, whose primitive `gathering` takes each
--- | element beside its key, and the label forms. The instance is the carrier's:
--- | `PUI` holds a generic `Hosting m node =>` instance over the keyed
--- | reconciler it shares with `Acting`, with passage where `Acting` gates.
+-- | The instance is the carrier's: `PUI` holds a generic `Hosting m node
+-- | =>` instance over the keyed reconciler it shares with `Acting`, with
+-- | passage where `Acting` gates.
 module Data.Profunctor.Keyed.Gathering
   ( class Gathering
   , gathering

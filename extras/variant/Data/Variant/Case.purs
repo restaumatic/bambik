@@ -1,10 +1,9 @@
 -- | The **value-level label read** the ecosystem's `Data.Variant` does not
--- | export: the case label of a variant value, verbatim. It is not a coined
--- | concept — the value, the machinery (`unvariant`) and the reflected symbol
--- | are all the ecosystem's, only this composition is missing — so it lives
--- | under `Data.Variant.*`, extending that family rather than shadowing it,
--- | in its own `extras/variant` source root. Liftable into
--- | `purescript-variant` unchanged.
+-- | export: the case label of a variant value, verbatim. Not a coined
+-- | concept — `unvariant` and the reflected symbol are the ecosystem's,
+-- | only this composition is missing — so it lives under `Data.Variant.*`
+-- | in its own `extras/variant` root, liftable into `purescript-variant`
+-- | unchanged.
 -- |
 -- | Law (label-is-copy):
 -- |

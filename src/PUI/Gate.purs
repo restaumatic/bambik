@@ -29,12 +29,12 @@
 -- | a broadcast step it is, and whether a contribution landed during the
 -- | step; its data (the retained slots) is stored and re-emitted but never
 -- | inspected — no branch of `gateStep` looks at a payload, and `v` is
--- | polymorphic to say so. That is what makes exhaustive checking complete
--- | rather than approximate (doc/observational-semantics.md, "The gate as a
--- | Mealy machine"): two machines built from this step either agree on every
--- | script or disagree on one shorter than the product of their
--- | control-state counts, and a fresh token per event is the most
--- | distinguishing environment there is. `known ⊆ order` is invariant.
+-- | polymorphic to say so. That is what makes exhaustive checking
+-- | (test/Exhaustive.purs) complete rather than approximate: two machines
+-- | built from this step either agree on every script or disagree on one
+-- | shorter than the product of their control-state counts, and a fresh
+-- | token per event is the most distinguishing environment there is.
+-- | `known ⊆ order` is invariant.
 -- |
 -- | **Inputs.** `Contributed` — an operand emitted, as the slots it fills
 -- | (a record merge trims the emission to its declared row and lists its

@@ -3,51 +3,41 @@
 -- | browser, the DOM building blocks and FFI, and the **element-neutral
 -- | vocabulary** every vocabulary beneath this module is written with.
 -- |
--- | No *element* lives here — elements are the submodules' to name: the
--- | element vocabularies `PUI.Web.HTML` and `PUI.Web.SVG`, and one module
--- | per design system — `PUI.Web.MDC2`, `PUI.Web.MDC3`, `PUI.Web.Shoelace`,
--- | `PUI.Web.Fluent`, `PUI.Web.Bootstrap`. What lives here instead works on
--- | whatever element was built last, or on no element at all, so SVG and
--- | every design system use it as readily as HTML does:
+-- | No *element* lives here — elements are the submodules' to name
+-- | (`PUI.Web.HTML`, `PUI.Web.SVG`, and one module per design system). What
+-- | lives here works on whatever element was built last, or on no element
+-- | at all. Two floors share the module (guardrails L16): the **vocabulary**
+-- | an application imports —
 -- |
--- | - **decorators** — `attr`/`:=` and `attrDyn`/`:=>` (static and
--- |   effect-computed attributes), `cl`, and the channel-fed `attrWith`,
--- |   `attrAt` and `clWhen`; `init` for per-element setup;
--- | - **text leaves** — `text` (copy from a read function), `textAt` (a
--- |   field shown as stored), `statusText` (a status's caption), `staticText`,
--- |   and `staticHTML`, kept off the public vocabularies (L10);
+-- | - **decorators** — `attr`/`:=` and `attrDyn`/`:=>`, `cl`, and the
+-- |   channel-fed `attrWith`, `attrAt` and `clWhen`; `init` for per-element
+-- |   setup;
+-- | - **text leaves** — `text`, `textAt`, `staticText`;
 -- | - **occurrence sources** — `onClickedXY @l`, `onHoveredXY @l`,
 -- |   `onContextMenuXY @l`;
--- | - **panes** (re-exported from `PUI`, where they run over any
--- |   `Hosting` carrier) — `provided` (emitters) and `inCase` (displays and
--- |   editors), each fed the whole row; a pane over a variant the model
--- |   stores names its field by label (`providedAt`, `inCaseAt`);
--- | - **sources** — the browser's facts (`geolocated`, `online`, `clock`,
--- |   `colorScheme`) over `PUI`'s `source`, each `{} → { l :: a }`, owning
--- |   one field the app cannot seed;
+-- | - **panes** (re-exported from `PUI`) — `provided`, `inCase`,
+-- |   `providedAt`, `inCaseAt`;
+-- | - **sources** — `geolocated`, `online`, `clock`, `colorScheme`, each
+-- |   `{} → { l :: a }`, owning one field the app cannot seed;
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
--- |   tag;
--- | - **leaf building blocks** — what every vocabulary's leaves are built
--- |   from over `PUI`'s leaf wirings (`recordToRecordWiring`,
--- |   `variantToRecordWiring`, `variantToVariantWiring`, `optionWiring` —
--- |   the leaf protocol, host-neutral, so it lives with the carrier, as
--- |   do the click emitter `eventLeaf`, the status `statusOver` and the
--- |   dialogs `confirmedOver`/`modalOver`): `fieldLeaf`, `chrome`,
--- |   `listenNode`/`listenNodeDeferred`/
--- |   `listenCapture`, `ensureStyle`, `autoDismiss`, the selector-group
--- |   helpers (`grouping`, `member`, `Member`, `unpickAll`, `hasClass`, `clearedByRepress` —
--- |   an optional group's clearing gesture) and the presentation-option
--- |   tags `OptCaption`, `OptLabelIcon`, `OptSelected`, `OptIcon`.
+-- |   tag —
 -- |
--- | There are two ways to draw a screen from data, and the choice is visible
--- | to the user. When the **shape is fixed and only the values move** — a
--- | spreadsheet grid, an SVG canvas, a table of orders — build the shape
--- | once and let data flow through it (`actedOf` from `PUI` for the repeated
--- | part, `text` for contents, `attrWith`/`clWhen` for anything computed):
--- | elements are updated in place, so nothing loses focus, scroll position
--- | or a half-finished gesture when a value changes. When the **shape itself
--- | depends on the data** — a rendered markdown document, where one block is
--- | a heading and the next a list — `dynamic` and `each` build it from a
+-- | and the **internals** only the vocabularies reach: the DOM builder and
+-- | FFI (`element`, `Node`, `runDomInNode`, …), `staticHTML` (kept off the
+-- | public vocabulary, L10), `statusText`, and the leaf building blocks
+-- | over `PUI`'s host-neutral leaf wirings — `fieldLeaf`, `chrome`,
+-- | `listenNode`/`listenNodeDeferred`/`listenCapture`, `ensureStyle`,
+-- | `autoDismiss`, the selector-group helpers (`grouping`, `member`,
+-- | `Member`, `unpickAll`, `hasClass`, `clearedByRepress`) and the
+-- | presentation-option tags `OptCaption`, `OptLabelIcon`, `OptSelected`.
+-- |
+-- | Two ways to draw a screen from data: when the **shape is fixed and only
+-- | the values move** (a grid, a canvas, a table), build it once and let
+-- | data flow through it (`actedOf` for the repeated part, `text` for
+-- | contents, `attrWith`/`clWhen` for anything computed) — elements are
+-- | updated in place, so nothing loses focus, scroll position or a
+-- | half-finished gesture; when the **shape itself depends on the data** (a
+-- | rendered markdown document), `dynamic` and `each` build it from a
 -- | function and redraw when it changes.
 module PUI.Web
   ( DOM
@@ -394,15 +384,10 @@ instance Hosting Web (Array Node) where
 -- | system only documents as markup. Like `staticText` it never changes and
 -- | carries no data; unlike it, the string is inserted as markup, so it must
 -- | be written in the source and never assembled from model or user text:
--- | a runtime string — a caption, a label, a title, a URL — is a
--- | `staticText` or an attribute (`:=`) on an element built with `el`,
--- | the constant markup around it staying a string where the catalogue
--- | documents it so.
--- |
--- | **Internal chrome plumbing** (L10): it lives here, on the carrier, rather
--- | than in the `PUI.Web.HTML` vocabulary, because an HTML-string surface must
--- | not be part of the public vocabulary an application composes from. The
--- | design-system modules reach it; application code does not.
+-- | a runtime string — a caption, a title, a URL — is a `staticText` or an
+-- | attribute (`:=`) on an element built with `el`. Internal chrome
+-- | plumbing (guardrails L10): the design-system modules reach it,
+-- | application code does not.
 staticHTMLExact :: String -> PUI Web {} {}
 staticHTMLExact html = fromHandles do
   parent <- gets _.parent
@@ -420,36 +405,26 @@ slotCounter :: Ref.Ref Int
 slotCounter = unsafePerformEffect $ Ref.new 0
 
 -- | Marks a leaf's caption field (`label`/`floatingLabel`) as optional —
--- | left out, it defaults to the row label **verbatim**, which is why a
--- | label is written as the copy it draws (`@"First name"`, quoted because
--- | human copy is no identifier). Nothing derives a caption from an
--- | identifier: real copy that the label cannot be — localized wording,
--- | units — belongs in the config. The `ConvertOptionsWithDefaults` tag
--- | the design systems' captioned leaves share.
+-- | left out, it defaults to the row label **verbatim**; nothing derives a
+-- | caption from an identifier (guardrails L3). The
+-- | `ConvertOptionsWithDefaults` tag the design systems' captioned leaves
+-- | share.
 -- |
--- | The stamp invariant, vocabulary-wide: **every label-indexed leaf
--- | stamps its label on its host element** — `name` where the element is
--- | a form citizen, `aria-label` where it is a display — so inspecting
--- | any element answers which `@l` in the code it is.
--- | `text` is outside the family: copy is a function, not a
--- | field, so it carries no label to stamp — under host diagnostics it
--- | plants a bare `text` comment marker, and in production nothing.
--- |
--- | The invariant's second half is the **accessible name**: it must be the
--- | caption *verbatim*. Browsers compute names from RENDERED text, so a
--- | catalogue's styling would leak into them — MD2's stylesheet uppercases
--- | buttons, tabs and segments, once computing a `@"Count"` button's name
--- | as "COUNT" — therefore every face whose styling transforms its caption
--- | stamps `aria-label` with the caption verbatim (MDC2's button family,
--- | tabs, segments and the menu anchor), keeping name = label exactly, in
--- | every vocabulary and browser alike — and so does every face the platform
--- | cannot name by itself: MD3's checkbox and switch sit inside a wrapping
--- | `<label>` whose association never reaches the input in their shadow
--- | root, so the switch stamps its label and the checkbox the rendered text
--- | of its content. The smoke harness enforces both
--- | halves: role + accessible-name locators match exactly
--- | (scripts/smoke/a11y.mjs), and axe's name-and-reference rules run per
--- | vocabulary (tests/a11y-laws.mjs).
+-- | The **stamp invariant**, vocabulary-wide: every label-indexed leaf
+-- | stamps its label on its host element — `name` where the element is a
+-- | form citizen, `aria-label` where it is a display — so inspecting any
+-- | element answers which `@l` in the code it is (`text` carries no label
+-- | to stamp; under host diagnostics it plants a bare `text` comment
+-- | marker). Its second half is the **accessible name**, the caption
+-- | verbatim: browsers compute names from rendered text, so every face
+-- | whose styling transforms its caption (MD2's stylesheet uppercases
+-- | buttons, tabs, segments and the menu anchor) and every face the
+-- | platform cannot name by itself (MD3's checkbox and switch, whose
+-- | wrapping `<label>` never reaches the input in their shadow root) stamps
+-- | `aria-label` with the caption. The smoke harness enforces both halves:
+-- | role + accessible-name locators match exactly (scripts/smoke/a11y.mjs),
+-- | and axe's name-and-reference rules run per vocabulary
+-- | (tests/a11y-laws.mjs).
 data OptCaption = OptCaption
 
 instance ConvertOption OptCaption sym a a where
@@ -501,7 +476,6 @@ chrome = void <<< handles
 listenNode :: Node -> String -> Effect Unit -> Effect Unit
 listenNode node event handler = void $ addEventListener event node (const handler)
 
--- | The options of a group, as its clearing sees them.
 -- | One option of a selector group, as it registers with the group: its
 -- | element, whether it shows itself picked, and how it stops.
 type Member = { node :: Node, picked :: Effect Boolean, unpick :: Effect Unit }
@@ -588,26 +562,14 @@ separating rule w = fromHandles do
   pure w'
 
 -- | Show a string that changes — a readout, a total, a sentence, a name in
--- | a list row. (Wording that doesn't change is `staticText`.)
--- |
--- | **Copy is a function, not a field**: the argument is the read — a named
--- | function from the fields it needs to the words on the screen, living in
--- | the logic module where it is one pure function and one unit test
--- | (`text progressLineOf`). The read function is typed at
--- | the row its line is fed (the model, or a list's element),
--- | so no call site coerces. This is why `text` takes no label:
--- | its content *is* the copy, so there is no field to name and nothing to
--- | caption — a caption is surrounding chrome (`staticText`, a `label`, a
--- | column header). A field shown as it is stored is not copy but the
--- | field itself, named by its label: `textAt @"title"`.
--- |
--- | A whole line is one function, glue included — never several leaves with
--- | `staticText` between them, and never a formatter in the view.
--- | doc/research-copy-is-a-function.md is the rationale.
--- |
--- | Like every display it is a stage that **changes no data**: the row it
+-- | a list row (`text countLine`, counter); wording that doesn't change is
+-- | `staticText`. **Copy is a function, not a field** (guardrails L17): the
+-- | argument is a named read function of the view model module, typed at
+-- | the row its line is fed, so `text` takes no label — its content *is*
+-- | the copy, and a caption is surrounding chrome. A field shown as stored
+-- | is `textAt @"title"`. Like every display it changes no data: the row it
 -- | shows is the row it releases, so it is a line of a `Semigroupoid.do`
--- | block like an editor, in its place on the screen.
+-- | block in its place on the screen.
 text :: forall r. ({ | r } -> String) -> PUI Web { | r } { | r }
 text = textLeaf
 
@@ -617,16 +579,13 @@ text = textLeaf
 textAt :: forall @l b r. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textAt = text (Record.get (Proxy @l))
 
--- | `text`'s status sibling: a status face renders its caption on every
--- | occurrence (`statusText caption`), adopted as its case by `atCase @l`
--- | — a `+→×` leaf. The caption is the case label verbatim, so the face
--- | reads nothing of the payload: a status tells its case. Unlike a static,
--- | nothing shows before the first occurrence. Vocabulary-internal —
--- | application code shows copy with `text`, whose row-shaped read states
--- | its footprint. Unlike the display it renders with, a status **releases
--- | nothing**: the `+→×` merge forwards every release as the whole shared
--- | row, so the leaf's echo is swallowed here and the output is typed at
--- | every row, as the silent component's is.
+-- | `text`'s status sibling, vocabulary-internal: a status face renders its
+-- | caption — the case label verbatim, reading nothing of the payload — on
+-- | every occurrence, adopted as its case by `atCase @l`; nothing shows
+-- | before the first occurrence. Unlike the display it renders with, it
+-- | **releases nothing**: the `+→×` merge forwards every release as the
+-- | whole shared row, so the leaf's echo is swallowed here and the output
+-- | is typed at every row, as the silent component's is.
 statusText :: forall a r. String -> PUI Web a { | r }
 statusText caption = fromHandles do
   leaf <- handles (textLeaf (const caption))
@@ -655,20 +614,15 @@ textLeaf f = fromHandles do
 
 -- | **Static copy**: text that is part of the structure — on screen before,
 -- | and regardless of, any model value — a value, never a label, since it
--- | names no field and no case: `h3 (staticText "Hours")`, `label $
--- | staticText "Name "`. Fixed decoration carrying no data, rendered at
--- | build, the wire at any row. A static inside a pane is still a static
--- | — the pane decides when it shows, the text reads nothing
--- | (`staticText "Error" # inCaseAt @"faulty" @"condition"`), so a copy
--- | function ignoring its row is a static in the wrong module. Copy that
--- | is fixed but reads data — the glue of a sentence, a formatted value, a
--- | business constant — is a *constant*, and lives in the copy function
--- | of the view model module (`text refundLine`); text that *is* data is
--- | `staticText` too.
+-- | names no field and no case: `h3 $ staticText "Hours"`. Rendered at
+-- | build, the wire at any row; a static inside a pane is still a static
+-- | (`staticText "Error" # inCaseAt @"faulty" @"condition"`, calculator).
+-- | Which copy is static and which a constant in a copy function is
+-- | writing.md's *Fixed copy is static or constant*.
 
 -- | Fixed text given as a runtime string — for vocabulary code captioning
 -- | from its configuration, and for closure-known text that is data (a
--- | parsed markdown run). Application copy that is static is `staticText (reflectSymbol (Proxy @s))`.
+-- | parsed markdown run).
 staticTextExact :: String -> PUI Web {} {}
 staticTextExact content = fromHandles do
   -- the `{}` it announces at registration is the point's answer to the
@@ -759,13 +713,10 @@ attrDyn name valueFunction w = fromHandles do
 infixr 10 attrDyn as :=>
 
 -- | Style by data: the class is on exactly while the test holds for what is
--- | being shown — the strike-through on a done todo, the error colour on an
--- | overdrawn amount, the highlight on the selected row.
--- |
--- | Styling only. To make something *appear and disappear*, use
--- | `provided`, which takes the content away with the pane instead of
--- | leaving it on the page in a different colour. Applies to the last
--- | element built, not to a group of siblings.
+-- | being shown — the strike-through on a done todo (`clWhen isCompleted
+-- | "todo-done"`, todo-list). Styling only: to make something *appear and
+-- | disappear*, use a pane. Applies to the last element built, not to a
+-- | group of siblings.
 clWhen :: forall r a. ({ | r } -> Boolean) -> String -> PUI Web { | r } a -> PUI Web { | r } a
 clWhen pred name w = fromHandles do
   w' <- handles w
@@ -880,13 +831,10 @@ dynamic build = fromHandles do
   liftEffect $ recordToRecordWiring { show: \value -> w.toUser [ value ], held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | Lay out a list that is known up front and never changes — the courses
--- | on a menu, the keys of a keypad, a row of preset swatches:
--- | `ul $ each courses renderCourse`, `tr $ each keys keyComponent`. Nothing
--- | about it comes from the model, so it sits among fixed decoration and,
--- | like every static, is built once, at registration: it is on screen
--- | before any feed and whether or not one arrives, and like every static
--- | it is the wire at its row: the elements are fed nothing, and the row
--- | passes.
+-- | on a menu, a row of preset swatches: `ul $ each courses renderCourse`.
+-- | Like every static it is built once, at registration, on screen before
+-- | any feed, and is the wire at its row: the elements are fed nothing, and
+-- | the row passes.
 each :: forall a r. Array a -> (a -> PUI Web {} {}) -> PUI Web { | r } { | r }
 each items build = built do
   w <- handles (foreachWith build)

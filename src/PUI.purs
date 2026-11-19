@@ -1,29 +1,14 @@
 -- | The core profunctor UI type and its combinators.
 -- |
--- | **The duoidal reading.** `PUI` composes two ways: sequentially
--- | (`Semigroupoid.do` — the ecosystem's `QualifiedDo.Semigroupoid`;
--- | `⊳`, emissions feed downstream) and in parallel
--- | (the row merges, `⊗` — the input broadcasts to every operand). The two
--- | interact as in a duoidal category: a pipeline can only emulate a merge
--- | through a **comonoid** — a stage that *duplicates* its input onward, not
--- | merely consumes it. A fulfillment-gated display is exactly that
--- | comultiplication (render
--- | *and* forward); a bare display is only the counit (render and discard),
--- | which is why undisplayed chrome ahead of a live stage starves it under
--- | `⊳` while the same chrome inside a merge needs nothing — a display is
--- | made into a pass-through stage precisely by its gate. See
--- | doc/collections-profunctor-algebra.md §0.
--- |
--- | **The cycle.** Read as an application, the four shapes are the four
--- | arrows of one loop, and the rows between them have names: `×→×`
--- | takes the **model** to the **view model** (presentation, edits
--- | carried back), `×→+` the view model to a **view event**
--- | (interaction), `+→+` a view event to a **model event**
--- | (interpretation) and `+→×` a model event to the model (transition);
--- | `looped` closes it. The diagonal shapes translate within a kind, the
--- | off-diagonal ones convert between kinds. Positions, not types: the
--- | model and the view model are one row wherever nothing narrows or
--- | derives (guardrails L3).
+-- | **Two compositions.** `PUI` composes sequentially (`Semigroupoid.do`,
+-- | emissions feeding downstream) and in parallel (the row merges, the
+-- | input broadcast to every operand), and the two interact as in a
+-- | duoidal category: a pipeline emulates a merge only through a stage
+-- | that *duplicates* its input onward — which is what a gated display is
+-- | (render *and* forward), and why a display is a pass-through stage
+-- | precisely by its gate. The four shapes are the four arrows of an
+-- | application's cycle, named in CLAUDE.md (*Core Type*); `looped`
+-- | closes it.
 -- |
 -- | **The carrier contract.** A `PUI` value denotes, per instantiation, one
 -- | process reached in three phases: constructed in `m`, then registered
@@ -35,28 +20,20 @@
 -- | `Functor` for one operand, `Apply` for two, `Applicative` for none.
 -- | `MonadEffect m` is left to what genuinely builds in `m` — the scope a
 -- | word reads (`Scoped`), the host placing collection elements
--- | (`Hosting`) — and to `handles`, the two-leg bridge. The protocol, `≈`, `⊑` and the component laws every
--- | instance below is stated against are doc/observational-semantics.md
--- | §1–3; the six laws — two on components, four on merges — are stated
--- | once in `Data.Profunctor.Row` ("The laws") and read per shape in the
--- | four `Data.Profunctor.Row.*` headers (`RecordToRecord`'s "The two
--- | laws" and "The merge at `×→×`", "Laws at `×→+`" and siblings);
--- | nothing of them is restated here.
--- |
--- | How applications are written over this module — the presentation rows,
--- | copy as a read function at the leaf, no nominal types in UI, the
--- | `looped` app loop and how to read a pipeline — is
--- | `.claude/skills/developing-bambik-apps/writing.md` and
--- | doc/research-copy-is-a-function.md, stated once there.
+-- | (`Hosting`) — and to `handles`, the two-leg bridge. The six laws — two
+-- | on components, four on merges — are stated once in
+-- | `Data.Profunctor.Row` ("The laws") and read per shape in the four
+-- | `Data.Profunctor.Row.*` headers; nothing of them is restated here. How
+-- | applications are written over this module is
+-- | `.claude/skills/developing-bambik-apps/writing.md`.
 -- |
 -- | **The gate is a pure machine.** The knowledge gate every product-shaped
 -- | output runs on — the `×→×` merge over its owned labels, the container
--- | action's gather over its element keys — is
--- | `PUI.Gate.gateStep`, one total step over a small state in a module with
--- | no `Effect`; `driveGate` below is its whole effectful part (read, step,
--- | write, act). That separation is what lets the merge laws be checked
--- | exhaustively rather than sampled (doc/observational-semantics.md §9,
--- | test/Exhaustive.purs).
+-- | action's gather over its element keys — is `PUI.Gate.gateStep`, one
+-- | total step over a small state in a module with no `Effect`; `driveGate`
+-- | below is its whole effectful part (read, step, write, act). That
+-- | separation is what lets the merge laws be checked exhaustively rather
+-- | than sampled (test/Exhaustive.purs).
 module PUI
   ( Action
   , Ocular
@@ -167,22 +144,11 @@ import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
 import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, onField, recordToRecord)
 -- the words a view writes beside the leaves, re-exported so demos need the
--- row modules only for the `.do` merges and the knot. `focusField` is
--- deliberately absent: the leaf lift is design-system plumbing — every
--- vocabulary editor is `focusField @l`-lifted inside, the labelled group
--- (`group @l`) carries sub-model nesting, so application code never lifts a
--- focus itself. No placement word is here either: every leaf narrows its
--- input and its output itself — a status or an action owns the one
--- case its label names, an emitter is closed to the case it emits, an action is
--- typed at exactly its outcomes, which the statuses or folds after it own — so a stage is typed at one
--- row (the gated displays, `settled`, `acted`) and a UI component's own
--- row is always stated by a business function, never placed at another
--- row at the call site. The floor's single-label adopters (`atField`/
--- `atCase`, `toField`) stay inside the vocabularies, where a face is
--- adopted at its label, and no view writes `toCase`: an editor's release
--- leaving as an event is the editing list's to say (`editsOf`).
--- `{}`-input chrome is placed by `eventLeaf` with a bare
--- `lcmap (const {})`.
+-- row modules only for the `.do` merges. `focusField` and the adopters
+-- (`atField`/`atCase`, `toField`) are deliberately absent: every vocabulary
+-- editor is `focusField @l`-lifted inside, `group @l` carries sub-model
+-- nesting, and every leaf narrows its input and output itself, so a view
+-- places nothing at a row (guardrails L3).
 import Data.Profunctor.Row (settled, type (+)) as Adopters
 import Data.Profunctor.Row.RecordToVariant (joined) as Adopters
 import Data.Profunctor.Keyed.Acting (acted, actedAt, actedOf, actedWithin) as Adopters
@@ -280,13 +246,11 @@ handles (PUI mreg) = do
           _ -> pure unit
     }
 
--- The leaf protocol, as functions, one per shape
--- a leaf answers in, named after it: every leaf of every vocabulary is one
--- of these wirings over its own element (an emitter is `eventLeaf`, a
--- derivation), so
--- the echo a gate depends on, the busy guard around a programmatic write
--- and the one-registration listener are written once here and nowhere
--- else.
+-- The leaf protocol, as functions, one per shape a leaf answers in: every
+-- leaf of every vocabulary is one of these wirings over its own element
+-- (an emitter is `eventLeaf`, a derivation), so the echo a gate depends
+-- on, the busy guard around a programmatic write and the one-registration
+-- listener are written once here.
 
 -- | The **`×→×` leaf**'s wiring — an editor's, and a display's, which is
 -- | an editor the user never changes (`held` false, `reports` registering
@@ -443,24 +407,20 @@ derive instance Newtype (PUI m i o) _
 instance Functor m => Profunctor (PUI m) where
   dimap pre post (PUI p) = PUI $ p <#> \reg prop -> (_ <<< pre) <$> reg (prop <<< post)
 
--- Stateful instances below share one gating principle (the same one the
--- record merges follow): state a UI component hasn't received yet cannot be
--- fabricated, so emissions needing it are withheld until
--- the state channel has been fed.
---
+-- Stateful instances below share one gating principle (the record merges'
+-- too): state a UI component hasn't received yet cannot be fabricated, so
+-- emissions needing it are withheld until the state channel has been fed.
 -- The price is named: the ecosystem Strong law `lmap fst = rmap fst <<< first`
 -- holds only as primed equivalence — a pre-feed emission is dropped, not
--- delayed (a permanent prefix difference, tested as such in test/Main.purs;
--- doc/observational-semantics.md).
+-- delayed (a permanent prefix difference, tested as such in test/Main.purs).
 instance Functor m => Strong (PUI m) where
   first (PUI p) = PUI $ retainingPair "Strong.first" fst (\b ab -> Tuple b (snd ab)) <$> p
   second (PUI p) = PUI $ retainingPair "Strong.second" snd (\b ab -> Tuple (fst ab) b) <$> p
 
--- The pair state is allocated at registration, once per instantiation —
--- the phase it belongs to (doc/observational-semantics.md §1), which is
--- also what keeps every `actedOf` row on its own ref: the last pair fed,
--- the inner leg shown its focus, an emission completed with the retained
--- side or withheld before any pair arrived.
+-- The pair state is allocated at registration, once per instantiation,
+-- which is what keeps every `actedOf` row on its own ref: the last pair
+-- fed, the inner leg shown its focus, an emission completed with the
+-- retained side or withheld before any pair arrived.
 retainingPair :: forall a b x y. String -> (x -> a) -> (b -> x -> y) -> Registration a b -> Registration x y
 retainingPair name focus completed reg prop = do
   lastRef <- Ref.new Nothing
@@ -483,10 +443,9 @@ instance Functor m => Choice (PUI m) where
 -- | two-case field, case `n` holding the number and case `i` the text
 -- | that is not one, so an invalid entry stays in the model — where a pane
 -- | can show it and a `provided` can withhold on it — instead of in the
--- | DOM alone, which a leaf typed at a bare `Number` would leave it in
--- | (the model keeping the last parse while the screen shows "abc", and
--- | the next broadcast erasing it). Shown a number, the leaf renders it
--- | with `toString`, so "12." re-shows as "12" once the field is left (the
+-- | DOM alone, where a leaf typed at a bare `Number` would leave it for
+-- | the next broadcast to erase. Shown a number, the leaf renders it with
+-- | `toString`, so "12." re-shows as "12" once the field is left (the
 -- | focus guard keeps what is being typed); shown the invalid text, it
 -- | shows it verbatim; shown any other case, nothing. The parse is strict
 -- | — digits, at most one point, a leading minus — never `parseFloat`'s
@@ -551,28 +510,35 @@ strictNumber s =
 -- | The **introducing form of an editor**: field `l` inserted into the
 -- | row fed, from `init` of the rest, in front of the lens editor — `{ | b }
 -- | → { l :: a | b }`. For a knotless form, which states each field's
--- | blank after its editor (`filledTextField @"Email" # introduced @"Email"
--- | blankEmail`, signup-form)
--- | instead of in a seed, so it needs no `looped` and no `with`; a document
--- | whose logic writes into its fields keeps the lens editor in a `looped`
--- | row, where the knot re-feeds the field's current value and a reset
--- | lands as a feed of the whole row.
+-- | blank after its editor instead of in a seed (`filledTextField @"Email"
+-- | # introduced @"Email" blankEmail`, signup-form), so it needs no
+-- | `looped` and no `with`; a document whose logic writes into its fields
+-- | keeps the lens editor in a `looped` row, where the knot re-feeds the
+-- | field's current value and a reset lands as a feed of the whole row.
 -- |
 -- | It is two stages: `onField @l` over the wire read through `init` —
 -- | the pure insertion, `Strong`'s — and the editor under `keepingEdits
--- | @l`, the carrier's part. The insertion alone would not do: in a chain
--- | of such editors an upstream edit re-feeds every editor below it, which
--- | would re-show each init over the user's value. Consequences, accepted
--- | with the word (git log, 2026-10-17): a state the row does not show,
--- | an init typed at the row the editors above it have built (screen
--- | order in the view model's signatures), and no introducing editor under
--- | a pane — a pane is `{ | r } → { | r }`, so a field whose editor exists
--- | sometimes is model state.
+-- | @l`, the carrier's part: in a chain of such editors an upstream edit
+-- | re-feeds every editor below it, which the insertion alone would
+-- | re-show each init over the user's value. Consequences, accepted with
+-- | the word (2026-10-17): a state the row does not show, an init typed at
+-- | the row the editors above it have built (screen order in the view
+-- | model's signatures), and no introducing editor under a pane — a pane
+-- | is `{ | r } → { | r }`, so a field whose editor exists sometimes is
+-- | model state.
 -- |
--- | It is given its label, the editor's own: the editor is open on the
--- | rest of its row, and a label can be read off a closed row only — as
--- | its siblings `supplied`, `acknowledged` and `continued` do off the
--- | closed leaf they follow.
+-- | **The square of trailing words.** `introduced` takes its label, the
+-- | editor's own, because the editor is open on the rest of its row; a
+-- | label can be read off a closed row only, which is how its three
+-- | siblings take none: `supplied` (`onField @l` over a source out of `{}`,
+-- | the init no function names — the source gives it), `continued`
+-- | (`onCase @l` over a leaf closed to one case, the mirror: an **exit**
+-- | `payload → [ | b ]` after the leaf where `init :: { | b } → a` stands
+-- | before the editor — the case leaving as one of the rest, the field
+-- | computed from the rest) and `acknowledged` (the exit into `[]`, which
+-- | no function need name: a stage typed at `[]` emits nothing, where an
+-- | init out of `{}` is still a value somebody has to give — a record must
+-- | be whole, an event may end).
 introduced
   :: forall @l m a b r
    . Applicative m
@@ -595,15 +561,9 @@ introduced init editor = onField @l (lcmap init identity) >>> keepingEdits @l ed
 -- | is answered with the row fed and the source's last value, and each
 -- | change the platform reports leaves as the row last fed with the new
 -- | value; a report before any feed is withheld (`Strong`'s). Sources
--- | that open a flow together are merged, `RecordToRecord.do`.
--- |
--- | It takes no label: the source it follows is closed to its one field,
--- | so the field is read off its row. It is `acknowledged`'s **exact
--- | mirror**, and `introduced`'s sibling whose `init` no function names:
--- | `onField @l` over a stage out of `{}`, the record that says nothing,
--- | where `acknowledged` is `onCase @l` over a stage into `[]`, the
--- | variant in which nothing happens. Out of `{}` there is still a value
--- | to give, and the source is what gives it.
+-- | that open a flow together are merged, `RecordToRecord.do`. It takes
+-- | no label: the source it follows is closed to its one field, so the
+-- | field is read off its row (the square, at `introduced`).
 supplied
   :: forall m l a b r s
    . Functor m
@@ -666,9 +626,9 @@ keepingEdits (PUI p) = PUI $ p <#> \reg prop -> do
 -- |
 -- | — which is why the knot at a record junction is `looped`
 -- | (the self-feeding diagonal, ungated) rather than a derivation from
--- | this class. Contrast `Cochoice` below,
--- | whose retraction holds raw: this carrier is genuinely traced over `+`
--- | and only pointed-traced over `×` (doc/observational-semantics.md).
+-- | this class. Contrast `Cochoice` below, whose retraction holds raw:
+-- | this carrier is genuinely traced over `+` and only pointed-traced
+-- | over `×`.
 instance Functor m => Costrong (PUI m) where
   unfirst (PUI p) = PUI $ p <#> \reg prop -> do
     cRef <- Ref.new Nothing
@@ -703,7 +663,7 @@ instance Functor m => Costrong (PUI m) where
 -- | provoke a synchronous spin — the no-synchronous-event-echo law is this
 -- | instance's termination argument). Retraction law: `unleft (left g) = g`,
 -- | holding **raw** — no seed: the one trace whose yanking needs no pointing
--- | (the `+`/`×` asymmetry, doc/observational-semantics.md).
+-- | (the `+`/`×` asymmetry).
 instance Functor m => Cochoice (PUI m) where
   unleft (PUI p) = PUI $ p <#> \reg prop -> (_ <<< Left) <$> registeredSelf reg \self -> case _ of
     Left b -> prop b
@@ -798,30 +758,27 @@ instance Applicative m => Category (PUI m) where
 -- | occurs. The **point** `announce a :: p {} a` is how this carrier
 -- | supplies that initial state: one emission of `a` at registration, then
 -- | nothing — the informationless `{}` it is fed is ignored. `with` closes
--- | the knot over it, and the seeded echo wire `debounced` primes its loop
--- | branch with is derived from it through `Choice` (`seeded`).
+-- | the knot over it, and `seeded`, the echo wire `debounced` primes its
+-- | loop branch with, is derived from it through `Choice`.
 -- |
--- | What the point *is* follows from rows alone: `{}` has exactly one
--- | value, so every feed of a `{}`-input component is a repetition of the
--- | first, and the Repetition law of a record input makes answering it
--- | once and answering it every time the same behaviour —
+-- | `{}` has exactly one value, so every feed of a `{}`-input component is
+-- | a repetition of the first, and the Repetition law of a record input
+-- | makes answering it once and answering it every time the same
+-- | behaviour —
 -- |
 -- |   * **answer** — `announce a ≈ lcmap (const a) identity`: the point is
 -- |     the wire's answer to the terminal record's one value (up to
--- |     stutter, doc/observational-semantics.md §2). On a timeless carrier
--- |     that is an equality, `const`.
+-- |     stutter). On a timeless carrier that is an equality, `const`.
 -- |   * **early** — a carrier with a registration moment gives the answer
 -- |     at registration, before any feed arrives, and (by Repetition)
 -- |     never again: feeding it `{}` changes nothing.
 -- |
--- | That earliness is carrier structure, the operational ⊥ of the trace
--- | asymmetry theorem (doc §5): `debounced` composes a `seeded` wire into a
--- | positional loop no feed can reach, and primes it only because the
--- | answer comes before the first input. It was a class, `Seeding`, with
--- | a `(->)` instance, until the class was dropped as a carrier
--- | fact dressed as algebra (git log, 2026-10-14). The merge units are
--- | *not* pointed: the record gates ignore a contribution of zero fields —
--- | pointing is this word's business alone.
+-- | That earliness is carrier structure, not algebra (a `Seeding` class
+-- | with a `(->)` instance was dropped for it, 2026-10-14): `debounced`
+-- | composes a `seeded` wire into a positional loop no feed can reach, and
+-- | primes it only because the answer comes before the first input. The
+-- | merge units are *not* pointed: the record gates ignore a contribution
+-- | of zero fields — pointing is this word's business alone.
 announce :: forall m a. Applicative m => a -> PUI m {} a
 announce a = PUI $ pure \prop -> do
     prop a
@@ -849,34 +806,28 @@ seeded a = dimap Right (either identity identity) (left (announce a))
 with :: forall a m b r. Applicative m => a -> PUI m a b -> PUI m { | r } b
 with a w = lcmap (const {}) (announce a >>> w)
 
--- | **Self-reference as carrier structure** — the point's sibling: the
--- | point says *a beginning exists* (one registration moment), the knot
--- | says *feedback exists* (an emission can re-enter its own input). The
--- | two things a timeless carrier lacks: feeding a function its own output
--- | is `fix`, a fixpoint computation, not a wire.
+-- | **The knot** — the point's sibling: the point says *a beginning
+-- | exists* (one registration moment), the knot says *feedback exists* (an
+-- | emission can re-enter its own input), the two things a timeless
+-- | carrier lacks. The `×`-diagonal **self-trace** at record rows: feed a
+-- | UI component its own emissions, re-entrancy-guarded — leaf UI
+-- | components echo on `toUser`, and the guard swallows the echoes the
+-- | re-feed provokes. A primitive because no ecosystem class reaches it: on
+-- | this knowledge-gated carrier `Costrong`'s `unfirst` cannot self-feed
+-- | (no `c` before the first emission, no emission before the first input
+-- | — the gate deadlocks). The looped value is a model row, stated by the
+-- | seed's signature, not on the knot (`w # looped # with freshCount`,
+-- | `freshCount :: { counted :: Int }`); it is the app's only knot, cut
+-- | at the record junction where the model holds the state, an event
+-- | re-entering through its fold as the step `stepped` lands — so every
+-- | line of its body passes the row it is fed (guardrails L7). The variant
+-- | side needs no primitive (`Cochoice`'s `unleft` holds raw) and a
+-- | one-field `×`-knot would be a seeded `unfirst`; neither has a word
+-- | (`Data.Profunctor.Row`, *What is deliberately not here*).
 -- |
--- | The `×`-diagonal **self-trace** at record rows: feed a UI component its
--- | own emissions, re-entrancy-guarded — leaf UI components echo on
--- | `toUser`, and the guard swallows the echoes the re-feed provokes (the
--- | idempotence law, operationally). A primitive because no ecosystem
--- | class reaches it: on this knowledge-gated carrier `Costrong`'s
--- | `unfirst` cannot self-feed (no `c` before the first emission, no
--- | emission before the first input — the gate deadlocks), so the
--- | self-feeding special case is carrier structure, not a derivation.
--- | Row-shaped in the word itself: the looped value is an entity (a model
--- | row), stated by the seed's signature, not on the knot (`w # looped #
--- | with freshCount`, `freshCount :: { counted :: Int }`). It is the app's
--- | knot, and the only knot: a loop through the four shapes is cut at its
--- | record junction, where the model row holds the state, and an event re-enters through its fold, as the step `stepped` lands on the row its line was fed — so every line of the knot's body passes the row it is fed, and an application has one knot. (The variant side would need
--- | no primitive — `Cochoice`'s `unleft` holds raw here, the carrier being
--- | traced over `+` and pointed-traced over `×` — and a one-field `×`-knot
--- | would be a seeded `unfirst`; neither has a word,
--- | `Data.Profunctor.Row`, *What is deliberately not here*.)
--- |
--- | Laws — the trace axioms restricted to the diagonal, stated up to the
--- | observational equivalence of doc/observational-semantics.md (boundary
--- | channels; inner feeds compared up to consecutive duplication — the
--- | quotient feed-idempotence licenses):
+-- | Laws — the trace axioms restricted to the diagonal, stated up to
+-- | observational equivalence (boundary channels; inner feeds compared up
+-- | to consecutive duplication, the quotient feed-idempotence licenses):
 -- |
 -- | ```
 -- | looped identity         = identity                        (yanking)
@@ -891,27 +842,24 @@ with a w = lcmap (const {}) (announce a >>> w)
 -- | behavioral law (temporal, like the point's): **re-entry** — each
 -- | emission of the wrapped UI component is fed back to it exactly once,
 -- | before propagating; the echoes that re-feed provokes are swallowed.
--- | Two of its three facts are row consequences: the re-entry guard is the
--- | Repetition law of a record input made operational, and the knot does
--- | not deadlock where positional `unfirst` does because a record input
--- | is **shared** — the loop-back and the outside are two feeders of one
--- | inclusive input row. What is not a row consequence is the cycle
--- | itself: an emission becoming a feed. The knot hides nothing and takes
--- | no seed of its own: it exposes the whole row and is primed by its
--- | first feed (`with seed`) — a looped state is a model field, never a
--- | hidden channel. It was a class, `Looping`, with this one instance,
--- | until the class was dropped (git log, 2026-10-14).
+-- | The re-entry guard is the Repetition law of a record input made
+-- | operational, and the knot does not deadlock where positional
+-- | `unfirst` does because a record input is **shared** — the loop-back
+-- | and the outside are two feeders of one input row; what is not a row
+-- | consequence is the cycle itself, an emission becoming a feed. The
+-- | knot hides nothing and takes no seed of its own: it exposes the whole
+-- | row and is primed by its first feed (`with seed`) — a looped state is
+-- | a model field, never a hidden channel (a `Looping` class with this
+-- | one instance was dropped, 2026-10-14).
 -- |
--- | Wrapped around a record merge it
--- | supplies the sibling cross-feed the gated merge deliberately omits —
--- | every operand sees every emission re-broadcast, and per-operand
--- | *retention* falls out of the merge gates (each gate holds its side's
--- | last contribution). For **whole-row editor stages** the re-broadcast
--- | is what keeps exactness honest: each editor's `focusField @l` lift
--- | re-attaches the background it retained at its last feed, and the loop
--- | re-feeds every stage on every emission, so no editor can emit a stale
--- | sibling for longer than the turn in flight — which is why editors
--- | live inside the application's `looped`.
+-- | Wrapped around a record merge it supplies the sibling cross-feed the
+-- | gated merge omits — every operand sees every emission re-broadcast,
+-- | each gate retaining its side's last contribution. For whole-row editor
+-- | stages the re-broadcast is what keeps exactness honest: each editor's
+-- | `focusField @l` lift re-attaches the background it retained at its
+-- | last feed, and the loop re-feeds every stage on every emission, so no
+-- | editor can emit a stale sibling for longer than the turn in flight —
+-- | which is why editors live inside the application's `looped`.
 looped :: forall r m. Functor m => PUI m { | r } { | r } -> PUI m { | r } { | r }
 looped (PUI p) = PUI $ p <#> \reg prop -> do
     busyRef <- Ref.new false
@@ -1342,14 +1290,10 @@ inScope sc act = do
 --
 -- The emission trace and the knowledge-gate starvation watchdog: an instrument
 -- pointed at the combinators below, not part of the algebra they state. Both
--- switches **and the log sink** are parameters, so this has no JavaScript of
--- its own — every `.js` in the library lives under the Web layer — and both
--- are no-ops until a carrier installs a sink. `PUI.Web.adoptHostDiagnostics`
--- passes the browser console and reads the browser's switches at the mount
--- entries, so a headless `spago test` over `PUI Effect` probes is silent.
--- They live here rather than in a module of their own because `PUI` is their
--- only caller and a carrier's diagnostics are the carrier's own business;
--- they cannot live under `PUI.Web`, which imports this module.
+-- switches and the log sink are parameters, so this has no JavaScript of its
+-- own and both are no-ops until a carrier installs a sink
+-- (`PUI.Web.adoptHostDiagnostics` passes the browser console at the mount
+-- entries), so a headless `spago test` over `PUI Effect` probes is silent.
 
 -- | Whatever a trace line carries, seen opaquely: `tr` is polymorphic in the
 -- | logged value but a `Ref` cannot hold a `forall`, so the value crosses to
@@ -1359,12 +1303,10 @@ foreign import data Logged :: Type
 
 -- | Where diagnostics go. A carrier installs one; until then both are no-ops,
 -- | so nothing prints even with the switches on. `warn` carries, beside the
--- | message, the **field labels the failure is about** (the starving gate's
--- | missing sibling fields; empty when the failure has no field locus) — as
--- | data, so a carrier's sink can point at the labels' stamped hosts rather
--- | than parse prose: the browser sink resolves each label through the stamp
--- | invariant (`[name=…]`/`[aria-label=…]`) and logs the elements themselves,
--- | clickable in DevTools.
+-- | message, the field labels the failure is about (the starving gate's
+-- | missing sibling fields; empty when the failure has no field locus) as
+-- | data, so the browser sink can resolve each label through the stamp
+-- | invariant (`[name=…]`/`[aria-label=…]`) and log the elements themselves.
 type Sink =
   { trace :: String -> Logged -> Effect Unit
   , warn :: String -> Array String -> Effect Unit
@@ -1422,18 +1364,14 @@ warn msg = do
   sink <- Ref.read sinkRef
   sink.warn msg []
 
--- | One-shot **starvation watchdog** for a knowledge gate. Every gated
--- | combinator withholds what it cannot yet complete — correct, but
--- | *silent*: an unprimed gate renders as a blank screen with no
--- | diagnostic. The guard turns that into a self-explaining failure:
--- | `blocked msg labels` (called on each withheld emission or input) arms a
--- | timer on its first call; if the gate hasn't opened (`fed`) within 3
--- | seconds, a single console warning prints `msg`, naming the gate and what
--- | it is waiting for — and hands the sink `labels`, the missing fields as
--- | data (the record merges pass the starving sibling's labels; guards with
--- | no field locus pass `[]`), so the browser sink can log the labels'
--- | stamped host elements beside the message. Fires at most once per gate
--- | instance, and only under `setDiagnostics true`.
+-- | One-shot **starvation watchdog** for a knowledge gate, which otherwise
+-- | withholds silently: `blocked msg labels` (called on each withheld
+-- | emission or input) arms a timer on its first call; if the gate hasn't
+-- | opened (`fed`) within 3 seconds, one warning prints `msg`, naming the
+-- | gate and what it is waiting for, and hands the sink `labels`, the
+-- | missing fields as data (`[]` where the failure has no field locus).
+-- | Fires at most once per gate instance, and only under `setDiagnostics
+-- | true`.
 gateGuard :: Effect { blocked :: String -> Array String -> Effect Unit, fed :: Effect Unit }
 gateGuard = do
   fedRef <- Ref.new false
@@ -1461,12 +1399,11 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | The **tick source**: the `×→+` leaf owning case `l`
 -- | (`ticks @"Clock ticked" tickPeriod`, timer) — every `interval`, the
 -- | row it was last fed leaves as case `l`; replay is `Strong`'s
--- | retention, the fed row riding the state channel as under `clicked`.
--- | Feeds are retained, never answered; nothing ticks before the first feed.
--- | A beat in a suspended
--- | scope (a detached pane) is skipped, and a cancelled scope ends the
--- | loop. A tick that needs telling is told by the status that folds it
--- | in the fold block, so the source opens with none.
+-- | retention. Feeds are retained, never answered; nothing ticks before
+-- | the first feed. A beat in a suspended scope (a detached pane) is
+-- | skipped, and a cancelled scope ends the loop. A tick that needs
+-- | telling is told by the status that folds it, so the source opens with
+-- | none.
 ticks
   :: forall @l m r v
    . Scoped m
@@ -1497,21 +1434,20 @@ ticks interval = fromHandles do
 -- | A **source**: a fact the platform knows and the app cannot seed — where
 -- | the device is, whether it is online, what time it is, which colour
 -- | scheme is preferred. A source owns one field, `l`, and reads nothing,
--- | so its input is `{}`: it stands where nothing has been released yet,
--- | at the head of a flow, and one placed after a stage that releases any
--- | field is a type error, where an open input would drop that row. It is
--- | **pointed**: it announces its first value at
--- | registration (`now`), so a merge of sources is a row the gate releases
--- | at once and keeps current. Every feed is answered with the last value
--- | known (Answer at `×→×`), and each change the platform reports is an
--- | emission outside any feed — the editor whose user is the platform. A
--- | fact the platform may never supply is a variant with its named cases
--- | (`geolocated`'s `located`/`unknown`/`denied`), never a `Maybe`, so the
--- | gate never starves on it. The watch is quiet while the scope is
--- | suspended (a detached pane) and ends when it is cancelled. Several
--- | sources are merged, `RecordToRecord.do`, each owning its field
--- | (here-and-now, incident-report) — the one application use of the
--- | `×→×` merge, since every editor owns the whole row.
+-- | so its input is `{}`: it stands at the head of a flow, and one placed
+-- | after a stage that releases any field is a type error (below such a
+-- | line it is `# supplied`). It is **pointed**: it announces its first
+-- | value at registration (`now`), so a merge of sources is a row the gate
+-- | releases at once and keeps current. Every feed is answered with the
+-- | last value known (Answer at `×→×`), and each change the platform
+-- | reports is an emission outside any feed — the editor whose user is the
+-- | platform. A fact the platform may never supply is a variant with its
+-- | named cases (`geolocated`'s `located`/`unknown`/`denied`), never a
+-- | `Maybe`, so the gate never starves on it. The watch is quiet while the
+-- | scope is suspended (a detached pane) and ends when it is cancelled.
+-- | Several sources are merged, `RecordToRecord.do`, each owning its field
+-- | (here-and-now) — the one application use of the `×→×` merge, since
+-- | every editor owns the whole row.
 source
   :: forall @l m a r
    . Scoped m
@@ -1546,9 +1482,8 @@ source now watch = fromHandles do
 -- | retention and nothing else — the primed `Strong` law: an occurrence
 -- | before any feed is withheld, a feed never emits. With `occurrencesOn`
 -- | this is how a vocabulary builds a pick that carries a field of what
--- | it showed (`listOf @l @k`'s row, MDC3's `tile @l @k`): `replayed @l
--- | (Record.get (Proxy @k)) (occurrencesOn Click content)`. Plumbing, not
--- | vocabulary — an application's emitters are its vocabulary's.
+-- | it showed (`listOf @l @k`, `tile @l @k`): `replayed @l (Record.get
+-- | (Proxy @k)) (occurrencesOn Click content)`. Plumbing.
 replayed :: forall @l m r k v. Functor m => IsSymbol l => Cons l k () v => ({ | r } -> k) -> PUI m { | r } [ occurred :: {} ] -> PUI m { | r } [ | v ]
 replayed f src = Adopters.joined @"occurred" src # rmap (on (Proxy @"occurred") (inj (Proxy @l) <<< f <<< _.model) case_)
 
@@ -1577,13 +1512,11 @@ instance Interacting Effect where
 -- | the last-built element (the content's own node) — a `Click` for every
 -- | emitter, a `DoubleClick` for MDC3's `doubleClickTile` — leaves as an
 -- | occurrence carrying nothing; the content is fed the row and its output
--- | written off. The `× → +` leaf's occurrence half — at the closed empty
--- | row, `occurrencesOn Click chrome :: PUI m {} [ occurred :: {} ]` is
--- | the point's dual, an occurrence out of the terminal record (`ticks` is
--- | its timer sibling). One fixed case: the business label is the
--- | vocabulary leaf's to state, and `replayed @l` relabels while it
--- | attaches the row — replay is `Strong`'s retention, so no source keeps
--- | a copy of the row it was shown. Plumbing, like `replayed`.
+-- | written off. At the closed empty row, `occurrencesOn Click chrome ::
+-- | PUI m {} [ occurred :: {} ]` is the point's dual, an occurrence out of
+-- | the terminal record (`ticks` is its timer sibling). One fixed case:
+-- | the business label is the vocabulary leaf's to state, and `replayed
+-- | @l` relabels while it attaches the row. Plumbing.
 occurrencesOn :: forall m a b. Interacting m => Gesture -> PUI m a b -> PUI m a [ occurred :: {} ]
 occurrencesOn gesture w = fromHandles do
   w' <- handles w
@@ -1616,11 +1549,9 @@ departures = fromHandles do
 -- | The click-emitter protocol over any `{}`-output element chrome: replay
 -- | the row last fed on click, as case `l` (a click before any value
 -- | arrived is withheld) — `replayed` over the chrome's click occurrences,
--- | the chrome placed at the row
--- | (`lcmap (const {})`: chrome reads nothing, and the terminal record is
--- | the one row every row maps onto, so the placement is total), the
--- | last-built element listening. Every vocabulary's `button` family
--- | is this over its own chrome. Plumbing.
+-- | the chrome placed at the row by `lcmap (const {})`, the last-built
+-- | element listening. Every vocabulary's `button` family is this over
+-- | its own chrome. Plumbing.
 eventLeaf :: forall @l m r v. Interacting m => IsSymbol l => Cons l { | r } () v => PUI m {} {} -> PUI m { | r } [ | v ]
 eventLeaf chrome = replayed @l identity (occurrencesOn Click (lcmap (const {}) chrome))
 
@@ -1700,29 +1631,14 @@ modalOver modal content = focusCase @l $ modal
 -- | the case ends there — `[ l :: a | b ] → [ | b ]`, every other case
 -- | passing untouched, so what follows is typed at the cases that go on.
 -- | Written after a modal, it is the dialog for the outcome the user must
--- | read and can only close — a rejection and its reason, a notice —
--- | (`( modal @"About this dashboard" $ bodyLarge $ text aboutLine ) #
--- | acknowledged`, weather, between the emitters and the fold; `( modal
--- | @"Total missing" $ … ) # acknowledged` after its action, order-form):
--- | the persistent member of the status family. A `snackbar` tells its
--- | case and is gone, so it carries no copy; a message the user closes
--- | is not ephemeral, so its content may read the payload.
--- |
--- | It takes no label: the leaf it follows is closed to its one case, so
--- | the case is read off its row (`RowToList` of a closed singleton).
--- |
--- | It is `introduced`'s mirror, the row made more definite from the
--- | other side — a case removed where that adds a field — and it is
--- | built the same way, turned round: `onCase @l` where that has `onField
--- | @l`, the vocabulary's modal where that has its editor, and after the
--- | modal what that has before the editor. There it is `init`, the field
--- | computed from the rest of the row; here it is the **exit**, the case
--- | leaving as one of the cases that go on, `payload → [ | b ]`
--- | (`continued`). An acknowledgement is the exit into `[]`, the variant
--- | with no case: no function names it and none is needed, since a stage
--- | typed at `[]` emits nothing (`silent`) — where an `init` out of `{}`
--- | is still a value somebody has to give. A record must be whole, an
--- | event may end.
+-- | read and can only close — a rejection and its reason, a notice
+-- | (`( modal @"Total missing" $ … ) # acknowledged` after its action,
+-- | order-form): the persistent member of the status family. A `snackbar`
+-- | tells its case and is gone, so it carries no copy; a message the user
+-- | closes is not ephemeral, so its content may read the payload. It takes
+-- | no label: the leaf it follows is closed to its one case, so the case
+-- | is read off its row (`RowToList` of a closed singleton; the square, at
+-- | `introduced`). The exit is into `[]`: `silent`, placed by `rmap case_`.
 acknowledged
   :: forall m l a b v s x
    . Applicative m
@@ -1745,15 +1661,9 @@ acknowledged leaf = onCase @l $ lcmap (inj (Proxy @l)) leaf >>> rmap case_ silen
 -- | weather). `exit` is a view model function of the payload,
 -- | `asForecast :: Report -> [ "Forecast fetched" :: Report ]`, typed at
 -- | exactly the cases the stages after it handle. Closing the modal any
--- | other way than its "OK" releases nothing, so nothing goes on.
--- |
--- | It takes no label, like `acknowledged`: the leaf it follows is closed
--- | to its one case. It is `introduced`'s **exact mirror**: `exit ::
--- | payload → [ | b ]` after the leaf where that has `init :: { | b } →
--- | a` before its editor — the case leaving as one of the rest, the
--- | field computed from the rest. `acknowledged` is the sibling whose
--- | exit no function names, as `supplied` is `introduced`'s whose `init`
--- | none does.
+-- | other way than its "OK" releases nothing, so nothing goes on. It takes
+-- | no label, like `acknowledged`: the leaf it follows is closed to its
+-- | one case (the square, at `introduced`).
 continued
   :: forall m l a b v s
    . Functor m
@@ -1767,11 +1677,10 @@ continued
 continued exit leaf = onCase @l $ dimap (inj (Proxy @l)) (exit <<< on (Proxy @l) identity case_) leaf
 
 -- | The carrier's **silent component**: fed anything, emitting nothing —
--- | the one stage into `[]`, the variant with no case, which has no value
--- | to emit. It is the point's mirror: `announce a` leaves `{}`, the
--- | record that says nothing, and needs a value; this enters `[]`, the
--- | variant in which nothing can happen, and needs none. `rmap case_`
--- | places it at any variant row (`acknowledged`'s exit).
+-- | the one stage into `[]`, the variant with no case, and the point's
+-- | mirror (`announce a` leaves `{}` and needs a value; this enters `[]`
+-- | and needs none). `rmap case_` places it at any variant row
+-- | (`acknowledged`'s exit); it is `×→+`'s unit (guardrails L5).
 silent :: forall m a. Applicative m => PUI m a (Variant ())
 silent = PUI $ pure \_ -> pure mempty
 
@@ -1779,19 +1688,15 @@ silent = PUI $ pure \_ -> pure mempty
 
 type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 
--- | The transpose of an optic. `Optic p s t a b = p a b -> p s t`, and the
--- | optic families quantify the *carrier* (`Lens s t a b = forall p. Strong
--- | p => Optic p s t a b`) to gain access to the data. Fix the carrier and
--- | quantify the *data* instead and you gain access to the carrier: a
--- | shape-preserving decorator — a design system's chrome — that by
--- | parametricity cannot read or produce a single value flowing through it.
--- |
--- | It is the endomorphism monoid of `p` (`identity` and `<<<`; here, carrier
--- | nesting). Naturality is free, so every ocular commutes with the
--- | `dimap`-only adopters (`atField`/`atCase`, `toField`/`toCase`, the
--- | floor's) and the focus `focusField`.
--- | Commuting with the *strengths* is the extra law, and the admission test
--- | for anything called an ocular:
+-- | The transpose of an optic: the optic families quantify the *carrier*
+-- | (`Lens s t a b = forall p. Strong p => Optic p s t a b`) to gain
+-- | access to the data; fix the carrier and quantify the *data* instead
+-- | and you gain access to the carrier — a shape-preserving decorator, a
+-- | design system's chrome, which by parametricity cannot read or produce
+-- | a value flowing through it. It is the endomorphism monoid of `p`
+-- | (`identity` and `<<<`), so every ocular commutes with the `dimap`-only
+-- | adopters and `focusField` for free. Commuting with the *strengths* is
+-- | the extra law, and the admission test for anything called an ocular:
 -- |
 -- | ```
 -- | ocular (first w) = first (ocular w)
@@ -1799,13 +1704,10 @@ type Action s t a b = forall m. MonadEffect m => Optic (PUI m) s t a b
 -- | ```
 -- |
 -- | It holds for everything that merely wraps nodes, which is why chrome
--- | slides freely past `focusField @l`. A decorator that captures —
--- | buffers, replays or withholds a feed — is still a natural transformation
--- | but breaks these, and needs a stated protocol instead (a modal, say).
--- | Both halves are tested in test/Main.purs: a node-wrapping ocular (a
--- | construction-time effect, untouched channels) satisfies the law; a
--- | capturing decorator counting emissions fails it before priming, seeing
--- | inside the gate what the gate drops outside.
+-- | slides freely past `focusField @l`; a decorator that captures —
+-- | buffers, replays or withholds a feed — breaks it and needs a stated
+-- | protocol instead (a modal, say). Both halves are tested in
+-- | test/Main.purs.
 type Ocular p = forall a b. Optic p a b a b
 
 -- | An element with **nothing in it**: an ocular applied to the wire — a
@@ -1821,35 +1723,32 @@ static o = o identity
 -- | (`action @"Charge card" chargeFlaky`, payment), fed the row the button
 -- | replayed, running the `Aff` on it, its outcome leaving as a case of
 -- | the row `t` the `Aff`'s signature names. Like a status it narrows its
--- | input to its one case (`Cons l a () v`); its output is **exactly** its
--- | outcomes, like `load`'s, so it widens nothing and the view writes no
--- | row for it: what tells the outcomes closes `t` — the statuses or
--- | folds after it, which own their cases. It stands **after the
--- | emitters**: on the line after its button (payment, ticker), or with
--- | its outcome's statuses as one operand of the fold block, where it
--- | owns its button's case (order-form, weather).
+-- | input to its one case; its output is **exactly** its outcomes, so it
+-- | widens nothing and the view writes no row for it: the statuses or
+-- | folds after it own their cases and close `t`. It stands **after the
+-- | emitters**: on the line after its button (payment), or with its
+-- | outcome's statuses as one operand of the fold block (order-form).
 -- |
 -- | It is **opened by its progress indicator**: the slot is a `+→×`
--- | citizen of the run's two lifecycle occurrences, `started` and
--- | `ended` (`indeterminateCircularProgress # action @"Charge card" …`), and of
+-- | citizen of the run's two lifecycle occurrences, `started` and `ended`
+-- | (`indeterminateCircularProgress # action @"Charge card" …`), and of
 -- | nothing else — a status that tells an outcome is never the slot, and
 -- | the types forbid it. The outcome is folded after the action by the
--- | statuses that tell it (`snackbar @"Card charged" captured`, payment;
--- | `snackbar @"Order submitted" kept`, order-form), or by `foldInto @l
--- | f` where nothing needs telling (weather), and it lands on the model
--- | as it is when it lands, so an edit made while the `Aff` ran is kept. No
--- | application owns a "busy": the indicator shows between `started` and
--- | `ended` and, like every status, owes the channel nothing. The action
--- | a mount runs, fed `body`'s one `{}` rather than a case, is `load`.
+-- | statuses that tell it (`snackbar @"Card charged" captured`), or by
+-- | `foldInto @l f` where nothing needs telling, and it lands on the model
+-- | as it is when it lands, so an edit made while the `Aff` ran is kept.
+-- | No application owns a "busy": the indicator shows between `started`
+-- | and `ended`. The action a mount runs, fed `body`'s one `{}` rather
+-- | than a case, is `load`.
 -- |
 -- | A failing action is **reported, not swallowed**: `ended` is dispatched
 -- | whichever way the `Aff` ends — so a throw cannot strand the spinner —
--- | and the error reaches the diagnostics sink by name. Nothing is posted
--- | onward, since there is no output to post. An outcome that settles in a suspended or
--- | cancelled scope — the pane that held the action detached meanwhile — is
--- | dropped: the case the model left gets no occurrence from it, so a
--- | detached action is silent like a detached button; the slot is still
--- | told `ended`, so a re-attached indicator is not left running.
+-- | and the error reaches the diagnostics sink by name; nothing is posted
+-- | onward, so a failure the user must see is an outcome case. An outcome
+-- | that settles in a suspended or cancelled scope — the pane that held
+-- | the action detached meanwhile — is dropped, so a detached action is
+-- | silent like a detached button; the slot is still told `ended`, so a
+-- | re-attached indicator is not left running.
 action
   :: forall @l t a v v1 m
    . IsSymbol l
@@ -1866,10 +1765,8 @@ action arr slot = atCase @l (running arr slot)
 -- | **load** standing before the knot, run by `body`'s one feed of `{}`
 -- | (`( indeterminateLinearProgress # load loadOrder; snackbar @"Order
 -- | loaded" captured ) # landed`, order-form), its outcome the model the
--- | knot loops. Its outcome row `t` is the `Aff`'s signature: unlike `action`
--- | it widens nothing, so the case the capture or status after it takes
--- | needs no line of its own. Opened by its progress indicator like `action`,
--- | reported and scoped the same way; typed at exactly its outcomes.
+-- | knot loops. Typed at exactly its outcomes; opened by its progress
+-- | indicator, reported and scoped as `action` is.
 load
   :: forall t r v1 m
    . Scoped m
@@ -1907,17 +1804,11 @@ running run w = action'
 -- | fed a row it passes the row on, like every other line, and an event
 -- | releases the next model — the step its fold released, applied to the
 -- | row the line was last fed (`( Semigroupoid.do RecordToVariant.do …;
--- | VariantToRecord.do … ) # stepped`).
--- |
--- | It is what **one knot per application** asks of an event path. The
--- | model re-enters at one place, so whatever changes it must reach that
--- | place: an edit above this line travels down the body as a row, and a
--- | line that swallowed it — as a bare `emitters >>> folds` does, a
--- | variant answering no feed — would leave the knot holding the row from
--- | before the edit. So the path answers every feed with the row fed, and
--- | the body is a pipeline of row-passing lines whatever their order:
--- | every line holds the knot's row, and the model an event lands on is
--- | the model.
+-- | VariantToRecord.do … ) # stepped`). It is what one knot per
+-- | application asks of an event path (guardrails L7): a bare `emitters
+-- | >>> folds` answers no feed and would leave the knot holding the row
+-- | from before an edit above it, so the path answers every feed with the
+-- | row fed, and the model an event lands on is the model.
 -- |
 -- | **Derived**: `landed` over the path merged (`×→+`) with the wire —
 -- | two sources, each owning its case, a feed and a step — the feed read
@@ -1950,9 +1841,8 @@ landed = lens identity \model step -> step model
 -- | `VariantToRecord.do`. The payload is not read: an emitter's event
 -- | carries the view model the user acted upon, which is the model only
 -- | until something waits — an effect, a dialog — so the fold reads the
--- | model where it lands and not the row the click replayed. An event
--- | whose payload the fold needs is `foldInto @l f`. What a `+→×` leaf
--- | releases is a **step**, which `stepped` applies.
+-- | model where it lands and not the row the click replayed; an event
+-- | whose payload the fold needs is `foldInto @l f`.
 fold
   :: forall @l m a v i o
    . Applicative m
@@ -2017,14 +1907,12 @@ kept = _.model
 captured :: forall a i. { event :: a, model :: i } -> a
 captured = _.event
 
--- | The fold behind every `+→×` leaf — plumbing, not vocabulary: a status
--- | face owning case `l` and the fold of its payload, in one leaf. The
--- | vocabularies build their statuses with it, through `statusOver`
--- | (`snackbar = statusOver @l snackbarFace`),
--- | and `foldInto @l f` is it over the faceless `unshown @l`. The status is fed
--- | the **event**, never the fold's result — it shows its case's label, so
--- | what a status says is the name of what happened — and what is released
--- | is the **step**: `f` of the payload and the model `stepped` lands it on.
+-- | The fold behind every `+→×` leaf — plumbing: a status face owning case
+-- | `l` and the fold of its payload, in one leaf. The vocabularies build
+-- | their statuses with it through `statusOver`, and `foldInto @l f` is it
+-- | over the faceless `unshown @l`. The status is fed the **event**, never
+-- | the fold's result, and what is released is the **step**: `f` of the
+-- | payload and the model `stepped` lands it on.
 -- |
 -- | **Derived**: the wire and the status under the `×→×` merge, fed the
 -- | occurrence's step and the occurrence in one two-field record — the
@@ -2065,13 +1953,9 @@ action' arr w = fromHandles do
 
 -- | Debounce the UI component: values feed it live, and its emissions forward
 -- | only after `millis` of quiescence — the last value of a burst resolves,
--- | the rest loop. Rapid sources (keystrokes, continuous drags) emit every
--- | value; the stage that doesn't want the burst opts in here.
--- |
--- | Not primitive — the `× → +` trace at the value level, the stated law
--- | `coresolve (resolve g) = debounced g` made the body: the quiescence
--- | step composed with its retraction, the loop channel primed by a
--- | `seeded` wire, the one place a seeded `×`-side trace survives.
+-- | the rest loop. Not primitive: the `Coresolving` retraction law made
+-- | the body, `coresolve (resolve g >>> seeded (Right c0)) ≈ debounced g`
+-- | — the one place a seeded `×`-side trace survives.
 debounced :: forall m. Applicative m => { ms :: Number } -> Ocular (PUI m)
 debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 
@@ -2102,20 +1986,15 @@ debounced millis w = coresolve (resolveFor millis w >>> seeded (Right unit))
 --   Accumulating /     | {l::k|ra}      (+) | p {l::k|ra}  | Array {l::k|rb}  | element          | whole array, once      | grows per new
 --     accumulated      |                    |   {l::k|rb}  |              (×) | emissions (gate) | every key spoke        | key; none before
 --
--- Rule of thumb — ask what the stage means downstream, and how updates
--- arrive: everything at once (a model projection) → ×-input; one entity at a
--- time (a stream, a tick, a push) → +-input. Then: an individual event
--- ("this one fired") → gathered/dispatched; the aggregate as a joint
--- decision (exists only when everyone has spoken; for element editors,
--- which answer every feed, that is every feed and every edit) → acted; the
--- aggregate as running state of a stream → accumulated; a list that only
--- shows → actedOf. gathered cannot be acted (a gate over event sources is
--- absurd; Array b erases "which one") — and the +-members never detach or
--- restack: the absence of a key is no signal, so removal and ordering are
--- array-level concerns of some ×-stage upstream. In the product-output
--- members the carrier re-sets the key on every emission from the input
--- row, so identity is unforgeable (the class primitives take each element
--- beside its key, out of its reach; the bare forms write it back).
+-- Which member: everything at once (a model projection) → ×-input; one
+-- entity at a time (a stream, a tick, a push) → +-input. Then an
+-- individual event → gathered/dispatched; the aggregate as a joint
+-- decision → acted; the aggregate as running state of a stream →
+-- accumulated; a list that only shows → actedOf. The +-members never
+-- detach or restack: the absence of a key is no signal, so removal and
+-- ordering are a ×-stage's upstream. In the product-output members the
+-- carrier re-sets the key on every emission from the input row, so
+-- identity is unforgeable (guardrails L9).
 
 
 -- | What a stateful carrier contributes to the container action: how to
@@ -2193,26 +2072,18 @@ instance Hosting m node => Accumulating (PUI m) where
 -- | The **pane**: a whole-row citizen — a display, an editor, or a pipeline
 -- | of them — that *exists* only while the classifier yields case `l`:
 -- | attached and fed the whole row on that case, detached on any other,
--- | the fed row released always. Where its content is a display, it shows
--- | the row only in that state (`text ticketLine # inCaseAt @"serving"
--- | @"display"`); where
--- | this pane's content emits the **row**, so the pane is a stage — the
--- | pane's channel and the wire's, side by side over one input and one
--- | output.
--- |
--- | It dissolves the identity fold: a field that exists only in one mode
--- | is *not* a payload to fold back into the row by hand — it is a
--- | whole-row editor whose existence is gated, and
--- | its `focusField @l` lift already re-attaches the rest of the row. The
--- | classifier is a business function typed at the stage's row, exactly as
--- | `pane`'s is; a variant the model stores is named by its label
--- | instead, `inCaseAt` (`# inCaseAt @"Delivery" @"selected"`, order-form). One release per feed either way: attached, the
--- | editor's own echo is the release; detached, the wire speaks for the
--- | absent editor. What the edit does to the rest of the row is a `settled`
--- | normalization on the same stage when it is a state invariant
--- | (meeting-booker's `seatsInRoom`, circle-drawer's `resizeSelected`).
--- | Like the other panes, it names only its case: the states it chooses
--- | among are the classifier's signature (guardrails L18).
+-- | the fed row released always, so the pane is a stage (`text ticketLine
+-- | # inCaseAt @"serving" @"display"`). A field that exists only in one
+-- | mode is therefore not a payload to fold back into the row by hand but
+-- | a whole-row editor whose existence is gated, its `focusField @l` lift
+-- | re-attaching the rest of the row. One release per feed either way:
+-- | attached, the editor's own echo is the release; detached, the wire
+-- | speaks for the absent editor. What the edit does to the rest of the
+-- | row is a `settled` normalization on the same stage when it is a state
+-- | invariant (meeting-booker's `seatsInRoom`). The classifier is a
+-- | business function typed at the stage's row, and the pane names only
+-- | its case (guardrails L18); a variant the model stores is named by its
+-- | label instead, `inCaseAt`.
 inCase
   :: forall @l m node v r a b
    . Hosting m node => IsSymbol l => Cons l a b v
@@ -2244,45 +2115,27 @@ inCaseAt
   => PUI m { | r } { | r } -> PUI m { | r } { | r }
 inCaseAt = inCase @c (Record.get (Proxy @l))
 
--- | Show the **emitter pane** while the model is in state `l` — visibility
--- | is **case adoption**: the argument is a business function classifying
--- | the situation into a variant, and the pane is attached and fed the row
--- | on case `l`, detached on every other case. A quiz whose run is either `asking` or `finished` shows its
--- | answer list as `listOf … # provided @"asking" quizPhase`; a stopwatch
--- | shows Start only while `halted`.
--- |
--- | The content is an emitter (`×→+`), and that is what makes the pane
--- | lawful: a feed arms an emitter and fires nothing, so a detached one
--- | firing nothing is the same answer — an emitter removed by `provided`
--- | *is* silent. For a button that is the document's doing (a parked
--- | node gets no clicks); for a `ticks` or an `action` inside, whose
--- | occurrences have no cause on the channel, it is the pane's **scope**:
--- | the content is built in a scope the pane suspends while detached, so a
--- | tick skips its beat and an outcome that settles meanwhile is dropped
--- | (`PUI`, "Scope"). The pane family is indexed by the shape of what the
--- | pane holds, each member lawful at its shape: `provided` for emitters,
--- | `inCase` for displays and editors (the wire while detached).
--- |
--- | A `Maybe`-gated pane is the same
--- | thing with its two cases unnamed, so there is no `Maybe` form: a state a
--- | pane depends on is a variant with **named** cases — `estimated`/`unknown`
--- | for a distance, `reading`/`browsing` for an inbox, `chosen`/`unchosen`
--- | for a selection — which is what makes the view line say which state it
--- | renders. Where several states are **mutually exclusive**, one classifier
--- | states it (`# provided @"taken" usernameStatus`) and each pane
--- | adopts its own case, so two panes can never both be on screen — which
--- | separate "should this be visible?" tests can always accidentally allow.
--- |
--- | The pane is fed the whole row, like every stage, and it is removed
--- | from the page while the model sits elsewhere: the rule for *what is on
--- | screen when* lives in business code where it can be tested, and a pane
--- | that is absent contributes nothing — so anything downstream waiting on
--- | it waits, rather than showing a stale or invented value.
--- |
--- | The pane names only its case (`# provided @"asking" quizPhase`):
--- | every state it chooses among is the classifier's signature, in the view
--- | model module, and the view restates none of them (guardrails L18).
--- | A variant the model stores is named by its label instead, `providedAt`.
+-- | The **emitter pane**: the content is attached and fed the row while
+-- | the classifier yields case `l`, detached on every other case (`listOf
+-- | … # provided @"asking" quizPhase`, quiz). The content is an emitter
+-- | (`×→+`), and that is what makes the pane lawful: a feed arms an
+-- | emitter and fires nothing, so a detached one firing nothing is the
+-- | same answer — an emitter removed by `provided` *is* silent. For a
+-- | button that is the document's doing (a parked node gets no clicks);
+-- | for a `ticks` or an `action` inside, whose occurrences have no cause
+-- | on the channel, it is the pane's **scope**: the content is built in a
+-- | scope the pane suspends while detached, so a tick skips its beat and
+-- | an outcome that settles meanwhile is dropped ("Scope", above). The
+-- | pane family is indexed by the shape of what the pane holds: `provided`
+-- | for emitters, `inCase` for displays and editors (the wire while
+-- | detached). An absent pane contributes nothing, so anything downstream
+-- | waiting on it waits rather than showing a stale or invented value.
+-- | There is no `Maybe` form: a state a pane depends on is a variant with
+-- | named cases, and where several states are mutually exclusive one
+-- | classifier states them and each pane adopts its own case, so two panes
+-- | can never both be on screen. The pane names only its case (guardrails
+-- | L18); a variant the model stores is named by its label instead,
+-- | `providedAt`.
 provided :: forall @l m node v r a b o. Hosting m node => IsSymbol l => Cons l a b v => ({ | r } -> [ | v ]) -> PUI m { | r } o -> PUI m { | r } o
 provided = attachedOn @l
 
@@ -2341,10 +2194,10 @@ editsOf f editor = Adopters.gatheredOf @k f (rmap (inj (Proxy @l)) (unanswering 
 
 -- | A stage with **its answers dropped**: what it emits inside its own
 -- | feed is withheld, what it emits outside one passes. It is the bridge
--- | between the two musts of doc/observational-semantics.md §3.1 — a
--- | `×→×` stage must answer every feed, a `×→+` one must not — so an
--- | editor under it is an emitter of the user's edits and of nothing
--- | else (`editsOf` is `gatheredOf` over it). An answer is told from an
+-- | between the two component laws — a `×→×` stage must answer every
+-- | feed, a `×→+` one must not — so an editor under it is an emitter of
+-- | the user's edits and of nothing else (`editsOf` is `gatheredOf` over
+-- | it). An answer is told from an
 -- | edit by **when** it comes, so the laws hold for a stage that answers
 -- | within its feed, as the leaf protocol does (`recordToRecordWiring`
 -- | echoes inside `toUser`): **silence** — a feed is answered by no

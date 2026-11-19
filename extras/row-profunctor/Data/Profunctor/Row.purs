@@ -23,56 +23,45 @@
 -- |
 -- | `*` marks what this library introduces; the rest is the ecosystem's
 -- | (`Strong`/`Choice` with their `Lens`/`Prism`, and the duals
--- | `Costrong`/`Cochoice` — whose optics `Colens`/`Coprism`, however, the
--- | ecosystem never built). `**`: the raw `unfirst` composite is dead on
--- | a gated carrier, so the knot at this shape needs a starting point —
--- | the whole-row `looped` (`PUI`'s, primed by its first feed) — while the `+` side needs no class of its own,
--- | `unleft` holding raw. For the ecosystem pairs the optics follow by
--- | Pastro–Street (`Strong`/`Choice` are lawful Tambara modules, so
--- | `Lens`/`Prism` — and, dually, `Colens`/`Coprism` — are representation
--- | theorems). The four **coined** optics are profunctor-encoded classes
--- | with **sound existential constructors and no completeness claim**: the
--- | mixed strengths carry no unit or composition coherence
--- | (`Data.Profunctor.Resolving`), so Pastro–Street does not apply — and
--- | indeed `identity` inhabits `Shutter a b a b` while no existential
--- | shutter produces it (every existential carries an escape `s → t`).
--- | Neither the classes nor the
--- | optics mention a row, so neither lives in `Data.Profunctor.Row.*`. Both follow
--- | the ecosystem's own layout: one class per module beside `Strong`/`Costrong`
--- | (`Data.Profunctor.Resolving`/`.Coresolving`/`.Retaining`/`.Coretaining`),
--- | and one optic per module beside `Data.Lens.Lens`/`.Prism`
--- | (`Data.Lens.Colens`/`.Coprism`/`.Shutter`/`.Coshutter`/`.Reel`/`.Coreel`).
--- | Claiming those ecosystem names is a claim about what the modules are, so
--- | they sit outside `src/` altogether, under the `extras/profunctor` and
--- | `extras/lenses` source roots: complements of the ecosystem's families,
--- | mentioning no `PUI`, no row and no carrier. A `Data.Profunctor.Row.*`
--- | module holds only what is about rows — the merge and the
--- | placements below; the whole-row knot `looped` and the point it is
--- | closed with (`with`, over `announce`) are the carrier's, in `PUI`:
--- | a beginning and feedback are the two things a timeless carrier
--- | lacks, so they are stated where the carrier is, not as classes.
+-- | `Costrong`/`Cochoice`, whose optics `Colens`/`Coprism` the ecosystem
+-- | never built). `**`: the raw `unfirst` composite is dead on a gated
+-- | carrier, so the knot at this shape needs a starting point — the
+-- | whole-row `looped` (`PUI`'s, primed by its first feed) — while the `+`
+-- | side needs no class of its own, `unleft` holding raw. For the
+-- | ecosystem pairs the optics follow by Pastro–Street (`Strong`/`Choice`
+-- | are lawful Tambara modules, so `Lens`/`Prism` — and, dually,
+-- | `Colens`/`Coprism` — are representation theorems). The four **coined**
+-- | optics are profunctor-encoded classes with **sound existential
+-- | constructors and no completeness claim**: the mixed strengths carry no
+-- | unit or composition coherence (`Data.Profunctor.Resolving`), so
+-- | Pastro–Street does not apply — and indeed `identity` inhabits
+-- | `Shutter a b a b` while no existential shutter produces it (every
+-- | existential carries an escape `s → t`). On the **mixed** shapes the
+-- | background *crosses* carriers (`resolve :: p a b -> p (Tuple a c) (Either
+-- | b c)`), which is not a Tambara action — hence the coinage, and hence
+-- | `PUI m` instances but no `(->)`: `resolve` needs quiescence (time),
+-- | `retain` needs memory (state).
 -- |
--- | The row layer itself is a **third** source root, `extras/row-profunctor`,
--- | which is a different claim again: these modules are bambik's own
--- | invention rather than anyone's complement, but they are still
--- | carrier-agnostic — the algebra of merging labelled rows, with `PUI` only
--- | one carrier that satisfies it. What remains in `src/` is the carrier and
--- | its vocabularies (`PUI`, `PUI.Web.*`), so the split is: `src/` is the UI
--- | library, `extras/` is the algebra it stands on.
+-- | Neither the classes nor the optics mention a row, so neither lives in
+-- | `Data.Profunctor.Row.*`: they follow the ecosystem's layout, one class
+-- | per module beside `Strong`/`Costrong` and one optic per module beside
+-- | `Data.Lens.Lens`/`.Prism`, under the `extras/profunctor` and
+-- | `extras/lenses` source roots — complements of the ecosystem's families,
+-- | mentioning no `PUI`, no row and no carrier. The row layer is a third
+-- | root, `extras/row-profunctor`: bambik's own invention, still
+-- | carrier-agnostic, with `PUI` one carrier that satisfies it; `src/` is
+-- | the UI library, `extras/` the algebra it stands on. The whole-row knot
+-- | `looped` and the point it is closed with (`with`, over `announce`) are
+-- | the carrier's, in `PUI`: a beginning and feedback are the two things a
+-- | timeless carrier lacks, so they are stated where the carrier is, not as
+-- | classes.
 -- |
--- | The **pure** shapes' `Strong`/`Choice` are Tambara modules for the `×` and
--- | `+` actions. On the **mixed** shapes the background *crosses* carriers
--- | (`resolve :: p a b -> p (Tuple a c) (Either b c)`), which is not a Tambara
--- | action — hence the coinage, and hence `PUI m` instances but no `(->)`:
--- | `resolve` needs quiescence (time), `retain` needs memory (state).
--- |
--- | What makes such a profunctor a row profunctor is not its shape alone but
--- | the structure that shape supports: for each shape, a **merge** combining
--- | two profunctors over labelled rows into one over the
--- | combined row, symmetric and associative (*The laws*) — so every shape
--- | is a commutative semigroup on labelled rows, written with qualified-do
--- | (`RecordToRecord.do`), and the labels of the merged output are exactly
--- | the labels the operands own.
+-- | What makes such a profunctor a row profunctor is the structure its
+-- | shape supports: for each shape, a **merge** combining two profunctors
+-- | over labelled rows into one over the combined row, symmetric and
+-- | associative (*The laws*) — every shape a commutative semigroup on
+-- | labelled rows, written with qualified-do (`RecordToRecord.do`), the
+-- | labels of the merged output exactly the labels the operands own.
 -- |
 -- | Around each merge sit the functions that place a profunctor **into** a
 -- | row. A function lives where the sides it constrains do: one
@@ -90,92 +79,69 @@
 -- | ```
 -- |
 -- | This is **every function the four shape modules export** beside their
--- | merge and its `do` sugar, and nothing else — each constrains both of
--- | its shape's sides. The **focus** column is the pure shapes' strength
--- | optic at one label (`Lens`, `Prism`), and it is the only column the
--- | first table reaches at row granularity: the mixed strengths' optics
--- | (`Shutter`, `Reel`) and every co-strength optic (`Colens`, `Coprism`,
--- | `Coshutter`, `Coreel`) have **no row form**, for the reasons under
--- | *What is deliberately not here*. The other two columns are half-full
--- | in complementary ways, and each empty cell is a fact (so is the
--- | absent rename column: no shape has a `dimap`-only word — a rename of
--- | a closed singleton on both sides has no reach under guardrails L3,
--- | below, and a two-sided record↔variant conversion is a classifier, a
--- | business function):
+-- | merge, its `do` sugar and the two diagonal introducers `onField`/`onCase`,
+-- | and each empty cell is a fact:
 -- |
+-- |   * **focus** — the pure shapes' strength optic at one label (`Lens`,
+-- |     `Prism`): `focusField`, the leaf lift making every label-indexed
+-- |     editor a whole-row citizen, and `focusCase`, the dialog's. The
+-- |     mixed strengths' optics (`Shutter`, `Reel`) and every co-strength
+-- |     optic have **no row form** (below).
 -- |   * **unit** — one shape only: no merge class carries a unit, and the
 -- |     algebra names no unit but `Category`'s `identity`. Three shapes
 -- |     reach theirs from it — `identity` at `+→+`, the `{}` wire at the
 -- |     merge's row (`lcmap (const {}) identity`) at `×→×`, `lcmap case_
 -- |     identity` at `+→×`, where `unshown @l` is that unit named at one
--- |     case, the one unit word a shape module has. `×→+`'s cannot be a
--- |     wire, since no wire fabricates a case (`{}` is terminal, `Variant
--- |     ()` initial): over the algebra that merge is a semigroup, and a
--- |     carrier with *nothing* in it supplies the unit as its own
--- |     structure — `PUI`'s silent component — named
--- |     by no class. None of these is a law: the merge laws are symmetry
--- |     and associativity (*The laws*).
--- |   * **retention** (over `Strong`, `×→×`'s strength used at `×→+`) —
--- |     one shape only: the fed row carried out with each occurrence.
--- |     `+→×` has no `Choice` mirror, because `left` would release an
--- |     `Either`, never a record — an event riding beside a record output
--- |     needs `Retaining`'s memory.
+-- |     case: the faceless leaf owning case `l`, the status a silent fold
+-- |     opens with (the fold itself is `PUI`'s, `fold @l f = unshown @l #
+-- |     folding @l f`). `×→+`'s cannot be a wire, since no wire fabricates
+-- |     a case (`{}` is terminal, `Variant ()` initial): over the algebra
+-- |     that merge is a semigroup, and a carrier with *nothing* in it
+-- |     supplies the unit as its own structure — `PUI`'s silent component —
+-- |     named by no class. None of these is a law: the merge laws are
+-- |     symmetry and associativity (*The laws*).
+-- |   * **retention** — one shape only: `×→×`'s `Strong` at `×→+`, `first`
+-- |     around an occurrence source, its state channel carrying the fed
+-- |     row out with each occurrence (`joined`, `{ event, model }`), the
+-- |     case the source's own and never renamed. A click, whose occurrence
+-- |     carries nothing, is `joined` with the `{}` event dropped and the
+-- |     case renamed (`PUI.replayed` writes that derivation itself). `+→×`
+-- |     has no `Choice` mirror, because `left` would release an `Either`,
+-- |     never a record — an event riding beside a record output needs
+-- |     `Retaining`'s memory.
+-- |   * **no rename column** — a `dimap`-only word relabelling a closed
+-- |     singleton on both sides has no reach: its one use is re-labelling
+-- |     a component built at a fixed label, which guardrails L3 forbids,
+-- |     and a two-sided record↔variant conversion is a classifier, a
+-- |     business function.
 -- |
 -- | What is deliberately *not* here: the one-sided words
 -- | (`atField`/`toField`, `atCase`/`toCase`, `settled`), which are the
--- | floor's and appear under *The shared floor* below; the seed `with`
--- | (no variant-input shape could mirror it, there being no point at a
--- | variant input) and the whole-row knot `looped`, both `PUI`'s —
--- | carrier structure rather than row forms, for the reason the first
--- | table's `**` gives; and, on grounds of the row discipline rather
--- | than reach, **every row form of a mixed strength or a co-strength**.
--- | A sub-row focus (a sub-record focused with the rest escaping as a
--- | case, or a sub-variant with the other cases retained as a field)
--- | **narrows** a stage's input and **widens** its output, and a stage is
--- | typed at one row, the row its business function is typed at
--- | (guardrails L18): a sub-record a stage should see is the
--- | model's own nesting under `group @l`, a sub-variant a case a pane
--- | adopts. The library names no coercion at all — the one reshape it
--- | needs is bare `lcmap (const {})` where a vocabulary places `{}`-input
--- | chrome, and `rmap expand` (lawful by `Union`) where a word whose
--- | row a function names — `action`'s outcome — sits in the row its
--- | block shares. A per-shape knot (a hidden seeded field, a
--- | re-entering case, a fold's accumulator, an unfold's resume case) is
--- | **subsumed** by a model field under `looped` — state the app needs is
--- | a model field (guardrails L14). Each of these had a word once and
--- | each went on exactly those grounds (git log, 2026-10-14, the
--- | precedent); the optics they encoded (`Shutter`/`Reel`,
--- | `Colens`/`Coprism`/`Coshutter`/`Coreel`) stay stated in extras/lenses
--- | at arbitrary `s t a b`, as business optics (test/BusinessOptics.purs).
+-- | floor's (*The shared floor*); the seed `with` (no variant-input shape
+-- | could mirror it, there being no point at a variant input) and the knot
+-- | `looped`, both `PUI`'s; and, on grounds of the row discipline rather
+-- | than reach, **every row form of a mixed strength or a co-strength**. A
+-- | sub-row focus (a sub-record focused with the rest escaping as a case,
+-- | or a sub-variant with the other cases retained as a field) **narrows**
+-- | a stage's input and **widens** its output, and a stage is typed at one
+-- | row, the row its business function is typed at (guardrails L18): a
+-- | sub-record a stage should see is the model's own nesting under `group
+-- | @l`, a sub-variant a case a pane adopts. The library names no coercion
+-- | at all — the one reshape it needs is bare `lcmap (const {})` where a
+-- | vocabulary places `{}`-input chrome. A per-shape knot (a hidden seeded
+-- | field, a re-entering case, a fold's accumulator, an unfold's resume
+-- | case) is **subsumed** by a model field under `looped` (guardrails L14).
+-- | Each of these had a word once and went on exactly those grounds
+-- | (2026-10-14); the optics they encoded stay stated in extras/lenses at
+-- | arbitrary `s t a b`, as business optics (test/BusinessOptics.purs).
+-- | A reshape *drops* the complement — chrome placed with `lcmap (const
+-- | {})` reads none of the row — while a focus *threads* it
+-- | (`Strong`/`Choice`); neither reshape is a word of the floor.
 -- |
--- | Column by column. The **focus** threads a **background** past a
--- | stage at one label: the single-label `Lens`/`Prism` (`focusField`,
--- | also the leaf lift making every label-indexed editor a whole-row
--- | citizen; `focusCase`). The one **knot** is not here but
--- | `PUI`'s `looped` (the model re-enters whole, primed by its first
--- | feed): an app's loop is cut at its record junction, where the model
--- | row holds the state (`w # looped # with seed`, guardrails L18).
--- | The one **unit** word, `unshown @l` (`lcmap (const {})
--- | identity`), is the faceless leaf owning case `l` and showing nothing
--- | of it — the status a silent fold opens with; the fold itself is not
--- | here but an optic over its status in `PUI` (`folding f`, and
--- | `fold @l f = unshown @l # folding @l f`), derived through the `×→×` merge.
--- | **Retention** is `×→×`'s `Strong` at `×→+`: `first` around an
--- | occurrence source, its state channel carrying the fed row out with
--- | each occurrence (`joined`, `{ event, model }`): the case is the
--- | source's own, its payload paired with the retained row, never renamed.
--- | A click, whose occurrence carries nothing, is `joined` with the `{}`
--- | event dropped and the case renamed (`PUI.replayed` writes that
--- | derivation itself; it needs no word).
--- |
--- | The pure shapes' two-sided words above and the floor's one-sided
--- | halves together form one **single-label grid**, the same three words
--- | over records and variants. A closed singleton is its payload
--- | (`{ l :: a } ≅ a ≅ [ l :: a ]`), and the three are the three ways to
--- | use that: on both sides with the rest of the row threaded
--- | (`focusField`/`focusCase`, the shape's), on the input side alone
--- | (`atField`/`atCase`, the floor's) and on the output side alone
--- | (`toField`/`toCase`, the floor's).
+-- | The pure shapes' two-sided words and the floor's one-sided halves form
+-- | one **single-label grid**, the same three words over records and
+-- | variants. A closed singleton is its payload (`{ l :: a } ≅ a ≅ [ l ::
+-- | a ]`), and the three are the three ways to use that:
 -- |
 -- | ```
 -- |                 both sides,     input side   output side
@@ -190,31 +156,21 @@
 -- | a case **injected into** any variant holding it (`atField`, `toCase`:
 -- | the projection and the injection, `Cons l a b r`), while a record is
 -- | **built** and a variant **eliminated** only at the singleton
--- | (`toField`, `atCase`: `Cons l a () r`).
--- |
--- | At the closed singleton the focus is its two halves, `focusField @l =
--- | toField @l <<< atField @l` and likewise over cases; the halves are
--- | not derivable from the focus (a two-sided wrap does not split), so
--- | the two `Profunctor` words per shape are generators. The fourth
--- | way, both sides with no rest — a rename — is deliberately absent:
--- | its one use is re-labelling a component built at a fixed label,
--- | which guardrails L3 forbids, so no application could reach it.
--- |
--- | None takes a function: business functions are arguments of leaves,
--- | never adopters — a display takes its **read function** (`text
--- | lineOf`), a status its business case and fold (`snackbar @"Flight
--- | booked" kept`, its face over its label, adopted `# atCase @l`),
--- | and an emitter emits its own case, which the fold consumes
--- | (doc/research-copy-is-a-function.md). The grid is symmetric in form
--- | and asymmetric in reach: a label-indexed leaf already emits its
--- | labelled row (`focusField @l` lifts an editor into it) and reads its
--- | input through its own read function, so applications meet no bare
--- | record side to adopt and the record words other than `focusField`
--- | are law-tested only, while the mixed shapes hand bare values to and
--- | from cases all the time (`atCase` opening an action's fold block,
--- | `toCase` naming a dialog's outcome). The entry outside the grid is
--- | `splitVariant`, a plain function rather than a placement: the
--- | dispatch the `+→+` merge splits with.
+-- | (`toField`, `atCase`: `Cons l a () r`). At the closed singleton the
+-- | focus is its two halves, `focusField @l = toField @l <<< atField @l`
+-- | and likewise over cases; the halves are not derivable from the focus
+-- | (a two-sided wrap does not split), so the two `Profunctor` words per
+-- | shape are generators. None takes a function: business functions are
+-- | arguments of leaves, never adopters (guardrails L3). The grid is
+-- | symmetric in form and asymmetric in reach: a label-indexed leaf
+-- | already emits its labelled row and reads its input through its own
+-- | read function, so applications meet no bare record side to adopt and
+-- | the record words other than `focusField` are law-tested only, while
+-- | the mixed shapes hand bare values to and from cases all the time
+-- | (`atCase` opening an action's fold block, `toCase` naming a dialog's
+-- | outcome). The entry outside the grid is `splitVariant`, a plain
+-- | function rather than a placement: the dispatch the `+→+` merge splits
+-- | with.
 -- |
 -- | The merges are the **universal properties of the two tensors**, read
 -- | at labelled rows, and that is where each one's sharing comes from:
@@ -239,33 +195,29 @@
 -- | of its variant but the occurrences of its cases over time, and a
 -- | record of occurrence sources is one stream of tagged occurrences
 -- | (tag each going one way, filter by tag coming back), so the product
--- | of the operands' outputs is the variant of their cases. Each case
--- | has exactly one emitter, and the merged row is exactly the cases the
--- | operands emit. Its unit is still the one no wire reaches: the
--- | carrier's silent component, the source of no occurrence.
--- |
--- | Read per side: a `×` input is shared and a `+` input owned, always,
--- | and the **input decides** the output: under a record input, the
--- | pairing, each operand owns its part of the output (fields at `×→×`,
--- | cases at `×→+`); under a variant input, the copairing, the output is
--- | one row every operand is typed at. So every merge has one shared
--- | side and one owned side. `+→×` is the
--- | one shape where both readings type — owned fields completed from
--- | retention, or the copairing — and the library takes the copairing:
--- | with owned inputs one operand runs per occurrence, so owned outputs
--- | would need the sibling's fields retained and a gate to wait on them
--- | (it was that until 2026-10-04, git log).
+-- | of the operands' outputs is the variant of their cases, each case
+-- | with exactly one emitter. So a `×` input is shared and a `+` input
+-- | owned, always, and the **input decides** the output: every merge has
+-- | one shared side and one owned side. `+→×` is the one shape where both
+-- | readings type — owned fields completed from retention, or the
+-- | copairing — and the library takes the copairing: with owned inputs
+-- | one operand runs per occurrence, so owned outputs would need the
+-- | sibling's fields retained and a gate to wait on them (it was that
+-- | until 2026-10-04).
 -- |
 -- | The constraint vocabulary below spells the two obligations out per
--- | side: on an **input** side, where does each label's value come from;
--- | on an **output** side, who is allowed to produce it. A shared record input is
--- | **one row** — the operands' inputs are the merge's, and an operand's
--- | business functions are typed at that row (guardrails L18); a shared
--- | variant output (`+→+`) is **one row** too, every operand typed at the
--- | block's; ownership is exclusive (`ExclusiveRows`, and at `×→+` the
--- | union `OwnedVariantOutputs` computes: an emitter is closed to its
--- | case, `Cons l a () v`, an action to its outcomes) — so a merge
--- | signature is its owned side's bundle and its shared side's one row.
+-- | side — on an **input** side, where each label's value comes from; on
+-- | an **output** side, who may produce it. A shared side is **one row**,
+-- | written as one row variable and no class (an operand's business
+-- | functions are typed at that row, guardrails L18; the `+→+` output is
+-- | one row for the same reason, 2026-10-07); ownership is exclusive
+-- | (`ExclusiveRows`), and at `×→+` the union `OwnedVariantOutputs`
+-- | computes — an emitter is closed to its case, `Cons l a () v`, an
+-- | action to its outcomes, so a case two operands emit and a handler for
+-- | a case nothing emits are compile errors (the `×→+` output was one
+-- | shared row from 2026-10-15 to 2026-11-15). Every shared side is open
+-- | on the leaf and closed by the owning side, and a merge signature is
+-- | its owned side's bundle and its shared side's one row.
 -- |
 -- | `Data.Profunctor.Keyed` extends the family one step past rows: rows
 -- | are the finitary μ-free fragment of the container grammar, and `Array`
@@ -273,25 +225,21 @@
 -- | of its own (`extras/keyed-profunctor`) that imports nothing from this
 -- | one.
 -- |
--- | The shared floor of the row layer — what every shape's module
--- | (`Data.Profunctor.Row.*`) stands on:
+-- | ## The shared floor
 -- |
--- |   * **row-constraint vocabulary** — `ExclusiveRows`
--- |     (disjoint partition: variant inputs, record outputs),
--- |     `DispatchableVariants` (runtime tag evidence for variant dispatch).
--- |     Their meanings come from the row-profunctor reading: everyone may
--- |     read a record field / offer a variant case, but each variant case
--- |     must have exactly one handler and, under the pairing (`×→×`), each
--- |     record field exactly one producer. `MergeableRecords` adds the **runtime-exactness** evidence the
--- |     gated merge uses to trim operand emissions to their declared
--- |     output rows (`exactRow`).
+-- | What every shape's module (`Data.Profunctor.Row.*`) stands on:
+-- |
+-- |   * **row-constraint vocabulary** — `ExclusiveRows` (disjoint
+-- |     partition: variant inputs, record outputs), `DispatchableVariants`
+-- |     (runtime tag evidence for variant dispatch), `MergeableRecords`
+-- |     (the **runtime-exactness** evidence the gated merge uses to trim
+-- |     operand emissions to their declared output rows, `exactRow`).
 -- |   * **the split** — `splitVariant`, the plain row function the `+→+`
 -- |     merge dispatches with (a case into the focus or the background).
 -- |   * **one-sided placements** — every word constraining a single side,
 -- |     so that no shape module needs another's: the closed-singleton
 -- |     halves `atField`/`toField` and `atCase`/`toCase`, and the
--- |     normalization `settled`; the knot's closure `with`, over the
--- |     point, is the carrier's (`PUI`).
+-- |     normalization `settled`.
 -- |
 -- | Everything needs only `Profunctor`; the strengths
 -- | (`Strong`/`Choice`/`Resolving`/`Retaining`) and the merges build above.
@@ -300,8 +248,7 @@
 -- |
 -- | Six statements, stated here once and read at each shape in the four
 -- | shape modules (`RecordToRecord`'s "The two laws" and "The merge at
--- | `×→×`", "Laws at `×→+`" and its siblings). All are stated
--- | against doc/observational-semantics.md §1–2: a **script** is a finite
+-- | `×→×`", "Laws at `×→+`" and its siblings). A **script** is a finite
 -- | interleaving of registration, feeds (`feed x`, at a record input),
 -- | occurrences (`occur e`, at a variant input) and inner firings; an
 -- | **emission** is an output on the boundary channel; a **step** is one
@@ -376,80 +323,67 @@
 -- | row as it is (`×→+`, where the row is the operands' union, and
 -- | `+→+`, where it is shared), and at `+→×` every operand releases the
 -- | whole row, so no sibling owns a field it could shadow. Only `×→×`
--- | owns fields, and there
--- | the trim is `exactRow`, the runtime evidence `OwnedRecordOutputs`
--- | carries, so an operand's stale runtime copy of a sibling's field never
--- | shadows the sibling. Law 2's liveness half is a **leaf** law (above): a stage
--- | may refine it in time (the gather gate releases once every element
--- | has spoken), by 6 the merge refines with
+-- | owns fields, and there the trim is `exactRow`, the runtime evidence
+-- | `OwnedRecordOutputs` carries, so an operand's stale runtime copy of a
+-- | sibling's field never shadows the sibling. Law 2's liveness half is a
+-- | **leaf** law (above): a stage may refine it in time (the gather gate
+-- | releases once every element has spoken), by 6 the merge refines with
 -- | it, and a route through a variant does not owe it. 5 is conditional
 -- | on its operands for the same reason: a merge of answering operands
 -- | answers; one with an event-driven operand releases on that operand's
--- | occurrences. `{}` is always known, so a `{}`-input component counts registration
--- | as its feed (`announce`, the point). A **pointed** component at any
--- | input — a source — releases at registration too, before any feed: the
--- | laws bound what a feed is owed, not what registration carries, and that
--- | release is what primes a gate. A display is a stage that answers with
--- | the row it shows.
+-- | occurrences. `{}` is always known, so a `{}`-input component counts
+-- | registration as its feed (`announce`, the point). A **pointed**
+-- | component at any input — a source — releases at registration too,
+-- | before any feed: the laws bound what a feed is owed, not what
+-- | registration carries, and that release is what primes a gate. A
+-- | display is a stage that answers with the row it shows.
 -- |
 -- | **What is not a law here.** That an emitted `{ | o }` is whole is the
 -- | type. That `focusField @l` re-attaches the background, that an emitter
--- | replays the row last fed (`joined`), that `settled`'s normalizer is idempotent
--- | are laws of those words, stated at them. That an occurrence twice is
--- | two, that a handler answers any number of times, that a fold releases
--- | when its state allows, is the absence of a quotient at a variant
--- | input, not an obligation. Broadcast, dispatch, gate and passage are
--- | how `PUI` satisfies 3–6 (below), not what the classes demand.
+-- | replays the row last fed (`joined`), that `settled`'s normalizer is
+-- | idempotent are laws of those words, stated at them. That an occurrence
+-- | twice is two, that a handler answers any number of times, that a fold
+-- | releases when its state allows, is the absence of a quotient at a
+-- | variant input, not an obligation. Broadcast, dispatch, gate and
+-- | passage are how `PUI` satisfies 3–6 (below), not what the classes
+-- | demand.
 -- |
 -- | **How `PUI` discharges them.** Input, law 4's first half: broadcast in
 -- | one step at `×`, dispatch to the one owner at `+`. Output: at `×→×`,
 -- | where the operands own fields of one row, the gate `PUI.Gate.gateStep`
 -- | over the owned field labels as participants — retain each field's
 -- | last value, release the row once every owned field is known, once per
--- | step; before that withhold, and **drop** rather than delay (the primed
--- | equivalence, doc §4); at `+→×`,
+-- | step; before that withhold, and **drop** rather than delay; at `+→×`,
 -- | where each operand releases the whole shared row, the copairing —
--- | forward each release as it occurs; at `+`
--- | passage — each emission exits as it occurs, nothing retained. The
--- | gate is the one canonical way to pair two streams into a stream of
--- | pairs, so it appears exactly where a row is assembled from several
--- | operands — the broadcast merge, and the container action's `Array b`,
--- | gathered by the same machine over the fed keys as labels
--- | (`Data.Profunctor.Keyed.Acting`) — and a zero-field side enrols no
--- | participant, so it is born satisfied. Counting
--- | renderings a gated merge is premonoidal — interchange at the inner
--- | surfaces holds as `⊑` — and counting channels monoidal; at the
--- | boundary interchange holds on the nose because a feed is one step
--- | (doc §4). Since operands share one input row, interchange is stated
--- | with the projections explicit: `merge (f >>> h) (g >>> k)` against
--- | `merge f g >>> merge (π₁ h) (π₂ k)`, `π` the projection
--- | (`lcmap`) of the middle row onto each second stage's input.
--- | Starvation reads off the laws: a gated merge silent after every owned
--- | field has been fed has an operand breaking 2; one silent before that
--- | has an unprimed owned field (`with`, `seeded`, or a source, pointed
--- | by construction).
+-- | forward each release as it occurs; at `+` passage — each emission
+-- | exits as it occurs, nothing retained. The gate is the one canonical
+-- | way to pair two streams into a stream of pairs, so it appears exactly
+-- | where a row is assembled from several operands — the broadcast merge,
+-- | and the container action's `Array b`, gathered by the same machine
+-- | over the fed keys as labels (`Data.Profunctor.Keyed.Acting`) — and a
+-- | zero-field side enrols no participant, so it is born satisfied.
+-- | Counting renderings a gated merge is premonoidal — interchange at the
+-- | inner surfaces holds as `⊑` — and counting channels monoidal; at the
+-- | boundary interchange holds on the nose because a feed is one step.
+-- | Since operands share one input row, interchange is stated with the
+-- | projections explicit: `merge (f >>> h) (g >>> k)` against `merge f g
+-- | >>> merge (π₁ h) (π₂ k)`, `π` the projection (`lcmap`) of the middle
+-- | row onto each second stage's input. Starvation reads off the laws: a
+-- | gated merge silent after every owned field has been fed has an
+-- | operand breaking 2; one silent before that has an unprimed owned
+-- | field (`with`, `seeded`, or a source, pointed by construction).
 -- |
 -- | **Coverage.** Laws 3, 4's input half and 6 at every shape, 4's `exact`
 -- | at `×→×` (the one shape where it is not the identity) and the gate's
 -- | conformance to its pure step are checked over every script to a bound
 -- | in test/Exhaustive.purs — complete, since the gate is a
--- | data-independent machine with finite control (doc §9); so is 5
--- | wherever it has content (repetition and the one untorn release per
--- | feed at `×→×`; repetition and arming at `×→+`, over `joined`
--- | emitters). The component laws at each shape's own wire or source, the
--- | `{}` clauses and the `looped` contrast are named probes in
--- | test/Main.purs, each carrying its law and shape (`repetition ×→×`,
--- | `answer ×→+`, `projection +→+`, `monotonicity at +→×`). Outside the
--- | laws, being about the carrier: the trace asymmetry (doc §5) and the
--- | named ecosystem deviations (doc §4). See
--- | doc/collections-profunctor-algebra.md §1.
--- |
--- | Reshape vs focus: a reshape *drops* the complement — chrome placed
--- | with `lcmap (const {})` reads none of the row, an action widened
--- | into its block never emits the added cases — while a focus *threads*
--- | it (`Strong`/`Choice`). Neither reshape is a word of the floor: no
--- | stage subsumes, a stage is typed at one row, and the widening is the
--- | action's own, since it alone declares a row beside emitters.
+-- | data-independent machine with finite control; so is 5 wherever it has
+-- | content (repetition and the one untorn release per feed at `×→×`;
+-- | repetition and arming at `×→+`, over `joined` emitters). The
+-- | component laws at each shape's own wire or source, the `{}` clauses
+-- | and the `looped` contrast are named probes in test/Main.purs, each
+-- | carrying its law and shape (`repetition ×→×`, `answer ×→+`,
+-- | `projection +→+`, `monotonicity at +→×`).
 module Data.Profunctor.Row
   ( class ExclusiveRows
   , splitVariant
@@ -609,41 +543,20 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 -- Side vocabulary: one constraint per merge side
 -- =====================================================================
 --
--- The four merges' constraints factor exactly by side, under one law:
--- **sharing is open, responsibility is exclusive** — a shared record input
--- is one row every operand is fed whole, a shared output one row every
--- operand is typed at (`+→+`, and the record output of `+→×`, the
--- copairing) — and runtime
--- label evidence appears only where the merge's
--- runtime action is label-driven (dispatch, union) rather than
--- label-blind (broadcast, passage): the owned variant outputs of `×→+`
--- carry none, a case entering the merged row as it is. Records are
--- read-shared, and write-owned under the pairing (`×→×`); variants are
--- handle-owned, emit-owned under the pairing (`×→+`) and emit-shared
--- under the copairing (`+→+`). A shared side
--- is one row, written as one row variable — no class states an equality
--- — so each merge signature is its owned side's bundle and its shared
--- side's row:
+-- The four merges' constraints factor exactly by side (guardrails L4;
+-- the header above): a shared side is one row variable and no class,
+-- runtime label evidence appears only where the merge's action is
+-- label-driven (dispatch, union), and each merge signature is its owned
+-- side's bundle and its shared side's row:
 --
 --   recordToRecord   : one input row `i`  + OwnedRecordOutputs
 --   recordToVariant  : one input row `i`  + OwnedVariantOutputs
 --   variantToVariant : OwnedVariantInputs + one output row `o`
 --   variantToRecord  : OwnedVariantInputs + one output row `o`
 --
--- A shared record input is one row by L18 (guardrails): a business
--- function is typed at the stage's row and checked by unification. The
--- one repeated variable carries the
--- context's row down into every operand, so an operand's owned evidence
--- (a whole-row editor, a collection item) never sees an open row. The
--- `+→+` output is one row for the same reason (git log, 2026-10-07).
--- The `×→+` output is owned: an emitter is closed to its case
--- (`Cons l a () v`), an action to its outcomes, the block's row is the
--- union of its operands' cases, and the handlers after it own exactly
--- those — so a case two operands emit and a handler for a case nothing
--- emits are both compile errors. Every shared side is open on the leaf
--- and closed by the owning side, and every merge has one of each. (The
--- `×→+` output was one shared row, every emitter open on it, from
--- 2026-10-15 to 2026-11-15; git log.)
+-- The one repeated variable carries the context's row down into every
+-- operand, so an operand's owned evidence (a whole-row editor, a
+-- collection item) never sees an open row.
 --
 -- **What a shared input side obliges.** A shared record input is a
 -- *broadcast*: one feed reaches both operands, so both may answer it. That
@@ -658,21 +571,14 @@ instance (IsSymbol l, RowLabels rest) => RowLabels (RL.Cons l a rest) where
 --     occurrence (no synchronous **event** echo), or the pass-through
 --     broadcast would manufacture a second emission.
 --
--- An exclusive variant input side carries neither obligation, and this is
--- a consequence rather than a coincidence: `DisjointLabels` gives every
--- case exactly one handler, so a feed is *dispatched*, not broadcast, and
--- exactly one operand answers. There is no "one feed, several answers"
--- situation to discipline — nothing to tear, nothing to duplicate.
---
--- The two axes are therefore independent, and the mechanisms follow both:
--- the **input** side says whether the obligation exists at all (broadcast
--- merges have it, dispatch merges do not), the **output** side says what
--- discharges it (a record output assembled from owned fields gates and
--- retains, so "one thing" also means "whole"; a variant output passes
--- through, so it only means "do not manufacture a second").
--- `variantToRecord` is the case that separates them: dispatched input, so
--- no broadcast to batch, and a record output each operand releases whole,
--- so nothing to assemble — it neither gates nor retains.
+-- An exclusive variant input carries neither obligation: `DisjointLabels`
+-- gives every case exactly one handler, so a feed is *dispatched*, not
+-- broadcast, and exactly one operand answers — nothing to tear, nothing
+-- to duplicate. The input side says whether the obligation exists, the
+-- output side what discharges it; `variantToRecord` separates them:
+-- dispatched input, so no broadcast to batch, and a record output each
+-- operand releases whole, so nothing to assemble — it neither gates nor
+-- retains.
 
 -- =====================================================================
 -- Custom diagnostics
@@ -904,8 +810,7 @@ settled f = rmap f
 -- | every label at once says the source has these cases and no others —
 -- | two `joined`s would leave the source's rest open to the block's other
 -- | cases. A variant is a sum and `+` lists its summands, in any order and
--- | to any length (until 2026-11-12 the two-outcome source had a numbered
--- | word of its own, `joined2`; git log).
+-- | to any length.
 data Or :: forall k. Symbol -> k -> Type
 data Or l ls
 

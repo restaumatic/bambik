@@ -1,20 +1,15 @@
 -- | The **`Coshutter`** — the profunctor-encoded optic of
 -- | `Data.Profunctor.Coresolving`'s `coresolve`, for the coined `× → +`
--- | shape. Both the class and the optic are this library's. Its
--- | strength-side sibling is `Data.Lens.Shutter`, and nothing here mentions
--- | a row; it has no row form.
--- |
--- | Like the other coined optics: the existential constructor `coshutterE`
--- | is **sound**, and completeness is **not claimed** — see
--- | `Data.Lens.Shutter`'s note (the mixed strengths carry no unit or
--- | composition coherence, so Pastro–Street does not apply). The ∃-to-∃
--- | duality `Coshutter s t a b ≅ Reel b a t s` (a pair swap) does hold.
--- |
--- | It claims a `Data.Lens.*` name and lives under the separate
--- | `extras/lenses` source root because it belongs to that family by
--- | construction — an optic over a co-strength, mentioning no `PUI`, no row
--- | and no carrier. Unlike `Colens`/`Coprism` it could not be upstreamed
--- | alone: its class is coined too, so the pair travels together.
+-- | shape; both the class and the optic are this library's, its
+-- | strength-side sibling `Data.Lens.Shutter`. Like the other coined
+-- | optics, the existential constructor `coshutterE` is **sound** and
+-- | completeness is **not claimed** (`Data.Lens.Shutter`'s note: the mixed
+-- | strengths carry no unit or composition coherence, so Pastro–Street
+-- | does not apply); the ∃-to-∃ duality `Coshutter s t a b ≅ Reel b a t s`
+-- | (a pair swap) does hold. An optic over a co-strength, mentioning no
+-- | `PUI`, row or carrier — hence the `Data.Lens.*` name and the
+-- | `extras/lenses` root, travelling with its coined class. Law-tested,
+-- | reached by no demo.
 module Data.Lens.Coshutter
   ( Coshutter
   , coshutter
@@ -34,8 +29,8 @@ import Data.Tuple (Tuple(..))
 -- | `∃c. (s × c → a) × (b → t + c)` to a single `step : b → t + (s → a)`:
 -- | each emission either exits with `t` or yields a **new way to read
 -- | inputs** — the fold state is a reader. The collapsed form has no initial
--- | reader, which is exactly why the `PUI` carrier gates inputs until primed.
--- | It has no row form: a fold's state is a model field under `looped`
+-- | reader, which is why the `PUI` carrier gates inputs until primed. It
+-- | has no row form: a fold's state is a model field under `looped`
 -- | (`Data.Profunctor.Row`, *What is deliberately not here*).
 type Coshutter s t a b = forall p. Coresolving p => p a b -> p s t
 

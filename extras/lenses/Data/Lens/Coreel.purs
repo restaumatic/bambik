@@ -1,19 +1,13 @@
 -- | The **`Coreel`** — the profunctor-encoded optic of
 -- | `Data.Profunctor.Coretaining`'s `coretain`, for the coined `+ → ×`
--- | shape. Both the class and the optic are this library's. Its
--- | strength-side sibling is `Data.Lens.Reel`, and nothing here mentions a
--- | row; it has no row form.
--- |
--- | Like the other coined optics: the existential constructor `coreelE` is
--- | **sound**, and completeness is **not claimed** — see
--- | `Data.Lens.Shutter`'s note. The ∃-to-∃ duality
--- | `Coreel s t a b ≅ Shutter b a t s` (a pair swap) does hold.
--- |
--- | It claims a `Data.Lens.*` name and lives under the separate
--- | `extras/lenses` source root because it belongs to that family by
--- | construction — an optic over a co-strength, mentioning no `PUI`, no row
--- | and no carrier. Unlike `Colens`/`Coprism` it could not be upstreamed
--- | alone: its class is coined too, so the pair travels together.
+-- | shape; both the class and the optic are this library's, its
+-- | strength-side sibling `Data.Lens.Reel`. Like the other coined optics,
+-- | the existential constructor `coreelE` is **sound** and completeness is
+-- | **not claimed** (`Data.Lens.Shutter`'s note); the ∃-to-∃ duality
+-- | `Coreel s t a b ≅ Shutter b a t s` (a pair swap) does hold. An optic
+-- | over a co-strength, mentioning no `PUI`, row or carrier — hence the
+-- | `Data.Lens.*` name and the `extras/lenses` root, travelling with its
+-- | coined class. Law-tested, reached by no demo.
 module Data.Lens.Coreel
   ( Coreel
   , coreel

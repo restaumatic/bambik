@@ -15,11 +15,10 @@
 -- | `dimap`s and multi-application chains no single `shutterE` produces.
 -- | The library only ever uses the sound direction.
 -- |
--- | It claims a `Data.Lens.*` name and lives under the separate
--- | `extras/lenses` source root because it belongs to that family by
--- | construction — an optic over a strength, mentioning no `PUI`, no row and
--- | no carrier. Unlike `Colens`/`Coprism` it could not be upstreamed alone:
--- | its class is coined too, so the pair travels together.
+-- | An optic over a strength, mentioning no `PUI`, row or carrier — hence
+-- | the `Data.Lens.*` name and the `extras/lenses` root; unlike
+-- | `Colens`/`Coprism` it could not be upstreamed alone, since its class is
+-- | coined too. Law-tested, reached by no demo.
 module Data.Lens.Shutter
   ( Shutter
   , shutter

@@ -1,47 +1,24 @@
--- | `Record → Record` (× → ×) row profunctors, organized (uniformly across
--- | the four shape modules) as:
+-- | `Record → Record` (× → ×) row profunctors:
 -- |
 -- |   * **strength** — `Strong` (ecosystem, with a `(->)` instance): the
--- |     unary power, the field lens. Its co-strength is the ecosystem's
--- |     `Costrong` (gated on `PUI`, so the knot at this shape needs a
--- |     starting point: the whole-row `looped`, the carrier's, primed by
--- |     its first feed),
--- |     and their optics are `Data.Lens.Lens` and `Data.Lens.Colens` —
--- |     neither the classes nor the optics mention a row, so none of them
--- |     lives here.
--- |   * **shape class** — `RecordToRecord`, the binary **merge**: the
--- |     one genuine per-carrier primitive, with its qualified-do sugar
--- |     (`bind`/`discard`).
--- |   * **free functions** — over the strength: `focusField` (the field
--- |     lens — the leaf lift, making every label-indexed editor a whole-row
--- |     citizen) and `onField` (a field computed from the row and added
--- |     to it, the mirror of `VariantToVariant.onCase`). No co-strength row form: a loop's state is a model
--- |     field the whole-row `looped` carries, never a hidden one
+-- |     field lens. Its co-strength is the ecosystem's `Costrong` (gated
+-- |     on `PUI`, so the knot at this shape is the whole-row `looped`, the
+-- |     carrier's, primed by its first feed); their optics are
+-- |     `Data.Lens.Lens` and `Data.Lens.Colens`. None of them mentions a
+-- |     row, so none lives here.
+-- |   * **shape class** — `RecordToRecord`, the binary **merge**, with its
+-- |     qualified-do sugar (`bind`/`discard`).
+-- |   * **free functions** — over the strength: `focusField` (the leaf
+-- |     lift, making every label-indexed editor a whole-row citizen) and
+-- |     `onField` (a field computed from the row and added to it, the
+-- |     mirror of `VariantToVariant.onCase`). No co-strength row form: a
+-- |     loop's state is a model field the whole-row `looped` carries
 -- |     (`Data.Profunctor.Row`, *What is deliberately not here*). The
--- |     one-sided words of this shape — `atField`/`toField` (the halves of
--- |     the closed-singleton iso) and `settled` (the normalization) —
--- |     live on the floor; the knot's closure `with`, over the point, is
--- |     the carrier's (`PUI`).
--- |
--- | A word lives where the sides it constrains do: one constraining both
--- | sides in its shape's module, one constraining a single side on the
--- | floor (`Data.Profunctor.Row`)
--- | — so no shape module imports another, and every module holds only
--- | its merge, its strength and trace forms, and the words that genuinely
--- | span both of its sides.
--- |
--- | The three single-label words mirror `VariantToVariant`'s one for one:
--- | `focusField`/`focusCase`, `atField`/`atCase`, `toField`/`toCase`. Where they differ is reach, not form: a record
--- | leaf already emits its labelled row (guardrails L3) and reads its
--- | input through its own read function, so applications meet no bare
--- | record side to adopt — `atField`/`toField` are law-tested
--- | (test/Main.purs, with `focusField @l = toField @l <<< atField @l` at
--- | the closed singleton: the focus is derived from its halves there,
--- | never the halves from it) — while the mixed shapes' words hand bare values
--- | to and from cases all the time. The owned halves close their row to
--- | the one label (`atField`/`atCase`, `toField`: `Cons l a () r`, `Cons
--- | l a () v`), the shared half leaves it open (`toCase`: `Cons l a b v`,
--- | the case sitting in the row the `×→+` block shares).
+-- |     one-sided words of this shape — `atField`/`toField` and `settled`
+-- |     — live on the floor (`Data.Profunctor.Row`, the single-label grid,
+-- |     with `focusField @l = toField @l <<< atField @l` at the closed
+-- |     singleton law-tested in test/Main.purs); the knot's closure `with`
+-- |     is the carrier's (`PUI`).
 -- |
 -- | ## What the shape models
 -- |
@@ -52,26 +29,22 @@
 -- | @l` over a leaf), displays (fed the row, releasing the row they
 -- | show), sources (each owning the field it knows) and `settled` (a
 -- | correction of the row by a function of it: a bid raised to the top,
--- | a selection the filter hid dropped, a quantity re-bounded by its
--- | room). Every field has the type the screen represents exactly — a
--- | text field's is `String`, a slider's a number, a selector's its
--- | option's case, a number field's the two-case `[ number, invalid ]`
--- | that keeps the text that is not one — so what the row says is what
--- | the user sees.
+-- | a selection the filter hid dropped). Every field has the type the
+-- | screen represents exactly — a text field's is `String`, a slider's a
+-- | number, a selector's its option's case, a number field's the two-case
+-- | `[ number, invalid ]` that keeps the text that is not one — so what
+-- | the row says is what the user sees.
 -- |
 -- | The **data model** is never a row here. It enters and leaves on the
 -- | variant edges, as the payload of an event: in through a fold
--- | (`capture @l`, `fold @l f` with `f :: payload -> state -> state`,
--- | `load f` at mount), out through an action (`action @l f`, `f :: row
--- | -> Aff outcomes`, where the view model is parsed into what the
--- | domain takes and a failed parse is one of the outcomes). So the two
--- | transforms a form needs — data model to view model, view model to
--- | data model — are functions on the `+` edges, and the first stage
--- | typed at a domain value is an action's argument. What `×→×` itself
--- | transforms is lawful only as long as it stays total: a `dimap f g`
--- | bracket on an editor is an iso lens (a lossy `g` loses what the user
--- | typed on the next broadcast), `settled` rewrites the row whole, and
--- | `introduced @l init` grows it by a field the user then owns.
+-- | (`capture @l`, `fold @l f`, `load f` at mount), out through an action
+-- | (`action @l f`, `f :: row -> Aff outcomes`, where the view model is
+-- | parsed into what the domain takes and a failed parse is one of the
+-- | outcomes). What `×→×` itself transforms is lawful only as long as it
+-- | stays total: a `dimap f g` bracket on an editor is an iso lens (a
+-- | lossy `g` loses what the user typed on the next broadcast), `settled`
+-- | rewrites the row whole, and `introduced @l init` grows it by a field
+-- | the user then owns.
 -- |
 -- | What the shape cannot model is a **decision**. A stage that could say
 -- | "no" to a row — a parse that fails, a validation — would withhold,
@@ -79,13 +52,12 @@
 -- | the row they last held and an emitter among them replays it, so a
 -- | failure shown at the field is a stale value sent from the button
 -- | beside it. A decision is a sum, and a sum is a **classifier**, a
--- | function of the row returning a variant, handed to a pane: `inCase
--- | @l f` for displays and editors, `provided @l f` for emitters. The
--- | pane owns its content and **detaches** it on every other case — its
--- | scope suspended, its emitters silent — which is the only safe form of
+-- | function of the row returning a variant, handed to a pane (`inCase
+-- | @l f` for displays and editors, `provided @l f` for emitters), which
+-- | **detaches** its content on every other case — the only safe form of
 -- | withholding, and why a classifier is a pane's argument and never a
 -- | stage. A validating stage `p { l :: String } { l' :: Number }` was
--- | considered and rejected on these grounds (git log, 2026-11-06).
+-- | considered and rejected on these grounds (2026-11-06).
 -- |
 -- | ## The two laws
 -- |
@@ -150,11 +122,11 @@
 -- | first feed has an operand that did not answer — a leaf breaking 2, or
 -- | an event-driven stage (a route through a variant) owning fields,
 -- | which answers on its occurrence and which the watchdog cannot tell
--- | from a breach; one silent before any feed is
--- | unprimed (`with`, `seeded`, or a source, pointed by construction — the
--- | merge's application use, sources each owning its field and released
--- | together at registration). Probes carry law and shape in test/Main.purs;
--- | 3–6, with 5's two clauses, run over every script to a bound in
+-- | from a breach; one silent before any feed is unprimed (`with`,
+-- | `seeded`, or a source, pointed by construction — the merge's
+-- | application use, sources each owning its field and released together
+-- | at registration). Probes carry law and shape in test/Main.purs; 3–6,
+-- | with 5's two clauses, run over every script to a bound in
 -- | test/Exhaustive.purs.
 module Data.Profunctor.Row.RecordToRecord
   ( class RecordToRecord

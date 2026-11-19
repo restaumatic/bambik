@@ -2,22 +2,16 @@
 -- | `Strong`'s analogue over a runtime key — the array fed whole, each
 -- | element fed its own row, the array of every element's latest output
 -- | released whole. It lifts a component over a container of its focus,
--- | `p a b -> p (F a) (F b)`, here at `F = Array`, the container
--- | `μ x. 1 + a × x`. Containers are generated from `×`, `+` and fixpoints,
--- | so this is not a fifth merge shape: its *type* is the closure of
--- | `Strong` and `Choice` under `μ` (the profunctor traversal,
--- | Jaskelioff–O'Connor). The keyed, retaining semantics is extra carrier
--- | structure beyond that closure — a derived traversal would rebuild per
--- | feed where this reconciles: survivors re-fed in place, entrants built,
--- | leavers removed (the functorial action along partial injections of key
--- | sets, the species refinement). See doc/collections-profunctor-algebra.md.
+-- | `p a b -> p (F a) (F b)`, at `F = Array = μ x. 1 + a × x`. Its *type*
+-- | is the closure of `Strong` and `Choice` under `μ` (the profunctor
+-- | traversal, Jaskelioff–O'Connor), so it is not a fifth merge shape; the
+-- | keyed, retaining semantics is carrier structure beyond that closure —
+-- | a derived traversal would rebuild per feed where this reconciles
+-- | (the functorial action along partial injections of key sets).
 -- |
--- | ## The key
--- |
--- | The square's (`Data.Profunctor.Keyed`, *The key*): field `l` of the
--- | element's row. The element is typed at its whole row, key included, on
--- | both sides, and the key is **re-set** on every emission from the
--- | element's *input* row (`keyed @l` in, `keyRestored @l` out).
+-- | The key is the square's (`Data.Profunctor.Keyed`, *The key*): field
+-- | `l` of the element's row, the element typed at its whole row on both
+-- | sides, the key re-set on every emission from the fed row.
 -- |
 -- | ## Laws
 -- |
@@ -46,41 +40,23 @@
 -- |
 -- | ## Forms
 -- |
--- | Three, like every member of the keyed square:
--- |
--- |   * `acted @l` — over the element's row.
--- |   * `actedOf @l proj` (a projection to the array) —
--- |     the list of displays, whose releases stay inside and whose fed row
--- |     passes on (`item # actedOf @"id" rowsOf`).
--- |   * `actedAt @l @t` — over an array the model stores at field `t`
--- |     (`item # actedAt @"id" @"Setlist"`, reorder).
--- |
--- | and one that is this member's alone, since only an array output has
--- | somewhere to be written back:
--- |
--- |   * `actedWithin @l @t select` — over the rows `select` picks from the
--- |     array the model stores at field `t`, each release written back
--- |     where its key is stored (`form # actedWithin @"id" @"contacts"
--- |     pickedContact`, contacts).
--- |
--- | The three forms that read the fed value are **one lens over `acted`**,
--- | told apart by their setter — the three answers to the view-update
--- | problem: `actedOf` writes nothing back (`const`: a derived array is a
--- | view with no base), `actedAt` writes the array back whole (`prop`: the
--- | view is the base), `actedWithin` writes each row back by its key (the
--- | view is a selection of the base).
+-- | `acted @l`, `actedOf @l proj`, `actedAt @l @t`, and this member's own
+-- | `actedWithin @l @t select` (each described at its definition). The
+-- | three that read the fed value are **one lens over `acted`**, told
+-- | apart by their setter — the three answers to the view-update problem:
+-- | `actedOf` writes nothing back (`const`: a derived array is a view with
+-- | no base), `actedAt` writes the array back whole (`prop`: the view is
+-- | the base), `actedWithin` writes each row back by its key (the view is
+-- | a selection of the base).
 -- |
 -- | ## The carrier
 -- |
--- | This module holds the class, whose primitive `acting` takes each
--- | element beside its key, and the label forms. The instance is the carrier's, as the
--- | merge classes' are: `PUI` holds the shared keyed reconciler and a
--- | generic `Hosting m node =>` instance, each display carrier its own
--- | `Hosting`. The gather gate is the record merges' knowledge gate with
--- | the row's labels supplied at runtime — literally the one pure machine
--- | `PUI.Gate.gateStep`, enrolled with the fed keys as its participants and
--- | rekeyed per feed, the empty law its zero-participant release.
--- | Conformance to the step over every script to a bound:
+-- | The instance is the carrier's: `PUI` holds the shared keyed reconciler
+-- | and a generic `Hosting m node =>` instance. The gather gate is the
+-- | record merges' knowledge gate with the labels supplied at runtime —
+-- | the one pure machine `PUI.Gate.gateStep`, enrolled with the fed keys
+-- | and rekeyed per feed, the empty law its zero-participant release;
+-- | conformance to the step over every script to a bound is
 -- | test/Exhaustive.purs.
 module Data.Profunctor.Keyed.Acting
   ( class Acting
@@ -116,9 +92,7 @@ class Profunctor p <= Acting p where
 
 -- | The container action keyed by the element's identity field `l`, the
 -- | element typed at its whole row on both sides and the key re-set from
--- | the input on every emission (see the header). Written trailing, like
--- | the merges' operands: `row # acted @"id"`. An element's functions are
--- | typed at its row.
+-- | the input on every emission. Written trailing: `row # acted @"id"`.
 acted :: forall @l r r1 p k b1 b2. Acting p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p (Array { | r }) (Array { | r1 })
 acted w = withStructuralOrd @k (dimap (map (keyed @l)) (map (keyRestored @l)) (acting w))
 
@@ -134,9 +108,8 @@ actedOf f w = lens f const (acted @l w)
 -- | `acted` over an array the model stores: keyed by field `l` of each
 -- | element, the array field `t` of the fed row, both named by label
 -- | (`item # actedAt @"id" @"Setlist"`), the rest of the row carried —
--- | `Strong`'s field lens, the ecosystem's `prop`, over the bare form. The
--- | MDC vocabularies' `group @t` does the same lift with its card and
--- | heading; the plain-HTML floor names the field here (reorder-html).
+-- | the ecosystem's `prop` over the bare form. The MDC vocabularies'
+-- | `group @t` does the same lift with its card and heading.
 actedAt :: forall @l @t p k b1 b2 b3 r1 r2 r3 r. Acting p => Strong p => IsSymbol l => IsSymbol t => Cons l k b1 r1 => Cons l k b2 r2 => Cons t (Array { | r1 }) b3 r3 => Cons t (Array { | r2 }) b3 r => p { | r1 } { | r2 } -> p { | r3 } { | r }
 actedAt w = prop (Proxy @t) (acted @l w)
 
@@ -145,14 +118,12 @@ actedAt w = prop (Proxy @t) (acted @l w)
 -- | `select` picks from field `t` of the fed row are the elements, keyed
 -- | by their field `l`, and every release is written back **where its key
 -- | is stored** — the rows of `t` carrying the released keys replaced, the
--- | others and the rest of the fed row kept. It is the lens whose getter
--- | is the selection and whose setter lands rows by key, over the bare
--- | form: the updatable view, between `actedOf` (nothing written back) and
--- | `actedAt` (the array written back whole). An editor's edit therefore
--- | reaches the stored array through a filter, a sort or a pick
--- | (`row # actedWithin @"title" @"movies" visibleMovies`, movie-browser;
--- | the form of the one picked row, `form # actedWithin @"id" @"contacts"
--- | pickedContact`, contacts).
+-- | others and the rest of the fed row kept: the lens whose getter is the
+-- | selection and whose setter lands rows by key, over the bare form. An
+-- | editor's edit therefore reaches the stored array through a filter, a
+-- | sort or a pick (`row # actedWithin @"title" @"movies" visibleMovies`,
+-- | movie-browser; `form # actedWithin @"id" @"contacts" pickedContact`,
+-- | contacts).
 -- |
 -- | `select` chooses and orders rows **of `t`**; it cannot reshape one
 -- | (the element is typed at the stored row) and must not invent one: a

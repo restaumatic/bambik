@@ -1,52 +1,31 @@
--- | `Variant → Variant` (+ → +) row profunctors, organized (uniformly across
--- | the four shape modules) as:
+-- | `Variant → Variant` (+ → +) row profunctors:
 -- |
 -- |   * **strength** — `Choice` (ecosystem, with a `(->)` instance): the
--- |     unary power, the case prism. Its co-strength `Cochoice` is the
--- |     ecosystem's too, and their optics are `Data.Lens.Prism` and
--- |     `Data.Lens.Coprism` — neither the classes nor the optics mention a
--- |     row, so none of them lives here, and the focus/background dispatch
--- |     `splitVariant` sits on the floor, in `Data.Profunctor.Row`.
--- |   * **shape class** — `VariantToVariant`, the binary **merge**: the
--- |     one genuine per-carrier primitive, with its qualified-do sugar
--- |     (`bind`/`discard`).
+-- |     case prism. Its co-strength `Cochoice` is the ecosystem's too,
+-- |     their optics `Data.Lens.Prism` and `Data.Lens.Coprism`; none
+-- |     mentions a row, so none lives here, and the focus/background
+-- |     dispatch `splitVariant` sits on the floor.
+-- |   * **shape class** — `VariantToVariant`, the binary **merge**, with
+-- |     its qualified-do sugar (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusCase` (one case, the
 -- |     value-level prism, the background passing — the lift every
 -- |     vocabulary dialog is built with, as every editor is `focusField
 -- |     @l`-lifted) and `onCase` (one case handed to a handler that
 -- |     answers nothing on it, the background passing: the row less that
--- |     case); the one-sided halves `atCase`/`toCase` live
--- |     on the floor. No co-strength row form: an app's loop is cut at
--- |     its record junction, where the model row holds the state
--- |     (`Data.Profunctor.Row`, *What is deliberately not here*).
+-- |     case). The one-sided halves `atCase`/`toCase` live on the floor,
+-- |     and take only their case, since there the case is the caller's to
+-- |     name (a status is its face over its label, adopted as its case:
+-- |     `snackbar f = snackbarFace (reflectSymbol (Proxy @l)) # atCase @l
+-- |     # folding @l f`). No co-strength row form: an app's loop is cut
+-- |     at its record junction (`Data.Profunctor.Row`, *What is
+-- |     deliberately not here*).
 -- |
--- | A word lives where the sides it constrains do: one constraining both
--- | sides in its shape's module, one constraining a single side on the
--- | floor (`Data.Profunctor.Row`)
--- | — so no shape module imports another, and every module holds only
--- | its merge, its strength and trace forms, and the words that genuinely
--- | span both of its sides.
--- |
--- | Business functions are arguments of leaves, never adopters: a display
--- | takes its read function, a status its business case and fold
--- | (`snackbar @"Card charged" identity`), and an emitter emits its own case,
--- | which the fold consumes. So the adopters are structural and take no
--- | function: `atCase` and `toCase` take only their cases, since there
--- | the case is the caller's to name. A status is its face over its
--- | label, adopted as its case: `snackbar f = snackbarFace (reflectSymbol
--- | (Proxy @l)) # atCase @l # folding @l f`.
--- |
--- | The three single-label words mirror `RecordToRecord`'s one for one —
--- | `focusCase`/`focusField` (the background threaded), `atCase`/`atField`
--- | and `toCase`/`toField` (the input and output halves of the iso between
--- | a closed singleton and its payload). Laws: `atCase @l >>> toCase @l`
--- | is `identity` at the closed singleton, and there the focus is its two
+-- | Laws of the single-label words: `atCase @l >>> toCase @l` is
+-- | `identity` at the closed singleton, and there the focus is its two
 -- | halves, `focusCase @l = toCase @l <<< atCase @l` (test/Main.purs). The
 -- | derivation runs that way only: a two-sided wrap cannot be split into
 -- | one side's, so the two halves are generators, not `focusCase`
--- | specialised. There is no rename (a closed singleton relabelled on
--- | both sides): its one use, re-labelling a component built at a fixed
--- | label, is what guardrails L3 forbids (`Data.Profunctor.Row`, the
+-- | specialised. There is no rename (`Data.Profunctor.Row`, the
 -- | single-label grid).
 -- |
 -- | ## Laws at `+→+`
@@ -57,8 +36,7 @@
 -- | (`OwnedVariantInputs`: exactly one handler per case), outputs **one
 -- | row** every operand is typed at — the **copairing** `[f, g] : A + B ->
 -- | C` of the coproduct, as at `+→×`; the shared row is an equality, as
--- | the `×→×` merge's inputs are (an inclusive union was the output until
--- | 2026-10-07; git log).
+-- | the `×→×` merge's inputs are (an inclusive union until 2026-10-07).
 -- |
 -- |   1–2. **Repetition, Answer** — not owed. A variant input is
 -- |      dispatched to one owner and `≈` counts every occurrence: a
@@ -81,33 +59,28 @@
 -- | On `PUI`: dispatch in, passage out — no broadcast, no gate, no state
 -- | (`Applicative m` suffices; the one merge with neither feed
 -- | obligation). `Cochoice`'s retraction holds raw here — `unleft (left
--- | g) = g` — the one shape where it does (doc §5), which is why a knot
--- | at this shape would need no class of its own. Probes carry law and shape in test/Main.purs; 3, 4 and
--- | 6 run over every script to a bound in test/Exhaustive.purs.
+-- | g) = g` — the one shape where it does, which is why a knot at this
+-- | shape would need no class of its own. Probes carry law and shape in
+-- | test/Main.purs; 3, 4 and 6 run over every script to a bound in
+-- | test/Exhaustive.purs.
 -- |
--- | One transpose of a `RecordToRecord` name is **deliberately absent**
--- | here: `focusField`'s `+ → +` transpose — the closed-singleton case wrap
--- | `p f f' -> p [ l :: f ] [ l' :: f' ]` — fails the admission test's
--- | subsumption step: it is already vocabulary-expressible as
--- | `lcmap`/`rmap` around `w # atCase @l # toCase @l'`.
--- | It was admitted briefly (as `handler @l f`, the wire at the wrap)
--- | when counter's four-shape loop wanted a `+→+` stage that was a pure
--- | function of the occurrence, and deleted when that function moved onto
--- | the fold (git log, 2026-10-03): a pure
--- | handling of an occurrence is applied where the occurrence is consumed,
--- | so the `+→+` shape keeps no pure leaf. Its leaves are the ones that
--- | **wait**: the `action`s, and the dialogs, which wait for the user —
--- | `confirmed @l` (`focusCase @l` over a modal whose content is a stage
--- | over the payload: confirm re-emits the case with the content's row,
--- | cancel consumes it) and `modal @l` under `acknowledged` (`onCase @l`
--- | over the leaf it follows, its release dropped: the case consumed, the
--- | row less it leaving). These are
--- | the two words that pass background cases through a `+→+` stage, each
+-- | `focusField`'s `+ → +` transpose — the closed-singleton case wrap
+-- | `p f f' -> p [ l :: f ] [ l' :: f' ]` — is **deliberately absent**: it
+-- | is already `lcmap`/`rmap` around `w # atCase @l # toCase @l'`, and a
+-- | pure handling of an occurrence is applied where the occurrence is
+-- | consumed, on the fold (admitted briefly as `handler @l f` and deleted,
+-- | 2026-10-03), so the `+→+` shape keeps no pure leaf. Its leaves are
+-- | the ones that **wait**: the `action`s, and the dialogs, which wait for
+-- | the user — `confirmed @l` (`focusCase @l` over a modal whose content
+-- | is a stage over the payload: confirm re-emits the case with the
+-- | content's row, cancel consumes it) and `modal @l` under
+-- | `acknowledged` (`onCase @l` over the leaf it follows, its release
+-- | dropped: the case consumed, the row less it leaving). These are the
+-- | two words that pass background cases through a `+→+` stage, each
 -- | over its strength form and never over the merge, so a dialog among
 -- | events names only its own case and the fold block stays typed at
--- | exactly the model-changing cases. Until 2026-10-17 `confirmed` was a
--- | `+→×` leaf folding on confirm, and an informational dialog folded
--- | `identity` (git log).
+-- | exactly the model-changing cases (until 2026-10-17 `confirmed` was a
+-- | `+→×` leaf folding on confirm).
 module Data.Profunctor.Row.VariantToVariant
   ( class VariantToVariant
   , variantToVariant

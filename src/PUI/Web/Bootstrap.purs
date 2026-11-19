@@ -1,15 +1,17 @@
 -- | The **Bootstrap** vocabulary (https://getbootstrap.com) — the CSS-only
--- | member of the family: Bootstrap ships a stylesheet rather than
--- | components, so every control here is a plain HTML element wearing
--- | Bootstrap's documented classes. Names and signatures match the Material
--- | modules wherever both catalogues have the concept, so a screen changes
--- | design system by changing this one import.
+-- | member of the family: Bootstrap ships a stylesheet, not components, so
+-- | every control here is a native element (`<input>`, `<select>`,
+-- | `<button>`) wearing the documented classes, with no custom elements,
+-- | no foundation instances and no FFI beyond the toast's dismissal timer
+-- | (`autoDismiss`, the one behaviour Bootstrap's own JS plugin would
+-- | supply). The same names and signatures as the Material modules
+-- | wherever both catalogues have the concept (guardrails L20); its gaps
+-- | stay gaps: `sliderLive` only, no dialog.
 -- |
 -- | **The page must load** the Bootstrap 5 stylesheet. No scripts and no
 -- | fonts — the design system rides the system font stack. Its `body` is
 -- | `PUI.Web.HTML.body` under this vocabulary's name: the reboot needs
--- | nothing on the page body, so the entry line reads the same and does no
--- | more.
+-- | nothing on the page body.
 -- |
 -- | The catalogue: `textField`, `sliderLive` and `toggleSwitch` to enter
 -- | values, `select` to choose one, `button` to act, `toast` to say what
@@ -62,68 +64,30 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 
 -- Implementation notes — the reference above is the contract.
 --
--- Bootstrap (https://getbootstrap.com) components implemented as
--- PUI Web/Ocular (PUI Web) datatypes — a design-system vocabulary beside
--- `PUI.Web.MDC2`/`PUI.Web.MDC3`/`PUI.Web.Shoelace`/`PUI.Web.Fluent`, proving the
--- vocabularies interchangeable, and the **CSS-only** member of the family:
--- Bootstrap is a stylesheet, not a component runtime, so every leaf is a
--- native element (`<input>`, `<select>`, `<button>`) dressed in the
--- documented classes (`form-control`, `form-select`, `btn btn-primary`) —
--- no custom elements, no foundation instances, and no FFI beyond the
--- toast's dismissal timer (the one behavior Bootstrap's own JS plugin
--- would supply). The leaf-echo protocols are the same as the MDC modules'
--- (focus-guarded text field, per-feed display echo, a selection
--- editor answering every feed with its row). Two-sorted, same citizenship, and — where
--- the concept exists in both catalogs — the same names and signatures:
---
---   * **components** — UI components with a model interface, every one a citizen
---     of exactly one row shape:
---       `×→×` editors — `textField @l` (`.form-control`), `sliderLive @l`
---         (`.form-range` — the native range input emits per drag step;
---         Bootstrap has no commit-only slider; the label line carries a
---         live numeric readout, the counterpart of MD's labeled handle),
---         `toggleSwitch @l`
---         (`.form-check.form-switch`), and the type-changing `select @l`
---         (`.form-select`, `{ l :: f } → { l :: f }`, `f` the option itself,
---         or a variant around it for the `…Unpicked`/`…Optional` siblings);
---       `×→×` displays — `progress` (`{ value :: Number } → {}`, the
---         filled fraction 0–1 — `.progress` over `.progress-bar`);
---       `×→+` events — `button @l` (`.btn.btn-primary`);
---       `+→×` statuses — `toast` (`.toast` fixed at the bottom, shown
---         on feed and dismissed by the hand-wired timer) — each taking
---         its business case and fold, the case label its copy (`toast @"Application received" kept`).
---   * **oculars** — shape-preserving decorators: `card`
---     (`.card`, a plain surface), `listGroup`/`listGroupItem`
---     (`.list-group`), `badge variant` (`.badge.text-bg-*`).
---     Typography is deliberately absent: Bootstrap styles plain HTML, so
---     the `PUI.Web.HTML` element oculars are the typography.
---
--- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
--- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
--- that can fail or lose information belong in the model (a `settled`
--- normalization on the whole-row stage), not in a leaf bracket.
+-- The leaf protocols are the MDC modules' (focus-guarded text field,
+-- per-feed display echo, a selection editor answering every feed with its
+-- row), over native elements. The `dimap` round-trip contract for editors
+-- holds as in `PUI.Web.MDC2`.
 
 -- UIs
 
--- | The **primary button**: the screen's action. It reports on click,
--- | carrying the data it was showing, under the name the app gives the
--- | action — `button @"Apply for the loan"`. The label defaults to
--- | the case label verbatim (`label:` overrides with real copy).
+-- | The **primary button** (`.btn.btn-primary`): on click it emits the
+-- | row it was showing as its case, which captions it — `button @"Apply
+-- | for the loan"`.
 button :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
 button = let config = { label: reflectSymbol (Proxy @l) } :: { label :: String } in eventLeaf @l $
   (el "button" >>> "type" := "button" $ staticText config.label) # cl "btn" # cl "btn-primary"
 
--- | The **text field**: a single-line input under its label. Shows the
--- | string it is given and reports each edit; typing is never interrupted
--- | by values arriving from elsewhere. A whole-row citizen: fed the wide
--- | row, it edits field `l` and carries the rest.
+-- | The **text field** (`.form-control` under its `.form-label`): a
+-- | single-line input editing field `l`. Shows the string it is given and
+-- | reports each edit; typing is never interrupted by values arriving
+-- | from elsewhere.
 textField :: forall @l r b. IsSymbol l => Cons l String b r => PUI Web { | r } { | r }
 textField = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `textField` with a `hint` under it — a format or an example the label
--- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), so the
--- | label stays the field's name. Shown as Bootstrap's form text, which
--- | describes the input.
+-- | is not (`textField' @"Start date" { hint: "DD.MM.YYYY" }`), shown as
+-- | Bootstrap's form text describing the input.
 textField' :: forall @l r b. IsSymbol l => Cons l String b r => { hint :: String } -> PUI Web { | r } { | r }
 textField' { hint } = fieldLeaf @l $ inputLeaf (reflectSymbol (Proxy @l)) hint
 
@@ -146,27 +110,19 @@ inputLeaf lbl hint = div >>> "style" := "width: 100%;" $ fromHandles do
     chrome ((div >>> "id" := hintId $ staticText hint) # cl "form-text")
   pure wiring
 
--- | The **slider**: a quantity chosen by feel, where the range matters more
--- | than the exact number — a rate, a term, an amount.
--- |
--- | The range is part of the quantity, not part of the screen:
--- | `{ current, min, max, step }` travels together as one business datum, so
--- | limits come from the data and can change while the app runs — a slider
--- | is never silently out of range, and a range nobody supplied is a
--- | compile error rather than a wrong screen. `step` is `.discrete n`
--- | or `.continuous {}`, named like every other two-state field.
--- |
--- | It reports on **every drag step**, following the thumb — the plain
--- | range input has no commit-only behaviour, hence the name — so whatever
--- | it drives should be cheap to redo, or be `debounced` downstream. The
--- | current number is shown at the end of the label line, since the control
--- | has no readout of its own.
+-- | The **live slider** (`.form-range`): a quantity chosen by feel. The
+-- | field is the bounded quantity `{ current, min, max, step }`, one
+-- | business datum, so the limits come from the data and may change while
+-- | the app runs; `step` is `.discrete n` or `.continuous {}`. It reports
+-- | on **every drag step** — the native range input has no commit-only
+-- | behaviour, hence the name — so what it drives should be cheap to redo
+-- | or `debounced`. The current number is shown at the end of the label
+-- | line, since the control has no readout of its own.
 sliderLive :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
 sliderLive = fieldLeaf @l $ rangeLeaf (reflectSymbol (Proxy @l)) ""
 
 -- | `sliderLive` whose value is read in a `unit` (`sliderLive' @"Amount"
--- | { unit: "€" }`), shown after the number in the label line's readout,
--- | so the label stays the quantity's name.
+-- | { unit: "€" }`), shown after the number in the readout.
 sliderLive' :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => { unit :: String } -> PUI Web { | r } { | r }
 sliderLive' config = fieldLeaf @l $ rangeLeaf (reflectSymbol (Proxy @l)) config.unit
 
@@ -196,16 +152,15 @@ rangeLeaf lbl measure = div >>> "style" := "width: 100%;" $ fromHandles do
   where
   measured n = if measure == "" then toString n else toString n <> " " <> measure
 
--- | The **select**: one choice out of a list, under its label.
--- | The field holds the option itself, so the model always has one.
--- | Two siblings hold a variant instead: `selectUnpicked @l @c` for a
--- | choice owed but not yet made, `selectOptional @l @c @n` for one
--- | the user may leave unmade. Every one is an editor: every feed is
--- | answered with the row, every pick stored.
--- | The options belong to the control, not to the model: they are `option`
--- | leaves (the native `<option>`) merged
--- | `VariantToVariant.do`, the block closing the field's row in the order
--- | written.
+-- | The **select** (`.form-select` under its label): one choice out of a
+-- | list. Its options are `option` leaves (the native `<option>`), one
+-- | per case of the field, merged `VariantToVariant.do` in the order
+-- | written; the block closes the field's cases and the select lifts it
+-- | onto field `l`, which holds the option itself. Two siblings hold a
+-- | variant instead: `selectUnpicked @l @c` for a choice owed but not yet
+-- | made, `selectOptional @l @c @n` for one the user may leave unmade.
+-- | All three are editors: every feed is answered with the row, every
+-- | pick stored.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf @l false options
 
@@ -257,8 +212,9 @@ blankEmits options = fromHandles do
           when (value == "") $ prop (inj (Proxy @n) {})
     }
 
--- | The **switch**: a setting that takes effect the moment it is flipped.
--- | The label is part of the target, so clicking the words toggles it too.
+-- | The **switch** (`.form-check.form-switch`): a Boolean setting that
+-- | takes effect the moment it is flipped. The label is part of the
+-- | target, so clicking the words toggles it too.
 toggleSwitch :: forall @l r b. IsSymbol l => Cons l Boolean b r => PUI Web { | r } { | r }
 toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l $ (div $ fromHandles do
   inputId <- liftEffect uniqueId
@@ -277,11 +233,10 @@ toggleSwitch = let config = { label: reflectSymbol (Proxy @l) } in fieldLeaf @l 
     , read: \_ -> getChecked node
     }) # cl "form-check" # cl "form-switch"
 
--- | The **progress bar**: how far along something is, `value` running 0 to
--- | 1. As much a gauge as a progress indicator — a share, a quota, a
--- | ratio — `progress progressFraction`: the value is a **read
--- | function** like every display's, since a fraction is derived (a ratio
--- | of source fields), not state.
+-- | The **progress bar** (`.progress` over `.progress-bar`): a fraction
+-- | 0–1 of how far along something is — as much a gauge as a progress
+-- | indicator. Takes a read function and no label (guardrails L17):
+-- | `progress progressFraction`.
 progress
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
@@ -298,15 +253,12 @@ progress f = fromHandles do
     setAttribute node "style" "width: 100%; min-width: 200px;"
   liftEffect $ recordToRecordWiring { show: \r -> setAttribute barNode "style" ("width: " <> show (round (f r * 100.0)) <> "%;"), held: pure false, reports: \_ -> pure unit, read: pure }
 
--- | The **toast**: a brief message at the bottom of the screen that
--- | dismisses itself after a few seconds, for something that has just
--- | happened and needs no reply. It never interrupts.
--- |
--- | A status **tells its case**: its caption is the case label verbatim,
--- | so the outcome is named as what it tells (`toast @"Application
--- | received" kept`) and the payload is read by nothing but the fold. A
--- | `+→×` leaf like `fold @l f`, it takes its fold, of the event and
--- | the model it lands on.
+-- | The **toast** (`.toast` fixed at the bottom, dismissed after a few
+-- | seconds by the hand-wired `autoDismiss` timer): a brief message that
+-- | never interrupts. A status, it tells its case — the case label is its
+-- | whole copy — and takes its fold, of the event and the model it lands
+-- | on (`toast @"Application received" kept`; see
+-- | `PUI.Web.MDC2.snackbar`).
 toast
   :: forall @l a v i o
    . IsSymbol l
@@ -331,30 +283,22 @@ toastFace caseLabel = fromHandles do
 
 -- UIOculars
 
--- | A **card**: a surface holding one subject's content. It stacks its
--- | children with even spacing, so a form or a summary can be dropped in
--- | without spacing each row by hand.
--- |
--- | A plain ocular, with no config of its own: a card is a *surface*, and a
--- | heading of its own is ordinary typography placed in its content.
--- | Bootstrap does document a `card-title` class for that heading — style a
--- | content heading with it where a card wants one (`h5 … # cl "card-title"`).
+-- | A **card** (`.card`): a surface holding one subject's content, its
+-- | body stacking the children with even spacing. A plain ocular with no
+-- | config: a heading is typography in its content, styled with the
+-- | documented `card-title` where a card wants one (`h5 … # cl
+-- | "card-title"`).
 card :: Ocular (PUI Web)
 card content =
   (div $ (div $ content)
     # cl "card-body" # cl "d-flex" # cl "flex-column" # cl "align-items-start" # cl "gap-3"
   ) # cl "card"
 
--- | A **labelled model group** — the contract is `PUI.Web.MDC2.group`'s:
--- | `focusField @l` fused with the `card` surface, `group @l w` rendering
--- | `w` on a card headed by the label verbatim as the documented
--- | `card-title` and nesting `w`'s model under field `l`, the label
--- | stamped as the accessible group name (`role="group"`,
--- | `aria-labelledby` the heading). Derived, not primitive:
--- |
--- | ```
--- | group @l w = card (heading >>> focusField @l w)      -- + the a11y stamp
--- | ```
+-- | The **labelled group** — the contract is `PUI.Web.MDC2.group`'s:
+-- | `w` on a `card` headed by the label verbatim as its `card-title`, its
+-- | model nested under field `l`, the label the accessible group name.
+-- | Derived: `group @l w = card (heading >>> focusField @l w)` plus the
+-- | a11y stamp.
 group
   :: forall @l f f' b s t
    . IsSymbol l
@@ -367,8 +311,8 @@ group w = fromHandles do
   handles $ "role" := "group" $ "aria-labelledby" := headingId $ card $
     ("id" := headingId $ h5 >>> cl "card-title" $ staticText (reflectSymbol (Proxy @l))) >>> focusField @l w
 
--- | A **list group**: rows of `listGroupItem`s sharing one bordered
--- | surface — a readout of figures, a set of related lines.
+-- | A **list group** (`.list-group`): rows of `listGroupItem`s sharing
+-- | one bordered surface — a readout of figures, a set of related lines.
 listGroup :: Ocular (PUI Web)
 listGroup w = (el "ul" $ w) # cl "list-group" # cl "w-100"
 
@@ -376,26 +320,24 @@ listGroup w = (el "ul" $ w) # cl "list-group" # cl "w-100"
 listGroupItem :: Ocular (PUI Web)
 listGroupItem w = (el "li" $ w) # cl "list-group-item"
 
--- | A **badge**: a value called out inline — a count, a figure, a status
--- | word. `variant` is the contextual colour ("primary", "success",
--- | "danger", ...), so the badge carries meaning as well as emphasis.
+-- | A **badge** (`.badge.text-bg-*`): a value called out inline — a
+-- | count, a figure, a status word. `variant` is the contextual colour
+-- | ("primary", "success", "danger", …).
 badge :: String -> Ocular (PUI Web)
 badge variant w = span w # cl "badge" # cl ("text-bg-" <> variant)
 
 -- Entry point
 
--- | Mount the app in the page's `<body>` — `PUI.Web.HTML.body` unchanged,
--- | under this vocabulary's name: Bootstrap's reboot needs nothing on the
--- | page body, so there is no dressing to do, and the entry line still
--- | reads the same as in every other vocabulary (same signature, same
--- | closed-app demand), switching design system with the rest of the import.
+-- | Mount the app in the page's `<body>`: `PUI.Web.HTML.body` unchanged,
+-- | under this vocabulary's name (same signature, same closed-app
+-- | demand), since Bootstrap's reboot needs nothing on the page body.
 body :: forall o. PUI Web {} o -> Effect Unit
 body = HTML.body
 
--- | The **indeterminate progress bar**: a status fed a run's `started` and
--- | `ended`, shown between them — what `PUI.action`'s slot dispatches
--- | (`indeterminateLinearProgress # action submit`). No label: it names no
--- | field and no case.
+-- | The **indeterminate progress bar** (the striped, animated
+-- | `.progress-bar`): the action slot, fed a run's `started` and `ended`
+-- | and shown between them (`indeterminateLinearProgress # action @l
+-- | f`). No label: it names no field and no case.
 indeterminateLinearProgress :: PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateLinearProgress = fromHandles do
   _ <- element "div" do

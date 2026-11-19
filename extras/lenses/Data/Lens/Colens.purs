@@ -1,18 +1,13 @@
 -- | The **`Colens`** — the optic `Data.Profunctor.Costrong`'s `unfirst`
--- | generates by the dual of Pastro–Street (the class is the ecosystem's,
+-- | generates by the dual of Pastro–Street: the class is the ecosystem's,
 -- | with a lawful `×`-action carrying unit and composition, so — unlike the
--- | coined mixed optics, see `Data.Lens.Shutter` — the representation is
--- | the standard co-optic result). The class is the ecosystem's; the optic is
--- | this library's, because `profunctor-lenses` never built it. Its dual is
--- | `Data.Lens.Lens`, and nothing here mentions a row; it has no row form
--- | (`Data.Profunctor.Row`, *What is deliberately not here*), and the
--- | whole-row knot is `PUI`'s `looped`.
--- |
--- | This module is a **complement of the ecosystem's own**, not bambik's: it
--- | claims a `Data.Lens.*` name because it belongs in that family beside
--- | `Lens`/`Prism`, and it lives under the separate `extras/lenses` source
--- | root to say so — nothing here mentions `PUI`, a row, or a carrier, so it
--- | could be lifted into `profunctor-lenses` unchanged.
+-- | coined mixed optics (`Data.Lens.Shutter`) — the representation is the
+-- | standard co-optic result. The optic is this library's, because
+-- | `profunctor-lenses` never built it; its dual is `Data.Lens.Lens`, and
+-- | the whole-row knot is `PUI`'s `looped`. A complement of the
+-- | ecosystem's own, mentioning no `PUI`, row or carrier, liftable into
+-- | `profunctor-lenses` unchanged — hence the `extras/lenses` root.
+-- | Law-tested, reached by no demo.
 module Data.Lens.Colens
   ( Colens
   , colens

@@ -34,61 +34,50 @@
 -- | supplied at runtime). A `+` output is one element's emission,
 -- | **passed** as it comes.
 -- |
--- | Rows are the finitary `μ`-free fragment of the container grammar, and
--- | `Array = μ x. 1 + a × x` is one `μ` later, so the square stands beside
--- | the row shapes, not under them — in its own source root,
--- | `extras/keyed-profunctor`, which imports nothing from the row root's
--- | (doc/collections-profunctor-algebra.md).
+-- | `Array = μ x. 1 + a × x` is one `μ` past the rows, so the square stands
+-- | beside the row shapes, not under them: its own source root,
+-- | `extras/keyed-profunctor`, imports nothing from the row root.
 -- |
 -- | ## The key
 -- |
--- | **A materialized identity field of the row**: an element is a
--- | data-model row, and rows carry their identity, so a label form names
--- | the field (`acted @"id"`) and no envelope is written. `Ord k` is the
--- | carrier's Map-indexing requirement — identity semantics remain
--- | equality — and the label forms supply it structurally
+-- | **A materialized identity field of the row** (guardrails L9): a label
+-- | form names the field (`acted @"id"`) and no envelope is written. `Ord
+-- | k` is the carrier's Map-indexing requirement — identity semantics
+-- | remain equality — supplied structurally by the label forms
 -- | (`Data.Structural`), so no instance is asked of the key's type. Keys
 -- | must be unique; a key may be shown where it is itself business copy,
 -- | but identity is never read back from what an element shows.
 -- |
 -- | In the class primitives the key rides **beside** the element, in a
--- | `Tuple`, out of the element's reach: an element cannot forge or change
--- | identity. The label forms are `dimap`s over the primitives with the
--- | two functions this module holds: `keyed @l` pairs a row with its field
--- | `l` on the way in, `keyRestored @l` writes the key back over field `l`
--- | of an emission on the way out — whatever the element emitted there is
--- | replaced. Law: `keyRestored @l (keyed @l r) = r`.
+-- | `Tuple`, out of the element's reach. The label forms are `dimap`s over
+-- | the primitives with the two functions this module holds: `keyed @l`
+-- | pairs a row with its field `l` on the way in, `keyRestored @l` writes
+-- | the key back over field `l` of an emission on the way out — whatever
+-- | the element emitted there is replaced. Law: `keyRestored @l (keyed @l
+-- | r) = r`.
 -- |
 -- | ## The forms
 -- |
--- | Three per member, so the twelve words read alike:
+-- | Three per member, so the twelve words read alike: the **bare** word
+-- | over the element typed at its whole row (`acted @l`, `dispatched @l`,
+-- | `gathered @l`, `accumulated @l`); `…Of @l proj` over a projection of
+-- | the fed value — `lcmap proj` over the bare form, except `actedOf`,
+-- | whose array has nowhere to be written back, which is the lens `lens
+-- | proj const` and so passes the fed value on where `dispatchedOf`
+-- | releases the entity and `accumulatedOf` the array; and the **stored**
+-- | form, `…At @l @t` over an array the model stores at field `t` for a
+-- | `×` input (`actedAt`, `gatheredAt`), `…On @l @c` over the case `c` an
+-- | entity arrives in for a `+` input (`dispatchedOn`, `accumulatedOn`).
+-- | `Acting` alone has a fourth, since only an array output can be written
+-- | back: `actedWithin @l @t select`, each release landed where its key is
+-- | stored.
 -- |
--- |   * the **bare** word, over the element typed at its whole row, key
--- |     field included — `acted @l`, `dispatched @l`, `gathered @l`,
--- |     `accumulated @l`;
--- |   * `…Of @l proj`, over a projection of the fed value — the bare
--- |     form under `lcmap proj`, and for `actedOf`, whose array has
--- |     nowhere to be written back, under the lens `lens proj const`: the
--- |     gathered array stays inside and the fed value passes on — the
--- |     one `…Of` form that passes it: `dispatchedOf` releases the
--- |     entity and `accumulatedOf` the array, so the lines after them
--- |     read those and not the row before;
--- |   * the **stored** form: `…At @l @t` over an array the model stores at
--- |     field `t`, for a `×` input (`actedAt`, `gatheredAt`); `…On @l @c`
--- |     over the case `c` an entity arrives in, for a `+` input
--- |     (`dispatchedOn`, `accumulatedOn`).
--- |
--- | `Acting` has one form more, its own, since only an array output can
--- | be written back: `actedWithin @l @t select`, over the rows a function
--- | selects from the stored array, each release landed where its key is
--- | stored — the third setter of the lens `actedOf` and `actedAt` are.
--- |
--- | Each member's module carries its class, its laws and its bare and
--- | stored forms; the instances are the carrier's, as the merge classes'
--- | are. No keyed module imports a row shape's: a stored form that keeps
--- | the rest of what it was fed is its strength's ecosystem optic over the
--- | bare form (`actedAt` is `prop`, `dispatchedOn` is `prism`, `actedOf`
--- | and `actedWithin` are `lens`), every other one a plain `lcmap`.
+-- | Each member's module carries its class, its laws and its forms; the
+-- | instances are the carrier's. No keyed module imports a row shape's: a
+-- | stored form that keeps the rest of what it was fed is its strength's
+-- | ecosystem optic over the bare form (`actedAt` is `prop`,
+-- | `dispatchedOn` is `prism`, `actedOf` and `actedWithin` are `lens`),
+-- | every other one a plain `lcmap`.
 module Data.Profunctor.Keyed
   ( keyed
   , keyRestored

@@ -181,56 +181,20 @@ import Type.Proxy (Proxy(..))
 
 -- Implementation notes — the reference above is the contract.
 --
--- Material Design 3 (https://m3.material.io) components implemented as
--- PUI Web/UIOcular (PUI Web) datatypes — the MD3 sibling of `PUI.Web.MDC2`,
--- built on Google's official MD3 web implementation, the `@material/web`
--- custom elements (`<md-filled-button>`, `<md-checkbox>`, ...): importing
--- the FFI module registers the tags, so a component leaf is just
--- `element "md-..."` plus property/event wiring — no foundation classes,
--- no hand-fused ripple/label chrome. The vocabulary is two-sorted, with
--- the same citizenship and (where the concept survived into MD3) the same
--- names and signatures as `PUI.Web.MDC2`, so a demo switches design systems by
--- switching the import:
+-- Built on the `@material/web` custom elements (`<md-filled-button>`,
+-- `<md-checkbox>`, …): importing the FFI module registers the tags, so a
+-- component leaf is `element "md-..."` plus property/event wiring — no
+-- foundation classes, no hand-fused ripple or label chrome. The sorts,
+-- shapes and naming follow `PUI.Web.MDC2`'s implementation notes
+-- (guardrails L3, L20); `divider` is the `<md-divider>`. The entries
+-- `@material/web` does not implement (segmented button, snackbar, card,
+-- top app bar, navigation drawer, data table, image list, tooltip) are
+-- hand-rolled as minimal chrome over the `--md-sys-*` design tokens, each
+-- injecting its stylesheet once via `ensureStyle`, so a page that themes
+-- the tokens themes them too.
 --
---   * **components** — UI components with a model interface, every one a citizen
---     of exactly one row shape:
---       `×→×` editors — `filledTextField @l`, `outlinedTextField @l` (the
---         MD3 variant pair), `filledTextArea @l`, `checkbox @l`,
---         `radioButton @l`, `toggleSwitch @l` (the MD3 Switch),
---         `slider @l`, `select @l` (the MD3 filled select),
---         `segmentedButton @l`, `tabBar @l` (the same-type selector — the
---         `looped`-ensemble citizen), `filterChip @l`, `iconToggle @l`;
---       `×→×` displays — the determinate `linearProgress`
---         (`{ | reads } → {}` over a read function);
---       `×→+` events — `button @l` (the filled button; `elevatedButton`,
---         `tonalButton`, `outlinedButton`, `textButton` are the other four
---         MD3 emphasis levels), `fab @l`, `iconButton @l`, `menuItem @l`;
---       `+→×` statuses — `snackbar` (MD3 dropped the banner from the
---         catalog, so `banner` has no citizen here) and
---         `indeterminateLinearProgress`/`indeterminateCircularProgress`
---         (`[ started, ended ] → { | r }` — the run's two occurrences, the shape
---         `PUI.action`'s progress slot dispatches).
---   * **oculars** — shape-preserving decorators (`card`, `dialog`, `menu`,
---     `chipSet`, `list`/`listItem`, `dataTable`/`dataRow`/`dataCell`,
---     `imageList`, `layoutGrid`/`layoutCell`, `topAppBar`, `drawer`,
---     `tooltip`, the MD3 typescale — `displayLarge` ... `labelSmall` —
---     and elevations): no model of their own, any polarity.
---   * plus **announcing statics** (`{}`-output chrome with a face, at any row):
---     `divider` (the `<md-divider>`), `imageListItem`.
---
--- M3 catalog entries `@material/web` does not implement (segmented button,
--- snackbar, card, top app bar, navigation drawer, data table, image list,
--- tooltip) are hand-rolled here as minimal chrome over the `--md-sys-*`
--- design tokens, each injecting its stylesheet once via `ensureStyle`; a
--- page that themes the tokens themes them too. Entries with neither an
--- `@material/web` element nor a cheap hand-roll (date/time pickers,
--- bottom/side sheets, badges, navigation bar/rail, search, carousel) are
--- absent.
---
--- **The `dimap` round-trip contract for editors** holds as in `PUI.Web.MDC2`:
--- an editor bracketed by `dimap f g` behaves as an iso lens; conversions
--- that can fail or lose information belong in the model (a `settled`
--- normalization on the whole-row stage), not in a leaf bracket.
+-- **The `dimap` round-trip contract for editors** holds as in
+-- `PUI.Web.MDC2`.
 
 -- UIs
 
@@ -510,13 +474,11 @@ filledTextArea provided = let config = convertOptionsWithDefaults OptCaption { f
 -- | whole line is a comfortable target.
 -- |
 -- | The field is a **named two-case variant** the application spells:
--- | `checkbox @"Terms" @"accepted" @"declined"
--- | is ticked exactly while `"Terms"` sits at `accepted`; ticking reports
--- | `.accepted {}`, clearing reports `.declined {}` — so an optional part
--- | of the model *is* the box's state under its own names, with no second
--- | flag to keep in step and no `Maybe`. Use a checkbox for a fact the user
--- | states as part of a form; use `toggleSwitch` for a setting that takes
--- | effect at once.
+-- | `checkbox @"Terms" @"accepted" @"declined"` is ticked exactly while
+-- | `"Terms"` sits at `accepted`; ticking reports `.accepted {}`, clearing
+-- | reports `.declined {}`. Use a checkbox for a fact the user states as
+-- | part of a form; use `toggleSwitch` for a setting that takes effect at
+-- | once.
 checkbox :: forall @l @c @n r b v cr nr. IsSymbol l => IsSymbol c => IsSymbol n => Cons l [ | v ] b r => Cons c {} cr v => Cons n {} nr v => PUI Web { | r } { | r }
 checkbox = fieldLeaf @l $
   label >>> "style" := "display: inline-flex; align-items: center; gap: 12px;" $ fromHandles do
@@ -640,13 +602,10 @@ switchLeaf lbl =
 -- | The **slider**: a quantity chosen by feel, where the range matters more
 -- | than the exact number — a volume, a tip, a budget.
 -- |
--- | The range is part of the quantity, not part of the screen:
--- | `{ current, min, max, step }` travels together as one business datum, so
--- | limits come from the data and can change while the app runs (a room's
--- | capacity, a plan's ceiling) — a slider is never silently out of range,
--- | and a range nobody supplied is a compile error rather than a wrong
--- | screen. `step` is `.discrete n`
--- | or `.continuous {}`, named like every other two-state field.
+-- | The range is part of the quantity: `{ current, min, max, step }` is one
+-- | business datum, so the limits come from the data and may change while
+-- | the app runs, and a range nobody supplied is a compile error. `step` is
+-- | `.discrete n` or `.continuous {}`.
 -- |
 -- | It reports on **release**, once per adjustment, so one drag is one
 -- | entry in the history — one undo step, one audit line. For a readout
@@ -995,17 +954,11 @@ tabWith glyph = fromHandles do
 tabBar :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 tabBar options = fieldLeaf @l $ el "md-tabs" >>> "style" := "align-self: stretch;" $ fromHandles (_.result <$> grouping (handles options))
 
--- | The **indeterminate progress bar**: work is under way and there is no
--- | telling how long — a request in flight, a file being processed. A
--- | **status**, not a display: it is fed the run's two occurrences,
--- | `started` and `ended`, and shows between them — exactly what
--- | `PUI.action`'s slot dispatches (`indeterminateLinearProgress # action
--- | submit`). No model owns a "busy" field, so nothing here is state, and
--- | it carries no label: it names no field and no case, and a caption is
--- | copy, which is a function, not a label. It releases nothing, so its
--- | output is `{}`, the row `action` and `load` take their slot at: a
--- | line after it that reads a field would never be fed, and is a type
--- | error.
+-- | The **indeterminate progress bar** — see
+-- | `PUI.Web.MDC2.indeterminateLinearProgress`: a status fed the run's
+-- | `started` and `ended`, shown between them, `PUI.action`'s slot
+-- | (`indeterminateLinearProgress # action submit`); no label, `{}` out.
+-- | Over `md-linear-progress`, hidden rather than removed between runs.
 indeterminateLinearProgress :: PUI Web [ started :: {}, ended :: {} ] {}
 indeterminateLinearProgress = fromHandles do
   element "md-linear-progress" (pure unit)
@@ -1021,10 +974,9 @@ indeterminateLinearProgress = fromHandles do
 
 -- | The **determinate progress bar**: how far along something is, `value`
 -- | running 0 to 1. As much a gauge as a progress indicator — a quiz's
--- | position, a budget's use, a quota — written as
--- | `linearProgress progressFraction`: the value is a **read
--- | function** like every display's, since a fraction is derived (a ratio
--- | of source fields), not state.
+-- | position, a budget's use, a quota — written as `linearProgress
+-- | progressFraction`: the value is a **read function** like every
+-- | display's (guardrails L17).
 linearProgress
   :: forall r
    . ({ | r } -> Number) -> PUI Web { | r } { | r }
@@ -1154,11 +1106,10 @@ elevationCss = """
 -- | — an order, a product, a summary. Takes any content; put a row of
 -- | buttons in `cardActions`.
 -- |
--- | A plain ocular, with no config of its own: MD3 defines a card as a
--- | *surface* and gives it no title — `@material/web`'s own card element is
--- | a bare `<slot>` with no properties — so a card's heading is ordinary
--- | typography placed in its content (`titleMedium`, `headlineSmall`). A
--- | card whose content is one model sub-record is not chrome but the
+-- | A plain ocular with no config: MD3 defines a card as a *surface* with
+-- | no title (`@material/web`'s card element is a bare `<slot>`), so a
+-- | card's heading is typography in its content (`titleMedium`,
+-- | `headlineSmall`). A card whose content is one model sub-record is the
 -- | labelled group, `group @l`.
 card :: Ocular (PUI Web)
 card content = fromHandles do
@@ -1179,34 +1130,12 @@ cardCss = """
 cardActions :: Ocular (PUI Web)
 cardActions = div >>> "style" := "display: flex; gap: 8px; align-items: center;"
 
--- | A **labelled model group** — the card as visual wrapper *and*
--- | presentation-model wrapper, one word. `group @l w` renders `w` on a
--- | `card` headed by the label verbatim (`titleMedium`) and nests `w`'s
--- | model under field `l`, stamping the label as the accessible group name
--- | (`role="group"`, `aria-labelledby` the heading) — so the group's view
--- | line anchors at its field like every labelled leaf, and the words
--- | appear once. It draws the surface, so it **leads its lines like any
--- | container** (`group @"Customer" $ …`), never trailing as a `#` chain.
--- | Without it a labelled group is three hand-aligned spellings — the
--- | `card`, a `staticText` heading, a trailing `# focusField @l` — free to
--- | drift apart.
--- |
--- | Derived, not primitive:
--- |
--- | ```
--- | group @l w = card (heading >>> focusField @l w)      -- + the a11y stamp
--- | ```
--- |
--- | well-defined because chrome commutes with the strengths (`Ocular`'s
--- | admission law): `card w # focusField @l = card (w # focusField @l)`, so fusing
--- | surface and lens loses nothing. The focus is any type `focusField @l`
--- | accepts — an editor ensemble (`group @"Customer" $ …`, order-form's
--- | `group @"Fulfillment"` with its case panes), a collection's array
--- | (potluck's `group @"Guests"` over `acted`, reorder's
--- | `group @"Setlist"` over `acted`). Fusion is earned by the
--- | leaf criterion — the label does work a trailing `# focusField @l` cannot
--- | (heading copy, accessible name) — so a card grouping no model (a
--- | display card, a button row) stays the blind `card`.
+-- | A **labelled model group** — see `PUI.Web.MDC2.group` for the
+-- | derivation and its law: `group @l w` renders `w` on a `card` headed by
+-- | the label verbatim (`titleMedium`) and nests `w`'s model under field
+-- | `l`, stamping the label as the accessible group name (`role="group"`,
+-- | `aria-labelledby` the heading). It draws the surface, so it leads its
+-- | lines (`group @"Customer" $ …`).
 group
   :: forall @l f f' b s t
    . IsSymbol l
@@ -1311,14 +1240,10 @@ modalFace { title, decide, cancel } content = fromHandles do
 -- | happened and needs no reply ("Order placed"). It never interrupts — for
 -- | something the user must acknowledge, use a `dialog`.
 -- |
--- | A status **tells its case**: its caption is the case label verbatim,
--- | so the outcome is named as what it tells (`snackbar @"Order placed"
--- | (const usualOrder)`) and the payload is read by nothing but the fold. Mutually
--- | exclusive outcomes are sibling snackbars, one per business case. A
--- | snackbar is a `+→×` leaf like `fold @l f`: it takes its fold, of the
--- | event and the model it lands on — `captured` for an outcome that is
--- | the model, `kept` for one that changes nothing, `(const x)` for a
--- | reset.
+-- | A status that **tells its case** and takes its fold — see
+-- | `PUI.Web.MDC2.snackbar` (`snackbar @"Order placed" (const
+-- | usualOrder)`). Hand-rolled over the tokens, since `@material/web` has
+-- | no snackbar: it dismisses itself after 5 s.
 snackbar
   :: forall @l a v i o
    . IsSymbol l
@@ -1385,12 +1310,10 @@ listItem = el "md-list-item"
 -- | both how a collection is shown and how the user picks from it.
 -- |
 -- | The key is a field the projection builds into each row, named rather
--- | than computed: the UI decides its view model, so whatever a pick must
--- | carry is a field of the row. Rows are keyed by it — matched keys are
--- | updated in place, and a row's node moves with its key — so the list
--- | can refresh under the user without flicker; keys must be unique. The
--- | row each list item is drawn from is the projection's signature, in the
--- | view model module (`listOf @"opened" @"id" messagesOf …`).
+-- | than computed, and must be unique: matched keys are updated in place
+-- | and a row's node moves with its key, so the list refreshes under the
+-- | user without flicker. The row each item is drawn from is the
+-- | projection's signature, in the view model module.
 listOf
   :: forall @l @k r i b2 o key v
    . IsSymbol l
@@ -1697,12 +1620,11 @@ imageListItem config = fromHandles do
 
 
 -- | One picture in an `imageList`, **fed through the channel**: like any
--- | display it takes its read function — the business row in, the picture's
--- | `{ src, alt }` out — so a gallery is the retaining `actedOf` over the
--- | pictures rather than a wholesale rebuild —
--- | `imagePane developedShot # actedOf @"shot" albumShots`, each item built once and its
--- | source and caption updated in place. `imageListItem`'s sibling, for the
--- | collection case; `imageListItem` stays the closure-known static.
+-- | display it takes its read function, the row in and the picture's
+-- | `{ src, alt }` out, so a gallery is `actedOf` over the pictures
+-- | (`imagePane developedShot # actedOf @"shot" albumShots`), each item
+-- | built once and updated in place. `imageListItem` is its static
+-- | sibling.
 imagePane :: forall r. ({ | r } -> { src :: String, alt :: String }) -> PUI Web { | r } { | r }
 imagePane picture = imagePaneFace picture
 
@@ -1712,10 +1634,6 @@ imagePaneFace picture = fromHandles do
   handles $ el "li" >>> cl "md3-image-list__item" $ Semigroupoid.do
     img >>> cl "md3-image-list__image" >>> attrWith "src" (_.src <<< picture) >>> attrWith "alt" (_.alt <<< picture) $ identity
     span >>> cl "md3-image-list__label" >>> cl "md-typescale-title-small" $ text (_.alt <<< picture)
-
--- the element adapter for the index-keyed internal collection: reads the
--- item out of the reconciler's { ix, item } row at the wiring level (the
--- closed-singleton adopters deliberately do not read from wider rows)
 
 -- Private
 
@@ -1736,15 +1654,11 @@ foreign import openMenuAnchoredTo :: Node -> Node -> Effect Unit
 -- Entry point
 
 -- | Mount the app in the page's `<body>`, dressed for Material 3: the MD3
--- | typescale stylesheet — what gives the `md-typescale-*` classes the
--- | typography oculars wear their meaning — is adopted by the document
--- | here, once, the page's base typeface set to the type scale's plain
--- | face (so text outside every typography word is not the browser's
--- | serif), and the app then mounts exactly as `PUI.Web.HTML.body`
--- | does — same signature, same closed-app demand (`PUI Web {} o`). The
--- | entry is a word of the vocabulary like any other, so a screen changes
--- | design system at its first line by changing the import, and nothing
--- | runs at import time.
+-- | typescale stylesheet (what gives the `md-typescale-*` classes their
+-- | meaning) is adopted by the document here, once, the page's base
+-- | typeface is set to the type scale's plain face, and the app then
+-- | mounts as `PUI.Web.HTML.body` does — same signature, same closed-app
+-- | demand (`PUI Web {} o`). Nothing runs at import time (guardrails L11).
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
   adoptTypescale

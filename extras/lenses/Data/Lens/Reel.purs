@@ -1,20 +1,15 @@
 -- | The **`Reel`** — the profunctor-encoded optic of
--- | `Data.Profunctor.Retaining`'s `retain`, for the coined `+ → ×` shape.
--- | Both the class and the optic are this library's. Its co-optic is
--- | `Data.Lens.Coreel`, and nothing here mentions a row; it has no row
--- | form (`Data.Profunctor.Row`, *What is deliberately not here*).
--- |
--- | Like the other coined optics: the existential constructor `reelE` is
--- | **sound**, and completeness is **not claimed** — see
--- | `Data.Lens.Shutter`'s note. (Here the existential does contain
--- | `identity`, at `c := Void`; the multi-application inhabitants are still
--- | unaccounted for, so the caveat stands.)
--- |
--- | It claims a `Data.Lens.*` name and lives under the separate
--- | `extras/lenses` source root because it belongs to that family by
--- | construction — an optic over a strength, mentioning no `PUI`, no row and
--- | no carrier. Unlike `Colens`/`Coprism` it could not be upstreamed alone:
--- | its class is coined too, so the pair travels together.
+-- | `Data.Profunctor.Retaining`'s `retain`, for the coined `+ → ×` shape;
+-- | both the class and the optic are this library's, its co-optic
+-- | `Data.Lens.Coreel`. It has no row form (`Data.Profunctor.Row`, *What
+-- | is deliberately not here*). Like the other coined optics, the
+-- | existential constructor `reelE` is **sound** and completeness is **not
+-- | claimed** (`Data.Lens.Shutter`'s note; here the existential does
+-- | contain `identity`, at `c := Void`, but the multi-application
+-- | inhabitants are still unaccounted for). An optic over a strength,
+-- | mentioning no `PUI`, row or carrier — hence the `Data.Lens.*` name and
+-- | the `extras/lenses` root, travelling with its coined class.
+-- | Law-tested, reached by no demo.
 module Data.Lens.Reel
   ( Reel
   , reel

@@ -9,12 +9,10 @@
 -- | narrates an event, `button` reports a click. `hr` is fixed decoration,
 -- | and `body` mounts the finished screen.
 -- |
--- | Everything that names no element — the decorators (`attr`/`:=`, `cl`,
--- | `attrWith`, `clWhen`), the text leaves (`text`, `staticText`), the
--- | occurrence sources (`clicked`, `onClickedXY`),
--- | the panes (`provided`, `inCase`), the sources (`geolocated`, `clock`, …),
--- | and the structure builders (`dynamic`, `each`, `el`) — lives in the
--- | parent module, `PUI.Web`, shared with SVG and the design systems.
+-- | Everything that names no element — the decorators, the text leaves,
+-- | the occurrence sources, the panes, the platform sources and the
+-- | structure builders — lives in the parent module, `PUI.Web`, shared
+-- | with SVG and the design systems.
 module PUI.Web.HTML
   ( confirmed
   , confirmed'
@@ -96,17 +94,13 @@ import PUI.Web (chrome, fieldLeaf, Node, Web, adoptHostDiagnostics, onFilePicked
 -- UIs
 
 -- | A single-line input of the given `type` ("text", "number",
--- | "email", ...), label-indexed at the `String` field it edits (L3):
--- | shows the string it is given, reports every keystroke, and stamps its
--- | label as the host `name`. The floor has no caption chrome of its own,
--- | so a caption stays a sibling `label`+`staticText` merge — and the
--- | `focusField @l` lift is fused in here as in every vocabulary's editors, so
--- | application code never lifts a scalar leaf itself.
--- |
--- | Typing is never interrupted — while the field has focus, values
--- | arriving from elsewhere are not written into it, so an update can't
--- | swallow a half-typed word; the field picks the model up again the
--- | moment it loses focus.
+-- | "email", ...), label-indexed at the `String` field it edits: shows the
+-- | string it is given, reports every keystroke, and stamps its label as
+-- | the host `name` (`input @"Celsius" "text"`, temperature-converter). The
+-- | floor has no caption chrome of its own, so a caption is a sibling
+-- | `label $ staticText`. Typing is never interrupted: while the field has
+-- | focus, values arriving from elsewhere are not written into it, and it
+-- | picks the model up again the moment it loses focus.
 input :: forall @l r b. IsSymbol l => Cons l String b r => String -> PUI Web { | r } { | r }
 input type_ = fieldLeaf @l $ "type" := type_ $ fromHandles do
   element "input" (pure unit)
@@ -163,16 +157,12 @@ textArea = fieldLeaf @l $ fromHandles do
     , read: \_ -> getValue node
     }
 
--- | One choice out of a fixed list — the native `<select>` of `<option>`s,
--- | with no chrome and no label of its own.
--- | The field holds the option itself, so the model always has one.
--- | Two siblings hold a variant instead: `selectUnpicked @l @c` for a
--- | choice owed but not yet made, `selectOptional @l @c @n` for one
--- | the user may leave unmade. Every one is an editor: every feed is
+-- | One choice out of a fixed list — the native `<select>` of `option`
+-- | leaves merged `VariantToVariant.do`, with no chrome and no label of its
+-- | own. The field holds the option itself; the siblings `selectUnpicked
+-- | @l @c` (a choice owed) and `selectOptional @l @c @n` (a choice that may
+-- | be left unmade) hold a variant. Every one is an editor: every feed is
 -- | answered with the row, every pick stored.
--- | The options belong to the control, not to the model: they are `option`
--- | leaves merged `VariantToVariant.do`, the block closing the field's row
--- | in the order written.
 select :: forall @l w b r. IsSymbol l => Cons l [ | w ] b r => PUI Web [ | w ] [ | w ] -> PUI Web { | r } { | r }
 select options = fieldLeaf @l $ selectGroupOf false options
 
@@ -233,14 +223,10 @@ blankEmits options = fromHandles do
     }
 
 -- | The native range slider (`<input type="range">`), with no chrome and no
--- | readout of its own, reporting while the user drags.
--- |
--- | The range is part of the quantity, not part of the screen:
--- | `{ current, min, max, step }` travels together as one business datum, so
--- | limits come from the data and can change while the app runs — a slider
--- | is never silently out of range, and a range nobody supplied is a
--- | compile error rather than a wrong screen. `step` is `.discrete n`
--- | or `.continuous {}`, named like every other two-state field.
+-- | readout of its own, reporting while the user drags. The range is part
+-- | of the quantity: `{ current, min, max, step }` is one business datum,
+-- | so limits come from the data and can change while the app runs; `step`
+-- | is `.discrete n` or `.continuous {}`.
 rangeInput :: forall @l r b. IsSymbol l => Cons l { current :: Number, min :: Number, max :: Number, step :: [ discrete :: Number, continuous :: {} ] } b r => PUI Web { | r } { | r }
 rangeInput = fieldLeaf @l $ "type" := "range" $ fromHandles do
   element "input" (pure unit)
@@ -271,15 +257,11 @@ progress f = fromHandles do
   liftEffect $ recordToRecordWiring { show: \r -> setAttribute node "value" (show (f r)), held: pure false, reports: \_ -> pure unit, read: pure }
 
 -- | What just happened, told in place — the native `<output>`, HTML's
--- | element for the result of a user action. It shows the latest event's
--- | caption and keeps it on the page (plain HTML has nothing that dismisses
--- | itself).
--- |
--- | A status **tells its case**: its caption is the case label verbatim,
--- | so the outcome is named as what it tells (`output @"Card charged"
--- | captured`) and the payload is read by nothing but the fold. A `+→×` leaf
--- | like `fold @l f`, it takes its fold, of the event and
--- | the model it lands on.
+-- | element for the result of a user action: the floor's status, showing
+-- | the latest event's case label and keeping it on the page (plain HTML
+-- | has nothing that dismisses itself). A `+→×` leaf like `fold @l f`, it
+-- | takes its fold of the event and the model it lands on (`output @"Card
+-- | charged" captured`); a status tells its case (guardrails L17).
 output
   :: forall @l a v i o
    . IsSymbol l
@@ -363,16 +345,12 @@ modalFace { title, decide, cancel } content = fromHandles do
     , cancels: \cancelled -> for_ cancelNode \node -> listenNode node "click" cancelled
     }
 
--- | A bare `<button>`, captioned by its label verbatim (`label:` overrides
--- | with real copy the label cannot be). It reports, as case `l`, that the
--- | user asked for something, carrying whatever row it was being shown at
--- | the time, so the request arrives with its subject attached:
--- | `button @"Count"`. An event source, `× → +`.
--- |
--- | It is disabled until it has been shown something: a click before any
--- | value arrived has nothing to report. Like every vocabulary's button it
--- | stays live after a click — a request a screen must not send twice is
--- | its action's concern, not the button's.
+-- | A bare `<button>`, captioned by its label verbatim. It reports, as case
+-- | `l`, that the user asked for something, carrying the row it was being
+-- | shown at the time: `button @"Count"`. An event source, `× → +`,
+-- | disabled until it has been shown something (a click before any value
+-- | arrived has nothing to report), and live after a click — a request a
+-- | screen must not send twice is its action's concern.
 button :: forall @l r v. IsSymbol l => Cons l { | r } () v => PUI Web { | r } [ | v ]
 button = fromHandles do
   w' <- handles (el "button" >>> "disabled" :=> (\x -> if isNothing x then Just "true" else Nothing) $ staticText config.label)
@@ -462,11 +440,9 @@ legend :: Ocular (PUI Web)
 legend = el "legend"
 
 -- | A **labelled model group** — the contract is `PUI.Web.MDC2.group`'s:
--- | `focusField @l` fused with the floor's grouping surface, `group @l w`
--- | rendering `w` in a `fieldset` whose `legend` is the label verbatim and
--- | nesting `w`'s model under field `l`. The platform names a fieldset by
--- | its legend, so the label is the accessible group name with no
--- | `aria-*` stamp. Derived, not primitive:
+-- | `group @l w` renders `w` in a `fieldset` whose `legend` is the label
+-- | verbatim and nests `w`'s model under field `l`; the platform names a
+-- | fieldset by its legend, so nothing is stamped. Derived, not primitive:
 -- |
 -- | ```
 -- | group @l w = fieldset (legend >>> focusField @l w)
@@ -598,25 +574,16 @@ h6 :: Ocular (PUI Web)
 h6 = el "h6"
 
 -- | Mount the app in the page's `<body>` — the one call an application
--- | makes: `body $ with initialOrder $ …` or `body $ … $ screen # looped
--- | # with initialGame`. This is the plain-HTML floor's entry; every design-system
--- | module exports a `body` of the same signature that first dresses the
--- | page for its catalogue (MDC2's typography baseline, MDC3's typescale
--- | stylesheet, Fluent's theme, Shoelace's icon base path) and then mounts
--- | here, so an app imports its entry from its vocabulary like every other
--- | word and no vocabulary acts on the page at import time.
--- |
--- | The app has to be **complete**: everything on screen must have a value
--- | from the first frame, and `with` is where that starting state is
--- | supplied. Anything left unsupplied is reported here as a compile error
--- | naming the missing pieces — a screen can't reach a user half-filled.
--- |
--- | Mounting registers the wiring and then feeds `{}` **once** — the
--- | terminal record's one value — so "closed to `{}`" is literal: the app
--- | is fed exactly what its type says it needs, which is nothing. A
--- | `{}`-input display (`text (const "…")`) renders on that feed; a point
--- | (`announce`, `with`) has already answered at registration and,
--- | by Repetition at `{}`, has nothing more to say (`PUI.announce`).
+-- | makes: `body $ … # looped # with freshCount` (counter). The plain-HTML
+-- | floor's entry; every design-system module exports a `body` of the same
+-- | signature that first dresses the page for its catalogue and then
+-- | mounts here, so no vocabulary acts on the page at import time
+-- | (guardrails L11). The app must be closed to `{}`: a knot left unprimed
+-- | is a compile error here naming the missing fields (L7). Mounting
+-- | registers the wiring and then feeds `{}` **once**, the terminal
+-- | record's one value: a `{}`-input display renders on that feed; a point
+-- | (`announce`, `with`) has already answered at registration and, by
+-- | Repetition at `{}`, has nothing more to say.
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
   adoptHostDiagnostics

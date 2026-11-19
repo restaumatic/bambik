@@ -1,13 +1,9 @@
 -- | The **co-strength** of `Data.Profunctor.Retaining` — the `+ → ×` analogue
 -- | of the ecosystem's `Data.Profunctor.Cochoice`, stated **positionally**
--- | (`Either`/`Tuple`) with no row in sight, and living beside its strength
--- | exactly as `Cochoice` lives beside `Choice`. It has no row form (an
--- | unfold's state is a model field under `looped`); the optic it
--- | generates is `Data.Lens.Coreel`.
--- |
--- | Like its strength, a **complement of the ecosystem's own** — hence the
--- | `Data.Profunctor.*` name and the separate `extras/profunctor` source
--- | root: nothing here mentions `PUI`, a row, or a carrier.
+-- | (`Either`/`Tuple`). It has no row form (an unfold's state is a model
+-- | field under `looped`); the optic it generates is `Data.Lens.Coreel`.
+-- | Like its strength, a complement of the ecosystem's own, mentioning no
+-- | `PUI`, row or carrier — hence the `extras/profunctor` root.
 module Data.Profunctor.Coretaining
   ( class Coretaining
   , coretain
@@ -29,8 +25,7 @@ import Data.Tuple (Tuple)
 -- | composite `coretain (retain g)` is output-dead (`retain`'s gate waits on
 -- | a resume only emissions can trigger):
 -- | `coretain (seeded (Right c0) >>> retain g) ≈ g` — state must enter
--- | somewhere, and the seed is where; a raw chain seeds the state case
--- | (`seeded`). Tested in test/Main.purs.
+-- | somewhere, and the seed is where. Tested in test/Main.purs.
 -- |
 -- | (No `(->)` instance: tying a knot takes state.)
 class Profunctor p <= Coretaining p where

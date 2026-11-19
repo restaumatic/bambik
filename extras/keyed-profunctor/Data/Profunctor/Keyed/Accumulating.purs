@@ -5,11 +5,9 @@
 -- | element, and each element's emission writes its slot. The output is a
 -- | product over the keys seen so far, so, like `Acting`'s, it gates.
 -- |
--- | ## The key
--- |
--- | The square's (`Data.Profunctor.Keyed`, *The key*): field `l` of the
--- | entity's row. The key is **re-set** on every emission from the fed row
--- | (`keyed @l` in, `keyRestored @l` out), so a slot is its entity's.
+-- | The key is the square's (`Data.Profunctor.Keyed`, *The key*): field
+-- | `l` of the entity's row, re-set on every emission from the fed row, so
+-- | a slot is its entity's.
 -- |
 -- | ## Laws
 -- |
@@ -29,21 +27,15 @@
 -- |
 -- | ## Forms
 -- |
--- | Three, like every member of the keyed square:
--- |
--- |   * `accumulated @l` — over the entity's row.
--- |   * `accumulatedOf @l proj` (a projection to the entity) — `# accumulatedOf @"team" goal`, scoreboard.
--- |   * `accumulatedOn @l @c` — for an entity arriving as case `c`, the
--- |     `+→×` operand owning that case, closed to it like every fold.
+-- | `accumulated @l`, `accumulatedOf @l proj` and `accumulatedOn @l @c`,
+-- | each described at its definition.
 -- |
 -- | ## The carrier
 -- |
--- | This module holds the class, whose primitive `accumulating` takes the
--- | entity beside its key, and the label forms. The instance is the
--- | carrier's: `PUI` holds a generic `Hosting m node =>` instance, never
--- | detached or restacked, its output the one pure machine
--- | `PUI.Gate.gateStep` that `Acting` gathers with, the keys enrolled in
--- | first-appearance order.
+-- | The instance is the carrier's: `PUI` holds a generic `Hosting m node
+-- | =>` instance, never detached or restacked, its output the one pure
+-- | machine `PUI.Gate.gateStep` that `Acting` gathers with, the keys
+-- | enrolled in first-appearance order.
 module Data.Profunctor.Keyed.Accumulating
   ( class Accumulating
   , accumulating
@@ -70,7 +62,7 @@ class Profunctor p <= Accumulating p where
   accumulating :: forall k a b. Ord k => p a b -> p (Tuple k a) (Array (Tuple k b))
 
 -- | The accumulating collection keyed by the entity's identity field `l`,
--- | the key re-set from the input on every emission (see the header).
+-- | the key re-set from the input on every emission.
 accumulated :: forall @l r r1 p k b1 b2. Accumulating p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p { | r } (Array { | r1 })
 accumulated w = withStructuralOrd @k (dimap (keyed @l) (map (keyRestored @l)) (accumulating w))
 

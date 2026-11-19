@@ -6,12 +6,9 @@
 -- | instantiates a new instance (a new case, not an error), a known key
 -- | re-feeds its instance.
 -- |
--- | ## The key
--- |
--- | The square's (`Data.Profunctor.Keyed`, *The key*): field `l` of the
--- | entity's row, so no envelope is written. The entity is typed at its
--- | whole row on both sides, and the key is **re-set** on every emission
--- | from the fed row (`keyed @l` in, `keyRestored @l` out).
+-- | The key is the square's (`Data.Profunctor.Keyed`, *The key*): field
+-- | `l` of the entity's row, the entity typed at its whole row on both
+-- | sides, the key re-set on every emission from the fed row.
 -- |
 -- | ## Laws
 -- |
@@ -26,21 +23,14 @@
 -- |
 -- | ## Forms
 -- |
--- | Three, like every member of the keyed square:
--- |
--- |   * `dispatched @l` — over the entity's row.
--- |   * `dispatchedOf @l proj` (a projection from the fed value to the
--- |     entity) — `# dispatchedOf @"code" arrival`, departures.
--- |   * `dispatchedOn @l @c` — for an entity arriving as case `c` of the
--- |     event, every other case passing: `Choice`'s case prism over the
--- |     bare form.
+-- | `dispatched @l`, `dispatchedOf @l proj` and `dispatchedOn @l @c`, each
+-- | described at its definition.
 -- |
 -- | ## The carrier
 -- |
--- | This module holds the class, whose primitive `dispatching` takes the
--- | entity beside its key, and the label forms. The instance is the carrier's:
--- | `PUI` holds a generic `Hosting m node =>` instance, one registration
--- | per key value, never detached or restacked.
+-- | The instance is the carrier's: `PUI` holds a generic `Hosting m node
+-- | =>` instance, one registration per key value, never detached or
+-- | restacked.
 module Data.Profunctor.Keyed.Dispatching
   ( class Dispatching
   , dispatching
@@ -72,7 +62,7 @@ class Profunctor p <= Dispatching p where
 
 -- | One instance per value of the entity's identity field `l`, the entity
 -- | typed at its whole row on both sides and the key re-set from the input
--- | on every emission (see the header).
+-- | on every emission.
 dispatched :: forall @l r r1 p k b1 b2. Dispatching p => IsSymbol l => Cons l k b1 r => Cons l k b2 r1 => p { | r } { | r1 } -> p { | r } { | r1 }
 dispatched w = withStructuralOrd @k (dimap (keyed @l) (keyRestored @l) (dispatching w))
 
