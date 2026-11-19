@@ -19,7 +19,7 @@ emptyDiner = dinnerService { orders = [] }
 soldOut :: Diner
 soldOut = dinnerService { dishes = map (_ { "Porcje" = .count 0 }) dinnerService.dishes }
 
--- | Four tables in the kitchen, two at the pass, one order being taken.
+-- | Four orders in the kitchen, one at the pass, one being taken.
 rushHour :: Diner
 rushHour = dinnerService
   { "Stolik" = ."6" {}

@@ -115,7 +115,7 @@ type Order =
   , table :: Table
   }
 
--- | A dish ordered in some quantity, plated once the kitchen has plated it.
+-- | A dish ordered in some quantity, and whether the kitchen has plated it.
 type Line = { dish :: String, quantity :: Int, state :: [ ordered :: {}, plated :: {} ] }
 
 -- | An order's life: taken at the table, cooking from the time it was placed,
