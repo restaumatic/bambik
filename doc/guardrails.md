@@ -103,13 +103,13 @@ allocated there, once per instantiation (2026-10-16).
   MUST use these four names for these four positions and for nothing
   else; the **view model module** is the module holding the functions of
   all four arrows.
-- **Every component is a citizen of one shape, and its row speaks the
-  business label**, stated once as the leaf's own type argument. No
-  canonical label (`value`/`clicked`/`event`) and no vocabulary-private
-  field name (`src`/`label`) appears in application code: a leaf reading
-  structured data takes a read function and the view model translates at
-  the boundary (`imagePane developedShot` replaced a `{ src, label }`
-  row). Business functions are arguments of leaves, never adopters: every
+- Every component MUST be a citizen of exactly one shape, and its row
+  MUST speak the **business label**, stated once as the leaf's own type
+  argument. No canonical label (`value`/`clicked`/`event`) appears in
+  application code, and a leaf reading structured data MUST NOT make the
+  application name its rows by the leaf's private names (`src`/`label`):
+  it takes a read function and the view model translates at the boundary
+  (`imagePane developedShot` replaced a `{ src, label }` row). Business functions are arguments of leaves, never adopters: every
   leaf narrows its input and its output itself — a status or an action
   owns the case its label names, an emitter is closed to the case it
   emits, an action is typed at exactly its outcomes and the folds and
@@ -143,7 +143,8 @@ allocated there, once per instantiation (2026-10-16).
 - **A label is the copy it draws**: a captioned leaf's caption is its
   label verbatim — nothing derives copy from an identifier — so labels
   are written as the words they render, usually quoted, in the business
-  rows as much as at the leaf. An emitter MUST NOT take a `label:`
+  rows as much as at the leaf (a quoted label cannot be a record pun;
+  bind explicitly). An emitter MUST NOT take a `label:`
   config (two buttons under one handler are two business actions, each
   its own case and fold); an editor takes no caption config, its label
   MUST be only the field's name, and a format, example or unit rides the
