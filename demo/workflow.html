@@ -29,54 +29,37 @@
   <body>
     <h1>How a bambik app is written</h1>
 
-    <p>Every demo page on this site shows a finished listing. This page shows
-    what a listing hides: the session that produces one — the order the code is
-    written in, and what the compiler says back after each step. The session
-    below is real: the app is a small pizza-order form — a text field, a live
-    line, an <em>Order</em> button that places the order, a snackbar telling
-    the outcome — in the two-module
-    layout every bambik app ships with (a view module and, beside it, the
-    view model module the view determines up to its tails), and every compiler response is verbatim output of bambik's pinned
-    PureScript compiler (0.15.16-variant.9, the variant fork), captured by
-    replaying the session. The screenshots at the end are the
-    session's own app, running.</p>
+    <p>Every demo page shows a finished listing; this page shows the session
+    that produces one — the order the code is written in, and what the
+    compiler says back after each step. The app is a small pizza-order form
+    (a text field, a live line, an <em>Order</em> button, a snackbar telling
+    the outcome) in the two-module layout every bambik app has: a view
+    module and the view model module beside it. Every compiler response is
+    verbatim output of the pinned compiler (0.15.16-variant.9), captured by
+    replaying the session; the screenshots at the end are the session's own
+    app running.</p>
 
-    <p>The method rests on one rule, the <em>anchor invariant</em> (see the
-    <a href="./#code-style">code style</a> note): every view line names exactly
-    one semantic anchor — the model <strong>field</strong> it edits
-    (<code>@l</code> on an editor or selector), the business
-    <strong>case</strong> it emits or shows (<code>@l</code> on an emitter,
-    pane or status), the named <strong>read function</strong> it renders, or
-    <strong>nothing</strong> at all, chrome writing nothing. So the view is
-    written first, with typed holes (<code>?orderLine</code> — a name the
-    compiler must type rather than resolve) standing in for the functions and
-    actions that do not exist yet, and the view model module is written second, to the names
-    and types the view demanded: the compiler's last message lists every hole
-    with its type, and that list <em>is</em> the module's signatures up to
-    their <em>tails</em>. The view fixes which holes share a row, what each
-    returns and every field and case its lines name; the rest of each row it
-    leaves unknown, and the module fills it — the view writes no row of its
-    own, so many models fit one view, and the module is where one is
-    chosen.</p>
+    <p>The method: write the view first, with a typed hole
+    (<code>?orderLine</code>) for every function and value that does not
+    exist yet; the compiler's last message lists every hole with its type,
+    and that list is the view model module's signatures up to their
+    <em>tails</em> — the rest of each row, which the view leaves unknown and
+    the module fills. Every view line names exactly one anchor (the
+    <a href="./#code-style">code style</a> note): a field, a case, a copy
+    function, or nothing.</p>
 
     <h2>1 · The view, whole, before any logic exists</h2>
 
     <p>You know what the screen is before you know what the model is: a field
     for the pizza, a line showing what's in the oven, a button that places the
-    order, a toast that tells the outcome. Write exactly that. The button,
-    its action and the snackbar are the event's path, one wrapped line,
-    <code>( … ) # stepped</code>: it passes the model on like every other
-    line, and what the event leads to lands on that model. Three term
-    obligations enter as holes — the display's read, the action, the seed.
-    Note what is <em>not</em> a hole: the field anchor (<code>@"Pizza"</code>),
-    the case anchors (<code>@"Order"</code>, stated once on the button and once
-    on the action that owns its case; <code>@"Pizza ordered"</code>, the
-    outcome the snackbar tells — a status shows its case label and nothing
-    else, so the outcome's name <em>is</em> the words on the screen, and the
-    snackbar owning that case is what names the action's outcome) and the
-    chrome (<code>headlineSmall</code>) are complete as
-    written. The model row is not written at all: it is the seed's
-    signature, still a hole.</p>
+    order, a toast that tells the outcome. Write exactly that. The button, its
+    action and the snackbar are the event path, one line closed by
+    <code># stepped</code>. Three holes: the display's copy function, the
+    action, the seed. The labels are not holes — <code>@"Pizza"</code> is the
+    field, <code>@"Order"</code> the case the button emits and the action
+    owns, <code>@"Pizza ordered"</code> the outcome the snackbar tells, and
+    its words on the screen — and the model row is not written at all: it is
+    the seed's signature, still a hole.</p>
 
     <h3>src/MDC3.purs</h3>
 <pre><code class="language-haskell">module Order.MDC3 (order) where
@@ -102,15 +85,11 @@ order =
 </code></pre>
 
     <p>The compiler answers with a message per hole and a last one listing
-    them together, and none of them is a refusal: every hole comes back typed.
-    The display read reports <code>{ "Pizza" :: String | t0 } -&gt;
-    String</code>: the editor's field anchor put <code>"Pizza"</code> in the
-    row, and <code>t0</code> is the rest of it, which only the model knows.
-    The seed is that row, and the action reports its whole contract over it,
-    <code>{ "Pizza" :: String | t0 } -&gt; Aff [ "Pizza ordered" :: {
-    "Pizza" :: String | t0 } ]</code>: the snackbar folds its outcome with
-    <code>captured</code>, the outcome taken as the next model, so the outcome
-    must be the model, and the status's case names it:</p>
+    them together, every hole typed. The editor put <code>"Pizza"</code> in
+    the row; <code>t0</code> is the rest of it, which only the model knows.
+    The seed is that row, and the action's outcome is that row too, under the
+    case the snackbar names, because the snackbar folds it with
+    <code>captured</code>, the outcome taken as the next model:</p>
 
 <pre class="compiler">Error 1 of 4:
 
@@ -190,17 +169,13 @@ Error 4 of 4:
   where t0 is an unknown type
   ⋯</pre>
 
-    <p>Two things to read here. First, the last message is the one to read
-    when there are many holes: it lists every hole with its type, with one
-    numbering of unknowns across them — <code>t0</code> is one tail, the
-    same in all three, because the knot loops one row through every stage.
-    Everything else in it the view decided. Second, the reported type <em>is</em> the signature
-    with its tail filled. Here the order is just the pizza, so the tail is
-    empty: write the hint down with <code>| t0</code> gone and the row
-    closed. A model holding more — a size, a note no line shows — would
-    fill <code>t0</code> with those fields instead, and the view would not
-    change. Which of the row's fields the body reads is the body's business,
-    not the signature's. This line shows the pizza.</p>
+    <p>The last message is the one to read: one numbering of unknowns across
+    all the holes, so <code>t0</code> is one tail, the same in all three,
+    because the knot loops one row through every stage. The reported type is
+    the signature with its tail filled. Here the order is just the pizza, so
+    the tail is empty: write the hint down with <code>| t0</code> gone and the
+    row closed. A model holding more — a size, a note no line shows — would
+    fill <code>t0</code> with those fields, and the view would not change.</p>
 
     <h2>2 · One decision in — one hole gone</h2>
 
@@ -269,12 +244,10 @@ Error 3 of 3:
                      }
   ⋯</pre>
 
-    <p>The action's payload is the model row too: it is fixed by what
-    consumes the outcome, not by what feeds it. The button replays the row it is fed,
-    <code>action @"Order"</code> owns that case and hands the row to the
-    function, and the snackbar's fold takes the outcome as the next model — so the
-    action must return <code>{ "Pizza" :: String }</code> under the case the
-    line names and the snackbar tells.</p>
+    <p>The action's outcome type is fixed by what consumes it, not by what
+    feeds it: the snackbar's fold takes the outcome as the next model, so the
+    action returns <code>{ "Pizza" :: String }</code> under the case the
+    snackbar tells.</p>
 
     <h2>3 · The action joins — the last hole is the seed</h2>
 
@@ -295,12 +268,9 @@ at src/MDC3.purs:21:19 - 21:25 (line 21, column 19 - line 21, column 25)
     }
   ⋯</pre>
 
-    <p>Both carry the signatures the compiler reported — the action's
-    outcome row included, its one case spelled as the snackbar will show
-    it. The tail was filled by the first signature, so the seed's type is no
-    longer in doubt: exactly <code>{ "Pizza" :: String }</code>. The
-    seed is the model's value at t=0 — business data under a business name,
-    never <code>initial</code>.</p>
+    <p>The seed's type is no longer in doubt: exactly <code>{ "Pizza" ::
+    String }</code>. It is business data under a business name, never
+    <code>initial</code>.</p>
 
     <h2>4 · Green</h2>
 
@@ -350,15 +320,10 @@ order =
 <pre class="compiler">[1 of 2] Compiling Order
 [2 of 2] Compiling Order.MDC3</pre>
 
-    <p>Every anchor resolved: <code>orderLine</code> is a pure function under
-    unit test in the view model module and <code>placeOrder</code> the
-    <code>Aff</code> beside it, each typed as the view reported it, the tail
-    filled;
-    <code>@"Pizza"</code> is both the field's caption and its name in the
-    model, <code>@"Order"</code> both the button's caption and the case the
-    action takes, <code>@"Pizza ordered"</code> both the outcome the action
-    returns and the words the snackbar shows, and the chrome names nothing
-    because it writes nothing.</p>
+    <p>Every hole resolved: <code>orderLine</code> is a pure function under
+    unit test and <code>placeOrder</code> the <code>Aff</code> beside it,
+    each typed as the view reported it; every label is at once a caption on
+    the screen and a name in the model.</p>
 
     <h2>5 · A slip, and where the compiler points</h2>
 
@@ -393,30 +358,25 @@ while checking that expression (discard ((applyFlipped indeterminateLinearProgre
 in value declaration order
   ⋯</pre>
 
-    <p>It points at the action line, the line after the misplaced display.
-    The button turned the model into an event, the heading showed that
-    event's row and passed it on — a display releases what it is fed — and
-    the action is the first line that wants the event back: <code>action
-    @"Order"</code> expects a variant and is handed the record the display
-    released. So read the two sides in the message, <code>Variant</code>
-    against <code>Record</code>, and look <em>upstream</em> for the stage
-    that changed the shape: an emitter standing above a display that reads
-    the model. Put the heading back above the button, where it is on the
-    screen. The skill's writing.md lists the other common messages under
-    <em>When it does not compile</em>.</p>
+    <p>It points at the action line, the line after the misplaced display:
+    the button turned the model into an event, the display passed on what it
+    was fed, and the action is the first line that wants the event back —
+    <code>Variant</code> against <code>Record</code>. Read the two sides and
+    look <em>upstream</em> for the stage that changed the shape; put the
+    heading back above the button, where it is on the screen. writing.md
+    lists the other common messages under <em>When it does not
+    compile</em>.</p>
 
     <h2>6 · Compile-green is not done — run it</h2>
 
     <p class="note">The types prove the wiring, not that data reaches the
-    screen: a record merge withholds until every field of its row has been fed,
-    so the session ends by <em>running</em> the app. A pane that stays blank is
-    a knowledge gate withholding — a named failure, not a mystery: the
-    3-second starvation watchdog prints the gate and its missing fields to the
-    console, and the emission trace logs every propagation decision (see the
-    <a href="./#tracing">tracing</a> note). Here the seed feeds the one gate
-    and the page renders at once — these are the session's own screenshots,
-    taken headlessly (the second after a scripted click on
-    <em>Order</em> and the stand-in kitchen's 800 ms):</p>
+    screen: a merge withholds until every field of its row has been fed, so
+    the session ends by running the app. A pane that stays blank is a gate
+    withholding, and after 3 s the watchdog prints its missing fields to the
+    console (the <a href="./#tracing">tracing</a> note). Here the seed feeds
+    the one gate and the page renders at once — the session's own
+    screenshots, taken headlessly, the second after a scripted click on
+    <em>Order</em> and the stand-in kitchen's 800 ms:</p>
 
     <div class="shots">
       <figure>
@@ -433,11 +393,10 @@ in value declaration order
     </div>
 
     <footer>
-      <p>The rules this session follows — the anchor invariant, the writing
-      order, and the full application code-style contract — are stated in the
-      <a href="https://github.com/restaumatic/bambik/blob/main/.claude/skills/developing-bambik-apps/writing.md">authoring
-      skill's writing.md</a>, which ships with every bambik release.
-      <a href="./">Back to the demos.</a></p>
+      <p>The rules this session follows are stated in the authoring skill's
+      <a href="https://github.com/restaumatic/bambik/blob/main/.claude/skills/developing-bambik-apps/writing.md">writing.md</a>
+      (<em>Writing order</em>, <em>Code style</em>), which ships with every
+      bambik release. <a href="./">Back to the demos.</a></p>
     </footer>
 
     <script>hljs.highlightAll()</script>

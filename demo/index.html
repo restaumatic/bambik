@@ -28,91 +28,51 @@
 
     <section id="code-style">
       <h2>Code style</h2>
-      <p>Every demo follows these rules. The skill's <a href="https://github.com/restaumatic/bambik/blob/main/.claude/skills/developing-bambik-apps/writing.md#code-style">writing.md</a> states them in full.</p>
+      <p>Every demo follows these rules; the skill's <a href="https://github.com/restaumatic/bambik/blob/main/.claude/skills/developing-bambik-apps/writing.md#code-style">writing.md</a> states them in full, each once.</p>
 
       <h3>Modules</h3>
       <ul>
-        <li><b>A view and a view model</b>, with a one-way dependency:
-          <ul>
-            <li>the view exports one entry function and imports the design-system vocabulary and the view model;</li>
-            <li>the view model holds pure business functions and values and imports only domain modules (<code>Prelude</code>, data modules, <code>Effect</code>, <code>Aff</code>, <code>Data.Variant.Case</code>);</li>
-            <li>further modules are only packaged controls (order-dashboard).</li>
-          </ul>
-        </li>
-        <li><b>The view determines the view model.</b> With a typed hole for every imported value, the compiler reports each at a concrete type; those types are the view model's signatures. The library checks this for every demo.</li>
-        <li><b>Twins share one view model.</b> A design-system switch is a view-only diff.</li>
-      </ul>
-
-      <h3>Layout</h3>
-      <ul>
-        <li>No comments in a view; the view model says in comments what each type and function means in the domain, never which screen shows it.</li>
-        <li>Explicit imports, <code>Prelude</code> included.</li>
-        <li>A line leads with what is seen, via <code>$</code>, and trails with data concerns, via <code>#</code>. An element over one leaf applies it with <code>$</code>, never parentheses: <code>headline4 $ text countLine</code>; a chain on the wrapped element opens the paren before the wrapper: <code>( headlineSmall $ text wonLine ) # inCase @"won" gameOutcome</code>.</li>
-        <li>A decorator trails its element: <code>checkbox @"Loyalty member" … # tooltip "Members get 10% off"</code>, never <code>tooltip … $ checkbox …</code>.</li>
-        <li>Two-space indentation; a closer returns to its opener's column.</li>
-        <li>A closer or <code>#</code> chain never starts a line, except a seed closer (<code>) # with seed</code>) and the closer of a broken row.</li>
-        <li>A declared row or signature too long for its line takes one field per line.</li>
-        <li>Pipeline order: load, form, live summary, events, actions with their statuses, closed by the seed.</li>
-        <li>The entry is <code>body $ …</code>; the page supplies the surface.</li>
+        <li>A view module and a view model module, one-way: the view exports one entry function and imports the design-system vocabulary and the view model; the view model holds pure business functions and values and imports only domain modules (<code>Prelude</code>, data modules, <code>Effect</code>, <code>Aff</code>, <code>Data.Variant.Case</code>); further modules are packaged controls (order-dashboard).</li>
+        <li>The view determines the view model: compiled with a typed hole for every imported value, it reports each at a type, and those types, their tails filled, are the view model's signatures (<code>Record t0 -&gt; String</code> reported, <code>countLine :: Count -&gt; String</code> written, never narrowed, never left open). Checked for every demo.</li>
+        <li>Twins share one view model: a design-system switch is a view-only diff.</li>
       </ul>
 
       <h3>Anchors</h3>
       <ul>
-        <li><b>Every line names exactly one anchor:</b>
-          <ul>
-            <li>a model field, as the type argument of an editor, selector or group: <code>filledTextField @"First name"</code>, <code>group @"Customer" $ …</code>;</li>
-            <li>a business case, as the type argument of an emitter, pane or status: <code>button @"Submit order"</code>, <code>snackbar @"Card charged" identity</code>;</li>
-            <li>a copy function, as a display's positional argument: <code>text balanceLine</code>;</li>
-            <li>nothing, for chrome: <code>card</code>, <code>staticText "Hours"</code>.</li>
-          </ul>
-        </li>
-        <li>A visible <code>@"…"</code> names a field or a case, nothing else. Titles and static texts are strings: <code>topAppBar "Espresso Bar"</code>.</li>
-        <li>A leaf reads word, anchor, positional arguments. Its record holds only optional presentation: <code>{ icon: "person_add" }</code>, <code>{ columns: 80, rows: 3 }</code>.</li>
+        <li>Every view line names exactly one anchor, in its own position: a model field as the type argument of an editor, selector or group (<code>filledTextField @"First name"</code>, <code>group @"Customer" $ …</code>); a business case as the type argument of an emitter, pane or status (<code>button @"Submit order"</code>, <code>snackbar @"Card charged" captured</code>); a copy function as a display's positional argument (<code>text balanceLine</code>); or nothing, for chrome (<code>card</code>, <code>staticText "Hours"</code>).</li>
+        <li>A visible <code>@"…"</code> names a field or a case, nothing else; titles and static texts are strings (<code>topAppBar "Espresso Bar"</code>). A leaf's record holds only optional presentation (<code>{ icon: "person_add" }</code>, <code>{ columns: 80, rows: 3 }</code>).</li>
+        <li>A stored field is named by its label, never picked with <code>_.</code>: <code>textAt @"title"</code>, <code># providedAt @"halted" @"phase"</code>, <code>listOfAt @"Message opened" @"id" @"messages"</code>.</li>
+        <li>The view writes no row: the model is the seed's signature (<code>freshCount :: Count</code>, <code>type Count = { counted :: Int }</code>), and a classifier's cases, a projection's element row, a payload and an action's outcomes are their functions' signatures (<code>action @"Charge card" chargeFlaky</code>, its outcomes closed by the statuses that tell them).</li>
       </ul>
 
       <h3>Labels and copy</h3>
       <ul>
-        <li>A label is its caption verbatim and only the name: <code>filledTextField @"First name"</code>. A format, an example or a unit is not the name and rides the primed sibling: <code>filledTextField' @"Start date" { hint: "DD.MM.YYYY" }</code>, <code>sliderLive' @"Amount" { unit: "€" }</code>.</li>
-        <li>Why: the code stays as close to the running UI as possible. The words on the screen are the words in the code, so a line is found from the screen and the screen from a line.</li>
-        <li>A leaf takes no options record: it states its copy once, as its label. A word with optional presentation has a primed sibling: <code>button' @"Place order" { icon: "local_cafe" }</code>.</li>
-        <li>Options are leaves, one per case and one per line, in a <code>VariantToVariant.do</code> block in display order: <code>option @"one-way flight"</code>, <code>option @"return flight"</code>.</li>
-        <li>A case label is read back with <code>caseText</code>, never restated in a <code>match</code>.</li>
-        <li>A display's text is a named copy function in the view model, whole line including glue: <code>balanceLine :: { balance :: Number } -&gt; String</code>.</li>
-        <li>Static copy (a heading, a note) is a literal in the view: <code>staticText "Hours"</code>.</li>
-        <li>Events and outcomes carry data, never copy: flight-booker's confirmation is spelled by <code>bookingLine</code> from the trip the event carries. A status tells its case and the case label is its whole copy, so an action names its outcomes as the words the user reads: <code>Aff [ "Total missing" :: {}, "Order submitted" :: {} ]</code>.</li>
+        <li>A label is its caption verbatim and only the name — the words on the screen are the words in the code. A format, an example or a unit rides the primed sibling (<code>filledTextField' @"Start date" { hint: "DD.MM.YYYY" }</code>, <code>sliderLive' @"Amount" { unit: "€" }</code>), as does optional presentation (<code>button' @"Place order" { icon: "local_cafe" }</code>).</li>
+        <li>Options are leaves, one per case, in a <code>VariantToVariant.do</code> block in display order: <code>option @"one-way flight"</code>, <code>option @"return flight"</code>. A case label is read back with <code>caseText</code>, never restated in a <code>match</code>.</li>
+        <li>A display's text is a named copy function in the view model, the whole line including glue (<code>balanceLine :: { balance :: Number } -&gt; String</code>); static copy is a literal in the view (<code>staticText "Hours"</code>).</li>
+        <li>Events carry data, never copy. A status tells its case and the label is its whole copy, so an action names its outcomes as the words the user reads (<code>Aff [ "Total missing" :: {}, "Order submitted" :: {} ]</code>) and a status stands only after an action; a command straight from an emitter folds silently (<code>fold @"Add" addTodo</code>). What the user must keep is a model field shown by a display.</li>
       </ul>
 
       <h3>Types and values</h3>
       <ul>
-        <li>No <code>data</code> or <code>newtype</code> declarations in UI code; a shared row is named by a <code>type</code> synonym, a name for the structure (<code>type Trip = { … }</code>).</li>
-        <li>A row holds records, variants, <code>String</code>, <code>Number</code>, <code>Int</code> and <code>Array</code>.</li>
-        <li>No <code>Maybe</code> in the model: <code>selected :: [ none :: {}, picked :: { index :: Int } ]</code>.</li>
-        <li>No <code>Boolean</code> unless a Boolean editor edits it: <code>phase :: [ halted :: {}, timing :: {} ]</code>.</li>
-        <li>The model row is stated once, by the seed's signature: <code>freshCount :: Count</code>, <code>type Count = { counted :: Int }</code>, closed on the view by <code># looped # with freshCount</code>.</li>
-        <li>The view writes no row: a classifier's cases, a projection's element row, a payload and an action's outcomes are their functions' signatures — <code>action @"Charge card" chargeFlaky</code>, its outcomes closed by the statuses that tell them.</li>
-        <li>A stored field is named by its label, never picked with <code>_.</code>: <code>textAt @"title"</code>, <code>doubleClickTile @"Cell double-clicked" @"key"</code>, <code># providedAt @"halted" @"phase"</code>, <code>listOfAt @"Message opened" @"id" @"messages"</code>.</li>
-        <li>Business values are model data: a slider edits <code>{ current, min, max, step }</code> from the seed.</li>
-        <li>Constants have business names (<code>tickPeriod</code>, <code>freshCount</code>), never <code>initial</code>, <code>default</code> or <code>seed</code>.</li>
+        <li>No <code>data</code> or <code>newtype</code> in UI code; a shared row is a <code>type</code> synonym (<code>type Trip = { … }</code>). A row holds records, variants, <code>String</code>, <code>Number</code>, <code>Int</code> and <code>Array</code>.</li>
+        <li>No <code>Maybe</code> in the model (<code>selected :: [ none :: {}, picked :: { index :: Int } ]</code>); no <code>Boolean</code> unless a Boolean editor edits it (<code>phase :: [ halted :: {}, timing :: {} ]</code>).</li>
+        <li>Business values are model data (a slider edits <code>{ current, min, max, step }</code> from the seed); constants have business names (<code>tickPeriod</code>, <code>freshCount</code>), never <code>initial</code>, <code>default</code> or <code>seed</code>.</li>
       </ul>
 
       <h3>Business functions</h3>
       <ul>
-        <li>A signature is the compiler's hint with its tails filled: the row the stage is fed, closed. <code>Record t0 -&gt; String</code> reported, <code>countLine :: Count -&gt; String</code> written, never narrowed, never left open.</li>
-        <li>A handler updates the row it is given: <code>increment m = m { counted = m.counted + 1 }</code>.</li>
-        <li>A constant replaces the model only whole, by a reset: <code>reset @"New game" openingPosition</code>.</li>
-        <li>Each event case has its own fold, applied to the model the event lands on: <code>fold @"Count" increment</code>. Buttons and folds are one line of the view, <code>( … ) # stepped</code>.</li>
-        <li>A status is a fold with a face, <code>snackbar @"Card charged" captured</code>; it shows its case label, never the fold's result, so it stands only after an action whose outcome it is. A command straight from an emitter folds silently: <code>fold @"Add" addTodo</code>. What the user must keep is a model field shown by a display, never copy flashed by a status.</li>
-        <li>An action is opened by its progress indicator alone and stands after its button, followed by the statuses that tell its outcomes; an outcome that is told and changes nothing is folded <code>kept</code>.</li>
-        <li>An event with a payload of its own is folded by <code>foldInto @"Person picked" pick</code>, its handler one record: <code>pick :: { event :: Int, model :: Catalogue } -&gt; Catalogue</code>.</li>
-        <li>An action returns the model under its outcome case, folded by <code>captured</code>.</li>
-        <li>A business function takes one record; field names carry the roles: <code>returnBetween { out, back }</code>.</li>
+        <li>A handler updates the row it is given (<code>increment m = m { counted = m.counted + 1 }</code>); a constant replaces the model only whole, by <code>reset @"New game" openingPosition</code>.</li>
+        <li>Each event case has its own fold, applied to the model the event lands on: <code>fold @"Count" increment</code>; an event with a payload is <code>foldInto @"Person picked" pick</code>, its handler one record, <code>pick :: { event :: Int, model :: Catalogue } -&gt; Catalogue</code>. Buttons and folds are one line of the view, <code>( … ) # stepped</code>.</li>
+        <li>An action is opened by its progress indicator and stands after its button, followed by the statuses that tell its outcomes: one that returns the model is folded <code>captured</code>, one that changes nothing <code>kept</code>.</li>
       </ul>
 
-      <h3>Wiring</h3>
+      <h3>Wiring and layout</h3>
       <ul>
-        <li>Never import the ecosystem's <code>Data.Profunctor</code>; a reshaping rides a word's argument: <code>actedOf @l rowsOf</code>, <code>dispatchedOf @l arrival</code>.</li>
-        <li>State lives in the model: no FFI stashes, window globals or hidden loop channels. An application has one knot, <code># looped</code>, around everything that changes the model.</li>
-        <li>Stock components only; custom style only for data-driven graphics.</li>
+        <li>Never import the ecosystem's <code>Data.Profunctor</code>; a reshaping rides a word's argument (<code>actedOf @l rowsOf</code>). State lives in the model, and an application has one knot, <code># looped</code>, around everything that changes it. Stock components only; custom style only for data-driven graphics.</li>
+        <li>No comments in a view; the view model says in <code>-- |</code> comments what each type and function means in the domain. Explicit imports, <code>Prelude</code> included.</li>
+        <li>A line leads with what is seen, via <code>$</code> (<code>headline4 $ text countLine</code>, never parentheses), and trails with data words, via <code>#</code> (<code>( headlineSmall $ text wonLine ) # inCase @"won" gameOutcome</code>); a decorator trails its element. Two-space indentation; a closer or <code>#</code> chain never starts a line, except the knot's closer (<code># looped # with seed</code>) and that of a broken row; a signature too long for its line takes one field per line.</li>
+        <li>Pipeline order: load, form, live summary, events, actions with their statuses, closed by the seed. The entry is <code>body $ …</code>; the page supplies the surface.</li>
       </ul>
 
       <h3>Compiler</h3>
@@ -123,7 +83,7 @@
 
     <section id="tracing">
       <h2>Tracing</h2>
-      <p>Every demo page runs with tracing on: open the browser console, set its level to include <em>Verbose</em>, and filter on <code>[bambik]</code> to see each value flow from stage to stage. DevTools → Elements → Accessibility shows the same app as its model: every component is named by its label, so groups read as sub-records, editors as fields with their values and buttons as cases.</p>
+      <p>Every demo page runs with tracing on: in the browser console, at the <em>Verbose</em> level, filter on <code>[bambik]</code> to see each value flow from stage to stage. DevTools → Elements → Accessibility shows the app as its model: every component is named by its label, so groups read as sub-records, editors as fields with their values and buttons as cases.</p>
     </section>
   </body>
 </html>
