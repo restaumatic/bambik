@@ -49,12 +49,13 @@ copy function (`countLine`), taken by the display at the leaf.
    files, the counter as starter.
 2. **[writing.md](writing.md)** — write the two modules. Its sections:
    *Terms* (the only vocabulary this skill uses), *The pipeline*,
-   *Components*, *Stages*, *App shape*, *Conditional visibility*,
+   *Components*, *Stages* (the reference: from the line you need to the
+   word and its demo), *App shape*, *Conditional visibility*,
    *Modals*, *Collections*, *View module and view model module*, **Code style** (the
    contract for application code: *Layout*, *Types and values*,
    *Business functions*, *Wiring*), *Writing order* (view first; its holes list the
    view model's signatures), *What the laws guarantee*, *When it does not
-   compile*, *When it does not propagate*, *Finish by running it*, *Looking things up*.
+   compile*, *When it does not propagate*, *Looking things up*.
 3. **[building.md](building.md)** — run dev mode, verify in a headless
    browser, bundle for deploy, open the API reference.
 

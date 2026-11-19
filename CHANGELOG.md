@@ -6,6 +6,25 @@ history they used to carry inline — what was added, what was tried and
 withdrawn, and the date — so a rule can be read without its obituary.
 Before 2026-07 the history is the git log.
 
+## 2026-11-19
+- **writing.md cut to its rules, 1 133 → 745 lines, no rule changed.** Every rule had been told once per genre — in the tutorial
+  prose, in the *Stages* table, in *Code style* and again in *Business
+  functions* (the fold words four times, the view-determines-the-view-model
+  rule six times, statuses, panes, modals and collections three or four
+  each) — with its algebraic justification inline and a demo citation on
+  nearly every sentence. Now each rule is stated once: the *Stages* table
+  is the reference the other sections point at, *Code style* is a
+  checklist without rationale, *Terms* is one table (the shape and cycle
+  tables merged) and defines *knot* and *ocular*, which were used and never
+  defined. Two facts arrived: an `Aff` that throws emits nothing and warns,
+  so a failure the user must see is an outcome case; and the compile table
+  gained the editor-names-a-field-the-model-lacks row and names the
+  forgotten-`# stepped` message as the compiler prints it (`Function t0`
+  against `Record`, at `looped`). *Finish by running it* folded into
+  *Writing order* (SKILL.md's section list follows). The demo pages'
+  `#code-style` note and demo/workflow.html restate rules, not sections,
+  and are unchanged.
+
 ## 2026-11-18
 - **No comments is a rule for view code only.** writing.md (and the
   `#code-style` note in demo/index.html) now asks the opposite of the view
