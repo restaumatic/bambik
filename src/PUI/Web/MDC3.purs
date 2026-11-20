@@ -1450,7 +1450,8 @@ dataTable tableName = dataTable' tableName { fullWidth: false }
 -- | `dataTable` with options: `fullWidth: true` stretches the table across
 -- | the width its container gives it, its columns spread out, instead of
 -- | hugging its content (`dataTable' "Statystyki" { fullWidth: true }`,
--- | diner). `fullWidth: false` is `dataTable`.
+-- | diner), and given less than 600px it tightens its cells, as
+-- | `layoutGrid` folds its columns. `fullWidth: false` is `dataTable`.
 dataTable' :: String -> { fullWidth :: Boolean } -> PUI Web {} {} -> Ocular (PUI Web)
 dataTable' tableName { fullWidth } headerCells content = fromHandles do
   liftEffect $ ensureStyle "md3-data-table" dataTableCss
@@ -1474,10 +1475,12 @@ rowHeader heading = th >>> cl "md-typescale-title-small" >>> "role" := "rowheade
 dataTableCss :: String
 dataTableCss = """
 .md3-data-table { border: 1px solid var(--md-sys-color-outline-variant, #cac4d0); border-radius: 12px; overflow-x: auto; display: inline-block; max-width: 100%; box-sizing: border-box; }
-.md3-data-table--full { display: block; align-self: stretch; }
+.md3-data-table--full { display: block; align-self: stretch; container-type: inline-size; }
 .md3-data-table table { border-collapse: collapse; width: 100%; color: var(--md-sys-color-on-surface, #1d1b20); }
 .md3-data-table th { text-align: left; height: 56px; padding: 0 16px; }
-.md3-data-table td, .md3-data-table tbody th { height: 52px; padding: 0 16px; border-top: 1px solid var(--md-sys-color-outline-variant, #cac4d0); }
+.md3-data-table td, .md3-data-table tbody th { height: 52px; padding: 6px 16px; box-sizing: border-box; border-top: 1px solid var(--md-sys-color-outline-variant, #cac4d0); }
+.md3-data-table :is(td, th) > :is(p, h1, h2, h3, h4, h5, h6) { margin: 0; }
+@container (max-width: 599px) { .md3-data-table :is(td, th), .md3-data-table tbody th { padding-inline: 8px; } }
 """
 
 -- | One row of a `dataTable` — a single record's line across the columns.

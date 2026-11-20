@@ -125,7 +125,7 @@ a guessed field fails as `TypesDoNotUnify` on the options record.
   `radio`, `segment`, `tab`); they never read the model. A fact about an
   option (a room's seats) is model data, never part of its name; options
   the model rules out stay drawn and disabled, given as a function from
-  the row (`select' @"Stolik" { unavailable: busyTables }`, diner).
+  the row (`select'`, in its header).
 - **Displays** take a copy function, not a label (`headline4 $ text
   countLine`); so does a number drawn as a bar (`linearProgress
   elapsedFraction`).
@@ -178,7 +178,7 @@ index from the line you need to the word and a demo that writes it.
 | an event whose payload the fold needs | `foldInto @"Person picked" pick`, `pick :: { event :: Int, model :: Catalogue } -> Catalogue` | crud, inbox, cells |
 | a constant replacing the model whole | `reset @"New game" openingPosition` | tic-tac-toe |
 | an event line that exists in one case | `( … ) # stepped # inCaseAt @"watching" @"phase"` | ticker |
-| an emitter inside a list element, its event carrying that element's row | `( listOfAt' @"Pozycja wydana" @"dish" @"lines" { selected: isPlated } ticketItem ) # joined @"Pozycja wydana"` inside `# gatheredOf @"number" cooking`, folded by `foldInto @"Pozycja wydana" plateDish` | diner |
+| an emitter inside a list element, its event carrying that element's row | `( listOfAt' @"Pozycja wydana" @"dish" @"lines" { selected: isPlated } ticketItem ) # joined @"Pozycja wydana"` inside `# gatheredOf @"number" ticketsPage`, folded by `foldInto @"Pozycja wydana" plateDish` | diner |
 | a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | stopwatch, timer |
 | an invariant between edited fields | `filledTextField @"Celsius" # settled fromCelsius` | temperature-converter |
 | an effect on a button's case, in the fold block | `( Semigroupoid.do { indeterminateLinearProgress # action @"Place order" placeOrder; snackbar @"Order placed" (const usualOrder) } )`, the pair owning the case | espresso-bar, order-form |

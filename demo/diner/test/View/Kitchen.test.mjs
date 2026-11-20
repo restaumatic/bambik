@@ -1,3 +1,5 @@
+import { fits } from '../fits.mjs'
+
 // Kuchnia: tickets in the order they were sent; a ticket is ready once
 // every line is plated.
 export const tests = [
@@ -22,5 +24,25 @@ export const tests = [
     name: 'an empty kitchen says so',
     seed: 'emptyDiner',
     run: async ({ text, assert }) => assert.includes(await text(), 'Wszystko ugotowane', 'the note'),
+  },
+  {
+    name: 'ten tickets to a page, each with the minutes it has waited; the oldest is overdue',
+    seed: 'busyKitchen',
+    run: async ({ click, ev, text, assert }) => {
+      const waits = () => ev(`[...document.querySelectorAll('.md3-card .md-typescale-label-large')].map(w => parseInt(w.innerText))`)
+      assert.includes(await text(), '1–10 z 20', 'ten of twenty')
+      const first = await waits()
+      assert.equal(first.length, 10, 'ten tickets')
+      assert.equal(first.every((w, i) => i === 0 || w <= first[i - 1]), true, 'oldest first')
+      assert.equal(await ev(`getComputedStyle(document.querySelector('.md3-card .md-typescale-label-large')).fontWeight`), '700', 'the oldest wait is marked')
+      await click('Następna strona')
+      assert.includes(await text(), '11–20 z 20', 'the rest')
+      assert.equal((await waits())[0] <= first[9], true, 'younger than the first page')
+    },
+  },
+  {
+    name: 'fits a phone, a tablet and a desktop',
+    seed: 'busyKitchen',
+    run: fits,
   },
 ]

@@ -35,7 +35,7 @@ lawBenchMDC3 = do
     , bench "tabBar" "×→×" tabs (tabBar @"Tab" tabOptions)
     , bench "tabBar'" "×→×" tabs (tabBar @"Tab" iconTabOptions)
     , bench "select" "×→×" chosen (select @"Pick" selectOptions)
-    , bench "select'" "×→×" chosen (select' @"Pick" { unavailable: const [] } selectOptions)
+    , bench "select'" "×→×" ruled (select' @"Pick" { unavailable: ruledOut } selectOptions)
     , bench "radioButton" "×→×" chosen (radioButton @"Pick" radioOptions)
     , bench "selectUnpicked" "×→×" picks (selectUnpicked @"Pick" @"chosen" selectOptions)
     , bench "selectOptional" "×→×" picks (selectOptional @"Pick" @"chosen" @"unchosen" selectOptions)
@@ -105,6 +105,8 @@ lawBenchMDC3 = do
     segment @"one"
     segment @"two"
   chosen = [ { "Pick": .one {} }, { "Pick": .two {} } ]
+  ruled = [ { "Pick": .one {}, out: [ .two {} ] }, { "Pick": .two {}, out: [] } ]
+  ruledOut r = r.out
   picks = [ { "Pick": .unchosen {} }, { "Pick": .chosen (.one {}) }, { "Pick": .chosen (.two {}) } ] :: Array { "Pick" :: [ chosen :: [ one :: {}, two :: {} ], unchosen :: {} ] }
   rows = [ { n: 1 }, { n: 2 } ]
   decisions = [ .decision { n: 1 }, .decision { n: 2 } ] :: Array [ decision :: { n :: Int } ]

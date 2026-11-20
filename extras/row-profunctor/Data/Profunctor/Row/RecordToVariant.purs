@@ -131,7 +131,7 @@ discard first cont = bind first (\_ -> cont unit)
 -- | of the **element it happened in**: an emitter inside a list element,
 -- | joined there, leaves with that element's row — `( listOfAt' @"Line
 -- | plated" @"dish" @"lines" … ) # joined @"Line plated"` under `#
--- | gatheredOf @"number" cooking` (diner), the plated dish with its
+-- | gatheredOf @"number" ticketsPage` (diner), the plated dish with its
 -- | order. At an application's top level nothing is joined: the model
 -- | meets the event at its fold (`PUI`'s `foldInto`, `kept`). The label
 -- | **closes the source** to case `l`, and the joined case leaves closed

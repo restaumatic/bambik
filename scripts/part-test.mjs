@@ -35,6 +35,8 @@
 //   text()                      the page's visible text
 //   ev(js)                      the value of a page expression
 //   shot(file)                  a screenshot
+//   resize(width)               the viewport set to `width` CSS pixels (a
+//                               test starts at its `width:`, 1100 when none)
 //   sleep(ms)
 //   assert.equal(actual, expected, what)
 //   assert.includes(text, part, what) / assert.excludes(text, part, what)
@@ -198,6 +200,10 @@ try {
         text: () => ev(`document.body.innerText`),
         ev,
         shot: async file => writeFileSync(file, Buffer.from((await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true })).result.data, 'base64')),
+        resize: async width => {
+          await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 600 })
+          await sleep(300)
+        },
         sleep,
         assert: {
           equal: (actual, expected, what) => { if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Failure(`${what}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`) },

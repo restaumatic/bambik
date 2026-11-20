@@ -2,11 +2,12 @@
 // MDC2's keep their law-bench rows): while it holds for the row last fed,
 // the button is drawn disabled and a real click reports nothing; once the
 // row changes so it no longer holds, the button reports again.
-// Walks diner's dish cards: ordering the last portions of a dish disables
-// its add button and the + of its order row, a click on it adds nothing,
-// taking one portion back enables the + again, and removing the dish from
-// the order — the trash icon asks first: its Cancel, captioned "Nie, nie
-// usuwaj dania", keeps the line, the confirm removes it — gives the portions back and enables the add button.
+// Walks diner's menu at the table the service opens on: ordering the last
+// portions of a dish disables its add button and the + of its order row, a
+// click on it adds nothing, taking one portion back enables the + again,
+// and removing the dish from the order — the trash icon asks first: its
+// Cancel, captioned "Nie, nie usuwaj dania", keeps the line, the confirm
+// removes it — gives the portions back and enables the add button.
 import { byName } from '../../demos.mjs'
 
 export const demos = ['diner']
@@ -14,24 +15,20 @@ export const pages = [
   { url: `/${byName('diner').page}`, label: 'mdc3' },
 ]
 
-const addButton = (dish) => `(() => {
-  const card = [...document.querySelectorAll('.md3-card, .mdc-card')].find(c => c.innerText.trim().startsWith(${JSON.stringify(dish)}))
-  return card.querySelector('md-filled-button, button')
-})()`
+const rowOf = (table, dish) => `[...document.querySelectorAll('table[aria-label="${table}"] tbody tr')].find(r => r.cells[0].innerText.trim().startsWith(${JSON.stringify(dish)}))`
+const addButton = (dish) => `${rowOf('Menu', dish)}.querySelector('md-filled-button')`
 const quantity = (dish) => `(() => {
-  const row = [...document.querySelectorAll('tr')].find(r => r.cells[0] && r.cells[0].textContent.trim() === ${JSON.stringify(dish)} && r.cells.length > 3)
-  return row ? row.cells[1].textContent.trim() : ''
+  const row = ${rowOf('Zamówienie', dish)}
+  return row ? [...row.cells[1].childNodes[0].childNodes].filter(n => n.nodeType === 3).map(n => n.nodeValue).join('').trim() : ''
 })()`
-const rowButton = (dish, label) => `(() => {
-  const row = [...document.querySelectorAll('tr')].find(r => r.cells[0] && r.cells[0].textContent.trim() === ${JSON.stringify(dish)} && r.cells.length > 3)
-  return [...row.querySelectorAll('md-icon-button, button')].find(b => b.getAttribute('aria-label') === ${JSON.stringify(label)})
-})()`
+const rowButton = (dish, label) => `[...${rowOf('Zamówienie', dish)}.querySelectorAll('md-icon-button')].find(b => b.getAttribute('aria-label') === ${JSON.stringify(label)})`
 
-const dialogButton = (caption) => `[...document.querySelectorAll('md-dialog [slot=actions] *, .mdc-dialog__actions button')].find(b => b.textContent.trim().toLowerCase() === ${JSON.stringify(caption.toLowerCase())})`
+const dialogButton = (caption) => `[...document.querySelectorAll('md-dialog[open] [slot=actions] *')].find(b => b.textContent.trim().toLowerCase() === ${JSON.stringify(caption.toLowerCase())})`
 
 export const run = async ({ ev, session, assertEq, sleep, page }) => {
   await sleep(600)
-  for (let i = 0; i < 25 && !(await ev(`document.body.querySelector('md-tabs, [role=tablist]') !== null`)); i++) await sleep(200)
+  // the service loads before anything is listed
+  for (let i = 0; i < 40 && !(await ev(`document.querySelector('table[aria-label="Menu"]') !== null`)); i++) await sleep(200)
   await sleep(500)
 
   const mouse = (type, x, y) => session.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1 })
@@ -44,35 +41,35 @@ export const run = async ({ ev, session, assertEq, sleep, page }) => {
   }
   const disabled = (dish) => ev(`${addButton(dish)}.hasAttribute('disabled')`)
 
-  assertEq(await disabled('Tiramisu'), false, `[${page}] a dish in stock has its add button enabled`)
-  await click(addButton('Tiramisu'))
-  await click(addButton('Tiramisu'))
-  assertEq(await ev(quantity('Tiramisu')), '2', `[${page}] the last two portions are ordered`)
-  assertEq(await disabled('Tiramisu'), true, `[${page}] the sold-out dish's add button is disabled`)
+  assertEq(await disabled('Affogato ze szpinakiem'), false, `[${page}] a dish in stock has its add button enabled`)
+  await click(addButton('Affogato ze szpinakiem'))
+  await click(addButton('Affogato ze szpinakiem'))
+  assertEq(await ev(quantity('Affogato ze szpinakiem')), '2', `[${page}] the last two portions are ordered`)
+  assertEq(await disabled('Affogato ze szpinakiem'), true, `[${page}] the sold-out dish's add button is disabled`)
 
-  await ev(`(() => { window.__clicks = 0; ${addButton('Tiramisu')}.addEventListener('click', () => window.__clicks++) })()`)
-  await click(addButton('Tiramisu'))
+  await ev(`(() => { window.__clicks = 0; ${addButton('Affogato ze szpinakiem')}.addEventListener('click', () => window.__clicks++) })()`)
+  await click(addButton('Affogato ze szpinakiem'))
   assertEq(await ev(`window.__clicks`), 0, `[${page}] a real click on the disabled button reaches no click listener`)
-  assertEq(await ev(quantity('Tiramisu')), '2', `[${page}] and adds nothing`)
-  assertEq(await ev(`${rowButton('Tiramisu', 'Dodano porcję')}.hasAttribute('disabled')`), true, `[${page}] the order row's + is disabled too`)
+  assertEq(await ev(quantity('Affogato ze szpinakiem')), '2', `[${page}] and adds nothing`)
+  assertEq(await ev(`${rowButton('Affogato ze szpinakiem', 'Dodano porcję')}.hasAttribute('disabled')`), true, `[${page}] the order row's + is disabled too`)
 
-  await click(rowButton('Tiramisu', 'Zwrócono porcję'))
-  assertEq(await ev(quantity('Tiramisu')), '1', `[${page}] one portion taken back`)
-  assertEq(await ev(`${rowButton('Tiramisu', 'Dodano porcję')}.hasAttribute('disabled')`), false, `[${page}] the order row's + is enabled again`)
-  await click(rowButton('Tiramisu', 'Dodano porcję'))
-  assertEq(await ev(quantity('Tiramisu')), '2', `[${page}] and adds a portion`)
+  await click(rowButton('Affogato ze szpinakiem', 'Zwrócono porcję'))
+  assertEq(await ev(quantity('Affogato ze szpinakiem')), '1', `[${page}] one portion taken back`)
+  assertEq(await ev(`${rowButton('Affogato ze szpinakiem', 'Dodano porcję')}.hasAttribute('disabled')`), false, `[${page}] the order row's + is enabled again`)
+  await click(rowButton('Affogato ze szpinakiem', 'Dodano porcję'))
+  assertEq(await ev(quantity('Affogato ze szpinakiem')), '2', `[${page}] and adds a portion`)
 
-  await click(rowButton('Tiramisu', 'Usuń danie'))
+  await click(rowButton('Affogato ze szpinakiem', 'Usuń danie'))
   await sleep(400)
   await click(dialogButton('Nie, nie usuwaj dania'))
   await sleep(400)
-  assertEq(await ev(quantity('Tiramisu')), '2', `[${page}] the trash icon asks first; Cancel keeps the line`)
-  await click(rowButton('Tiramisu', 'Usuń danie'))
+  assertEq(await ev(quantity('Affogato ze szpinakiem')), '2', `[${page}] the trash icon asks first; Cancel keeps the line`)
+  await click(rowButton('Affogato ze szpinakiem', 'Usuń danie'))
   await sleep(400)
   await click(dialogButton('Usuń danie'))
   await sleep(400)
-  assertEq(await ev(quantity('Tiramisu')), '', `[${page}] confirming removes the line`)
-  assertEq(await disabled('Tiramisu'), false, `[${page}] the portions back, the button is enabled again`)
-  await click(addButton('Tiramisu'))
-  assertEq(await ev(quantity('Tiramisu')), '1', `[${page}] and it reports again`)
+  assertEq(await ev(quantity('Affogato ze szpinakiem')), '', `[${page}] confirming removes the line`)
+  assertEq(await disabled('Affogato ze szpinakiem'), false, `[${page}] the portions back, the button is enabled again`)
+  await click(addButton('Affogato ze szpinakiem'))
+  assertEq(await ev(quantity('Affogato ze szpinakiem')), '1', `[${page}] and it reports again`)
 }

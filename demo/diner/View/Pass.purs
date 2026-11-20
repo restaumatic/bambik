@@ -2,11 +2,12 @@ module Diner.View.Pass (pass) where
 
 import Prelude ((#), ($))
 
-import Diner (Bill, Diner, billPlacedLine, billTotalLine, bills, billsState, numberLine, settle, tableLine)
-import Diner.Design (note)
+import Diner (Bill, Diner, billLine, billsPage, billsState, billTotalLine, paceFace, settle, waitLine)
+import Diner.Design (amountCell, amountHeader, note)
+import Diner.View.Pager (pager)
 import PUI (foldInto, gatheredOf, PUI, stepped)
-import PUI.Web (Web, inCase, provided, text)
-import PUI.Web.MDC3 (button, columnHeader, dataCell, dataRow, dataTable')
+import PUI.Web (Web, attrWith, inCase, provided, text)
+import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable', iconButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 pass :: PUI Web Diner Diner
@@ -15,23 +16,22 @@ pass = Semigroupoid.do
   ( Semigroupoid.do
     billTable # provided @"pending" billsState
     foldInto @"Zapłacono" settle ) # stepped
+  pager # inCase @"pending" billsState
 
 billTable :: PUI Web Diner [ "Zapłacono" :: Bill ]
 billTable =
   dataTable' "Wydawka" { fullWidth: true }
     ( Semigroupoid.do
-      columnHeader "Nr"
-      columnHeader "Godzina"
-      columnHeader "Stolik"
-      columnHeader "Kwota"
-      columnHeader "Płatność" )
-    ( billRow # gatheredOf @"number" bills )
+      columnHeader "Zamówienie"
+      columnHeader "Czeka"
+      amountHeader "Kwota"
+      columnHeader "Zapłata" )
+    ( billRow # gatheredOf @"number" billsPage )
 
 billRow :: PUI Web Bill [ "Zapłacono" :: Bill ]
 billRow =
   dataRow $ Semigroupoid.do
-    dataCell $ text numberLine
-    dataCell $ text billPlacedLine
-    dataCell $ text tableLine
-    dataCell $ text billTotalLine
-    dataCell $ button @"Zapłacono"
+    dataCell $ text billLine
+    ( dataCell $ text waitLine ) # attrWith "style" paceFace
+    amountCell $ text billTotalLine
+    dataCell $ iconButton @"Zapłacono" "payments"

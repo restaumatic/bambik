@@ -1,42 +1,38 @@
 module Diner.View.Report (report) where
 
-import Prelude (identity, (#), ($))
+import Prelude ((#), ($))
 
-import Diner (Diner, Order, numberLine, orderItemsLine, paidOrders, paidState, paidTotalLine, placedLine, tableLine, takingsLine)
-import Diner.Design (note, totalCell)
+import Diner (Diner, Receipt, orderItemsLine, paidPage, paidState, paidTotalLine, receiptLine, takingsLine)
+import Diner.Design (amountCell, amountHeader, note, totalAmountCell)
+import Diner.View.Pager (pager)
 import PUI (actedOf, PUI)
 import PUI.Web (Web, inCase, text)
-import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable', rowHeader)
+import PUI.Web.MDC3 (bodyMedium, bodySmall, columnHeader, dataCell, dataRow, dataTable', rowHeader)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 report :: PUI Web Diner Diner
 report = Semigroupoid.do
   note "Nic jeszcze nie sprzedano" # inCase @"none" paidState
-  paidTable # inCase @"some" paidState
+  ( Semigroupoid.do
+    paidTable
+    pager ) # inCase @"some" paidState
 
 paidTable :: PUI Web Diner Diner
 paidTable =
   dataTable' "Raport" { fullWidth: true }
     ( Semigroupoid.do
-      columnHeader "Nr"
-      columnHeader "Godzina"
-      columnHeader "Stolik"
-      columnHeader "Dania"
-      columnHeader "Kwota" )
+      columnHeader "Zamówienie"
+      amountHeader "Kwota" )
     ( Semigroupoid.do
       dataRow $ Semigroupoid.do
         rowHeader "Łącznie"
-        dataCell identity
-        dataCell identity
-        dataCell identity
-        totalCell takingsLine
-      paidRow # actedOf @"number" paidOrders )
+        totalAmountCell takingsLine
+      paidRow # actedOf @"number" paidPage )
 
-paidRow :: PUI Web Order Order
+paidRow :: PUI Web Receipt Receipt
 paidRow =
   dataRow $ Semigroupoid.do
-    dataCell $ text numberLine
-    dataCell $ text placedLine
-    dataCell $ text tableLine
-    dataCell $ text orderItemsLine
-    dataCell $ text paidTotalLine
+    dataCell $ Semigroupoid.do
+      bodyMedium $ text receiptLine
+      bodySmall $ text orderItemsLine
+    amountCell $ text paidTotalLine
