@@ -2,20 +2,20 @@ module Diner.View.Report (report) where
 
 import Prelude ((#), ($))
 
-import Diner (Diner, Receipt, orderItemsLine, paidPage, paidState, paidTotalLine, receiptLine, takingsLine)
-import Diner.Design (amountCell, amountHeader, note, totalAmountCell)
-import Diner.View.Pager (pager)
+import Diner (Diner, Receipt, isFirstPage, isLastPage, nextPage, orderItemsLine, pageLine, paidPage, paidState, paidTotalLine, previousPage, receiptLine, takingsLine)
+import Diner.Design (amountCell, amountHeader, note, pager, station, totalAmountCell)
 import PUI (actedOf, PUI)
 import PUI.Web (Web, inCase, text)
 import PUI.Web.MDC3 (bodyMedium, bodySmall, columnHeader, dataCell, dataRow, dataTable', rowHeader)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
 report :: PUI Web Diner Diner
-report = Semigroupoid.do
-  note "Nic jeszcze nie sprzedano" # inCase @"none" paidState
-  ( Semigroupoid.do
-    paidTable
-    pager ) # inCase @"some" paidState
+report =
+  station $ Semigroupoid.do
+    note "Nic jeszcze nie sprzedano" # inCase @"none" paidState
+    ( Semigroupoid.do
+      paidTable
+      pager pageLine { isFirst: isFirstPage, isLast: isLastPage, next: nextPage, previous: previousPage } ) # inCase @"some" paidState
 
 paidTable :: PUI Web Diner Diner
 paidTable =

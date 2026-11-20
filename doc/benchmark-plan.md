@@ -22,7 +22,7 @@ the library on it.
 
 1. Tables are data: 40 of them, picked from a tile grid.
 2. The clock ticks every second; the screen shows minutes.
-3. The pager is the app's (`Diner.View.Pager` over `Diner.Design`), no new
+3. The pager is the app's (`pager` in `Diner.Design`), no new
    vocabulary word.
 4. The simulated backend has latency and jitter, no failure injection yet.
 5. The load's progress indicator is indeterminate (`load` reports only
@@ -33,8 +33,9 @@ the library on it.
 - [x] `Diner.Service`, the stand-in server: the day's schema, a pure seeded
       generator (`dayAt load time`, 5 ms for the standard load, 60 ms for
       10 000 orders), `Aff`s answering after a jittered latency. Standard
-      load: 300 dishes, 40 tables, 33 open orders (3 taking, 20 cooking,
-      10 ready), 100 paid, placed over the last 24 hours.
+      load: 304 dishes in five courses, 42 tables, 33 open orders (3
+      taking, 20 cooking, 10 ready) at tables drawn by lot, 219 paid,
+      placed over the last 24 hours.
 - [x] Startup: `indeterminateLinearProgress # load openService`, then
       `capture`, before the knot; the service opens on the first free table.
 - [x] Time in the model: `now` folded from `ticks` every second; tickets and
@@ -43,12 +44,33 @@ the library on it.
 - [x] Pagination: `perPage` and the pages turned are model fields
       (`turned`, one entry per station, valid for the search it was turned
       at); every station lists a derived slice and ends in the shared
-      `Diner.View.Pager`; stock is edited through its slice
+      `pager` of `Diner.Design`; stock is edited through its slice
       (`actedWithin`); one search field narrows the stockroom and the menu.
-- [x] Dishes in groups: every dish belongs to a course (five of them), the
-      stockroom and the menu are looked through by group (a tab bar, "all"
-      first) and by search, both in the shared `Diner.View.Search`; a page
-      turned stands while group and search do.
+- [x] Dishes in groups: every dish belongs to a course (five of them); the
+      stockroom and the menu are each browsed by group (a tab bar, "all"
+      first) or searched by name across every group — the search field on
+      top, the groups under it only while nothing is searched for — each
+      with a group and a search of its own; a page turned stands while
+      group and search do.
+- [x] The hall: tables as tiles in four colours with a sign each and a
+      legend under them, the served table's line saying which order it
+      waits for and since when; the menu as tiles to tap (`surfaceTile`
+      in `Diner.Design`, dimmed and deaf when sold out), 24 to a page
+      (`perPage` is `{ list, tiles }`).
+- [x] Prices: a dish's price is edited in the stockroom (`priceField` in
+      `Diner.Design`), kept as written with a comma before the grosze and
+      read by the view model, a price that cannot be read taking the dish
+      off the menu; amounts are shown with their thousands set apart
+      (`18 311,50 zł`); an order line carries the
+      price its dish had when it was put on the order, so bills, receipts
+      and sales do not move when a price does. The statistics are browsed
+      by group and searched like the stockroom and the menu, on their own
+      state, and their totals are those of the dishes listed.
+- [x] The kitchen: three tickets to a row on a desktop, a ticket's head on
+      one line, its lines drawn tight. The pass asks before a bill is
+      taken as paid, the kitchen before an order is passed on as ready. A
+      menu tile says beside its dish's name how much of it is on the order
+      being taken (`×3`) and takes the colour of a table that is ordering.
 - [x] Every list in a stated order: stock and menu by name, tickets and
       bills the longest waiting first, receipts the latest placed first,
       sales the best selling first; open orders sit at tables drawn by lot,
@@ -58,7 +80,7 @@ the library on it.
       as a tile grid, controls in one cell; `test/fits.mjs` asserts no
       sideways scroll of the page or of any table at 360, 768 and 1280 px,
       per station.
-- [x] 35 part tests green (`npm run part -- diner`, 70 s); the L15 stack
+- [x] 39 part tests green (`npm run part -- diner`, 70 s); the L15 stack
       green.
 - [ ] Fixtures at 10× and 100× of the standard load: moved to B2, where
       their shape is decided (`Diner.Fixtures.busy…` are the 1× ones).
@@ -92,8 +114,14 @@ What Part A found, before any measurement:
 quick` for a short pass). Built on scripts/smoke/cdp.mjs and chrome.mjs and
 on the part-test mount (`body $ part # looped # with seed`, compiled into a
 scratch directory against a copy of output/), so **scale is a compiled
-fixture, never a knob in the app**. The mounted part is the whole service
-(everything inside the knot) or one station.
+fixture, never a knob in the app**. A fixture mounts one station: the
+knot's body is written in `Diner.View` itself (Eryk's decision, inlined
+2026-11-20), so the whole application runs only as it starts, at the
+standard load (the mount of `test/View.test.mjs`). Startup, the tick with
+every station built and the cross-station walk are measured there; the
+scale sweep of B2 is per station. If a whole-application sweep proves
+necessary, the bench writes its own mount — the six stations under the tab
+bar and the clock — into its scratch directory.
 
 Every number is attributed to one of three layers, measured separately:
 

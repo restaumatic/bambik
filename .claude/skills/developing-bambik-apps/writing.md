@@ -162,7 +162,7 @@ index from the line you need to the word and a demo that writes it.
 | a display shown in one case | `text ticketLine # inCaseAt @"serving" @"display"` | ticket-dispenser |
 | an editor that exists in one case | `filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"` | order-form |
 | a button that exists in one case | `button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"`; in a derived state, `# provided @"bookable" bookingState` | stopwatch; flight-booker |
-| a button drawn but not pressable while the row says so | `button' @"Dodaj" { icon: "add", disabled: isSoldOut }` | diner |
+| a button drawn but not pressable while the row says so | `iconButton' @"Dodano porcję" "add" { disabled: isLineSoldOut }` | diner |
 | a list of displays rendered from the row | `ul $ ( li $ text lapLine ) # actedOf @"number" lapRows` | stopwatch |
 | a list of editors over an array the model stores | `( … ) # actedAt @"id" @"Setlist"` | reorder |
 | a list whose elements emit | `tile @"Key entered" @"key" ( … ) # gatheredOf @"key" (const keyPad)`; over a stored array `# gatheredAt @"key" @"cells"` | calculator, tic-tac-toe; cells |

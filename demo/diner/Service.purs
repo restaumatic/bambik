@@ -10,6 +10,7 @@ module Diner.Service
   , Load
   , Order
   , Portions
+  , Price
   , Stage
   , Time
   , dayAt
@@ -37,9 +38,12 @@ import Effect.Random (randomInt)
 -- | from 1, every order since the day began, and the time it is.
 type Day = { dishes :: Array Dish, now :: Time, orders :: Array Order, tables :: Int }
 
--- | A dish on the menu: the course it belongs to, its price in grosze and
--- | the portions left in stock.
-type Dish = { group :: Course, name :: String, "Porcje" :: Portions, price :: Int }
+-- | A dish on the menu: its price, the course it belongs to and the
+-- | portions left in stock.
+type Dish = { "Cena" :: Price, group :: Course, name :: String, "Porcje" :: Portions }
+
+-- | A price in złoty as written on the menu, a comma before the grosze.
+type Price = String
 
 -- | The courses of the menu, in the order they are served.
 type Course =
@@ -57,8 +61,9 @@ type Portions = [ count :: Int, invalid :: String ]
 -- | along it is.
 type Order = { lines :: Array Line, number :: Int, stage :: Stage, table :: Int }
 
--- | A dish ordered in some quantity, and whether the kitchen has plated it.
-type Line = { dish :: String, quantity :: Int, state :: [ ordered :: {}, plated :: {} ] }
+-- | A dish ordered in some quantity, at the price in grosze it had when it
+-- | was put on the order, and whether the kitchen has plated it.
+type Line = { dish :: String, price :: Int, quantity :: Int, state :: [ ordered :: {}, plated :: {} ] }
 
 -- | An order's life: taken at the table, cooking from the time it was placed,
 -- | ready at the pass until it is paid, then paid for its total.
@@ -84,10 +89,10 @@ type Load =
   , taking :: Int
   }
 
--- | A busy day in a large restaurant: a long menu, a full hall, a hundred
--- | orders already paid.
+-- | A busy day in a large restaurant: a long menu, a full hall, a couple of
+-- | dozen orders already paid.
 standardLoad :: Load
-standardLoad = { cooking: 20, dishes: 300, paid: 100, ready: 10, seed: 7, tables: 40, taking: 3 }
+standardLoad = { cooking: 20, dishes: 304, paid: 219, ready: 10, seed: 7, tables: 42, taking: 3 }
 
 -- | The day as of now, at the standard load.
 today :: Aff Day
@@ -108,11 +113,13 @@ taken number = do
 dayAt :: Load -> Time -> Day
 dayAt load time = { dishes, now: time, orders, tables: load.tables }
   where
-  dishes = map dish (range 0 (load.dishes - 1))
-  dish i =
-    { name: (dishAt i).name
-    , group: (dishAt i).course
-    , price: 650 + 50 * drawn 1 i 40
+  -- the menu with every price in grosze, as the orders' lines keep them
+  menu = map (\i -> { cents: 650 + 50 * drawn 1 i 40, course: (dishAt i).course, i, name: (dishAt i).name }) (range 0 (load.dishes - 1))
+  dishes = map dish menu
+  dish { cents, course, i, name } =
+    { name
+    , group: course
+    , "Cena": show (cents / 100) <> "," <> (if mod cents 100 < 10 then "0" else "") <> show (mod cents 100)
     , "Porcje": .count (if drawn 2 i 9 == 0 then 0 else 2 + drawn 3 i 18)
     }
   orders = mapMaybe order (range 1 (load.paid + pipeline + load.taking))
@@ -124,7 +131,7 @@ dayAt load time = { dishes, now: time, orders, tables: load.tables }
         { number
         , table: 1 + drawn 4 number load.tables
         , lines: linesOf number \_ -> .plated {}
-        , stage: .paid { placed: paidAt number, total: sum (map (\p -> p.quantity * p.dish.price) (picks number)) }
+        , stage: .paid { placed: paidAt number, total: sum (map (\p -> p.quantity * p.dish.cents) (picks number)) }
         }
     | number <= load.paid + load.ready = seated (number - load.paid) \table ->
         { number, table, lines: linesOf number \_ -> .plated {}, stage: .ready { placed: placedAt (number - load.paid) } }
@@ -143,11 +150,11 @@ dayAt load time = { dishes, now: time, orders, tables: load.tables }
   paidAt number = time - 86400 + (number * 82800) / (load.paid + 1) + drawn 5 number 300
   -- the open orders placed over the last 50 minutes, oldest first
   placedAt seat = time - 3000 + ((seat - 1) * 2940) / max 1 pipeline + drawn 6 seat 60
-  linesOf number plating = map (\p -> { dish: p.dish.name, quantity: p.quantity, state: plating p.slot }) (picks number)
+  linesOf number plating = map (\p -> { dish: p.dish.name, price: p.dish.cents, quantity: p.quantity, state: plating p.slot }) (picks number)
   -- one to four dishes, no dish twice
   picks number = nubByEq (\a b -> a.dish.name == b.dish.name) (mapMaybe (pick number) (range 1 (1 + drawn 7 number 4)))
   pick number slot = map (\d -> { dish: d, quantity: 1 + drawn 9 (number * 8 + slot) 3, slot })
-    (index dishes (drawn 8 (number * 8 + slot) (length dishes)))
+    (index menu (drawn 8 (number * 8 + slot) (length menu)))
   drawn stream i below = if below < 1 then 0 else mod (scrambled (load.seed * 7919 + stream * 104729 + i)) below
 
 -- | The `i`-th dish of a menu: thirty dishes, each in ten variations, and

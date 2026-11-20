@@ -12,7 +12,7 @@
 //   export const tests = [
 //     { name: 'an order sent makes its table busy', seed: 'dinnerService',
 //       run: async ({ click, text, assert }) => {
-//         await click('Dodaj', 'Risotto')
+//         await click('Risotto', 'dostępne')
 //         await click('Wyślij do kuchni')
 //         assert.includes(await text(), 'Stolik zajęty', 'the table is busy')
 //       } },
@@ -24,6 +24,10 @@
 // # looped # with seed`, compiled into .part/ (gitignored) against a copy
 // of output/, and every test runs on a fresh page.
 //
+// The view's own tests, `test/View.test.mjs` beside `View.purs`, run the
+// application itself as it starts — its load, its knot, whatever it opens
+// on — so they name no seed (`npm run part -- diner View`).
+//
 // What a test is handed:
 //   click(label, scope?)        a real mouse click on the visible control whose
 //                               accessible name or text is `label`; with a
@@ -31,7 +35,8 @@
 //                               whose text contains `scope` (a card, a row)
 //   fill(field, text, scope?)   type into the field named `field` (its label)
 //   pick(field, option)         open the select named `field`, click `option`
-//   disabled(label, scope?)     whether that control is disabled
+//   disabled(label, scope?)     whether that control, or the control it is
+//                               part of, is disabled
 //   text()                      the page's visible text
 //   ev(js)                      the value of a page expression
 //   shot(file)                  a screenshot
@@ -82,11 +87,14 @@ for (const file of existsSync(testDir) ? walk(testDir).filter(f => f.endsWith('.
   if (partFilter && partName !== partFilter) continue
   const partFile = path.join(demo.dir, path.relative(testDir, file).replace(/\.test\.mjs$/, '.purs'))
   const part = sources.find(s => s.file === partFile)
-  if (!part || !part.mod?.startsWith(`${demo.mod}.`)) fail(`${file} tests no part of ${demo.mod} (no ${partFile})`)
+  // the view's own tests (`test/View.test.mjs` beside `View.purs`) run the application as it starts
+  const app = part?.mod === demo.mod
+  if (!part || !(app || part.mod?.startsWith(`${demo.mod}.`))) fail(`${file} tests no part of ${demo.mod} (no ${partFile})`)
   const exported = exportsOf(part.src)
   if (exported.length !== 1) fail(`${part.mod} exports ${exported.join(', ') || 'no value'}; a part exports its one stage`)
   const { tests } = await import(pathToFileURL(path.resolve(file)))
-  suites.push({ file, partName, part: part.mod, fn: exported[0], tests })
+  if (app && tests.some(t => t.seed)) fail(`${file}: the application starts by itself, its tests name no seed`)
+  suites.push({ file, partName, part: part.mod, fn: exported[0], tests, app })
 }
 if (!suites.length) fail(`no part tests${partFilter ? ` for ${partFilter}` : ''} under ${testDir}`)
 
@@ -94,13 +102,21 @@ if (!suites.length) fail(`no part tests${partFilter ? ` for ${partFilter}` : ''}
 const out = '.part'
 rmSync(`${out}/src`, { recursive: true, force: true })
 mkdirSync(`${out}/src`, { recursive: true })
-const mountName = (s, seed) => `${s.partName}.${seed[0].toUpperCase()}${seed.slice(1)}`
+const mountName = (s, seed) => s.app ? `${s.partName}.App` : `${s.partName}.${seed[0].toUpperCase()}${seed.slice(1)}`
 const mounts = new Map()
 for (const s of suites) for (const t of s.tests) {
   const name = mountName(s, t.seed)
   if (mounts.has(name)) continue
-  const from = seedModule(t.seed)
   mounts.set(name, true)
+  if (s.app) {
+    writeFileSync(`${out}/src/${name}.purs`, [
+      `module PartMain.${name} (main) where`, '',
+      'import Prelude', 'import Effect (Effect)', `import ${s.part} as App`, '',
+      'main :: Effect Unit', `main = App.${s.fn}`, '',
+    ].join('\n'))
+    continue
+  }
+  const from = seedModule(t.seed)
   writeFileSync(`${out}/src/${name}.purs`, [
     `module PartMain.${name} (main) where`, '',
     'import Prelude', 'import Effect (Effect)', 'import PUI (looped, with)',
@@ -193,7 +209,7 @@ try {
           await press(await at(locate(option), `option "${option}" of "${field}"`))
         },
         disabled: async (label, scope) => {
-          const d = await ev(`(() => { const el = ${locate(label, scope)}; return el && (el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true' || !!el.disabled) })()`)
+          const d = await ev(`(() => { const el = ${locate(label, scope)}; if (!el) return null; for (let a = el; a; a = a.parentElement) if (a.hasAttribute('disabled') || a.getAttribute('aria-disabled') === 'true' || a.disabled) return true; return false })()`)
           if (d === null) throw new Failure(`no visible "${label}"${where(scope)}`)
           return d
         },
@@ -218,10 +234,10 @@ try {
         failed++
         const shot = path.resolve(out, `${mountName(s, t.seed)}.failed.png`)
         await ui.shot(shot)
-        console.log(`  ✗ ${t.name} [${t.seed}]\n      ${problem}\n      screenshot: ${shot}`)
+        console.log(`  ✗ ${t.name} [${t.seed ?? "the application"}]\n      ${problem}\n      screenshot: ${shot}`)
       } else {
         passed++
-        console.log(`  ✓ ${t.name} [${t.seed}]`)
+        console.log(`  ✓ ${t.name} [${t.seed ?? "the application"}]`)
       }
       await session.close()
     }

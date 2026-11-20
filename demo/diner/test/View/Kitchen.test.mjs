@@ -11,13 +11,18 @@ export const tests = [
     },
   },
   {
-    name: 'plating the last line offers "Zamówienie gotowe", which clears the ticket',
+    name: 'plating the last line offers "Zamówienie gotowe", which clears the ticket once confirmed',
     seed: 'rushHour',
     run: async ({ click, text, assert }) => {
       assert.excludes(await text(), 'Zamówienie gotowe', 'not before every line is plated')
       await click('2 × Tiramisu', '#11')
       await click('Zamówienie gotowe', '#11')
-      assert.excludes(await text(), '#11', 'the ticket left the kitchen')
+      assert.includes(await text(), 'Przekazać zamówienie #11 dla stolika 1 na wydawkę?', 'the kitchen is asked first')
+      await click('Nie, jeszcze nie gotowe')
+      assert.includes(await text(), '#11 · Stolik 1', 'declined, the ticket stays')
+      await click('Zamówienie gotowe', '#11 · Stolik 1')
+      await click('Zamówienie gotowe', 'Przekazać')
+      assert.excludes(await text(), '#11 · Stolik 1', 'confirmed, the ticket left the kitchen')
     },
   },
   {

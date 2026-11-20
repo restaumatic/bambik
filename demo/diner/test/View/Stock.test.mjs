@@ -45,31 +45,32 @@ export const tests = [
     name: 'stock edited on a later page is kept where the dish is stored',
     seed: 'busyStockroom',
     run: async ({ click, fill, ev, text, assert }) => {
-      assert.includes(await text(), '1–10 z 300', 'ten of three hundred')
-      assert.equal(await ev(`[...document.querySelectorAll('tbody tr')].map(r => r.cells[0].innerText).slice(0, 3)`), ['Affogato', 'Affogato z gorgonzolą', 'Affogato z grzybami'], 'by name')
+      assert.includes(await text(), '1–10 z 304', 'ten of three hundred and four')
+      assert.equal(await ev(`document.querySelector('[name="Cena"]').value`), '25,00', 'a price as written, a comma before the grosze')
+      assert.equal(await ev(`[...document.querySelectorAll('tbody tr')].map(r => r.cells[0].querySelector('p').innerText).slice(0, 3)`), ['Affogato', 'Affogato z gorgonzolą', 'Affogato z grzybami'], 'by name')
       await click('Następna strona')
-      assert.includes(await text(), '11–20 z 300', 'the second page')
+      assert.includes(await text(), '11–20 z 304', 'the second page')
       await fill('Porcje', '41', 'Arancini')
       await click('Przybyła porcja', 'Arancini')
       await click('Poprzednia strona')
       assert.excludes(await text(), 'Arancini', 'the first page again')
       await click('Następna strona')
-      assert.equal(await ev(`[...document.querySelectorAll('tbody tr')].find(r => r.cells[0].innerText === 'Arancini').querySelector('[name="Porcje"]').value`), '42', 'typed, then one more')
+      assert.equal(await ev(`[...document.querySelectorAll('tbody tr')].find(r => r.cells[0].querySelector('p').innerText === 'Arancini').querySelector('[name="Porcje"]').value`), '42', 'typed, then one more')
     },
   },
   {
     name: 'the search and the group narrow the stock to the dishes they name',
     seed: 'busyStockroom',
     run: async ({ click, fill, ev, text, assert }) => {
-      await fill('Szukaj', 'tiramisu')
-      assert.includes(await text(), '1–10 z 10', 'ten kinds of tiramisu')
-      assert.equal(await ev(`[...document.querySelectorAll('tbody tr')].every(r => r.cells[0].innerText.includes('Tiramisu'))`), true, 'only they are listed')
-      await fill('Szukaj', 'zzz')
-      assert.includes(await text(), 'Żadne danie nie pasuje', 'no dish answers')
-      await fill('Szukaj', '')
       await click('Zupy')
-      assert.includes(await text(), '1–10 z 20', 'two soups in ten variations')
-      assert.equal(await ev(`[...document.querySelectorAll('tbody tr')].every(r => /Minestrone|Ribollita/.test(r.cells[0].innerText))`), true, 'only they are listed')
+      await fill('Szukaj w magazynie', 'tiramisu')
+      assert.includes(await text(), '1–10 z 11', 'eleven kinds of tiramisu, though soups were being browsed')
+      assert.equal(await ev(`[...document.querySelectorAll('tbody tr')].every(r => r.cells[0].querySelector('p').innerText.includes('Tiramisu'))`), true, 'only they are listed')
+      await fill('Szukaj w magazynie', 'zzz')
+      assert.includes(await text(), 'Nie ma takich dań', 'no dish answers')
+      await fill('Szukaj w magazynie', '')
+      assert.includes(await text(), '1–10 z 20', 'the search cleared, the soups again: two in ten variations')
+      assert.equal(await ev(`[...document.querySelectorAll('tbody tr')].every(r => /Minestrone|Ribollita/.test(r.cells[0].querySelector('p').innerText))`), true, 'only they are listed')
     },
   },
   {

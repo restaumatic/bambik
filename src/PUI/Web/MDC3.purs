@@ -219,8 +219,8 @@ button = buttonOf @l "md-filled-button" {}
 -- | "local_cafe" }`), `label:` overrides the caption with copy the case
 -- | cannot be, and `disabled:` takes a predicate on the row — while it
 -- | holds for the row last fed, the button is drawn disabled and reports
--- | no click (`button' @"Add" { icon: "add", disabled: isSoldOut }`,
--- | diner). A decoration: `disabled: const false` is the button itself.
+-- | no click (`button' @"Add" { icon: "add", disabled: isSoldOut }`).
+-- | A decoration: `disabled: const false` is the button itself.
 button'
   :: forall @l provided r v
    . IsSymbol l

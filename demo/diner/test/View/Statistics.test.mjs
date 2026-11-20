@@ -33,6 +33,26 @@ export const tests = [
     },
   },
   {
+    name: 'the search and the group narrow the sales, and the totals with them',
+    seed: 'busyStatistics',
+    run: async ({ click, fill, ev, text, assert }) => {
+      const dishes = () => ev(`[...document.querySelectorAll('tbody tr')].slice(1).map(r => r.cells[0].innerText)`)
+      const total = () => ev(`document.querySelector('tbody tr').innerText`)
+      const all = await total()
+      await fill('Szukaj w statystykach', 'truf')
+      assert.includes(await text(), '1–10 z 26', 'the dishes with truffles that sold')
+      assert.equal((await dishes()).every(d => d.includes('z truflami')), true, 'only they are listed')
+      assert.equal((await total()) !== all, true, 'the totals are theirs')
+      await fill('Szukaj w statystykach', '')
+      assert.equal(await total(), all, 'the search cleared, every sale again')
+      await click('Desery')
+      assert.includes(await text(), '1–10 z 44', 'the desserts that sold')
+      assert.equal((await dishes()).every(d => /^(Tiramisu|Panna cotta|Cannoli|Affogato|Zabaglione)/.test(d)), true, 'only desserts are listed')
+      await fill('Szukaj w statystykach', 'zzz')
+      assert.includes(await text(), 'Nie ma takich dań', 'no dish answers')
+    },
+  },
+  {
     name: 'fits a phone, a tablet and a desktop',
     seed: 'busyStatistics',
     run: fits,
