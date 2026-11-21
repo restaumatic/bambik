@@ -162,6 +162,9 @@ import Data.Profunctor.Row (class RowLabels, atCase, exactRow, rowLabels)
 import Data.String (joinWith, trim)
 import Data.String.CodeUnits (toCharArray)
 import Data.Int (fromString) as Int
+import Data.Int (floor, toNumber)
+import Data.DateTime.Instant (unInstant)
+import Effect.Now (now)
 import Data.Number (fromString) as Number
 import Data.Number.Format (toString)
 import Data.Profunctor.Coretaining (class Coretaining)
@@ -1400,8 +1403,9 @@ renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 -- | (`ticks @"Clock ticked" tickPeriod`, timer) — every `interval`, the
 -- | row it was last fed leaves as case `l`; replay is `Strong`'s
 -- | retention. Feeds are retained, never answered; nothing ticks before
--- | the first feed. A beat in a suspended scope (a detached pane) is
--- | skipped, and a cancelled scope ends the loop. A tick that needs
+-- | the first feed. Beats are due at whole intervals from registration, so
+-- | the handling of one does not delay the next. A beat in a suspended
+-- | scope (a detached pane) is skipped, and a cancelled scope ends the loop. A tick that needs
 -- | telling is told by the status that folds it, so the source opens with
 -- | none.
 ticks
@@ -1417,17 +1421,23 @@ ticks interval = fromHandles do
   pure
     { toUser: \r -> Ref.write (Just r) lastRef
     , fromUser: \prop -> do
+        Milliseconds started <- unInstant <$> now
         let
-          loop = do
-            delay (Milliseconds interval.ms)
+          -- beat `n` is due `n` intervals after the start, whatever the
+          -- beats before it took: a late beat does not delay the next, and
+          -- beats the page slept through are skipped, not made up for
+          loop beat = do
+            Milliseconds woken <- liftEffect $ unInstant <$> now
+            let next = max (beat + 1) (floor ((woken - started) / interval.ms) + 1)
+            delay (Milliseconds (started + toNumber next * interval.ms - woken))
             cancelled <- liftEffect $ scopeCancelled sc
             unless cancelled do
               liftEffect do
                 active <- scopeActive sc
                 fed <- Ref.read lastRef
                 when active $ for_ fed \r -> prop (inj (Proxy @l) r)
-              loop
-        launchAff_ loop
+              loop next
+        launchAff_ (loop 0)
     }
 
 

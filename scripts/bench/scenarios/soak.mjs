@@ -93,11 +93,11 @@ export const soak = {
     // the clock: its seconds against the wall's, then across a frozen page
     p = await browser.open('App')
     await p.waitFor(drawn.App)
-    const ticks = () => p.ev('window.__bench.fired[1000] || 0')
-    await p.waitFor(`(window.__bench.fired[1000] || 0) > 0`, 5000)
+    const ticks = () => p.ev('window.__bench.beats(1000)')
+    await p.waitFor(`window.__bench.beats(1000) > 0`, 5000)
     await p.sleep(watched * 1000)
     // its seconds per second, from the first tick to the last
-    const rate = await p.ev(`(B => (B.fired[1000] - 1) / ((B.lastAt[1000] - B.firstAt[1000]) / 1000))(window.__bench)`)
+    const rate = await p.ev(`(at => (at.length - 1) / ((at[at.length - 1] - at[0]) / 1000))(window.__bench.beatsOf(1000))`)
     let frozen = null
     try {
       const a = await ticks()
@@ -127,7 +127,7 @@ export const soak = {
       'What one doing leaves behind for good (twenty of them between two forced collections, a station alone):', '',
       table(['done', 'DOM nodes', 'listeners', 'heap (KB)'], Object.entries(r.left).map(([name, l]) => [name, l.nodes, l.listeners, l.heapKB])), '',
       `${r.cycles * 6} station switches after a warm-up of twelve: heap ${round(r.before.heapMB, 1)} → ${round(r.after.heapMB, 1)} MB, DOM nodes ${r.before.nodes} → ${r.after.nodes}, listeners ${r.before.listeners} → ${r.after.listeners}.`, '',
-      `The clock, watched for ${r.clock.watched} s with the hall open: ${r.clock.rate} of its seconds pass in a second (each beat waits a full second after the one before has been handled).`
+      `The clock, watched for ${r.clock.watched} s with the hall open: ${r.clock.rate} of its seconds pass in a second.`
         + (r.clock.frozen?.skipped ? ` (The frozen-page reading was skipped: ${r.clock.frozen.skipped}.)` : ` Across ${r.clock.frozen.seconds} s with the page frozen for 6 of them it counted ${r.clock.frozen.ticks}.`), '',
       r.problems.length ? `Console problems: ${[...new Set(r.problems)].join(' | ')}` : 'No exception and no console warning.', '']
     return out.join('\n')

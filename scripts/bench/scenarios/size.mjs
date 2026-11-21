@@ -104,7 +104,7 @@ export const size = {
       }
       const p = await browser.open(`Size${k}`)
       await p.waitFor(`document.querySelector('tbody tr') !== null`, 60000)
-      const next = async () => { const n = await p.ev(`window.__bench.fired[${period}] || 0`); await p.waitFor(`(window.__bench.fired[${period}] || 0) > ${n}`, 20000) }
+      const next = async () => { const n = await p.ev(`window.__bench.beats(${period})`); await p.waitFor(`window.__bench.beats(${period}) > ${n}`, 20000) }
       const feeds = [], clicks = []
       await next()
       for (let i = 0; i < 8; i++) { await p.sleep(30); feeds.push((await p.measure(next)).total) }

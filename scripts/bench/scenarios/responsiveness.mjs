@@ -86,8 +86,8 @@ const application = async (browser, throttle, reps) => {
   const push = (name, s) => (samples[name] ??= []).push(s)
   const p = await browser.open('App', { throttle })
   await p.waitFor(drawn.App)
-  const fired = () => p.ev('window.__bench.fired[1000] || 0')
-  const nextTick = async () => { const n = await fired(); await p.waitFor(`(window.__bench.fired[1000] || 0) > ${n}`, 5000) }
+  const fired = () => p.ev('window.__bench.beats(1000)')
+  const nextTick = async () => { const n = await fired(); await p.waitFor(`window.__bench.beats(1000) > ${n}`, 5000) }
   for (const station of stationTabs) {
     await p.clickOn(tab(station))
     await p.sleep(200)

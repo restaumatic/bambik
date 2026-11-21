@@ -62,7 +62,7 @@ const mounting = async (browser, mount, part, reps) => {
 const ticking = async (browser, mount, part, reps) => {
   const p = await browser.open(mount)
   if (!await p.waitFor(drawn[part], 180000)) { await p.close(); return null }
-  const next = async () => { const n = await p.ev(`window.__bench.fired[${period}] || 0`); await p.waitFor(`(window.__bench.fired[${period}] || 0) > ${n}`, 60000) }
+  const next = async () => { const n = await p.ev(`window.__bench.beats(${period})`); await p.waitFor(`window.__bench.beats(${period}) > ${n}`, 60000) }
   const samples = []
   await next()
   for (let i = 0; i < reps; i++) { await p.sleep(30); samples.push((await p.measure(next)).total) }

@@ -39,7 +39,7 @@ export const races = {
     await p.clickOn(portions)
     await p.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'a', code: 'KeyA', modifiers: 2, windowsVirtualKeyCode: 65 })
     await p.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'a', code: 'KeyA', modifiers: 2, windowsVirtualKeyCode: 65 })
-    const ticks = () => p.ev('window.__bench.fired[1000] || 0')
+    const ticks = () => p.ev('window.__bench.beats(1000)')
     const ticksBefore = await ticks()
     for (const d of '123') { await digit(p, d); await p.sleep(750) }
     await p.sleep(1300)

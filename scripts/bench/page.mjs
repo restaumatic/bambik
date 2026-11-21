@@ -15,12 +15,15 @@ export const sleep = ms => new Promise(r => setTimeout(r, ms))
 // What the page gets before any of its own script runs: the locators the
 // scenarios click by, and a count of the timeouts that fired per delay, with
 // when the first and the last did — a clock line of period p is the
-// timeouts of delay p.
+// timeouts of delay p, or a little under it: a clock that keeps to its
+// beats waits less after a beat that took time.
 const prelude = `
 window.__bench = {
-  fired: {},
-  firstAt: {},
-  lastAt: {},
+  timeouts: [],
+  // the beats of a clock line of the given period: a clock that keeps to
+  // its beats waits the period, or less after a beat that took time
+  beatsOf(period) { return this.timeouts.filter(([ms]) => ms > period / 2 && ms <= period).map(([, at]) => at) },
+  beats(period) { return this.beatsOf(period).length },
   visible: el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 },
   name: el => (el.getAttribute('aria-label') || el.innerText || '').trim(),
   // the innermost visible element named label, inside the smallest element whose text contains scope
@@ -37,10 +40,7 @@ window.__bench = {
   const set = window.setTimeout
   window.setTimeout = function (f, ms, ...rest) {
     return set.call(window, function () {
-      const B = window.__bench, now = performance.now()
-      B.fired[ms] = (B.fired[ms] || 0) + 1
-      B.firstAt[ms] ??= now
-      B.lastAt[ms] = now
+      window.__bench.timeouts.push([ms, performance.now()])
       return typeof f === 'function' ? f.apply(this, arguments) : undefined
     }, ms, ...rest)
   }
