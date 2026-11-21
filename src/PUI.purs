@@ -2333,17 +2333,31 @@ reconcileKeyed hooks onEmit busyRef entriesRef items = do
         Just e -> do
           e.feed a
           pure e
-        Nothing -> do
-          slot <- Ref.new Nothing
-          inst <- hooks.instantiate
-          inst.subscribe \b -> onEmit k slot b
-          inst.feed a
-          pure { key: k, feed: inst.feed, slot, node: inst.node, cancel: inst.cancel }
+        Nothing -> enteringKeyed hooks onEmit k a
     let keep = Set.fromFoldable (map _.key entries)
     for_ old \e -> unless (Set.member e.key keep) (hooks.detach e.node *> e.cancel)
     when (map _.key old /= map _.key entries) $ hooks.restack (map _.node entries)
     Ref.write entries entriesRef
     Ref.write false busyRef
+
+-- An entrant, instantiated and fed. It is built here, apart from the
+-- reconcile, so that the subscription an element keeps for life closes over
+-- its own key and slot only: written inside `reconcileKeyed` it would hold
+-- that reconcile's previous entries, and through them every generation of
+-- elements the list ever showed.
+enteringKeyed
+  :: forall k a b node
+   . Hooks a b node
+  -> (k -> Ref.Ref (Maybe b) -> b -> Effect Unit)
+  -> k
+  -> a
+  -> Effect (ActingEntry k a b node)
+enteringKeyed hooks onEmit k a = do
+  slot <- Ref.new Nothing
+  inst <- hooks.instantiate
+  inst.subscribe \b -> onEmit k slot b
+  inst.feed a
+  pure { key: k, feed: inst.feed, slot, node: inst.node, cancel: inst.cancel }
 
 -- Skip a feed that arrives while a reconcile is in flight: the whole step,
 -- rekeying included, so a mid-reconcile re-feed can neither enrol keys the

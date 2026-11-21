@@ -231,6 +231,14 @@ a second passing at Statystyki (36 ms, finding 2).
 
 - 2026-11-20: plan agreed; Part A done and pushed (5b1f877e, d807c07b).
 - 2026-11-21: Part B built; baseline run saved (bench/baseline.json, .md).
-  Next: decide on the changes findings 1, 2, 3, 5 and 7 ask for — each a
-  separate change through the guardrails' gates, re-measured with
-  `npm run bench -- compare`.
+- 2026-11-21: finding 1 fixed (`enteringKeyed`, src/PUI.purs) and the
+  baseline replaced by the run after it. A page turned now leaves no node
+  and no listener behind at any station; the same four minutes of random
+  clicks end at 16 979 nodes and 10.1 MB (were 1 418 490 and 284 MB). What
+  is left and not yet traced: about 310 nodes, 46 listeners and 0.2 MB a
+  minute over the second half of that run, and 5–18 KB of heap per page
+  turned or pick. The findings above keep the numbers of the first
+  baseline (`git show 2a800c94:bench/baseline.md`).
+  Next: trace that residue; decide on the changes findings 2, 3, 5 and 7
+  ask for — each a separate change through the guardrails' gates,
+  re-measured with `npm run bench -- compare`.
