@@ -1,0 +1,4168 @@
+{
+ "meta": {
+  "date": "2026-11-20T23:50:26.147Z",
+  "commit": "d807c07b+dirty",
+  "quick": false,
+  "machine": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz, 16 threads, 63 GB",
+  "node": "v25.6.0",
+  "chrome": "Chrome/158.0.8127.36",
+  "seconds": 1045
+ },
+ "results": {
+  "viewmodel": {
+   "scales": [
+    1,
+    4,
+    16,
+    64
+   ],
+   "generation": {
+    "1": 1.33,
+    "4": 5.79,
+    "16": 33.53,
+    "64": 72.5
+   },
+   "stations": {
+    "Magazyn": {
+     "1": {
+      "browseState": 0.0001,
+      "searchState": 0.0586,
+      "stockPage": 0.2122,
+      "pageLine": 0.0569,
+      "isFirstPage": 0.0554,
+      "isLastPage": 0.0564
+     },
+     "4": {
+      "browseState": 0.0002,
+      "searchState": 0.2141,
+      "stockPage": 0.8788,
+      "pageLine": 0.2402,
+      "isFirstPage": 0.2308,
+      "isLastPage": 0.2589
+     },
+     "16": {
+      "browseState": 0.0002,
+      "searchState": 0.8765,
+      "stockPage": 4.4934,
+      "pageLine": 1.0377,
+      "isFirstPage": 0.8926,
+      "isLastPage": 0.875
+     },
+     "64": {
+      "browseState": 0.0002,
+      "searchState": 3.6845,
+      "stockPage": 18.6267,
+      "pageLine": 3.7724,
+      "isFirstPage": 3.6589,
+      "isLastPage": 3.8331
+     }
+    },
+    "Sala": {
+     "1": {
+      "seatings": 0.0423,
+      "servedLine": 0.0015,
+      "tableAvailability": 0.0014,
+      "tableState": 0.0031,
+      "tableLines": 0.0014,
+      "orderTotalLine": 0.0016,
+      "browseState": 0.0002,
+      "searchState": 0.0522,
+      "menuPage": 0.1717,
+      "pageLine": 0.0572,
+      "isFirstPage": 0.0516,
+      "isLastPage": 0.0527
+     },
+     "4": {
+      "seatings": 0.1672,
+      "servedLine": 0.0052,
+      "tableAvailability": 0.0049,
+      "tableState": 0.0097,
+      "tableLines": 0.005,
+      "orderTotalLine": 0.0052,
+      "browseState": 0.0002,
+      "searchState": 0.215,
+      "menuPage": 0.8081,
+      "pageLine": 0.2255,
+      "isFirstPage": 0.2069,
+      "isLastPage": 0.2165
+     },
+     "16": {
+      "seatings": 0.7732,
+      "servedLine": 0.0201,
+      "tableAvailability": 0.0205,
+      "tableState": 0.0447,
+      "tableLines": 0.0246,
+      "orderTotalLine": 0.0234,
+      "browseState": 0.0002,
+      "searchState": 0.8547,
+      "menuPage": 4.0064,
+      "pageLine": 0.8773,
+      "isFirstPage": 0.8434,
+      "isLastPage": 0.8694
+     },
+     "64": {
+      "seatings": 3.842,
+      "servedLine": 0.0853,
+      "tableAvailability": 0.077,
+      "tableState": 0.152,
+      "tableLines": 0.0782,
+      "orderTotalLine": 0.0758,
+      "browseState": 0.0002,
+      "searchState": 3.499,
+      "menuPage": 19.0582,
+      "pageLine": 3.7047,
+      "isFirstPage": 3.678,
+      "isLastPage": 3.7661
+     }
+    },
+    "Kuchnia": {
+     "1": {
+      "kitchenState": 0.0042,
+      "ticketsPage": 0.029,
+      "pageLine": 0.0272,
+      "isFirstPage": 0.0152,
+      "isLastPage": 0.0148
+     },
+     "4": {
+      "kitchenState": 0.0157,
+      "ticketsPage": 0.0739,
+      "pageLine": 0.0739,
+      "isFirstPage": 0.0714,
+      "isLastPage": 0.0801
+     },
+     "16": {
+      "kitchenState": 0.0657,
+      "ticketsPage": 0.4238,
+      "pageLine": 0.3979,
+      "isFirstPage": 0.4133,
+      "isLastPage": 0.4148
+     },
+     "64": {
+      "kitchenState": 0.2923,
+      "ticketsPage": 2.1714,
+      "pageLine": 2.2591,
+      "isFirstPage": 2.231,
+      "isLastPage": 2.8765
+     }
+    },
+    "Wydawka": {
+     "1": {
+      "billsState": 0.004,
+      "billsPage": 0.0103,
+      "pageLine": 0.0056,
+      "isFirstPage": 0.0049,
+      "isLastPage": 0.0056
+     },
+     "4": {
+      "billsState": 0.0152,
+      "billsPage": 0.039,
+      "pageLine": 0.0193,
+      "isFirstPage": 0.0184,
+      "isLastPage": 0.0219
+     },
+     "16": {
+      "billsState": 0.0615,
+      "billsPage": 0.2111,
+      "pageLine": 0.0753,
+      "isFirstPage": 0.0737,
+      "isLastPage": 0.076
+     },
+     "64": {
+      "billsState": 0.2583,
+      "billsPage": 1.0712,
+      "pageLine": 0.3337,
+      "isFirstPage": 0.3109,
+      "isLastPage": 0.3432
+     }
+    },
+    "Raport": {
+     "1": {
+      "paidState": 0.0165,
+      "takingsLine": 0.021,
+      "paidPage": 0.0603,
+      "pageLine": 0.0173,
+      "isFirstPage": 0.0169,
+      "isLastPage": 0.0171
+     },
+     "4": {
+      "paidState": 0.0664,
+      "takingsLine": 0.0854,
+      "paidPage": 0.3043,
+      "pageLine": 0.0716,
+      "isFirstPage": 0.0691,
+      "isLastPage": 0.0688
+     },
+     "16": {
+      "paidState": 0.2662,
+      "takingsLine": 0.3766,
+      "paidPage": 1.6981,
+      "pageLine": 0.2706,
+      "isFirstPage": 0.2709,
+      "isLastPage": 0.2854
+     },
+     "64": {
+      "paidState": 1.0844,
+      "takingsLine": 1.6419,
+      "paidPage": 9.6533,
+      "pageLine": 1.1336,
+      "isFirstPage": 1.1078,
+      "isLastPage": 1.1384
+     }
+    },
+    "Statystyki": {
+     "1": {
+      "paidState": 0.0167,
+      "browseState": 0.0002,
+      "searchState": 0.8331,
+      "soldQuantityLine": 0.7648,
+      "soldAmountLine": 0.7746,
+      "salesPage": 0.8965,
+      "pageLine": 0.8066,
+      "isFirstPage": 0.7581,
+      "isLastPage": 0.7718
+     },
+     "4": {
+      "paidState": 0.0662,
+      "browseState": 0.0002,
+      "searchState": 4.3881,
+      "soldQuantityLine": 4.1466,
+      "soldAmountLine": 4.0185,
+      "salesPage": 4.3664,
+      "pageLine": 4.0365,
+      "isFirstPage": 3.9336,
+      "isLastPage": 3.94
+     },
+     "16": {
+      "paidState": 0.2698,
+      "browseState": 0.0002,
+      "searchState": 26.0838,
+      "soldQuantityLine": 21.0475,
+      "soldAmountLine": 20.9481,
+      "salesPage": 20.6814,
+      "pageLine": 21.4161,
+      "isFirstPage": 20.5991,
+      "isLastPage": 20.7851
+     },
+     "64": {
+      "paidState": 1.1499,
+      "browseState": 0.0002,
+      "searchState": 113.6568,
+      "soldQuantityLine": 112.3637,
+      "soldAmountLine": 106.398,
+      "salesPage": 109.3958,
+      "pageLine": 122.1265,
+      "isFirstPage": 105.9611,
+      "isLastPage": 105.8893
+     }
+    }
+   }
+  },
+  "responsiveness": {
+   "reps": 30,
+   "passes": {
+    "1": {
+     "stock: a portion more": {
+      "total": {
+       "n": 30,
+       "p50": 3.8,
+       "p95": 5.34,
+       "max": 7.2
+      },
+      "script": 3.01,
+      "style": 0.44,
+      "layout": 0.34
+     },
+     "stock: a portion fewer": {
+      "total": {
+       "n": 30,
+       "p50": 3.63,
+       "p95": 6.06,
+       "max": 6.29
+      },
+      "script": 2.95,
+      "style": 0.42,
+      "layout": 0.32
+     },
+     "stock: a key in a portion count": {
+      "total": {
+       "n": 30,
+       "p50": 2.39,
+       "p95": 2.96,
+       "max": 3.62
+      },
+      "script": 2.16,
+      "style": 0,
+      "layout": 0.16
+     },
+     "stock: a key in a price": {
+      "total": {
+       "n": 30,
+       "p50": 2.41,
+       "p95": 3.16,
+       "max": 3.39
+      },
+      "script": 2.18,
+      "style": 0,
+      "layout": 0.17
+     },
+     "stock: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 20.31,
+       "p95": 22.03,
+       "max": 22.5
+      },
+      "script": 12.64,
+      "style": 4.92,
+      "layout": 2.61
+     },
+     "stock: a group picked": {
+      "total": {
+       "n": 30,
+       "p50": 21.61,
+       "p95": 25.5,
+       "max": 26.3
+      },
+      "script": 12.31,
+      "style": 6.49,
+      "layout": 2.71
+     },
+     "stock: a key in the search": {
+      "total": {
+       "n": 32,
+       "p50": 4.19,
+       "p95": 19.85,
+       "max": 22.17
+      },
+      "script": 3.52,
+      "style": 0.28,
+      "layout": 0.25
+     },
+     "hall: a dish added": {
+      "total": {
+       "n": 30,
+       "p50": 3.99,
+       "p95": 7.44,
+       "max": 8.47
+      },
+      "script": 3.52,
+      "style": 0.19,
+      "layout": 0.36
+     },
+     "hall: a portion more on a line": {
+      "total": {
+       "n": 30,
+       "p50": 5.31,
+       "p95": 8.77,
+       "max": 9.92
+      },
+      "script": 4.36,
+      "style": 0.52,
+      "layout": 0.44
+     },
+     "hall: a portion fewer on a line": {
+      "total": {
+       "n": 30,
+       "p50": 5.68,
+       "p95": 8.29,
+       "max": 9.49
+      },
+      "script": 4.47,
+      "style": 0.75,
+      "layout": 0.49
+     },
+     "hall: a table picked": {
+      "total": {
+       "n": 30,
+       "p50": 5.69,
+       "p95": 7.38,
+       "max": 7.65
+      },
+      "script": 4.22,
+      "style": 1.09,
+      "layout": 0.84
+     },
+     "hall: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 7.76,
+       "p95": 9.93,
+       "max": 11.21
+      },
+      "script": 5.82,
+      "style": 0.97,
+      "layout": 0.83
+     },
+     "hall: a group picked": {
+      "total": {
+       "n": 30,
+       "p50": 8.27,
+       "p95": 13.42,
+       "max": 18.87
+      },
+      "script": 5.73,
+      "style": 1.9,
+      "layout": 0.77
+     },
+     "hall: a key in the search": {
+      "total": {
+       "n": 32,
+       "p50": 5.64,
+       "p95": 7.96,
+       "max": 9.64
+      },
+      "script": 4.37,
+      "style": 0.37,
+      "layout": 0.71
+     },
+     "kitchen: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 14.12,
+       "p95": 18.17,
+       "max": 21.58
+      },
+      "script": 9.05,
+      "style": 3.03,
+      "layout": 1.7
+     },
+     "kitchen: a line plated": {
+      "total": {
+       "n": 7,
+       "p50": 3.95,
+       "p95": 4.37,
+       "max": 4.42
+      },
+      "script": 3.01,
+      "style": 0.75,
+      "layout": 0.29
+     },
+     "kitchen: an order passed on, asked": {
+      "total": {
+       "n": 12,
+       "p50": 4.2,
+       "p95": 5.55,
+       "max": 6.64
+      },
+      "script": 0.34,
+      "style": 3.48,
+      "layout": 0.35
+     },
+     "kitchen: an order passed on, confirmed": {
+      "total": {
+       "n": 12,
+       "p50": 18.21,
+       "p95": 20.71,
+       "max": 21.41
+      },
+      "script": 4.3,
+      "style": 10.83,
+      "layout": 2.87
+     },
+     "pass: a payment, asked": {
+      "total": {
+       "n": 10,
+       "p50": 2.72,
+       "p95": 5.08,
+       "max": 6.45
+      },
+      "script": 0.44,
+      "style": 1.86,
+      "layout": 0.44
+     },
+     "pass: a payment, confirmed": {
+      "total": {
+       "n": 10,
+       "p50": 11.33,
+       "p95": 12.71,
+       "max": 13.41
+      },
+      "script": 1.7,
+      "style": 7.97,
+      "layout": 1.76
+     },
+     "report: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 3.99,
+       "p95": 5.98,
+       "max": 8.73
+      },
+      "script": 2.61,
+      "style": 0.81,
+      "layout": 0.64
+     },
+     "statistics: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 11.87,
+       "p95": 15.48,
+       "max": 17.51
+      },
+      "script": 10.57,
+      "style": 0.76,
+      "layout": 0.6
+     },
+     "statistics: a group picked": {
+      "total": {
+       "n": 30,
+       "p50": 15.51,
+       "p95": 18.55,
+       "max": 19.28
+      },
+      "script": 13,
+      "style": 1.91,
+      "layout": 0.63
+     },
+     "statistics: a key in the search": {
+      "total": {
+       "n": 32,
+       "p50": 14.12,
+       "p95": 16.34,
+       "max": 16.99
+      },
+      "script": 13.42,
+      "style": 0.17,
+      "layout": 0.56
+     },
+     "app: a second passes at Magazyn": {
+      "total": {
+       "n": 6,
+       "p50": 2.25,
+       "p95": 3.13,
+       "max": 3.3
+      },
+      "script": 2.17,
+      "style": 0.14,
+      "layout": 0
+     },
+     "app: a second passes at Sala": {
+      "total": {
+       "n": 6,
+       "p50": 2.86,
+       "p95": 3.24,
+       "max": 3.34
+      },
+      "script": 2.7,
+      "style": 0.19,
+      "layout": 0
+     },
+     "app: a second passes at Kuchnia": {
+      "total": {
+       "n": 6,
+       "p50": 1.57,
+       "p95": 1.75,
+       "max": 1.8
+      },
+      "script": 1.38,
+      "style": 0.22,
+      "layout": 0
+     },
+     "app: a second passes at Wydawka": {
+      "total": {
+       "n": 6,
+       "p50": 0.92,
+       "p95": 1.56,
+       "max": 1.72
+      },
+      "script": 0.81,
+      "style": 0.15,
+      "layout": 0
+     },
+     "app: a second passes at Raport": {
+      "total": {
+       "n": 6,
+       "p50": 1.6,
+       "p95": 1.82,
+       "max": 1.83
+      },
+      "script": 1.46,
+      "style": 0.27,
+      "layout": 0
+     },
+     "app: a second passes at Statystyki": {
+      "total": {
+       "n": 6,
+       "p50": 7.55,
+       "p95": 9.12,
+       "max": 9.6
+      },
+      "script": 7.44,
+      "style": 0.16,
+      "layout": 0
+     },
+     "app: switched to Magazyn": {
+      "total": {
+       "n": 5,
+       "p50": 15.27,
+       "p95": 17.5,
+       "max": 17.82
+      },
+      "script": 5.1,
+      "style": 7.38,
+      "layout": 2.72
+     },
+     "app: switched to Sala": {
+      "total": {
+       "n": 5,
+       "p50": 14.78,
+       "p95": 15.56,
+       "max": 15.72
+      },
+      "script": 7.33,
+      "style": 5.28,
+      "layout": 1.78
+     },
+     "app: switched to Kuchnia": {
+      "total": {
+       "n": 5,
+       "p50": 9.58,
+       "p95": 11.84,
+       "max": 12.2
+      },
+      "script": 2.99,
+      "style": 5.13,
+      "layout": 1.66
+     },
+     "app: switched to Wydawka": {
+      "total": {
+       "n": 5,
+       "p50": 5.8,
+       "p95": 6.31,
+       "max": 6.41
+      },
+      "script": 1.98,
+      "style": 2.91,
+      "layout": 0.91
+     },
+     "app: switched to Raport": {
+      "total": {
+       "n": 5,
+       "p50": 4.63,
+       "p95": 5.66,
+       "max": 5.76
+      },
+      "script": 1.93,
+      "style": 2,
+      "layout": 0.68
+     },
+     "app: switched to Statystyki": {
+      "total": {
+       "n": 5,
+       "p50": 20.84,
+       "p95": 23.96,
+       "max": 24.11
+      },
+      "script": 14.27,
+      "style": 4.08,
+      "layout": 1.08
+     },
+     "app: started, until it waits for its day": {
+      "total": {
+       "n": 6,
+       "p50": 45.73,
+       "p95": 49.66,
+       "max": 49.95
+      },
+      "script": 40.58,
+      "style": 2.16,
+      "layout": 3.53
+     },
+     "app: started, the day drawn": {
+      "total": {
+       "n": 6,
+       "p50": 53.07,
+       "p95": 57.49,
+       "max": 57.99
+      },
+      "script": 38.93,
+      "style": 3.88,
+      "layout": 10.13
+     }
+    },
+    "4": {
+     "stock: a portion more": {
+      "total": {
+       "n": 30,
+       "p50": 13.54,
+       "p95": 21.41,
+       "max": 28.33
+      },
+      "script": 10.85,
+      "style": 1.62,
+      "layout": 1.13
+     },
+     "stock: a portion fewer": {
+      "total": {
+       "n": 30,
+       "p50": 13.65,
+       "p95": 19.78,
+       "max": 21.23
+      },
+      "script": 10.38,
+      "style": 1.82,
+      "layout": 1.17
+     },
+     "stock: a key in a portion count": {
+      "total": {
+       "n": 30,
+       "p50": 10.49,
+       "p95": 13.73,
+       "max": 14.38
+      },
+      "script": 9.13,
+      "style": 0.27,
+      "layout": 0.89
+     },
+     "stock: a key in a price": {
+      "total": {
+       "n": 30,
+       "p50": 9.29,
+       "p95": 11.66,
+       "max": 12.42
+      },
+      "script": 8.41,
+      "style": 0,
+      "layout": 0.87
+     },
+     "stock: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 82.63,
+       "p95": 97.52,
+       "max": 120.8
+      },
+      "script": 51.18,
+      "style": 20.25,
+      "layout": 11.03
+     },
+     "stock: a group picked": {
+      "total": {
+       "n": 30,
+       "p50": 92.64,
+       "p95": 107.85,
+       "max": 140.52
+      },
+      "script": 50.32,
+      "style": 28.54,
+      "layout": 12.13
+     },
+     "stock: a key in the search": {
+      "total": {
+       "n": 32,
+       "p50": 14.61,
+       "p95": 79.07,
+       "max": 80.68
+      },
+      "script": 13.39,
+      "style": 1.04,
+      "layout": 1.3
+     },
+     "hall: a dish added": {
+      "total": {
+       "n": 30,
+       "p50": 14.92,
+       "p95": 29.44,
+       "max": 32.56
+      },
+      "script": 12.54,
+      "style": 0.81,
+      "layout": 1.35
+     },
+     "hall: a portion more on a line": {
+      "total": {
+       "n": 30,
+       "p50": 19.64,
+       "p95": 25.08,
+       "max": 31.92
+      },
+      "script": 15.73,
+      "style": 2.29,
+      "layout": 1.99
+     },
+     "hall: a portion fewer on a line": {
+      "total": {
+       "n": 30,
+       "p50": 21.64,
+       "p95": 28.74,
+       "max": 31.2
+      },
+      "script": 16.29,
+      "style": 3.53,
+      "layout": 1.94
+     },
+     "hall: a table picked": {
+      "total": {
+       "n": 30,
+       "p50": 22.48,
+       "p95": 27.7,
+       "max": 30.4
+      },
+      "script": 16.32,
+      "style": 4.39,
+      "layout": 3.33
+     },
+     "hall: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 29.02,
+       "p95": 43.44,
+       "max": 45.35
+      },
+      "script": 22.05,
+      "style": 3.91,
+      "layout": 3.23
+     },
+     "hall: a group picked": {
+      "total": {
+       "n": 30,
+       "p50": 35.1,
+       "p95": 74.66,
+       "max": 114.05
+      },
+      "script": 23.05,
+      "style": 9,
+      "layout": 3.41
+     },
+     "hall: a key in the search": {
+      "total": {
+       "n": 32,
+       "p50": 23.5,
+       "p95": 29.71,
+       "max": 36.28
+      },
+      "script": 18.57,
+      "style": 1.57,
+      "layout": 2.59
+     },
+     "kitchen: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 55.61,
+       "p95": 70.48,
+       "max": 89.21
+      },
+      "script": 36.98,
+      "style": 11.91,
+      "layout": 7.4
+     },
+     "kitchen: a line plated": {
+      "total": {
+       "n": 7,
+       "p50": 13.05,
+       "p95": 18.1,
+       "max": 19.21
+      },
+      "script": 9.9,
+      "style": 2.51,
+      "layout": 1.24
+     },
+     "kitchen: an order passed on, asked": {
+      "total": {
+       "n": 12,
+       "p50": 17.88,
+       "p95": 28.41,
+       "max": 28.62
+      },
+      "script": 1.81,
+      "style": 15.24,
+      "layout": 1.52
+     },
+     "kitchen: an order passed on, confirmed": {
+      "total": {
+       "n": 12,
+       "p50": 57.14,
+       "p95": 71.84,
+       "max": 77.76
+      },
+      "script": 16.54,
+      "style": 33.55,
+      "layout": 10.56
+     },
+     "pass: a payment, asked": {
+      "total": {
+       "n": 10,
+       "p50": 9.89,
+       "p95": 19.43,
+       "max": 25.35
+      },
+      "script": 1.66,
+      "style": 6.94,
+      "layout": 1.53
+     },
+     "pass: a payment, confirmed": {
+      "total": {
+       "n": 10,
+       "p50": 28.77,
+       "p95": 35.5,
+       "max": 37.88
+      },
+      "script": 6.73,
+      "style": 17.12,
+      "layout": 4.97
+     },
+     "report: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 13.74,
+       "p95": 18.8,
+       "max": 26.51
+      },
+      "script": 8.68,
+      "style": 2.68,
+      "layout": 2.54
+     },
+     "statistics: a page turned": {
+      "total": {
+       "n": 30,
+       "p50": 42.49,
+       "p95": 57.03,
+       "max": 66.76
+      },
+      "script": 37.47,
+      "style": 2.78,
+      "layout": 2.43
+     },
+     "statistics: a group picked": {
+      "total": {
+       "n": 30,
+       "p50": 58.3,
+       "p95": 67.07,
+       "max": 80.5
+      },
+      "script": 49.58,
+      "style": 6.98,
+      "layout": 2.51
+     },
+     "statistics: a key in the search": {
+      "total": {
+       "n": 32,
+       "p50": 53.07,
+       "p95": 69.64,
+       "max": 79.69
+      },
+      "script": 50.21,
+      "style": 0.67,
+      "layout": 2.25
+     },
+     "app: a second passes at Magazyn": {
+      "total": {
+       "n": 6,
+       "p50": 11.94,
+       "p95": 13.47,
+       "max": 13.72
+      },
+      "script": 11.09,
+      "style": 0.53,
+      "layout": 0
+     },
+     "app: a second passes at Sala": {
+      "total": {
+       "n": 6,
+       "p50": 11.4,
+       "p95": 15.96,
+       "max": 17.14
+      },
+      "script": 11.34,
+      "style": 0.55,
+      "layout": 0
+     },
+     "app: a second passes at Kuchnia": {
+      "total": {
+       "n": 6,
+       "p50": 5.28,
+       "p95": 6.41,
+       "max": 6.66
+      },
+      "script": 4.87,
+      "style": 0.41,
+      "layout": 0
+     },
+     "app: a second passes at Wydawka": {
+      "total": {
+       "n": 6,
+       "p50": 3.06,
+       "p95": 5.07,
+       "max": 5.37
+      },
+      "script": 2.53,
+      "style": 0.5,
+      "layout": 0
+     },
+     "app: a second passes at Raport": {
+      "total": {
+       "n": 6,
+       "p50": 3.63,
+       "p95": 5.28,
+       "max": 5.61
+      },
+      "script": 3.61,
+      "style": 0.19,
+      "layout": 0
+     },
+     "app: a second passes at Statystyki": {
+      "total": {
+       "n": 6,
+       "p50": 32.63,
+       "p95": 36.39,
+       "max": 37.08
+      },
+      "script": 32.65,
+      "style": 0.43,
+      "layout": 0
+     },
+     "app: switched to Magazyn": {
+      "total": {
+       "n": 5,
+       "p50": 66.32,
+       "p95": 67.88,
+       "max": 68.13
+      },
+      "script": 19.63,
+      "style": 34.9,
+      "layout": 11.68
+     },
+     "app: switched to Sala": {
+      "total": {
+       "n": 5,
+       "p50": 60.07,
+       "p95": 77.82,
+       "max": 80
+      },
+      "script": 28.27,
+      "style": 23.52,
+      "layout": 8.28
+     },
+     "app: switched to Kuchnia": {
+      "total": {
+       "n": 5,
+       "p50": 42.65,
+       "p95": 45.74,
+       "max": 46.51
+      },
+      "script": 13.57,
+      "style": 23.58,
+      "layout": 7.58
+     },
+     "app: switched to Wydawka": {
+      "total": {
+       "n": 5,
+       "p50": 22.68,
+       "p95": 25.38,
+       "max": 25.77
+      },
+      "script": 8.01,
+      "style": 11.43,
+      "layout": 3.64
+     },
+     "app: switched to Raport": {
+      "total": {
+       "n": 5,
+       "p50": 22.18,
+       "p95": 24.27,
+       "max": 24.73
+      },
+      "script": 7.45,
+      "style": 9.96,
+      "layout": 2.27
+     },
+     "app: switched to Statystyki": {
+      "total": {
+       "n": 5,
+       "p50": 87.8,
+       "p95": 106.04,
+       "max": 109.97
+      },
+      "script": 65.06,
+      "style": 18.39,
+      "layout": 4.51
+     },
+     "app: started, until it waits for its day": {
+      "total": {
+       "n": 6,
+       "p50": 180.74,
+       "p95": 201.56,
+       "max": 202.18
+      },
+      "script": 160.91,
+      "style": 8.52,
+      "layout": 13.09
+     },
+     "app: started, the day drawn": {
+      "total": {
+       "n": 6,
+       "p50": 221.81,
+       "p95": 231.34,
+       "max": 233.51
+      },
+      "script": 167.05,
+      "style": 19.06,
+      "layout": 39.98
+     }
+    }
+   },
+   "layers": {
+    "Stock": {
+     "layers": {
+      "browser": 523.11,
+      "design system": 496.8,
+      "carrier": 286.47,
+      "view model": 73.31,
+      "garbage collector": 55.16
+     },
+     "top": [
+      {
+       "fn": "(program)",
+       "module": "",
+       "ms": 511.96
+      },
+      {
+       "fn": "scrollToTab",
+       "module": "node_modules/@material/web/tabs/internal/tabs.js",
+       "ms": 75.87
+      },
+      {
+       "fn": "(garbage collector)",
+       "module": "",
+       "ms": 55.16
+      },
+      {
+       "fn": "showStringImpl",
+       "module": "Data.Show",
+       "ms": 34.53
+      },
+      {
+       "fn": "insertBefore",
+       "module": "",
+       "ms": 29.76
+      },
+      {
+       "fn": "importNode",
+       "module": "",
+       "ms": 29.55
+      },
+      {
+       "fn": "setAttribute",
+       "module": "",
+       "ms": 29.07
+      },
+      {
+       "fn": "removeChild",
+       "module": "",
+       "ms": 24.5
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Effect",
+       "ms": 22.92
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Data.Ord",
+       "ms": 22.45
+      },
+      {
+       "fn": "getAnimations",
+       "module": "",
+       "ms": 21.55
+      },
+      {
+       "fn": "get",
+       "module": "node_modules/@material/web/internal/aria/delegate.js",
+       "ms": 19.54
+      }
+     ]
+    },
+    "Hall": {
+     "layers": {
+      "browser": 344.84,
+      "carrier": 287.81,
+      "view model": 128.74,
+      "garbage collector": 41.6,
+      "design system": 60.67
+     },
+     "top": [
+      {
+       "fn": "(program)",
+       "module": "",
+       "ms": 327.85
+      },
+      {
+       "fn": "(garbage collector)",
+       "module": "",
+       "ms": 41.6
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Effect",
+       "ms": 31.73
+      },
+      {
+       "fn": "setAttribute",
+       "module": "",
+       "ms": 23.44
+      },
+      {
+       "fn": "__do3",
+       "module": "PUI",
+       "ms": 21.19
+      },
+      {
+       "fn": "getAnimations",
+       "module": "",
+       "ms": 15.49
+      },
+      {
+       "fn": "variantTags",
+       "module": "Data.Variant.Internal",
+       "ms": 14.3
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "PUI.Web",
+       "ms": 12.21
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Data.Ord",
+       "ms": 12.19
+      },
+      {
+       "fn": "showStringImpl",
+       "module": "Data.Show",
+       "ms": 11.04
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Data.String.Common",
+       "ms": 10.45
+      },
+      {
+       "fn": "filterImpl",
+       "module": "Data.Array",
+       "ms": 9.47
+      }
+     ]
+    },
+    "Kitchen": {
+     "layers": {
+      "browser": 452.91,
+      "design system": 179.37,
+      "carrier": 136.04,
+      "view model": 15.09,
+      "garbage collector": 28
+     },
+     "top": [
+      {
+       "fn": "(program)",
+       "module": "",
+       "ms": 443.26
+      },
+      {
+       "fn": "animate",
+       "module": "",
+       "ms": 49.66
+      },
+      {
+       "fn": "showModal",
+       "module": "",
+       "ms": 32.88
+      },
+      {
+       "fn": "(garbage collector)",
+       "module": "",
+       "ms": 28
+      },
+      {
+       "fn": "appendChild",
+       "module": "",
+       "ms": 14.41
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Effect",
+       "ms": 12.73
+      },
+      {
+       "fn": "setAttribute",
+       "module": "",
+       "ms": 8.96
+      },
+      {
+       "fn": "removeChild",
+       "module": "",
+       "ms": 6.66
+      },
+      {
+       "fn": "insertBefore",
+       "module": "",
+       "ms": 6.42
+      },
+      {
+       "fn": "importNode",
+       "module": "",
+       "ms": 5.51
+      },
+      {
+       "fn": "disconnectedCallback",
+       "module": "node_modules/lit-element/lit-element.js",
+       "ms": 5.08
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Monad.State.Trans",
+       "ms": 4.89
+      }
+     ]
+    },
+    "Pass": {
+     "layers": {
+      "browser": 230.56,
+      "design system": 49.36,
+      "carrier": 10.55,
+      "view model": 4.82,
+      "garbage collector": 1.96
+     },
+     "top": [
+      {
+       "fn": "(program)",
+       "module": "",
+       "ms": 223.6
+      },
+      {
+       "fn": "animate",
+       "module": "",
+       "ms": 17.36
+      },
+      {
+       "fn": "showModal",
+       "module": "",
+       "ms": 15.83
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "",
+       "ms": 4.11
+      },
+      {
+       "fn": "animateDialog",
+       "module": "node_modules/@material/web/dialog/internal/dialog.js",
+       "ms": 2.33
+      },
+      {
+       "fn": "(garbage collector)",
+       "module": "",
+       "ms": 1.96
+      },
+      {
+       "fn": "show",
+       "module": "node_modules/@material/web/dialog/internal/dialog.js",
+       "ms": 1.75
+      },
+      {
+       "fn": "appendChild",
+       "module": "",
+       "ms": 1.56
+      },
+      {
+       "fn": "centre",
+       "module": "Data.Array",
+       "ms": 1.06
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "PUI.Web",
+       "ms": 1.04
+      },
+      {
+       "fn": "billsState",
+       "module": "Diner",
+       "ms": 1.04
+      },
+      {
+       "fn": "__do3",
+       "module": "PUI",
+       "ms": 1.03
+      }
+     ]
+    },
+    "Report": {
+     "layers": {
+      "browser": 54.05,
+      "design system": 6.27,
+      "carrier": 22.02,
+      "view model": 8.63,
+      "garbage collector": 4.88
+     },
+     "top": [
+      {
+       "fn": "(program)",
+       "module": "",
+       "ms": 53.52
+      },
+      {
+       "fn": "(garbage collector)",
+       "module": "",
+       "ms": 4.88
+      },
+      {
+       "fn": "setAttribute",
+       "module": "",
+       "ms": 4.05
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Bind",
+       "ms": 1.81
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Monad",
+       "ms": 1.69
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Effect",
+       "ms": 1.43
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Diner",
+       "ms": 1.32
+      },
+      {
+       "fn": "mergeFromTo",
+       "module": "Data.Array",
+       "ms": 1.07
+      },
+      {
+       "fn": "appendChild",
+       "module": "",
+       "ms": 1
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Monad.State.Trans",
+       "ms": 0.89
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Monad",
+       "ms": 0.77
+      },
+      {
+       "fn": "createTextNode",
+       "module": "",
+       "ms": 0.77
+      }
+     ]
+    },
+    "Statistics": {
+     "layers": {
+      "browser": 150.66,
+      "design system": 41.43,
+      "carrier": 67.29,
+      "view model": 405.86,
+      "garbage collector": 36.84
+     },
+     "top": [
+      {
+       "fn": "(program)",
+       "module": "",
+       "ms": 144.56
+      },
+      {
+       "fn": "go",
+       "module": "Data.Map.Internal",
+       "ms": 100.94
+      },
+      {
+       "fn": "mergeFromTo",
+       "module": "Data.Array",
+       "ms": 73.91
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Data.Map.Internal",
+       "ms": 48.69
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Data.Ord",
+       "ms": 48.52
+      },
+      {
+       "fn": "(garbage collector)",
+       "module": "",
+       "ms": 36.84
+      },
+      {
+       "fn": "$tco_loop",
+       "module": "Data.Map.Internal",
+       "ms": 13.79
+      },
+      {
+       "fn": "go",
+       "module": "Data.Map.Internal",
+       "ms": 12.95
+      },
+      {
+       "fn": "getAnimations",
+       "module": "",
+       "ms": 12.31
+      },
+      {
+       "fn": "filterImpl",
+       "module": "Data.Array",
+       "ms": 9.51
+      },
+      {
+       "fn": "variantTags",
+       "module": "Data.Variant.Internal",
+       "ms": 8.71
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Bind",
+       "ms": 7.81
+      }
+     ]
+    }
+   },
+   "problems": []
+  },
+  "scale": {
+   "scales": [
+    1,
+    4,
+    16,
+    64
+   ],
+   "openScales": [
+    1,
+    4
+   ],
+   "paged": {
+    "Stock": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 82.01,
+        "p95": 86.53,
+        "max": 87.03
+       },
+       "nodes": 6184,
+       "heapMB": 6.3,
+       "rows": 10,
+       "layers": {
+        "browser": 26.73,
+        "view model": 15.87,
+        "carrier": 23.44,
+        "design system": 61.44,
+        "garbage collector": 6.29
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 2.69,
+       "p95": 3.38,
+       "max": 3.56
+      },
+      "doing": {
+       "n": 12,
+       "p50": 4.14,
+       "p95": 6.35,
+       "max": 7.66
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 102.47,
+        "p95": 107.73,
+        "max": 108.31
+       },
+       "nodes": 6192,
+       "heapMB": 5.9,
+       "rows": 10,
+       "layers": {
+        "browser": 28.61,
+        "carrier": 31.6,
+        "design system": 66.83,
+        "garbage collector": 8.61,
+        "view model": 29.07
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 5.41,
+       "p95": 5.91,
+       "max": 5.95
+      },
+      "doing": {
+       "n": 12,
+       "p50": 8.97,
+       "p95": 13.87,
+       "max": 14.32
+      }
+     },
+     "16": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 145.41,
+        "p95": 145.57,
+        "max": 145.58
+       },
+       "nodes": 6192,
+       "heapMB": 10.3,
+       "rows": 10,
+       "layers": {
+        "browser": 26.52,
+        "design system": 62.15,
+        "garbage collector": 11.03,
+        "carrier": 36.76,
+        "view model": 64.63
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 14.34,
+       "p95": 16.67,
+       "max": 17.44
+      },
+      "doing": {
+       "n": 12,
+       "p50": 22.76,
+       "p95": 30.65,
+       "max": 36.66
+      }
+     },
+     "64": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 285.98,
+        "p95": 286.31,
+        "max": 286.34
+       },
+       "nodes": 6192,
+       "heapMB": 23.4,
+       "rows": 10,
+       "layers": {
+        "browser": 29.93,
+        "garbage collector": 19.63,
+        "carrier": 72.88,
+        "design system": 56.39,
+        "view model": 177.54
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 53.26,
+       "p95": 59.21,
+       "max": 60.55
+      },
+      "doing": {
+       "n": 12,
+       "p50": 89.86,
+       "p95": 166.47,
+       "max": 239.45
+      }
+     }
+    },
+    "Hall": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 82.95,
+        "p95": 88.64,
+        "max": 89.27
+       },
+       "nodes": 2457,
+       "heapMB": 7.1,
+       "rows": 66,
+       "layers": {
+        "browser": 27.14,
+        "view model": 22.52,
+        "carrier": 43.82,
+        "design system": 41.63,
+        "garbage collector": 9.48
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 3.6,
+       "p95": 3.92,
+       "max": 4.03
+      },
+      "doing": {
+       "n": 12,
+       "p50": 4.58,
+       "p95": 11.27,
+       "max": 15.46
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 135.73,
+        "p95": 149.01,
+        "max": 150.49
+       },
+       "nodes": 5121,
+       "heapMB": 11.6,
+       "rows": 192,
+       "layers": {
+        "browser": 30.68,
+        "view model": 37.33,
+        "carrier": 74.41,
+        "design system": 41.27,
+        "garbage collector": 20.78
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 7.31,
+       "p95": 9.57,
+       "max": 10.39
+      },
+      "doing": {
+       "n": 12,
+       "p50": 9.29,
+       "p95": 13.94,
+       "max": 16.34
+      }
+     },
+     "16": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 286.01,
+        "p95": 290.46,
+        "max": 290.96
+       },
+       "nodes": 15777,
+       "heapMB": 18.7,
+       "rows": 696,
+       "layers": {
+        "browser": 44.11,
+        "design system": 66.42,
+        "garbage collector": 36.41,
+        "carrier": 161.01,
+        "view model": 70.34
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 24.16,
+       "p95": 28.58,
+       "max": 29.7
+      },
+      "doing": {
+       "n": 12,
+       "p50": 27.2,
+       "p95": 37.59,
+       "max": 41.89
+      }
+     },
+     "64": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 814.17,
+        "p95": 815.15,
+        "max": 815.26
+       },
+       "nodes": 54023,
+       "heapMB": 51.2,
+       "rows": 2712,
+       "layers": {
+        "browser": 195.2,
+        "design system": 132.07,
+        "garbage collector": 91.38,
+        "carrier": 436.68,
+        "view model": 217.11
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 91.78,
+       "p95": 107.09,
+       "max": 108.01
+      },
+      "doing": {
+       "n": 12,
+       "p50": 104.21,
+       "p95": 126.88,
+       "max": 132.69
+      }
+     }
+    },
+    "Kitchen": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 69.95,
+        "p95": 72.33,
+        "max": 72.6
+       },
+       "nodes": 3286,
+       "heapMB": 4.8,
+       "rows": 10,
+       "layers": {
+        "browser": 33.24,
+        "view model": 14.6,
+        "carrier": 23.44,
+        "design system": 28.92,
+        "garbage collector": 4.61
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 1.75,
+       "p95": 2.63,
+       "max": 2.76
+      },
+      "doing": {
+       "n": 12,
+       "p50": 16.29,
+       "p95": 21.71,
+       "max": 24.7
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 73.9,
+        "p95": 74.09,
+        "max": 74.11
+       },
+       "nodes": 3143,
+       "heapMB": 7.4,
+       "rows": 10,
+       "layers": {
+        "browser": 33.77,
+        "view model": 24.64,
+        "carrier": 26.14,
+        "design system": 27.04,
+        "garbage collector": 4.89
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 2.3,
+       "p95": 2.6,
+       "max": 2.61
+      },
+      "doing": {
+       "n": 12,
+       "p50": 15.64,
+       "p95": 19.28,
+       "max": 20.95
+      }
+     },
+     "16": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 99.89,
+        "p95": 112.13,
+        "max": 113.49
+       },
+       "nodes": 3325,
+       "heapMB": 9.6,
+       "rows": 10,
+       "layers": {
+        "browser": 35.12,
+        "garbage collector": 11.44,
+        "view model": 50.18,
+        "design system": 27.3,
+        "carrier": 23.49
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 4.24,
+       "p95": 5.16,
+       "max": 5.41
+      },
+      "doing": {
+       "n": 12,
+       "p50": 17.36,
+       "p95": 23.98,
+       "max": 24.77
+      }
+     },
+     "64": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 167.4,
+        "p95": 169.29,
+        "max": 169.5
+       },
+       "nodes": 2896,
+       "heapMB": 17.5,
+       "rows": 10,
+       "layers": {
+        "browser": 35.03,
+        "view model": 120.95,
+        "carrier": 22.57,
+        "design system": 23.62,
+        "garbage collector": 20.18
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 10,
+       "p95": 11.88,
+       "max": 12.36
+      },
+      "doing": {
+       "n": 12,
+       "p50": 24.09,
+       "p95": 30.24,
+       "max": 33.41
+      }
+     }
+    },
+    "Pass": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 50.52,
+        "p95": 51.91,
+        "max": 52.06
+       },
+       "nodes": 922,
+       "heapMB": 4.5,
+       "rows": 10,
+       "layers": {
+        "browser": 30.65,
+        "carrier": 14.85,
+        "design system": 18.5,
+        "garbage collector": 4.44,
+        "view model": 14.25
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 0.82,
+       "p95": 1.2,
+       "max": 1.21
+      },
+      "doing": {
+       "n": 6,
+       "p50": 14.81,
+       "p95": 19.61,
+       "max": 20.9
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 58.39,
+        "p95": 59.49,
+        "max": 59.61
+       },
+       "nodes": 924,
+       "heapMB": 4.6,
+       "rows": 10,
+       "layers": {
+        "browser": 27.58,
+        "design system": 21.15,
+        "garbage collector": 5.26,
+        "carrier": 13.96,
+        "view model": 24.51
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 1.44,
+       "p95": 2.68,
+       "max": 2.78
+      },
+      "doing": {
+       "n": 6,
+       "p50": 17.09,
+       "p95": 21.36,
+       "max": 22.58
+      }
+     },
+     "16": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 77.47,
+        "p95": 79.22,
+        "max": 79.41
+       },
+       "nodes": 924,
+       "heapMB": 7.7,
+       "rows": 10,
+       "layers": {
+        "browser": 32.39,
+        "view model": 43.7,
+        "carrier": 14.9,
+        "design system": 22.73,
+        "garbage collector": 9.12
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 1.91,
+       "p95": 2.72,
+       "max": 2.78
+      },
+      "doing": {
+       "n": 6,
+       "p50": 18.01,
+       "p95": 24.38,
+       "max": 26.34
+      }
+     },
+     "64": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 144.08,
+        "p95": 149.98,
+        "max": 150.63
+       },
+       "nodes": 924,
+       "heapMB": 13.9,
+       "rows": 10,
+       "layers": {
+        "browser": 29.65,
+        "carrier": 15.62,
+        "design system": 20.08,
+        "garbage collector": 16.96,
+        "view model": 100.67
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 4.46,
+       "p95": 5.4,
+       "max": 5.63
+      },
+      "doing": {
+       "n": 6,
+       "p50": 22.56,
+       "p95": 31.53,
+       "max": 34.27
+      }
+     }
+    },
+    "Report": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 44.3,
+        "p95": 46.84,
+        "max": 47.12
+       },
+       "nodes": 301,
+       "heapMB": 5,
+       "rows": 11,
+       "layers": {
+        "browser": 27.8,
+        "design system": 13.91,
+        "garbage collector": 4.45,
+        "carrier": 12.76,
+        "view model": 15.81
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 1.23,
+       "p95": 1.65,
+       "max": 1.69
+      },
+      "doing": {
+       "n": 12,
+       "p50": 4.31,
+       "p95": 6.43,
+       "max": 6.96
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 53.55,
+        "p95": 60.2,
+        "max": 60.94
+       },
+       "nodes": 301,
+       "heapMB": 6.2,
+       "rows": 11,
+       "layers": {
+        "browser": 25.36,
+        "view model": 23.69,
+        "carrier": 12.76,
+        "design system": 18.37,
+        "garbage collector": 6.58
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 1.87,
+       "p95": 3.04,
+       "max": 3.12
+      },
+      "doing": {
+       "n": 12,
+       "p50": 4.77,
+       "p95": 7.83,
+       "max": 9.78
+      }
+     },
+     "16": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 88.06,
+        "p95": 99.35,
+        "max": 100.61
+       },
+       "nodes": 301,
+       "heapMB": 6.5,
+       "rows": 11,
+       "layers": {
+        "browser": 23.05,
+        "design system": 18.56,
+        "garbage collector": 8.22,
+        "carrier": 14.75,
+        "view model": 53.2
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 3.61,
+       "p95": 4.13,
+       "max": 4.16
+      },
+      "doing": {
+       "n": 12,
+       "p50": 6.55,
+       "p95": 10.24,
+       "max": 12.24
+      }
+     },
+     "64": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 162.74,
+        "p95": 165.52,
+        "max": 165.82
+       },
+       "nodes": 301,
+       "heapMB": 41.3,
+       "rows": 11,
+       "layers": {
+        "browser": 27.32,
+        "carrier": 14.24,
+        "design system": 15.73,
+        "garbage collector": 20.08,
+        "view model": 144.84
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 16.89,
+       "p95": 22.06,
+       "max": 23.75
+      },
+      "doing": {
+       "n": 12,
+       "p50": 20.72,
+       "p95": 30.44,
+       "max": 35.82
+      }
+     }
+    },
+    "Statistics": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 78.94,
+        "p95": 79.1,
+        "max": 79.12
+       },
+       "nodes": 924,
+       "heapMB": 4.7,
+       "rows": 11,
+       "layers": {
+        "browser": 20.77,
+        "carrier": 13.05,
+        "design system": 31.98,
+        "garbage collector": 7.48,
+        "view model": 43.31
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 8.35,
+       "p95": 13.38,
+       "max": 14.69
+      },
+      "doing": {
+       "n": 12,
+       "p50": 12.34,
+       "p95": 15.63,
+       "max": 16.09
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 152.18,
+        "p95": 163.64,
+        "max": 164.91
+       },
+       "nodes": 924,
+       "heapMB": 8.5,
+       "rows": 11,
+       "layers": {
+        "browser": 23.22,
+        "carrier": 17.11,
+        "design system": 34.94,
+        "garbage collector": 14.01,
+        "view model": 118.03
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 32.41,
+       "p95": 45.23,
+       "max": 51.5
+      },
+      "doing": {
+       "n": 12,
+       "p50": 35.41,
+       "p95": 49.35,
+       "max": 53.08
+      }
+     },
+     "16": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 404.61,
+        "p95": 410.92,
+        "max": 411.62
+       },
+       "nodes": 924,
+       "heapMB": 21.2,
+       "rows": 11,
+       "layers": {
+        "browser": 27.02,
+        "design system": 29,
+        "garbage collector": 38.52,
+        "carrier": 16.08,
+        "view model": 374.68
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 131.98,
+       "p95": 146.36,
+       "max": 149.49
+      },
+      "doing": {
+       "n": 12,
+       "p50": 160.52,
+       "p95": 181.32,
+       "max": 184.48
+      }
+     },
+     "64": {
+      "mount": {
+       "ms": {
+        "n": 3,
+        "p50": 1642.82,
+        "p95": 1789.36,
+        "max": 1805.64
+       },
+       "nodes": 905,
+       "heapMB": 42.2,
+       "rows": 11,
+       "layers": {
+        "browser": 29.61,
+        "design system": 28.66,
+        "garbage collector": 136.19,
+        "carrier": 16.15,
+        "view model": 1590.45
+       }
+      },
+      "tick": {
+       "n": 8,
+       "p50": 712.44,
+       "p95": 730.66,
+       "max": 736.02
+      },
+      "doing": {
+       "n": 12,
+       "p50": 815.74,
+       "p95": 839.67,
+       "max": 842.36
+      }
+     }
+    }
+   },
+   "unpaged": {
+    "Stock": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 703.77,
+        "p95": 703.77,
+        "max": 703.77
+       },
+       "nodes": 144136,
+       "heapMB": 25.4,
+       "rows": 304,
+       "layers": {
+        "browser": 169.15,
+        "carrier": 168.97,
+        "design system": 641.03,
+        "garbage collector": 42.98,
+        "view model": 20.74
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 21.17,
+       "p95": 23.82,
+       "max": 24.28
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 2307.39,
+        "p95": 2307.39,
+        "max": 2307.39
+       },
+       "nodes": 641133,
+       "heapMB": 88.2,
+       "rows": 1216,
+       "layers": {
+        "browser": 789.8,
+        "carrier": 569.27,
+        "design system": 2192.9,
+        "garbage collector": 147.39,
+        "view model": 34.96
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 94.78,
+       "p95": 110.94,
+       "max": 116.08
+      }
+     }
+    },
+    "Hall": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 168.22,
+        "p95": 168.22,
+        "max": 168.22
+       },
+       "nodes": 6655,
+       "heapMB": 12.5,
+       "rows": 346,
+       "layers": {
+        "browser": 37.86,
+        "garbage collector": 21.77,
+        "view model": 27.98,
+        "carrier": 100.46,
+        "design system": 49.13
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 12.56,
+       "p95": 14.33,
+       "max": 14.39
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 449.21,
+        "p95": 449.21,
+        "max": 449.21
+       },
+       "nodes": 22999,
+       "heapMB": 31.7,
+       "rows": 1384,
+       "layers": {
+        "browser": 133.66,
+        "design system": 83.88,
+        "garbage collector": 44.32,
+        "carrier": 241.91,
+        "view model": 57.42
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 48.02,
+       "p95": 51.56,
+       "max": 51.88
+      }
+     }
+    },
+    "Kitchen": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 92.26,
+        "p95": 92.26,
+        "max": 92.26
+       },
+       "nodes": 6085,
+       "heapMB": 7.1,
+       "rows": 20,
+       "layers": {
+        "browser": 41.07,
+        "carrier": 30.46,
+        "design system": 36.7,
+        "garbage collector": 7.49,
+        "view model": 17.35
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 2.73,
+       "p95": 3.76,
+       "max": 4.05
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 183.52,
+        "p95": 183.52,
+        "max": 183.52
+       },
+       "nodes": 22345,
+       "heapMB": 13.8,
+       "rows": 80,
+       "layers": {
+        "browser": 85.23,
+        "carrier": 74.25,
+        "design system": 71.4,
+        "garbage collector": 17.97,
+        "view model": 25.85
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 7.05,
+       "p95": 9.06,
+       "max": 9.66
+      }
+     }
+    },
+    "Pass": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 50.48,
+        "p95": 50.48,
+        "max": 50.48
+       },
+       "nodes": 922,
+       "heapMB": 4.5,
+       "rows": 10,
+       "layers": {
+        "browser": 30.49,
+        "view model": 15.11,
+        "carrier": 14.54,
+        "design system": 22.45,
+        "garbage collector": 3.16
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 0.71,
+       "p95": 0.85,
+       "max": 0.87
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 71.98,
+        "p95": 71.98,
+        "max": 71.98
+       },
+       "nodes": 2422,
+       "heapMB": 7,
+       "rows": 40,
+       "layers": {
+        "browser": 36.55,
+        "design system": 31.67,
+        "garbage collector": 9.07,
+        "carrier": 25.89,
+        "view model": 26.73
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 2.34,
+       "p95": 2.68,
+       "max": 2.72
+      }
+     }
+    },
+    "Report": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 92.72,
+        "p95": 92.72,
+        "max": 92.72
+       },
+       "nodes": 2598,
+       "heapMB": 7.2,
+       "rows": 220,
+       "layers": {
+        "browser": 46.96,
+        "view model": 16.15,
+        "design system": 15.96,
+        "garbage collector": 12.39,
+        "carrier": 43.14
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 6.21,
+       "p95": 8.93,
+       "max": 9.73
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 226.83,
+        "p95": 226.83,
+        "max": 226.83
+       },
+       "nodes": 9825,
+       "heapMB": 15.1,
+       "rows": 877,
+       "layers": {
+        "browser": 106.42,
+        "garbage collector": 24.81,
+        "design system": 18.89,
+        "carrier": 116.22,
+        "view model": 25.28
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 22.1,
+       "p95": 36.9,
+       "max": 40.45
+      }
+     }
+    },
+    "Statistics": {
+     "1": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 142.19,
+        "p95": 142.19,
+        "max": 142.19
+       },
+       "nodes": 3442,
+       "heapMB": 8.8,
+       "rows": 263,
+       "layers": {
+        "browser": 31.82,
+        "carrier": 55.97,
+        "design system": 38.17,
+        "garbage collector": 12.28,
+        "view model": 41.04
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 18.4,
+       "p95": 20.29,
+       "max": 20.32
+      }
+     },
+     "4": {
+      "mount": {
+       "ms": {
+        "n": 1,
+        "p50": 426.47,
+        "p95": 426.47,
+        "max": 426.47
+       },
+       "nodes": 11212,
+       "heapMB": 13.2,
+       "rows": 1040,
+       "layers": {
+        "browser": 65.24,
+        "design system": 67.71,
+        "garbage collector": 37.33,
+        "carrier": 165.83,
+        "view model": 146.81
+       }
+      },
+      "tick": {
+       "n": 6,
+       "p50": 82.33,
+       "p95": 95.38,
+       "max": 98.42
+      }
+     }
+    }
+   }
+  },
+  "walk": {
+   "seed": 20261120,
+   "steps": 3000,
+   "asked": 3000,
+   "seconds": 167,
+   "done": {
+    "next page": 326,
+    "add": 186,
+    "previous page": 239,
+    "group": 60,
+    "line +": 48,
+    "remove": 27,
+    "serve table": 136,
+    "search": 162,
+    "line −": 15,
+    "send": 41,
+    "open": 1177,
+    "order": 159,
+    "plate": 125,
+    "zero": 45,
+    "stock +": 76,
+    "portions of": 53,
+    "price of": 61,
+    "stock −": 64
+   },
+   "failure": null,
+   "problems": [],
+   "orders": 310,
+   "paid": 288
+  },
+  "races": {
+   "checks": [
+    {
+     "name": "twelve clicks on a dish with no wait between them put twelve portions on the order",
+     "ok": true,
+     "detail": "{\"line\":\"12\",\"tile\":\"Arancini z orzechami\\n×12\\n9,00 zł · dostępne: 5\"}"
+    },
+    {
+     "name": "three digits typed while 3 seconds pass stay as typed, the caret after them",
+     "ok": true,
+     "detail": "{\"value\":\"123\",\"caret\":3,\"focused\":true}"
+    },
+    {
+     "name": "and are the stock when the stockroom is come back to",
+     "ok": true,
+     "detail": "\"123\""
+    },
+    {
+     "name": "a dish clicked while the order was on its way went with it or stayed in stock, never both or neither",
+     "ok": true,
+     "detail": "{\"served\":\"Stolik 7 · wolny\",\"sent\":\"Stolik 5 · zamówienie #253 w kuchni, złożone 0 min temu\",\"lines\":[\"12 × Arancini z orzechami\",\"1 × Arancini\"],\"left\":\"14\"}"
+    },
+    {
+     "name": "the last page losing its only row falls back to the page before",
+     "ok": true,
+     "detail": "{\"last\":\"10–10 z 10\",\"pager\":\"1–9 z 9\",\"rows\":9}"
+    },
+    {
+     "name": "a payment confirmed twice at once is taken once",
+     "ok": true,
+     "detail": "\"1–8 z 8\""
+    }
+   ],
+   "problems": []
+  },
+  "soak": {
+   "seconds": 240,
+   "actions": 5300,
+   "samples": [
+    {
+     "t": 0.569,
+     "heapMB": 6.603931427001953,
+     "nodes": 8674,
+     "listeners": 946
+    },
+    {
+     "t": 1.452,
+     "heapMB": 8.046001434326172,
+     "nodes": 13328,
+     "listeners": 1679
+    },
+    {
+     "t": 2.092,
+     "heapMB": 9.114631652832031,
+     "nodes": 18493,
+     "listeners": 1879
+    },
+    {
+     "t": 2.705,
+     "heapMB": 11.283828735351562,
+     "nodes": 32561,
+     "listeners": 3849
+    },
+    {
+     "t": 3.334,
+     "heapMB": 13.56573486328125,
+     "nodes": 46815,
+     "listeners": 4787
+    },
+    {
+     "t": 4.043,
+     "heapMB": 13.92837905883789,
+     "nodes": 47898,
+     "listeners": 5241
+    },
+    {
+     "t": 4.52,
+     "heapMB": 13.959175109863281,
+     "nodes": 47946,
+     "listeners": 5252
+    },
+    {
+     "t": 5.096,
+     "heapMB": 14.779075622558594,
+     "nodes": 52825,
+     "listeners": 5942
+    },
+    {
+     "t": 5.702,
+     "heapMB": 15.55435562133789,
+     "nodes": 57498,
+     "listeners": 5933
+    },
+    {
+     "t": 6.351,
+     "heapMB": 15.896984100341797,
+     "nodes": 58376,
+     "listeners": 5993
+    },
+    {
+     "t": 6.986,
+     "heapMB": 16.318279266357422,
+     "nodes": 59193,
+     "listeners": 6365
+    },
+    {
+     "t": 7.617,
+     "heapMB": 17.521442413330078,
+     "nodes": 63006,
+     "listeners": 6702
+    },
+    {
+     "t": 8.255,
+     "heapMB": 18.765655517578125,
+     "nodes": 68939,
+     "listeners": 7153
+    },
+    {
+     "t": 8.831,
+     "heapMB": 19.364471435546875,
+     "nodes": 70864,
+     "listeners": 7279
+    },
+    {
+     "t": 9.5,
+     "heapMB": 19.73157501220703,
+     "nodes": 71944,
+     "listeners": 7436
+    },
+    {
+     "t": 10.188,
+     "heapMB": 21.844112396240234,
+     "nodes": 86096,
+     "listeners": 9370
+    },
+    {
+     "t": 10.78,
+     "heapMB": 22.112415313720703,
+     "nodes": 86953,
+     "listeners": 9128
+    },
+    {
+     "t": 11.43,
+     "heapMB": 24.53106689453125,
+     "nodes": 101599,
+     "listeners": 11016
+    },
+    {
+     "t": 12.124,
+     "heapMB": 25.92078399658203,
+     "nodes": 110844,
+     "listeners": 11996
+    },
+    {
+     "t": 12.753,
+     "heapMB": 26.790271759033203,
+     "nodes": 116075,
+     "listeners": 12339
+    },
+    {
+     "t": 13.336,
+     "heapMB": 27.377429962158203,
+     "nodes": 118765,
+     "listeners": 12635
+    },
+    {
+     "t": 13.959,
+     "heapMB": 27.60851287841797,
+     "nodes": 119231,
+     "listeners": 12635
+    },
+    {
+     "t": 14.549,
+     "heapMB": 28.324268341064453,
+     "nodes": 123854,
+     "listeners": 13125
+    },
+    {
+     "t": 15.284,
+     "heapMB": 29.92211151123047,
+     "nodes": 133693,
+     "listeners": 14141
+    },
+    {
+     "t": 15.816,
+     "heapMB": 29.939926147460938,
+     "nodes": 133606,
+     "listeners": 13751
+    },
+    {
+     "t": 16.472,
+     "heapMB": 30.44247817993164,
+     "nodes": 134805,
+     "listeners": 14011
+    },
+    {
+     "t": 17.174,
+     "heapMB": 30.99457550048828,
+     "nodes": 136326,
+     "listeners": 14209
+    },
+    {
+     "t": 17.834,
+     "heapMB": 32.224029541015625,
+     "nodes": 142172,
+     "listeners": 14601
+    },
+    {
+     "t": 18.556,
+     "heapMB": 33.9225959777832,
+     "nodes": 152566,
+     "listeners": 16281
+    },
+    {
+     "t": 19.31,
+     "heapMB": 35.73533630371094,
+     "nodes": 163164,
+     "listeners": 17079
+    },
+    {
+     "t": 19.954,
+     "heapMB": 36.72228240966797,
+     "nodes": 168888,
+     "listeners": 18039
+    },
+    {
+     "t": 20.65,
+     "heapMB": 38.13296890258789,
+     "nodes": 178102,
+     "listeners": 18439
+    },
+    {
+     "t": 21.3,
+     "heapMB": 38.25156021118164,
+     "nodes": 178313,
+     "listeners": 18439
+    },
+    {
+     "t": 21.985,
+     "heapMB": 39.371883392333984,
+     "nodes": 183902,
+     "listeners": 19025
+    },
+    {
+     "t": 22.774,
+     "heapMB": 39.89385986328125,
+     "nodes": 185470,
+     "listeners": 19713
+    },
+    {
+     "t": 23.455,
+     "heapMB": 40.59798049926758,
+     "nodes": 189981,
+     "listeners": 19763
+    },
+    {
+     "t": 24.107,
+     "heapMB": 40.801448822021484,
+     "nodes": 190570,
+     "listeners": 20049
+    },
+    {
+     "t": 24.816,
+     "heapMB": 41.8066291809082,
+     "nodes": 194633,
+     "listeners": 20114
+    },
+    {
+     "t": 25.485,
+     "heapMB": 43.139251708984375,
+     "nodes": 200629,
+     "listeners": 21096
+    },
+    {
+     "t": 26.149,
+     "heapMB": 44.91173553466797,
+     "nodes": 210563,
+     "listeners": 21716
+    },
+    {
+     "t": 26.853,
+     "heapMB": 45.448421478271484,
+     "nodes": 211879,
+     "listeners": 22184
+    },
+    {
+     "t": 27.57,
+     "heapMB": 47.036277770996094,
+     "nodes": 218216,
+     "listeners": 22811
+    },
+    {
+     "t": 28.232,
+     "heapMB": 47.79679870605469,
+     "nodes": 220785,
+     "listeners": 22743
+    },
+    {
+     "t": 28.972,
+     "heapMB": 49.02509307861328,
+     "nodes": 225071,
+     "listeners": 23247
+    },
+    {
+     "t": 29.701,
+     "heapMB": 50.54222106933594,
+     "nodes": 232574,
+     "listeners": 24641
+    },
+    {
+     "t": 30.5,
+     "heapMB": 51.291297912597656,
+     "nodes": 234931,
+     "listeners": 24337
+    },
+    {
+     "t": 31.35,
+     "heapMB": 52.17687225341797,
+     "nodes": 240088,
+     "listeners": 24931
+    },
+    {
+     "t": 32.177,
+     "heapMB": 52.954261779785156,
+     "nodes": 245014,
+     "listeners": 25721
+    },
+    {
+     "t": 32.906,
+     "heapMB": 53.610260009765625,
+     "nodes": 247668,
+     "listeners": 25606
+    },
+    {
+     "t": 33.668,
+     "heapMB": 54.05122756958008,
+     "nodes": 249204,
+     "listeners": 25786
+    },
+    {
+     "t": 34.415,
+     "heapMB": 54.88066864013672,
+     "nodes": 251650,
+     "listeners": 26040
+    },
+    {
+     "t": 35.299,
+     "heapMB": 57.24512481689453,
+     "nodes": 266072,
+     "listeners": 27510
+    },
+    {
+     "t": 36.133,
+     "heapMB": 59.830482482910156,
+     "nodes": 281332,
+     "listeners": 29692
+    },
+    {
+     "t": 36.983,
+     "heapMB": 61.31808090209961,
+     "nodes": 290869,
+     "listeners": 30128
+    },
+    {
+     "t": 37.786,
+     "heapMB": 63.067142486572266,
+     "nodes": 299812,
+     "listeners": 31226
+    },
+    {
+     "t": 38.566,
+     "heapMB": 63.43082809448242,
+     "nodes": 300921,
+     "listeners": 31206
+    },
+    {
+     "t": 39.299,
+     "heapMB": 64.04437255859375,
+     "nodes": 303199,
+     "listeners": 32038
+    },
+    {
+     "t": 40.19,
+     "heapMB": 66.77797317504883,
+     "nodes": 321732,
+     "listeners": 33999
+    },
+    {
+     "t": 40.934,
+     "heapMB": 66.84647369384766,
+     "nodes": 321829,
+     "listeners": 33820
+    },
+    {
+     "t": 41.818,
+     "heapMB": 67.60601806640625,
+     "nodes": 324870,
+     "listeners": 34075
+    },
+    {
+     "t": 42.603,
+     "heapMB": 67.97786331176758,
+     "nodes": 326136,
+     "listeners": 34397
+    },
+    {
+     "t": 43.698,
+     "heapMB": 74.28935241699219,
+     "nodes": 367977,
+     "listeners": 38307
+    },
+    {
+     "t": 44.689,
+     "heapMB": 77.13705444335938,
+     "nodes": 385317,
+     "listeners": 40247
+    },
+    {
+     "t": 45.553,
+     "heapMB": 77.5046157836914,
+     "nodes": 386391,
+     "listeners": 40187
+    },
+    {
+     "t": 46.601,
+     "heapMB": 80.35234832763672,
+     "nodes": 402412,
+     "listeners": 42101
+    },
+    {
+     "t": 47.502,
+     "heapMB": 82.97169494628906,
+     "nodes": 418970,
+     "listeners": 44156
+    },
+    {
+     "t": 48.35,
+     "heapMB": 84.0921859741211,
+     "nodes": 423336,
+     "listeners": 44066
+    },
+    {
+     "t": 49.299,
+     "heapMB": 84.26532363891602,
+     "nodes": 423723,
+     "listeners": 44126
+    },
+    {
+     "t": 50.345,
+     "heapMB": 85.21383285522461,
+     "nodes": 427126,
+     "listeners": 44391
+    },
+    {
+     "t": 51.268,
+     "heapMB": 85.91150665283203,
+     "nodes": 430148,
+     "listeners": 45169
+    },
+    {
+     "t": 52.182,
+     "heapMB": 86.66130828857422,
+     "nodes": 432606,
+     "listeners": 44957
+    },
+    {
+     "t": 53.145,
+     "heapMB": 89.3591194152832,
+     "nodes": 445482,
+     "listeners": 46741
+    },
+    {
+     "t": 53.991,
+     "heapMB": 90.3957748413086,
+     "nodes": 447848,
+     "listeners": 46493
+    },
+    {
+     "t": 54.969,
+     "heapMB": 91.24052047729492,
+     "nodes": 452955,
+     "listeners": 47031
+    },
+    {
+     "t": 55.967,
+     "heapMB": 93.12424850463867,
+     "nodes": 463278,
+     "listeners": 48483
+    },
+    {
+     "t": 56.865,
+     "heapMB": 93.39559936523438,
+     "nodes": 464012,
+     "listeners": 48167
+    },
+    {
+     "t": 57.858,
+     "heapMB": 95.0947494506836,
+     "nodes": 468425,
+     "listeners": 48919
+    },
+    {
+     "t": 58.719,
+     "heapMB": 95.6075325012207,
+     "nodes": 470207,
+     "listeners": 49401
+    },
+    {
+     "t": 59.763,
+     "heapMB": 99.8729019165039,
+     "nodes": 498383,
+     "listeners": 52141
+    },
+    {
+     "t": 60.737,
+     "heapMB": 101.11043548583984,
+     "nodes": 505011,
+     "listeners": 53119
+    },
+    {
+     "t": 61.821,
+     "heapMB": 105.87636947631836,
+     "nodes": 537357,
+     "listeners": 56549
+    },
+    {
+     "t": 62.886,
+     "heapMB": 109.39421081542969,
+     "nodes": 560586,
+     "listeners": 58559
+    },
+    {
+     "t": 63.783,
+     "heapMB": 109.97318649291992,
+     "nodes": 562696,
+     "listeners": 59059
+    },
+    {
+     "t": 64.668,
+     "heapMB": 110.41790771484375,
+     "nodes": 564225,
+     "listeners": 59239
+    },
+    {
+     "t": 65.575,
+     "heapMB": 110.66107559204102,
+     "nodes": 565072,
+     "listeners": 59316
+    },
+    {
+     "t": 66.542,
+     "heapMB": 111.1327018737793,
+     "nodes": 566695,
+     "listeners": 59358
+    },
+    {
+     "t": 67.654,
+     "heapMB": 112.1079330444336,
+     "nodes": 572096,
+     "listeners": 60210
+    },
+    {
+     "t": 68.55,
+     "heapMB": 112.83358764648438,
+     "nodes": 576677,
+     "listeners": 60530
+    },
+    {
+     "t": 69.497,
+     "heapMB": 113.52616500854492,
+     "nodes": 579033,
+     "listeners": 60408
+    },
+    {
+     "t": 70.468,
+     "heapMB": 114.58717346191406,
+     "nodes": 584794,
+     "listeners": 61026
+    },
+    {
+     "t": 71.456,
+     "heapMB": 114.69785690307617,
+     "nodes": 585006,
+     "listeners": 61026
+    },
+    {
+     "t": 72.734,
+     "heapMB": 115.35947036743164,
+     "nodes": 587122,
+     "listeners": 61222
+    },
+    {
+     "t": 73.837,
+     "heapMB": 116.505859375,
+     "nodes": 591137,
+     "listeners": 62246
+    },
+    {
+     "t": 74.899,
+     "heapMB": 117.53290176391602,
+     "nodes": 596914,
+     "listeners": 62560
+    },
+    {
+     "t": 75.935,
+     "heapMB": 118.68449020385742,
+     "nodes": 602830,
+     "listeners": 63492
+    },
+    {
+     "t": 77.12,
+     "heapMB": 119.11980819702148,
+     "nodes": 604061,
+     "listeners": 63588
+    },
+    {
+     "t": 78.296,
+     "heapMB": 121.44070434570312,
+     "nodes": 618582,
+     "listeners": 64538
+    },
+    {
+     "t": 79.283,
+     "heapMB": 121.67404174804688,
+     "nodes": 619480,
+     "listeners": 65044
+    },
+    {
+     "t": 80.25,
+     "heapMB": 122.62914657592773,
+     "nodes": 622631,
+     "listeners": 65242
+    },
+    {
+     "t": 81.353,
+     "heapMB": 125.6839599609375,
+     "nodes": 641670,
+     "listeners": 67546
+    },
+    {
+     "t": 82.552,
+     "heapMB": 127.71265411376953,
+     "nodes": 655536,
+     "listeners": 69016
+    },
+    {
+     "t": 83.619,
+     "heapMB": 130.16109466552734,
+     "nodes": 670829,
+     "listeners": 70654
+    },
+    {
+     "t": 84.638,
+     "heapMB": 131.07004165649414,
+     "nodes": 673934,
+     "listeners": 70766
+    },
+    {
+     "t": 85.672,
+     "heapMB": 132.09120178222656,
+     "nodes": 676917,
+     "listeners": 70862
+    },
+    {
+     "t": 86.835,
+     "heapMB": 132.70428848266602,
+     "nodes": 678917,
+     "listeners": 71456
+    },
+    {
+     "t": 88.024,
+     "heapMB": 133.76230239868164,
+     "nodes": 681975,
+     "listeners": 71414
+    },
+    {
+     "t": 89.186,
+     "heapMB": 137.15900421142578,
+     "nodes": 703391,
+     "listeners": 74139
+    },
+    {
+     "t": 90.197,
+     "heapMB": 137.1811294555664,
+     "nodes": 703281,
+     "listeners": 73559
+    },
+    {
+     "t": 91.269,
+     "heapMB": 137.48006057739258,
+     "nodes": 704335,
+     "listeners": 74235
+    },
+    {
+     "t": 92.354,
+     "heapMB": 137.9893341064453,
+     "nodes": 706016,
+     "listeners": 74167
+    },
+    {
+     "t": 93.413,
+     "heapMB": 139.0751838684082,
+     "nodes": 709725,
+     "listeners": 74291
+    },
+    {
+     "t": 94.465,
+     "heapMB": 140.48308181762695,
+     "nodes": 714816,
+     "listeners": 75269
+    },
+    {
+     "t": 95.503,
+     "heapMB": 141.87299728393555,
+     "nodes": 724041,
+     "listeners": 76179
+    },
+    {
+     "t": 96.763,
+     "heapMB": 143.47131729125977,
+     "nodes": 728644,
+     "listeners": 76683
+    },
+    {
+     "t": 97.885,
+     "heapMB": 144.5279312133789,
+     "nodes": 734463,
+     "listeners": 77077
+    },
+    {
+     "t": 99.032,
+     "heapMB": 144.7853546142578,
+     "nodes": 735343,
+     "listeners": 77483
+    },
+    {
+     "t": 100.166,
+     "heapMB": 144.87807083129883,
+     "nodes": 735452,
+     "listeners": 77093
+    },
+    {
+     "t": 101.285,
+     "heapMB": 144.88277435302734,
+     "nodes": 735579,
+     "listeners": 77673
+    },
+    {
+     "t": 102.487,
+     "heapMB": 145.6680564880371,
+     "nodes": 740420,
+     "listeners": 78163
+    },
+    {
+     "t": 103.546,
+     "heapMB": 146.19157028198242,
+     "nodes": 742133,
+     "listeners": 77799
+    },
+    {
+     "t": 104.653,
+     "heapMB": 147.4262924194336,
+     "nodes": 748711,
+     "listeners": 78657
+    },
+    {
+     "t": 105.911,
+     "heapMB": 148.9745216369629,
+     "nodes": 758373,
+     "listeners": 80077
+    },
+    {
+     "t": 107.218,
+     "heapMB": 151.25352096557617,
+     "nodes": 770231,
+     "listeners": 81321
+    },
+    {
+     "t": 108.38,
+     "heapMB": 153.31772994995117,
+     "nodes": 783970,
+     "listeners": 82211
+    },
+    {
+     "t": 109.631,
+     "heapMB": 155.32582473754883,
+     "nodes": 789318,
+     "listeners": 82781
+    },
+    {
+     "t": 110.755,
+     "heapMB": 157.3377342224121,
+     "nodes": 795876,
+     "listeners": 83935
+    },
+    {
+     "t": 111.848,
+     "heapMB": 157.76448440551758,
+     "nodes": 796585,
+     "listeners": 83935
+    },
+    {
+     "t": 113.004,
+     "heapMB": 159.0005340576172,
+     "nodes": 802223,
+     "listeners": 84669
+    },
+    {
+     "t": 114.13,
+     "heapMB": 159.4742202758789,
+     "nodes": 803734,
+     "listeners": 84281
+    },
+    {
+     "t": 115.397,
+     "heapMB": 161.2733268737793,
+     "nodes": 814641,
+     "listeners": 86021
+    },
+    {
+     "t": 116.803,
+     "heapMB": 163.07857131958008,
+     "nodes": 825300,
+     "listeners": 87179
+    },
+    {
+     "t": 118.085,
+     "heapMB": 165.04405975341797,
+     "nodes": 834122,
+     "listeners": 88151
+    },
+    {
+     "t": 119.396,
+     "heapMB": 168.16439056396484,
+     "nodes": 844945,
+     "listeners": 88733
+    },
+    {
+     "t": 120.662,
+     "heapMB": 169.87565231323242,
+     "nodes": 850511,
+     "listeners": 89440
+    },
+    {
+     "t": 121.9,
+     "heapMB": 171.2611083984375,
+     "nodes": 859870,
+     "listeners": 90860
+    },
+    {
+     "t": 123.182,
+     "heapMB": 172.52172088623047,
+     "nodes": 863634,
+     "listeners": 91110
+    },
+    {
+     "t": 124.458,
+     "heapMB": 174.97342681884766,
+     "nodes": 871672,
+     "listeners": 91977
+    },
+    {
+     "t": 125.852,
+     "heapMB": 176.82867050170898,
+     "nodes": 879998,
+     "listeners": 92826
+    },
+    {
+     "t": 127.215,
+     "heapMB": 177.60873794555664,
+     "nodes": 882136,
+     "listeners": 92628
+    },
+    {
+     "t": 128.595,
+     "heapMB": 179.2323875427246,
+     "nodes": 887849,
+     "listeners": 93666
+    },
+    {
+     "t": 129.732,
+     "heapMB": 179.24646377563477,
+     "nodes": 887841,
+     "listeners": 93666
+    },
+    {
+     "t": 131.014,
+     "heapMB": 180.56188583374023,
+     "nodes": 895309,
+     "listeners": 94625
+    },
+    {
+     "t": 132.248,
+     "heapMB": 180.66606903076172,
+     "nodes": 895482,
+     "listeners": 94455
+    },
+    {
+     "t": 133.622,
+     "heapMB": 184.01579666137695,
+     "nodes": 916121,
+     "listeners": 96289
+    },
+    {
+     "t": 134.982,
+     "heapMB": 184.9694061279297,
+     "nodes": 919597,
+     "listeners": 96996
+    },
+    {
+     "t": 136.196,
+     "heapMB": 184.97536087036133,
+     "nodes": 919653,
+     "listeners": 97186
+    },
+    {
+     "t": 137.621,
+     "heapMB": 186.69937896728516,
+     "nodes": 927769,
+     "listeners": 97770
+    },
+    {
+     "t": 138.894,
+     "heapMB": 187.47731399536133,
+     "nodes": 930453,
+     "listeners": 98182
+    },
+    {
+     "t": 140.414,
+     "heapMB": 189.59660720825195,
+     "nodes": 942352,
+     "listeners": 99474
+    },
+    {
+     "t": 141.781,
+     "heapMB": 191.75126266479492,
+     "nodes": 956471,
+     "listeners": 101134
+    },
+    {
+     "t": 143.146,
+     "heapMB": 193.3029327392578,
+     "nodes": 961746,
+     "listeners": 101190
+    },
+    {
+     "t": 144.684,
+     "heapMB": 193.7399787902832,
+     "nodes": 963174,
+     "listeners": 101346
+    },
+    {
+     "t": 145.981,
+     "heapMB": 195.36827850341797,
+     "nodes": 969463,
+     "listeners": 102429
+    },
+    {
+     "t": 147.541,
+     "heapMB": 199.9131202697754,
+     "nodes": 998591,
+     "listeners": 105561
+    },
+    {
+     "t": 148.897,
+     "heapMB": 200.6700668334961,
+     "nodes": 1003337,
+     "listeners": 105991
+    },
+    {
+     "t": 150.098,
+     "heapMB": 200.68305206298828,
+     "nodes": 1003333,
+     "listeners": 105991
+    },
+    {
+     "t": 151.469,
+     "heapMB": 201.46660614013672,
+     "nodes": 1005829,
+     "listeners": 105877
+    },
+    {
+     "t": 152.947,
+     "heapMB": 203.08371353149414,
+     "nodes": 1013809,
+     "listeners": 107141
+    },
+    {
+     "t": 154.328,
+     "heapMB": 203.79665756225586,
+     "nodes": 1018382,
+     "listeners": 107224
+    },
+    {
+     "t": 155.756,
+     "heapMB": 204.5715560913086,
+     "nodes": 1023295,
+     "listeners": 108124
+    },
+    {
+     "t": 157.219,
+     "heapMB": 205.7142677307129,
+     "nodes": 1027203,
+     "listeners": 108808
+    },
+    {
+     "t": 158.509,
+     "heapMB": 206.95841598510742,
+     "nodes": 1030467,
+     "listeners": 109126
+    },
+    {
+     "t": 159.94,
+     "heapMB": 207.42798233032227,
+     "nodes": 1031866,
+     "listeners": 109108
+    },
+    {
+     "t": 161.444,
+     "heapMB": 209.54476928710938,
+     "nodes": 1038075,
+     "listeners": 109750
+    },
+    {
+     "t": 162.872,
+     "heapMB": 213.3299331665039,
+     "nodes": 1057612,
+     "listeners": 111945
+    },
+    {
+     "t": 164.521,
+     "heapMB": 217.31951141357422,
+     "nodes": 1082168,
+     "listeners": 114441
+    },
+    {
+     "t": 166.015,
+     "heapMB": 219.20540237426758,
+     "nodes": 1088232,
+     "listeners": 115057
+    },
+    {
+     "t": 167.461,
+     "heapMB": 220.55253982543945,
+     "nodes": 1095794,
+     "listeners": 116016
+    },
+    {
+     "t": 169.044,
+     "heapMB": 222.23694229125977,
+     "nodes": 1105606,
+     "listeners": 116416
+    },
+    {
+     "t": 170.515,
+     "heapMB": 223.79605102539062,
+     "nodes": 1111110,
+     "listeners": 117462
+    },
+    {
+     "t": 171.884,
+     "heapMB": 223.8011474609375,
+     "nodes": 1111163,
+     "listeners": 117632
+    },
+    {
+     "t": 173.23,
+     "heapMB": 224.55481338500977,
+     "nodes": 1115863,
+     "listeners": 117952
+    },
+    {
+     "t": 174.979,
+     "heapMB": 225.36370468139648,
+     "nodes": 1118521,
+     "listeners": 117854
+    },
+    {
+     "t": 176.747,
+     "heapMB": 227.9325180053711,
+     "nodes": 1134434,
+     "listeners": 120082
+    },
+    {
+     "t": 178.178,
+     "heapMB": 228.5372428894043,
+     "nodes": 1136110,
+     "listeners": 119754
+    },
+    {
+     "t": 179.545,
+     "heapMB": 229.4627799987793,
+     "nodes": 1141455,
+     "listeners": 120316
+    },
+    {
+     "t": 181.23,
+     "heapMB": 232.2068328857422,
+     "nodes": 1160175,
+     "listeners": 122856
+    },
+    {
+     "t": 182.86,
+     "heapMB": 233.86984634399414,
+     "nodes": 1165958,
+     "listeners": 123370
+    },
+    {
+     "t": 184.25,
+     "heapMB": 235.16358947753906,
+     "nodes": 1173244,
+     "listeners": 124295
+    },
+    {
+     "t": 185.746,
+     "heapMB": 235.71602630615234,
+     "nodes": 1174921,
+     "listeners": 124273
+    },
+    {
+     "t": 187.246,
+     "heapMB": 237.08121490478516,
+     "nodes": 1184213,
+     "listeners": 125443
+    },
+    {
+     "t": 188.753,
+     "heapMB": 238.42522811889648,
+     "nodes": 1191642,
+     "listeners": 125652
+    },
+    {
+     "t": 190.492,
+     "heapMB": 240.47492599487305,
+     "nodes": 1205620,
+     "listeners": 127182
+    },
+    {
+     "t": 192.049,
+     "heapMB": 241.31473541259766,
+     "nodes": 1208107,
+     "listeners": 127504
+    },
+    {
+     "t": 193.831,
+     "heapMB": 243.57205200195312,
+     "nodes": 1222497,
+     "listeners": 129414
+    },
+    {
+     "t": 195.449,
+     "heapMB": 246.58341217041016,
+     "nodes": 1234443,
+     "listeners": 130174
+    },
+    {
+     "t": 197.159,
+     "heapMB": 248.83688354492188,
+     "nodes": 1248670,
+     "listeners": 131664
+    },
+    {
+     "t": 198.836,
+     "heapMB": 250.4113311767578,
+     "nodes": 1253985,
+     "listeners": 132660
+    },
+    {
+     "t": 200.317,
+     "heapMB": 251.17117309570312,
+     "nodes": 1256335,
+     "listeners": 132504
+    },
+    {
+     "t": 202.079,
+     "heapMB": 252.22008514404297,
+     "nodes": 1260658,
+     "listeners": 133319
+    },
+    {
+     "t": 203.563,
+     "heapMB": 253.5274314880371,
+     "nodes": 1267423,
+     "listeners": 134111
+    },
+    {
+     "t": 205.12,
+     "heapMB": 255.00445556640625,
+     "nodes": 1274713,
+     "listeners": 134485
+    },
+    {
+     "t": 206.694,
+     "heapMB": 256.4836006164551,
+     "nodes": 1282832,
+     "listeners": 135326
+    },
+    {
+     "t": 208.289,
+     "heapMB": 258.0606346130371,
+     "nodes": 1288441,
+     "listeners": 136564
+    },
+    {
+     "t": 209.814,
+     "heapMB": 258.247314453125,
+     "nodes": 1288880,
+     "listeners": 136578
+    },
+    {
+     "t": 211.443,
+     "heapMB": 259.8184585571289,
+     "nodes": 1294506,
+     "listeners": 137238
+    },
+    {
+     "t": 213.235,
+     "heapMB": 261.13733291625977,
+     "nodes": 1299075,
+     "listeners": 137848
+    },
+    {
+     "t": 215.061,
+     "heapMB": 262.88768768310547,
+     "nodes": 1307142,
+     "listeners": 138092
+    },
+    {
+     "t": 216.926,
+     "heapMB": 263.5182418823242,
+     "nodes": 1309872,
+     "listeners": 138337
+    },
+    {
+     "t": 218.512,
+     "heapMB": 264.5258331298828,
+     "nodes": 1313126,
+     "listeners": 139089
+    },
+    {
+     "t": 220.097,
+     "heapMB": 266.20146560668945,
+     "nodes": 1318526,
+     "listeners": 139891
+    },
+    {
+     "t": 221.714,
+     "heapMB": 268.3438186645508,
+     "nodes": 1330401,
+     "listeners": 140615
+    },
+    {
+     "t": 223.447,
+     "heapMB": 269.7968978881836,
+     "nodes": 1336938,
+     "listeners": 141841
+    },
+    {
+     "t": 225.294,
+     "heapMB": 272.51911544799805,
+     "nodes": 1355388,
+     "listeners": 143611
+    },
+    {
+     "t": 227.092,
+     "heapMB": 273.1885871887207,
+     "nodes": 1357436,
+     "listeners": 143437
+    },
+    {
+     "t": 228.844,
+     "heapMB": 273.992733001709,
+     "nodes": 1360637,
+     "listeners": 143736
+    },
+    {
+     "t": 230.812,
+     "heapMB": 278.05590438842773,
+     "nodes": 1388497,
+     "listeners": 147236
+    },
+    {
+     "t": 232.789,
+     "heapMB": 280.0840034484863,
+     "nodes": 1399701,
+     "listeners": 148466
+    },
+    {
+     "t": 234.629,
+     "heapMB": 281.5873146057129,
+     "nodes": 1404789,
+     "listeners": 148814
+    },
+    {
+     "t": 236.325,
+     "heapMB": 282.3721389770508,
+     "nodes": 1407572,
+     "listeners": 149438
+    },
+    {
+     "t": 238.033,
+     "heapMB": 283.4544563293457,
+     "nodes": 1413528,
+     "listeners": 149954
+    },
+    {
+     "t": 239.779,
+     "heapMB": 284.3252372741699,
+     "nodes": 1418490,
+     "listeners": 150274
+    }
+   ],
+   "cycles": 150,
+   "before": {
+    "t": 0,
+    "heapMB": 7.2056427001953125,
+    "nodes": 11623,
+    "listeners": 1275
+   },
+   "after": {
+    "t": 0,
+    "heapMB": 7.756046295166016,
+    "nodes": 11623,
+    "listeners": 1275
+   },
+   "left": {
+    "stockroom: a page turned": {
+     "nodes": 4619.9,
+     "listeners": 490,
+     "heapKB": 715
+    },
+    "hall: a page turned": {
+     "nodes": 359.9,
+     "listeners": 24,
+     "heapKB": 279.9
+    },
+    "hall: a group picked": {
+     "nodes": 330,
+     "listeners": 22,
+     "heapKB": 257.1
+    },
+    "hall: a table picked": {
+     "nodes": 0,
+     "listeners": 0,
+     "heapKB": 4.8
+    },
+    "kitchen: a page turned": {
+     "nodes": 2446.4,
+     "listeners": 265.5,
+     "heapKB": 582.3
+    },
+    "report: a page turned": {
+     "nodes": 109.9,
+     "listeners": 0,
+     "heapKB": 67.4
+    },
+    "statistics: a page turned": {
+     "nodes": 99.9,
+     "listeners": 0,
+     "heapKB": 59.9
+    }
+   },
+   "clock": {
+    "watched": 60,
+    "rate": 0.9969,
+    "frozen": {
+     "seconds": 7.2,
+     "ticks": 1
+    }
+   },
+   "problems": []
+  },
+  "size": {
+   "ks": [
+    6,
+    12,
+    24,
+    48
+   ],
+   "idleCompileSeconds": 0.2,
+   "by": {
+    "6": {
+     "compileSeconds": 0.3,
+     "bundleKB": 498.5,
+     "gzipKB": 95.3,
+     "drawn": {
+      "n": 4,
+      "p50": 44.24,
+      "p95": 47.12,
+      "max": 47.62
+     },
+     "nodes": 966,
+     "feed": {
+      "n": 8,
+      "p50": 0.54,
+      "p95": 0.8,
+      "max": 0.82
+     },
+     "click": {
+      "n": 8,
+      "p50": 1.23,
+      "p95": 2.87,
+      "max": 3.59
+     },
+     "problems": []
+    },
+    "12": {
+     "compileSeconds": 0.7,
+     "bundleKB": 519.7,
+     "gzipKB": 96.9,
+     "drawn": {
+      "n": 4,
+      "p50": 54.81,
+      "p95": 74.88,
+      "max": 78.39
+     },
+     "nodes": 1356,
+     "feed": {
+      "n": 8,
+      "p50": 0.58,
+      "p95": 0.76,
+      "max": 0.82
+     },
+     "click": {
+      "n": 8,
+      "p50": 1.17,
+      "p95": 2.61,
+      "max": 3.24
+     },
+     "problems": []
+    },
+    "24": {
+     "compileSeconds": 2.2,
+     "bundleKB": 592.5,
+     "gzipKB": 100.3,
+     "drawn": {
+      "n": 4,
+      "p50": 60.44,
+      "p95": 63.17,
+      "max": 63.59
+     },
+     "nodes": 2136,
+     "feed": {
+      "n": 8,
+      "p50": 0.59,
+      "p95": 1.28,
+      "max": 1.43
+     },
+     "click": {
+      "n": 8,
+      "p50": 2.31,
+      "p95": 4.88,
+      "max": 5.86
+     },
+     "problems": []
+    },
+    "48": {
+     "compileSeconds": 8.7,
+     "bundleKB": 856.8,
+     "gzipKB": 108,
+     "drawn": {
+      "n": 4,
+      "p50": 78.41,
+      "p95": 81.76,
+      "max": 82.29
+     },
+     "nodes": 3696,
+     "feed": {
+      "n": 8,
+      "p50": 0.86,
+      "p95": 1.25,
+      "max": 1.33
+     },
+     "click": {
+      "n": 8,
+      "p50": 1.36,
+      "p95": 2.6,
+      "max": 3.11
+     },
+     "problems": []
+    }
+   }
+  }
+ }
+}

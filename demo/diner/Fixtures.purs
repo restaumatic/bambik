@@ -5,16 +5,21 @@ module Diner.Fixtures
   , busyReport
   , busyStatistics
   , busyStockroom
+  , busyWith
   , dinnerService
   , emptyDiner
   , rushHour
   , soldOut
   ) where
 
-import Prelude (map, (*), (+))
+import Prelude (map, not, (*), (+))
 
+import Data.Array (find, mapMaybe, range)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Set (fromFoldable, member)
+import Data.Variant (match)
 import Diner (Diner, Station, Time)
-import Diner.Service (dayAt, standardLoad)
+import Diner.Service (Load, dayAt, standardLoad)
 
 -- Initial models the part tests (`test/View/*.test.mjs`, `npm run part --
 -- diner`) run a part of the view from.
@@ -107,13 +112,13 @@ rushHour = dinnerService
   }
 
 -- | A busy day in a large restaurant, at one in the afternoon, worked at
--- | each station in turn: a long menu, a full hall, a couple of hundred orders paid.
--- | The hall serves table 5, one of the free ones.
+-- | each station in turn: a long menu, a full hall, a couple of hundred
+-- | orders paid, the first free table being served.
 busyStockroom :: Diner
 busyStockroom = busyAt (."Magazyn" {})
 
 busyHall :: Diner
-busyHall = (busyAt (."Sala" {})) { table = 5 }
+busyHall = busyAt (."Sala" {})
 
 busyKitchen :: Diner
 busyKitchen = busyAt (."Kuchnia" {})
@@ -128,7 +133,14 @@ busyStatistics :: Diner
 busyStatistics = busyAt (."Statystyki" {})
 
 busyAt :: Station -> Diner
-busyAt station =
+busyAt = busyWith standardLoad { list: 10, tiles: 24 }
+
+-- | A day of the given load at one in the afternoon, worked at the given
+-- | station with the given rows to a page, the first free table being
+-- | served: what the benchmark (scripts/bench/) mounts a station on at
+-- | every scale.
+busyWith :: Load -> { list :: Int, tiles :: Int } -> Station -> Diner
+busyWith load perPage station =
   { "Grupa magazynu": ."Wszystkie" {}
   , "Grupa menu": ."Wszystkie" {}
   , "Grupa statystyk": ."Wszystkie" {}
@@ -139,13 +151,15 @@ busyAt station =
   , dishes: day.dishes
   , now: day.now
   , orders: day.orders
-  , perPage: { list: 10, tiles: 24 }
-  , table: 1
+  , perPage
+  , table: fromMaybe 1 (find (\table -> not (member table taken)) (range 1 day.tables))
   , tables: day.tables
   , turned: []
   }
   where
-  day = dayAt standardLoad (at 13 0)
+  day = dayAt load (at 13 0)
+  taken = fromFoldable (mapMaybe open day.orders)
+  open { stage, table } = match { taking: \_ -> Just table, cooking: \_ -> Just table, ready: \_ -> Just table, paid: \_ -> Nothing } stage
 
 -- A time of the day the fixtures are set on.
 at :: Int -> Int -> Time

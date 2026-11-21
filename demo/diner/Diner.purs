@@ -760,7 +760,7 @@ turnedTo page diner = diner
 -- | The kitchen's queue: cooking orders, the longest waiting first, with the
 -- | minutes each has waited.
 cooking :: Diner -> Array Ticket
-cooking diner = mapMaybe ticket (sortBy oldestFirst diner.orders)
+cooking diner = mapMaybe ticket (sortBy oldestFirst (filter isCooking diner.orders))
   where
   ticket { lines, number, stage, table } = on (Proxy @"cooking")
     (\{ placed } -> Just { lines, number, placed, table, waited: minutesSince placed diner })

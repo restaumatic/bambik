@@ -8,6 +8,7 @@
     "dev": "node scripts/dev.mjs",
     "smoke": "node scripts/smoke/run.mjs",
     "part": "node scripts/part-test.mjs",
+    "bench": "node scripts/bench/run.mjs",
     "api-docs": "spago docs --format markdown",
     "presentation": "marp doc/presentation-20min.md --pdf --allow-local-files && marp doc/presentation-20min.md",
     "bundle-demos": "spago build && node scripts/bundle.mjs",

@@ -108,123 +108,129 @@ What Part A found, before any measurement:
   page buttons are one component for six lists because `listed` matches on
   `"Stanowisko"`; a part mounted alone needs its seed at its own station.
 
-## Part B — the benchmark
+## Part B — the benchmark (built 2026-11-21)
 
-`scripts/bench/`, run by `npm run bench` (`-- <scenario>` filters, `--
-quick` for a short pass). Built on scripts/smoke/cdp.mjs and chrome.mjs and
-on the part-test mount (`body $ part # looped # with seed`, compiled into a
-scratch directory against a copy of output/), so **scale is a compiled
-fixture, never a knob in the app**. A fixture mounts one station: the
-knot's body is written in `Diner.View` itself (Eryk's decision, inlined
-2026-11-20), so the whole application runs only as it starts, at the
-standard load (the mount of `test/View.test.mjs`). Startup, the tick with
-every station built and the cross-station walk are measured there; the
-scale sweep of B2 is per station. If a whole-application sweep proves
-necessary, the bench writes its own mount — the six stations under the tab
-bar and the clock — into its scratch directory.
+`npm run bench` (scripts/bench/, its manual the header of run.mjs): seven
+scenarios, about 18 minutes in full, `-- quick` shortened, `-- <scenario>`
+selected, `-- compare` a run against bench/baseline.json. Every run writes
+bench/results/<date>-<commit>.json (every sample summarised) and a markdown
+summary beside it; **bench/baseline.md is the committed run to read**.
 
-Every number is attributed to one of three layers, measured separately:
+Mounts are compiled into .bench/ against a copy of output/ and bundled
+unminified: a station alone on a day of a given load
+(`Diner.Fixtures.busyWith load perPage station`), the six stations under
+their tab bar (the bench's own module, for the walk), or the application
+as it starts. **Scale is a compiled fixture, never a knob in the
+application.** The whole application is measured only as it starts, at the
+standard load; the scale sweep is per station.
+
+Every number is attributed to a layer:
 
 | Layer | What it is | Measured by |
 | --- | --- | --- |
-| view model | the pure functions of `Diner` (slices, copy, folds) | node, importing `output/Diner/index.js`, no browser |
-| carrier | feeds, gates, the keyed reconciler, scopes | CPU profile of an unminified bundle, bucketed by module |
-| browser | custom-element upgrade, style, layout | `Performance.getMetrics` deltas (script, style, layout, nodes) |
+| view model | the pure functions of `Diner` | node, importing output/Diner (`viewmodel`), and the profile's share |
+| carrier | feeds, gates, the keyed reconciler, the view's own composition | CPU profile of the bundle, self time by module; a library frame counts to the nearest frame above it that is not one |
+| design system | `@material/web` and Lit | the same profile |
+| browser | style, layout, native DOM | `Performance.getMetrics` deltas, and the profile's `(program)` |
 
-### B1. Responsiveness
+What each scenario does:
 
-- Scripted real input (CDP mouse and key events, as the part tests send
-  them) per station: add a dish, change a quantity, plate a line, mark
-  ready, settle a bill, turn a page, switch station, type in the search
-  field, edit a stock count.
-- Per interaction: `Performance.getMetrics` before and after (ScriptDuration,
-  RecalcStyleDuration, LayoutDuration, Nodes, JSHeapUsedSize), plus
-  `performance.now()` around the dispatch. Frames are not relied on:
-  headless sessions can run frameless.
-- At CPU throttle 1× and 4× (`Emulation.setCPUThrottlingRate`); 30
-  repetitions; p50, p95, max.
-- Startup: navigation → progress indicator on screen → load resolved →
-  first station rendered.
-- Tick: cost of one second passing, per open station.
-- Budgets (4× throttle): interaction p95 under 100 ms, tick p95 under 16 ms,
-  load-to-rendered under 1 s. A budget missed is a finding, not a failure
-  of the run.
+| Scenario | Does |
+| --- | --- |
+| `viewmodel` | every read a station's lines make per feed, timed in node on days of 1× to 64× |
+| `responsiveness` | everything a user does at each station, 30 times with real input, at full and at quarter speed, then under a profile; a second passing at each station, a station switched to, the start |
+| `scale` | each station alone at 1×, 4×, 16×, 64×: drawn, a second passing (a clock line of the bench's own), one thing done; then with pagination off at 1× and 4× |
+| `walk` | 3 000 seeded random steps over the six stations, each applied to a reference model with the application's own folds (output/Diner) and the station on screen compared, whole, with what the read functions say of the reference |
+| `races` | twelve unawaited clicks, digits typed across ticks, clicks during an effect, the last page's only row leaving, a dialog confirmed twice |
+| `soak` | four minutes of random clicks under the clock sampled after forced collections; what one doing leaves behind; 900 station switches against a baseline; the clock's rate and a frozen page |
+| `size` | synthetic applications of 6, 12, 24, 48 stations: compile time, bundle bytes, drawn, fed, clicked |
 
-### B2. Large data
+Not done, against the plan above it replaced: simulated order arrivals (the
+application has none), `check-determined` time on the synthetic
+applications, accelerated time in the soak (it runs four real minutes), a
+pass/fail budget subset for CI.
 
-- Fixtures at 1×, 10×, 100× of the standard load (to 10 000 orders, 1 000+
-  dishes) in `Diner.Fixtures`, built with `Diner.Service.dayAt`, each
-  scenario of B1 at each scale.
-- The same with pagination off (`perPage` is a model field: a fixture sets
-  it to the whole collection) to read the carrier's raw cost: ms per row mounted, ms per
-  attached row per feed.
-- Reported: the fitted growth exponent per scenario; anything superlinear
-  flagged with its layer.
+## Findings (baseline of 2026-11-21, bench/baseline.md)
 
-### B3. Correctness under stress
+i7-11850H, Chrome 158 headless. "At ¼" is 4× CPU throttle, the stand-in for
+a mid-range phone. No library change was made in this work; each finding
+that asks for one names it.
 
-- **Random walk with an oracle.** A seeded PRNG picks real clicks across
-  the stations for thousands of steps. The same steps run on a reference
-  model in node — the pure folds imported from `output/Diner` — and after
-  each step the open station's visible text is compared with the copy
-  functions applied to the reference model. A divergence reports the step
-  and the seed; the run is replayable.
-- **Invariants** on the reference model and on the screen: portions in
-  stock plus portions on open orders are conserved, order numbers are
-  unique, the takings equal the sum of the paid totals, no order is lost
-  between stages.
-- **Races**: click bursts with no wait between them, clicks while
-  `placeOrder` runs, a tick landing between a click and its fold, typing in
-  a stock field while ticks land (the value and the caret must survive),
-  turning a page while its last row leaves.
-- Zero exceptions, zero console warnings (the starvation watchdog's
-  included).
+**Holds.**
 
-### B4. Reliability
+- **Correctness.** 3 000 random steps of real input: after every one the
+  station on screen read exactly what the view model says. All six races
+  hold. No exception and no console warning in any scenario.
+- **Responsiveness on the standard day.** Of 38 kinds of doing, 35 are
+  within budget at ¼: a click costs 4–6 ms at full speed (13–22 ms at ¼), a
+  page turned 4–20 ms, a key in a field 2–14 ms. The start is 46 ms to the
+  progress bar and 53 ms more to draw the day (181 and 222 ms at ¼).
+- **Pagination does its work.** DOM nodes stay flat from 1× to 64× at every
+  paged station; 900 station switches leave nodes and listeners unchanged.
+- **Bundle.** 499 KB minified (95 KB gzipped) at 6 stations, 857 KB (108 KB)
+  at 48: the floor is the design system and the runtime.
 
-- Soak: ticks, random input, simulated order arrivals and 1 000 station
-  switches, for 10 minutes of accelerated time; every N steps force a GC
-  (`HeapProfiler.collectGarbage`) and sample heap, DOM nodes and event
-  listeners.
-- Reported: the slope of each series (expected zero within noise) and the
-  counts after the switch cycles against the baseline before them.
-- A hidden page (timers throttled) coming back: the clock and the screen
-  agree again within one tick.
+**1. Rows that leave a keyed list are never freed — carrier, a leak.**
+A page turned leaves behind, for good: 110 DOM nodes in the report (its ten
+rows), 2 446 nodes and 266 listeners in the kitchen, 4 620 nodes, 490
+listeners and 0.7 MB in the stockroom. Four minutes of random clicks took
+the page from 8 674 to 1 418 490 nodes and from 6.6 to 284 MB. A heap
+snapshot names the retainer: in `reconcileKeyed` (src/PUI.purs) the
+subscription closure made for each entrant (`inst.subscribe \b -> onEmit k
+slot b`) shares its closure context with `oldByKey`, the map of the
+previous entries, so every generation of rows keeps the one before it
+alive. *Change asked:* build that closure where `oldByKey` is not in scope.
 
-### B5. Application size
+**2. Every read is recomputed by every line that asks — the idiom's cost.**
+A station's lines each call their own read function on each feed, and
+nothing is shared between them. Statystyki asks for the day's sales seven
+times per feed (the table, both totals, the search state, the pager's
+three): 5.6 ms in node on the standard day, 7.6 ms per second in the
+browser (33 ms at ¼ — over the 16 ms budget), 58% of that station's
+profile. It grows linearly with the day (exponent 1.06): 712 ms per second
+at 64×, 88% of it the view model.
 
-- A generator writes synthetic views of 6, 12, 24 and 48 stations with wide
-  fold blocks (each station a copy of a Diner station under fresh labels).
-- Reported against station count: `purs compile` time for the view and the
-  view model, `check-determined` time, bundle bytes (raw and gzip), mount
-  time, per-feed cost with one station open.
+**3. A feed costs the whole attached model, not the change — carrier.**
+A second passing, or any click, feeds every attached row again: 0.02–0.08
+ms per row per feed (a stock row 0.063–0.074, a menu tile 0.032–0.034, a
+report row 0.023–0.024). So with pagination off the stockroom's second
+costs 21 ms at 304 rows and 95 ms at 1 216. And since every read is over
+the whole day, even the paged stations grow: "a portion more" in the
+stockroom is 4 ms on the standard day and 90 ms at 64× (growth 0.73).
 
-### B6. Output
+**4. A row of controls is expensive to draw — design system.**
+A stock row (two text fields, three icon buttons, a dialog) is 474 DOM
+nodes with its shadow trees and 1.8–2.1 ms to draw: 304 rows 0.7 s, 1 216
+rows 2.3 s. A report row is 0.2 ms. The design system is 35% of the
+stockroom's profile; `md-tabs`' `scrollToTab` alone puts the stockroom's
+group pick over budget (108 ms at the 95th percentile at ¼).
 
-- One JSON per run under `bench/results/` (commit, date, machine, Chrome
-  version, every sample) and a markdown summary printed to the terminal.
-- A committed baseline; `npm run bench -- compare` prints the deltas beyond
-  noise. Not part of the L15 gate (slow, noisy); a small budget subset can
-  be pass/fail later.
+**5. Every pane is built at the start — carrier.**
+A station that is not open is still built, into a detached fragment: the
+synthetic application's nodes grow with its stations (966 at 6, 3 696 at
+48) with one station open, and drawing it grows with them (44 → 78 ms).
+The cost is small at Diner's six stations; it is the start's to pay, not
+the first visit's.
 
-### B7. Findings
+**6. Compile time grows faster than the application — compiler.**
+The view and view model of a synthetic application: 0.3 s at 6 stations,
+0.7 at 12, 2.2 at 24, 8.7 at 48 — the last doubling costs four times.
 
-Each finding is a measured number with its layer. Candidates the code
-already suggests: survivors re-fed unconditionally, derived functions
-recomputed per line, custom-element upgrade cost per row. A library change
-is proposed separately and passes the guardrails' gates; none is made
-inside the benchmark work.
+**7. The clock is not the wall's — vocabulary.**
+`ticks` waits its full period after each beat is handled, so the clock runs
+at 0.9969 of real time with the hall open (11 s lost per hour, more where a
+second costs more), and a page frozen for six seconds loses them. Diner
+counts seconds because an `action` cannot read the wall clock without a
+progress indicator and `clock` carries no date.
 
-## Order of work
-
-1. Part A.
-2. B1 with the attribution layers.
-3. B2.
-4. B3.
-5. B4.
-6. B5.
-7. B7.
+**8. Over budget at ¼ on the standard day.** A group picked in the
+stockroom (108 ms, finding 4), switching to Statystyki (106 ms, finding 2),
+a second passing at Statystyki (36 ms, finding 2).
 
 ## Log
 
-- 2026-11-20: plan agreed; Part A done, uncommitted. Next: B1.
+- 2026-11-20: plan agreed; Part A done and pushed (5b1f877e, d807c07b).
+- 2026-11-21: Part B built; baseline run saved (bench/baseline.json, .md).
+  Next: decide on the changes findings 1, 2, 3, 5 and 7 ask for — each a
+  separate change through the guardrails' gates, re-measured with
+  `npm run bench -- compare`.
