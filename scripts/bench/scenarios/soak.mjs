@@ -97,7 +97,7 @@ export const soak = {
     await p.waitFor(`window.__bench.beats(1000) > 0`, 5000)
     await p.sleep(watched * 1000)
     // its seconds per second, from the first tick to the last
-    const rate = await p.ev(`(at => (at.length - 1) / ((at[at.length - 1] - at[0]) / 1000))(window.__bench.beatsOf(1000))`)
+    const rate = await p.ev(`(at => (at.length - 1) / ((at[at.length - 1] - at[0]) / 1000))(window.__bench.fullBeatsOf(1000))`)
     let frozen = null
     try {
       const a = await ticks()

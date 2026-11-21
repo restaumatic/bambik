@@ -20,10 +20,11 @@ export const sleep = ms => new Promise(r => setTimeout(r, ms))
 const prelude = `
 window.__bench = {
   timeouts: [],
-  // the beats of a clock line of the given period: a clock that keeps to
-  // its beats waits the period, or less after a beat that took time
+  // the beats of a clock line of the given period, when each fired
   beatsOf(period) { return this.timeouts.filter(([ms]) => ms > period / 2 && ms <= period).map(([, at]) => at) },
   beats(period) { return this.beatsOf(period).length },
+  // only those that waited nearly the whole period: none but the clock's own, for reading its rate
+  fullBeatsOf(period) { return this.timeouts.filter(([, , ms]) => ms > period * 0.9 && ms <= period).map(([, at]) => at) },
   visible: el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 },
   name: el => (el.getAttribute('aria-label') || el.innerText || '').trim(),
   // the innermost visible element named label, inside the smallest element whose text contains scope
@@ -37,11 +38,19 @@ window.__bench = {
   centre(el) { el.scrollIntoView({ block: 'center', inline: 'center' }); const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2] },
 }
 {
+  // a clock line that keeps to its beats waits its period, or less after a
+  // beat that took time, and sets each wait while the beat before is being
+  // handled: a timeout set inside one of a period's, for no longer than
+  // it, is the next of that period
   const set = window.setTimeout
+  let handling = null
   window.setTimeout = function (f, ms, ...rest) {
+    const period = handling !== null && ms > 0 && ms <= handling ? handling : ms
     return set.call(window, function () {
-      window.__bench.timeouts.push([ms, performance.now()])
-      return typeof f === 'function' ? f.apply(this, arguments) : undefined
+      window.__bench.timeouts.push([period, performance.now(), ms])
+      const before = handling
+      handling = period
+      try { return typeof f === 'function' ? f.apply(this, arguments) : undefined } finally { handling = before }
     }, ms, ...rest)
   }
 }

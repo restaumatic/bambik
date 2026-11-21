@@ -180,6 +180,8 @@ subscription closure made for each entrant (`inst.subscribe \b -> onEmit k
 slot b`) shares its closure context with `oldByKey`, the map of the
 previous entries, so every generation of rows keeps the one before it
 alive. *Change asked:* build that closure where `oldByKey` is not in scope.
+*Fixed 2026-11-21* (`enteringKeyed`, 75c164ef): a page turned leaves no
+node and no listener behind at any station.
 
 **2. Every read is recomputed by every line that asks — the idiom's cost.**
 A station's lines each call their own read function on each feed, and
@@ -202,8 +204,10 @@ stockroom is 4 ms on the standard day and 90 ms at 64× (growth 0.73).
 A stock row (two text fields, three icon buttons, a dialog) is 474 DOM
 nodes with its shadow trees and 1.8–2.1 ms to draw: 304 rows 0.7 s, 1 216
 rows 2.3 s. A report row is 0.2 ms. The design system is 35% of the
-stockroom's profile; `md-tabs`' `scrollToTab` alone puts the stockroom's
-group pick over budget (108 ms at the 95th percentile at ¼).
+stockroom's profile, and with `md-tabs`' `scrollToTab` the stockroom's
+group pick is over budget (108 ms at the 95th percentile at ¼). That
+scroll is the catalogue's own cost of a tab picked: leaving the active tab
+unwritten on a feed was tried and changed nothing (2026-11-21).
 
 **5. Every pane is built at the start — carrier.**
 A station that is not open is still built, into a detached fragment: the
@@ -221,11 +225,72 @@ The view and view model of a synthetic application: 0.3 s at 6 stations,
 at 0.9969 of real time with the hall open (11 s lost per hour, more where a
 second costs more), and a page frozen for six seconds loses them. Diner
 counts seconds because an `action` cannot read the wall clock without a
-progress indicator and `clock` carries no date.
+progress indicator and `clock` carries no date. *The drift is fixed
+2026-11-21* (3ab462cb): a beat is due at whole intervals from registration,
+and the clock keeps the wall's rate. Seconds a frozen page sleeps through
+are still lost, and that is the application's to mend, by reading the wall
+clock instead of counting beats.
 
 **8. Over budget at ¼ on the standard day.** A group picked in the
 stockroom (108 ms, finding 4), switching to Statystyki (106 ms, finding 2),
 a second passing at Statystyki (36 ms, finding 2).
+
+## What remains, read together (2026-11-21)
+
+Findings 2, 3 and 8 are one thing: the wire carries whole values and no
+stage knows what changed, so every feed makes every attached line call its
+read on the whole model and write the result. Where the time goes says
+which remedy matters: at 64× the view model is 47–89% of every station's
+profile but the hall's (20%), so at scale the reads dominate, not the
+carrier. Three changes were weighed; **none is made**, by decision
+(2026-11-21).
+
+**A. Keyed rows skip an unchanged element.** A row whose element equals
+the one it was last fed, and which has not emitted since, is not fed
+again. Spiked in `enteringKeyed` (a dozen lines, structural equality) and
+measured, then taken out: a second passing with everything on screen went
+from 20.2 to 12.4 ms in the stockroom (304 rows), 96.0 to 56.9 (1 216
+rows), 12.8 to 8.5 in the hall (346 tiles), 7.6 to 2.9 in the kitchen (80
+tickets); nothing moved on the standard paged day; the 3 000-step walk and
+Diner's 39 part tests held. It breaks one law test, which pins today's
+behaviour (`acted laxity: the two-stage form re-feeds the untouched
+q-element on every gather`), so adopting it restates that. A reference
+check before the structural one would make unchanged rows nearly free
+where a read returns the same records. It helps long unpaged lists only
+and leaves finding 2 as it is.
+
+**B. The same rule on the field lens.** `focusField` — behind `group @l`
+and every label-indexed editor — would skip its inner stage while the
+field is the reference it was last fed and the stage has not emitted
+since; A is then the keyed case of one rule, *a strength does not re-feed
+an unchanged focus*. A station under a field that excludes `now` would
+cost nothing on a tick (Statystyki's 33 ms per second at ¼). It asks for
+one more law — feeding a component the value it was last fed changes
+nothing — and for Diner's model regrouped (`{ now, day }`), the kitchen
+reading both. Not measured.
+
+**C. Reads computed once.** B stops needless feeds, not seven lines
+recomputing the sales on a real change. Three routes: (1) the
+application's own — derived data is a model field kept by the folds that
+change it, no library change; (2) a presenting stage, one function from
+the model to the station's view-model row run once per feed, its lines
+reading fields by label — a narrowing word, which reopens a decision
+taken against them; (3) footprints in the types — closed, L18 records the
+open-row footprint tried and withdrawn.
+
+**The rest.** Finding 4 is the catalogue's two text fields per row;
+recycling a leaver's nodes for an entrant is unsound (a row holds dialogs
+and effects in flight), and one editable row at a time is Diner's design
+to choose. Finding 5 can be mended — keyed rows already build late — but
+moves the cost to the first visit and changes when a pane's
+registration-time announcements fire; Diner's start is 100 ms. Finding 6
+is the compiler's and bites one module of two dozen stations, which parts
+already avoid.
+
+The growth left after finding 1's fix is not a leak in the DOM: nodes
+swing between 12 000 and 17 000 with what is on screen and do not trend;
+the heap's 0.2 MB a minute is untraced, and the walk adds orders to the
+model as it goes.
 
 ## Log
 
@@ -239,6 +304,19 @@ a second passing at Statystyki (36 ms, finding 2).
   minute over the second half of that run, and 5–18 KB of heap per page
   turned or pick. The findings above keep the numbers of the first
   baseline (`git show 2a800c94:bench/baseline.md`).
-  Next: trace that residue; decide on the changes findings 2, 3, 5 and 7
-  ask for — each a separate change through the guardrails' gates,
+- 2026-11-21: the clock's drift fixed (finding 7, 3ab462cb); the bench
+  counts a clock's beats by lineage, since such a clock waits less than
+  its period after a beat that took time; baseline replaced by the run
+  after both. Changes A, B and C weighed above and not made.
+  Read the new baseline with two cautions. A second passing at Magazyn
+  reads 3.1–3.3 ms in three runs since the clock change against 2.3
+  before, cause not found. And a count at the 95th percentile of five or
+  six samples is their largest: the runs disagree on which doings are over
+  budget at ¼ beyond the three of finding 8 (a stockroom page turned and
+  the switches to Magazyn and Sala come and go). At 64× a tick of
+  Statystyki outlasts the test clock's period, so its 1 089 ms spans more
+  than one beat and is not the 733 of the first baseline.
+  Next, when taken up: A with a reference check first and its law test
+  restated; B spiked on Diner and measured; C's first route in Diner for
+  Statystyki — each a separate change through the guardrails' gates,
   re-measured with `npm run bench -- compare`.
