@@ -12,7 +12,7 @@ import Diner.View.Statistics (statistics)
 import Diner.View.Stock (stock)
 import Effect (Effect)
 import PUI (capture, landed, load, looped)
-import PUI.Web (inCaseAt)
+import PUI.Web (awaited, inCaseAt)
 import PUI.Web.MDC3 (body, indeterminateLinearProgress, tab, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -35,4 +35,4 @@ diner =
       kitchen # inCaseAt @"Kuchnia" @"Stanowisko"
       pass # inCaseAt @"Wydawka" @"Stanowisko"
       report # inCaseAt @"Raport" @"Stanowisko"
-      statistics # inCaseAt @"Statystyki" @"Stanowisko" ) # looped
+      statistics # inCaseAt @"Statystyki" @"Stanowisko" ) # looped # awaited

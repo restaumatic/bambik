@@ -10,6 +10,15 @@ const opened = async ({ ev, sleep }) => {
 
 export const tests = [
   {
+    name: 'nothing but the progress bar stands while the day loads',
+    run: async ui => {
+      const { ev, text, assert } = ui
+      assert.equal(await ev(`document.querySelector('md-linear-progress') !== null && document.querySelector('md-tabs') === null`), true, 'no tab bar under the progress bar')
+      await opened(ui)
+      assert.includes(await text(), 'Magazyn', 'the tabs come with the day')
+    },
+  },
+  {
     name: 'each tab opens its station; a station keeps the page turned to there',
     run: async ui => {
       const { click, text, assert } = ui

@@ -112,6 +112,7 @@ module PUI
   , looped
   , inCase
   , inCaseAt
+  , awaited
   , provided
   , providedAt
   , introduced
@@ -2116,6 +2117,18 @@ inCase f w = fromHandles do
         Ref.write (Just prop) propRef
         editor.fromUser prop
     }
+
+-- | Content **awaited**: built parked and attached at its first feed, for
+-- | good — the pane with no case to name, for what has nothing to show
+-- | until its row arrives: the knot a load primes (`( … ) # looped #
+-- | awaited`, diner: no tab bar under the progress bar while the day
+-- | loads). Fed, it is the content: every feed passes to it and whatever
+-- | it emits leaves. Until then nothing of it is on screen and its scope
+-- | is suspended, so it is silent as a detached pane is.
+awaited :: forall m node a b. Hosting m node => PUI m a b -> PUI m a b
+awaited w = fromHandles do
+  { result: content, ensureAttached } <- attachable $ handles w
+  pure content { toUser = \a -> ensureAttached *> content.toUser a }
 
 -- | `inCase` over a variant the model stores: the editor exists in case `c`
 -- | of field `l`, both named by label (`# inCaseAt @"return flight" @"Flight type"`).

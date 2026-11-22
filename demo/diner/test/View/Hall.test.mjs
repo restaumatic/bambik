@@ -2,7 +2,33 @@ import { fits } from '../fits.mjs'
 
 // Sala: dishes go onto the selected table's order, the order goes to the
 // kitchen, and a table with an order in progress takes no second one.
+// the order's scroller, and whether the row of a dish is wholly inside it
+const scroller = `[...document.querySelectorAll('*')].find(e => getComputedStyle(e).overflowY === 'auto' && e.querySelector('tbody tr'))`
+const inView = dish => `(() => {
+  const box = ${scroller}.getBoundingClientRect()
+  const row = [...${scroller}.querySelectorAll('tbody tr')].find(r => r.innerText.includes(${JSON.stringify(dish)})).getBoundingClientRect()
+  return row.top >= box.top - 1 && row.bottom <= box.bottom + 1
+})()`
+
 export const tests = [
+  {
+    name: 'the order scrolls to the dish just added, and stays where a line in view is changed',
+    seed: 'busyHall',
+    run: async ({ click, ev, sleep, assert }) => {
+      const dishes = (await ev(`[...document.querySelectorAll('.md3-tile')].filter(t => t.innerText.includes('dostępne:')).map(t => t.querySelector('.md-typescale-label-large').innerText)`)).slice(0, 8)
+      for (const dish of dishes) await click(dish, 'dostępne')
+      await sleep(100)
+      assert.equal(await ev(`${scroller}.scrollHeight > ${scroller}.clientHeight`), true, 'eight dishes do not fit the order')
+      assert.equal(await ev(inView(dishes[7])), true, 'the last dish added is in view')
+      await click(dishes[0], 'dostępne')
+      await sleep(100)
+      assert.equal(await ev(inView(dishes[0])), true, 'a dish added again is scrolled back to')
+      await click('Dodano porcję', dishes[1])
+      await sleep(100)
+      assert.equal(await ev(inView(dishes[1])), true, 'a portion more on a line in view leaves it in view')
+      assert.equal(await ev(inView(dishes[7])), false, 'and the order does not jump to its end')
+    },
+  },
   {
     name: 'a dish added appears on the order with its amount',
     seed: 'dinnerService',

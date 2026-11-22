@@ -105,6 +105,47 @@ export function separatorRule(start) {
   };
 }
 
+// revealRule :: Node -> Effect (Effect Unit) — scrolls `container`, and
+// nothing else, just far enough to show the element that last entered it
+// or the element whose text last changed in it — with as much around it
+// as fits: the largest of its ancestors no taller than the container, a
+// row for a cell; the returned effect disconnects the observer. A text written again with the value it had
+// counts for nothing.
+export function revealRule(container) {
+  return function () {
+    const reveal = (changed) => {
+      const box = container.getBoundingClientRect();
+      if (box.height === 0) return;
+      let el = changed;
+      for (let p = el.parentElement; p && p !== container && p.getBoundingClientRect().height <= container.clientHeight; p = p.parentElement) el = p;
+      const r = el.getBoundingClientRect();
+      if (r.height === 0) return;
+      const top = box.top + container.clientTop;
+      const bottom = top + container.clientHeight;
+      if (r.top < top || r.height > container.clientHeight) container.scrollTop += r.top - top;
+      else if (r.bottom > bottom) container.scrollTop += r.bottom - bottom;
+    };
+    const observer = new MutationObserver((records) => {
+      let last = null;
+      for (const m of records) {
+        if (m.type === "characterData") {
+          if (m.oldValue !== m.target.nodeValue && m.target.parentElement) last = m.target.parentElement;
+        } else {
+          for (const n of m.addedNodes) {
+            if (n.nodeType === 1) last = n;
+            else if (n.nodeType === 3 && n.nodeValue.trim() !== "" && n.parentElement) last = n.parentElement;
+          }
+        }
+      }
+      if (last && last !== container && container.contains(last)) reveal(last);
+    });
+    observer.observe(container, { childList: true, subtree: true, characterData: true, characterDataOldValue: true });
+    return function () {
+      observer.disconnect();
+    };
+  };
+}
+
 // listenNodeDeferred :: Node -> String -> Effect Unit -> Effect Unit — the
 // handler runs a microtask after the event, for components whose default
 // action (a filter chip toggling `selected`) settles after the event

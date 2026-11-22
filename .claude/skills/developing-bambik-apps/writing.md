@@ -163,6 +163,7 @@ index from the line you need to the word and a demo that writes it.
 | an element whose whole face is its decorators | `circle >>> attrAt @"x" "cx" >>> attrWith "fill" circleFill $ identity` | circle-drawer, color-mixer |
 | a display shown in one case | `text ticketLine # inCaseAt @"serving" @"display"` | ticket-dispenser |
 | an editor that exists in one case | `filledTextField @"Table" # inCaseAt @"Dine in" @"Mode"` | order-form |
+| a scrolling list that shows the row just added or changed | `( orderRow # gatheredOf @"dish" tableLines ) # scrolling # revealing` | diner |
 | a button that exists in one case | `button' @"Start" { icon: "play_arrow" } # providedAt @"halted" @"phase"`; in a derived state, `# provided @"bookable" bookingState` | stopwatch; flight-booker |
 | a button drawn but not pressable while the row says so | `iconButton' @"Dodano porcję" "add" { disabled: isLineSoldOut }` | diner |
 | a list of displays rendered from the row | `ul $ ( li $ text lapLine ) # actedOf @"number" lapRows` | stopwatch |
@@ -191,6 +192,7 @@ index from the line you need to the word and a demo that writes it.
 | an effect whose outcome is folded into the model it lands on | `… # action @"Forecast requested" fetchReport`, then `foldInto @"Forecast fetched" rememberReport` | weather, order-form |
 | an effect whose outcome is told and keeps the model | `… # action @"Receipt" printReceipt`, then `snackbar @"Receipt printed" kept`; two outcomes, each told on its line (`( modal @"Total missing" $ … ) # acknowledged`, then `snackbar @"Order submitted" kept`) | order-form |
 | the load before the knot | `( Semigroupoid.do { indeterminateLinearProgress # load loadOrder; snackbar @"Order loaded" captured } ) # landed` | order-form |
+| nothing of the knot on screen until the load lands | `( … ) # looped # awaited` | diner |
 
 Facts the table cannot hold:
 

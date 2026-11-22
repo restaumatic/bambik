@@ -16,13 +16,17 @@
 -- | - **occurrence sources** — `onClickedXY @l`, `onHoveredXY @l`,
 -- |   `onContextMenuXY @l`;
 -- | - **panes** (re-exported from `PUI`) — `provided`, `inCase`,
--- |   `providedAt`, `inCaseAt`;
+-- |   `providedAt`, `inCaseAt`, and `awaited`, content absent until its
+-- |   first feed;
 -- | - **sources** — `geolocated`, `online`, `colorScheme`, each
 -- |   `{} → { l :: a }`, owning one field the app cannot seed; the time
 -- |   is not among them;
 -- | - **the time beside the model** — `timestamped @l`, a line that reads
 -- |   the time under field `l` of its row, and `timestamping @l`, an
 -- |   emitter whose event carries the time it left at;
+-- | - **oculars that watch the DOM** — `separating`, a rule shown only
+-- |   between things, and `revealing`, a scroller that shows what it was
+-- |   last given;
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
 -- |   tag —
 -- |
@@ -94,6 +98,7 @@ module PUI.Web
   , setTextNodeValue
   , setValue
   , uniqueId
+  , revealing
   , separating
   , geolocated
   , online
@@ -139,7 +144,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
-import PUI (inCase, inCaseAt, provided, providedAt) as Panes
+import PUI (awaited, inCase, inCaseAt, provided, providedAt) as Panes
 import PUI (class Interacting, Gesture(..), fromHandles, handles, recordToRecordWiring, source, class Hosting, class Scoped, Ocular, PUI(..), Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
 import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
@@ -299,6 +304,7 @@ foreign import listenCapture :: Node -> String -> Effect Unit -> Effect Unit
 foreign import addEventListener :: String -> Node -> (Event -> Effect Unit) -> Effect (Effect Unit)
 foreign import createCommentNode :: String -> Effect Node
 foreign import separatorRule :: Node -> Node -> Node -> Effect (Effect Unit)
+foreign import revealRule :: Node -> Effect (Effect Unit)
 foreign import listenNodeDeferred :: Node -> String -> Effect Unit -> Effect Unit
 foreign import ensureStyle :: String -> String -> Effect Unit
 foreign import autoDismiss :: Node -> String -> Int -> Effect Unit
@@ -566,6 +572,24 @@ separating rule w = fromHandles do
   end <- liftEffect $ createCommentNode "/separator"
   liftEffect $ appendChild end parentNode
   disconnect <- liftEffect $ separatorRule start ruleEnd end
+  liftEffect $ onCancel sc disconnect
+  pure w'
+
+-- | A scroller that **shows what it was last given**: the element built
+-- | last scrolls, itself and nothing around it, just far enough to bring
+-- | into view the element that last entered it or the one whose text last
+-- | changed, with as much around it as fits (a row for a cell) — `( orderRow # gatheredOf @"dish" tableLines ) # scrolling #
+-- | revealing` (diner: a dish added from the menu is seen on the order,
+-- | wherever the order was scrolled to). Decided on the DOM, not the data,
+-- | like `separating`: it is an ocular, reads no row and touches no
+-- | channel. A text written again as it was moves nothing, and so does
+-- | whatever is already in view.
+revealing :: forall a b. PUI Web a b -> PUI Web a b
+revealing w = fromHandles do
+  sc <- gets _.scope
+  w' <- handles w
+  node <- gets _.sibling
+  disconnect <- liftEffect $ revealRule node
   liftEffect $ onCancel sc disconnect
   pure w'
 

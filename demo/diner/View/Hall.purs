@@ -8,7 +8,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Diner (Diner, Offer, Seating, Standing, TableLine, addedLine, addUnit, browseState, clockPeriod, isAdded, isFirstPage, isLastPage, isLineSoldOut, isOffMenu, isSinglePortion, lineTotalLine, menuPage, nextPage, numberLine, offerLine, offerState, orderDish, orderTotalLine, pageLine, placeOrder, previousPage, quantityLine, removalLine, removeDish, returnUnit, searchState, seatings, sendToKitchen, servedLine, serveTable, standings, swatchFace, tableAvailability, tableFace, tableLines, tableName, tableState)
 import Diner.Design (controls, entry, floor, glyph, heading, headline, legend, note, pager, scrolling, shelf, station, surfaceTile, tray)
 import PUI (actedOf, action, foldInto, gatheredOf, PUI, stepped)
-import PUI.Web (Web, attrWith, inCase, inCaseAt, provided, staticText, text, textAt, timestamped, timestamping)
+import PUI.Web (Web, attrWith, inCase, inCaseAt, provided, revealing, staticText, text, textAt, timestamped, timestamping)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (bodyMedium, bodySmall, button', columnHeader, confirmed', dataCell, dataRow, dataTable', filledTextField', iconButton, iconButton', indeterminateLinearProgress, labelLarge, labelMedium, tab, tabBar, tile)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -66,7 +66,7 @@ orderTable =
     ( Semigroupoid.do
       columnHeader "Danie"
       columnHeader "Ilość" )
-    ( orderRow # gatheredOf @"dish" tableLines ) # scrolling
+    ( orderRow # gatheredOf @"dish" tableLines ) # scrolling # revealing
 
 orderRow :: PUI Web TableLine [ "Dodano porcję" :: TableLine, "Usuń danie" :: TableLine, "Zwrócono porcję" :: TableLine ]
 orderRow =
