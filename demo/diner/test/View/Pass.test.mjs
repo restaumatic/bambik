@@ -5,6 +5,7 @@ export const tests = [
   {
     name: 'a bill is paid once the payment is confirmed, and leaves the pass',
     seed: 'rushHour',
+    time: '12:20',
     run: async ({ click, text, assert }) => {
       assert.includes(await text(), '#9 · stolik 5', 'the ready order')
       assert.includes(await text(), '30 min', 'with the minutes since it was placed')

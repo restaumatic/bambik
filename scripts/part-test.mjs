@@ -45,6 +45,9 @@
 //   sleep(ms)
 //   assert.equal(actual, expected, what)
 //   assert.includes(text, part, what) / assert.excludes(text, part, what)
+// A test may set the time its page opens at, `time: '12:20'` — the wall
+// clock reads that time as the page loads and runs on from there, for a
+// part whose lines read the time (`timestamped`) against a seed's moments.
 // A test fails on a failed assertion, a control it cannot find, an
 // exception, or a console warning or error (the starvation watchdog's
 // included). The run exits 1 when any test fails.
@@ -175,6 +178,17 @@ const locate = (label, scope, field) => `(() => {
   return innermost.filter(el => size(el) < Infinity).sort((a, b) => size(a) - size(b))[0] ?? null
 })()`
 
+// the page's clock set to read `time` ('HH:MM') as the page loads
+const openedAt = time => `(() => {
+  const Real = Date, [hours, minutes] = ${JSON.stringify(time.split(':').map(Number))}
+  const start = new Real(); start.setHours(hours, minutes, 0, 0)
+  const shift = start.getTime() - Real.now()
+  window.Date = class extends Real {
+    constructor(...args) { if (args.length) super(...args); else super(Real.now() + shift) }
+    static now() { return Real.now() + shift }
+  }
+})()`
+
 class Failure extends Error {}
 let passed = 0, failed = 0
 try {
@@ -184,6 +198,7 @@ try {
       const session = await openSession(cdpBase, 'about:blank')
       const { ev, send, events } = session
       await send('Emulation.setDeviceMetricsOverride', { width: t.width ?? 1100, height: 900, deviceScaleFactor: 1, mobile: (t.width ?? 1100) < 600 })
+      if (t.time) { await send('Page.enable'); await send('Page.addScriptToEvaluateOnNewDocument', { source: openedAt(t.time) }) }
       await send('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/${mountName(s, t.seed)}.html` })
       for (let i = 0; i < 50 && !(await ev('document.body && document.body.childElementCount > 0')); i++) await sleep(100)
       await sleep(800)

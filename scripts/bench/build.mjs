@@ -26,22 +26,19 @@ const load = scale =>
 
 // A mount is { name, kind } and, by kind:
 //   'app'      the application as it starts
-//   'station'  { part, scale, perPage: { list, tiles }, clock } — one station
-//              on a day of `scale`; `clock` (ms) adds a clock line of that period
-//   'service'  { scale, perPage, clock } — the six stations under their tab bar
+//   'station'  { part, scale, perPage: { list, tiles } } — one station on a
+//              day of `scale`
+//   'service'  { scale, perPage } — the six stations under their tab bar
+// A station's lines that read the time follow the wall clock themselves.
 const source = m => {
   const head = [`module BenchMain.${m.name} (main) where`, '', 'import Prelude', 'import Effect (Effect)']
   if (m.kind === 'app') return [...head, 'import Diner.View as App', '', 'main :: Effect Unit', 'main = App.diner', ''].join('\n')
-  const clock = m.clock
-    ? [`      ( Semigroupoid.do`, `        ticks @"Minęła sekunda" { ms: ${m.clock.toFixed(1)} }`, `        fold @"Minęła sekunda" secondPassed ) # stepped`]
-    : []
   const seed = station => `( busyWith (${load(m.scale)}) { list: ${m.perPage.list}, tiles: ${m.perPage.tiles} } (."${station}" {}) )`
   const imports = [
     'import Data.Profunctor.Row.VariantToVariant as VariantToVariant',
-    'import Diner (secondPassed)',
     'import Diner.Fixtures (busyWith)',
     'import Diner.Service (standardLoad)',
-    'import PUI (fold, looped, stepped, ticks, with)',
+    'import PUI (looped, with)',
     'import PUI.Web (inCaseAt)',
     'import PUI.Web.MDC3 (body, tab, tabBar)',
     'import QualifiedDo.Semigroupoid as Semigroupoid',
@@ -49,7 +46,7 @@ const source = m => {
   if (m.kind === 'station') {
     const s = stations[m.part]
     return [...head, ...imports, `import Diner.View.${m.part} as Part`, '', 'main :: Effect Unit', 'main =',
-      '  body $', '    ( Semigroupoid.do', `      Part.${s.fn}`, ...clock, `    ) # looped # with ${seed(s.tab)}`, '',
+      '  body $', '    ( Semigroupoid.do', `      Part.${s.fn}`, `    ) # looped # with ${seed(s.tab)}`, '',
     ].join('\n')
   }
   const parts = Object.entries(stations)
@@ -57,7 +54,7 @@ const source = m => {
     '  body $', '    ( Semigroupoid.do', '      tabBar @"Stanowisko" $ VariantToVariant.do',
     ...parts.map(([, s]) => `        tab @"${s.tab}"`),
     ...parts.map(([part, s]) => `      ${part}.${s.fn} # inCaseAt @"${s.tab}" @"Stanowisko"`),
-    ...clock, `    ) # looped # with ${seed('Sala')}`, '',
+    `    ) # looped # with ${seed('Sala')}`, '',
   ].join('\n')
 }
 

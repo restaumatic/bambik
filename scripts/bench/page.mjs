@@ -56,6 +56,15 @@ window.__bench = {
 }
 `
 
+const stoppedAt = time => `(() => {
+  const Real = Date, [hours, minutes] = ${JSON.stringify(time.split(':').map(Number))}
+  const stopped = new Real(); stopped.setHours(hours, minutes, 0, 0)
+  window.Date = class extends Real {
+    constructor(...args) { if (args.length) super(...args); else super(stopped.getTime()) }
+    static now() { return stopped.getTime() }
+  }
+})()`
+
 const serve = () => new Promise(resolve => {
   const s = createServer((req, res) => {
     const file = path.join(out, decodeURIComponent(new URL(req.url, 'http://x').pathname))
@@ -78,15 +87,18 @@ export const startBrowser = async () => {
     rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 })
   }
 
-  // open a mount: { width, height, throttle, profile } — `profile: true` starts
-  // a CPU profile before the page's first script
-  const open = async (mount, { width = 1100, height = 900, throttle = 1, profile: profiled = false } = {}) => {
+  // open a mount: { width, height, throttle, profile, time } — `profile: true`
+  // starts a CPU profile before the page's first script; `time: 'HH:MM'` stops
+  // the page's wall clock at that time, for a reading checked against a
+  // reference that cannot watch the clock
+  const open = async (mount, { width = 1100, height = 900, throttle = 1, profile: profiled = false, time = null } = {}) => {
     const session = await openSession(cdpBase, 'about:blank')
     const { send, ev, events } = session
     await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 600 })
     await send('Performance.enable')
     await send('Page.enable')
     await send('Page.addScriptToEvaluateOnNewDocument', { source: prelude })
+    if (time) await send('Page.addScriptToEvaluateOnNewDocument', { source: stoppedAt(time) })
     if (throttle > 1) await send('Emulation.setCPUThrottlingRate', { rate: throttle })
     const modules = moduleMap(mount)
     const startProfile = async () => {

@@ -9,6 +9,8 @@
 // reaches its fold with the right row, that a fed model reaches every
 // leaf, that keyed rows follow their keys. A divergence stops the walk and
 // is reported with its step and seed; the same seed walks the same walk.
+// The page's wall clock is stopped at the day's own time, one in the
+// afternoon, so the lines that read the time read what the reference does.
 import { pathToFileURL } from 'node:url'
 import path from 'node:path'
 import { answer, dishTile, drawn, field, perPage, retype, tab, tableTile } from './common.mjs'
@@ -17,6 +19,7 @@ const stationTabs = ['Magazyn', 'Sala', 'Kuchnia', 'Wydawka', 'Raport', 'Statyst
 const groups = ['Wszystkie', 'Przystawki', 'Zupy', 'Makarony', 'Dania główne', 'Desery']
 const finderOf = { Magazyn: ['Grupa magazynu', 'Szukaj w magazynie'], Sala: ['Grupa menu', 'Szukaj w menu'], Statystyki: ['Grupa statystyk', 'Szukaj w statystykach'] }
 const V = type => ({ type, value: {} })
+const time = { hours: 13, minutes: 0, seconds: 0 }
 
 // what the station on screen reads, as plain data — the counterpart of `expected` below
 const reading = `(() => {
@@ -95,7 +98,7 @@ const expected = (D, m) => {
   if (station === 'Sala') {
     const free = is(D.tableAvailability(m), 'free'), state = D.tableState(m).type
     view.tables = D.seatings(m).map(D.tableName)
-    view.heading = D.servedLine(m)
+    view.heading = D.servedLine({ ...m, time })
     if (free && state === 'idle') view.notes.push('Żadnych dań jeszcze nie wybrano')
     view.order = free && state === 'taking'
       ? { lines: D.tableLines(m).map(l => [l.dish, D.lineTotalLine(l), D.quantityLine(l), D.isSinglePortion(l), D.isLineSoldOut(l)]), total: D.orderTotalLine(m) }
@@ -108,20 +111,20 @@ const expected = (D, m) => {
   if (station === 'Kuchnia') {
     const busy = is(D.kitchenState(m), 'busy')
     if (!busy) view.notes.push('Wszystko ugotowane, kuchnia czeka na zamówienia')
-    view.tickets = busy ? D.ticketsPage(m).map(t => [D.ticketLine(t), D.waitLine(t), t.lines.map(l => [D.itemLine(l), D.isPlated(l)]), is(D.ticketState(t), 'plated')]) : []
+    view.tickets = busy ? D.ticketsPage(m).map(t => [D.ticketLine(t), D.waitLine({ ...t, time }), t.lines.map(l => [D.itemLine(l), D.isPlated(l)]), is(D.ticketState(t), 'plated')]) : []
     view.pager = busy ? pager() : null
   }
   if (station === 'Wydawka') {
     const pending = is(D.billsState(m), 'pending')
     if (!pending) view.notes.push('Wszystko wydane, wydawka czeka na kuchnię')
-    view.rows = pending ? D.billsPage(m).map(b => [D.billLine(b), D.waitLine(b), D.billTotalLine(b)]) : []
+    view.rows = pending ? D.billsPage(m).map(b => [D.billLine(b), D.waitLine({ ...b, time }), D.billTotalLine(b)]) : []
     view.pager = pending ? pager() : null
   }
   if (station === 'Raport') {
     const some = is(D.paidState(m), 'some')
     if (!some) view.notes.push('Nic jeszcze nie sprzedano')
     view.total = some ? D.takingsLine(m) : null
-    view.rows = some ? D.paidPage(m).map(r => [D.receiptLine(r), D.orderItemsLine(r), D.paidTotalLine(r)]) : []
+    view.rows = some ? D.paidPage(m).map(r => [D.receiptLine({ ...r, time }), D.orderItemsLine(r), D.paidTotalLine(r)]) : []
     view.pager = some ? pager() : null
   }
   if (station === 'Statystyki') {
@@ -205,7 +208,7 @@ const options = (D, m, pick) => {
         add(1, `remove ${l.dish}`, async p => { await p.clickOn(inNamed('Zamówienie', l.dish, 'Usuń danie')); await answer(p, 'Usuń danie') }, () => D.removeDish({ event: l, model: m }))
         add(0.5, `remove ${l.dish}, declined`, async p => { await p.clickOn(inNamed('Zamówienie', l.dish, 'Usuń danie')); await answer(p, 'Nie, nie usuwaj dania') }, () => m)
         const number = m.orders.find(o => o.table === m.table && o.stage.type === 'taking').number
-        add(1.5, `send order ${number} to the kitchen`, p => p.clickOn(`([...document.querySelectorAll('md-filled-button')].find(b => window.__bench.visible(b) && b.innerText.includes('Wyślij do kuchni')) ?? null)`), () => D.sendToKitchen({ event: { number }, model: m }))
+        add(1.5, `send order ${number} to the kitchen`, p => p.clickOn(`([...document.querySelectorAll('md-filled-button')].find(b => window.__bench.visible(b) && b.innerText.includes('Wyślij do kuchni')) ?? null)`), () => D.sendToKitchen({ event: { number, time }, model: m }))
       }
     }
   }
@@ -264,7 +267,7 @@ export const walk = {
     const pick = xs => xs[Math.floor(random() * xs.length)]
     pick.random = random
     let model = F.busyWith(S.standardLoad)(perPage)(V('Sala'))
-    const p = await browser.open('Service')
+    const p = await browser.open('Service', { time: '13:00' })
     await p.waitFor(drawn.Service)
     const settled = async () => {
       const want = expected(D, model)

@@ -1,7 +1,9 @@
 module Diner
   ( Bill
+  , Clock
   , Course
   , Diner
+  , DinerRow
   , Dish
   , DishSales
   , Group
@@ -71,7 +73,6 @@ module Diner
   , salesPage
   , searchState
   , seatings
-  , secondPassed
   , sendToKitchen
   , servedLine
   , serveTable
@@ -117,9 +118,11 @@ import Type.Proxy (Proxy(..))
 -- | group of dishes and the dish being looked for in the stockroom and, each
 -- | on their own, on the menu and in the statistics, the table being served, the rows to a page and
 -- | the pages turned to, and the day itself — the dishes on offer with their
--- | stock, the hall's tables, every order, and the time it is.
-type Diner =
-  { "Grupa magazynu" :: Group
+-- | stock, the hall's tables, every order, and the time the service was opened at.
+type Diner = { | DinerRow () }
+
+type DinerRow r =
+  ( "Grupa magazynu" :: Group
   , "Grupa menu" :: Group
   , "Grupa statystyk" :: Group
   , "Stanowisko" :: Station
@@ -127,13 +130,14 @@ type Diner =
   , "Szukaj w menu" :: String
   , "Szukaj w statystykach" :: String
   , dishes :: Array Dish
-  , now :: Time
+  , opened :: Time
   , orders :: Array Order
   , perPage :: { list :: Int, tiles :: Int }
   , table :: Int
   , tables :: Int
   , turned :: Array Turned
-  }
+  | r
+  )
 
 -- | Where in the restaurant one works: the stockroom, the hall, the kitchen,
 -- | the pass, or the day's books (takings, then sales per dish).
@@ -214,16 +218,18 @@ type Offer = { added :: Int, "Cena" :: Price, group :: Course, name :: String, "
 -- | at, with the portions still in stock.
 type TableLine = { dish :: String, left :: Int, price :: Int, quantity :: Int }
 
--- | An order in the kitchen, and the minutes it has waited there.
-type Ticket = { lines :: Array Line, number :: Int, placed :: Time, table :: Int, waited :: Int }
+-- | An order in the kitchen.
+type Ticket = { lines :: Array Line, number :: Int, placed :: Time, table :: Int }
 
--- | What a ready order owes, and the minutes since it was placed.
-type Bill = { number :: Int, placed :: Time, table :: Int, total :: Int, waited :: Int }
+-- | What a ready order owes.
+type Bill = { number :: Int, placed :: Time, table :: Int, total :: Int }
 
--- | A paid order, and whether it was placed today.
+-- | The wall clock's time of day, as the lines that read the time are fed it.
+type Clock = { hours :: Int, minutes :: Int, seconds :: Int }
+
+-- | A paid order.
 type Receipt =
-  { day :: [ today :: {}, yesterday :: {} ]
-  , lines :: Array Line
+  { lines :: Array Line
   , number :: Int
   , placed :: Time
   , table :: Int
@@ -249,7 +255,7 @@ openService _ = do
         , "Szukaj w menu": ""
         , "Szukaj w statystykach": ""
         , dishes: day.dishes
-        , now: day.now
+        , opened: day.now
         , orders: day.orders
         , perPage: { list: 10, tiles: 24 }
         , table: fromMaybe 1 (find (\table -> not (any (\o -> o.table == table && not (isPaid o)) day.orders)) (range 1 day.tables))
@@ -261,10 +267,6 @@ openService _ = do
 -- | How often the clock is read.
 clockPeriod :: { ms :: Number }
 clockPeriod = { ms: 1000.0 }
-
--- | The time one clock period later.
-secondPassed :: Diner -> Diner
-secondPassed diner = diner { now = diner.now + 1 }
 
 -- | Where the rows on screen stand among all of them, `21–30 z 312`.
 pageLine :: Diner -> String
@@ -436,7 +438,7 @@ serveTable { event: table, model } = model { table = table }
 
 -- | The table being served and what it is up to: free, taking an order, or
 -- | which order it waits for, where that order is and since when.
-servedLine :: Diner -> String
+servedLine :: { | DinerRow ( time :: Clock ) } -> String
 servedLine diner = "Stolik " <> show diner.table <> " · " <> maybe "wolny" standing (find (\o -> o.table == diner.table && not (isPaid o)) diner.orders)
   where
   standing { number, stage } = match
@@ -446,7 +448,7 @@ servedLine diner = "Stolik " <> show diner.table <> " · " <> maybe "wolny" stan
     , paid: \_ -> "wolny"
     } stage
   placedLine number place placed =
-    "zamówienie #" <> show number <> " " <> place <> ", złożone " <> show (minutesSince placed diner) <> " min temu"
+    "zamówienie #" <> show number <> " " <> place <> ", złożone " <> show (minutesWaited placed diner.time) <> " min temu"
 
 -- | Whether the table being served can take an order.
 tableAvailability :: Diner -> [ busy :: {}, free :: {} ]
@@ -544,10 +546,10 @@ placeOrder diner = do
   pure (."Zamówienie złożone" { number })
 
 -- | A placed order goes to the kitchen, placed at the time it lands there.
-sendToKitchen :: { event :: { number :: Int }, model :: Diner } -> Diner
-sendToKitchen { event: { number }, model } = advanced number cooked model
+sendToKitchen :: { event :: { number :: Int, time :: Clock }, model :: Diner } -> Diner
+sendToKitchen { event: { number, time }, model } = advanced number cooked model
   where
-  cooked = on (Proxy @"taking") (\_ -> Just (.cooking { placed: model.now })) (default Nothing)
+  cooked = on (Proxy @"taking") (\_ -> Just (.cooking { placed: momentAt time model })) (default Nothing)
 
 -- | Whether the kitchen has anything to cook.
 kitchenState :: Diner -> [ busy :: {}, cleared :: {} ]
@@ -570,16 +572,18 @@ ticketLine :: Ticket -> String
 ticketLine { number, placed, table } = "#" <> show number <> " · Stolik " <> show table <> " · " <> clockText placed
 
 -- | The minutes an order has waited.
-waitLine :: forall r. { waited :: Int | r } -> String
-waitLine { waited } = show waited <> " min"
+waitLine :: forall r. { placed :: Time, time :: Clock | r } -> String
+waitLine { placed, time } = show (minutesWaited placed time) <> " min"
 
 -- | How a wait reads: plain while the order is fresh, marked once it is
 -- | late, alarming once it is overdue.
-paceFace :: forall r. { waited :: Int | r } -> String
-paceFace { waited }
-  | waited < lateAfter = ""
-  | waited < overdueAfter = "color: var(--md-sys-color-tertiary, #7d5260); font-weight: 700;"
-  | true = "color: var(--md-sys-color-error, #b3261e); font-weight: 700;"
+paceFace :: forall r. { placed :: Time, time :: Clock | r } -> String
+paceFace { placed, time } = pace (minutesWaited placed time)
+  where
+  pace waited
+    | waited < lateAfter = ""
+    | waited < overdueAfter = "color: var(--md-sys-color-tertiary, #7d5260); font-weight: 700;"
+    | true = "color: var(--md-sys-color-error, #b3261e); font-weight: 700;"
 
 -- | A line as quantity × dish.
 itemLine :: Line -> String
@@ -618,7 +622,6 @@ billsPage diner = mapMaybe bill (paged diner (sortBy oldestFirst (filter isReady
         , table
         , placed
         , total: sum (map (\l -> l.quantity * l.price) lines)
-        , waited: minutesSince placed diner
         }
     )
     (default Nothing)
@@ -652,12 +655,12 @@ paidState diner = if null (receipts diner) then .none {} else .some {}
 paidPage :: Diner -> Array Receipt
 paidPage diner = paged diner (sortBy (\a b -> compare b.placed a.placed <> compare b.number a.number) (receipts diner))
 
--- | A paid order's number, table and the time it was placed.
-receiptLine :: Receipt -> String
-receiptLine { day, number, placed, table } = "#" <> show number <> " · stolik " <> show table <> " · " <> match
-  { today: \_ -> clockText placed
-  , yesterday: \_ -> "wczoraj " <> clockText placed
-  } day
+-- | A paid order's number, table and the time it was placed: an order of
+-- | the last 24 hours placed at a later time of day than it is now was
+-- | placed yesterday.
+receiptLine :: { lines :: Array Line, number :: Int, placed :: Time, table :: Int, time :: Clock, total :: Int } -> String
+receiptLine { number, placed, table, time } =
+  "#" <> show number <> " · stolik " <> show table <> " · " <> (if mod placed 86400 > secondOfDay time then "wczoraj " else "") <> clockText placed
 
 -- | An order's lines, in the order they were taken.
 orderItemsLine :: Receipt -> String
@@ -763,7 +766,7 @@ cooking :: Diner -> Array Ticket
 cooking diner = mapMaybe ticket (sortBy oldestFirst (filter isCooking diner.orders))
   where
   ticket { lines, number, stage, table } = on (Proxy @"cooking")
-    (\{ placed } -> Just { lines, number, placed, table, waited: minutesSince placed diner })
+    (\{ placed } -> Just { lines, number, placed, table })
     (default Nothing)
     stage
 
@@ -773,8 +776,7 @@ receipts diner = mapMaybe receipt diner.orders
   where
   receipt { lines, number, stage, table } = on (Proxy @"paid")
     ( \{ placed, total } -> Just
-        { day: if placed / 86400 < diner.now / 86400 then .yesterday {} else .today {}
-        , lines
+        { lines
         , number
         , placed
         , table
@@ -836,9 +838,18 @@ priceRead written = case split (Pattern ",") (replaceAll (Pattern " ") (Replacem
 isOrderable :: forall r. { "Cena" :: Price, "Porcje" :: Portions | r } -> Boolean
 isOrderable dish = portionsOf dish > 0 && isJust (priceRead dish."Cena")
 
--- | Whole minutes from a moment until now.
-minutesSince :: Time -> Diner -> Int
-minutesSince time { now } = max 0 ((now - time) / 60)
+-- | Whole minutes from a moment of the last 24 hours until the clock's time.
+minutesWaited :: Time -> Clock -> Int
+minutesWaited placed time = mod (secondOfDay time - mod placed 86400 + 86400) 86400 / 60
+
+-- | The first moment the clock reads `time` since the service was opened.
+momentAt :: Clock -> Diner -> Time
+momentAt time { opened } = if moment < opened then moment + 86400 else moment
+  where
+  moment = opened - mod opened 86400 + secondOfDay time
+
+secondOfDay :: Clock -> Int
+secondOfDay { hours, minutes, seconds } = hours * 3600 + minutes * 60 + seconds
 
 -- | Portions to be had: stock that cannot be read, or is negative, counts
 -- | as none.

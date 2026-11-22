@@ -2,10 +2,10 @@ module Diner.View.Report (report) where
 
 import Prelude ((#), ($))
 
-import Diner (Diner, Receipt, isFirstPage, isLastPage, nextPage, orderItemsLine, pageLine, paidPage, paidState, paidTotalLine, previousPage, receiptLine, takingsLine)
+import Diner (Diner, Receipt, clockPeriod, isFirstPage, isLastPage, nextPage, orderItemsLine, pageLine, paidPage, paidState, paidTotalLine, previousPage, receiptLine, takingsLine)
 import Diner.Design (amountCell, amountHeader, note, pager, station, totalAmountCell)
 import PUI (actedOf, PUI)
-import PUI.Web (Web, inCase, text)
+import PUI.Web (Web, inCase, text, timestamped)
 import PUI.Web.MDC3 (bodyMedium, bodySmall, columnHeader, dataCell, dataRow, dataTable', rowHeader)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -33,6 +33,6 @@ paidRow :: PUI Web Receipt Receipt
 paidRow =
   dataRow $ Semigroupoid.do
     dataCell $ Semigroupoid.do
-      bodyMedium $ text receiptLine
+      ( bodyMedium $ text receiptLine ) # timestamped @"time" clockPeriod
       bodySmall $ text orderItemsLine
     amountCell $ text paidTotalLine

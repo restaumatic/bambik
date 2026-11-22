@@ -19,6 +19,7 @@ export const tests = [
   {
     name: 'two hundred and nineteen receipts, ten to a page, the oldest placed yesterday',
     seed: 'busyReport',
+    time: '13:00',
     run: async ({ click, disabled, ev, text, assert }) => {
       const numbers = () => ev(`[...document.querySelectorAll('tbody tr')].slice(1).map(r => r.cells[0].innerText.split(' ')[0])`)
       assert.includes(await text(), '1–10 z 219', 'ten of two hundred and nineteen')

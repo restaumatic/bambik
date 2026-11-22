@@ -67,6 +67,7 @@ export const tests = [
   {
     name: 'a table with an order in progress is served as busy, a free one takes an order',
     seed: 'rushHour',
+    time: '12:20',
     run: async ({ click, text, assert }) => {
       await click('Stolik 5')
       assert.includes(await text(), 'Stolik 5 · zamówienie #9 do zapłaty, złożone 30 min temu', 'the table at the pass says what it waits for')

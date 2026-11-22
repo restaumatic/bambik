@@ -10,13 +10,11 @@ import { answer, drawn, inRow, pagerButton, stationMount } from './common.mjs'
 
 const parts = ['Stock', 'Hall', 'Kitchen', 'Pass', 'Report', 'Statistics']
 const everything = { list: 1000000, tiles: 1000000 }
-const period = 251
+const period = 1000
 const scalesOf = quick => quick ? [1, 4, 16] : [1, 4, 16, 64]
 const openScalesOf = quick => quick ? [1] : [1, 4]
 
-const clocked = (part, scale) => stationMount(part, scale, { suffix: 'Clock', clock: period })
 const open = (part, scale) => stationMount(part, scale, { suffix: 'All', perPage: everything })
-const openClocked = (part, scale) => stationMount(part, scale, { suffix: 'AllClock', perPage: everything, clock: period })
 
 // what is listed at a station: its rows, tiles or tickets
 const listed = {
@@ -58,11 +56,16 @@ const mounting = async (browser, mount, part, reps) => {
   return { ms: summary(totals), nodes, heapMB: round(heap / 2 ** 20, 1), rows, layers }
 }
 
-// a second passing: single ticks of the clock line, each read on its own
+// a second passing: single beats of the station's clock, each read on its
+// own; a station none of whose lines reads the time has no clock, and a
+// second of it is a second of nothing
 const ticking = async (browser, mount, part, reps) => {
   const p = await browser.open(mount)
   if (!await p.waitFor(drawn[part], 180000)) { await p.close(); return null }
-  const next = async () => { const n = await p.ev(`window.__bench.beats(${period})`); await p.waitFor(`window.__bench.beats(${period}) > ${n}`, 60000) }
+  const beating = await p.waitFor(`window.__bench.beats(${period}) > 0`, 2 * period + 500)
+  const next = beating
+    ? async () => { const n = await p.ev(`window.__bench.beats(${period})`); await p.waitFor(`window.__bench.beats(${period}) > ${n}`, 60000) }
+    : () => p.sleep(period)
   const samples = []
   await next()
   for (let i = 0; i < reps; i++) { await p.sleep(30); samples.push((await p.measure(next)).total) }
@@ -83,8 +86,8 @@ const doing = async (browser, mount, part, reps) => {
 export const scale = {
   name: 'scale',
   mounts: ({ quick }) => [
-    ...parts.flatMap(part => scalesOf(quick).flatMap(s => [stationMount(part, s), clocked(part, s)])),
-    ...parts.flatMap(part => openScalesOf(quick).flatMap(s => [open(part, s), openClocked(part, s)])),
+    ...parts.flatMap(part => scalesOf(quick).map(s => stationMount(part, s))),
+    ...parts.flatMap(part => openScalesOf(quick).map(s => open(part, s))),
   ],
   run: async ({ quick, browser, log }) => {
     const scales = scalesOf(quick), openScales = openScalesOf(quick)
@@ -95,7 +98,7 @@ export const scale = {
         log(`  ${part} at ${s}×`)
         paged[part][s] = {
           mount: await mounting(browser, stationMount(part, s).name, part, quick ? 3 : 4),
-          tick: await ticking(browser, clocked(part, s).name, part, quick ? 5 : 8),
+          tick: await ticking(browser, stationMount(part, s).name, part, quick ? 5 : 8),
           doing: await doing(browser, stationMount(part, s).name, part, part === 'Pass' ? 6 : quick ? 6 : 12),
         }
       }
@@ -104,7 +107,7 @@ export const scale = {
         log(`  ${part} at ${s}×, everything on screen`)
         unpaged[part][s] = {
           mount: await mounting(browser, open(part, s).name, part, 2),
-          tick: await ticking(browser, openClocked(part, s).name, part, quick ? 4 : 6),
+          tick: await ticking(browser, open(part, s).name, part, quick ? 4 : 6),
         }
       }
     }

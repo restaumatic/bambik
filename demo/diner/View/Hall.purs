@@ -5,10 +5,10 @@ import Prelude (const, (#), ($), (>>>))
 import Data.Profunctor.Row.RecordToVariant as RecordToVariant
 import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Diner (Diner, Offer, Seating, Standing, TableLine, addedLine, addUnit, browseState, isAdded, isFirstPage, isLastPage, isLineSoldOut, isOffMenu, isSinglePortion, lineTotalLine, menuPage, nextPage, numberLine, offerLine, offerState, orderDish, orderTotalLine, pageLine, placeOrder, previousPage, quantityLine, removalLine, removeDish, returnUnit, searchState, seatings, sendToKitchen, servedLine, serveTable, standings, swatchFace, tableAvailability, tableFace, tableLines, tableName, tableState)
+import Diner (Diner, Offer, Seating, Standing, TableLine, addedLine, addUnit, browseState, clockPeriod, isAdded, isFirstPage, isLastPage, isLineSoldOut, isOffMenu, isSinglePortion, lineTotalLine, menuPage, nextPage, numberLine, offerLine, offerState, orderDish, orderTotalLine, pageLine, placeOrder, previousPage, quantityLine, removalLine, removeDish, returnUnit, searchState, seatings, sendToKitchen, servedLine, serveTable, standings, swatchFace, tableAvailability, tableFace, tableLines, tableName, tableState)
 import Diner.Design (controls, entry, floor, glyph, heading, headline, legend, note, pager, scrolling, shelf, station, surfaceTile, tray)
 import PUI (actedOf, action, foldInto, gatheredOf, PUI, stepped)
-import PUI.Web (Web, attrWith, inCase, inCaseAt, provided, staticText, text, textAt)
+import PUI.Web (Web, attrWith, inCase, inCaseAt, provided, staticText, text, textAt, timestamped, timestamping)
 import PUI.Web.HTML (span)
 import PUI.Web.MDC3 (bodyMedium, bodySmall, button', columnHeader, confirmed', dataCell, dataRow, dataTable', filledTextField', iconButton, iconButton', indeterminateLinearProgress, labelLarge, labelMedium, tab, tabBar, tile)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -20,7 +20,7 @@ hall =
       floor $ tableTile # gatheredOf @"number" seatings
       foldInto @"Stolik wybrany" serveTable ) # stepped
     legend $ standingEntry # actedOf @"name" (const standings)
-    heading servedLine
+    heading servedLine # timestamped @"time" clockPeriod
     ( Semigroupoid.do
       tray $ Semigroupoid.do
         note "Żadnych dań jeszcze nie wybrano" # inCase @"idle" tableState
@@ -38,7 +38,7 @@ hall =
             foldInto @"Dodano porcję" addUnit
             foldInto @"Usuń danie" removeDish
             ( Semigroupoid.do
-              indeterminateLinearProgress # action @"Wyślij do kuchni" placeOrder
+              indeterminateLinearProgress # action @"Wyślij do kuchni" placeOrder # timestamping @"time"
               foldInto @"Zamówienie złożone" sendToKitchen ) ) # stepped
       menu ) # inCase @"free" tableAvailability
 

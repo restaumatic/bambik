@@ -35,7 +35,7 @@ dinnerService =
   , "Szukaj w magazynie": ""
   , "Szukaj w menu": ""
   , "Szukaj w statystykach": ""
-  , now: at 9 10
+  , opened: at 9 10
   , perPage: { list: 10, tiles: 24 }
   , table: 1
   , tables: 6
@@ -99,7 +99,7 @@ soldOut = dinnerService { dishes = map (_ { "Porcje" = .count 0 }) dinnerService
 -- | Four orders in the kitchen, one at the pass, one being taken.
 rushHour :: Diner
 rushHour = dinnerService
-  { now = at 12 20
+  { opened = at 12 20
   , table = 6
   , orders =
     [ { number: 11, table: 1, stage: .cooking { placed: at 12 2 }, lines: [ { dish: "Carbonara", price: 1050, quantity: 2, state: .plated {} }, { dish: "Tiramisu", price: 650, quantity: 2, state: .ordered {} } ] }
@@ -149,7 +149,7 @@ busyWith load perPage station =
   , "Szukaj w menu": ""
   , "Szukaj w statystykach": ""
   , dishes: day.dishes
-  , now: day.now
+  , opened: day.now
   , orders: day.orders
   , perPage
   , table: fromMaybe 1 (find (\table -> not (member table taken)) (range 1 day.tables))

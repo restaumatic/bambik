@@ -14,7 +14,7 @@ export const drawn = {
   Service: `document.querySelector('.md3-tile') !== null`,
 }
 
-export const stationMount = (part, scale = 1, extra = {}) => ({ name: `${part}x${scale}${extra.suffix ?? ''}`, kind: 'station', part, scale, perPage: extra.perPage ?? perPage, clock: extra.clock })
+export const stationMount = (part, scale = 1, extra = {}) => ({ name: `${part}x${scale}${extra.suffix ?? ''}`, kind: 'station', part, scale, perPage: extra.perPage ?? perPage })
 
 // page expressions for the things clicked
 export const dialogButton = label => `([...(document.querySelector('md-dialog[open]')?.querySelectorAll('[slot=actions] *') ?? [])].find(b => b.textContent.trim() === ${JSON.stringify(label)}) ?? null)`

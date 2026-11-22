@@ -2,10 +2,10 @@ module Diner.View.Pass (pass) where
 
 import Prelude ((#), ($))
 
-import Diner (Bill, Diner, billLine, billsPage, billsState, billTotalLine, isFirstPage, isLastPage, nextPage, paceFace, pageLine, paymentLine, previousPage, settle, waitLine)
+import Diner (Bill, Diner, billLine, billsPage, billsState, billTotalLine, clockPeriod, isFirstPage, isLastPage, nextPage, paceFace, pageLine, paymentLine, previousPage, settle, waitLine)
 import Diner.Design (amountCell, amountHeader, note, pager, station)
 import PUI (foldInto, gatheredOf, PUI, stepped)
-import PUI.Web (Web, attrWith, inCase, provided, text)
+import PUI.Web (Web, attrWith, inCase, provided, text, timestamped)
 import PUI.Web.MDC3 (bodyMedium, columnHeader, confirmed', dataCell, dataRow, dataTable', iconButton)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -33,6 +33,6 @@ billRow :: PUI Web Bill [ "Zapłacono" :: Bill ]
 billRow =
   dataRow $ Semigroupoid.do
     dataCell $ text billLine
-    ( dataCell $ text waitLine ) # attrWith "style" paceFace
+    ( dataCell $ text waitLine ) # attrWith "style" paceFace # timestamped @"time" clockPeriod
     amountCell $ text billTotalLine
     dataCell $ iconButton @"Zapłacono" "payments"

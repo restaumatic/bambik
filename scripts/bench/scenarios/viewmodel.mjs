@@ -50,7 +50,7 @@ export const viewmodel = {
       stations[station] = {}
       for (const scale of scales) {
         const model = F.busyWith(load(S, scale))({ list: 10, tiles: 24 })(variant(station))
-        stations[station][scale] = Object.fromEntries(fns.map(fn => [fn, round(time(() => D[fn](model), budget), 4)]))
+        stations[station][scale] = Object.fromEntries(fns.map(fn => [fn, round(time(() => D[fn](fn === 'servedLine' ? { ...model, time: { hours: 13, minutes: 0, seconds: 0 } } : model), budget), 4)]))
       }
     }
     return { scales, generation, stations }

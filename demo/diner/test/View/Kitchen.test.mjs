@@ -33,6 +33,7 @@ export const tests = [
   {
     name: 'ten tickets to a page, each with the minutes it has waited; the oldest is overdue',
     seed: 'busyKitchen',
+    time: '13:00',
     run: async ({ click, ev, text, assert }) => {
       const waits = () => ev(`[...document.querySelectorAll('.md3-card .md-typescale-label-large')].map(w => parseInt(w.innerText))`)
       assert.includes(await text(), '1–10 z 20', 'ten of twenty')
