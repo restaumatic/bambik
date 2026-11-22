@@ -106,7 +106,7 @@ export const scale = {
       for (const s of openScales) {
         log(`  ${part} at ${s}×, everything on screen`)
         unpaged[part][s] = {
-          mount: await mounting(browser, open(part, s).name, part, 2),
+          mount: await mounting(browser, open(part, s).name, part, quick ? 3 : 6),
           tick: await ticking(browser, open(part, s).name, part, quick ? 4 : 6),
         }
       }

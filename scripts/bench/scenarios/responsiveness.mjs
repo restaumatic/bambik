@@ -97,9 +97,11 @@ const application = async (browser, throttle, reps) => {
       push(`app: a second passes at ${station}`, await p.measure(nextTick))
     }
   }
-  for (let i = 0; i < reps; i++) {
+  // the first round is each station's first visit, left out
+  for (let i = 0; i < 6 + reps * 4; i++) {
     const station = stationTabs[i % 6]
-    push(`app: switched to ${station}`, await p.measure(() => p.clickOn(tab(station))))
+    const m = await p.measure(() => p.clickOn(tab(station)))
+    if (i >= 6) push(`app: switched to ${station}`, m)
   }
   const problems = p.events.map(e => `${e.kind}: ${e.text}`)
   await p.close()

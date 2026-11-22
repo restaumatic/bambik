@@ -330,9 +330,14 @@ model as it goes.
   1.2–7.9), 0.66–1.68 at ¼ (was 3.4–32.2), every station within the 16 ms
   budget; on a station alone it no longer grows with the day (Statistics
   at 64×: 0, was 1 089 ms; Hall 0.45, was 91). The walk and the soak read
-  as before. Dearer: Wydawka with every bill on screen mounts in 71 ms
-  (was 53) and is switched to at ¼ in 35 (was 26), each row registering
-  a line of its own that reads the time; not profiled. Untouched, and
+  as before. That run read Wydawka dearer — every bill on screen drawn in
+  71 ms (was 53), switched to at ¼ in 35 (was 26) — and it is not: the
+  first was one sample and the second five. Measured again on the same
+  build, 15 and 36 times: drawn in 49 ms (46–51), 70 at 4×; switched to
+  in 5.7 ms, 24.0 at ¼. A row's own line reading the time costs nothing
+  that shows, and `timestamped` is left as it is. The bench now draws an
+  unpaged station five times, not once, and switches to each station
+  twenty times, the first visit left out. Untouched, and
   still what A, B and C above are about: a real change at Statystyki runs
   its seven aggregations, a stockroom page turned and a group picked are
   over 100 ms at ¼, and so is the switch to Statystyki.
