@@ -4,20 +4,17 @@ import Prelude ((*), (+), (<>), div, mod)
 
 import Data.Array (index, length)
 import Data.Maybe (fromMaybe)
+import Data.Variant (match)
 
 type Departure = { code :: String, status :: String }
 
 clockPeriod :: { ms :: Number }
 clockPeriod = { ms: 1000.0 }
 
-arrival :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } -> Departure
-arrival { time } =
-  let
-    beat = time.minutes * 60 + time.seconds
-    code = pick flights beat
-    status = pick statuses (beat `div` length flights + beat `mod` length flights)
-  in
-    { code, status }
+arrival :: [ "Clock ticked" :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } ] -> Departure
+arrival = match { "Clock ticked": \{ time } -> at (time.minutes * 60 + time.seconds) }
+  where
+  at beat = { code: pick flights beat, status: pick statuses (beat `div` length flights + beat `mod` length flights) }
 
 flightLine :: Departure -> String
 flightLine { code, status } = code <> " — " <> status

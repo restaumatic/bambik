@@ -67,8 +67,10 @@ none is a monad's `do`):
 
 - `RecordToRecord.do` (×→×) — **sources**, each owning the one field it
   produces: facts the platform knows and the app cannot seed
-  (`geolocated @"position"`, `online @"connection"`, `clock @"time"
-  clockPeriod`, `colorScheme @"scheme"`, `filePicked @"Photo"`). A
+  (`geolocated @"position"`, `online @"connection"`, `colorScheme
+  @"scheme"`, `filePicked @"Photo"`). The current time is never one: it
+  is no field of the model, a line reads it (`# timestamped @"time"
+  clockPeriod`) and an event carries it (`# timestamping @"time"`). A
   source reads nothing, so it is typed at `{}` and a block of sources
   opens the flow; below a line that releases a field it is a compile
   error, and there a source is followed by `# supplied`, which inserts
@@ -169,9 +171,9 @@ index from the line you need to the word and a demo that writes it.
 | a filter, a sort or a pick of a stored array, its rows edited in place | `( … iconToggle @"Favorite" … ) # actedWithin @"title" @"movies" visibleMovies`; the picked row's form, `( … ) # actedWithin @"id" @"contacts" pickedContact` | movie-browser, todo-list; contacts |
 | a projection that reshapes its rows, its elements edited | `editsOf @l @k proj editor`, folded by `foldInto @l f` | no demo; `PUI` |
 | one entity at a time, each shown by its key | `( listItem $ text flightLine ) # dispatchedOf @"code" arrival`; the array of them `# accumulatedOf @"team" goal` | departures, scoreboard |
-| a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, in `RecordToRecord.do` | here-and-now, incident-report |
-| a line that shows the time, or time passed: the time is not a model field | `( titleMedium $ text clockLine ) # timestamped @"time" clockPeriod`, `clockLine` typed at the line's row with `time` added; on a row of a list, the element's row | punch-clock; diner |
-| an event stamped with the time it happened | `button @"Punch in" # timestamping @"time"`, folded by `foldInto @"Punch in" punchIn`, the time a field of the event | punch-clock; diner |
+| a fact the platform knows, owning its field | `geolocated @"position"`, `online @"connection"`, `filePicked @"Photo"`, in `RecordToRecord.do` | here-and-now |
+| a line that shows the time, or time passed: the time is not a model field | `( titleMedium $ text clockLine ) # timestamped @"time" clockPeriod`, `clockLine` typed at the line's row with `time` added; on a row of a list, the element's row | punch-clock, incident-report, here-and-now; diner |
+| an event stamped with the time it happened | `button @"Punch in" # timestamping @"time"`, folded by `foldInto @"Punch in" punchIn`, the time a field of the event; a beat stamped is `ticks @"Clock ticked" clockPeriod # timestamping @"time"` | punch-clock, incident-report, departures; diner |
 | content that waits for the user to confirm | `confirmed @"Refund a customer" $ …`, between the emitters and the folds, its fold among the folds; `confirmed' @l { cancel: "…" }` to caption its Cancel | cashbox, inbox, flight-booker; diner |
 | a message the user must close | `( modal @"Total missing" $ … ) # acknowledged` | weather, order-form, incident-report |
 | a notice, then the flow goes on | `( modal @"Weather warning" $ … text warningLine ) # continued asForecast`, `asForecast :: Report -> [ "Forecast fetched" :: Report ]` | weather |

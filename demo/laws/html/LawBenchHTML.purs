@@ -6,7 +6,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import LawBench (bench, benchStep, runBench)
 import PUI (acknowledged, PUI)
-import PUI.Web (Web, clock, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, online, provided, providedAt, staticText, text, textAt)
+import PUI.Web (Web, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, online, provided, providedAt, staticText, text, textAt)
 import PUI.Web.HTML (confirmed, body, button, div, filePicked, group, inPlaceInput, indeterminateLinearProgress, input, output, option, progress, rangeInput, select, selectOptional, selectUnpicked, textArea, modal)
 
 lawBenchHTML :: Effect Unit
@@ -39,7 +39,6 @@ lawBenchHTML = do
     , benchStep "output" "+→×" events (output @"event" (const {}))
     , bench "geolocated" "×→×" units (geolocated @"position")
     , bench "online" "×→×" units (online @"connection")
-    , bench "clock" "×→×" units (clock @"time" { ms: 60000.0 })
     , bench "colorScheme" "×→×" units (colorScheme @"scheme")
     , bench "filePicked" "×→×" units (filePicked @"Photo")
     , bench "inPlaceInput" "×→+" texts (inPlaceInput @"entered" @"Name")

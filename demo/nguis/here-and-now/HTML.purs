@@ -1,11 +1,11 @@
 module HereAndNow.HTML (hereAndNow) where
 
-import Prelude (($), Unit)
+import Prelude ((#), ($), Unit)
 
 import Data.Profunctor.Row.RecordToRecord as RecordToRecord
 import Effect (Effect)
 import HereAndNow (clockPeriod, connectionLine, schemeLine, whenLine, whereLine)
-import PUI.Web (clock, colorScheme, geolocated, online, text)
+import PUI.Web (colorScheme, geolocated, online, text, timestamped)
 import PUI.Web.HTML (body, div, h2, p)
 import QualifiedDo.Semigroupoid as Semigroupoid
 
@@ -15,9 +15,8 @@ hereAndNow =
     RecordToRecord.do
       geolocated @"position"
       online @"connection"
-      clock @"time" clockPeriod
       colorScheme @"scheme"
     h2 $ text whereLine
-    p $ text whenLine
+    ( p $ text whenLine ) # timestamped @"time" clockPeriod
     p $ text connectionLine
     p $ text schemeLine

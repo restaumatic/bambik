@@ -18,7 +18,7 @@ type Position = [ denied :: {}, located :: { lat :: Number, lng :: Number }, unk
 
 type Time = { hours :: Int, minutes :: Int, seconds :: Int }
 
-noDescription :: { position :: Position, time :: Time } -> String
+noDescription :: { position :: Position } -> String
 noDescription _ = ""
 
 clockPeriod :: { ms :: Number }

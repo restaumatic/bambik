@@ -1,16 +1,18 @@
-module HereAndNow (Situation, clockPeriod, connectionLine, schemeLine, whenLine, whereLine) where
+module HereAndNow (Situation, SituationRow, clockPeriod, connectionLine, schemeLine, whenLine, whereLine) where
 
 import Prelude ((<), (<>), const, show)
 
 import Data.Number.Format (fixed, toStringWith)
 import Data.Variant (match)
 
-type Situation =
-  { connection :: [ offline :: {}, online :: {} ]
+type Situation = { | SituationRow () }
+
+type SituationRow r =
+  ( connection :: [ offline :: {}, online :: {} ]
   , position :: [ denied :: {}, located :: { lat :: Number, lng :: Number }, unknown :: {} ]
   , scheme :: [ dark :: {}, light :: {} ]
-  , time :: { hours :: Int, minutes :: Int, seconds :: Int }
-  }
+  | r
+  )
 
 clockPeriod :: { ms :: Number }
 clockPeriod = { ms: 1000.0 }
@@ -22,7 +24,7 @@ whereLine { position } = match
   , denied: const "Your location is unavailable."
   } position
 
-whenLine :: Situation -> String
+whenLine :: { | SituationRow ( time :: { hours :: Int, minutes :: Int, seconds :: Int } ) } -> String
 whenLine { time } = "It is " <> padded time.hours <> ":" <> padded time.minutes <> ":" <> padded time.seconds <> "."
 
 connectionLine :: Situation -> String

@@ -17,12 +17,10 @@ type Leader = [ led :: Score, unled :: {} ]
 clockPeriod :: { ms :: Number }
 clockPeriod = { ms: 1000.0 }
 
-goal :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } -> Score
-goal { time } =
-  let beat = time.minutes * 60 + time.seconds
-      team = pick teams beat
-      points = scored team beat
-  in { team, points }
+goal :: [ "Clock ticked" :: { time :: { hours :: Int, minutes :: Int, seconds :: Int } } ] -> Score
+goal = match { "Clock ticked": \{ time } -> at (time.minutes * 60 + time.seconds) }
+  where
+  at beat = { team: pick teams beat, points: scored (pick teams beat) beat }
 
 scoreLine :: Score -> String
 scoreLine { team, points } = team <> ": " <> show points

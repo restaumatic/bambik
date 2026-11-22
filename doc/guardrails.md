@@ -411,7 +411,11 @@ allocated there, once per instantiation (2026-10-16).
   author names and releases the row without it, and `timestamping @l`
   adds the time to an event's payload — the time is no state of the app,
   so it is no model field, and a line that reads it follows the clock
-  without the knot turning. Neither carries `Lacks`, which is stuck on a
+  without the knot turning. **The current time is never a source**: a
+  source owns a field of the model, so a clock among the sources made
+  every beat a feed of the whole row (`clock @l`, deleted 2026-11-22);
+  a stream of beats that carries the time is `ticks @l period #
+  timestamping @t`. Neither carries `Lacks`, which is stuck on a
   row whose tail the view model fills (L18); the named field must be one
   the row does not have.
   **Unreachable by design** — a word whose only use another guardrail

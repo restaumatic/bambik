@@ -1,8 +1,9 @@
 // A source below a line that has released a field (`supplied`), on the real
 // DOM (incident-report): the photo capture stands under the description
 // editor, its field joins the row the lines above built, a file the user
-// picks lands on the row last fed — the description kept — and the clock
-// ticking above re-feeds the capture without disturbing it.
+// picks lands on the row last fed — the description kept — and an edit
+// above re-feeds the capture without disturbing it, while the line that
+// reads the time goes on by itself.
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -38,10 +39,16 @@ export const run = async ({ ev, session, assertEq, sleep, page }) => {
   assertEq((await ev(report)).includes('with kerb.jpg (5 kB)'), true, `[${page}] a picked file joins the row`)
   assertEq((await ev(report)).includes('a loose kerb'), true, `[${page}] landing on the row last fed, the description kept`)
 
+  await ev(`${field}.focus()`)
+  await session.send('Input.insertText', { text: ' by the gate' })
+  await sleep(300)
+  assertEq((await ev(report)).includes('a loose kerb by the gate'), true, `[${page}] an edit after the pick re-feeds the capture`)
+  assertEq((await ev(report)).includes('with kerb.jpg (5 kB)'), true, `[${page}] which keeps the file`)
+
   const before = await ev(report)
   await sleep(2200)
   const after = await ev(report)
-  assertEq(after !== before, true, `[${page}] the clock above goes on re-feeding the capture`)
-  assertEq(after.includes('with kerb.jpg (5 kB)') && after.includes('a loose kerb'), true, `[${page}] which keeps the file, as the editor keeps its text`)
-  assertEq(await ev(`${field}.value`), 'a loose kerb', `[${page}] the editor still shows what was typed`)
+  assertEq(after !== before, true, `[${page}] the line that reads the time follows the clock`)
+  assertEq(after.includes('with kerb.jpg (5 kB)') && after.includes('a loose kerb by the gate'), true, `[${page}] the row it reads unchanged`)
+  assertEq(await ev(`${field}.value`), 'a loose kerb by the gate', `[${page}] the editor still shows what was typed`)
 }

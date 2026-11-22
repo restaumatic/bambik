@@ -17,8 +17,9 @@
 -- |   `onContextMenuXY @l`;
 -- | - **panes** (re-exported from `PUI`) — `provided`, `inCase`,
 -- |   `providedAt`, `inCaseAt`;
--- | - **sources** — `geolocated`, `online`, `clock`, `colorScheme`, each
--- |   `{} → { l :: a }`, owning one field the app cannot seed;
+-- | - **sources** — `geolocated`, `online`, `colorScheme`, each
+-- |   `{} → { l :: a }`, owning one field the app cannot seed; the time
+-- |   is not among them;
 -- | - **the time beside the model** — `timestamped @l`, a line that reads
 -- |   the time under field `l` of its row, and `timestamping @l`, an
 -- |   emitter whose event carries the time it left at;
@@ -96,7 +97,6 @@ module PUI.Web
   , separating
   , geolocated
   , online
-  , clock
   , timestamped
   , timestamping
   , colorScheme
@@ -878,19 +878,6 @@ online = source @l (onlineCase <$> isOnline) \tell -> watchOnline (tell <<< onli
   where
   onlineCase on = if on then inj (Proxy @"online") {} else inj (Proxy @"offline") {}
 
--- | The wall clock as a fact — local hours, minutes and seconds, read every
--- | `period` — the `×→×` sibling of `ticks`, which is the clock as an
--- | event. Known at registration. Its beats fall on whole periods of the
--- | wall clock, one timer for every use of a period.
-clock
-  :: forall @l r
-   . IsSymbol l
-  => Cons l { hours :: Int, minutes :: Int, seconds :: Int } () r
-  => { ms :: Number }
-  -> PUI Web {} { | r }
-clock period = source @l localTime \tell ->
-  everyMs period.ms (localTime >>= tell)
-
 -- | A line that **reads the time**: the stage is fed its row with the wall
 -- | clock under field `l` — `( labelLarge $ text waitLine ) # timestamped
 -- | @"time" clockPeriod`, `waitLine :: { placed :: Time, time :: { hours ::
@@ -905,7 +892,10 @@ clock period = source @l localTime \tell ->
 -- | knot; **the model's row leaves** — what the stage does release, an
 -- | edit, leaves without field `l`. The author names the field, and it
 -- | must be one the row does not have: the time written over a field of
--- | the model would be dropped with it on the way out.
+-- | the model would be dropped with it on the way out. The time has no
+-- | source of its own: a source would make it a field of the model, and
+-- | each beat a turn of the knot. Beats fall on whole periods of the wall
+-- | clock, one timer for every use of a period.
 timestamped
   :: forall @l r t
    . IsSymbol l
@@ -932,7 +922,7 @@ timestamped period (PUI inner) = PUI ado
       feed row
   where
   name = reflectSymbol (Proxy @l)
-  PUI beat = clock @"time" period :: PUI Web {} { time :: { hours :: Int, minutes :: Int, seconds :: Int } }
+  PUI beat = source @"time" localTime (\tell -> everyMs period.ms (localTime >>= tell)) :: PUI Web {} { time :: { hours :: Int, minutes :: Int, seconds :: Int } }
 
 -- | An emitter whose event **carries the time it left at**: the wall
 -- | clock is read as the event leaves and joins its payload under field

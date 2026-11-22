@@ -2250,7 +2250,7 @@ main = do
     -- `p { l | rest } { l | rest }`, so two editors merged in parallel fail
     -- with `Prim.Row.Union` having no instance. Sources can: each owns one
     -- field and answers every feed with its last value, so a feed to
-    -- `RecordToRecord.do { geolocated …; online …; clock …; colorScheme … }`
+    -- `RecordToRecord.do { geolocated …; online …; colorScheme … }`
     -- (here-and-now) is exactly this broadcast.
     outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
     m <- handles disjointOperands
