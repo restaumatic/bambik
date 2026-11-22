@@ -1,7 +1,9 @@
 // B1 — responsiveness: every kind of thing a user does at each station,
 // done with real input on the standard day and timed by what the browser
-// spent on it (script, style, layout — the layout forced inside the
-// reading, so no frame is waited for). Three passes on fresh pages: at full
+// spent on it: everything its main thread did up to and including the
+// frame that shows the change — script, style, layout, and the painting
+// and compositing a forced layout would leave out; a frame with nothing
+// done is measured beside them as the floor. Three passes on fresh pages: at full
 // speed, at a quarter of it (a mid-range phone), and under a CPU profile
 // that says which layer the time went to. Then the application itself: a
 // second passing at each station, a station switched to, and the start.
@@ -86,8 +88,8 @@ const application = async (browser, throttle, reps) => {
   const push = (name, s) => (samples[name] ??= []).push(s)
   const p = await browser.open('App', { throttle })
   await p.waitFor(drawn.App)
-  const fired = () => p.ev('window.__bench.beats(1000)')
-  const nextTick = async () => { const n = await fired(); await p.waitFor(`window.__bench.beats(1000) > ${n}`, 5000) }
+  const nextTick = () => p.nextBeat(1000)
+  for (let i = 0; i < Math.min(reps, 6); i++) { await p.sleep(100); push('app: a frame with nothing done', await p.measure(async () => {})) }
   for (const station of stationTabs) {
     await p.clickOn(tab(station))
     await p.sleep(200)
@@ -110,11 +112,11 @@ const application = async (browser, throttle, reps) => {
     await q.waitFor(`document.querySelector('md-linear-progress') !== null`)
     const waiting = await q.metrics()
     await q.waitFor(drawn.App)
-    await q.ev('document.body.offsetHeight')
+    await q.frame()
     const open = await q.metrics()
-    const cost = m => m.script + m.style + m.layout
-    push('app: started, until it waits for its day', { total: cost(waiting), script: waiting.script, style: waiting.style, layout: waiting.layout })
-    push('app: started, the day drawn', { total: cost(open) - cost(waiting), script: open.script - waiting.script, style: open.style - waiting.style, layout: open.layout - waiting.layout, nodes: open.nodes })
+    const a = q.spent(waiting), b = q.spent(open)
+    push('app: started, until it waits for its day', a)
+    push('app: started, the day drawn', { total: b.total - a.total, script: b.script - a.script, style: b.style - a.style, layout: b.layout - a.layout, rest: Math.max(0, b.rest - a.rest), nodes: open.nodes })
     await q.close()
   }
   return { samples, problems }
@@ -145,7 +147,7 @@ export const responsiveness = {
       problems.push(...app.problems)
       passes[throttle] = Object.fromEntries(Object.entries(samples).map(([name, xs]) => [name, {
         total: summary(xs.map(x => x.total)),
-        script: round(median(xs.map(x => x.script))), style: round(median(xs.map(x => x.style))), layout: round(median(xs.map(x => x.layout))),
+        script: round(median(xs.map(x => x.script))), style: round(median(xs.map(x => x.style))), layout: round(median(xs.map(x => x.layout))), rest: round(median(xs.map(x => x.rest))),
       }]))
     }
     // the profiled pass: fewer doings, one profile per station
@@ -156,7 +158,7 @@ export const responsiveness = {
       await p.waitFor(drawn[part])
       await p.sleep(300)
       await p.startProfile()
-      await walks[part](p, async (_, act) => { await act(); await p.ev('document.body.offsetHeight') }, quick ? 4 : 10)
+      await walks[part](p, async (_, act) => { await act(); await p.frame() }, quick ? 4 : 10)
       layers[part] = await p.stopProfile()
       await p.close()
     }
@@ -164,15 +166,15 @@ export const responsiveness = {
   },
   report: ({ passes, layers, problems }) => {
     const names = Object.keys(passes[1])
-    const budget = name => name.includes('a second passes') ? 16 : name.startsWith('app: started') ? 1000 : 100
+    const budget = name => name.includes('a second passes') || name.includes('nothing done') ? 16 : name.startsWith('app: started') ? 1000 : 100
     const rows = names.map(name => {
       const a = passes[1][name], b = passes[4][name]
       const over = b.total.p95 > budget(name)
-      return [name, a.total.n, a.total.p50, a.total.p95, `${a.script} / ${a.style} / ${a.layout}`, b.total.p50, b.total.p95, over ? `over ${budget(name)}` : 'within']
+      return [name, a.total.n, a.total.p50, a.total.p95, `${a.script} / ${a.style} / ${a.layout} / ${a.rest}`, b.total.p50, b.total.p95, over ? `over ${budget(name)}` : 'within']
     })
     const out = ['### Responsiveness: what one doing costs the browser (ms)', '',
-      'Script, style and layout together; the split is the median at full speed. The budget is on the 95th percentile at a quarter of the speed: 100 ms for something done, 16 ms for a second passing, 1 s for the start.', '',
-      table(['done', 'n', 'p50', 'p95', 'script / style / layout', 'p50 at ¼', 'p95 at ¼', 'budget'], rows), '']
+      'Everything the main thread does from the doing to the frame that shows it; the split is the median at full speed, the rest being painting, compositing and the browser\'s own — a frame with nothing done is its floor. The budget is on the 95th percentile at a quarter of the speed: 100 ms for something done, 16 ms for a second passing, 1 s for the start.', '',
+      table(['done', 'n', 'p50', 'p95', 'script / style / layout / rest', 'p50 at ¼', 'p95 at ¼', 'budget'], rows), '']
     const share = Object.entries(layers).map(([part, { layers: l }]) => {
       const sum = Object.values(l).reduce((a, b) => a + b, 0)
       const pct = k => `${round(100 * (l[k] ?? 0) / sum, 0)}%`

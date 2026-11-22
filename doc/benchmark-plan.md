@@ -341,3 +341,21 @@ model as it goes.
   still what A, B and C above are about: a real change at Statystyki runs
   its seven aggregations, a stockroom page turned and a group picked are
   over 100 ms at ¼, and so is the switch to Statystyki.
+- 2026-11-22: the measure changed, so no number before this entry
+  compares with one after it. A doing was timed as script, style and
+  layout with the layout forced; it is now everything the main thread
+  does from the doing to the end of the frame that shows it, painting
+  and compositing included (`rest` in the split), with a frame in which
+  nothing is done measured beside them as the floor (1 ms, 2.6 at ¼).
+  A trace of a station switched to showed the old measure counting a
+  third of the work: Magazyn 16 ms measured, 61 done. Baseline replaced
+  by the run under the new measure (`git show f4b3d99b:bench/baseline.md`
+  for the last under the old), made on 199b9603 before `revealing` and
+  `awaited` went into Diner. Over the 100 ms budget at ¼ now, by the
+  95th percentile: a stockroom group picked (199), a stockroom page
+  turned (167), a kitchen order passed on and confirmed (165), the
+  switches to Magazyn (136), Statystyki (134) and Sala (123), a kitchen
+  page turned (120), and a key in the stockroom's search (125, median
+  29). A third to a half of each is painting and compositing: a station
+  that is not open is out of the document, so a switch styles, lays out
+  and paints it anew.

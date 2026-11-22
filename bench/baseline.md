@@ -1,168 +1,169 @@
-# bambik on Diner — 2026-11-22, 51bba2b3
+# bambik on Diner — 2026-11-22, 199b9603+dirty
 
-11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz, 16 threads, 63 GB; Chrome/158.0.8127.36; node v25.6.0; 1311 s.
+11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz, 16 threads, 63 GB; Chrome/158.0.8127.36; node v25.6.0; 1390 s.
 
 ### View model in node: one feed's reads per station (ms)
 
-| station    | 1×    | 4×     | 16×     | 64×    | growth |
-| ---------- | ----- | ------ | ------- | ------ | ------ |
-| Magazyn    | 0.44  | 1.909  | 7.765   | 36.424 | 1.06   |
-| Sala       | 0.462 | 2.058  | 9.034   | 42.243 | 1.08   |
-| Kuchnia    | 0.064 | 0.32   | 1.645   | 9.61   | 1.2    |
-| Wydawka    | 0.03  | 0.118  | 0.517   | 2.554  | 1.07   |
-| Raport     | 0.14  | 0.643  | 3.047   | 15.182 | 1.13   |
-| Statystyki | 5.686 | 29.383 | 149.715 | 811.43 | 1.19   |
+| station    | 1×    | 4×     | 16×     | 64×     | growth |
+| ---------- | ----- | ------ | ------- | ------- | ------ |
+| Magazyn    | 0.449 | 1.708  | 7.867   | 36.296  | 1.06   |
+| Sala       | 0.443 | 1.958  | 8.877   | 36.33   | 1.06   |
+| Kuchnia    | 0.064 | 0.3    | 1.696   | 8.704   | 1.19   |
+| Wydawka    | 0.031 | 0.12   | 0.544   | 2.647   | 1.07   |
+| Raport     | 0.141 | 0.595  | 2.977   | 14.908  | 1.13   |
+| Statystyki | 5.215 | 27.042 | 142.959 | 793.881 | 1.21   |
 
 The costliest reads at the largest scale:
 
 | read                         | 1×    | 4×    | 16×    | 64×     | growth |
 | ---------------------------- | ----- | ----- | ------ | ------- | ------ |
-| Statystyki: searchState      | 0.936 | 4.305 | 21.403 | 123.086 | 1.17   |
-| Statystyki: soldAmountLine   | 0.84  | 4.333 | 22.012 | 117.843 | 1.19   |
-| Statystyki: isLastPage       | 0.762 | 4.107 | 20.854 | 115.573 | 1.2    |
-| Statystyki: soldQuantityLine | 0.83  | 4.385 | 22.121 | 113.63  | 1.18   |
-| Statystyki: salesPage        | 0.771 | 4.144 | 21.157 | 113.578 | 1.2    |
-| Statystyki: pageLine         | 0.774 | 3.99  | 20.688 | 113.349 | 1.2    |
-| Statystyki: isFirstPage      | 0.757 | 4.058 | 21.217 | 113.317 | 1.2    |
-| Sala: menuPage               | 0.176 | 0.903 | 4.288  | 22.202  | 1.16   |
-| Magazyn: stockPage           | 0.191 | 0.927 | 3.974  | 19.737  | 1.11   |
-| Raport: paidPage             | 0.059 | 0.306 | 1.627  | 9.199   | 1.21   |
+| Statystyki: salesPage        | 0.756 | 3.88  | 20.123 | 122.636 | 1.22   |
+| Statystyki: searchState      | 0.752 | 3.825 | 19.86  | 113.985 | 1.21   |
+| Statystyki: soldQuantityLine | 0.689 | 3.879 | 20.288 | 112.19  | 1.22   |
+| Statystyki: pageLine         | 0.762 | 3.723 | 19.506 | 111.58  | 1.2    |
+| Statystyki: soldAmountLine   | 0.732 | 3.927 | 19.551 | 110.963 | 1.2    |
+| Statystyki: isLastPage       | 0.734 | 3.767 | 23.488 | 110.959 | 1.22   |
+| Statystyki: isFirstPage      | 0.777 | 3.982 | 19.889 | 110.509 | 1.19   |
+| Magazyn: stockPage           | 0.216 | 0.812 | 4.368  | 20.77   | 1.11   |
+| Sala: menuPage               | 0.166 | 0.865 | 4.597  | 18.228  | 1.14   |
+| Raport: paidPage             | 0.06  | 0.288 | 1.588  | 9.053   | 1.21   |
 
-Generating the day (`dayAt`): 1× 1.63 ms, 4× 6.41 ms, 16× 35.65 ms, 64× 87.4 ms.
+Generating the day (`dayAt`): 1× 1.78 ms, 4× 5.8 ms, 16× 33.98 ms, 64× 82.32 ms.
 
 ### Responsiveness: what one doing costs the browser (ms)
 
-Script, style and layout together; the split is the median at full speed. The budget is on the 95th percentile at a quarter of the speed: 100 ms for something done, 16 ms for a second passing, 1 s for the start.
+Everything the main thread does from the doing to the frame that shows it; the split is the median at full speed, the rest being painting, compositing and the browser's own — a frame with nothing done is its floor. The budget is on the 95th percentile at a quarter of the speed: 100 ms for something done, 16 ms for a second passing, 1 s for the start.
 
-| done                                     | n  | p50   | p95   | script / style / layout | p50 at ¼ | p95 at ¼ | budget   |
-| ---------------------------------------- | -- | ----- | ----- | ----------------------- | -------- | -------- | -------- |
-| stock: a portion more                    | 30 | 3.53  | 4.61  | 2.9 / 0.33 / 0.3        | 14.17    | 24.57    | within   |
-| stock: a portion fewer                   | 30 | 3.55  | 4.57  | 2.87 / 0.36 / 0.32      | 14.93    | 19.68    | within   |
-| stock: a key in a portion count          | 30 | 2.99  | 4.08  | 2.68 / 0 / 0.24         | 9.7      | 11.93    | within   |
-| stock: a key in a price                  | 30 | 2.33  | 4.39  | 2.12 / 0 / 0.17         | 9.52     | 11.64    | within   |
-| stock: a page turned                     | 30 | 19.11 | 25.73 | 12.14 / 4.66 / 2.58     | 80.82    | 101.27   | over 100 |
-| stock: a group picked                    | 30 | 21.38 | 26.67 | 11.88 / 6.76 / 2.89     | 89.25    | 113.15   | over 100 |
-| stock: a key in the search               | 32 | 3.57  | 18.45 | 3.19 / 0.25 / 0.24      | 14.33    | 69.83    | within   |
-| hall: a dish added                       | 30 | 3.82  | 6.66  | 3.45 / 0.18 / 0.32      | 15.45    | 27.32    | within   |
-| hall: a portion more on a line           | 30 | 5.33  | 6.54  | 4.35 / 0.56 / 0.45      | 20.03    | 24.88    | within   |
-| hall: a portion fewer on a line          | 30 | 5.22  | 6.38  | 4.09 / 0.67 / 0.46      | 20.97    | 27.65    | within   |
-| hall: a table picked                     | 30 | 5.93  | 7.22  | 4.31 / 1.12 / 0.86      | 23.27    | 28.6     | within   |
-| hall: a page turned                      | 30 | 7.45  | 11.03 | 5.73 / 0.99 / 0.8       | 30.37    | 37.52    | within   |
-| hall: a group picked                     | 30 | 9.56  | 13.34 | 6.58 / 2.16 / 0.89      | 35.16    | 49.63    | within   |
-| hall: a key in the search                | 32 | 5.45  | 7.07  | 4.44 / 0.34 / 0.74      | 21.8     | 28.01    | within   |
-| kitchen: a page turned                   | 30 | 14.49 | 19.77 | 9.33 / 3.11 / 1.8       | 58.26    | 72.99    | within   |
-| kitchen: a line plated                   | 7  | 3.49  | 4.06  | 2.65 / 0.65 / 0.33      | 12.99    | 18.33    | within   |
-| kitchen: an order passed on, asked       | 12 | 4.47  | 11.88 | 0.44 / 3.86 / 0.37      | 17.9     | 27.8     | within   |
-| kitchen: an order passed on, confirmed   | 12 | 19.73 | 24.09 | 4.48 / 11.95 / 3.06     | 58.53    | 69.02    | within   |
-| pass: a payment, asked                   | 10 | 2.77  | 6.6   | 0.51 / 1.96 / 0.37      | 10.6     | 18.24    | within   |
-| pass: a payment, confirmed               | 10 | 11.37 | 12.91 | 2.12 / 7.36 / 1.69      | 31.82    | 40.96    | within   |
-| report: a page turned                    | 30 | 3.81  | 5.62  | 2.58 / 0.71 / 0.61      | 13.55    | 18.52    | within   |
-| statistics: a page turned                | 30 | 10.98 | 14.51 | 9.8 / 0.76 / 0.6        | 43.39    | 60.89    | within   |
-| statistics: a group picked               | 30 | 14.63 | 21.83 | 12.22 / 1.88 / 0.58     | 58.52    | 67.99    | within   |
-| statistics: a key in the search          | 32 | 12.56 | 18.04 | 12.1 / 0.14 / 0.55      | 50.1     | 69.53    | within   |
-| app: a second passes at Magazyn          | 6  | 0.28  | 0.43  | 0.11 / 0.19 / 0         | 0.66     | 1.15     | within   |
-| app: a second passes at Sala             | 6  | 0.4   | 0.44  | 0.16 / 0.24 / 0         | 0.87     | 1.41     | within   |
-| app: a second passes at Kuchnia          | 6  | 0.77  | 1.02  | 0.62 / 0.21 / 0         | 1.08     | 2.25     | within   |
-| app: a second passes at Wydawka          | 6  | 0.49  | 0.92  | 0.44 / 0.16 / 0         | 1.68     | 2.5      | within   |
-| app: a second passes at Raport           | 6  | 0.44  | 0.51  | 0.29 / 0.15 / 0         | 0.84     | 1.14     | within   |
-| app: a second passes at Statystyki       | 6  | 0.3   | 0.34  | 0.14 / 0.16 / 0         | 0.69     | 0.97     | within   |
-| app: switched to Magazyn                 | 5  | 17.39 | 24.36 | 5.51 / 9.16 / 2.86      | 72.14    | 73.46    | within   |
-| app: switched to Sala                    | 5  | 16.61 | 19.38 | 8.61 / 6.05 / 2.17      | 69.35    | 72.83    | within   |
-| app: switched to Kuchnia                 | 5  | 10.68 | 12    | 3.58 / 5.33 / 1.71      | 49.96    | 58.87    | within   |
-| app: switched to Wydawka                 | 5  | 6.18  | 7.98  | 2.32 / 2.93 / 1.05      | 34.89    | 67.55    | within   |
-| app: switched to Raport                  | 5  | 5.12  | 6.08  | 2.39 / 2.17 / 0.59      | 23.06    | 24.96    | within   |
-| app: switched to Statystyki              | 5  | 23.53 | 23.92 | 18.2 / 4.24 / 1.09      | 95.48    | 103.51   | over 100 |
-| app: started, until it waits for its day | 6  | 46.06 | 54.73 | 40.47 / 2.09 / 3.85     | 182.53   | 186.54   | within   |
-| app: started, the day drawn              | 6  | 55.48 | 60.72 | 42.04 / 4.09 / 10.06    | 199.66   | 207.15   | within   |
+| done                                     | n  | p50   | p95   | script / style / layout / rest | p50 at ¼ | p95 at ¼ | budget   |
+| ---------------------------------------- | -- | ----- | ----- | ------------------------------ | -------- | -------- | -------- |
+| stock: a portion more                    | 30 | 8.83  | 12.45 | 2.69 / 0.54 / 0.32 / 5.3       | 34.28    | 49.59    | within   |
+| stock: a portion fewer                   | 30 | 8.83  | 10.68 | 2.79 / 0.57 / 0.3 / 5.34       | 34.37    | 49.25    | within   |
+| stock: a key in a portion count          | 30 | 5.8   | 6.68  | 2.19 / 0.17 / 0.23 / 2.99      | 21.42    | 25.5     | within   |
+| stock: a key in a price                  | 30 | 5.72  | 6.87  | 2.21 / 0 / 0.23 / 3.09         | 20.56    | 24.37    | within   |
+| stock: a page turned                     | 30 | 33.9  | 45.26 | 13 / 4.96 / 2.56 / 13.38       | 132.14   | 167.34   | over 100 |
+| stock: a group picked                    | 30 | 36.84 | 49.84 | 12.05 / 6.46 / 2.68 / 15.67    | 149.61   | 199.48   | over 100 |
+| stock: a key in the search               | 32 | 8.53  | 30.05 | 3.89 / 0.26 / 0.33 / 4.07      | 28.63    | 125.07   | over 100 |
+| hall: a dish added                       | 30 | 7.44  | 13.38 | 3.65 / 0.3 / 0.37 / 3.27       | 26.71    | 42.51    | within   |
+| hall: a portion more on a line           | 30 | 9.81  | 13.85 | 3.95 / 0.79 / 0.47 / 4.73      | 42.47    | 60.11    | within   |
+| hall: a portion fewer on a line          | 30 | 10.29 | 12.16 | 4.07 / 0.96 / 0.5 / 4.64       | 47.06    | 65.67    | within   |
+| hall: a table picked                     | 30 | 9.54  | 13.17 | 4.33 / 1.3 / 0.86 / 3.58       | 41.03    | 45.81    | within   |
+| hall: a page turned                      | 30 | 12.32 | 14.91 | 5.91 / 1.27 / 0.8 / 4.38       | 47.64    | 70.01    | within   |
+| hall: a group picked                     | 30 | 14.38 | 22.43 | 6.14 / 2.28 / 0.78 / 4.83      | 54.63    | 68.15    | within   |
+| hall: a key in the search                | 32 | 8.47  | 12.12 | 4.55 / 0.43 / 0.72 / 2.78      | 36.11    | 52.42    | within   |
+| kitchen: a page turned                   | 30 | 22.5  | 27.99 | 10.32 / 3.12 / 1.73 / 7.76     | 81.82    | 120.31   | over 100 |
+| kitchen: a line plated                   | 7  | 7.5   | 10.5  | 2.57 / 0.9 / 0.39 / 3.68       | 27.17    | 37.75    | within   |
+| kitchen: an order passed on, asked       | 12 | 9.43  | 11.88 | 0.46 / 3.86 / 0.37 / 4.5       | 38.73    | 52.63    | within   |
+| kitchen: an order passed on, confirmed   | 12 | 39.7  | 48.77 | 4.19 / 11.18 / 2.93 / 21.51    | 120.23   | 165.14   | over 100 |
+| pass: a payment, asked                   | 10 | 6.35  | 9.58  | 0.59 / 2.05 / 0.41 / 3.47      | 24.09    | 38.75    | within   |
+| pass: a payment, confirmed               | 10 | 26.25 | 32.39 | 1.72 / 7.78 / 1.66 / 15.29     | 58.43    | 66.87    | within   |
+| report: a page turned                    | 30 | 6.77  | 8.9   | 2.42 / 0.94 / 0.63 / 2.77      | 23.47    | 33.36    | within   |
+| statistics: a page turned                | 30 | 14.56 | 17.91 | 10.08 / 0.9 / 0.6 / 3.08       | 53.45    | 69.19    | within   |
+| statistics: a group picked               | 30 | 21.52 | 29.41 | 14.71 / 2.18 / 0.61 / 4.27     | 72.19    | 83.32    | within   |
+| statistics: a key in the search          | 32 | 15.93 | 23.94 | 13.01 / 0.17 / 0.55 / 2.22     | 59.04    | 82.04    | within   |
+| app: a frame with nothing done           | 6  | 0.95  | 1.08  | 0.09 / 0.15 / 0 / 0.75         | 2.63     | 9.88     | within   |
+| app: a second passes at Magazyn          | 6  | 2.37  | 5.62  | 0.24 / 0.11 / 0 / 2.36         | 5.45     | 9.23     | within   |
+| app: a second passes at Sala             | 6  | 3.92  | 8.44  | 0.24 / 0.22 / 0 / 4.01         | 3.8      | 4.85     | within   |
+| app: a second passes at Kuchnia          | 6  | 1.92  | 2.43  | 0.29 / 0.11 / 0 / 1.69         | 4.37     | 5.49     | within   |
+| app: a second passes at Wydawka          | 6  | 1.64  | 2.06  | 0.43 / 0.1 / 0 / 1.23          | 4.22     | 6.07     | within   |
+| app: a second passes at Raport           | 6  | 1.49  | 2.44  | 0.4 / 0.08 / 0 / 1.07          | 5.01     | 8.75     | within   |
+| app: a second passes at Statystyki       | 6  | 1.49  | 2.23  | 0.22 / 0.08 / 0 / 1.24         | 3.75     | 7.38     | within   |
+| app: switched to Magazyn                 | 20 | 25.88 | 31.6  | 4.38 / 8.03 / 2.74 / 10.8      | 123.93   | 135.66   | over 100 |
+| app: switched to Sala                    | 20 | 25.45 | 27.75 | 7.26 / 5.74 / 1.7 / 10.08      | 114.62   | 122.6    | over 100 |
+| app: switched to Kuchnia                 | 20 | 16.31 | 18.07 | 2.9 / 5.36 / 1.61 / 6.27       | 78.71    | 85.14    | within   |
+| app: switched to Wydawka                 | 20 | 11.92 | 13.72 | 1.9 / 3.34 / 0.99 / 5.96       | 47.95    | 56.62    | within   |
+| app: switched to Raport                  | 20 | 9.34  | 10.79 | 1.85 / 2.67 / 0.63 / 4.18      | 33.66    | 39.74    | within   |
+| app: switched to Statystyki              | 20 | 26.08 | 38.15 | 15.27 / 4.63 / 1.05 / 5.54     | 125.5    | 133.76   | over 100 |
+| app: started, until it waits for its day | 6  | 57.98 | 68.74 | 39.58 / 2.4 / 3.61 / 13.13     | 229.59   | 237.33   | within   |
+| app: started, the day drawn              | 6  | 69.92 | 75.85 | 40.94 / 4.08 / 11.38 / 14.68   | 241.53   | 250.73   | within   |
 
 Where the time of a station's doings goes (CPU profile, self time by layer):
 
 | station    | ms profiled | view model | carrier | design system | browser | gc |
 | ---------- | ----------- | ---------- | ------- | ------------- | ------- | -- |
-| Stock      | 1426        | 5%         | 20%     | 33%           | 38%     | 4% |
-| Hall       | 853         | 16%        | 32%     | 8%            | 41%     | 4% |
-| Kitchen    | 808         | 2%         | 16%     | 22%           | 56%     | 3% |
-| Pass       | 314         | 1%         | 3%      | 17%           | 78%     | 1% |
-| Report     | 98          | 6%         | 24%     | 7%            | 59%     | 4% |
-| Statistics | 699         | 58%        | 9%      | 6%            | 22%     | 6% |
+| Stock      | 1518        | 5%         | 19%     | 31%           | 41%     | 4% |
+| Hall       | 940         | 15%        | 30%     | 7%            | 43%     | 5% |
+| Kitchen    | 780         | 2%         | 16%     | 22%           | 56%     | 4% |
+| Pass       | 300         | 1%         | 4%      | 17%           | 77%     | 1% |
+| Report     | 108         | 5%         | 24%     | 9%            | 56%     | 6% |
+| Statistics | 732         | 55%        | 9%      | 6%            | 23%     | 6% |
 
-Stock, the functions that took most: (program) 538.69 ms; scrollToTab (node_modules/@material/web/tabs/internal/tabs.js) 74.73 ms; (garbage collector) 55.73 ms; showStringImpl (Data.Show) 34.12 ms; insertBefore 26.86 ms.
-Hall, the functions that took most: (program) 332.39 ms; (garbage collector) 36.22 ms; (anonymous) (Effect) 31.9 ms; setAttribute 20.76 ms; __do3 (PUI) 19.96 ms.
-Kitchen, the functions that took most: (program) 446.75 ms; animate 45.43 ms; showModal 35.21 ms; (garbage collector) 25.19 ms; (anonymous) (Effect) 14.29 ms.
-Pass, the functions that took most: (program) 239.12 ms; showModal 17.63 ms; animate 15.86 ms; (anonymous) 3.31 ms; animateDialog (node_modules/@material/web/dialog/internal/dialog.js) 2.03 ms.
-Report, the functions that took most: (program) 56.7 ms; setAttribute 4.15 ms; (garbage collector) 4.06 ms; (anonymous) (Effect) 1.55 ms; (anonymous) (Control.Bind) 1.14 ms.
-Statistics, the functions that took most: (program) 145.55 ms; go (Data.Map.Internal) 90.59 ms; (anonymous) (Data.Map.Internal) 59.25 ms; (anonymous) (Diner) 52.11 ms; (anonymous) (Data.Ord) 48.23 ms.
+Stock, the functions that took most: (program) 604.16 ms; scrollToTab (node_modules/@material/web/tabs/internal/tabs.js) 73.07 ms; (garbage collector) 58.85 ms; showStringImpl (Data.Show) 32.08 ms; setAttribute 30.08 ms.
+Hall, the functions that took most: (program) 387.92 ms; (garbage collector) 49.05 ms; (anonymous) (Effect) 31.05 ms; setAttribute 25.81 ms; __do3 (PUI) 20.93 ms.
+Kitchen, the functions that took most: (program) 425.73 ms; animate 45.43 ms; showModal 32.81 ms; (garbage collector) 29.07 ms; appendChild 11.73 ms.
+Pass, the functions that took most: (program) 223.66 ms; animate 17.29 ms; showModal 16.82 ms; (garbage collector) 2.6 ms; (anonymous) 2.47 ms.
+Report, the functions that took most: (program) 59.21 ms; (garbage collector) 6.1 ms; setAttribute 4.61 ms; (anonymous) (Effect) 3.86 ms; animate 1.84 ms.
+Statistics, the functions that took most: (program) 158.88 ms; go (Data.Map.Internal) 102.8 ms; (anonymous) (Diner) 51.35 ms; (garbage collector) 46.39 ms; (anonymous) (Data.Ord) 45.95 ms.
 
 No exception and no console warning.
 
 ### Large data: a station alone on days of growing load (ms)
 
-The standard day is 1×; 64× is 19456 dishes, 2688 tables and 16128 orders. Growth is the exponent k of cost ≈ c·scale^k: 0 is flat, 1 linear, above 1 a finding.
+The standard day is 1×; 64× is 19456 dishes, 2688 tables and 16128 orders. Growth is the exponent k of cost ≈ c·scale^k: 0 is flat, 1 linear, above 1 a finding. A cost is everything the main thread did up to the frame that shows the change, painting and compositing included; a second of a station with no clock is a frame with nothing done.
 
-| station    | measured        | 1×    | 4×     | 16×    | 64×     | growth |
-| ---------- | --------------- | ----- | ------ | ------ | ------- | ------ |
-| Stock      | drawn           | 79.63 | 97.54  | 141.38 | 287.03  | 0.3    |
-| Stock      | a second passes | 0     | 0      | 0      | 0       | 0      |
-| Stock      | a portion more  | 4.18  | 9.86   | 22.63  | 84.96   | 0.71   |
-| Stock      | DOM nodes       | 6184  | 6192   | 6192   | 6192    | 0      |
-| Stock      | heap (MB)       | 6.2   | 5.9    | 10.2   | 20.8    | 0.3    |
-| Hall       | drawn           | 83.91 | 146.79 | 287.64 | 846.31  | 0.55   |
-| Hall       | a second passes | 0.3   | 0.32   | 0.39   | 0.45    | 0.1    |
-| Hall       | a dish added    | 4.66  | 9.56   | 28.86  | 109.44  | 0.76   |
-| Hall       | DOM nodes       | 2457  | 5121   | 15777  | 54027   | 0.75   |
-| Hall       | heap (MB)       | 7.2   | 11.7   | 18.8   | 51.6    | 0.46   |
-| Kitchen    | drawn           | 68.86 | 77.5   | 103.32 | 176.58  | 0.22   |
-| Kitchen    | a second passes | 0.27  | 0.27   | 0.34   | 0.26    | 0.01   |
-| Kitchen    | a page turned   | 14.91 | 17.96  | 17.48  | 26.92   | 0.13   |
-| Kitchen    | DOM nodes       | 3286  | 3143   | 3325   | 2896    | -0.02  |
-| Kitchen    | heap (MB)       | 4.9   | 7.3    | 7.6    | 19.5    | 0.3    |
-| Pass       | drawn           | 51.24 | 58.9   | 82     | 147.66  | 0.25   |
-| Pass       | a second passes | 0.31  | 0.38   | 0.31   | 0.33    | 0      |
-| Pass       | a payment taken | 15.1  | 16.01  | 18.84  | 24.42   | 0.12   |
-| Pass       | DOM nodes       | 922   | 924    | 924    | 924     | 0      |
-| Pass       | heap (MB)       | 4.7   | 4.7    | 8.1    | 12.7    | 0.25   |
-| Report     | drawn           | 48    | 58.31  | 81.47  | 160.73  | 0.29   |
-| Report     | a second passes | 0.23  | 0.32   | 0.3    | 0.35    | 0.09   |
-| Report     | a page turned   | 4.32  | 4.49   | 6.18   | 17.55   | 0.33   |
-| Report     | DOM nodes       | 301   | 301    | 301    | 301     | 0      |
-| Report     | heap (MB)       | 4.4   | 5      | 7.6    | 20.7    | 0.37   |
-| Statistics | drawn           | 77.92 | 153.46 | 404.31 | 1654.54 | 0.73   |
-| Statistics | a second passes | 0     | 0      | 0      | 0       | 0      |
-| Statistics | a page turned   | 12.19 | 37.62  | 156.64 | 802.94  | 1.01   |
-| Statistics | DOM nodes       | 924   | 924    | 924    | 905     | 0      |
-| Statistics | heap (MB)       | 5.3   | 8.7    | 26.4   | 32.2    | 0.47   |
+| station    | measured        | 1×     | 4×     | 16×    | 64×     | growth |
+| ---------- | --------------- | ------ | ------ | ------ | ------- | ------ |
+| Stock      | drawn           | 111.25 | 129.07 | 167.46 | 305.69  | 0.24   |
+| Stock      | a second passes | 0.58   | 0.68   | 0.64   | 0.64    | 0.02   |
+| Stock      | a portion more  | 9.32   | 14.86  | 28.54  | 92.8    | 0.54   |
+| Stock      | DOM nodes       | 6184   | 6192   | 6192   | 6192    | 0      |
+| Stock      | heap (MB)       | 6.2    | 5.9    | 10.2   | 20.5    | 0.3    |
+| Hall       | drawn           | 113.39 | 157.5  | 311.75 | 910.58  | 0.5    |
+| Hall       | a second passes | 1.42   | 1.41   | 2.17   | 1.84    | 0.09   |
+| Hall       | a dish added    | 7.24   | 13.48  | 36.74  | 126.02  | 0.69   |
+| Hall       | DOM nodes       | 2457   | 5121   | 15777  | 54023   | 0.75   |
+| Hall       | heap (MB)       | 7.4    | 12     | 18.7   | 51.3    | 0.45   |
+| Kitchen    | drawn           | 86.68  | 90.77  | 120.38 | 188.08  | 0.19   |
+| Kitchen    | a second passes | 1.2    | 1.56   | 1.45   | 1.35    | 0.02   |
+| Kitchen    | a page turned   | 22.1   | 23.31  | 24.06  | 31.69   | 0.08   |
+| Kitchen    | DOM nodes       | 3286   | 3143   | 3325   | 2896    | -0.02  |
+| Kitchen    | heap (MB)       | 4.9    | 7.3    | 9.3    | 15.8    | 0.27   |
+| Pass       | drawn           | 62.62  | 73.88  | 91.88  | 165.27  | 0.23   |
+| Pass       | a second passes | 1.45   | 1.44   | 0.97   | 1.13    | -0.08  |
+| Pass       | a payment taken | 33     | 35.67  | 37.97  | 42.5    | 0.06   |
+| Pass       | DOM nodes       | 922    | 924    | 924    | 924     | 0      |
+| Pass       | heap (MB)       | 4.7    | 4.8    | 7.6    | 15.6    | 0.29   |
+| Report     | drawn           | 63     | 67.17  | 96.47  | 168.53  | 0.24   |
+| Report     | a second passes | 1.11   | 1.11   | 1.13   | 0.96    | -0.03  |
+| Report     | a page turned   | 7.4    | 6.66   | 9.97   | 21.02   | 0.26   |
+| Report     | DOM nodes       | 301    | 301    | 301    | 301     | 0      |
+| Report     | heap (MB)       | 4.3    | 5.1    | 8      | 25.9    | 0.42   |
+| Statistics | drawn           | 93.7   | 187.56 | 417.32 | 1634.66 | 0.68   |
+| Statistics | a second passes | 0.68   | 0.72   | 0.62   | 0.7     | 0      |
+| Statistics | a page turned   | 13.68  | 40.99  | 167.09 | 829.46  | 0.99   |
+| Statistics | DOM nodes       | 924    | 924    | 924    | 905     | 0      |
+| Statistics | heap (MB)       | 5.2    | 8.6    | 27.8   | 38      | 0.52   |
 
 Where drawing the day at 64× goes (CPU profile, self time by layer):
 
 | station    | ms profiled | view model | carrier | design system | browser | gc  |
 | ---------- | ----------- | ---------- | ------- | ------------- | ------- | --- |
-| Stock      | 368         | 50%        | 20%     | 16%           | 8%      | 6%  |
-| Hall       | 1040        | 20%        | 40%     | 14%           | 19%     | 8%  |
-| Kitchen    | 229         | 56%        | 11%     | 11%           | 14%     | 8%  |
-| Pass       | 187         | 54%        | 8%      | 11%           | 17%     | 10% |
-| Report     | 211         | 63%        | 8%      | 7%            | 12%     | 9%  |
-| Statistics | 1847        | 89%        | 1%      | 2%            | 2%      | 7%  |
+| Stock      | 396         | 48%        | 22%     | 17%           | 7%      | 7%  |
+| Hall       | 1021        | 19%        | 41%     | 14%           | 18%     | 9%  |
+| Kitchen    | 220         | 53%        | 10%     | 11%           | 18%     | 8%  |
+| Pass       | 192         | 55%        | 9%      | 12%           | 16%     | 8%  |
+| Report     | 206         | 59%        | 8%      | 7%            | 14%     | 12% |
+| Statistics | 1759        | 89%        | 1%      | 2%            | 2%      | 7%  |
 
 With pagination off, everything listed is on screen. A row's cost is the difference to the paged station over the difference in rows:
 
 | station    | scale | listed | drawn   | per row | a second passes | per row | DOM nodes |
 | ---------- | ----- | ------ | ------- | ------- | --------------- | ------- | --------- |
-| Stock      | 1×    | 304    | 672.29  | 2.016   | 0               | 0       | 144136    |
-| Stock      | 4×    | 1216   | 2282.99 | 1.812   | 0               | 0       | 641133    |
-| Hall       | 1×    | 346    | 158.55  | 0.267   | 0.33            | 0       | 6655      |
-| Hall       | 4×    | 1384   | 470.97  | 0.272   | 0.31            | 0       | 22999     |
-| Kitchen    | 1×    | 20     | 79.48   | 1.062   | 0.49            | 0.022   | 6085      |
-| Kitchen    | 4×    | 80     | 179.35  | 1.455   | 1.4             | 0.016   | 22345     |
-| Pass       | 1×    | 10     | 71.28   | —       | 0.49            | —       | 922       |
-| Pass       | 4×    | 40     | 75.19   | 0.543   | 0.96            | 0.019   | 2422      |
-| Report     | 1×    | 220    | 105.95  | 0.277   | 1.53            | 0.006   | 2598      |
-| Report     | 4×    | 877    | 236.61  | 0.206   | 3.42            | 0.004   | 9825      |
-| Statistics | 1×    | 263    | 137.08  | 0.235   | 0               | 0       | 3442      |
-| Statistics | 4×    | 1040   | 363.04  | 0.204   | 0               | 0       | 11212     |
+| Stock      | 1×    | 304    | 948.39  | 2.847   | 1.06            | 0.002   | 144136    |
+| Stock      | 4×    | 1216   | 3288.46 | 2.62    | 1.31            | 0.001   | 641133    |
+| Hall       | 1×    | 346    | 183.77  | 0.251   | 1.66            | 0.001   | 6655      |
+| Hall       | 4×    | 1384   | 484.35  | 0.274   | 2.54            | 0.001   | 22999     |
+| Kitchen    | 1×    | 20     | 109.43  | 2.275   | 1.75            | 0.055   | 6085      |
+| Kitchen    | 4×    | 80     | 226.64  | 1.941   | 3.9             | 0.033   | 22345     |
+| Pass       | 1×    | 10     | 63.52   | —       | 1.38            | —       | 922       |
+| Pass       | 4×    | 40     | 94.29   | 0.68    | 2.14            | 0.023   | 2422      |
+| Report     | 1×    | 220    | 116.52  | 0.256   | 2.11            | 0.005   | 2598      |
+| Report     | 4×    | 877    | 265.79  | 0.229   | 4.35            | 0.004   | 9825      |
+| Statistics | 1×    | 263    | 152.52  | 0.233   | 0.77            | 0       | 3442      |
+| Statistics | 4×    | 1040   | 428.5   | 0.234   | 0.57            | 0       | 11212     |
 
 ### Correctness under stress: a random walk against the view model
 
-3000 steps of real input (seed 20261120, 166 s): after every one the station on screen read exactly what the view model says of the reference model. The day ended with 310 orders, 288 of them paid.
+3000 steps of real input (seed 20261120, 175 s): after every one the station on screen read exactly what the view model says of the reference model. The day ended with 310 orders, 288 of them paid.
 
 Done along the way: open ×1177, next page ×326, previous page ×239, add ×186, search ×162, order ×159, serve table ×136, plate ×125, stock + ×76, stock − ×64, price of ×61, group ×60, portions of ×53, line + ×48, zero ×45, send ×41, remove ×27, line − ×15.
 
@@ -181,45 +182,45 @@ No exception and no console warning.
 
 ### Reliability: left running
 
-9521 random clicks over 240 s under the clock, sampled every 25 after a forced collection. The slope is over the second half of the run:
+9650 random clicks over 240 s under the clock, sampled every 25 after a forced collection. The slope is over the second half of the run:
 
 |           | first sample | last sample | slope per minute |
 | --------- | ------------ | ----------- | ---------------- |
-| heap (MB) | 6.3          | 10          | 0.25             |
-| DOM nodes | 7955         | 14899       | 280.8            |
-| listeners | 872          | 1949        | 43.14            |
+| heap (MB) | 6.3          | 9.9         | 0.27             |
+| DOM nodes | 7954         | 14369       | 354.15           |
+| listeners | 872          | 1569        | 48.33            |
 
 What one doing leaves behind for good (twenty of them between two forced collections, a station alone):
 
 | done                      | DOM nodes | listeners | heap (KB) |
 | ------------------------- | --------- | --------- | --------- |
 | stockroom: a page turned  | -0.1      | 0         | 18.5      |
-| hall: a page turned       | -0.1      | 0         | 15.5      |
-| hall: a group picked      | 0         | 0         | 14.1      |
+| hall: a page turned       | -0.1      | 0         | 15.9      |
+| hall: a group picked      | 0         | 0         | 14.3      |
 | hall: a table picked      | 0         | 0         | 4.7       |
-| kitchen: a page turned    | -0.1      | 0         | 15.4      |
+| kitchen: a page turned    | -0.1      | 0         | 53.6      |
 | report: a page turned     | -0.1      | 0         | 8.7       |
-| statistics: a page turned | -0.1      | 0         | 8.1       |
+| statistics: a page turned | -0.1      | 0         | 8.5       |
 
-900 station switches after a warm-up of twelve: heap 7.3 → 7.8 MB, DOM nodes 11623 → 11623, listeners 1275 → 1275.
+900 station switches after a warm-up of twelve: heap 7.3 → 7.9 MB, DOM nodes 11623 → 11623, listeners 1275 → 1275.
 
-The clock, watched for 60 s with the hall open: 1.001 of its seconds pass in a second. Across 7.2 s with the page frozen for 6 of them it counted 1.
+The clock, watched for 60 s with the hall open: 1 of its seconds pass in a second. Across 7.2 s with the page frozen for 6 of them it counted 1.
 
 No exception and no console warning.
 
 ### Application size: synthetic applications of growing width
 
-Each station is a display, an editor, a keyed table of five rows and three buttons with their folds; one model, one knot. Compile time is for the two modules (view and view model), over the 0.3 s the compiler needs with nothing to do. Growth is the exponent against the number of stations.
+Each station is a display, an editor, a keyed table of five rows and three buttons with their folds; one model, one knot. Compile time is for the two modules (view and view model), over the 0.2 s the compiler needs with nothing to do. Growth is the exponent against the number of stations.
 
 |                                   | 6 stations | 12 stations | 24 stations | 48 stations | growth |
 | --------------------------------- | ---------- | ----------- | ----------- | ----------- | ------ |
-| compile (s)                       | 0.3        | 0.7         | 2.3         | 8.8         | 1.63   |
+| compile (s)                       | 0.3        | 0.7         | 2.1         | 8.6         | 1.61   |
 | bundle, minified (KB)             | 499.6      | 520.8       | 593.5       | 857.9       | 0.25   |
 | bundle, gzipped (KB)              | 95.6       | 97.2        | 100.6       | 108.4       | 0.06   |
-| drawn (ms)                        | 41.98      | 52.02       | 61.58       | 80.53       | 0.31   |
+| drawn (ms)                        | 61.6       | 72.23       | 79.71       | 96.36       | 0.21   |
 | DOM nodes                         | 966        | 1356        | 2136        | 3696        | 0.65   |
-| a tick fed, one station open (ms) | 0.55       | 0.63        | 0.7         | 0.92        | 0.24   |
-| a button clicked (ms)             | 1.51       | 1.36        | 1.47        | 1.44        | -0.01  |
+| a tick fed, one station open (ms) | 1.41       | 1.45        | 1.6         | 1.88        | 0.14   |
+| a button clicked (ms)             | 4.08       | 4.11        | 4.13        | 5.2         | 0.11   |
 
 No exception and no console warning.
 

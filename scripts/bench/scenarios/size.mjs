@@ -91,20 +91,20 @@ export const size = {
       await build({ ...entry, minify: true, outfile: `${out}/Size${k}.min.js` })
       const min = readFileSync(`${out}/Size${k}.min.js`)
       writeFileSync(`${out}/Size${k}.html`, `<!doctype html>\n<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">\n${linksFor('mdc3').join('\n')}\n<script type="module" src="Size${k}.js"></script></head><body></body></html>\n`)
-      const cost = m => m.script + m.style + m.layout
+      const cost = m => m.task
       const draws = []
       let nodes = 0
       for (let i = 0; i < 4; i++) {
         const p = await browser.open(`Size${k}`)
         await p.waitFor(`document.querySelector('tbody tr') !== null`, 60000)
-        await p.ev('document.body.offsetHeight')
+        await p.frame()
         const m = await p.metrics()
         draws.push(cost(m)); nodes = m.nodes
         await p.close()
       }
       const p = await browser.open(`Size${k}`)
       await p.waitFor(`document.querySelector('tbody tr') !== null`, 60000)
-      const next = async () => { const n = await p.ev(`window.__bench.beats(${period})`); await p.waitFor(`window.__bench.beats(${period}) > ${n}`, 20000) }
+      const next = () => p.nextBeat(period, 20000)
       const feeds = [], clicks = []
       await next()
       for (let i = 0; i < 8; i++) { await p.sleep(30); feeds.push((await p.measure(next)).total) }

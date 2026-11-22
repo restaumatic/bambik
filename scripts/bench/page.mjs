@@ -1,7 +1,9 @@
 // A benchmark page: a mount opened in headless Chrome over CDP, driven with
 // real input, and read three ways — `Performance.getMetrics` deltas (what
-// the browser spent in script, style and layout), a CPU profile attributed
-// to layers, and the page's own text.
+// the browser's main thread spent until the frame that shows the change:
+// script, style, layout, and the rest — painting, compositing, the
+// browser's own), a CPU profile attributed to layers, and the page's own
+// text.
 import { createServer } from 'node:http'
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -23,6 +25,11 @@ window.__bench = {
   // the beats of a clock line of the given period, when each fired
   beatsOf(period) { return this.timeouts.filter(([ms]) => ms > period / 2 && ms <= period).map(([, at]) => at) },
   beats(period) { return this.beatsOf(period).length },
+  // resolves once the next beat of a clock line of the given period has been handled, with no polling
+  waiters: [],
+  nextBeat(period) { return new Promise(resolve => this.waiters.push([period, resolve])) },
+  // resolves once a frame has been produced: after the next animation frame's style, layout and paint
+  frame() { return new Promise(resolve => requestAnimationFrame(() => { const c = new MessageChannel(); c.port1.onmessage = () => resolve(true); c.port2.postMessage(0) })) },
   // only those that waited nearly the whole period: none but the clock's own, for reading its rate
   fullBeatsOf(period) { return this.timeouts.filter(([, , ms]) => ms > period * 0.9 && ms <= period).map(([, at]) => at) },
   visible: el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 },
@@ -50,7 +57,14 @@ window.__bench = {
       window.__bench.timeouts.push([period, performance.now(), ms])
       const before = handling
       handling = period
-      try { return typeof f === 'function' ? f.apply(this, arguments) : undefined } finally { handling = before }
+      try { return typeof f === 'function' ? f.apply(this, arguments) : undefined } finally {
+        handling = before
+        if (window.__bench.waiters.length) {
+          const waiting = window.__bench.waiters
+          window.__bench.waiters = waiting.filter(([p]) => !(period > p / 2 && period <= p))
+          for (const [p, resolve] of waiting) if (period > p / 2 && period <= p) resolve(true)
+        }
+      }
     }, ms, ...rest)
   }
 }
@@ -159,14 +173,21 @@ export const startBrowser = async () => {
       const m = Object.fromEntries(list.map(({ name, value }) => [name, value]))
       return { script: m.ScriptDuration * 1000, style: m.RecalcStyleDuration * 1000, layout: m.LayoutDuration * 1000, task: m.TaskDuration * 1000, nodes: m.Nodes, listeners: m.JSEventListeners, heap: m.JSHeapUsedSize }
     }
-    // what `act` cost: script, style and layout, the layout forced before the second reading
+    // a frame produced: what is on the page has been styled, laid out and painted
+    const frame = () => ev('window.__bench.frame()')
+    // what the main thread has spent since the page opened, split; `rest` is painting, compositing and the browser's own
+    const spent = m => ({ total: m.task, script: m.script, style: m.style, layout: m.layout, rest: Math.max(0, m.task - m.script - m.style - m.layout) })
+    // the next beat of a clock line of the given period handled; false when none comes within `ms`
+    const nextBeat = (period, ms = 5000) => ev(`Promise.race([window.__bench.nextBeat(${period}), new Promise(r => setTimeout(() => r(false), ${ms}))])`)
+    // what `act` cost the main thread, up to and including the frame that shows it
     const measure = async act => {
       const a = await metrics()
       await act()
-      await ev('document.body.offsetHeight')
+      await frame()
       const b = await metrics()
-      const d = { script: b.script - a.script, style: b.style - a.style, layout: b.layout - a.layout }
-      return { ...d, total: d.script + d.style + d.layout, nodes: b.nodes - a.nodes }
+      const x = spent(a), y = spent(b)
+      const d = { total: y.total - x.total, script: y.script - x.script, style: y.style - x.style, layout: y.layout - x.layout }
+      return { ...d, rest: Math.max(0, d.total - d.script - d.style - d.layout), nodes: b.nodes - a.nodes }
     }
     const mouse = (type, [x, y]) => send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1 })
     const clickAt = async xy => { await mouse('mouseMoved', xy); await mouse('mousePressed', xy); await mouse('mouseReleased', xy) }
@@ -187,7 +208,7 @@ export const startBrowser = async () => {
       return false
     }
     const gc = () => send('HeapProfiler.collectGarbage')
-    return { ...session, mount, ev, send, events, metrics, measure, clickAt, clickOn, click, key, waitFor, gc, startProfile, stopProfile, sleep }
+    return { ...session, mount, ev, send, events, metrics, spent, frame, nextBeat, measure, clickAt, clickOn, click, key, waitFor, gc, startProfile, stopProfile, sleep }
   }
   return { open, stop, version }
 }

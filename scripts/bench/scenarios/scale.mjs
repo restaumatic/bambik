@@ -37,7 +37,7 @@ const doings = {
   Statistics: ['a page turned', async (p, i) => p.clickOn(pagerButton(i % 2 ? 'Poprzednia strona' : 'Następna strona'))],
 }
 
-const cost = m => m.script + m.style + m.layout
+const cost = m => m.task
 
 // drawing the day: the browser's spend from navigation until the station stands, once under a profile
 const mounting = async (browser, mount, part, reps) => {
@@ -46,7 +46,7 @@ const mounting = async (browser, mount, part, reps) => {
   for (let i = 0; i < reps; i++) {
     const p = await browser.open(mount, { profile: i === 0 })
     if (!await p.waitFor(drawn[part], 180000)) { await p.close(); return null }
-    await p.ev('document.body.offsetHeight')
+    await p.frame()
     if (i === 0) layers = (await p.stopProfile()).layers
     else totals.push(cost(await p.metrics()))
     const m = await p.metrics()
@@ -62,10 +62,8 @@ const mounting = async (browser, mount, part, reps) => {
 const ticking = async (browser, mount, part, reps) => {
   const p = await browser.open(mount)
   if (!await p.waitFor(drawn[part], 180000)) { await p.close(); return null }
-  const beating = await p.waitFor(`window.__bench.beats(${period}) > 0`, 2 * period + 500)
-  const next = beating
-    ? async () => { const n = await p.ev(`window.__bench.beats(${period})`); await p.waitFor(`window.__bench.beats(${period}) > ${n}`, 60000) }
-    : () => p.sleep(period)
+  const beating = await p.nextBeat(period, 2 * period + 500)
+  const next = beating ? () => p.nextBeat(period, 60000) : () => p.sleep(period)
   const samples = []
   await next()
   for (let i = 0; i < reps; i++) { await p.sleep(30); samples.push((await p.measure(next)).total) }
@@ -115,7 +113,7 @@ export const scale = {
   },
   report: ({ scales, openScales, paged, unpaged }) => {
     const out = ['### Large data: a station alone on days of growing load (ms)', '',
-      `The standard day is ${scales[0]}×; ${scales[scales.length - 1]}× is ${304 * scales[scales.length - 1]} dishes, ${42 * scales[scales.length - 1]} tables and ${252 * scales[scales.length - 1]} orders. Growth is the exponent k of cost ≈ c·scale^k: 0 is flat, 1 linear, above 1 a finding.`, '']
+      `The standard day is ${scales[0]}×; ${scales[scales.length - 1]}× is ${304 * scales[scales.length - 1]} dishes, ${42 * scales[scales.length - 1]} tables and ${252 * scales[scales.length - 1]} orders. Growth is the exponent k of cost ≈ c·scale^k: 0 is flat, 1 linear, above 1 a finding. A cost is everything the main thread did up to the frame that shows the change, painting and compositing included; a second of a station with no clock is a frame with nothing done.`, '']
     const row = (part, what, get) => {
       const ys = scales.map(s => get(paged[part][s]))
       return [part, what, ...ys.map(y => y ?? '—'), ys.every(y => typeof y === 'number') ? exponent(scales, ys) : '—']
