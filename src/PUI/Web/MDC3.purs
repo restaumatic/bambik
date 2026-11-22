@@ -1650,6 +1650,7 @@ foreign import setBoolProp :: String -> Node -> Boolean -> Effect Unit
 foreign import getBoolProp :: String -> Node -> Effect Boolean
 foreign import setClassIf :: Node -> String -> Boolean -> Effect Unit
 foreign import getStringProp :: String -> Node -> Effect String
+foreign import releaseStrandedPresses :: Effect Unit
 foreign import showDialog :: Node -> Effect Unit
 foreign import closeDialog :: Node -> Effect Unit
 foreign import openMenuAnchoredTo :: Node -> Node -> Effect Unit
@@ -1659,13 +1660,15 @@ foreign import openMenuAnchoredTo :: Node -> Node -> Effect Unit
 -- | Mount the app in the page's `<body>`, dressed for Material 3: the MD3
 -- | typescale stylesheet (what gives the `md-typescale-*` classes their
 -- | meaning) is adopted by the document here, once, the page's base
--- | typeface is set to the type scale's plain face, and the app then
+-- | typeface is set to the type scale's plain face, a touch press the
+-- | catalogue's ripple would hold for good is released, and the app then
 -- | mounts as `PUI.Web.HTML.body` does — same signature, same closed-app
 -- | demand (`PUI Web {} o`). Nothing runs at import time (guardrails L11).
 body :: forall o. PUI Web {} o -> Effect Unit
 body ui = do
   adoptTypescale
   ensureStyle "md3-body" bodyCss
+  releaseStrandedPresses
   HTML.body ui
 
 -- the page's base typeface: text outside every typography word still

@@ -116,6 +116,33 @@ export function setClassIf(node) {
   };
 }
 
+// releaseStrandedPresses :: Effect Unit — `md-ripple` ends a touch press on
+// the click that follows it and waits for that click for good, so a touch
+// whose click lands on another control (a browser moves a tap to the
+// control nearest the finger) or never comes leaves the control drawn
+// pressed and deaf to every later touch. Installed once per page: a touch
+// lifted from a control whose ripple still holds that press half a second
+// later is released.
+let releasingStrandedPresses = false;
+
+export function releaseStrandedPresses() {
+  if (releasingStrandedPresses) return;
+  releasingStrandedPresses = true;
+  document.addEventListener("pointerup", (event) => {
+    if (event.pointerType !== "touch") return;
+    const ripples = event.composedPath().flatMap((n) => {
+      const ripple = n.shadowRoot && n.shadowRoot.querySelector("md-ripple");
+      return ripple ? [ripple] : [];
+    });
+    if (ripples.length === 0) return;
+    setTimeout(() => {
+      for (const ripple of ripples) {
+        if (ripple.rippleStartEvent && ripple.rippleStartEvent.pointerId === event.pointerId) ripple.endPressAnimation();
+      }
+    }, 500);
+  }, true);
+}
+
 export function showDialog(node) {
   return function () {
     node.show();
