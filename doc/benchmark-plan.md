@@ -320,3 +320,19 @@ model as it goes.
   restated; B spiked on Diner and measured; C's first route in Diner for
   Statystyki — each a separate change through the guardrails' gates,
   re-measured with `npm run bench -- compare`.
+- 2026-11-22: the clock taken out of Diner's model (be5f9e20, 51bba2b3):
+  decision 2 above is superseded. The time is read where it is drawn, by
+  `timestamped @"time"` on the four lines that show time passed and
+  `timestamping @"time"` on the outcome of the order sent, so a beat feeds
+  those lines and never turns the knot. Baseline replaced by the run
+  after it (`git show eb718d3a:bench/baseline.md` for the one before). A
+  second passing in the application: 0.28–0.77 ms at full speed (was
+  1.2–7.9), 0.66–1.68 at ¼ (was 3.4–32.2), every station within the 16 ms
+  budget; on a station alone it no longer grows with the day (Statistics
+  at 64×: 0, was 1 089 ms; Hall 0.45, was 91). The walk and the soak read
+  as before. Dearer: Wydawka with every bill on screen mounts in 71 ms
+  (was 53) and is switched to at ¼ in 35 (was 26), each row registering
+  a line of its own that reads the time; not profiled. Untouched, and
+  still what A, B and C above are about: a real change at Statystyki runs
+  its seven aggregations, a stockroom page turned and a group picked are
+  over 100 ms at ¼, and so is the switch to Statystyki.

@@ -1,12 +1,12 @@
 {
  "meta": {
-  "date": "2026-11-21T11:35:03.843Z",
-  "commit": "3ab462cb+dirty",
+  "date": "2026-11-22T09:41:49.732Z",
+  "commit": "51bba2b3",
   "quick": false,
   "machine": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz, 16 threads, 63 GB",
   "node": "v25.6.0",
   "chrome": "Chrome/158.0.8127.36",
-  "seconds": 1042
+  "seconds": 1311
  },
  "results": {
   "viewmodel": {
@@ -17,242 +17,242 @@
     64
    ],
    "generation": {
-    "1": 1.29,
-    "4": 6.39,
-    "16": 39.2,
-    "64": 73.31
+    "1": 1.63,
+    "4": 6.41,
+    "16": 35.65,
+    "64": 87.4
    },
    "stations": {
     "Magazyn": {
      "1": {
       "browseState": 0.0001,
-      "searchState": 0.0685,
-      "stockPage": 0.2129,
-      "pageLine": 0.0613,
-      "isFirstPage": 0.0582,
-      "isLastPage": 0.0578
+      "searchState": 0.0686,
+      "stockPage": 0.1908,
+      "pageLine": 0.0598,
+      "isFirstPage": 0.0619,
+      "isLastPage": 0.0592
      },
      "4": {
       "browseState": 0.0002,
-      "searchState": 0.2418,
-      "stockPage": 0.8633,
-      "pageLine": 0.2327,
-      "isFirstPage": 0.2706,
-      "isLastPage": 0.2867
+      "searchState": 0.2337,
+      "stockPage": 0.9271,
+      "pageLine": 0.2364,
+      "isFirstPage": 0.2378,
+      "isLastPage": 0.274
      },
      "16": {
       "browseState": 0.0002,
-      "searchState": 0.9793,
-      "stockPage": 4.0632,
-      "pageLine": 0.9326,
-      "isFirstPage": 0.9918,
-      "isLastPage": 0.9391
+      "searchState": 0.9514,
+      "stockPage": 3.9745,
+      "pageLine": 0.9509,
+      "isFirstPage": 0.9036,
+      "isLastPage": 0.9845
      },
      "64": {
       "browseState": 0.0002,
-      "searchState": 4.3347,
-      "stockPage": 19.0579,
-      "pageLine": 3.9305,
-      "isFirstPage": 3.9865,
-      "isLastPage": 3.8625
+      "searchState": 4.0048,
+      "stockPage": 19.7374,
+      "pageLine": 4.2739,
+      "isFirstPage": 4.4584,
+      "isLastPage": 3.9495
      }
     },
     "Sala": {
      "1": {
-      "seatings": 0.0383,
-      "servedLine": 0.0018,
-      "tableAvailability": 0.0015,
+      "seatings": 0.0396,
+      "servedLine": 0.0017,
+      "tableAvailability": 0.0017,
       "tableState": 0.0032,
-      "tableLines": 0.0016,
+      "tableLines": 0.0017,
       "orderTotalLine": 0.0018,
       "browseState": 0.0002,
-      "searchState": 0.0568,
-      "menuPage": 0.1691,
-      "pageLine": 0.0568,
-      "isFirstPage": 0.0576,
-      "isLastPage": 0.0585
+      "searchState": 0.0583,
+      "menuPage": 0.1763,
+      "pageLine": 0.0591,
+      "isFirstPage": 0.0569,
+      "isLastPage": 0.0613
      },
      "4": {
-      "seatings": 0.1691,
-      "servedLine": 0.0057,
-      "tableAvailability": 0.0057,
+      "seatings": 0.1774,
+      "servedLine": 0.0063,
+      "tableAvailability": 0.0056,
       "tableState": 0.0108,
-      "tableLines": 0.0055,
-      "orderTotalLine": 0.0057,
+      "tableLines": 0.0058,
+      "orderTotalLine": 0.0059,
       "browseState": 0.0002,
-      "searchState": 0.2317,
-      "menuPage": 0.8513,
-      "pageLine": 0.2322,
-      "isFirstPage": 0.2309,
-      "isLastPage": 0.2378
+      "searchState": 0.2432,
+      "menuPage": 0.9033,
+      "pageLine": 0.2313,
+      "isFirstPage": 0.233,
+      "isLastPage": 0.2348
      },
      "16": {
-      "seatings": 0.7937,
-      "servedLine": 0.0211,
-      "tableAvailability": 0.0215,
-      "tableState": 0.0441,
-      "tableLines": 0.0221,
-      "orderTotalLine": 0.0235,
+      "seatings": 0.7952,
+      "servedLine": 0.0217,
+      "tableAvailability": 0.0228,
+      "tableState": 0.0461,
+      "tableLines": 0.0229,
+      "orderTotalLine": 0.0272,
       "browseState": 0.0002,
-      "searchState": 0.925,
-      "menuPage": 4.4427,
-      "pageLine": 0.8884,
-      "isFirstPage": 0.9033,
-      "isLastPage": 0.8689
+      "searchState": 0.9407,
+      "menuPage": 4.2882,
+      "pageLine": 0.9364,
+      "isFirstPage": 0.9209,
+      "isLastPage": 1.0122
      },
      "64": {
-      "seatings": 3.7571,
-      "servedLine": 0.076,
-      "tableAvailability": 0.0784,
-      "tableState": 0.1544,
-      "tableLines": 0.0794,
-      "orderTotalLine": 0.078,
+      "seatings": 3.8608,
+      "servedLine": 0.0857,
+      "tableAvailability": 0.0876,
+      "tableState": 0.1834,
+      "tableLines": 0.0878,
+      "orderTotalLine": 0.0864,
       "browseState": 0.0002,
-      "searchState": 3.6971,
-      "menuPage": 18.5122,
-      "pageLine": 3.6623,
-      "isFirstPage": 3.6674,
-      "isLastPage": 3.613
+      "searchState": 3.7964,
+      "menuPage": 22.2023,
+      "pageLine": 4.1262,
+      "isFirstPage": 3.7832,
+      "isLastPage": 3.9426
      }
     },
     "Kuchnia": {
      "1": {
-      "kitchenState": 0.0048,
+      "kitchenState": 0.0043,
       "ticketsPage": 0.0154,
       "pageLine": 0.0154,
-      "isFirstPage": 0.0192,
-      "isLastPage": 0.0158
+      "isFirstPage": 0.0142,
+      "isLastPage": 0.0148
      },
      "4": {
-      "kitchenState": 0.0159,
-      "ticketsPage": 0.0978,
-      "pageLine": 0.0768,
-      "isFirstPage": 0.0733,
-      "isLastPage": 0.076
+      "kitchenState": 0.0161,
+      "ticketsPage": 0.0799,
+      "pageLine": 0.0773,
+      "isFirstPage": 0.0721,
+      "isLastPage": 0.0743
      },
      "16": {
-      "kitchenState": 0.0726,
-      "ticketsPage": 0.4025,
-      "pageLine": 0.4118,
-      "isFirstPage": 0.4317,
-      "isLastPage": 0.44
+      "kitchenState": 0.0694,
+      "ticketsPage": 0.3997,
+      "pageLine": 0.3944,
+      "isFirstPage": 0.383,
+      "isLastPage": 0.3988
      },
      "64": {
-      "kitchenState": 0.3077,
-      "ticketsPage": 2.5658,
-      "pageLine": 2.2623,
-      "isFirstPage": 2.2381,
-      "isLastPage": 2.2652
+      "kitchenState": 0.3001,
+      "ticketsPage": 2.3318,
+      "pageLine": 2.3209,
+      "isFirstPage": 2.316,
+      "isLastPage": 2.3408
      }
     },
     "Wydawka": {
      "1": {
-      "billsState": 0.0044,
-      "billsPage": 0.0107,
-      "pageLine": 0.0058,
-      "isFirstPage": 0.0053,
-      "isLastPage": 0.006
+      "billsState": 0.004,
+      "billsPage": 0.0099,
+      "pageLine": 0.0057,
+      "isFirstPage": 0.005,
+      "isLastPage": 0.0055
      },
      "4": {
       "billsState": 0.0154,
       "billsPage": 0.0428,
-      "pageLine": 0.0196,
-      "isFirstPage": 0.0188,
-      "isLastPage": 0.0194
+      "pageLine": 0.0204,
+      "isFirstPage": 0.0186,
+      "isLastPage": 0.0205
      },
      "16": {
-      "billsState": 0.0664,
-      "billsPage": 0.2468,
-      "pageLine": 0.0852,
-      "isFirstPage": 0.0849,
-      "isLastPage": 0.0869
+      "billsState": 0.0657,
+      "billsPage": 0.2144,
+      "pageLine": 0.0791,
+      "isFirstPage": 0.0779,
+      "isLastPage": 0.0802
      },
      "64": {
-      "billsState": 0.2699,
-      "billsPage": 1.1859,
-      "pageLine": 0.3401,
-      "isFirstPage": 0.3262,
-      "isLastPage": 0.3305
+      "billsState": 0.2914,
+      "billsPage": 1.2169,
+      "pageLine": 0.3487,
+      "isFirstPage": 0.3372,
+      "isLastPage": 0.36
      }
     },
     "Raport": {
      "1": {
-      "paidState": 0.0168,
-      "takingsLine": 0.0213,
-      "paidPage": 0.0668,
-      "pageLine": 0.0178,
-      "isFirstPage": 0.0175,
-      "isLastPage": 0.0172
+      "paidState": 0.0153,
+      "takingsLine": 0.0191,
+      "paidPage": 0.0588,
+      "pageLine": 0.0157,
+      "isFirstPage": 0.0153,
+      "isLastPage": 0.0155
      },
      "4": {
-      "paidState": 0.0671,
-      "takingsLine": 0.0849,
-      "paidPage": 0.3178,
-      "pageLine": 0.0691,
-      "isFirstPage": 0.0668,
-      "isLastPage": 0.0787
+      "paidState": 0.0641,
+      "takingsLine": 0.0835,
+      "paidPage": 0.3064,
+      "pageLine": 0.0655,
+      "isFirstPage": 0.0613,
+      "isLastPage": 0.0624
      },
      "16": {
-      "paidState": 0.3021,
-      "takingsLine": 0.4118,
-      "paidPage": 1.8196,
-      "pageLine": 0.2856,
-      "isFirstPage": 0.2797,
-      "isLastPage": 0.2815
+      "paidState": 0.2546,
+      "takingsLine": 0.3585,
+      "paidPage": 1.627,
+      "pageLine": 0.2578,
+      "isFirstPage": 0.2631,
+      "isLastPage": 0.2859
      },
      "64": {
-      "paidState": 1.2574,
-      "takingsLine": 1.7595,
-      "paidPage": 9.8419,
-      "pageLine": 1.2335,
-      "isFirstPage": 1.2713,
-      "isLastPage": 1.2039
+      "paidState": 1.0942,
+      "takingsLine": 1.6496,
+      "paidPage": 9.1992,
+      "pageLine": 1.0746,
+      "isFirstPage": 1.0742,
+      "isLastPage": 1.0899
      }
     },
     "Statystyki": {
      "1": {
-      "paidState": 0.0182,
+      "paidState": 0.0154,
       "browseState": 0.0002,
-      "searchState": 0.7985,
-      "soldQuantityLine": 0.7795,
-      "soldAmountLine": 0.7738,
-      "salesPage": 0.7777,
-      "pageLine": 0.773,
-      "isFirstPage": 0.8189,
-      "isLastPage": 0.7834
+      "searchState": 0.936,
+      "soldQuantityLine": 0.8301,
+      "soldAmountLine": 0.8395,
+      "salesPage": 0.7713,
+      "pageLine": 0.7742,
+      "isFirstPage": 0.7571,
+      "isLastPage": 0.7621
      },
      "4": {
-      "paidState": 0.0672,
+      "paidState": 0.0608,
       "browseState": 0.0002,
-      "searchState": 3.8633,
-      "soldQuantityLine": 3.9916,
-      "soldAmountLine": 3.9654,
-      "salesPage": 4.0529,
-      "pageLine": 3.8332,
-      "isFirstPage": 4.1893,
-      "isLastPage": 4.2182
+      "searchState": 4.3051,
+      "soldQuantityLine": 4.385,
+      "soldAmountLine": 4.3331,
+      "salesPage": 4.1445,
+      "pageLine": 3.9899,
+      "isFirstPage": 4.0577,
+      "isLastPage": 4.1071
      },
      "16": {
-      "paidState": 0.2978,
+      "paidState": 0.2622,
       "browseState": 0.0002,
-      "searchState": 20.5753,
-      "soldQuantityLine": 21.9611,
-      "soldAmountLine": 21.4991,
-      "salesPage": 21.735,
-      "pageLine": 21.871,
-      "isFirstPage": 24.3179,
-      "isLastPage": 21.4356
+      "searchState": 21.4034,
+      "soldQuantityLine": 22.121,
+      "soldAmountLine": 22.0121,
+      "salesPage": 21.1565,
+      "pageLine": 20.6884,
+      "isFirstPage": 21.2171,
+      "isLastPage": 20.8539
      },
      "64": {
-      "paidState": 1.2546,
+      "paidState": 1.0534,
       "browseState": 0.0002,
-      "searchState": 114.5611,
-      "soldQuantityLine": 113.449,
-      "soldAmountLine": 116.8239,
-      "salesPage": 112.5617,
-      "pageLine": 112.1038,
-      "isFirstPage": 114.347,
-      "isLastPage": 120.6218
+      "searchState": 123.0861,
+      "soldQuantityLine": 113.6305,
+      "soldAmountLine": 117.8434,
+      "salesPage": 113.578,
+      "pageLine": 113.3489,
+      "isFirstPage": 113.3165,
+      "isLastPage": 115.5733
      }
     }
    }
@@ -264,1267 +264,1267 @@
      "stock: a portion more": {
       "total": {
        "n": 30,
-       "p50": 3.57,
-       "p95": 5.84,
-       "max": 6.77
+       "p50": 3.53,
+       "p95": 4.61,
+       "max": 7.54
       },
-      "script": 2.96,
-      "style": 0.4,
+      "script": 2.9,
+      "style": 0.33,
       "layout": 0.3
      },
      "stock: a portion fewer": {
       "total": {
        "n": 30,
-       "p50": 3.51,
-       "p95": 5.12,
-       "max": 5.47
+       "p50": 3.55,
+       "p95": 4.57,
+       "max": 5.48
       },
-      "script": 2.85,
-      "style": 0.41,
-      "layout": 0.3
+      "script": 2.87,
+      "style": 0.36,
+      "layout": 0.32
      },
      "stock: a key in a portion count": {
       "total": {
        "n": 30,
-       "p50": 2.56,
-       "p95": 3.03,
-       "max": 3.18
+       "p50": 2.99,
+       "p95": 4.08,
+       "max": 4.3
       },
-      "script": 2.32,
+      "script": 2.68,
       "style": 0,
-      "layout": 0.19
+      "layout": 0.24
      },
      "stock: a key in a price": {
       "total": {
        "n": 30,
-       "p50": 2.38,
-       "p95": 2.96,
-       "max": 6.26
+       "p50": 2.33,
+       "p95": 4.39,
+       "max": 4.52
       },
-      "script": 2.15,
+      "script": 2.12,
       "style": 0,
       "layout": 0.17
      },
      "stock: a page turned": {
       "total": {
        "n": 30,
-       "p50": 19.62,
-       "p95": 29.27,
-       "max": 38.72
+       "p50": 19.11,
+       "p95": 25.73,
+       "max": 37.2
       },
-      "script": 12.66,
-      "style": 4.7,
-      "layout": 2.6
+      "script": 12.14,
+      "style": 4.66,
+      "layout": 2.58
      },
      "stock: a group picked": {
       "total": {
        "n": 30,
-       "p50": 21.02,
-       "p95": 29.58,
-       "max": 31.59
+       "p50": 21.38,
+       "p95": 26.67,
+       "max": 36.97
       },
-      "script": 11.92,
-      "style": 6.51,
-      "layout": 2.73
+      "script": 11.88,
+      "style": 6.76,
+      "layout": 2.89
      },
      "stock: a key in the search": {
       "total": {
        "n": 32,
-       "p50": 4.44,
-       "p95": 22.21,
-       "max": 23.63
+       "p50": 3.57,
+       "p95": 18.45,
+       "max": 19.01
       },
-      "script": 3.78,
-      "style": 0.27,
-      "layout": 0.29
+      "script": 3.19,
+      "style": 0.25,
+      "layout": 0.24
      },
      "hall: a dish added": {
       "total": {
        "n": 30,
-       "p50": 3.84,
-       "p95": 7.82,
-       "max": 8.06
+       "p50": 3.82,
+       "p95": 6.66,
+       "max": 7.26
       },
-      "script": 3.36,
-      "style": 0.2,
-      "layout": 0.34
+      "script": 3.45,
+      "style": 0.18,
+      "layout": 0.32
      },
      "hall: a portion more on a line": {
       "total": {
        "n": 30,
-       "p50": 5.02,
-       "p95": 7.47,
-       "max": 7.56
+       "p50": 5.33,
+       "p95": 6.54,
+       "max": 7.17
       },
-      "script": 4.01,
-      "style": 0.58,
-      "layout": 0.41
+      "script": 4.35,
+      "style": 0.56,
+      "layout": 0.45
      },
      "hall: a portion fewer on a line": {
       "total": {
        "n": 30,
-       "p50": 5.42,
-       "p95": 7.24,
-       "max": 8.06
+       "p50": 5.22,
+       "p95": 6.38,
+       "max": 6.63
       },
-      "script": 4.25,
-      "style": 0.75,
-      "layout": 0.49
+      "script": 4.09,
+      "style": 0.67,
+      "layout": 0.46
      },
      "hall: a table picked": {
       "total": {
        "n": 30,
-       "p50": 6.11,
-       "p95": 7.42,
-       "max": 8.24
+       "p50": 5.93,
+       "p95": 7.22,
+       "max": 7.32
       },
-      "script": 4.19,
+      "script": 4.31,
       "style": 1.12,
       "layout": 0.86
      },
      "hall: a page turned": {
       "total": {
        "n": 30,
-       "p50": 7.85,
-       "p95": 10.75,
-       "max": 12.11
+       "p50": 7.45,
+       "p95": 11.03,
+       "max": 13.58
       },
-      "script": 6.02,
-      "style": 1.07,
-      "layout": 0.84
+      "script": 5.73,
+      "style": 0.99,
+      "layout": 0.8
      },
      "hall: a group picked": {
       "total": {
        "n": 30,
-       "p50": 8.64,
-       "p95": 13.23,
-       "max": 16.82
+       "p50": 9.56,
+       "p95": 13.34,
+       "max": 17.35
       },
-      "script": 6.05,
-      "style": 1.91,
-      "layout": 0.74
+      "script": 6.58,
+      "style": 2.16,
+      "layout": 0.89
      },
      "hall: a key in the search": {
       "total": {
        "n": 32,
-       "p50": 5.75,
-       "p95": 7.74,
-       "max": 8.08
+       "p50": 5.45,
+       "p95": 7.07,
+       "max": 7.71
       },
-      "script": 4.45,
-      "style": 0.38,
-      "layout": 0.7
+      "script": 4.44,
+      "style": 0.34,
+      "layout": 0.74
      },
      "kitchen: a page turned": {
       "total": {
        "n": 30,
-       "p50": 13.96,
-       "p95": 50.14,
-       "max": 72.68
+       "p50": 14.49,
+       "p95": 19.77,
+       "max": 22.26
       },
-      "script": 8.94,
-      "style": 3.02,
-      "layout": 1.78
+      "script": 9.33,
+      "style": 3.11,
+      "layout": 1.8
      },
      "kitchen: a line plated": {
       "total": {
        "n": 7,
-       "p50": 4.05,
-       "p95": 4.75,
-       "max": 4.92
+       "p50": 3.49,
+       "p95": 4.06,
+       "max": 4.06
       },
-      "script": 2.93,
-      "style": 0.71,
-      "layout": 0.38
+      "script": 2.65,
+      "style": 0.65,
+      "layout": 0.33
      },
      "kitchen: an order passed on, asked": {
       "total": {
        "n": 12,
-       "p50": 4.3,
-       "p95": 6.44,
-       "max": 7.54
+       "p50": 4.47,
+       "p95": 11.88,
+       "max": 18.71
       },
-      "script": 0.38,
-      "style": 3.64,
-      "layout": 0.4
+      "script": 0.44,
+      "style": 3.86,
+      "layout": 0.37
      },
      "kitchen: an order passed on, confirmed": {
       "total": {
        "n": 12,
-       "p50": 18.03,
-       "p95": 36.23,
-       "max": 49.97
+       "p50": 19.73,
+       "p95": 24.09,
+       "max": 26.28
       },
-      "script": 3.85,
-      "style": 11.32,
-      "layout": 2.87
+      "script": 4.48,
+      "style": 11.95,
+      "layout": 3.06
      },
      "pass: a payment, asked": {
       "total": {
        "n": 10,
-       "p50": 2.56,
-       "p95": 4.93,
-       "max": 6.37
+       "p50": 2.77,
+       "p95": 6.6,
+       "max": 7.07
       },
-      "script": 0.49,
-      "style": 1.76,
-      "layout": 0.41
+      "script": 0.51,
+      "style": 1.96,
+      "layout": 0.37
      },
      "pass: a payment, confirmed": {
       "total": {
        "n": 10,
-       "p50": 11.75,
-       "p95": 14.75,
-       "max": 16.09
+       "p50": 11.37,
+       "p95": 12.91,
+       "max": 13.55
       },
-      "script": 1.83,
-      "style": 7.85,
-      "layout": 1.76
+      "script": 2.12,
+      "style": 7.36,
+      "layout": 1.69
      },
      "report: a page turned": {
       "total": {
        "n": 30,
-       "p50": 3.45,
-       "p95": 4.87,
-       "max": 6.33
+       "p50": 3.81,
+       "p95": 5.62,
+       "max": 7.75
       },
-      "script": 2.24,
-      "style": 0.76,
-      "layout": 0.62
+      "script": 2.58,
+      "style": 0.71,
+      "layout": 0.61
      },
      "statistics: a page turned": {
       "total": {
        "n": 30,
-       "p50": 11.65,
-       "p95": 15.97,
-       "max": 17.64
+       "p50": 10.98,
+       "p95": 14.51,
+       "max": 17.15
       },
-      "script": 10.45,
+      "script": 9.8,
       "style": 0.76,
-      "layout": 0.57
+      "layout": 0.6
      },
      "statistics: a group picked": {
       "total": {
        "n": 30,
-       "p50": 14.67,
-       "p95": 17.77,
-       "max": 20.08
+       "p50": 14.63,
+       "p95": 21.83,
+       "max": 22.83
       },
-      "script": 12.25,
-      "style": 1.8,
-      "layout": 0.6
+      "script": 12.22,
+      "style": 1.88,
+      "layout": 0.58
      },
      "statistics: a key in the search": {
       "total": {
        "n": 32,
-       "p50": 13.03,
-       "p95": 23.36,
-       "max": 28.62
+       "p50": 12.56,
+       "p95": 18.04,
+       "max": 18.71
       },
-      "script": 12.82,
-      "style": 0.15,
-      "layout": 0.53
+      "script": 12.1,
+      "style": 0.14,
+      "layout": 0.55
      },
      "app: a second passes at Magazyn": {
       "total": {
        "n": 6,
-       "p50": 3.3,
-       "p95": 5.15,
-       "max": 5.16
+       "p50": 0.28,
+       "p95": 0.43,
+       "max": 0.46
       },
-      "script": 3.35,
-      "style": 0.16,
+      "script": 0.11,
+      "style": 0.19,
       "layout": 0
      },
      "app: a second passes at Sala": {
       "total": {
        "n": 6,
-       "p50": 3.01,
-       "p95": 3.39,
-       "max": 3.44
+       "p50": 0.4,
+       "p95": 0.44,
+       "max": 0.44
       },
-      "script": 2.95,
-      "style": 0.17,
+      "script": 0.16,
+      "style": 0.24,
       "layout": 0
      },
      "app: a second passes at Kuchnia": {
       "total": {
        "n": 6,
-       "p50": 1.47,
-       "p95": 1.74,
-       "max": 1.79
+       "p50": 0.77,
+       "p95": 1.02,
+       "max": 1.03
       },
-      "script": 1.29,
-      "style": 0.24,
+      "script": 0.62,
+      "style": 0.21,
       "layout": 0
      },
      "app: a second passes at Wydawka": {
       "total": {
        "n": 6,
-       "p50": 1.2,
-       "p95": 1.71,
-       "max": 1.84
+       "p50": 0.49,
+       "p95": 0.92,
+       "max": 0.99
       },
-      "script": 1.06,
-      "style": 0.23,
+      "script": 0.44,
+      "style": 0.16,
       "layout": 0
      },
      "app: a second passes at Raport": {
       "total": {
        "n": 6,
-       "p50": 1.38,
-       "p95": 1.93,
-       "max": 2.04
+       "p50": 0.44,
+       "p95": 0.51,
+       "max": 0.53
       },
-      "script": 1.4,
+      "script": 0.29,
       "style": 0.15,
       "layout": 0
      },
      "app: a second passes at Statystyki": {
       "total": {
        "n": 6,
-       "p50": 7.94,
-       "p95": 10.5,
-       "max": 11.16
+       "p50": 0.3,
+       "p95": 0.34,
+       "max": 0.34
       },
-      "script": 7.82,
-      "style": 0.23,
+      "script": 0.14,
+      "style": 0.16,
       "layout": 0
      },
      "app: switched to Magazyn": {
       "total": {
        "n": 5,
-       "p50": 16.63,
-       "p95": 19.58,
-       "max": 20.16
+       "p50": 17.39,
+       "p95": 24.36,
+       "max": 25.41
       },
-      "script": 5.21,
-      "style": 8.61,
-      "layout": 2.82
+      "script": 5.51,
+      "style": 9.16,
+      "layout": 2.86
      },
      "app: switched to Sala": {
       "total": {
        "n": 5,
-       "p50": 14.97,
-       "p95": 18.94,
+       "p50": 16.61,
+       "p95": 19.38,
        "max": 19.54
       },
-      "script": 7.1,
-      "style": 5.56,
-      "layout": 1.86
+      "script": 8.61,
+      "style": 6.05,
+      "layout": 2.17
      },
      "app: switched to Kuchnia": {
       "total": {
        "n": 5,
-       "p50": 10.45,
-       "p95": 12.97,
-       "max": 13.36
+       "p50": 10.68,
+       "p95": 12,
+       "max": 12.25
       },
-      "script": 3.14,
-      "style": 5.63,
-      "layout": 1.73
+      "script": 3.58,
+      "style": 5.33,
+      "layout": 1.71
      },
      "app: switched to Wydawka": {
       "total": {
        "n": 5,
-       "p50": 5.85,
-       "p95": 6.38,
-       "max": 6.44
+       "p50": 6.18,
+       "p95": 7.98,
+       "max": 8.34
       },
-      "script": 2.05,
-      "style": 2.75,
-      "layout": 1.01
+      "script": 2.32,
+      "style": 2.93,
+      "layout": 1.05
      },
      "app: switched to Raport": {
       "total": {
        "n": 5,
-       "p50": 5.01,
-       "p95": 6.31,
-       "max": 6.45
+       "p50": 5.12,
+       "p95": 6.08,
+       "max": 6.21
       },
-      "script": 2.38,
-      "style": 2.07,
-      "layout": 0.64
+      "script": 2.39,
+      "style": 2.17,
+      "layout": 0.59
      },
      "app: switched to Statystyki": {
       "total": {
        "n": 5,
-       "p50": 23.62,
-       "p95": 30.61,
-       "max": 31.32
+       "p50": 23.53,
+       "p95": 23.92,
+       "max": 23.98
       },
-      "script": 18.27,
-      "style": 4.42,
-      "layout": 1.21
+      "script": 18.2,
+      "style": 4.24,
+      "layout": 1.09
      },
      "app: started, until it waits for its day": {
       "total": {
        "n": 6,
-       "p50": 47.42,
-       "p95": 49.26,
-       "max": 49.72
+       "p50": 46.06,
+       "p95": 54.73,
+       "max": 56.85
       },
-      "script": 41.97,
-      "style": 2.15,
-      "layout": 3.39
+      "script": 40.47,
+      "style": 2.09,
+      "layout": 3.85
      },
      "app: started, the day drawn": {
       "total": {
        "n": 6,
-       "p50": 53.16,
-       "p95": 58.22,
-       "max": 58.82
+       "p50": 55.48,
+       "p95": 60.72,
+       "max": 60.88
       },
-      "script": 38.8,
-      "style": 4.02,
-      "layout": 9.87
+      "script": 42.04,
+      "style": 4.09,
+      "layout": 10.06
      }
     },
     "4": {
      "stock: a portion more": {
       "total": {
        "n": 30,
-       "p50": 14.38,
-       "p95": 21.25,
-       "max": 28.19
+       "p50": 14.17,
+       "p95": 24.57,
+       "max": 33.1
       },
-      "script": 11.11,
-      "style": 2.12,
-      "layout": 1.29
+      "script": 11.29,
+      "style": 1.7,
+      "layout": 1.3
      },
      "stock: a portion fewer": {
       "total": {
        "n": 30,
-       "p50": 14.62,
-       "p95": 18.43,
-       "max": 20.7
+       "p50": 14.93,
+       "p95": 19.68,
+       "max": 26.37
       },
       "script": 11.33,
-      "style": 2.26,
-      "layout": 1.46
+      "style": 1.9,
+      "layout": 1.39
      },
      "stock: a key in a portion count": {
       "total": {
        "n": 30,
-       "p50": 10.3,
-       "p95": 12.52,
-       "max": 13.01
+       "p50": 9.7,
+       "p95": 11.93,
+       "max": 13.6
       },
-      "script": 8.87,
-      "style": 0.21,
-      "layout": 0.87
+      "script": 8.58,
+      "style": 0.41,
+      "layout": 0.78
      },
      "stock: a key in a price": {
       "total": {
        "n": 30,
-       "p50": 9.36,
-       "p95": 10.71,
-       "max": 12.06
+       "p50": 9.52,
+       "p95": 11.64,
+       "max": 18.12
       },
-      "script": 8.55,
+      "script": 8.57,
       "style": 0,
-      "layout": 0.78
+      "layout": 0.95
      },
      "stock: a page turned": {
       "total": {
        "n": 30,
-       "p50": 86.76,
-       "p95": 105.63,
-       "max": 122.58
+       "p50": 80.82,
+       "p95": 101.27,
+       "max": 104.5
       },
-      "script": 55.31,
-      "style": 19.88,
-      "layout": 11.27
+      "script": 52.91,
+      "style": 18.6,
+      "layout": 10.14
      },
      "stock: a group picked": {
       "total": {
        "n": 30,
-       "p50": 91.18,
-       "p95": 121.25,
-       "max": 128.65
+       "p50": 89.25,
+       "p95": 113.15,
+       "max": 117.07
       },
-      "script": 54.12,
-      "style": 27.62,
-      "layout": 12.29
+      "script": 52.07,
+      "style": 25.82,
+      "layout": 10.81
      },
      "stock: a key in the search": {
       "total": {
        "n": 32,
-       "p50": 16.89,
-       "p95": 71.47,
-       "max": 99.44
+       "p50": 14.33,
+       "p95": 69.83,
+       "max": 74.71
       },
-      "script": 15.45,
-      "style": 1.28,
-      "layout": 1.1
+      "script": 13.76,
+      "style": 0.96,
+      "layout": 1
      },
      "hall: a dish added": {
       "total": {
        "n": 30,
-       "p50": 15.78,
-       "p95": 27.02,
-       "max": 29.36
+       "p50": 15.45,
+       "p95": 27.32,
+       "max": 28.44
       },
-      "script": 14.08,
-      "style": 0.64,
-      "layout": 1.38
+      "script": 13,
+      "style": 0.84,
+      "layout": 1.54
      },
      "hall: a portion more on a line": {
       "total": {
        "n": 30,
-       "p50": 19.67,
-       "p95": 24.76,
-       "max": 25.28
+       "p50": 20.03,
+       "p95": 24.88,
+       "max": 26
       },
-      "script": 15.62,
-      "style": 2.17,
-      "layout": 1.85
+      "script": 15.52,
+      "style": 2.37,
+      "layout": 1.96
      },
      "hall: a portion fewer on a line": {
       "total": {
        "n": 30,
-       "p50": 22.5,
-       "p95": 27.48,
-       "max": 30.79
+       "p50": 20.97,
+       "p95": 27.65,
+       "max": 30.93
       },
-      "script": 16.93,
-      "style": 3.69,
-      "layout": 2.17
+      "script": 15.95,
+      "style": 3.3,
+      "layout": 2.2
      },
      "hall: a table picked": {
       "total": {
        "n": 30,
-       "p50": 25.24,
-       "p95": 34.35,
-       "max": 44.66
+       "p50": 23.27,
+       "p95": 28.6,
+       "max": 30.45
       },
-      "script": 16.85,
-      "style": 4.77,
-      "layout": 3.6
+      "script": 16.64,
+      "style": 4.02,
+      "layout": 2.79
      },
      "hall: a page turned": {
       "total": {
        "n": 30,
-       "p50": 31.11,
-       "p95": 37.28,
-       "max": 45.48
+       "p50": 30.37,
+       "p95": 37.52,
+       "max": 55.79
       },
-      "script": 22.77,
-      "style": 4.11,
-      "layout": 3.42
+      "script": 22.88,
+      "style": 3.78,
+      "layout": 3.19
      },
      "hall: a group picked": {
       "total": {
        "n": 30,
-       "p50": 36.33,
-       "p95": 48.13,
-       "max": 60.24
+       "p50": 35.16,
+       "p95": 49.63,
+       "max": 51.6
       },
-      "script": 24.44,
-      "style": 9.02,
-      "layout": 3.37
+      "script": 22.66,
+      "style": 9.19,
+      "layout": 3.55
      },
      "hall: a key in the search": {
       "total": {
        "n": 32,
-       "p50": 23.32,
-       "p95": 31.19,
-       "max": 40.02
+       "p50": 21.8,
+       "p95": 28.01,
+       "max": 34.8
       },
-      "script": 18.67,
-      "style": 1.7,
-      "layout": 2.99
+      "script": 17.06,
+      "style": 1.52,
+      "layout": 2.76
      },
      "kitchen: a page turned": {
       "total": {
        "n": 30,
-       "p50": 55.28,
-       "p95": 68.5,
-       "max": 98.83
+       "p50": 58.26,
+       "p95": 72.99,
+       "max": 79.64
       },
-      "script": 34.71,
-      "style": 12.48,
-      "layout": 7.4
+      "script": 38.93,
+      "style": 11.8,
+      "layout": 7.15
      },
      "kitchen: a line plated": {
       "total": {
        "n": 7,
-       "p50": 15.3,
-       "p95": 15.72,
-       "max": 15.74
+       "p50": 12.99,
+       "p95": 18.33,
+       "max": 18.36
       },
-      "script": 9.18,
-      "style": 2.98,
-      "layout": 1.72
+      "script": 7.21,
+      "style": 3.46,
+      "layout": 1.48
      },
      "kitchen: an order passed on, asked": {
       "total": {
        "n": 12,
-       "p50": 19.55,
-       "p95": 27.43,
-       "max": 31.1
+       "p50": 17.9,
+       "p95": 27.8,
+       "max": 27.93
       },
-      "script": 1.93,
-      "style": 15.8,
-      "layout": 1.97
+      "script": 1.92,
+      "style": 14.9,
+      "layout": 1.91
      },
      "kitchen: an order passed on, confirmed": {
       "total": {
        "n": 12,
-       "p50": 62.87,
-       "p95": 73.39,
-       "max": 73.4
+       "p50": 58.53,
+       "p95": 69.02,
+       "max": 73.89
       },
-      "script": 17.26,
-      "style": 36.24,
-      "layout": 11.31
+      "script": 16.07,
+      "style": 34.11,
+      "layout": 10.12
      },
      "pass: a payment, asked": {
       "total": {
        "n": 10,
-       "p50": 10.09,
-       "p95": 19.14,
-       "max": 24.48
+       "p50": 10.6,
+       "p95": 18.24,
+       "max": 23.2
       },
-      "script": 2.07,
-      "style": 6.94,
-      "layout": 1.25
+      "script": 1.36,
+      "style": 7.98,
+      "layout": 1.61
      },
      "pass: a payment, confirmed": {
       "total": {
        "n": 10,
-       "p50": 29.99,
-       "p95": 42,
-       "max": 43.19
+       "p50": 31.82,
+       "p95": 40.96,
+       "max": 41.56
       },
-      "script": 6.38,
-      "style": 19.2,
-      "layout": 5.89
+      "script": 6.65,
+      "style": 19.23,
+      "layout": 6.05
      },
      "report: a page turned": {
       "total": {
        "n": 30,
-       "p50": 12.99,
-       "p95": 18.11,
-       "max": 24.23
+       "p50": 13.55,
+       "p95": 18.52,
+       "max": 22.11
       },
-      "script": 7.65,
-      "style": 2.85,
-      "layout": 2.19
+      "script": 7.19,
+      "style": 2.66,
+      "layout": 2.26
      },
      "statistics: a page turned": {
       "total": {
        "n": 30,
-       "p50": 43.52,
-       "p95": 55.69,
-       "max": 65.19
+       "p50": 43.39,
+       "p95": 60.89,
+       "max": 69.35
       },
-      "script": 38.44,
-      "style": 3.27,
-      "layout": 2.26
+      "script": 37.98,
+      "style": 3.22,
+      "layout": 2.16
      },
      "statistics: a group picked": {
       "total": {
        "n": 30,
-       "p50": 59.56,
-       "p95": 71.23,
-       "max": 71.79
+       "p50": 58.52,
+       "p95": 67.99,
+       "max": 74.14
       },
-      "script": 49.76,
-      "style": 7.56,
-      "layout": 2.24
+      "script": 49.15,
+      "style": 6.8,
+      "layout": 2.48
      },
      "statistics: a key in the search": {
       "total": {
        "n": 32,
-       "p50": 55.03,
-       "p95": 68.4,
-       "max": 75.13
+       "p50": 50.1,
+       "p95": 69.53,
+       "max": 78.91
       },
-      "script": 52.4,
-      "style": 0.49,
-      "layout": 2.36
+      "script": 47.21,
+      "style": 0.53,
+      "layout": 1.91
      },
      "app: a second passes at Magazyn": {
       "total": {
        "n": 6,
-       "p50": 10.67,
-       "p95": 17.96,
-       "max": 19.45
+       "p50": 0.66,
+       "p95": 1.15,
+       "max": 1.29
       },
-      "script": 10.46,
-      "style": 0.54,
+      "script": 0.44,
+      "style": 0.14,
       "layout": 0
      },
      "app: a second passes at Sala": {
       "total": {
        "n": 6,
-       "p50": 12.2,
-       "p95": 14.51,
-       "max": 15.01
+       "p50": 0.87,
+       "p95": 1.41,
+       "max": 1.49
       },
-      "script": 11.43,
-      "style": 0.72,
+      "script": 0.11,
+      "style": 0.56,
       "layout": 0
      },
      "app: a second passes at Kuchnia": {
       "total": {
        "n": 6,
-       "p50": 5.87,
-       "p95": 6.22,
-       "max": 6.3
+       "p50": 1.08,
+       "p95": 2.25,
+       "max": 2.47
       },
-      "script": 5.02,
-      "style": 0.85,
+      "script": 0.92,
+      "style": 0.16,
       "layout": 0
      },
      "app: a second passes at Wydawka": {
       "total": {
        "n": 6,
-       "p50": 3.37,
-       "p95": 5.9,
-       "max": 5.94
+       "p50": 1.68,
+       "p95": 2.5,
+       "max": 2.68
       },
-      "script": 3.07,
-      "style": 0.48,
+      "script": 1.08,
+      "style": 0.44,
       "layout": 0
      },
      "app: a second passes at Raport": {
       "total": {
        "n": 6,
-       "p50": 3.86,
-       "p95": 6.64,
-       "max": 6.74
+       "p50": 0.84,
+       "p95": 1.14,
+       "max": 1.15
       },
-      "script": 3.5,
-      "style": 0.52,
+      "script": 0.63,
+      "style": 0.3,
       "layout": 0
      },
      "app: a second passes at Statystyki": {
       "total": {
        "n": 6,
-       "p50": 32.23,
-       "p95": 43.22,
-       "max": 44.27
+       "p50": 0.69,
+       "p95": 0.97,
+       "max": 1
       },
-      "script": 32.72,
-      "style": 0.19,
+      "script": 0.28,
+      "style": 0.55,
       "layout": 0
      },
      "app: switched to Magazyn": {
       "total": {
        "n": 5,
-       "p50": 71.49,
-       "p95": 137.45,
-       "max": 146.59
+       "p50": 72.14,
+       "p95": 73.46,
+       "max": 73.53
       },
-      "script": 21.62,
-      "style": 36.28,
-      "layout": 13.26
+      "script": 27.54,
+      "style": 33.48,
+      "layout": 10.6
      },
      "app: switched to Sala": {
       "total": {
        "n": 5,
-       "p50": 73.44,
-       "p95": 121.41,
-       "max": 131.82
+       "p50": 69.35,
+       "p95": 72.83,
+       "max": 73.08
       },
-      "script": 31.58,
-      "style": 30.86,
-      "layout": 11.54
+      "script": 37.24,
+      "style": 23.21,
+      "layout": 11.19
      },
      "app: switched to Kuchnia": {
       "total": {
        "n": 5,
-       "p50": 44.51,
-       "p95": 52.64,
-       "max": 52.84
+       "p50": 49.96,
+       "p95": 58.87,
+       "max": 59.95
       },
-      "script": 13.46,
-      "style": 24.54,
-      "layout": 7.43
+      "script": 16,
+      "style": 22.45,
+      "layout": 8.87
      },
      "app: switched to Wydawka": {
       "total": {
        "n": 5,
-       "p50": 26.25,
-       "p95": 28.34,
-       "max": 28.47
+       "p50": 34.89,
+       "p95": 67.55,
+       "max": 75.68
       },
-      "script": 8.19,
-      "style": 12.75,
-      "layout": 3.88
+      "script": 12.06,
+      "style": 15.45,
+      "layout": 4.28
      },
      "app: switched to Raport": {
       "total": {
        "n": 5,
-       "p50": 20.97,
-       "p95": 25.5,
-       "max": 25.8
+       "p50": 23.06,
+       "p95": 24.96,
+       "max": 24.97
       },
-      "script": 7.86,
-      "style": 10.74,
-      "layout": 3.01
+      "script": 9.79,
+      "style": 9.86,
+      "layout": 3.38
      },
      "app: switched to Statystyki": {
       "total": {
        "n": 5,
-       "p50": 82.4,
-       "p95": 105.74,
-       "max": 110.84
+       "p50": 95.48,
+       "p95": 103.51,
+       "max": 105.19
       },
-      "script": 61.25,
-      "style": 16.82,
-      "layout": 4.27
+      "script": 72.86,
+      "style": 16.22,
+      "layout": 4.18
      },
      "app: started, until it waits for its day": {
       "total": {
        "n": 6,
-       "p50": 181.24,
-       "p95": 195.77,
-       "max": 199.41
+       "p50": 182.53,
+       "p95": 186.54,
+       "max": 187.15
       },
-      "script": 161.25,
-      "style": 8.71,
-      "layout": 15.59
+      "script": 164.41,
+      "style": 7.96,
+      "layout": 12.53
      },
      "app: started, the day drawn": {
       "total": {
        "n": 6,
-       "p50": 214.51,
-       "p95": 226.63,
-       "max": 228.73
+       "p50": 199.66,
+       "p95": 207.15,
+       "max": 207.74
       },
-      "script": 162.93,
-      "style": 16.19,
-      "layout": 39.45
+      "script": 146.95,
+      "style": 15.59,
+      "layout": 38.3
      }
     }
    },
    "layers": {
     "Stock": {
      "layers": {
-      "browser": 518.98,
-      "design system": 507.71,
-      "carrier": 289.68,
-      "view model": 76.21,
-      "garbage collector": 58.81
+      "browser": 546.96,
+      "design system": 466.17,
+      "carrier": 287.12,
+      "view model": 70.22,
+      "garbage collector": 55.73
      },
      "top": [
       {
        "fn": "(program)",
        "module": "",
-       "ms": 509.57
+       "ms": 538.69
       },
       {
        "fn": "scrollToTab",
        "module": "node_modules/@material/web/tabs/internal/tabs.js",
-       "ms": 76.13
+       "ms": 74.73
       },
       {
        "fn": "(garbage collector)",
        "module": "",
-       "ms": 58.81
-      },
-      {
-       "fn": "insertBefore",
-       "module": "",
-       "ms": 34.33
-      },
-      {
-       "fn": "setAttribute",
-       "module": "",
-       "ms": 34.08
+       "ms": 55.73
       },
       {
        "fn": "showStringImpl",
        "module": "Data.Show",
-       "ms": 31.81
+       "ms": 34.12
       },
       {
-       "fn": "removeChild",
+       "fn": "insertBefore",
        "module": "",
-       "ms": 26.31
+       "ms": 26.86
+      },
+      {
+       "fn": "setAttribute",
+       "module": "",
+       "ms": 25.8
       },
       {
        "fn": "(anonymous)",
        "module": "Data.Ord",
-       "ms": 25.71
+       "ms": 22.53
       },
       {
-       "fn": "importNode",
+       "fn": "removeChild",
        "module": "",
-       "ms": 24.92
-      },
-      {
-       "fn": "getAnimations",
-       "module": "",
-       "ms": 19.94
+       "ms": 21.13
       },
       {
        "fn": "(anonymous)",
        "module": "Effect",
-       "ms": 18.87
+       "ms": 20.21
       },
       {
-       "fn": "variantTags",
-       "module": "Data.Variant.Internal",
-       "ms": 14.28
+       "fn": "importNode",
+       "module": "",
+       "ms": 18.96
+      },
+      {
+       "fn": "getAnimations",
+       "module": "",
+       "ms": 17.86
+      },
+      {
+       "fn": "get",
+       "module": "node_modules/@material/web/internal/aria/delegate.js",
+       "ms": 15.95
       }
      ]
     },
     "Hall": {
      "layers": {
-      "browser": 356.07,
-      "carrier": 297.2,
-      "view model": 133.75,
-      "garbage collector": 37.44,
-      "design system": 68.28
+      "browser": 347.6,
+      "carrier": 271.8,
+      "view model": 133.24,
+      "garbage collector": 36.22,
+      "design system": 64.56
      },
      "top": [
       {
        "fn": "(program)",
        "module": "",
-       "ms": 346.58
+       "ms": 332.39
       },
       {
        "fn": "(garbage collector)",
        "module": "",
-       "ms": 37.44
+       "ms": 36.22
       },
       {
        "fn": "(anonymous)",
        "module": "Effect",
-       "ms": 31.3
-      },
-      {
-       "fn": "__do3",
-       "module": "PUI",
-       "ms": 26.24
+       "ms": 31.9
       },
       {
        "fn": "setAttribute",
        "module": "",
-       "ms": 22.24
+       "ms": 20.76
       },
       {
-       "fn": "getAnimations",
-       "module": "",
-       "ms": 15.97
-      },
-      {
-       "fn": "variantTags",
-       "module": "Data.Variant.Internal",
-       "ms": 14.9
-      },
-      {
-       "fn": "(anonymous)",
-       "module": "Data.Ord",
-       "ms": 14.86
+       "fn": "__do3",
+       "module": "PUI",
+       "ms": 19.96
       },
       {
        "fn": "showStringImpl",
        "module": "Data.Show",
-       "ms": 14.82
+       "ms": 15.18
+      },
+      {
+       "fn": "getAnimations",
+       "module": "",
+       "ms": 15.07
       },
       {
        "fn": "(anonymous)",
-       "module": "Data.String.CodePoints",
-       "ms": 13.25
+       "module": "Data.Ord",
+       "ms": 12.95
       },
       {
-       "fn": "(anonymous)",
-       "module": "PUI.Web",
-       "ms": 12
+       "fn": "variantTags",
+       "module": "Data.Variant.Internal",
+       "ms": 11.65
       },
       {
        "fn": "variantEqs",
        "module": "Data.Variant",
-       "ms": 11.18
+       "ms": 11.31
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Data.String.CodePoints",
+       "ms": 10.06
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Data.String.Common",
+       "ms": 9.95
       }
      ]
     },
     "Kitchen": {
      "layers": {
-      "browser": 440.11,
-      "design system": 202.88,
-      "carrier": 130.8,
-      "view model": 15.35,
-      "garbage collector": 30.86
+      "browser": 455.63,
+      "design system": 180.4,
+      "carrier": 130.88,
+      "view model": 15.83,
+      "garbage collector": 25.19
      },
      "top": [
       {
        "fn": "(program)",
        "module": "",
-       "ms": 425.82
+       "ms": 446.75
       },
       {
        "fn": "animate",
        "module": "",
-       "ms": 47.28
+       "ms": 45.43
       },
       {
        "fn": "showModal",
        "module": "",
-       "ms": 31.84
+       "ms": 35.21
       },
       {
        "fn": "(garbage collector)",
        "module": "",
-       "ms": 30.86
+       "ms": 25.19
       },
       {
        "fn": "(anonymous)",
        "module": "Effect",
-       "ms": 15.11
-      },
-      {
-       "fn": "setAttribute",
-       "module": "",
-       "ms": 12.28
+       "ms": 14.29
       },
       {
        "fn": "appendChild",
        "module": "",
-       "ms": 10.89
+       "ms": 12.34
+      },
+      {
+       "fn": "setAttribute",
+       "module": "",
+       "ms": 10.45
       },
       {
        "fn": "removeChild",
        "module": "",
-       "ms": 9.08
+       "ms": 8.02
       },
       {
        "fn": "insertBefore",
        "module": "",
-       "ms": 7.36
+       "ms": 6.37
+      },
+      {
+       "fn": "importNode",
+       "module": "",
+       "ms": 6.32
       },
       {
        "fn": "(anonymous)",
        "module": "Control.Monad.State.Trans",
-       "ms": 6.24
+       "ms": 5.38
       },
       {
-       "fn": "disconnectedCallback",
-       "module": "node_modules/lit-element/lit-element.js",
-       "ms": 5.76
-      },
-      {
-       "fn": "S",
-       "module": "node_modules/@lit/reactive-element/css-tag.js",
-       "ms": 5.63
+       "fn": "addEventListener",
+       "module": "",
+       "ms": 4.61
       }
      ]
     },
     "Pass": {
      "layers": {
-      "browser": 239.15,
-      "design system": 54.28,
-      "carrier": 10.61,
-      "view model": 4.46,
-      "garbage collector": 2.04
+      "browser": 246.21,
+      "design system": 53.04,
+      "carrier": 9.97,
+      "view model": 2.85,
+      "garbage collector": 1.73
      },
      "top": [
       {
        "fn": "(program)",
        "module": "",
-       "ms": 233.12
-      },
-      {
-       "fn": "animate",
-       "module": "",
-       "ms": 17.38
+       "ms": 239.12
       },
       {
        "fn": "showModal",
        "module": "",
-       "ms": 15.26
+       "ms": 17.63
+      },
+      {
+       "fn": "animate",
+       "module": "",
+       "ms": 15.86
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "",
+       "ms": 3.31
+      },
+      {
+       "fn": "animateDialog",
+       "module": "node_modules/@material/web/dialog/internal/dialog.js",
+       "ms": 2.03
       },
       {
        "fn": "(garbage collector)",
        "module": "",
-       "ms": 2.04
-      },
-      {
-       "fn": "(anonymous)",
-       "module": "",
-       "ms": 1.96
-      },
-      {
-       "fn": "querySelector",
-       "module": "",
-       "ms": 1.55
+       "ms": 1.73
       },
       {
        "fn": "(anonymous)",
        "module": "Data.Array",
-       "ms": 1.31
-      },
-      {
-       "fn": "removeChild",
-       "module": "",
-       "ms": 1.27
-      },
-      {
-       "fn": "(anonymous)",
-       "module": "Effect",
-       "ms": 1.04
-      },
-      {
-       "fn": "getBoundingClientRect",
-       "module": "",
-       "ms": 1
+       "ms": 1.64
       },
       {
        "fn": "appendChild",
        "module": "",
+       "ms": 1.29
+      },
+      {
+       "fn": "getBoundingClientRect",
+       "module": "",
+       "ms": 1.16
+      },
+      {
+       "fn": "filterImpl",
+       "module": "Data.Array",
+       "ms": 1.02
+      },
+      {
+       "fn": "handleEvent",
+       "module": "node_modules/@material/web/focus/internal/focus-ring.js",
        "ms": 0.97
       },
       {
-       "fn": "anyImpl",
-       "module": "Data.Array",
-       "ms": 0.85
+       "fn": "set",
+       "module": "node_modules/@lit/reactive-element/reactive-element.js",
+       "ms": 0.79
       }
      ]
     },
     "Report": {
      "layers": {
-      "browser": 67.1,
-      "design system": 8.27,
-      "carrier": 26.4,
-      "view model": 9.06,
-      "garbage collector": 4.96
+      "browser": 58.11,
+      "design system": 6.59,
+      "carrier": 23.08,
+      "view model": 6.14,
+      "garbage collector": 4.06
      },
      "top": [
       {
        "fn": "(program)",
        "module": "",
-       "ms": 65.62
+       "ms": 56.7
       },
       {
        "fn": "setAttribute",
        "module": "",
-       "ms": 5.19
+       "ms": 4.15
       },
       {
        "fn": "(garbage collector)",
        "module": "",
-       "ms": 4.96
+       "ms": 4.06
       },
       {
        "fn": "(anonymous)",
        "module": "Effect",
-       "ms": 3.38
-      },
-      {
-       "fn": "$$default",
-       "module": "Data.Variant",
-       "ms": 2.25
-      },
-      {
-       "fn": "animate",
-       "module": "",
-       "ms": 1.8
+       "ms": 1.55
       },
       {
        "fn": "(anonymous)",
        "module": "Control.Bind",
-       "ms": 1.56
-      },
-      {
-       "fn": "(anonymous)",
-       "module": "Diner",
-       "ms": 1.04
-      },
-      {
-       "fn": "add",
-       "module": "",
-       "ms": 0.79
-      },
-      {
-       "fn": "handleEvent",
-       "module": "node_modules/@material/web/ripple/internal/ripple.js",
-       "ms": 0.79
-      },
-      {
-       "fn": "(anonymous)",
-       "module": "Data.Maybe",
-       "ms": 0.79
+       "ms": 1.14
       },
       {
        "fn": "mergeFromTo",
        "module": "Data.Array",
-       "ms": 0.78
+       "ms": 1.02
+      },
+      {
+       "fn": "element2.addEventListener.capture",
+       "module": "node_modules/@material/web/internal/events/dispatch-hooks.js",
+       "ms": 0.77
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Data.Foldable",
+       "ms": 0.77
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Monad.State.Trans",
+       "ms": 0.77
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Applicative",
+       "ms": 0.77
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Monad.State.Trans",
+       "ms": 0.74
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "",
+       "ms": 0.68
       }
      ]
     },
     "Statistics": {
      "layers": {
-      "browser": 158.55,
-      "design system": 37.84,
-      "carrier": 70.42,
-      "view model": 414.83,
-      "garbage collector": 36.8
+      "browser": 150.53,
+      "design system": 40.9,
+      "carrier": 61.85,
+      "view model": 406.08,
+      "garbage collector": 39.84
      },
      "top": [
       {
        "fn": "(program)",
        "module": "",
-       "ms": 152.92
+       "ms": 145.55
       },
       {
        "fn": "go",
        "module": "Data.Map.Internal",
-       "ms": 106.78
-      },
-      {
-       "fn": "mergeFromTo",
-       "module": "Data.Array",
-       "ms": 70.92
+       "ms": 90.59
       },
       {
        "fn": "(anonymous)",
        "module": "Data.Map.Internal",
-       "ms": 44.43
+       "ms": 59.25
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Diner",
+       "ms": 52.11
       },
       {
        "fn": "(anonymous)",
        "module": "Data.Ord",
-       "ms": 39.71
+       "ms": 48.23
       },
       {
        "fn": "(garbage collector)",
        "module": "",
-       "ms": 36.8
+       "ms": 39.84
       },
       {
        "fn": "$tco_loop",
        "module": "Data.Map.Internal",
-       "ms": 14.75
+       "ms": 14.17
       },
       {
-       "fn": "unsafeNode",
-       "module": "Data.Map.Internal",
-       "ms": 13.36
-      },
-      {
-       "fn": "go",
-       "module": "Data.Map.Internal",
-       "ms": 12.73
-      },
-      {
-       "fn": "(anonymous)",
-       "module": "Control.Bind",
-       "ms": 10.42
-      },
-      {
-       "fn": "getAnimations",
-       "module": "",
-       "ms": 9.88
+       "fn": "mergeFromTo",
+       "module": "Data.Array",
+       "ms": 11.9
       },
       {
        "fn": "filterImpl",
        "module": "Data.Array",
-       "ms": 9.11
+       "ms": 10.67
+      },
+      {
+       "fn": "go",
+       "module": "Data.Map.Internal",
+       "ms": 10.65
+      },
+      {
+       "fn": "getAnimations",
+       "module": "",
+       "ms": 9.48
+      },
+      {
+       "fn": "(anonymous)",
+       "module": "Control.Bind",
+       "ms": 9.04
       }
      ]
     }
@@ -1548,128 +1548,128 @@
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 84.66,
-        "p95": 90.42,
-        "max": 91.06
+        "p50": 79.63,
+        "p95": 86.43,
+        "max": 87.19
        },
        "nodes": 6184,
-       "heapMB": 6.3,
+       "heapMB": 6.2,
        "rows": 10,
        "layers": {
-        "browser": 30.5,
-        "view model": 18.32,
-        "design system": 61.79,
-        "garbage collector": 5.95,
-        "carrier": 25.31
+        "browser": 26.16,
+        "carrier": 24.88,
+        "design system": 62.3,
+        "garbage collector": 5.84,
+        "view model": 17.17
        }
       },
       "tick": {
        "n": 8,
-       "p50": 2.77,
-       "p95": 4.28,
-       "max": 4.61
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       },
       "doing": {
        "n": 12,
-       "p50": 5.65,
-       "p95": 6.9,
-       "max": 6.98
+       "p50": 4.18,
+       "p95": 7.78,
+       "max": 7.79
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 99.93,
-        "p95": 107.18,
-        "max": 107.98
+        "p50": 97.54,
+        "p95": 98.79,
+        "max": 98.93
        },
        "nodes": 6192,
        "heapMB": 5.9,
        "rows": 10,
        "layers": {
-        "browser": 28.44,
-        "view model": 29.79,
-        "carrier": 30.49,
-        "design system": 62.58,
-        "garbage collector": 9.55
+        "browser": 27.37,
+        "design system": 60.63,
+        "garbage collector": 6.81,
+        "carrier": 29.39,
+        "view model": 29.7
        }
       },
       "tick": {
        "n": 8,
-       "p50": 7.4,
-       "p95": 8.68,
-       "max": 8.79
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       },
       "doing": {
        "n": 12,
-       "p50": 9.19,
-       "p95": 12.32,
-       "max": 12.92
+       "p50": 9.86,
+       "p95": 14.62,
+       "max": 17.1
       }
      },
      "16": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 171.16,
-        "p95": 185.86,
-        "max": 187.5
+        "p50": 141.38,
+        "p95": 147.83,
+        "max": 148.55
        },
        "nodes": 6192,
        "heapMB": 10.2,
        "rows": 10,
        "layers": {
-        "browser": 29.18,
-        "view model": 60.41,
-        "carrier": 39.07,
-        "design system": 65.3,
-        "garbage collector": 11.94
+        "browser": 32.89,
+        "carrier": 38.31,
+        "design system": 62.06,
+        "garbage collector": 12,
+        "view model": 60.38
        }
       },
       "tick": {
        "n": 8,
-       "p50": 17.14,
-       "p95": 20.28,
-       "max": 20.82
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       },
       "doing": {
        "n": 12,
-       "p50": 23.54,
-       "p95": 32.51,
-       "max": 32.91
+       "p50": 22.63,
+       "p95": 29.92,
+       "max": 30.1
       }
      },
      "64": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 284.59,
-        "p95": 326.78,
-        "max": 331.47
+        "p50": 287.03,
+        "p95": 304.32,
+        "max": 306.24
        },
        "nodes": 6192,
-       "heapMB": 17.7,
+       "heapMB": 20.8,
        "rows": 10,
        "layers": {
-        "browser": 28.27,
-        "carrier": 82.17,
-        "design system": 61.43,
-        "garbage collector": 23.96,
-        "view model": 181.29
+        "browser": 31.09,
+        "view model": 183.67,
+        "carrier": 73.8,
+        "design system": 57.74,
+        "garbage collector": 21.34
        }
       },
       "tick": {
        "n": 8,
-       "p50": 59.3,
-       "p95": 66.71,
-       "max": 68.17
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       },
       "doing": {
        "n": 12,
-       "p50": 90.86,
-       "p95": 107.1,
-       "max": 113.59
+       "p50": 84.96,
+       "p95": 93.73,
+       "max": 94.54
       }
      }
     },
@@ -1678,128 +1678,128 @@
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 86.05,
-        "p95": 88.48,
-        "max": 88.75
+        "p50": 83.91,
+        "p95": 93.38,
+        "max": 94.43
        },
        "nodes": 2457,
        "heapMB": 7.2,
        "rows": 66,
        "layers": {
-        "browser": 27.87,
-        "view model": 20.87,
-        "garbage collector": 10.07,
-        "design system": 40.04,
-        "carrier": 36.03
+        "browser": 30.89,
+        "view model": 20.81,
+        "carrier": 37.56,
+        "design system": 43.89,
+        "garbage collector": 7.36
        }
       },
       "tick": {
        "n": 8,
-       "p50": 3.75,
-       "p95": 4.38,
-       "max": 4.48
+       "p50": 0.3,
+       "p95": 0.39,
+       "max": 0.41
       },
       "doing": {
        "n": 12,
-       "p50": 4.33,
-       "p95": 9.34,
-       "max": 12.6
+       "p50": 4.66,
+       "p95": 8.93,
+       "max": 9.45
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 144.75,
-        "p95": 145.29,
-        "max": 145.35
+        "p50": 146.79,
+        "p95": 161.2,
+        "max": 162.8
        },
        "nodes": 5121,
-       "heapMB": 12,
+       "heapMB": 11.7,
        "rows": 192,
        "layers": {
-        "browser": 32.48,
-        "carrier": 69.7,
-        "design system": 46.58,
-        "garbage collector": 17.36,
-        "view model": 41.67
+        "browser": 27.59,
+        "carrier": 73.13,
+        "design system": 42.88,
+        "garbage collector": 16.98,
+        "view model": 40.14
        }
       },
       "tick": {
        "n": 8,
-       "p50": 7.59,
-       "p95": 8.98,
-       "max": 9.1
+       "p50": 0.32,
+       "p95": 0.45,
+       "max": 0.47
       },
       "doing": {
        "n": 12,
-       "p50": 10.03,
-       "p95": 15.83,
-       "max": 18.71
+       "p50": 9.56,
+       "p95": 15.08,
+       "max": 18.39
       }
      },
      "16": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 289.1,
-        "p95": 325.54,
-        "max": 329.59
+        "p50": 287.64,
+        "p95": 290.25,
+        "max": 290.54
        },
        "nodes": 15777,
-       "heapMB": 18.7,
+       "heapMB": 18.8,
        "rows": 696,
        "layers": {
-        "browser": 46.14,
-        "carrier": 168.58,
-        "design system": 74.01,
-        "garbage collector": 35.37,
-        "view model": 78.82
+        "browser": 51.8,
+        "carrier": 159.11,
+        "design system": 57.97,
+        "garbage collector": 33.65,
+        "view model": 72.44
        }
       },
       "tick": {
        "n": 8,
-       "p50": 27.29,
-       "p95": 71.76,
-       "max": 94.37
+       "p50": 0.39,
+       "p95": 0.54,
+       "max": 0.56
       },
       "doing": {
        "n": 12,
-       "p50": 27,
-       "p95": 38.86,
-       "max": 45.11
+       "p50": 28.86,
+       "p95": 38.05,
+       "max": 42.15
       }
      },
      "64": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 839.64,
-        "p95": 842.48,
-        "max": 842.8
+        "p50": 846.31,
+        "p95": 857.79,
+        "max": 859.07
        },
-       "nodes": 54029,
+       "nodes": 54027,
        "heapMB": 51.6,
        "rows": 2712,
        "layers": {
-        "browser": 202.59,
-        "carrier": 461,
-        "design system": 137.05,
-        "garbage collector": 87.3,
-        "view model": 200.14
+        "browser": 193.25,
+        "design system": 144.96,
+        "garbage collector": 87.11,
+        "carrier": 410.79,
+        "view model": 203.49
        }
       },
       "tick": {
        "n": 8,
-       "p50": 91.39,
-       "p95": 104.75,
-       "max": 110.34
+       "p50": 0.45,
+       "p95": 0.66,
+       "max": 0.66
       },
       "doing": {
        "n": 12,
-       "p50": 106.46,
-       "p95": 128.99,
-       "max": 130.98
+       "p50": 109.44,
+       "p95": 120.94,
+       "max": 125.24
       }
      }
     },
@@ -1808,128 +1808,128 @@
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 69.02,
-        "p95": 71.71,
-        "max": 72.01
+        "p50": 68.86,
+        "p95": 69.37,
+        "max": 69.43
        },
        "nodes": 3286,
-       "heapMB": 4.7,
+       "heapMB": 4.9,
        "rows": 10,
        "layers": {
-        "browser": 41.56,
-        "design system": 26.59,
-        "garbage collector": 6.35,
-        "carrier": 21.15,
-        "view model": 14.05
+        "browser": 39.2,
+        "design system": 31.17,
+        "garbage collector": 7.91,
+        "carrier": 22.42,
+        "view model": 14.61
        }
       },
       "tick": {
        "n": 8,
-       "p50": 1.82,
-       "p95": 2.61,
-       "max": 2.8
+       "p50": 0.27,
+       "p95": 0.82,
+       "max": 0.99
       },
       "doing": {
        "n": 12,
-       "p50": 15.14,
-       "p95": 20.26,
-       "max": 22.42
+       "p50": 14.91,
+       "p95": 18.73,
+       "max": 21.21
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 76.86,
-        "p95": 77.83,
-        "max": 77.94
+        "p50": 77.5,
+        "p95": 79.1,
+        "max": 79.28
        },
        "nodes": 3143,
-       "heapMB": 7.4,
+       "heapMB": 7.3,
        "rows": 10,
        "layers": {
-        "browser": 34.43,
-        "view model": 26.78,
-        "design system": 29.27,
-        "garbage collector": 7.13,
-        "carrier": 23.68
+        "browser": 34.16,
+        "carrier": 23.05,
+        "design system": 30.29,
+        "garbage collector": 5.51,
+        "view model": 22.18
        }
       },
       "tick": {
        "n": 8,
-       "p50": 3.12,
-       "p95": 3.65,
-       "max": 3.79
+       "p50": 0.27,
+       "p95": 0.8,
+       "max": 0.92
       },
       "doing": {
        "n": 12,
-       "p50": 15.63,
-       "p95": 23.12,
-       "max": 27.26
+       "p50": 17.96,
+       "p95": 20.15,
+       "max": 20.3
       }
      },
      "16": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 102.51,
-        "p95": 108.09,
-        "max": 108.71
+        "p50": 103.32,
+        "p95": 112.89,
+        "max": 113.96
        },
        "nodes": 3325,
-       "heapMB": 9.6,
+       "heapMB": 7.6,
        "rows": 10,
        "layers": {
-        "browser": 39.49,
-        "garbage collector": 11.28,
-        "carrier": 22.72,
-        "design system": 26.31,
-        "view model": 53.02
+        "browser": 36.66,
+        "view model": 44.94,
+        "carrier": 25.81,
+        "design system": 30.32,
+        "garbage collector": 10.15
        }
       },
       "tick": {
        "n": 8,
-       "p50": 3.85,
-       "p95": 6.23,
-       "max": 6.74
+       "p50": 0.34,
+       "p95": 0.63,
+       "max": 0.64
       },
       "doing": {
        "n": 12,
-       "p50": 17.41,
-       "p95": 25.87,
-       "max": 30.86
+       "p50": 17.48,
+       "p95": 24.33,
+       "max": 24.82
       }
      },
      "64": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 168,
-        "p95": 179.23,
-        "max": 180.47
+        "p50": 176.58,
+        "p95": 188.53,
+        "max": 189.86
        },
        "nodes": 2896,
-       "heapMB": 13.4,
+       "heapMB": 19.5,
        "rows": 10,
        "layers": {
-        "browser": 33.16,
-        "carrier": 24.23,
-        "design system": 25.37,
-        "garbage collector": 21.89,
-        "view model": 121.74
+        "browser": 32.26,
+        "view model": 129.1,
+        "carrier": 24.57,
+        "design system": 24.59,
+        "garbage collector": 18.15
        }
       },
       "tick": {
        "n": 8,
-       "p50": 9.65,
-       "p95": 11.76,
-       "max": 11.78
+       "p50": 0.26,
+       "p95": 0.47,
+       "max": 0.49
       },
       "doing": {
        "n": 12,
-       "p50": 25.4,
-       "p95": 32.48,
-       "max": 38.02
+       "p50": 26.92,
+       "p95": 33.57,
+       "max": 38.12
       }
      }
     },
@@ -1938,128 +1938,128 @@
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 48.95,
-        "p95": 53.28,
-        "max": 53.76
+        "p50": 51.24,
+        "p95": 52.16,
+        "max": 52.26
        },
        "nodes": 922,
-       "heapMB": 4.5,
+       "heapMB": 4.7,
        "rows": 10,
        "layers": {
-        "browser": 27.45,
-        "carrier": 13.81,
-        "design system": 18.91,
-        "garbage collector": 6.56,
-        "view model": 12.91
+        "browser": 28.53,
+        "design system": 20.61,
+        "garbage collector": 4.89,
+        "carrier": 13.69,
+        "view model": 13.46
        }
       },
       "tick": {
        "n": 8,
-       "p50": 0.85,
-       "p95": 1.31,
-       "max": 1.37
+       "p50": 0.31,
+       "p95": 0.5,
+       "max": 0.5
       },
       "doing": {
        "n": 6,
-       "p50": 15.32,
-       "p95": 18.93,
-       "max": 19.74
+       "p50": 15.1,
+       "p95": 20.44,
+       "max": 21.22
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 56.82,
-        "p95": 61.28,
-        "max": 61.78
+        "p50": 58.9,
+        "p95": 59.78,
+        "max": 59.88
        },
        "nodes": 924,
-       "heapMB": 4.6,
+       "heapMB": 4.7,
        "rows": 10,
        "layers": {
-        "browser": 24.85,
-        "garbage collector": 5.65,
-        "design system": 21.56,
-        "carrier": 14.21,
-        "view model": 23.68
+        "browser": 31.49,
+        "carrier": 13.72,
+        "design system": 19.59,
+        "garbage collector": 5.98,
+        "view model": 26.66
        }
       },
       "tick": {
        "n": 8,
-       "p50": 1.31,
-       "p95": 1.88,
-       "max": 1.93
+       "p50": 0.38,
+       "p95": 0.66,
+       "max": 0.76
       },
       "doing": {
        "n": 6,
-       "p50": 17.01,
-       "p95": 22,
-       "max": 23.33
+       "p50": 16.01,
+       "p95": 22.33,
+       "max": 24.09
       }
      },
      "16": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 87.81,
-        "p95": 88.14,
-        "max": 88.18
+        "p50": 82,
+        "p95": 83.53,
+        "max": 83.7
        },
        "nodes": 924,
-       "heapMB": 7.6,
+       "heapMB": 8.1,
        "rows": 10,
        "layers": {
-        "browser": 27.12,
-        "carrier": 16.54,
-        "design system": 21.8,
-        "garbage collector": 9.15,
-        "view model": 41.42
+        "browser": 29.76,
+        "design system": 21,
+        "garbage collector": 9.42,
+        "carrier": 15.73,
+        "view model": 38.78
        }
       },
       "tick": {
        "n": 8,
-       "p50": 2.25,
-       "p95": 2.97,
-       "max": 3.19
+       "p50": 0.31,
+       "p95": 0.47,
+       "max": 0.48
       },
       "doing": {
        "n": 6,
-       "p50": 18.96,
-       "p95": 24.32,
-       "max": 25.89
+       "p50": 18.84,
+       "p95": 23.62,
+       "max": 24.39
       }
      },
      "64": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 142.49,
-        "p95": 147.06,
-        "max": 147.57
+        "p50": 147.66,
+        "p95": 149.4,
+        "max": 149.59
        },
        "nodes": 924,
-       "heapMB": 15.5,
+       "heapMB": 12.7,
        "rows": 10,
        "layers": {
-        "browser": 26.8,
-        "carrier": 16.6,
-        "design system": 20.74,
-        "garbage collector": 16.59,
-        "view model": 107.75
+        "browser": 32.52,
+        "view model": 100.58,
+        "carrier": 15.15,
+        "design system": 20.6,
+        "garbage collector": 17.82
        }
       },
       "tick": {
        "n": 8,
-       "p50": 5.81,
-       "p95": 8.71,
-       "max": 8.72
+       "p50": 0.33,
+       "p95": 0.51,
+       "max": 0.52
       },
       "doing": {
        "n": 6,
-       "p50": 24.55,
-       "p95": 32.96,
-       "max": 35.18
+       "p50": 24.42,
+       "p95": 29.36,
+       "max": 30.63
       }
      }
     },
@@ -2068,128 +2068,128 @@
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 53.3,
-        "p95": 53.63,
-        "max": 53.67
+        "p50": 48,
+        "p95": 50.28,
+        "max": 50.54
        },
        "nodes": 301,
-       "heapMB": 5,
+       "heapMB": 4.4,
        "rows": 11,
        "layers": {
-        "browser": 29.29,
-        "carrier": 13.09,
-        "design system": 13.72,
-        "garbage collector": 4.29,
-        "view model": 16.66
+        "browser": 28.39,
+        "design system": 13.42,
+        "garbage collector": 3.52,
+        "carrier": 13.8,
+        "view model": 14.54
        }
       },
       "tick": {
        "n": 8,
-       "p50": 1.28,
-       "p95": 2.02,
-       "max": 2.08
+       "p50": 0.23,
+       "p95": 0.42,
+       "max": 0.42
       },
       "doing": {
        "n": 12,
-       "p50": 4.1,
-       "p95": 5.78,
-       "max": 6.19
+       "p50": 4.32,
+       "p95": 7.51,
+       "max": 9.38
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 57.54,
-        "p95": 59.08,
-        "max": 59.25
+        "p50": 58.31,
+        "p95": 69.25,
+        "max": 70.47
        },
        "nodes": 301,
-       "heapMB": 6.4,
+       "heapMB": 5,
        "rows": 11,
        "layers": {
-        "browser": 30.53,
-        "design system": 15.61,
-        "garbage collector": 6.05,
-        "carrier": 13.87,
-        "view model": 24.42
+        "browser": 24.42,
+        "garbage collector": 5.59,
+        "design system": 15.16,
+        "carrier": 14.41,
+        "view model": 24.6
        }
       },
       "tick": {
        "n": 8,
-       "p50": 1.96,
-       "p95": 3.15,
-       "max": 3.17
+       "p50": 0.32,
+       "p95": 0.47,
+       "max": 0.49
       },
       "doing": {
        "n": 12,
-       "p50": 4.22,
-       "p95": 9.6,
-       "max": 13.99
+       "p50": 4.49,
+       "p95": 10.19,
+       "max": 11.96
       }
      },
      "16": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 87.92,
-        "p95": 90.74,
-        "max": 91.06
+        "p50": 81.47,
+        "p95": 85.56,
+        "max": 86.01
        },
        "nodes": 301,
-       "heapMB": 8.9,
+       "heapMB": 7.6,
        "rows": 11,
        "layers": {
-        "browser": 27.01,
-        "carrier": 16.7,
-        "design system": 15.73,
-        "garbage collector": 11.53,
-        "view model": 55.72
+        "browser": 27.76,
+        "view model": 53.88,
+        "carrier": 16.66,
+        "design system": 19.05,
+        "garbage collector": 8.73
        }
       },
       "tick": {
        "n": 8,
-       "p50": 4.08,
-       "p95": 4.98,
-       "max": 5.16
+       "p50": 0.3,
+       "p95": 0.36,
+       "max": 0.39
       },
       "doing": {
        "n": 12,
-       "p50": 6.78,
-       "p95": 10.38,
-       "max": 13.23
+       "p50": 6.18,
+       "p95": 10.27,
+       "max": 11.25
       }
      },
      "64": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 171.15,
-        "p95": 178,
-        "max": 178.76
+        "p50": 160.73,
+        "p95": 168.41,
+        "max": 169.26
        },
        "nodes": 301,
-       "heapMB": 36.2,
+       "heapMB": 20.7,
        "rows": 11,
        "layers": {
-        "browser": 25.36,
-        "view model": 143.31,
-        "carrier": 17.01,
-        "design system": 15.46,
-        "garbage collector": 20.44
+        "browser": 26.28,
+        "carrier": 16.54,
+        "design system": 15.26,
+        "garbage collector": 19.08,
+        "view model": 133.6
        }
       },
       "tick": {
        "n": 8,
-       "p50": 15.18,
-       "p95": 26.43,
-       "max": 27.8
+       "p50": 0.35,
+       "p95": 0.47,
+       "max": 0.49
       },
       "doing": {
        "n": 12,
-       "p50": 23.84,
-       "p95": 43.66,
-       "max": 47.63
+       "p50": 17.55,
+       "p95": 22.4,
+       "max": 22.48
       }
      }
     },
@@ -2198,128 +2198,128 @@
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 89.88,
-        "p95": 92.51,
-        "max": 92.8
+        "p50": 77.92,
+        "p95": 82.92,
+        "max": 83.48
        },
        "nodes": 924,
-       "heapMB": 4.9,
+       "heapMB": 5.3,
        "rows": 11,
        "layers": {
-        "browser": 19.77,
-        "view model": 43.94,
-        "carrier": 17.71,
-        "design system": 30.63,
-        "garbage collector": 7.04
+        "browser": 19.59,
+        "design system": 33.92,
+        "garbage collector": 6.75,
+        "carrier": 15.29,
+        "view model": 38.31
        }
       },
       "tick": {
        "n": 8,
-       "p50": 9.51,
-       "p95": 10.65,
-       "max": 10.76
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       },
       "doing": {
        "n": 12,
-       "p50": 12.38,
-       "p95": 22.17,
-       "max": 26.43
+       "p50": 12.19,
+       "p95": 18.11,
+       "max": 19.65
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 153.32,
-        "p95": 154.57,
-        "max": 154.71
+        "p50": 153.46,
+        "p95": 159.48,
+        "max": 160.15
        },
        "nodes": 924,
-       "heapMB": 8.3,
+       "heapMB": 8.7,
        "rows": 11,
        "layers": {
-        "browser": 21.98,
-        "design system": 33.54,
-        "garbage collector": 13.93,
-        "carrier": 16.46,
-        "view model": 113.22
+        "browser": 22.27,
+        "carrier": 16.4,
+        "design system": 32.91,
+        "garbage collector": 16.26,
+        "view model": 111.47
        }
       },
       "tick": {
        "n": 8,
-       "p50": 29.9,
-       "p95": 33.3,
-       "max": 33.62
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       },
       "doing": {
        "n": 12,
-       "p50": 38.19,
-       "p95": 43.22,
-       "max": 45.85
+       "p50": 37.62,
+       "p95": 46.56,
+       "max": 49.26
       }
      },
      "16": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 420.79,
-        "p95": 443.35,
-        "max": 445.86
+        "p50": 404.31,
+        "p95": 416.3,
+        "max": 417.63
        },
        "nodes": 924,
-       "heapMB": 18,
+       "heapMB": 26.4,
        "rows": 11,
        "layers": {
-        "browser": 25.41,
-        "design system": 31.32,
-        "garbage collector": 37.51,
-        "carrier": 16.55,
-        "view model": 371.89
+        "browser": 21.58,
+        "view model": 373.44,
+        "carrier": 18.58,
+        "design system": 32.14,
+        "garbage collector": 39.91
        }
       },
       "tick": {
        "n": 8,
-       "p50": 140.56,
-       "p95": 155.43,
-       "max": 157.88
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       },
       "doing": {
        "n": 12,
-       "p50": 161.68,
-       "p95": 182.17,
-       "max": 186.77
+       "p50": 156.64,
+       "p95": 180.75,
+       "max": 185.29
       }
      },
      "64": {
       "mount": {
        "ms": {
         "n": 3,
-        "p50": 1695.54,
-        "p95": 1742.73,
-        "max": 1747.97
+        "p50": 1654.54,
+        "p95": 1699.97,
+        "max": 1705.02
        },
        "nodes": 905,
-       "heapMB": 44.3,
+       "heapMB": 32.2,
        "rows": 11,
        "layers": {
-        "browser": 29.96,
-        "carrier": 18.23,
-        "design system": 31.76,
-        "garbage collector": 128.22,
-        "view model": 1643.08
+        "browser": 30.86,
+        "design system": 33.67,
+        "garbage collector": 122.07,
+        "carrier": 17.29,
+        "view model": 1643.23
        }
       },
       "tick": {
        "n": 8,
-       "p50": 1088.78,
-       "p95": 1483.2,
-       "max": 1490.92
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       },
       "doing": {
        "n": 12,
-       "p50": 840.92,
-       "p95": 878.04,
-       "max": 878.49
+       "p50": 802.94,
+       "p95": 844.78,
+       "max": 849.8
       }
      }
     }
@@ -2330,52 +2330,52 @@
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 678.1,
-        "p95": 678.1,
-        "max": 678.1
+        "p50": 672.29,
+        "p95": 672.29,
+        "max": 672.29
        },
        "nodes": 144136,
        "heapMB": 25.4,
        "rows": 304,
        "layers": {
-        "browser": 190,
-        "view model": 19.82,
-        "carrier": 187.3,
-        "design system": 686.21,
-        "garbage collector": 46.46
+        "browser": 169.37,
+        "design system": 653.91,
+        "garbage collector": 44.84,
+        "carrier": 176.93,
+        "view model": 18.65
        }
       },
       "tick": {
        "n": 6,
-       "p50": 19.92,
-       "p95": 22,
-       "max": 22.06
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 2312.53,
-        "p95": 2312.53,
-        "max": 2312.53
+        "p50": 2282.99,
+        "p95": 2282.99,
+        "max": 2282.99
        },
        "nodes": 641133,
-       "heapMB": 90.4,
+       "heapMB": 88.2,
        "rows": 1216,
        "layers": {
-        "browser": 798.36,
-        "garbage collector": 171.39,
-        "view model": 44.48,
-        "carrier": 557.48,
-        "design system": 2148.72
+        "browser": 778.45,
+        "design system": 2122.7,
+        "garbage collector": 145.77,
+        "carrier": 572.67,
+        "view model": 32.53
        }
       },
       "tick": {
        "n": 6,
-       "p50": 102.02,
-       "p95": 111.06,
-       "max": 112.3
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       }
      }
     },
@@ -2384,52 +2384,52 @@
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 164.09,
-        "p95": 164.09,
-        "max": 164.09
+        "p50": 158.55,
+        "p95": 158.55,
+        "max": 158.55
        },
        "nodes": 6655,
-       "heapMB": 12.9,
+       "heapMB": 9.4,
        "rows": 346,
        "layers": {
-        "browser": 39.1,
-        "carrier": 87.06,
-        "design system": 50.18,
-        "garbage collector": 23.23,
-        "view model": 25.59
+        "browser": 46.77,
+        "garbage collector": 17.02,
+        "design system": 47.1,
+        "carrier": 91.37,
+        "view model": 27.51
        }
       },
       "tick": {
        "n": 6,
-       "p50": 12.05,
-       "p95": 13.65,
-       "max": 13.76
+       "p50": 0.33,
+       "p95": 0.59,
+       "max": 0.66
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 446.76,
-        "p95": 446.76,
-        "max": 446.76
+        "p50": 470.97,
+        "p95": 470.97,
+        "max": 470.97
        },
        "nodes": 22999,
-       "heapMB": 38,
+       "heapMB": 31.1,
        "rows": 1384,
        "layers": {
-        "browser": 128.29,
-        "view model": 60.22,
-        "carrier": 247.69,
-        "design system": 91.45,
-        "garbage collector": 46.6
+        "browser": 128.49,
+        "carrier": 242,
+        "design system": 85.79,
+        "garbage collector": 45.87,
+        "view model": 59.61
        }
       },
       "tick": {
        "n": 6,
-       "p50": 50.79,
-       "p95": 59.98,
-       "max": 62.12
+       "p50": 0.31,
+       "p95": 0.41,
+       "max": 0.42
       }
      }
     },
@@ -2438,52 +2438,52 @@
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 80.87,
-        "p95": 80.87,
-        "max": 80.87
+        "p50": 79.48,
+        "p95": 79.48,
+        "max": 79.48
        },
        "nodes": 6085,
-       "heapMB": 5.6,
+       "heapMB": 7.4,
        "rows": 20,
        "layers": {
-        "browser": 41.43,
-        "carrier": 34.47,
-        "design system": 34,
-        "garbage collector": 7.13,
-        "view model": 16.68
+        "browser": 42.3,
+        "view model": 17.47,
+        "carrier": 32.51,
+        "design system": 34.82,
+        "garbage collector": 6.21
        }
       },
       "tick": {
        "n": 6,
-       "p50": 2.61,
-       "p95": 2.95,
-       "max": 2.98
+       "p50": 0.49,
+       "p95": 0.99,
+       "max": 1.07
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 183.34,
-        "p95": 183.34,
-        "max": 183.34
+        "p50": 179.35,
+        "p95": 179.35,
+        "max": 179.35
        },
        "nodes": 22345,
-       "heapMB": 13.9,
+       "heapMB": 14.7,
        "rows": 80,
        "layers": {
-        "browser": 83.75,
-        "view model": 26.64,
-        "carrier": 74.59,
-        "design system": 75.08,
-        "garbage collector": 17.09
+        "browser": 101.7,
+        "carrier": 90.2,
+        "design system": 78.63,
+        "garbage collector": 16.21,
+        "view model": 26.21
        }
       },
       "tick": {
        "n": 6,
-       "p50": 7.03,
-       "p95": 8,
-       "max": 8.25
+       "p50": 1.4,
+       "p95": 1.8,
+       "max": 1.9
       }
      }
     },
@@ -2492,52 +2492,52 @@
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 53.17,
-        "p95": 53.17,
-        "max": 53.17
+        "p50": 71.28,
+        "p95": 71.28,
+        "max": 71.28
        },
        "nodes": 922,
-       "heapMB": 4.5,
+       "heapMB": 4.7,
        "rows": 10,
        "layers": {
-        "browser": 28.73,
-        "design system": 20.74,
-        "garbage collector": 4.43,
-        "carrier": 14.99,
-        "view model": 13.58
+        "browser": 24.68,
+        "carrier": 14.56,
+        "design system": 19.35,
+        "garbage collector": 3.44,
+        "view model": 13.62
        }
       },
       "tick": {
        "n": 6,
-       "p50": 0.82,
-       "p95": 2.34,
-       "max": 2.74
+       "p50": 0.49,
+       "p95": 0.54,
+       "max": 0.54
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 69.81,
-        "p95": 69.81,
-        "max": 69.81
+        "p50": 75.19,
+        "p95": 75.19,
+        "max": 75.19
        },
        "nodes": 2422,
-       "heapMB": 6.9,
+       "heapMB": 7.5,
        "rows": 40,
        "layers": {
-        "browser": 31.94,
-        "carrier": 21.41,
-        "design system": 27.56,
-        "garbage collector": 5.27,
-        "view model": 26.59
+        "browser": 33.3,
+        "carrier": 24.77,
+        "design system": 27.58,
+        "garbage collector": 5.61,
+        "view model": 22.04
        }
       },
       "tick": {
        "n": 6,
-       "p50": 2.57,
-       "p95": 2.86,
-       "max": 2.91
+       "p50": 0.96,
+       "p95": 1.96,
+       "max": 2.14
       }
      }
     },
@@ -2546,52 +2546,52 @@
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 101.99,
-        "p95": 101.99,
-        "max": 101.99
+        "p50": 105.95,
+        "p95": 105.95,
+        "max": 105.95
        },
        "nodes": 2598,
-       "heapMB": 7.3,
+       "heapMB": 6.9,
        "rows": 220,
        "layers": {
-        "browser": 46.51,
-        "view model": 17.37,
-        "carrier": 47.39,
-        "design system": 15.62,
-        "garbage collector": 13.82
+        "browser": 48.06,
+        "view model": 18.92,
+        "carrier": 56.58,
+        "design system": 14.11,
+        "garbage collector": 9.78
        }
       },
       "tick": {
        "n": 6,
-       "p50": 7.02,
-       "p95": 7.71,
-       "max": 7.73
+       "p50": 1.53,
+       "p95": 2.06,
+       "max": 2.07
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 254.45,
-        "p95": 254.45,
-        "max": 254.45
+        "p50": 236.61,
+        "p95": 236.61,
+        "max": 236.61
        },
        "nodes": 9825,
-       "heapMB": 15.4,
+       "heapMB": 17.6,
        "rows": 877,
        "layers": {
-        "browser": 116.89,
-        "design system": 16.78,
-        "garbage collector": 30.02,
-        "carrier": 117.73,
-        "view model": 29.89
+        "browser": 103.72,
+        "design system": 15.32,
+        "garbage collector": 24.66,
+        "carrier": 130.16,
+        "view model": 32.13
        }
       },
       "tick": {
        "n": 6,
-       "p50": 22.42,
-       "p95": 28.7,
-       "max": 30.7
+       "p50": 3.42,
+       "p95": 4.02,
+       "max": 4.04
       }
      }
     },
@@ -2600,52 +2600,52 @@
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 153.79,
-        "p95": 153.79,
-        "max": 153.79
+        "p50": 137.08,
+        "p95": 137.08,
+        "max": 137.08
        },
        "nodes": 3442,
-       "heapMB": 8.8,
+       "heapMB": 7.8,
        "rows": 263,
        "layers": {
-        "browser": 35.65,
-        "design system": 43.66,
-        "garbage collector": 11.67,
-        "carrier": 63.76,
-        "view model": 41.12
+        "browser": 31.07,
+        "carrier": 73.19,
+        "design system": 45.33,
+        "garbage collector": 15.01,
+        "view model": 58.1
        }
       },
       "tick": {
        "n": 6,
-       "p50": 20.22,
-       "p95": 22.5,
-       "max": 22.64
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       }
      },
      "4": {
       "mount": {
        "ms": {
         "n": 1,
-        "p50": 370.24,
-        "p95": 370.24,
-        "max": 370.24
+        "p50": 363.04,
+        "p95": 363.04,
+        "max": 363.04
        },
        "nodes": 11212,
-       "heapMB": 17.4,
+       "heapMB": 12.5,
        "rows": 1040,
        "layers": {
-        "browser": 109.54,
-        "carrier": 168.15,
-        "design system": 67.37,
-        "garbage collector": 32.79,
-        "view model": 121.88
+        "browser": 62.54,
+        "carrier": 160.5,
+        "design system": 69.25,
+        "garbage collector": 28.95,
+        "view model": 126.75
        }
       },
       "tick": {
        "n": 6,
-       "p50": 81.07,
-       "p95": 99.61,
-       "max": 100.29
+       "p50": 0,
+       "p95": 0,
+       "max": 0
       }
      }
     }
@@ -2655,7 +2655,7 @@
    "seed": 20261120,
    "steps": 3000,
    "asked": 3000,
-   "seconds": 167,
+   "seconds": 166,
    "done": {
     "next page": 326,
     "add": 186,
@@ -2689,7 +2689,7 @@
      "detail": "{\"line\":\"12\",\"tile\":\"Arancini z orzechami\\n×12\\n9,00 zł · dostępne: 5\"}"
     },
     {
-     "name": "three digits typed while 3 seconds pass stay as typed, the caret after them",
+     "name": "three digits typed while 4 seconds pass stay as typed, the caret after them",
      "ok": true,
      "detail": "{\"value\":\"123\",\"caret\":3,\"focused\":true}"
     },
@@ -2718,2281 +2718,2299 @@
   },
   "soak": {
    "seconds": 240,
-   "actions": 9433,
+   "actions": 9521,
    "samples": [
     {
-     "t": 0.54,
-     "heapMB": 6.313865661621094,
+     "t": 0.539,
+     "heapMB": 6.319755554199219,
      "nodes": 7955,
      "listeners": 872
     },
     {
-     "t": 1.225,
-     "heapMB": 7.473640441894531,
+     "t": 1.219,
+     "heapMB": 7.508251190185547,
      "nodes": 11954,
      "listeners": 1581
     },
     {
-     "t": 1.863,
-     "heapMB": 7.627490997314453,
+     "t": 1.857,
+     "heapMB": 7.667488098144531,
      "nodes": 12381,
      "listeners": 1340
     },
     {
-     "t": 2.477,
-     "heapMB": 8.252750396728516,
+     "t": 2.456,
+     "heapMB": 8.29659652709961,
      "nodes": 16181,
      "listeners": 2232
     },
     {
-     "t": 3.055,
-     "heapMB": 7.798130035400391,
-     "nodes": 12190,
-     "listeners": 1247
+     "t": 3.016,
+     "heapMB": 7.891883850097656,
+     "nodes": 12653,
+     "listeners": 1296
     },
     {
-     "t": 3.747,
-     "heapMB": 7.721691131591797,
+     "t": 3.678,
+     "heapMB": 7.7629852294921875,
      "nodes": 11973,
      "listeners": 1581
     },
     {
-     "t": 4.208,
-     "heapMB": 7.748893737792969,
+     "t": 4.139,
+     "heapMB": 7.788646697998047,
      "nodes": 12021,
      "listeners": 1592
     },
     {
-     "t": 4.766,
-     "heapMB": 7.930606842041016,
+     "t": 4.695,
+     "heapMB": 7.976036071777344,
      "nodes": 13001,
      "listeners": 1890
     },
     {
-     "t": 5.346,
-     "heapMB": 7.825222015380859,
+     "t": 5.256,
+     "heapMB": 7.873104095458984,
      "nodes": 12028,
      "listeners": 1293
     },
     {
-     "t": 5.905,
-     "heapMB": 7.958492279052734,
+     "t": 5.883,
+     "heapMB": 8.00478744506836,
      "nodes": 12434,
      "listeners": 1341
     },
     {
-     "t": 6.574,
-     "heapMB": 7.9177398681640625,
+     "t": 6.518,
+     "heapMB": 7.962902069091797,
      "nodes": 12085,
      "listeners": 1603
     },
     {
-     "t": 7.16,
-     "heapMB": 8.076587677001953,
+     "t": 7.116,
+     "heapMB": 8.133167266845703,
      "nodes": 12544,
      "listeners": 1622
     },
     {
-     "t": 7.726,
-     "heapMB": 8.053695678710938,
+     "t": 7.707,
+     "heapMB": 8.110576629638672,
      "nodes": 12459,
      "listeners": 1451
     },
     {
-     "t": 8.274,
-     "heapMB": 8.016010284423828,
+     "t": 8.259,
+     "heapMB": 8.044731140136719,
      "nodes": 11985,
      "listeners": 1312
     },
     {
-     "t": 8.889,
-     "heapMB": 8.043472290039062,
+     "t": 8.831,
+     "heapMB": 8.078857421875,
      "nodes": 12049,
      "listeners": 1373
     },
     {
-     "t": 9.509,
-     "heapMB": 8.426612854003906,
-     "nodes": 14547,
-     "listeners": 2070
+     "t": 9.438,
+     "heapMB": 8.53204345703125,
+     "nodes": 15010,
+     "listeners": 2119
     },
     {
-     "t": 10.047,
-     "heapMB": 8.123970031738281,
+     "t": 9.96,
+     "heapMB": 8.156265258789062,
      "nodes": 12272,
      "listeners": 1487
     },
     {
-     "t": 10.691,
-     "heapMB": 8.665790557861328,
+     "t": 10.563,
+     "heapMB": 8.720165252685547,
      "nodes": 15979,
      "listeners": 2225
     },
     {
-     "t": 11.326,
-     "heapMB": 8.414779663085938,
+     "t": 11.174,
+     "heapMB": 8.453689575195312,
      "nodes": 14126,
      "listeners": 2029
     },
     {
-     "t": 11.873,
-     "heapMB": 8.161979675292969,
+     "t": 11.72,
+     "heapMB": 8.199508666992188,
      "nodes": 12269,
      "listeners": 1614
     },
     {
-     "t": 12.407,
-     "heapMB": 8.441349029541016,
+     "t": 12.227,
+     "heapMB": 8.486896514892578,
      "nodes": 13609,
      "listeners": 1767
     },
     {
-     "t": 12.981,
-     "heapMB": 8.170394897460938,
+     "t": 12.811,
+     "heapMB": 8.198070526123047,
      "nodes": 12319,
      "listeners": 1635
     },
     {
-     "t": 13.536,
-     "heapMB": 8.185379028320312,
+     "t": 13.333,
+     "heapMB": 8.215461730957031,
      "nodes": 12320,
      "listeners": 1635
     },
     {
-     "t": 14.222,
-     "heapMB": 8.171577453613281,
+     "t": 13.986,
+     "heapMB": 8.217090606689453,
      "nodes": 12479,
      "listeners": 1648
     },
     {
-     "t": 14.673,
-     "heapMB": 8.119781494140625,
+     "t": 14.433,
+     "heapMB": 8.164066314697266,
      "nodes": 11929,
      "listeners": 1209
     },
     {
-     "t": 15.224,
-     "heapMB": 8.292961120605469,
+     "t": 14.988,
+     "heapMB": 8.337310791015625,
      "nodes": 12420,
      "listeners": 1401
     },
     {
-     "t": 15.86,
-     "heapMB": 8.261619567871094,
+     "t": 15.623,
+     "heapMB": 8.308334350585938,
      "nodes": 12350,
      "listeners": 1479
     },
     {
-     "t": 16.422,
-     "heapMB": 8.32790756225586,
+     "t": 16.184,
+     "heapMB": 8.37381362915039,
      "nodes": 12660,
      "listeners": 1286
     },
     {
-     "t": 17.041,
-     "heapMB": 8.253929138183594,
+     "t": 16.855,
+     "heapMB": 8.299259185791016,
      "nodes": 12125,
      "listeners": 1793
     },
     {
-     "t": 17.697,
-     "heapMB": 8.522125244140625,
+     "t": 17.527,
+     "heapMB": 8.555099487304688,
      "nodes": 13277,
      "listeners": 1577
     },
     {
-     "t": 18.258,
-     "heapMB": 8.507118225097656,
+     "t": 18.071,
+     "heapMB": 8.565410614013672,
      "nodes": 13256,
      "listeners": 1915
     },
     {
-     "t": 18.854,
-     "heapMB": 8.616039276123047,
+     "t": 18.651,
+     "heapMB": 8.662841796875,
      "nodes": 13947,
      "listeners": 1421
     },
     {
-     "t": 19.404,
-     "heapMB": 8.357131958007812,
+     "t": 19.283,
+     "heapMB": 8.401603698730469,
      "nodes": 12095,
      "listeners": 1225
     },
     {
-     "t": 19.975,
-     "heapMB": 8.69207763671875,
+     "t": 19.852,
+     "heapMB": 8.72314453125,
      "nodes": 13888,
      "listeners": 1420
     },
     {
-     "t": 20.614,
-     "heapMB": 8.535579681396484,
+     "t": 20.424,
+     "heapMB": 8.571388244628906,
      "nodes": 12843,
      "listeners": 1877
     },
     {
-     "t": 21.177,
-     "heapMB": 8.632041931152344,
+     "t": 20.988,
+     "heapMB": 8.665428161621094,
      "nodes": 13195,
      "listeners": 1486
     },
     {
-     "t": 21.746,
-     "heapMB": 8.454021453857422,
+     "t": 21.559,
+     "heapMB": 8.484901428222656,
      "nodes": 12397,
      "listeners": 1639
     },
     {
-     "t": 22.288,
-     "heapMB": 8.79376220703125,
+     "t": 22.084,
+     "heapMB": 8.836013793945312,
      "nodes": 13873,
      "listeners": 1418
     },
     {
-     "t": 22.89,
-     "heapMB": 8.852935791015625,
+     "t": 22.668,
+     "heapMB": 8.899478912353516,
      "nodes": 14330,
      "listeners": 1829
     },
     {
-     "t": 23.453,
-     "heapMB": 8.521671295166016,
-     "nodes": 12944,
+     "t": 23.199,
+     "heapMB": 8.560165405273438,
+     "nodes": 12945,
      "listeners": 1342
     },
     {
-     "t": 24.058,
-     "heapMB": 8.466388702392578,
+     "t": 23.771,
+     "heapMB": 8.514888763427734,
      "nodes": 12406,
      "listeners": 1640
     },
     {
-     "t": 24.623,
-     "heapMB": 8.947547912597656,
-     "nodes": 14669,
-     "listeners": 1865
+     "t": 24.369,
+     "heapMB": 8.933784484863281,
+     "nodes": 14366,
+     "listeners": 1835
     },
     {
-     "t": 25.17,
-     "heapMB": 8.590435028076172,
+     "t": 24.933,
+     "heapMB": 8.638683319091797,
      "nodes": 12727,
      "listeners": 1308
     },
     {
-     "t": 25.725,
-     "heapMB": 8.621513366699219,
+     "t": 25.502,
+     "heapMB": 8.673538208007812,
      "nodes": 12831,
      "listeners": 1320
     },
     {
-     "t": 26.303,
-     "heapMB": 8.644752502441406,
+     "t": 26.084,
+     "heapMB": 8.692626953125,
      "nodes": 12959,
      "listeners": 1900
     },
     {
-     "t": 26.937,
-     "heapMB": 8.655696868896484,
+     "t": 26.7,
+     "heapMB": 8.70138168334961,
      "nodes": 12830,
      "listeners": 1320
     },
     {
-     "t": 27.636,
-     "heapMB": 8.4931640625,
+     "t": 27.366,
+     "heapMB": 8.542198181152344,
      "nodes": 12361,
      "listeners": 1340
     },
     {
-     "t": 28.316,
-     "heapMB": 8.472537994384766,
-     "nodes": 12413,
+     "t": 28.026,
+     "heapMB": 8.51980209350586,
+     "nodes": 12414,
      "listeners": 1640
     },
     {
-     "t": 28.911,
-     "heapMB": 8.728580474853516,
+     "t": 28.61,
+     "heapMB": 8.779640197753906,
      "nodes": 13462,
      "listeners": 1368
     },
     {
-     "t": 29.489,
-     "heapMB": 8.427196502685547,
+     "t": 29.184,
+     "heapMB": 8.47684097290039,
      "nodes": 12084,
      "listeners": 1225
     },
     {
-     "t": 30.088,
-     "heapMB": 8.517723083496094,
+     "t": 29.782,
+     "heapMB": 8.568470001220703,
      "nodes": 12387,
      "listeners": 1261
     },
     {
-     "t": 30.805,
-     "heapMB": 8.683536529541016,
+     "t": 30.501,
+     "heapMB": 8.732067108154297,
      "nodes": 13307,
      "listeners": 1359
     },
     {
-     "t": 31.424,
-     "heapMB": 9.008647918701172,
+     "t": 31.129,
+     "heapMB": 9.057693481445312,
      "nodes": 15379,
      "listeners": 2147
     },
     {
-     "t": 32.055,
-     "heapMB": 8.69766616821289,
-     "nodes": 13569,
-     "listeners": 1384
+     "t": 31.818,
+     "heapMB": 8.68520736694336,
+     "nodes": 13106,
+     "listeners": 1335
     },
     {
-     "t": 32.674,
-     "heapMB": 8.8477783203125,
+     "t": 32.456,
+     "heapMB": 8.902305603027344,
      "nodes": 13656,
      "listeners": 1532
     },
     {
-     "t": 33.27,
-     "heapMB": 8.773792266845703,
+     "t": 33.082,
+     "heapMB": 8.793228149414062,
      "nodes": 12932,
      "listeners": 1332
     },
     {
-     "t": 33.818,
-     "heapMB": 8.5423583984375,
+     "t": 33.673,
+     "heapMB": 8.561573028564453,
      "nodes": 12251,
      "listeners": 1816
     },
     {
-     "t": 34.528,
-     "heapMB": 8.759235382080078,
+     "t": 34.358,
+     "heapMB": 8.789798736572266,
      "nodes": 13689,
      "listeners": 1964
     },
     {
-     "t": 35.057,
-     "heapMB": 8.582870483398438,
+     "t": 34.852,
+     "heapMB": 8.614360809326172,
      "nodes": 12296,
      "listeners": 1638
     },
     {
-     "t": 35.688,
-     "heapMB": 8.885879516601562,
+     "t": 35.469,
+     "heapMB": 8.919864654541016,
      "nodes": 13816,
      "listeners": 1778
     },
     {
-     "t": 36.241,
-     "heapMB": 8.730060577392578,
+     "t": 36.073,
+     "heapMB": 8.739021301269531,
      "nodes": 12719,
      "listeners": 1865
     },
     {
-     "t": 37.133,
-     "heapMB": 8.950855255126953,
+     "t": 36.962,
+     "heapMB": 8.952407836914062,
      "nodes": 14003,
      "listeners": 1512
     },
     {
-     "t": 37.792,
-     "heapMB": 8.95340347290039,
-     "nodes": 14101,
-     "listeners": 1631
+     "t": 37.708,
+     "heapMB": 8.861930847167969,
+     "nodes": 13638,
+     "listeners": 1582
     },
     {
-     "t": 38.341,
-     "heapMB": 8.777286529541016,
+     "t": 38.304,
+     "heapMB": 8.776870727539062,
      "nodes": 12708,
      "listeners": 1318
     },
     {
-     "t": 39.054,
-     "heapMB": 8.796207427978516,
+     "t": 39.016,
+     "heapMB": 8.796344757080078,
      "nodes": 13027,
      "listeners": 1583
     },
     {
-     "t": 39.721,
-     "heapMB": 8.917213439941406,
+     "t": 39.635,
+     "heapMB": 8.916793823242188,
      "nodes": 13901,
      "listeners": 1988
     },
     {
-     "t": 40.327,
-     "heapMB": 9.013492584228516,
-     "nodes": 13685,
-     "listeners": 1417
+     "t": 40.201,
+     "heapMB": 9.150508880615234,
+     "nodes": 14291,
+     "listeners": 1477
     },
     {
-     "t": 40.917,
-     "heapMB": 8.797470092773438,
+     "t": 40.797,
+     "heapMB": 8.804840087890625,
      "nodes": 12749,
      "listeners": 1378
     },
     {
-     "t": 41.653,
-     "heapMB": 8.953262329101562,
+     "t": 41.528,
+     "heapMB": 8.960556030273438,
      "nodes": 13534,
      "listeners": 1455
     },
     {
-     "t": 42.288,
-     "heapMB": 8.914222717285156,
+     "t": 42.134,
+     "heapMB": 8.919410705566406,
      "nodes": 13348,
      "listeners": 1931
     },
     {
-     "t": 42.87,
-     "heapMB": 8.840351104736328,
+     "t": 42.798,
+     "heapMB": 8.844379425048828,
      "nodes": 12854,
      "listeners": 1390
     },
     {
-     "t": 43.532,
-     "heapMB": 8.98751449584961,
+     "t": 43.477,
+     "heapMB": 8.974658966064453,
      "nodes": 13413,
      "listeners": 1870
     },
     {
-     "t": 44.298,
-     "heapMB": 8.748619079589844,
+     "t": 44.042,
+     "heapMB": 8.738811492919922,
      "nodes": 12408,
      "listeners": 1262
     },
     {
-     "t": 44.886,
-     "heapMB": 8.727622985839844,
+     "t": 44.635,
+     "heapMB": 8.7354736328125,
      "nodes": 12383,
      "listeners": 1262
     },
     {
-     "t": 45.522,
-     "heapMB": 8.983985900878906,
+     "t": 45.302,
+     "heapMB": 8.951725006103516,
      "nodes": 14326,
      "listeners": 1858
     },
     {
-     "t": 46.071,
-     "heapMB": 8.857555389404297,
+     "t": 45.867,
+     "heapMB": 8.824527740478516,
      "nodes": 12822,
      "listeners": 1310
     },
     {
-     "t": 46.696,
-     "heapMB": 8.856529235839844,
+     "t": 46.492,
+     "heapMB": 8.810920715332031,
      "nodes": 12782,
      "listeners": 1588
     },
     {
-     "t": 47.274,
-     "heapMB": 8.903179168701172,
+     "t": 47.069,
+     "heapMB": 8.868568420410156,
      "nodes": 13034,
      "listeners": 1902
     },
     {
-     "t": 47.983,
-     "heapMB": 9.277393341064453,
+     "t": 47.764,
+     "heapMB": 9.265655517578125,
      "nodes": 15541,
      "listeners": 1912
     },
     {
-     "t": 48.574,
-     "heapMB": 8.847343444824219,
+     "t": 48.339,
+     "heapMB": 8.82424545288086,
      "nodes": 12729,
      "listeners": 1866
     },
     {
-     "t": 49.326,
-     "heapMB": 9.465721130371094,
-     "nodes": 16884,
-     "listeners": 2307
+     "t": 49.29,
+     "heapMB": 9.157325744628906,
+     "nodes": 15032,
+     "listeners": 2111
     },
     {
-     "t": 50.022,
-     "heapMB": 9.184982299804688,
+     "t": 50.036,
+     "heapMB": 9.159828186035156,
      "nodes": 14934,
      "listeners": 1671
     },
     {
-     "t": 50.539,
-     "heapMB": 8.836811065673828,
+     "t": 50.568,
+     "heapMB": 8.813484191894531,
      "nodes": 12689,
      "listeners": 1686
     },
     {
-     "t": 51.021,
-     "heapMB": 8.846202850341797,
+     "t": 51.083,
+     "heapMB": 8.82149887084961,
      "nodes": 12688,
      "listeners": 1686
     },
     {
-     "t": 51.51,
-     "heapMB": 8.937789916992188,
+     "t": 51.575,
+     "heapMB": 8.908573150634766,
      "nodes": 13025,
      "listeners": 1703
     },
     {
-     "t": 52.029,
-     "heapMB": 8.854808807373047,
+     "t": 52.167,
+     "heapMB": 8.820323944091797,
      "nodes": 12709,
      "listeners": 1517
     },
     {
-     "t": 52.745,
-     "heapMB": 8.836814880371094,
+     "t": 52.872,
+     "heapMB": 8.790069580078125,
      "nodes": 12701,
      "listeners": 1855
     },
     {
-     "t": 53.306,
-     "heapMB": 8.980323791503906,
+     "t": 53.435,
+     "heapMB": 8.947395324707031,
      "nodes": 13586,
      "listeners": 1783
     },
     {
-     "t": 53.871,
-     "heapMB": 8.951343536376953,
+     "t": 53.999,
+     "heapMB": 8.89645767211914,
      "nodes": 12874,
      "listeners": 1311
     },
     {
-     "t": 54.472,
-     "heapMB": 8.953041076660156,
+     "t": 54.586,
+     "heapMB": 8.930423736572266,
      "nodes": 12978,
      "listeners": 1343
     },
     {
-     "t": 55.013,
-     "heapMB": 8.959529876708984,
+     "t": 55.191,
+     "heapMB": 8.9375,
      "nodes": 12980,
      "listeners": 1343
     },
     {
-     "t": 55.624,
-     "heapMB": 8.895423889160156,
+     "t": 55.783,
+     "heapMB": 8.875072479248047,
      "nodes": 12776,
      "listeners": 1299
     },
     {
-     "t": 56.241,
-     "heapMB": 8.961017608642578,
+     "t": 56.404,
+     "heapMB": 8.941261291503906,
      "nodes": 13110,
      "listeners": 1903
     },
     {
-     "t": 56.821,
-     "heapMB": 8.844017028808594,
-     "nodes": 12630,
-     "listeners": 1535
+     "t": 56.965,
+     "heapMB": 8.892646789550781,
+     "nodes": 13093,
+     "listeners": 1584
     },
     {
-     "t": 57.425,
-     "heapMB": 9.032669067382812,
+     "t": 57.57,
+     "heapMB": 9.012802124023438,
      "nodes": 13564,
      "listeners": 1952
     },
     {
-     "t": 58.117,
-     "heapMB": 8.992618560791016,
+     "t": 58.27,
+     "heapMB": 8.971855163574219,
      "nodes": 13217,
      "listeners": 1915
     },
     {
-     "t": 58.903,
-     "heapMB": 8.85458755493164,
+     "t": 59.031,
+     "heapMB": 8.816314697265625,
      "nodes": 12568,
      "listeners": 1275
     },
     {
-     "t": 59.388,
-     "heapMB": 8.972564697265625,
+     "t": 59.535,
+     "heapMB": 8.93405532836914,
      "nodes": 13058,
      "listeners": 1733
     },
     {
-     "t": 59.915,
-     "heapMB": 8.849773406982422,
+     "t": 60.063,
+     "heapMB": 8.811851501464844,
      "nodes": 12623,
      "listeners": 1535
     },
     {
-     "t": 60.575,
-     "heapMB": 9.463981628417969,
+     "t": 60.7,
+     "heapMB": 9.448917388916016,
      "nodes": 16870,
      "listeners": 2296
     },
     {
-     "t": 61.257,
-     "heapMB": 9.318092346191406,
-     "nodes": 15939,
-     "listeners": 2198
+     "t": 61.304,
+     "heapMB": 9.385555267333984,
+     "nodes": 16403,
+     "listeners": 2247
     },
     {
-     "t": 61.94,
-     "heapMB": 9.309696197509766,
+     "t": 61.939,
+     "heapMB": 9.280220031738281,
      "nodes": 15676,
      "listeners": 2173
     },
     {
-     "t": 62.509,
-     "heapMB": 8.941768646240234,
+     "t": 62.541,
+     "heapMB": 8.906425476074219,
      "nodes": 12943,
      "listeners": 1631
     },
     {
-     "t": 63.057,
-     "heapMB": 8.948722839355469,
+     "t": 63.127,
+     "heapMB": 8.90692138671875,
      "nodes": 12916,
      "listeners": 1391
     },
     {
-     "t": 63.684,
-     "heapMB": 9.07370376586914,
+     "t": 63.752,
+     "heapMB": 9.039527893066406,
      "nodes": 13378,
      "listeners": 1829
     },
     {
-     "t": 64.344,
-     "heapMB": 9.131084442138672,
-     "nodes": 13525,
-     "listeners": 1463
+     "t": 64.387,
+     "heapMB": 9.12588119506836,
+     "nodes": 13628,
+     "listeners": 1475
     },
     {
-     "t": 65.058,
-     "heapMB": 9.537349700927734,
+     "t": 65.07,
+     "heapMB": 9.521736145019531,
      "nodes": 16558,
      "listeners": 2280
     },
     {
-     "t": 65.586,
-     "heapMB": 9.083881378173828,
+     "t": 65.633,
+     "heapMB": 9.059364318847656,
      "nodes": 13206,
      "listeners": 1357
     },
     {
-     "t": 66.092,
-     "heapMB": 8.953865051269531,
+     "t": 66.142,
+     "heapMB": 8.921710968017578,
      "nodes": 12823,
      "listeners": 1877
     },
     {
-     "t": 66.661,
-     "heapMB": 8.915550231933594,
+     "t": 66.708,
+     "heapMB": 8.892936706542969,
      "nodes": 12669,
      "listeners": 1605
     },
     {
-     "t": 67.252,
-     "heapMB": 8.978569030761719,
+     "t": 67.281,
+     "heapMB": 8.968757629394531,
      "nodes": 12808,
      "listeners": 1309
     },
     {
-     "t": 67.858,
-     "heapMB": 9.015613555908203,
+     "t": 67.883,
+     "heapMB": 8.998207092285156,
      "nodes": 13103,
      "listeners": 1723
     },
     {
-     "t": 68.423,
-     "heapMB": 9.461982727050781,
+     "t": 68.473,
+     "heapMB": 9.456195831298828,
      "nodes": 16365,
      "listeners": 1997
     },
     {
-     "t": 69.034,
-     "heapMB": 8.936992645263672,
+     "t": 69.111,
+     "heapMB": 8.920696258544922,
      "nodes": 12771,
      "listeners": 1617
     },
     {
-     "t": 69.645,
-     "heapMB": 9.305473327636719,
+     "t": 69.72,
+     "heapMB": 9.303413391113281,
      "nodes": 14641,
      "listeners": 1584
     },
     {
-     "t": 70.272,
-     "heapMB": 9.00521469116211,
-     "nodes": 12907,
-     "listeners": 1699
+     "t": 70.284,
+     "heapMB": 9.027889251708984,
+     "nodes": 13010,
+     "listeners": 1711
     },
     {
-     "t": 70.854,
-     "heapMB": 9.002094268798828,
+     "t": 70.848,
+     "heapMB": 8.996101379394531,
      "nodes": 12816,
      "listeners": 1309
     },
     {
-     "t": 71.408,
-     "heapMB": 9.005851745605469,
+     "t": 71.368,
+     "heapMB": 9.002052307128906,
      "nodes": 12943,
      "listeners": 1889
     },
     {
-     "t": 72.023,
-     "heapMB": 9.13448715209961,
+     "t": 72.003,
+     "heapMB": 9.13187026977539,
      "nodes": 13868,
      "listeners": 1987
     },
     {
-     "t": 72.568,
-     "heapMB": 9.024181365966797,
+     "t": 72.547,
+     "heapMB": 9.022865295410156,
      "nodes": 12920,
      "listeners": 1321
     },
     {
-     "t": 73.143,
-     "heapMB": 9.20883560180664,
+     "t": 73.104,
+     "heapMB": 9.208026885986328,
      "nodes": 13802,
      "listeners": 1558
     },
     {
-     "t": 73.734,
-     "heapMB": 9.22939682006836,
+     "t": 73.749,
+     "heapMB": 9.239898681640625,
      "nodes": 13902,
      "listeners": 1998
     },
     {
-     "t": 74.427,
-     "heapMB": 9.171745300292969,
+     "t": 74.436,
+     "heapMB": 9.156852722167969,
      "nodes": 13557,
      "listeners": 1961
     },
     {
-     "t": 75.053,
-     "heapMB": 9.37017822265625,
-     "nodes": 14815,
+     "t": 75.098,
+     "heapMB": 9.354927062988281,
+     "nodes": 14814,
      "listeners": 1528
     },
     {
-     "t": 75.739,
-     "heapMB": 9.017871856689453,
+     "t": 75.733,
+     "heapMB": 9.005847930908203,
      "nodes": 12915,
      "listeners": 1321
     },
     {
-     "t": 76.327,
-     "heapMB": 9.103935241699219,
+     "t": 76.324,
+     "heapMB": 9.096633911132812,
      "nodes": 13303,
      "listeners": 1767
     },
     {
-     "t": 76.919,
-     "heapMB": 8.973464965820312,
+     "t": 76.848,
+     "heapMB": 8.96187973022461,
      "nodes": 12945,
      "listeners": 1707
     },
     {
-     "t": 77.524,
-     "heapMB": 8.964012145996094,
+     "t": 77.505,
+     "heapMB": 8.953250885009766,
      "nodes": 12960,
      "listeners": 1897
     },
     {
-     "t": 78.102,
-     "heapMB": 9.11324691772461,
+     "t": 78.032,
+     "heapMB": 9.102718353271484,
      "nodes": 13348,
      "listeners": 1377
     },
     {
-     "t": 78.737,
-     "heapMB": 8.96722412109375,
+     "t": 78.649,
+     "heapMB": 8.959857940673828,
      "nodes": 13226,
      "listeners": 1922
     },
     {
-     "t": 79.357,
-     "heapMB": 9.427146911621094,
-     "nodes": 15414,
-     "listeners": 2175
+     "t": 79.317,
+     "heapMB": 9.341468811035156,
+     "nodes": 14951,
+     "listeners": 2126
     },
     {
-     "t": 79.994,
-     "heapMB": 9.196460723876953,
+     "t": 79.988,
+     "heapMB": 9.194400787353516,
      "nodes": 13782,
      "listeners": 1993
     },
     {
-     "t": 80.67,
-     "heapMB": 9.241409301757812,
+     "t": 80.682,
+     "heapMB": 9.214317321777344,
      "nodes": 13714,
      "listeners": 1417
     },
     {
-     "t": 81.251,
-     "heapMB": 9.224346160888672,
+     "t": 81.313,
+     "heapMB": 9.212532043457031,
      "nodes": 13907,
      "listeners": 1558
     },
     {
-     "t": 81.859,
-     "heapMB": 9.477691650390625,
+     "t": 81.905,
+     "heapMB": 9.464637756347656,
      "nodes": 15967,
      "listeners": 2209
     },
     {
-     "t": 82.453,
-     "heapMB": 9.117374420166016,
+     "t": 82.496,
+     "heapMB": 9.127803802490234,
      "nodes": 13433,
      "listeners": 1781
     },
     {
-     "t": 83.147,
-     "heapMB": 8.750858306884766,
-     "nodes": 12593,
-     "listeners": 1640
+     "t": 83.159,
+     "heapMB": 8.754112243652344,
+     "nodes": 12696,
+     "listeners": 1652
     },
     {
-     "t": 83.752,
-     "heapMB": 9.111186981201172,
+     "t": 83.766,
+     "heapMB": 9.10336685180664,
      "nodes": 14288,
      "listeners": 1846
     },
     {
-     "t": 84.371,
-     "heapMB": 8.9957275390625,
+     "t": 84.4,
+     "heapMB": 8.994144439697266,
      "nodes": 13300,
      "listeners": 1384
     },
     {
-     "t": 85.051,
-     "heapMB": 8.745491027832031,
+     "t": 85.047,
+     "heapMB": 8.719917297363281,
      "nodes": 12477,
      "listeners": 1666
     },
     {
-     "t": 85.521,
-     "heapMB": 8.760295867919922,
+     "t": 85.5,
+     "heapMB": 8.737415313720703,
      "nodes": 12469,
      "listeners": 1666
     },
     {
-     "t": 86.13,
-     "heapMB": 9.294849395751953,
+     "t": 86.068,
+     "heapMB": 9.28195571899414,
      "nodes": 15437,
      "listeners": 2151
     },
     {
-     "t": 86.721,
-     "heapMB": 8.814529418945312,
+     "t": 86.654,
+     "heapMB": 8.795639038085938,
      "nodes": 12639,
      "listeners": 1700
     },
     {
-     "t": 87.41,
-     "heapMB": 9.024581909179688,
+     "t": 87.357,
+     "heapMB": 9.017070770263672,
      "nodes": 14035,
      "listeners": 1469
     },
     {
-     "t": 88.02,
-     "heapMB": 9.13393783569336,
+     "t": 87.948,
+     "heapMB": 9.10330581665039,
      "nodes": 13188,
      "listeners": 1735
     },
     {
-     "t": 88.551,
-     "heapMB": 9.141731262207031,
+     "t": 88.446,
+     "heapMB": 9.108489990234375,
      "nodes": 13244,
      "listeners": 1925
     },
     {
-     "t": 89.195,
-     "heapMB": 8.93112564086914,
+     "t": 89.071,
+     "heapMB": 8.90230941772461,
      "nodes": 12559,
      "listeners": 1563
     },
     {
-     "t": 89.748,
-     "heapMB": 9.097442626953125,
+     "t": 89.626,
+     "heapMB": 9.061126708984375,
      "nodes": 13100,
      "listeners": 1723
     },
     {
-     "t": 90.421,
-     "heapMB": 9.47406005859375,
+     "t": 90.317,
+     "heapMB": 9.4390869140625,
      "nodes": 14843,
      "listeners": 1917
     },
     {
-     "t": 91.068,
-     "heapMB": 9.613868713378906,
+     "t": 91.05,
+     "heapMB": 9.58565902709961,
      "nodes": 16069,
      "listeners": 2230
     },
     {
-     "t": 91.735,
-     "heapMB": 9.111377716064453,
+     "t": 91.63,
+     "heapMB": 9.080116271972656,
      "nodes": 13011,
      "listeners": 1333
     },
     {
-     "t": 92.306,
-     "heapMB": 9.215293884277344,
-     "nodes": 13320,
+     "t": 92.186,
+     "heapMB": 9.184513092041016,
+     "nodes": 13319,
      "listeners": 1369
     },
     {
-     "t": 92.92,
-     "heapMB": 9.565753936767578,
+     "t": 92.765,
+     "heapMB": 9.533050537109375,
      "nodes": 15041,
      "listeners": 1945
     },
     {
-     "t": 93.731,
-     "heapMB": 9.22726821899414,
+     "t": 93.547,
+     "heapMB": 9.215145111083984,
      "nodes": 13805,
      "listeners": 1878
     },
     {
-     "t": 94.321,
-     "heapMB": 9.584877014160156,
+     "t": 94.099,
+     "heapMB": 9.564388275146484,
      "nodes": 16129,
      "listeners": 2063
     },
     {
-     "t": 94.786,
-     "heapMB": 9.194755554199219,
+     "t": 94.553,
+     "heapMB": 9.168575286865234,
      "nodes": 13345,
      "listeners": 1769
     },
     {
-     "t": 95.357,
-     "heapMB": 9.272151947021484,
+     "t": 95.121,
+     "heapMB": 9.247871398925781,
      "nodes": 13579,
      "listeners": 1415
     },
     {
-     "t": 96.005,
-     "heapMB": 9.333488464355469,
+     "t": 95.768,
+     "heapMB": 9.309257507324219,
      "nodes": 13878,
      "listeners": 1829
     },
     {
-     "t": 96.668,
-     "heapMB": 9.083263397216797,
+     "t": 96.38,
+     "heapMB": 9.056373596191406,
      "nodes": 13370,
      "listeners": 1386
     },
     {
-     "t": 97.262,
-     "heapMB": 9.208000183105469,
-     "nodes": 14396,
-     "listeners": 1894
+     "t": 97.011,
+     "heapMB": 9.123298645019531,
+     "nodes": 13933,
+     "listeners": 1845
     },
     {
-     "t": 97.824,
-     "heapMB": 9.164592742919922,
+     "t": 97.553,
+     "heapMB": 9.152229309082031,
      "nodes": 13800,
      "listeners": 2072
     },
     {
-     "t": 98.363,
-     "heapMB": 9.33053970336914,
+     "t": 98.145,
+     "heapMB": 9.310535430908203,
      "nodes": 13905,
      "listeners": 2039
     },
     {
-     "t": 98.978,
-     "heapMB": 9.195507049560547,
+     "t": 98.776,
+     "heapMB": 9.16262435913086,
      "nodes": 13372,
      "listeners": 1829
     },
     {
-     "t": 99.699,
-     "heapMB": 9.170608520507812,
+     "t": 99.528,
+     "heapMB": 9.146232604980469,
      "nodes": 13368,
      "listeners": 1799
     },
     {
-     "t": 100.415,
-     "heapMB": 9.709457397460938,
+     "t": 100.287,
+     "heapMB": 9.700801849365234,
      "nodes": 16514,
      "listeners": 2279
     },
     {
-     "t": 101.21,
-     "heapMB": 9.445453643798828,
+     "t": 101.074,
+     "heapMB": 9.42245864868164,
      "nodes": 15049,
      "listeners": 2011
     },
     {
-     "t": 101.82,
-     "heapMB": 9.166431427001953,
+     "t": 101.665,
+     "heapMB": 9.122783660888672,
      "nodes": 13190,
      "listeners": 1735
     },
     {
-     "t": 102.417,
-     "heapMB": 9.451156616210938,
+     "t": 102.264,
+     "heapMB": 9.422054290771484,
      "nodes": 15135,
      "listeners": 2123
     },
     {
-     "t": 103.254,
-     "heapMB": 9.159996032714844,
+     "t": 103.114,
+     "heapMB": 9.12673568725586,
      "nodes": 13153,
      "listeners": 1347
     },
     {
-     "t": 103.853,
-     "heapMB": 9.151809692382812,
-     "nodes": 13149,
-     "listeners": 1745
+     "t": 103.699,
+     "heapMB": 9.075775146484375,
+     "nodes": 13046,
+     "listeners": 1733
     },
     {
-     "t": 104.388,
-     "heapMB": 9.070404052734375,
+     "t": 104.218,
+     "heapMB": 9.02371597290039,
      "nodes": 12893,
      "listeners": 1879
     },
     {
-     "t": 104.972,
-     "heapMB": 9.0743408203125,
-     "nodes": 12859,
-     "listeners": 1709
+     "t": 104.769,
+     "heapMB": 9.187858581542969,
+     "nodes": 13785,
+     "listeners": 1807
     },
     {
-     "t": 105.603,
-     "heapMB": 9.334449768066406,
+     "t": 105.368,
+     "heapMB": 9.314002990722656,
      "nodes": 13681,
      "listeners": 1407
     },
     {
-     "t": 106.347,
-     "heapMB": 9.67593765258789,
-     "nodes": 16359,
-     "listeners": 2207
+     "t": 106.013,
+     "heapMB": 9.707134246826172,
+     "nodes": 16822,
+     "listeners": 2256
     },
     {
-     "t": 106.918,
-     "heapMB": 9.22784423828125,
+     "t": 106.547,
+     "heapMB": 9.183830261230469,
      "nodes": 13269,
      "listeners": 1359
     },
     {
-     "t": 107.468,
-     "heapMB": 9.103694915771484,
+     "t": 107.079,
+     "heapMB": 9.078529357910156,
      "nodes": 12863,
      "listeners": 1311
     },
     {
-     "t": 108.154,
-     "heapMB": 9.362934112548828,
-     "nodes": 14849,
-     "listeners": 2087
+     "t": 107.733,
+     "heapMB": 9.406024932861328,
+     "nodes": 15312,
+     "listeners": 2136
     },
     {
-     "t": 108.801,
-     "heapMB": 9.289730072021484,
+     "t": 108.381,
+     "heapMB": 9.272769927978516,
      "nodes": 13680,
      "listeners": 1805
     },
     {
-     "t": 109.382,
-     "heapMB": 9.850997924804688,
-     "nodes": 16648,
-     "listeners": 2276
+     "t": 108.918,
+     "heapMB": 9.899406433105469,
+     "nodes": 16871,
+     "listeners": 2299
     },
     {
-     "t": 109.969,
-     "heapMB": 9.392528533935547,
+     "t": 109.532,
+     "heapMB": 9.36208724975586,
      "nodes": 13794,
      "listeners": 1807
     },
     {
-     "t": 110.518,
-     "heapMB": 9.595767974853516,
+     "t": 110.081,
+     "heapMB": 9.565547943115234,
      "nodes": 15232,
      "listeners": 2144
     },
     {
-     "t": 111.159,
-     "heapMB": 9.534812927246094,
+     "t": 110.72,
+     "heapMB": 9.513229370117188,
      "nodes": 14561,
      "listeners": 1523
     },
     {
-     "t": 111.851,
-     "heapMB": 9.535175323486328,
+     "t": 111.445,
+     "heapMB": 9.5069580078125,
      "nodes": 14832,
      "listeners": 1609
     },
     {
-     "t": 112.458,
-     "heapMB": 9.249717712402344,
+     "t": 112.05,
+     "heapMB": 9.197193145751953,
      "nodes": 13282,
      "listeners": 1499
     },
     {
-     "t": 113.121,
-     "heapMB": 9.632152557373047,
+     "t": 112.716,
+     "heapMB": 9.579814910888672,
      "nodes": 16164,
      "listeners": 2233
     },
     {
-     "t": 113.837,
-     "heapMB": 9.427532196044922,
-     "nodes": 13983,
+     "t": 113.418,
+     "heapMB": 9.370384216308594,
+     "nodes": 13984,
      "listeners": 1443
     },
     {
-     "t": 114.568,
-     "heapMB": 9.737632751464844,
+     "t": 114.147,
+     "heapMB": 9.700569152832031,
      "nodes": 16196,
      "listeners": 1696
     },
     {
-     "t": 115.185,
-     "heapMB": 9.202396392822266,
+     "t": 114.738,
+     "heapMB": 9.162498474121094,
      "nodes": 13256,
      "listeners": 1787
     },
     {
-     "t": 115.742,
-     "heapMB": 9.244537353515625,
+     "t": 115.292,
+     "heapMB": 9.205623626708984,
      "nodes": 13274,
      "listeners": 1379
     },
     {
-     "t": 116.369,
-     "heapMB": 9.350074768066406,
-     "nodes": 13999,
-     "listeners": 1807
+     "t": 115.949,
+     "heapMB": 9.239662170410156,
+     "nodes": 13615,
+     "listeners": 1770
     },
     {
-     "t": 117.222,
-     "heapMB": 9.25960922241211,
+     "t": 116.512,
+     "heapMB": 9.221611022949219,
      "nodes": 13553,
      "listeners": 1822
     },
     {
-     "t": 117.858,
-     "heapMB": 9.736190795898438,
-     "nodes": 16184,
+     "t": 117.139,
+     "heapMB": 9.685535430908203,
+     "nodes": 16185,
      "listeners": 1675
     },
     {
-     "t": 118.502,
-     "heapMB": 9.204700469970703,
+     "t": 117.798,
+     "heapMB": 9.178657531738281,
      "nodes": 13314,
      "listeners": 1360
     },
     {
-     "t": 119.089,
-     "heapMB": 9.37225341796875,
+     "t": 118.384,
+     "heapMB": 9.34619140625,
      "nodes": 13768,
      "listeners": 1997
     },
     {
-     "t": 119.704,
-     "heapMB": 9.454055786132812,
+     "t": 118.983,
+     "heapMB": 9.425769805908203,
      "nodes": 14007,
      "listeners": 2011
     },
     {
-     "t": 120.396,
-     "heapMB": 9.304397583007812,
+     "t": 119.645,
+     "heapMB": 9.259754180908203,
      "nodes": 13512,
      "listeners": 1951
     },
     {
-     "t": 121.121,
-     "heapMB": 9.548233032226562,
+     "t": 120.316,
+     "heapMB": 9.510608673095703,
      "nodes": 14305,
      "listeners": 2117
     },
     {
-     "t": 121.8,
-     "heapMB": 9.463199615478516,
+     "t": 121.197,
+     "heapMB": 9.459888458251953,
      "nodes": 13980,
      "listeners": 1463
     },
     {
-     "t": 122.283,
-     "heapMB": 9.487812042236328,
+     "t": 121.68,
+     "heapMB": 9.478511810302734,
      "nodes": 14034,
      "listeners": 1452
     },
     {
-     "t": 122.868,
-     "heapMB": 9.530956268310547,
+     "t": 122.28,
+     "heapMB": 9.516677856445312,
      "nodes": 14201,
      "listeners": 1855
     },
     {
-     "t": 123.508,
-     "heapMB": 9.285816192626953,
+     "t": 122.884,
+     "heapMB": 9.244338989257812,
      "nodes": 13429,
      "listeners": 1949
     },
     {
-     "t": 124.17,
-     "heapMB": 9.629253387451172,
-     "nodes": 15200,
-     "listeners": 1576
+     "t": 123.5,
+     "heapMB": 9.684131622314453,
+     "nodes": 15663,
+     "listeners": 1625
     },
     {
-     "t": 124.826,
-     "heapMB": 9.38144302368164,
+     "t": 124.152,
+     "heapMB": 9.355453491210938,
      "nodes": 14157,
      "listeners": 2023
     },
     {
-     "t": 125.571,
-     "heapMB": 9.382694244384766,
+     "t": 124.932,
+     "heapMB": 9.359813690185547,
      "nodes": 14122,
      "listeners": 1833
     },
     {
-     "t": 126.236,
-     "heapMB": 9.445636749267578,
+     "t": 125.547,
+     "heapMB": 9.421314239501953,
      "nodes": 13819,
      "listeners": 1429
     },
     {
-     "t": 126.818,
-     "heapMB": 9.471664428710938,
+     "t": 126.097,
+     "heapMB": 9.45025634765625,
      "nodes": 13978,
      "listeners": 1463
     },
     {
-     "t": 127.505,
-     "heapMB": 10.008842468261719,
-     "nodes": 17812,
-     "listeners": 2415
+     "t": 126.837,
+     "heapMB": 9.918827056884766,
+     "nodes": 17349,
+     "listeners": 2366
     },
     {
-     "t": 128.241,
-     "heapMB": 9.647285461425781,
+     "t": 127.603,
+     "heapMB": 9.626201629638672,
      "nodes": 15380,
      "listeners": 2228
     },
     {
-     "t": 128.919,
-     "heapMB": 9.601276397705078,
+     "t": 128.265,
+     "heapMB": 9.576126098632812,
      "nodes": 14478,
      "listeners": 1901
     },
     {
-     "t": 129.487,
-     "heapMB": 9.509662628173828,
+     "t": 128.824,
+     "heapMB": 9.486007690429688,
      "nodes": 14200,
      "listeners": 2165
     },
     {
-     "t": 130.139,
-     "heapMB": 9.620307922363281,
+     "t": 129.44,
+     "heapMB": 9.586429595947266,
      "nodes": 15187,
      "listeners": 2134
     },
     {
-     "t": 130.753,
-     "heapMB": 9.42795181274414,
+     "t": 130.032,
+     "heapMB": 9.3931884765625,
      "nodes": 13768,
      "listeners": 1817
     },
     {
-     "t": 131.335,
-     "heapMB": 9.561958312988281,
+     "t": 130.648,
+     "heapMB": 9.53265380859375,
      "nodes": 14705,
      "listeners": 1915
     },
     {
-     "t": 131.786,
-     "heapMB": 9.436103820800781,
+     "t": 131.114,
+     "heapMB": 9.4140625,
      "nodes": 13768,
      "listeners": 1817
     },
     {
-     "t": 132.417,
-     "heapMB": 9.628623962402344,
+     "t": 131.712,
+     "heapMB": 9.61203384399414,
      "nodes": 14537,
      "listeners": 2071
     },
     {
-     "t": 132.986,
-     "heapMB": 9.876304626464844,
-     "nodes": 16276,
-     "listeners": 2255
+     "t": 132.299,
+     "heapMB": 9.922859191894531,
+     "nodes": 16739,
+     "listeners": 2304
     },
     {
-     "t": 133.666,
-     "heapMB": 9.659137725830078,
+     "t": 132.997,
+     "heapMB": 9.619049072265625,
      "nodes": 14535,
      "listeners": 1583
     },
     {
-     "t": 134.491,
-     "heapMB": 9.788288116455078,
+     "t": 133.739,
+     "heapMB": 9.766094207763672,
      "nodes": 15818,
      "listeners": 2396
     },
     {
-     "t": 135.085,
-     "heapMB": 9.60599136352539,
+     "t": 134.315,
+     "heapMB": 9.579627990722656,
      "nodes": 14387,
      "listeners": 1889
     },
     {
-     "t": 135.602,
-     "heapMB": 9.259269714355469,
+     "t": 134.831,
+     "heapMB": 9.231056213378906,
      "nodes": 13162,
      "listeners": 1745
     },
     {
-     "t": 136.171,
-     "heapMB": 9.39981460571289,
+     "t": 135.431,
+     "heapMB": 9.356803894042969,
      "nodes": 13677,
      "listeners": 1805
     },
     {
-     "t": 136.884,
-     "heapMB": 9.610286712646484,
+     "t": 136.095,
+     "heapMB": 9.566944122314453,
      "nodes": 14298,
      "listeners": 1479
     },
     {
-     "t": 137.619,
-     "heapMB": 9.520458221435547,
-     "nodes": 13998,
-     "listeners": 1443
+     "t": 136.798,
+     "heapMB": 9.527812957763672,
+     "nodes": 14204,
+     "listeners": 1467
     },
     {
-     "t": 138.288,
-     "heapMB": 9.195484161376953,
+     "t": 137.465,
+     "heapMB": 9.153247833251953,
      "nodes": 13381,
      "listeners": 1406
     },
     {
-     "t": 138.98,
-     "heapMB": 9.578006744384766,
+     "t": 138.157,
+     "heapMB": 9.513900756835938,
      "nodes": 14321,
      "listeners": 2147
     },
     {
-     "t": 139.653,
-     "heapMB": 9.58056640625,
+     "t": 138.813,
+     "heapMB": 9.527915954589844,
      "nodes": 14586,
      "listeners": 2072
     },
     {
-     "t": 140.301,
-     "heapMB": 9.459033966064453,
+     "t": 139.463,
+     "heapMB": 9.400947570800781,
      "nodes": 13832,
      "listeners": 1427
     },
     {
-     "t": 140.967,
-     "heapMB": 9.496078491210938,
+     "t": 140.145,
+     "heapMB": 9.43792724609375,
      "nodes": 13937,
      "listeners": 1439
     },
     {
-     "t": 141.651,
-     "heapMB": 9.276668548583984,
+     "t": 140.832,
+     "heapMB": 9.229961395263672,
      "nodes": 13351,
      "listeners": 1935
     },
     {
-     "t": 142.312,
-     "heapMB": 9.566768646240234,
+     "t": 141.452,
+     "heapMB": 9.522518157958984,
      "nodes": 14372,
      "listeners": 2245
     },
     {
-     "t": 143.006,
-     "heapMB": 9.574665069580078,
-     "nodes": 15308,
-     "listeners": 2143
+     "t": 142.151,
+     "heapMB": 9.544994354248047,
+     "nodes": 15205,
+     "listeners": 2131
     },
     {
-     "t": 143.611,
-     "heapMB": 9.643051147460938,
+     "t": 142.745,
+     "heapMB": 9.616157531738281,
      "nodes": 14586,
      "listeners": 2329
     },
     {
-     "t": 144.202,
-     "heapMB": 9.296138763427734,
+     "t": 143.331,
+     "heapMB": 9.255416870117188,
      "nodes": 13322,
      "listeners": 1765
     },
     {
-     "t": 144.869,
-     "heapMB": 9.681034088134766,
+     "t": 143.981,
+     "heapMB": 9.626914978027344,
      "nodes": 14729,
      "listeners": 1554
     },
     {
-     "t": 145.49,
-     "heapMB": 9.809146881103516,
+     "t": 144.604,
+     "heapMB": 9.753238677978516,
      "nodes": 15629,
      "listeners": 2193
     },
     {
-     "t": 146.137,
-     "heapMB": 9.673698425292969,
-     "nodes": 14739,
+     "t": 145.286,
+     "heapMB": 9.641361236572266,
+     "nodes": 14737,
      "listeners": 1554
     },
     {
-     "t": 146.786,
-     "heapMB": 9.991832733154297,
+     "t": 145.849,
+     "heapMB": 9.962047576904297,
      "nodes": 16707,
      "listeners": 2300
     },
     {
-     "t": 147.402,
-     "heapMB": 9.652706146240234,
+     "t": 146.496,
+     "heapMB": 9.618156433105469,
      "nodes": 14522,
      "listeners": 1909
     },
     {
-     "t": 148.038,
-     "heapMB": 9.710880279541016,
+     "t": 147.152,
+     "heapMB": 9.676254272460938,
      "nodes": 14891,
      "listeners": 1548
     },
     {
-     "t": 148.66,
-     "heapMB": 9.56558609008789,
+     "t": 147.772,
+     "heapMB": 9.531585693359375,
      "nodes": 14110,
      "listeners": 1535
     },
     {
-     "t": 149.203,
-     "heapMB": 9.575241088867188,
+     "t": 148.28,
+     "heapMB": 9.547191619873047,
      "nodes": 14176,
      "listeners": 1865
     },
     {
-     "t": 149.857,
-     "heapMB": 9.847892761230469,
+     "t": 148.886,
+     "heapMB": 9.810066223144531,
      "nodes": 15966,
      "listeners": 1731
     },
     {
-     "t": 150.628,
-     "heapMB": 9.767902374267578,
+     "t": 149.676,
+     "heapMB": 9.741226196289062,
      "nodes": 15561,
      "listeners": 2012
     },
     {
-     "t": 151.22,
-     "heapMB": 9.377155303955078,
+     "t": 150.261,
+     "heapMB": 9.345924377441406,
      "nodes": 13368,
      "listeners": 1371
     },
     {
-     "t": 151.96,
-     "heapMB": 9.860908508300781,
+     "t": 151.007,
+     "heapMB": 9.845256805419922,
      "nodes": 15555,
      "listeners": 1693
     },
     {
-     "t": 152.649,
-     "heapMB": 9.999797821044922,
+     "t": 151.675,
+     "heapMB": 9.952262878417969,
      "nodes": 16569,
      "listeners": 2291
     },
     {
-     "t": 153.317,
-     "heapMB": 9.73055648803711,
+     "t": 152.313,
+     "heapMB": 9.703941345214844,
      "nodes": 14688,
      "listeners": 1925
     },
     {
-     "t": 154.131,
-     "heapMB": 10.224655151367188,
-     "nodes": 17841,
-     "listeners": 1858
+     "t": 153.074,
+     "heapMB": 10.25204086303711,
+     "nodes": 18304,
+     "listeners": 1907
     },
     {
-     "t": 154.704,
-     "heapMB": 9.787349700927734,
+     "t": 153.665,
+     "heapMB": 9.729137420654297,
      "nodes": 14831,
      "listeners": 2107
     },
     {
-     "t": 155.479,
-     "heapMB": 9.716506958007812,
+     "t": 154.452,
+     "heapMB": 9.684383392333984,
      "nodes": 14635,
      "listeners": 2303
     },
     {
-     "t": 156.245,
-     "heapMB": 9.8692626953125,
+     "t": 155.17,
+     "heapMB": 9.852424621582031,
      "nodes": 16902,
      "listeners": 2307
     },
     {
-     "t": 156.987,
-     "heapMB": 9.59808349609375,
+     "t": 155.93,
+     "heapMB": 9.597038269042969,
      "nodes": 15156,
      "listeners": 2123
     },
     {
-     "t": 157.724,
-     "heapMB": 9.823291778564453,
+     "t": 156.664,
+     "heapMB": 9.823413848876953,
      "nodes": 16074,
      "listeners": 2032
     },
     {
-     "t": 158.367,
-     "heapMB": 9.602294921875,
+     "t": 157.31,
+     "heapMB": 9.580760955810547,
      "nodes": 14794,
      "listeners": 2046
     },
     {
-     "t": 158.933,
-     "heapMB": 9.708354949951172,
+     "t": 157.866,
+     "heapMB": 9.682868957519531,
      "nodes": 14415,
      "listeners": 1879
     },
     {
-     "t": 159.584,
-     "heapMB": 9.6888427734375,
+     "t": 158.429,
+     "heapMB": 9.670703887939453,
      "nodes": 14475,
      "listeners": 1901
     },
     {
-     "t": 160.114,
-     "heapMB": 9.695198059082031,
+     "t": 158.945,
+     "heapMB": 9.676105499267578,
      "nodes": 14414,
      "listeners": 1631
     },
     {
-     "t": 160.723,
-     "heapMB": 9.437286376953125,
+     "t": 159.551,
+     "heapMB": 9.40445327758789,
      "nodes": 13511,
      "listeners": 1463
     },
     {
-     "t": 161.415,
-     "heapMB": 9.448356628417969,
-     "nodes": 13481,
-     "listeners": 1383
+     "t": 160.212,
+     "heapMB": 9.506629943847656,
+     "nodes": 13945,
+     "listeners": 1432
     },
     {
-     "t": 162.069,
-     "heapMB": 9.739349365234375,
+     "t": 160.882,
+     "heapMB": 9.71502685546875,
      "nodes": 14880,
      "listeners": 2298
     },
     {
-     "t": 162.754,
-     "heapMB": 9.444759368896484,
+     "t": 161.545,
+     "heapMB": 9.417716979980469,
      "nodes": 13508,
      "listeners": 1463
     },
     {
-     "t": 163.336,
-     "heapMB": 9.507835388183594,
-     "nodes": 13686,
+     "t": 162.132,
+     "heapMB": 9.484508514404297,
+     "nodes": 13685,
      "listeners": 1426
     },
     {
-     "t": 164.081,
-     "heapMB": 9.71646499633789,
+     "t": 162.928,
+     "heapMB": 9.702812194824219,
      "nodes": 15123,
      "listeners": 2132
     },
     {
-     "t": 164.666,
-     "heapMB": 9.531787872314453,
+     "t": 163.547,
+     "heapMB": 9.504329681396484,
      "nodes": 13695,
      "listeners": 1795
     },
     {
-     "t": 165.268,
-     "heapMB": 9.692005157470703,
+     "t": 164.133,
+     "heapMB": 9.667518615722656,
      "nodes": 14627,
      "listeners": 1893
     },
     {
-     "t": 165.717,
-     "heapMB": 9.568000793457031,
+     "t": 164.597,
+     "heapMB": 9.542949676513672,
      "nodes": 13694,
      "listeners": 1795
     },
     {
-     "t": 166.438,
-     "heapMB": 9.58005142211914,
+     "t": 165.282,
+     "heapMB": 9.557174682617188,
      "nodes": 13891,
      "listeners": 1999
     },
     {
-     "t": 167.079,
-     "heapMB": 9.882148742675781,
-     "nodes": 15228,
-     "listeners": 1642
+     "t": 165.861,
+     "heapMB": 9.98736572265625,
+     "nodes": 15978,
+     "listeners": 1718
     },
     {
-     "t": 167.834,
-     "heapMB": 9.509979248046875,
-     "nodes": 13851,
-     "listeners": 1808
+     "t": 166.512,
+     "heapMB": 9.508155822753906,
+     "nodes": 13954,
+     "listeners": 1820
     },
     {
-     "t": 168.435,
-     "heapMB": 9.439109802246094,
+     "t": 167.134,
+     "heapMB": 9.402217864990234,
      "nodes": 13367,
      "listeners": 1517
     },
     {
-     "t": 169.17,
-     "heapMB": 9.95151138305664,
+     "t": 167.916,
+     "heapMB": 9.9044189453125,
      "nodes": 16013,
      "listeners": 1669
     },
     {
-     "t": 169.882,
-     "heapMB": 9.693408966064453,
+     "t": 168.643,
+     "heapMB": 9.628231048583984,
      "nodes": 14346,
      "listeners": 1567
     },
     {
-     "t": 170.482,
-     "heapMB": 9.853878021240234,
+     "t": 169.243,
+     "heapMB": 9.807197570800781,
      "nodes": 15020,
      "listeners": 1636
     },
     {
-     "t": 171.098,
-     "heapMB": 9.675090789794922,
+     "t": 169.836,
+     "heapMB": 9.625526428222656,
      "nodes": 14254,
      "listeners": 1863
     },
     {
-     "t": 171.654,
-     "heapMB": 9.681392669677734,
+     "t": 170.381,
+     "heapMB": 9.63217544555664,
      "nodes": 14259,
      "listeners": 1863
     },
     {
-     "t": 172.388,
-     "heapMB": 9.48330307006836,
+     "t": 171.135,
+     "heapMB": 9.432029724121094,
      "nodes": 13826,
      "listeners": 1464
     },
     {
-     "t": 173.02,
-     "heapMB": 9.94295883178711,
+     "t": 171.748,
+     "heapMB": 9.879169464111328,
      "nodes": 17176,
      "listeners": 2367
     },
     {
-     "t": 173.857,
-     "heapMB": 9.47964859008789,
+     "t": 172.632,
+     "heapMB": 9.431987762451172,
      "nodes": 13951,
      "listeners": 2214
     },
     {
-     "t": 174.447,
-     "heapMB": 9.526565551757812,
+     "t": 173.193,
+     "heapMB": 9.462265014648438,
      "nodes": 14019,
      "listeners": 1468
     },
     {
-     "t": 175.102,
-     "heapMB": 10.053077697753906,
+     "t": 173.838,
+     "heapMB": 9.991012573242188,
      "nodes": 17749,
      "listeners": 2428
     },
     {
-     "t": 175.764,
-     "heapMB": 9.733158111572266,
+     "t": 174.527,
+     "heapMB": 9.665252685546875,
      "nodes": 14379,
      "listeners": 1497
     },
     {
-     "t": 176.444,
-     "heapMB": 9.89975357055664,
+     "t": 175.141,
+     "heapMB": 9.845531463623047,
      "nodes": 15097,
      "listeners": 2391
     },
     {
-     "t": 177.201,
-     "heapMB": 9.749454498291016,
+     "t": 175.833,
+     "heapMB": 9.676513671875,
      "nodes": 14580,
      "listeners": 2361
     },
     {
-     "t": 177.77,
-     "heapMB": 10.02728271484375,
+     "t": 176.416,
+     "heapMB": 9.979869842529297,
      "nodes": 16412,
      "listeners": 2277
     },
     {
-     "t": 178.252,
-     "heapMB": 9.900413513183594,
-     "nodes": 15442,
-     "listeners": 1989
+     "t": 176.898,
+     "heapMB": 9.788871765136719,
+     "nodes": 14978,
+     "listeners": 1940
     },
     {
-     "t": 178.934,
-     "heapMB": 9.400413513183594,
+     "t": 177.53,
+     "heapMB": 9.337875366210938,
      "nodes": 13216,
      "listeners": 1357
     },
     {
-     "t": 179.574,
-     "heapMB": 9.880855560302734,
+     "t": 178.094,
+     "heapMB": 9.834461212158203,
      "nodes": 15612,
      "listeners": 2161
     },
     {
-     "t": 180.231,
-     "heapMB": 9.425254821777344,
+     "t": 178.678,
+     "heapMB": 9.378959655761719,
      "nodes": 13337,
      "listeners": 1937
     },
     {
-     "t": 180.8,
-     "heapMB": 9.770866394042969,
-     "nodes": 15617,
-     "listeners": 1992
+     "t": 179.263,
+     "heapMB": 9.654399871826172,
+     "nodes": 15154,
+     "listeners": 1943
     },
     {
-     "t": 181.501,
-     "heapMB": 9.749378204345703,
+     "t": 179.915,
+     "heapMB": 9.676204681396484,
      "nodes": 14465,
      "listeners": 2069
     },
     {
-     "t": 182.103,
-     "heapMB": 9.753604888916016,
+     "t": 180.467,
+     "heapMB": 9.686515808105469,
      "nodes": 14479,
      "listeners": 2069
     },
     {
-     "t": 182.821,
-     "heapMB": 10.030143737792969,
+     "t": 181.186,
+     "heapMB": 9.974361419677734,
      "nodes": 16186,
      "listeners": 1685
     },
     {
-     "t": 183.452,
-     "heapMB": 9.755435943603516,
+     "t": 181.797,
+     "heapMB": 9.707725524902344,
      "nodes": 14340,
      "listeners": 1509
     },
     {
-     "t": 184.074,
-     "heapMB": 9.7159423828125,
+     "t": 182.415,
+     "heapMB": 9.690105438232422,
      "nodes": 14386,
      "listeners": 1497
     },
     {
-     "t": 184.83,
-     "heapMB": 9.921112060546875,
+     "t": 183.193,
+     "heapMB": 9.867206573486328,
      "nodes": 14957,
      "listeners": 1561
     },
     {
-     "t": 185.468,
-     "heapMB": 9.555740356445312,
+     "t": 183.779,
+     "heapMB": 9.496284484863281,
      "nodes": 13717,
      "listeners": 1795
     },
     {
-     "t": 186.066,
-     "heapMB": 9.920856475830078,
+     "t": 184.394,
+     "heapMB": 9.882648468017578,
      "nodes": 15665,
      "listeners": 2009
     },
     {
-     "t": 186.702,
-     "heapMB": 9.876873016357422,
+     "t": 185.031,
+     "heapMB": 9.842853546142578,
      "nodes": 15179,
      "listeners": 1639
     },
     {
-     "t": 187.334,
-     "heapMB": 9.647941589355469,
+     "t": 185.627,
+     "heapMB": 9.620250701904297,
      "nodes": 14082,
      "listeners": 1455
     },
     {
-     "t": 187.964,
-     "heapMB": 9.654090881347656,
+     "t": 186.243,
+     "heapMB": 9.631584167480469,
      "nodes": 14224,
      "listeners": 1475
     },
     {
-     "t": 188.635,
-     "heapMB": 9.879261016845703,
+     "t": 186.913,
+     "heapMB": 9.84817886352539,
      "nodes": 15022,
      "listeners": 2131
     },
     {
-     "t": 189.252,
-     "heapMB": 10.200477600097656,
+     "t": 187.497,
+     "heapMB": 10.156478881835938,
      "nodes": 16421,
      "listeners": 2084
     },
     {
-     "t": 189.871,
-     "heapMB": 9.611862182617188,
+     "t": 188.116,
+     "heapMB": 9.568923950195312,
      "nodes": 13936,
      "listeners": 2079
     },
     {
-     "t": 190.745,
-     "heapMB": 9.604827880859375,
+     "t": 188.789,
+     "heapMB": 9.553489685058594,
      "nodes": 13932,
      "listeners": 2079
     },
     {
-     "t": 191.419,
-     "heapMB": 9.523345947265625,
+     "t": 189.513,
+     "heapMB": 9.462287902832031,
      "nodes": 13618,
      "listeners": 1983
     },
     {
-     "t": 192.052,
-     "heapMB": 9.739692687988281,
-     "nodes": 14246,
+     "t": 190.133,
+     "heapMB": 9.677845001220703,
+     "nodes": 14245,
      "listeners": 1617
     },
     {
-     "t": 192.686,
-     "heapMB": 9.402263641357422,
+     "t": 190.749,
+     "heapMB": 9.342533111572266,
      "nodes": 13256,
      "listeners": 1853
     },
     {
-     "t": 193.316,
-     "heapMB": 9.705890655517578,
+     "t": 191.358,
+     "heapMB": 9.65097427368164,
      "nodes": 14509,
      "listeners": 2057
     },
     {
-     "t": 194.184,
-     "heapMB": 9.615142822265625,
+     "t": 192.397,
+     "heapMB": 9.5606689453125,
      "nodes": 14007,
      "listeners": 2028
     },
     {
-     "t": 194.748,
-     "heapMB": 9.569488525390625,
+     "t": 192.979,
+     "heapMB": 9.486244201660156,
      "nodes": 13393,
      "listeners": 1759
     },
     {
-     "t": 195.413,
-     "heapMB": 9.728630065917969,
-     "nodes": 14652,
-     "listeners": 2077
+     "t": 193.64,
+     "heapMB": 9.753978729248047,
+     "nodes": 14955,
+     "listeners": 2107
     },
     {
-     "t": 196.113,
-     "heapMB": 9.520206451416016,
+     "t": 194.356,
+     "heapMB": 9.454837799072266,
      "nodes": 13436,
      "listeners": 1949
     },
     {
-     "t": 196.833,
-     "heapMB": 9.642040252685547,
+     "t": 195.08,
+     "heapMB": 9.576904296875,
      "nodes": 13795,
      "listeners": 1807
     },
     {
-     "t": 197.467,
-     "heapMB": 9.828067779541016,
+     "t": 195.715,
+     "heapMB": 9.761749267578125,
      "nodes": 14339,
      "listeners": 1629
     },
     {
-     "t": 198.08,
-     "heapMB": 10.113887786865234,
+     "t": 196.31,
+     "heapMB": 10.054763793945312,
      "nodes": 16015,
      "listeners": 1672
     },
     {
-     "t": 198.719,
-     "heapMB": 9.594608306884766,
+     "t": 196.932,
+     "heapMB": 9.53469467163086,
      "nodes": 13633,
      "listeners": 1973
     },
     {
-     "t": 199.571,
-     "heapMB": 10.093952178955078,
+     "t": 197.682,
+     "heapMB": 10.02950668334961,
      "nodes": 15406,
      "listeners": 2577
     },
     {
-     "t": 200.242,
-     "heapMB": 9.945056915283203,
+     "t": 198.353,
+     "heapMB": 9.911056518554688,
      "nodes": 14822,
      "listeners": 1927
     },
     {
-     "t": 200.947,
-     "heapMB": 9.985374450683594,
+     "t": 199.058,
+     "heapMB": 9.933135986328125,
      "nodes": 14869,
      "listeners": 1629
     },
     {
-     "t": 201.58,
-     "heapMB": 9.723896026611328,
+     "t": 199.709,
+     "heapMB": 9.686134338378906,
      "nodes": 13915,
      "listeners": 1441
     },
     {
-     "t": 202.119,
-     "heapMB": 9.738845825195312,
+     "t": 200.228,
+     "heapMB": 9.699165344238281,
      "nodes": 14007,
      "listeners": 1831
     },
     {
-     "t": 202.746,
-     "heapMB": 10.292045593261719,
+     "t": 200.82,
+     "heapMB": 10.269432067871094,
      "nodes": 17765,
      "listeners": 2413
     },
     {
-     "t": 203.267,
-     "heapMB": 9.757061004638672,
+     "t": 201.365,
+     "heapMB": 9.735397338867188,
      "nodes": 14012,
      "listeners": 1831
     },
     {
-     "t": 203.949,
-     "heapMB": 9.541015625,
+     "t": 202.028,
+     "heapMB": 9.468364715576172,
      "nodes": 13351,
      "listeners": 1937
     },
     {
-     "t": 204.581,
-     "heapMB": 10.228324890136719,
-     "nodes": 17102,
-     "listeners": 2161
+     "t": 202.644,
+     "heapMB": 10.247913360595703,
+     "nodes": 17565,
+     "listeners": 2210
     },
     {
-     "t": 205.268,
-     "heapMB": 10.239944458007812,
+     "t": 203.312,
+     "heapMB": 10.168594360351562,
      "nodes": 17144,
      "listeners": 2351
     },
     {
-     "t": 205.98,
-     "heapMB": 9.883338928222656,
+     "t": 204.025,
+     "heapMB": 9.811901092529297,
      "nodes": 14573,
      "listeners": 2081
     },
     {
-     "t": 206.645,
-     "heapMB": 9.652923583984375,
+     "t": 204.674,
+     "heapMB": 9.581241607666016,
      "nodes": 13760,
      "listeners": 1985
     },
     {
-     "t": 207.298,
-     "heapMB": 10.227108001708984,
+     "t": 205.363,
+     "heapMB": 10.199592590332031,
      "nodes": 16355,
      "listeners": 2094
     },
     {
-     "t": 207.978,
-     "heapMB": 9.993820190429688,
+     "t": 206.041,
+     "heapMB": 9.965328216552734,
      "nodes": 15041,
      "listeners": 2471
     },
     {
-     "t": 208.714,
-     "heapMB": 9.909549713134766,
-     "nodes": 14585,
-     "listeners": 1515
+     "t": 206.744,
+     "heapMB": 9.889873504638672,
+     "nodes": 14688,
+     "listeners": 1527
     },
     {
-     "t": 209.627,
-     "heapMB": 9.634052276611328,
+     "t": 207.603,
+     "heapMB": 9.597888946533203,
      "nodes": 13664,
      "listeners": 1955
     },
     {
-     "t": 210.386,
-     "heapMB": 10.183246612548828,
+     "t": 208.318,
+     "heapMB": 10.13302230834961,
      "nodes": 17396,
      "listeners": 2367
     },
     {
-     "t": 211.184,
-     "heapMB": 9.84177017211914,
+     "t": 209.08,
+     "heapMB": 9.804508209228516,
      "nodes": 14977,
      "listeners": 1682
     },
     {
-     "t": 211.737,
-     "heapMB": 9.88916015625,
+     "t": 209.612,
+     "heapMB": 9.860004425048828,
      "nodes": 14490,
      "listeners": 1523
     },
     {
-     "t": 212.48,
-     "heapMB": 10.087409973144531,
+     "t": 210.393,
+     "heapMB": 10.056083679199219,
      "nodes": 15379,
      "listeners": 1740
     },
     {
-     "t": 213.319,
-     "heapMB": 10.17855453491211,
+     "t": 211.214,
+     "heapMB": 10.143505096435547,
      "nodes": 16203,
      "listeners": 2254
     },
     {
-     "t": 214.078,
-     "heapMB": 10.052536010742188,
+     "t": 211.937,
+     "heapMB": 10.012245178222656,
      "nodes": 15917,
      "listeners": 2056
     },
     {
-     "t": 214.563,
-     "heapMB": 10.250030517578125,
+     "t": 212.46,
+     "heapMB": 10.200645446777344,
      "nodes": 16329,
      "listeners": 1686
     },
     {
-     "t": 215.195,
-     "heapMB": 9.720203399658203,
+     "t": 213.074,
+     "heapMB": 9.691020965576172,
      "nodes": 14657,
      "listeners": 2080
     },
     {
-     "t": 215.948,
-     "heapMB": 9.597244262695312,
+     "t": 213.793,
+     "heapMB": 9.5447998046875,
      "nodes": 13446,
      "listeners": 1389
     },
     {
-     "t": 216.615,
-     "heapMB": 9.69736099243164,
+     "t": 214.462,
+     "heapMB": 9.641319274902344,
      "nodes": 13928,
      "listeners": 1827
     },
     {
-     "t": 217.273,
-     "heapMB": 10.072269439697266,
-     "nodes": 16203,
-     "listeners": 1822
+     "t": 215.152,
+     "heapMB": 9.866458892822266,
+     "nodes": 15275,
+     "listeners": 1724
     },
     {
-     "t": 217.869,
-     "heapMB": 9.987659454345703,
+     "t": 215.765,
+     "heapMB": 9.935665130615234,
      "nodes": 16002,
      "listeners": 2226
     },
     {
-     "t": 218.381,
-     "heapMB": 10.023548126220703,
+     "t": 216.278,
+     "heapMB": 9.974746704101562,
      "nodes": 15466,
      "listeners": 1991
     },
     {
-     "t": 218.981,
-     "heapMB": 9.730545043945312,
+     "t": 216.894,
+     "heapMB": 9.673606872558594,
      "nodes": 14271,
      "listeners": 1874
     },
     {
-     "t": 219.667,
-     "heapMB": 10.026714324951172,
+     "t": 217.526,
+     "heapMB": 9.988548278808594,
      "nodes": 15074,
      "listeners": 1651
     },
     {
-     "t": 220.25,
-     "heapMB": 10.326179504394531,
-     "nodes": 16480,
+     "t": 218.094,
+     "heapMB": 10.287250518798828,
+     "nodes": 16481,
      "listeners": 2097
     },
     {
-     "t": 220.968,
-     "heapMB": 10.421024322509766,
-     "nodes": 17680,
-     "listeners": 1991
+     "t": 218.796,
+     "heapMB": 10.443912506103516,
+     "nodes": 18143,
+     "listeners": 2040
     },
     {
-     "t": 221.613,
-     "heapMB": 10.01187515258789,
-     "nodes": 14883,
-     "listeners": 1557
+     "t": 219.442,
+     "heapMB": 10.042388916015625,
+     "nodes": 15346,
+     "listeners": 1606
     },
     {
-     "t": 222.197,
-     "heapMB": 9.985118865966797,
+     "t": 219.993,
+     "heapMB": 9.938735961914062,
      "nodes": 14788,
      "listeners": 1545
     },
     {
-     "t": 222.927,
-     "heapMB": 9.547393798828125,
+     "t": 220.724,
+     "heapMB": 9.491268157958984,
      "nodes": 13365,
      "listeners": 1865
     },
     {
-     "t": 223.613,
-     "heapMB": 9.814308166503906,
+     "t": 221.342,
+     "heapMB": 9.750179290771484,
      "nodes": 14037,
      "listeners": 1453
     },
     {
-     "t": 224.23,
-     "heapMB": 9.88824462890625,
+     "t": 221.977,
+     "heapMB": 9.843639373779297,
      "nodes": 14793,
      "listeners": 1607
     },
     {
-     "t": 224.83,
-     "heapMB": 9.73507308959961,
+     "t": 222.576,
+     "heapMB": 9.67236328125,
      "nodes": 13876,
      "listeners": 1437
     },
     {
-     "t": 225.53,
-     "heapMB": 10.165359497070312,
+     "t": 223.243,
+     "heapMB": 10.102577209472656,
      "nodes": 15972,
      "listeners": 2062
     },
     {
-     "t": 226.171,
-     "heapMB": 9.722545623779297,
+     "t": 223.848,
+     "heapMB": 9.670455932617188,
      "nodes": 13974,
      "listeners": 2147
     },
     {
-     "t": 226.902,
-     "heapMB": 10.106128692626953,
+     "t": 224.597,
+     "heapMB": 10.044296264648438,
      "nodes": 15142,
      "listeners": 1585
     },
     {
-     "t": 227.496,
-     "heapMB": 10.193084716796875,
+     "t": 225.176,
+     "heapMB": 10.128852844238281,
      "nodes": 15683,
      "listeners": 1630
     },
     {
-     "t": 228.016,
-     "heapMB": 9.8306884765625,
+     "t": 225.711,
+     "heapMB": 9.75289535522461,
      "nodes": 14199,
      "listeners": 1607
     },
     {
-     "t": 228.867,
-     "heapMB": 10.056697845458984,
+     "t": 226.53,
+     "heapMB": 9.992198944091797,
      "nodes": 15686,
      "listeners": 2194
     },
     {
-     "t": 229.724,
-     "heapMB": 10.245536804199219,
+     "t": 227.407,
+     "heapMB": 10.18564224243164,
      "nodes": 17078,
      "listeners": 2341
     },
     {
-     "t": 230.351,
-     "heapMB": 9.902626037597656,
+     "t": 228.012,
+     "heapMB": 9.849563598632812,
      "nodes": 14667,
      "listeners": 1656
     },
     {
-     "t": 231.145,
-     "heapMB": 9.710735321044922,
+     "t": 228.809,
+     "heapMB": 9.63525390625,
      "nodes": 13807,
      "listeners": 1499
     },
     {
-     "t": 231.815,
-     "heapMB": 9.686100006103516,
+     "t": 229.528,
+     "heapMB": 9.650367736816406,
      "nodes": 13679,
      "listeners": 1427
     },
     {
-     "t": 232.51,
-     "heapMB": 10.12637710571289,
+     "t": 230.184,
+     "heapMB": 10.07110595703125,
      "nodes": 15375,
      "listeners": 2537
     },
     {
-     "t": 233.231,
-     "heapMB": 10.214473724365234,
+     "t": 230.893,
+     "heapMB": 10.164302825927734,
      "nodes": 16694,
      "listeners": 2134
     },
     {
-     "t": 233.907,
-     "heapMB": 9.957744598388672,
+     "t": 231.598,
+     "heapMB": 9.889930725097656,
      "nodes": 14729,
      "listeners": 2285
     },
     {
-     "t": 234.738,
-     "heapMB": 9.808486938476562,
+     "t": 232.421,
+     "heapMB": 9.744129180908203,
      "nodes": 14200,
      "listeners": 2135
     },
     {
-     "t": 235.379,
-     "heapMB": 9.750450134277344,
+     "t": 233.009,
+     "heapMB": 9.685417175292969,
      "nodes": 13878,
      "listeners": 1431
     },
     {
-     "t": 235.936,
-     "heapMB": 9.721263885498047,
+     "t": 233.548,
+     "heapMB": 9.659351348876953,
      "nodes": 13879,
      "listeners": 2039
     },
     {
-     "t": 236.543,
-     "heapMB": 9.956161499023438,
+     "t": 234.168,
+     "heapMB": 9.893871307373047,
      "nodes": 14738,
      "listeners": 2375
     },
     {
-     "t": 237.198,
-     "heapMB": 9.992233276367188,
+     "t": 234.845,
+     "heapMB": 9.954547882080078,
      "nodes": 14938,
      "listeners": 1957
     },
     {
-     "t": 237.665,
-     "heapMB": 10.010028839111328,
+     "t": 235.311,
+     "heapMB": 9.966499328613281,
      "nodes": 14942,
      "listeners": 1957
     },
     {
-     "t": 238.306,
-     "heapMB": 9.785961151123047,
+     "t": 235.904,
+     "heapMB": 9.740104675292969,
      "nodes": 14167,
      "listeners": 2031
     },
     {
-     "t": 239.03,
-     "heapMB": 9.745498657226562,
+     "t": 236.626,
+     "heapMB": 9.727474212646484,
      "nodes": 13790,
      "listeners": 1419
     },
     {
-     "t": 239.692,
-     "heapMB": 10.003921508789062,
+     "t": 237.288,
+     "heapMB": 9.974720001220703,
      "nodes": 14837,
      "listeners": 2327
+    },
+    {
+     "t": 238.012,
+     "heapMB": 10.166568756103516,
+     "nodes": 15943,
+     "listeners": 2229
+    },
+    {
+     "t": 238.728,
+     "heapMB": 10.021381378173828,
+     "nodes": 15012,
+     "listeners": 2131
+    },
+    {
+     "t": 239.529,
+     "heapMB": 9.9666748046875,
+     "nodes": 14899,
+     "listeners": 1949
     }
    ],
    "cycles": 150,
    "before": {
     "t": 0,
-    "heapMB": 7.214817047119141,
+    "heapMB": 7.259834289550781,
     "nodes": 11623,
     "listeners": 1275
    },
    "after": {
     "t": 0,
-    "heapMB": 7.827278137207031,
+    "heapMB": 7.841762542724609,
     "nodes": 11623,
     "listeners": 1275
    },
@@ -5005,37 +5023,37 @@
     "hall: a page turned": {
      "nodes": -0.1,
      "listeners": 0,
-     "heapKB": 15.2
+     "heapKB": 15.5
     },
     "hall: a group picked": {
      "nodes": 0,
      "listeners": 0,
-     "heapKB": 13.7
+     "heapKB": 14.1
     },
     "hall: a table picked": {
      "nodes": 0,
      "listeners": 0,
-     "heapKB": 4.8
+     "heapKB": 4.7
     },
     "kitchen: a page turned": {
      "nodes": -0.1,
      "listeners": 0,
-     "heapKB": 15.2
+     "heapKB": 15.4
     },
     "report: a page turned": {
      "nodes": -0.1,
      "listeners": 0,
-     "heapKB": 8
+     "heapKB": 8.7
     },
     "statistics: a page turned": {
      "nodes": -0.1,
      "listeners": 0,
-     "heapKB": 8
+     "heapKB": 8.1
     }
    },
    "clock": {
     "watched": 60,
-    "rate": 1,
+    "rate": 1.001,
     "frozen": {
      "seconds": 7.2,
      "ticks": 1
@@ -5058,22 +5076,22 @@
      "gzipKB": 95.6,
      "drawn": {
       "n": 4,
-      "p50": 45.38,
-      "p95": 47.92,
-      "max": 48.3
+      "p50": 41.98,
+      "p95": 45.7,
+      "max": 46.31
      },
      "nodes": 966,
      "feed": {
       "n": 8,
-      "p50": 0.63,
-      "p95": 1.02,
-      "max": 1.06
+      "p50": 0.55,
+      "p95": 1.05,
+      "max": 1.16
      },
      "click": {
       "n": 8,
-      "p50": 1.33,
-      "p95": 2.47,
-      "max": 2.83
+      "p50": 1.51,
+      "p95": 2.89,
+      "max": 3.37
      },
      "problems": []
     },
@@ -5083,72 +5101,72 @@
      "gzipKB": 97.2,
      "drawn": {
       "n": 4,
-      "p50": 55.7,
-      "p95": 67.69,
-      "max": 69.74
+      "p50": 52.02,
+      "p95": 61.58,
+      "max": 63.06
      },
      "nodes": 1356,
      "feed": {
       "n": 8,
-      "p50": 0.62,
-      "p95": 1.15,
-      "max": 1.27
+      "p50": 0.63,
+      "p95": 0.89,
+      "max": 0.91
      },
      "click": {
       "n": 8,
-      "p50": 1.25,
-      "p95": 2.54,
-      "max": 2.97
+      "p50": 1.36,
+      "p95": 2.76,
+      "max": 3.32
      },
      "problems": []
     },
     "24": {
-     "compileSeconds": 2.2,
+     "compileSeconds": 2.3,
      "bundleKB": 593.5,
      "gzipKB": 100.6,
      "drawn": {
       "n": 4,
-      "p50": 59.68,
-      "p95": 62.3,
-      "max": 62.73
+      "p50": 61.58,
+      "p95": 63.09,
+      "max": 63.31
      },
      "nodes": 2136,
      "feed": {
       "n": 8,
-      "p50": 0.84,
-      "p95": 1.2,
-      "max": 1.29
+      "p50": 0.7,
+      "p95": 0.91,
+      "max": 1
      },
      "click": {
       "n": 8,
-      "p50": 2.02,
-      "p95": 3.13,
-      "max": 3.13
+      "p50": 1.47,
+      "p95": 2.94,
+      "max": 3.44
      },
      "problems": []
     },
     "48": {
-     "compileSeconds": 8.9,
+     "compileSeconds": 8.8,
      "bundleKB": 857.9,
-     "gzipKB": 108.5,
+     "gzipKB": 108.4,
      "drawn": {
       "n": 4,
-      "p50": 79.91,
-      "p95": 82.01,
-      "max": 82.29
+      "p50": 80.53,
+      "p95": 86.95,
+      "max": 87.98
      },
      "nodes": 3696,
      "feed": {
       "n": 8,
-      "p50": 0.94,
-      "p95": 1.19,
-      "max": 1.21
+      "p50": 0.92,
+      "p95": 1.27,
+      "max": 1.27
      },
      "click": {
       "n": 8,
-      "p50": 1.56,
-      "p95": 2.82,
-      "max": 3.4
+      "p50": 1.44,
+      "p95": 2.87,
+      "max": 3.57
      },
      "problems": []
     }
