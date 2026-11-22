@@ -567,11 +567,34 @@ export function localTime() {
 }
 
 // everyMs :: Number -> Effect Unit -> Effect (Effect Unit)
+// One timer per period, shared by every subscriber, its beats on whole
+// periods of the wall clock: a beat that took time is followed sooner.
+const beats = new Map();
+
 export function everyMs(ms) {
   return function (action) {
     return function () {
-      const id = setInterval(action, ms);
-      return function () { clearInterval(id); };
+      let beat = beats.get(ms);
+      if (!beat) {
+        beat = { subscribers: new Set(), timer: null };
+        beats.set(ms, beat);
+        const arm = () => {
+          const left = ms - (Date.now() % ms);
+          beat.timer = setTimeout(() => {
+            arm();
+            for (const subscriber of [...beat.subscribers]) subscriber();
+          }, left < ms / 20 ? left + ms : left);
+        };
+        arm();
+      }
+      beat.subscribers.add(action);
+      return function () {
+        beat.subscribers.delete(action);
+        if (beat.subscribers.size === 0 && beats.get(ms) === beat) {
+          clearTimeout(beat.timer);
+          beats.delete(ms);
+        }
+      };
     };
   };
 }

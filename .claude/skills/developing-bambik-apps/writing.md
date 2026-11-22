@@ -170,6 +170,8 @@ index from the line you need to the word and a demo that writes it.
 | a projection that reshapes its rows, its elements edited | `editsOf @l @k proj editor`, folded by `foldInto @l f` | no demo; `PUI` |
 | one entity at a time, each shown by its key | `( listItem $ text flightLine ) # dispatchedOf @"code" arrival`; the array of them `# accumulatedOf @"team" goal` | departures, scoreboard |
 | a fact the platform knows, owning its field | `geolocated @"position"`, `clock @"time" clockPeriod`, `filePicked @"Photo"`, in `RecordToRecord.do` | here-and-now, incident-report |
+| a line that shows the time, or time passed: the time is not a model field | `( titleMedium $ text clockLine ) # timestamped @"time" clockPeriod`, `clockLine` typed at the line's row with `time` added; on a row of a list, the element's row | punch-clock; diner |
+| an event stamped with the time it happened | `button @"Punch in" # timestamping @"time"`, folded by `foldInto @"Punch in" punchIn`, the time a field of the event | punch-clock; diner |
 | content that waits for the user to confirm | `confirmed @"Refund a customer" $ …`, between the emitters and the folds, its fold among the folds; `confirmed' @l { cancel: "…" }` to caption its Cancel | cashbox, inbox, flight-booker; diner |
 | a message the user must close | `( modal @"Total missing" $ … ) # acknowledged` | weather, order-form, incident-report |
 | a notice, then the flow goes on | `( modal @"Weather warning" $ … text warningLine ) # continued asForecast`, `asForecast :: Report -> [ "Forecast fetched" :: Report ]` | weather |

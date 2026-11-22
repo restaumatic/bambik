@@ -68,6 +68,7 @@ export const sets = {
     'parcel': ['mdc2', 'mdc3', 'shoelace', 'fluent', 'bootstrap', 'html'],
     'potluck': ['mdc2', 'mdc3'],
     'departures': ['mdc2', 'mdc3'],
+    'punch-clock': ['mdc3', 'mdc2'],
     'scoreboard': ['mdc2', 'mdc3'],
     'reorder': ['mdc2', 'mdc3', 'html'],
     'restaurant-menu': ['html'],

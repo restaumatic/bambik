@@ -19,6 +19,9 @@
 -- |   `providedAt`, `inCaseAt`;
 -- | - **sources** — `geolocated`, `online`, `clock`, `colorScheme`, each
 -- |   `{} → { l :: a }`, owning one field the app cannot seed;
+-- | - **the time beside the model** — `timestamped @l`, a line that reads
+-- |   the time under field `l` of its row, and `timestamping @l`, an
+-- |   emitter whose event carries the time it left at;
 -- | - **structure from data** — `dynamic`, `each`, and `el` for a computed
 -- |   tag —
 -- |
@@ -94,6 +97,8 @@ module PUI.Web
   , geolocated
   , online
   , clock
+  , timestamped
+  , timestamping
   , colorScheme
   , onFilePicked
   , module Panes
@@ -125,7 +130,7 @@ import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Variant (inj)
+import Data.Variant (case_, inj, on)
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..), isNothing, maybe)
@@ -135,9 +140,12 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (inCase, inCaseAt, provided, providedAt) as Panes
-import PUI (class Interacting, Gesture(..), fromHandles, handles, recordToRecordWiring, source, class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
+import PUI (class Interacting, Gesture(..), fromHandles, handles, recordToRecordWiring, source, class Hosting, class Scoped, Ocular, PUI(..), Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
 import Prim.Row (class Cons)
+import Prim.RowList (class RowToList)
+import Prim.RowList as RL
 import Record as Record
+import Record.Unsafe (unsafeDelete, unsafeSet)
 
 foreign import data Node :: Type
 
@@ -872,7 +880,8 @@ online = source @l (onlineCase <$> isOnline) \tell -> watchOnline (tell <<< onli
 
 -- | The wall clock as a fact — local hours, minutes and seconds, read every
 -- | `period` — the `×→×` sibling of `ticks`, which is the clock as an
--- | event. Known at registration.
+-- | event. Known at registration. Its beats fall on whole periods of the
+-- | wall clock, one timer for every use of a period.
 clock
   :: forall @l r
    . IsSymbol l
@@ -881,6 +890,75 @@ clock
   -> PUI Web {} { | r }
 clock period = source @l localTime \tell ->
   everyMs period.ms (localTime >>= tell)
+
+-- | A line that **reads the time**: the stage is fed its row with the wall
+-- | clock under field `l` — `( labelLarge $ text waitLine ) # timestamped
+-- | @"time" clockPeriod`, `waitLine :: { placed :: Time, time :: { hours ::
+-- | Int, minutes :: Int, seconds :: Int } | r } -> String` — and fed it
+-- | again every `period`, so the time is a fact of the platform the line
+-- | reads where it is drawn and no field of the model. Laws: **read at the
+-- | feed** — every feed reaches the stage with the time of that moment;
+-- | **followed** — each `period` the stage is fed the row it was last fed
+-- | with the time then, quietly while its scope is suspended; **nothing
+-- | leaves on a beat** — what the stage passes on while a beat feeds it,
+-- | the same row again, is not passed on, so a beat never reaches the
+-- | knot; **the model's row leaves** — what the stage does release, an
+-- | edit, leaves without field `l`. The author names the field, and it
+-- | must be one the row does not have: the time written over a field of
+-- | the model would be dropped with it on the way out.
+timestamped
+  :: forall @l r t
+   . IsSymbol l
+  => Cons l { hours :: Int, minutes :: Int, seconds :: Int } r t
+  => { ms :: Number }
+  -> PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+timestamped period (PUI inner) = PUI ado
+  beatReg <- beat
+  innerReg <- inner
+  in \prop -> do
+    rowRef <- Ref.new Nothing
+    beatingRef <- Ref.new false
+    feedInner <- innerReg \o -> do
+      beating <- Ref.read beatingRef
+      unless beating $ prop (unsafeDelete name o)
+    let feed row = localTime >>= \time -> feedInner (unsafeSet name time row)
+    _ <- beatReg \_ -> Ref.read rowRef >>= traverse_ \row -> do
+      Ref.write true beatingRef
+      feed row
+      Ref.write false beatingRef
+    pure \row -> do
+      Ref.write (Just row) rowRef
+      feed row
+  where
+  name = reflectSymbol (Proxy @l)
+  PUI beat = clock @"time" period :: PUI Web {} { time :: { hours :: Int, minutes :: Int, seconds :: Int } }
+
+-- | An emitter whose event **carries the time it left at**: the wall
+-- | clock is read as the event leaves and joins its payload under field
+-- | `l` — `button @"Punch in" # timestamping @"time"`, folded by `foldInto
+-- | @"Punch in" punchIn`, `punchIn :: { event :: { time :: … | r }, model
+-- | :: Shift } -> Shift`. The fold stays a function of the event and the
+-- | model; no timer runs. Takes an emitter closed to one case, whose
+-- | payload is a record without field `l`.
+timestamping
+  :: forall @l c a b v w i
+   . IsSymbol l
+  => IsSymbol c
+  => RowToList v (RL.Cons c { | a } RL.Nil)
+  => Cons c { | a } () v
+  => Cons l { hours :: Int, minutes :: Int, seconds :: Int } a b
+  => Cons c { | b } () w
+  => RowToList w (RL.Cons c { | b } RL.Nil)
+  => PUI Web i [ | v ]
+  -> PUI Web i [ | w ]
+timestamping (PUI inner) = PUI ado
+  innerReg <- inner
+  in \prop -> innerReg
+    ( on (Proxy @c)
+        (\payload -> localTime >>= \time -> prop (inj (Proxy @c) (unsafeSet (reflectSymbol (Proxy @l)) time payload)))
+        case_
+    )
 
 -- | The colour scheme the user prefers, `light` or `dark`, followed as the
 -- | system setting changes.
