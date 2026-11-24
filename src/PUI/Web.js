@@ -573,33 +573,94 @@ export function afterTask(action) {
   };
 }
 
-// Sources (see `source` in PUI.Web): each watch returns the effect that ends it.
+// Facts of the host, read beside the model (`reading` in PUI): each is
+// what it is now, read on demand, and a watch that reports a change and
+// returns the effect that ends it.
 
-// watchPosition :: ({ lat, lng } -> Effect Unit) -> Effect Unit -> Effect (Effect Unit)
-export function watchPosition(located) {
-  return function (denied) {
-    return function () {
-      if (!navigator.geolocation) { denied(); return function () {}; }
-      const id = navigator.geolocation.watchPosition(
-        (pos) => located({ lat: pos.coords.latitude, lng: pos.coords.longitude })(),
-        () => denied(),
-        { enableHighAccuracy: false, maximumAge: 60000 });
-      return function () { navigator.geolocation.clearWatch(id); };
+// Where the device is: the platform only tells by watching, so one watch
+// is shared by every reader and its last answer is kept for the reads.
+const position = { fix: null, denied: !(typeof navigator !== "undefined" && navigator.geolocation), subscribers: new Set(), id: null };
+
+// positionNow :: ({ lat, lng } -> a) -> a -> a -> Effect a
+export function positionNow(located) {
+  return function (unknown) {
+    return function (denied) {
+      return function () {
+        return position.fix ? located(position.fix) : position.denied ? denied : unknown;
+      };
     };
   };
 }
 
+// positionChanges :: Effect Unit -> Effect (Effect Unit)
+export function positionChanges(tell) {
+  return function () {
+    if (!navigator.geolocation) return function () {};
+    const notify = () => { for (const s of [...position.subscribers]) s(); };
+    position.subscribers.add(tell);
+    if (position.id === null) {
+      position.id = navigator.geolocation.watchPosition(
+        (pos) => { position.fix = { lat: pos.coords.latitude, lng: pos.coords.longitude }; position.denied = false; notify(); },
+        () => { position.fix = null; position.denied = true; notify(); },
+        { enableHighAccuracy: false, maximumAge: 60000 });
+    }
+    return function () {
+      position.subscribers.delete(tell);
+      if (position.subscribers.size === 0 && position.id !== null) {
+        navigator.geolocation.clearWatch(position.id);
+        position.id = null;
+      }
+    };
+  };
+}
+
+const listening = (target, types, tell) => {
+  const handler = () => tell();
+  for (const t of types) target.addEventListener(t, handler);
+  return function () { for (const t of types) target.removeEventListener(t, handler); };
+};
+
 export function isOnline() { return navigator.onLine; }
 
-// watchOnline :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
-export function watchOnline(tell) {
-  return function () {
-    const on = () => tell(true)();
-    const off = () => tell(false)();
-    window.addEventListener("online", on);
-    window.addEventListener("offline", off);
-    return function () { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+// onlineChanges :: Effect Unit -> Effect (Effect Unit)
+export function onlineChanges(tell) {
+  return function () { return listening(window, ["online", "offline"], tell); };
+}
+
+// mediaMatches :: String -> Effect Boolean
+export function mediaMatches(query) {
+  return function () { return !!(window.matchMedia && window.matchMedia(query).matches); };
+}
+
+// mediaChanges :: Array String -> Effect Unit -> Effect (Effect Unit)
+export function mediaChanges(queries) {
+  return function (tell) {
+    return function () {
+      if (!window.matchMedia) return function () {};
+      const stops = queries.map(q => listening(window.matchMedia(q), ["change"], tell));
+      return function () { stops.forEach(stop => stop()); };
+    };
   };
+}
+
+export function viewportNow() {
+  return { width: window.innerWidth, height: window.innerHeight };
+}
+
+// viewportChanges :: Effect Unit -> Effect (Effect Unit)
+export function viewportChanges(tell) {
+  return function () { return listening(window, ["resize"], tell); };
+}
+
+export function languageNow() { return navigator.language || ""; }
+
+// languageChanges :: Effect Unit -> Effect (Effect Unit)
+export function languageChanges(tell) {
+  return function () { return listening(window, ["languagechange"], tell); };
+}
+
+export function timeZoneNow() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "";
 }
 
 export function localTime() {
@@ -641,21 +702,6 @@ export function everyMs(ms) {
         }
       };
     };
-  };
-}
-
-const darkQuery = () => window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
-
-export function prefersDark() { const q = darkQuery(); return !!(q && q.matches); }
-
-// watchColorScheme :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
-export function watchColorScheme(tell) {
-  return function () {
-    const q = darkQuery();
-    if (!q) return function () {};
-    const handler = (e) => tell(e.matches)();
-    q.addEventListener("change", handler);
-    return function () { q.removeEventListener("change", handler); };
   };
 }
 

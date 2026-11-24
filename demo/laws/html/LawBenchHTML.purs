@@ -6,7 +6,7 @@ import Data.Profunctor.Row.VariantToVariant as VariantToVariant
 import Effect (Effect)
 import LawBench (bench, benchStep, runBench)
 import PUI (acknowledged, PUI)
-import PUI.Web (Web, colorScheme, dynamic, each, geolocated, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, online, provided, providedAt, staticText, text, textAt)
+import PUI.Web (Web, dynamic, each, inCase, inCaseAt, onClickedXY, onContextMenuXY, onHoveredXY, provided, providedAt, staticText, text, textAt)
 import PUI.Web.HTML (confirmed, body, button, div, filePicked, group, inPlaceInput, indeterminateLinearProgress, input, output, option, progress, rangeInput, select, selectOptional, selectUnpicked, textArea, modal)
 
 lawBenchHTML :: Effect Unit
@@ -37,9 +37,6 @@ lawBenchHTML = do
     , bench "onHoveredXY" "×→+" units (onHoveredXY @"at" (div (staticText "canvas")))
     , bench "onContextMenuXY" "×→+" units (onContextMenuXY @"at" (div (staticText "canvas")))
     , benchStep "output" "+→×" events (output @"event" (const {}))
-    , bench "geolocated" "×→×" units (geolocated @"position")
-    , bench "online" "×→×" units (online @"connection")
-    , bench "colorScheme" "×→×" units (colorScheme @"scheme")
     , bench "filePicked" "×→×" units (filePicked @"Photo")
     , bench "inPlaceInput" "×→+" texts (inPlaceInput @"entered" @"Name")
     -- the dialogs last: a modal open traps the page's focus, so nothing is typed after them

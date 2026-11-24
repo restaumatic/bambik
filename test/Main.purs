@@ -7,7 +7,7 @@ import Data.String as String
 import Data.Either (Either(..))
 import Data.Foldable (foldl, for_, traverse_)
 import Data.Lens (over, set, view)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust)
 import Data.Profunctor.Choice (left, right)
 import Data.Profunctor.Cochoice (unleft, unright)
 import Data.Profunctor.Costrong (unfirst)
@@ -39,7 +39,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedAt, actedOf, actedWithin, announce, dispatchedOf, editsOf, gathered, gatheredOf, cancelScope, capture, fold, foldInto, folding, inScope, landed, looped, newScope, resolveFor, resumeScope, seeded, suspendScope, stepped, ticks, unanswering, with)
+import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedAt, actedOf, actedWithin, announce, dispatchedOf, editsOf, gathered, gatheredOf, cancelScope, capture, fold, foldInto, folding, inScope, landed, looped, newScope, reading, resolveFor, resumeScope, seeded, stamping, stampingEdits, suspendScope, stepped, ticks, unanswering, with)
 import PUI (acknowledged, continued, introduced, modalOver, supplied) as PUI
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
@@ -2250,8 +2250,7 @@ main = do
     -- `p { l | rest } { l | rest }`, so two editors merged in parallel fail
     -- with `Prim.Row.Union` having no instance. Sources can: each owns one
     -- field and answers every feed with its last value, so a feed to
-    -- `RecordToRecord.do { geolocated …; online …; colorScheme … }`
-    -- (here-and-now) is exactly this broadcast.
+    -- a `RecordToRecord.do` block of sources is exactly this broadcast.
     outs <- Ref.new ([] :: Array { a :: Int, b :: Int })
     m <- handles disjointOperands
     m.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
@@ -2314,12 +2313,61 @@ main = do
       cancelled <- liftEffect $ Ref.read beats
       liftEffect $ assertEqual "scope: a cancelled parent ends the child's ticks" atCancel cancelled
 
+  -- == A fact beside the model (`reading`, `stamping`, `stampingEdits`): ==
+  -- == read at the feed or as the event leaves, followed with no turn.  ==
+  do
+    fact <- Ref.new 1
+    changed <- Ref.new (Nothing :: Maybe (Effect Unit))
+    let
+      now = Ref.read fact
+      follow tell = Ref.write (Just tell) changed $> Ref.write Nothing changed
+      change n = Ref.write n fact *> (Ref.read changed >>= traverse_ identity)
+    ins <- Ref.new ([] :: Array { f :: Int, n :: Int })
+    prop <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { n :: Int })
+    r <- handles (reading @"f" now follow (echoProbe identity ins prop) :: PUI Effect { n :: Int } { n :: Int })
+    r.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    r.toUser { n: 5 }
+    Ref.read ins >>= assertEqual "reading: read at the feed" [ { f: 1, n: 5 } ]
+    Ref.read outs >>= assertEqual "reading: the row leaves without the fact" [ { n: 5 } ]
+    change 2
+    Ref.read ins >>= assertEqual "reading: a change re-feeds the row last fed, the fact read again" [ { f: 1, n: 5 }, { f: 2, n: 5 } ]
+    Ref.read outs >>= assertEqual "reading: nothing leaves on a change" [ { n: 5 } ]
+    fire prop { f: 9, n: 6 }
+    Ref.read outs >>= assertEqual "reading: an edit leaves without the fact" [ { n: 5 }, { n: 6 } ]
+
+  do
+    fact <- Ref.new 3
+    changed <- Ref.new (Nothing :: Maybe (Effect Unit))
+    let follow tell = Ref.write (Just tell) changed $> Ref.write Nothing changed
+    prop <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { f :: Int, n :: Int })
+    s <- handles (stamping @"f" @"go" (Ref.read fact) follow (probe prop) :: PUI Effect {} [ go :: { f :: Int, n :: Int } ])
+    s.fromUser \v -> Ref.modify_ (_ <> [ match { go: identity } v ]) outs
+    Ref.read changed >>= assertEqual "stamping: the fact is followed from registration" true <<< isJust
+    fire prop (.go { n: 1 })
+    Ref.write 4 fact
+    fire prop (.go { n: 2 })
+    Ref.read outs >>= assertEqual "stamping: each event carries the fact as it leaves" [ { f: 3, n: 1 }, { f: 4, n: 2 } ]
+
+  do
+    fact <- Ref.new 1
+    ins <- Ref.new ([] :: Array { f :: Int, n :: Int })
+    prop <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { f :: Int, n :: Int })
+    e <- handles (stampingEdits @"f" (Ref.read fact) (\_ -> pure (pure unit)) (echoProbe identity ins prop) :: PUI Effect { f :: Int, n :: Int } { f :: Int, n :: Int })
+    e.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    e.toUser { f: 0, n: 1 }
+    Ref.read outs >>= assertEqual "stampingEdits: a feed is answered as fed" [ { f: 0, n: 1 } ]
+    fire prop { f: 0, n: 2 }
+    Ref.read outs >>= assertEqual "stampingEdits: an edit is stamped" [ { f: 0, n: 1 }, { f: 1, n: 2 } ]
+
   -- == Every script to a bound, exhaustively — test/Exhaustive.purs. ==
   Exhaustive.run
 
 
 -- The reachable parallel-merge shape: two operands owning disjoint labels —
--- what a merge of sources is (here-and-now, incident-report); an application
+-- what a merge of sources is; an application
 -- merging two `focusField @l` editors cannot build it, since both would own the
 -- whole row. See doc/observational-semantics.md §8.
 disjointOperands :: PUI Effect { s :: Int } { a :: Int, b :: Int }

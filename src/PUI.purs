@@ -79,6 +79,9 @@ module PUI
   , integral
   , replayed
   , source
+  , reading
+  , stamping
+  , stampingEdits
   , class Interacting
   , gestured
   , focused
@@ -191,7 +194,7 @@ import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI.Gate (GateInput(..), GateOutput(..), GateState, StepKind(..), gateStep, initialGate)
 import Record (get, insert, set) as Record
-import Record.Unsafe (unsafeGet, unsafeSet)
+import Record.Unsafe (unsafeDelete, unsafeGet, unsafeSet)
 
 --------------------------------------------------------------------------------
 -- The carrier
@@ -1442,9 +1445,12 @@ ticks interval = fromHandles do
     }
 
 
--- | A **source**: a fact the platform knows and the app cannot seed — where
--- | the device is, whether it is online, what time it is, which colour
--- | scheme is preferred. A source owns one field, `l`, and reads nothing,
+-- | A **source**: a value the user gives through the platform rather than
+-- | through an editor, which the app cannot seed — the file picked
+-- | (`filePicked`). The host's own facts (where the device is, the time,
+-- | the colour scheme) are never sources: a source owns a field of the
+-- | model, and each change would turn the knot; they are read beside it
+-- | (`reading`). A source owns one field, `l`, and reads nothing,
 -- | so its input is `{}`: it stands at the head of a flow, and one placed
 -- | after a stage that releases any field is a type error (below such a
 -- | line it is `# supplied`). It is **pointed**: it announces its first
@@ -1452,13 +1458,13 @@ ticks interval = fromHandles do
 -- | releases at once and keeps current. Every feed is answered with the
 -- | last value known (Answer at `×→×`), and each change the platform
 -- | reports is an emission outside any feed — the editor whose user is the
--- | platform. A fact the platform may never supply is a variant with its
--- | named cases (`geolocated`'s `located`/`unknown`/`denied`), never a
--- | `Maybe`, so the gate never starves on it. The watch is quiet while the
--- | scope is suspended (a detached pane) and ends when it is cancelled.
--- | Several sources are merged, `RecordToRecord.do`, each owning its field
--- | (here-and-now) — the one application use of the `×→×` merge, since
--- | every editor owns the whole row.
+-- | platform. A value the platform may never supply is a variant with its
+-- | named cases (`filePicked`'s `picked`/`none`), never a `Maybe`, so the
+-- | gate never starves on it. The watch is quiet while the scope is
+-- | suspended (a detached pane) and ends when it is cancelled. Several
+-- | sources are merged, `RecordToRecord.do`, each owning its field — the
+-- | `×→×` merge's application shape, since every editor owns the whole
+-- | row.
 source
   :: forall @l m a r
    . Scoped m
@@ -1486,6 +1492,115 @@ source now watch = fromHandles do
           when active $ prop (row a)
         onCancel sc stop
     }
+
+-- | A line that **reads a fact beside the model**: the stage is fed its
+-- | row with `now` read under field `l`, and fed the row it was last fed
+-- | again each time `follow` reports a change — the host words are this
+-- | at one fact each (`timestamped`, `geolocated`, `viewport`, … in
+-- | `PUI.Web`). A fact of the host is no state of the application, so it
+-- | is no model field and its changes never turn the knot. Laws: **read at
+-- | the feed** — every feed reaches the stage with `now` as it is then;
+-- | **followed** — each change reported re-feeds the stage the row last
+-- | fed, with `now` read again, quietly while the scope is suspended;
+-- | **nothing leaves on a change** — what the stage passes on while a
+-- | change re-feeds it is not passed on; **the row leaves** — what the
+-- | stage does release, an edit, leaves without field `l`. The field must
+-- | be one the row does not have: a fact written over a field of the model
+-- | would be dropped with it on the way out. `follow` is started at
+-- | registration and ended with the scope. Plumbing.
+reading
+  :: forall @l m a r t
+   . Scoped m
+  => IsSymbol l
+  => Cons l a r t
+  => Effect a
+  -> (Effect Unit -> Effect (Effect Unit))
+  -> PUI m { | t } { | t }
+  -> PUI m { | r } { | r }
+reading now follow (PUI inner) = PUI ado
+  changeReg <- changes
+  innerReg <- inner
+  in \prop -> do
+    rowRef <- Ref.new Nothing
+    followingRef <- Ref.new false
+    feedInner <- innerReg \o -> do
+      following <- Ref.read followingRef
+      unless following $ prop (unsafeDelete name o)
+    let feed row = now >>= \a -> feedInner (unsafeSet name a row)
+    _ <- changeReg \_ -> Ref.read rowRef >>= traverse_ \row -> do
+      Ref.write true followingRef
+      feed row
+      Ref.write false followingRef
+    pure \row -> do
+      Ref.write (Just row) rowRef
+      feed row
+  where
+  name = reflectSymbol (Proxy @l)
+  PUI changes = followed follow :: PUI m {} { change :: Unit }
+
+-- | An emitter whose event **carries a fact** as it leaves: `now` is read
+-- | then and joins the payload of case `c` under field `l` (`timestamping`,
+-- | `geolocating` in `PUI.Web`). The fold stays a function of the event
+-- | and the model. `follow` runs from registration to the end of the
+-- | scope and reports to no one: it keeps a fact the host only learns by
+-- | watching (where the device is) current for the moment of the event.
+-- | Plumbing.
+stamping
+  :: forall @l @c m a b t v w i
+   . Scoped m
+  => IsSymbol l
+  => IsSymbol c
+  => Cons c { | a } () v
+  => Cons l t a b
+  => Cons c { | b } () w
+  => Effect t
+  -> (Effect Unit -> Effect (Effect Unit))
+  -> PUI m i [ | v ]
+  -> PUI m i [ | w ]
+stamping now follow (PUI inner) = PUI ado
+  keptReg <- kept'
+  innerReg <- inner
+  in \prop -> do
+    _ <- keptReg \_ -> pure unit
+    innerReg
+      ( on (Proxy @c)
+          (\payload -> now >>= \a -> prop (inj (Proxy @c) (unsafeSet (reflectSymbol (Proxy @l)) a payload)))
+          case_
+      )
+  where
+  PUI kept' = followed follow :: PUI m {} { change :: Unit }
+
+-- | An editor whose **edit carries a fact** as it leaves (`timingEdits` in
+-- | `PUI.Web`): field `l` of a row released outside a feed is `now` read
+-- | then; an answer within a feed leaves as fed, so a turn of the knot
+-- | stamps nothing. `follow` as `stamping`'s. Plumbing.
+stampingEdits
+  :: forall @l m a b r
+   . Scoped m
+  => IsSymbol l
+  => Cons l a b r
+  => Effect a
+  -> (Effect Unit -> Effect (Effect Unit))
+  -> PUI m { | r } { | r }
+  -> PUI m { | r } { | r }
+stampingEdits now follow (PUI inner) = PUI ado
+  keptReg <- kept'
+  innerReg <- inner
+  in \prop -> do
+    _ <- keptReg \_ -> pure unit
+    feeding <- Ref.new false
+    leg <- innerReg \o -> do
+      answering <- Ref.read feeding
+      if answering then prop o else now >>= \a -> prop (unsafeSet (reflectSymbol (Proxy @l)) a o)
+    pure \i -> do
+      Ref.write true feeding
+      leg i
+      Ref.write false feeding
+  where
+  PUI kept' = followed follow :: PUI m {} { change :: Unit }
+
+followed :: forall m. Scoped m => (Effect Unit -> Effect (Effect Unit)) -> PUI m {} { change :: Unit }
+followed follow = source @"change" (pure unit) \tell -> follow (tell unit)
 
 -- | `joined` at the empty payload: the click source's occurrence carries
 -- | nothing, so the event is dropped, `f` is read off the row last fed and

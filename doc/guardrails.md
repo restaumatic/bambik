@@ -406,21 +406,27 @@ allocated there, once per instantiation (2026-10-16).
   its output by the leftover is a coercion, never vocabulary (a stage is
   typed at one row, L18): inlined where the library needs it and written
   by no demo; the model-side idioms are `group @l` and a pane. The one
-  exception is a fact of the platform read beside the model:
-  `timestamped @l` feeds a line its row with the time under a field the
-  author names and releases the row without it, and `timestamping @l`
-  adds the time to an event's payload — the time is no state of the app,
-  so it is no model field, and a line that reads it follows the clock
-  without the knot turning. **The current time is never a source**: a
+  exception is a fact of the host read beside the model — `PUI`'s
+  `reading @l` feeds a line its row with the fact under a field the
+  author names, re-feeds it as the fact changes and releases the row
+  without it; `stamping @l` adds the fact to an event's payload and
+  `stampingEdits @l` to an edit's. A fact of the host is no state of the
+  app, so it is no model field, and a line that reads it follows it
+  without the knot turning. **The environment is never a source**: a
   source owns a field of the model, so a clock among the sources made
-  every beat a feed of the whole row (`clock @l`, deleted 2026-11-22);
-  a stream of beats that carries the time is `ticks @l period #
-  timestamping @t`. **Time measured is read the same way**, never
-  counted: `timed @l`, `timing @l` and `timingEdits @l` are the three
-  with the time run since the page opened, to the millisecond, for the
-  wall clock — a moment the model keeps (a start, a lap, an edit) is a
-  field, what has run since is read by the line that shows it, and no
-  beat is folded into the model (timer, stopwatch, 2026-11-22). Neither carries `Lacks`, which is stuck on a
+  every beat a feed of the whole row (`clock @l`, deleted 2026-11-22),
+  and where the device is, whether it is online and the colour scheme
+  preferred were sources until 2026-11-24. `PUI.Web` names each fact
+  once per form — lines `timestamped`, `timed`, `geolocated`, `online`,
+  `colorScheme`, `reducedMotion`, `pointer`, `viewport`, `language`,
+  `timeZone`; events `timestamping`, `timing`, `geolocating`; the edit
+  `timingEdits` — and a form is named for a fact only where a demo
+  reaches it. A moment or place the model keeps (a start, a lap, an
+  edit, where a report was filed) is a field, carried in by the event
+  that made it; what has passed since, or where the device is now, is
+  read by the line that shows it, and no beat is folded into the model
+  (timer, stopwatch, incident-report); a stream of beats that carries
+  the time is `ticks @l period # timestamping @t`. Neither carries `Lacks`, which is stuck on a
   row whose tail the view model fills (L18); the named field must be one
   the row does not have.
   **Unreachable by design** — a word whose only use another guardrail

@@ -18,14 +18,14 @@
 -- | - **panes** (re-exported from `PUI`) — `provided`, `inCase`,
 -- |   `providedAt`, `inCaseAt`, and `awaited`, content absent until its
 -- |   first feed;
--- | - **sources** — `geolocated`, `online`, `colorScheme`, each
--- |   `{} → { l :: a }`, owning one field the app cannot seed; the time
--- |   is not among them;
--- | - **the time beside the model** — `timestamped @l`, a line that reads
--- |   the time under field `l` of its row, and `timestamping @l`, an
--- |   emitter whose event carries the time it left at; for measuring,
--- |   the time run since the page opened, to the millisecond: `timed @l`,
--- |   `timing @l`, and `timingEdits @l`, an editor whose edit carries it;
+-- | - **facts of the host beside the model**, never in it — each a line
+-- |   that reads the fact under field `l` of its row and follows it
+-- |   (`PUI.reading` at one fact): `geolocated`, `online`, `colorScheme`,
+-- |   `reducedMotion`, `pointer`, `viewport`, `language`, `timeZone`,
+-- |   `timestamped` (the wall clock) and `timed` (the time run since the
+-- |   page opened, to measure with); and the event that carries one as
+-- |   it leaves (`PUI.stamping`): `geolocating`, `timestamping`,
+-- |   `timing`, and the edit, `timingEdits`;
 -- | - **oculars that watch the DOM** — `separating`, a rule shown only
 -- |   between things, and `revealing`, a scroller that shows what it was
 -- |   last given;
@@ -103,7 +103,13 @@ module PUI.Web
   , revealing
   , separating
   , geolocated
+  , geolocating
   , online
+  , reducedMotion
+  , pointer
+  , viewport
+  , language
+  , timeZone
   , timestamped
   , timestamping
   , timed
@@ -140,7 +146,7 @@ import Control.Monad.State (class MonadState, StateT, gets, modify_, runStateT)
 import ConvertableOptions (class ConvertOption)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Profunctor.Row.RecordToRecord (focusField)
-import Data.Variant (case_, inj, on)
+import Data.Variant (inj)
 import Type.Proxy (Proxy(..))
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (Maybe(..), isNothing, maybe)
@@ -150,12 +156,11 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Effect.Unsafe (unsafePerformEffect)
 import PUI (awaited, inCase, inCaseAt, provided, providedAt) as Panes
-import PUI (class Interacting, Gesture(..), fromHandles, handles, recordToRecordWiring, source, class Hosting, class Scoped, Ocular, PUI(..), Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
+import PUI (class Interacting, Gesture(..), fromHandles, handles, reading, recordToRecordWiring, stamping, stampingEdits, class Hosting, class Scoped, Ocular, PUI, Logged, Scope, ScopeState(..), cancelScope, diagnosticsOn, newScope, onCancel, resumeScope, setDiagnostics, setSink, setTracing, suspendScope)
 import Prim.Row (class Cons)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
 import Record as Record
-import Record.Unsafe (unsafeDelete, unsafeSet)
 
 foreign import data Node :: Type
 
@@ -334,14 +339,20 @@ foreign import liveRun :: Array Node -> Effect (Array Node)
 foreign import onPointerXY :: String -> Node -> (Number -> Number -> Effect Unit) -> Effect Unit
 foreign import onDeparture :: Node -> Effect Unit -> Effect Unit
 foreign import focusWithin :: Node -> Effect Unit
-foreign import watchPosition :: ({ lat :: Number, lng :: Number } -> Effect Unit) -> Effect Unit -> Effect (Effect Unit)
+foreign import positionNow :: forall a. ({ lat :: Number, lng :: Number } -> a) -> a -> a -> Effect a
+foreign import positionChanges :: Effect Unit -> Effect (Effect Unit)
 foreign import isOnline :: Effect Boolean
-foreign import watchOnline :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
+foreign import onlineChanges :: Effect Unit -> Effect (Effect Unit)
+foreign import mediaMatches :: String -> Effect Boolean
+foreign import mediaChanges :: Array String -> Effect Unit -> Effect (Effect Unit)
+foreign import viewportNow :: Effect { width :: Int, height :: Int }
+foreign import viewportChanges :: Effect Unit -> Effect (Effect Unit)
+foreign import languageNow :: Effect String
+foreign import languageChanges :: Effect Unit -> Effect (Effect Unit)
+foreign import timeZoneNow :: Effect String
 foreign import localTime :: Effect { hours :: Int, minutes :: Int, seconds :: Int }
 foreign import timeRun :: Effect { ms :: Number }
 foreign import everyMs :: Number -> Effect Unit -> Effect (Effect Unit)
-foreign import prefersDark :: Effect Boolean
-foreign import watchColorScheme :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
 foreign import onFilePicked :: Node -> ({ name :: String, size :: Number, mime :: String } -> Effect Unit) -> Effect (Effect Unit)
 foreign import onInputDebounced :: Node -> Number -> (String -> Effect Unit) -> Effect Unit
 
@@ -885,47 +896,159 @@ each items build = built do
 built :: forall a r. Web a -> PUI Web { | r } { | r }
 built build = fromHandles (build *> handles (identity :: PUI Web { | r } { | r }))
 
--- Sources
+-- Facts beside the model
 
--- | Where the device is: `located` with its coordinates once the platform
--- | answers, `unknown` until then, `denied` when the user refuses or the
--- | platform has no geolocation. Follows the device thereafter.
+-- | A line that **reads where the device is** under field `l`:
+-- | `located` with its coordinates once the platform answers, `unknown`
+-- | until then, `denied` when the user refuses or the platform has no
+-- | geolocation — `( headlineSmall $ text whereLine ) # geolocated
+-- | @"position"` (here-and-now). The line follows the device; the model
+-- | holds no position. `reading`'s laws, all four. One platform watch is
+-- | shared by every reader and runs while any is registered.
 geolocated
-  :: forall @l r
+  :: forall @l r t
    . IsSymbol l
-  => Cons l [ located :: { lat :: Number, lng :: Number }, unknown :: {}, denied :: {} ] () r
-  => PUI Web {} { | r }
-geolocated = source @l (pure (inj (Proxy @"unknown") {})) \tell ->
-  watchPosition (tell <<< inj (Proxy @"located")) (tell (inj (Proxy @"denied") {}))
+  => Cons l [ located :: { lat :: Number, lng :: Number }, unknown :: {}, denied :: {} ] r t
+  => PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+geolocated = reading @l position positionChanges
 
--- | Whether the browser is online, as it reports it, followed as it changes.
-online
-  :: forall @l r
+-- | An emitter whose event **carries where the device was** when it left,
+-- | `geolocated`'s cases, under field `l` of its payload — `button @"File
+-- | the report" # geolocating @"position"` (incident-report): a place
+-- | the model keeps is a fact of the event, never the device's live
+-- | position. The platform is watched from registration, so the event
+-- | carries the last answer, `unknown` before the first.
+geolocating
+  :: forall @l c a b v w i
    . IsSymbol l
-  => Cons l [ online :: {}, offline :: {} ] () r
-  => PUI Web {} { | r }
-online = source @l (onlineCase <$> isOnline) \tell -> watchOnline (tell <<< onlineCase)
+  => IsSymbol c
+  => RowToList v (RL.Cons c { | a } RL.Nil)
+  => Cons c { | a } () v
+  => Cons l [ located :: { lat :: Number, lng :: Number }, unknown :: {}, denied :: {} ] a b
+  => Cons c { | b } () w
+  => RowToList w (RL.Cons c { | b } RL.Nil)
+  => PUI Web i [ | v ]
+  -> PUI Web i [ | w ]
+geolocating = stamping @l @c position positionChanges
+
+position :: Effect [ located :: { lat :: Number, lng :: Number }, unknown :: {}, denied :: {} ]
+position = positionNow (inj (Proxy @"located")) (inj (Proxy @"unknown") {}) (inj (Proxy @"denied") {})
+
+-- | A line that **reads whether the browser is online**, as it reports
+-- | it, under field `l` — `( p $ text connectionLine ) # online
+-- | @"connection"` (here-and-now). `reading`'s laws.
+online
+  :: forall @l r t
+   . IsSymbol l
+  => Cons l [ online :: {}, offline :: {} ] r t
+  => PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+online = reading @l (onlineCase <$> isOnline) onlineChanges
   where
   onlineCase on = if on then inj (Proxy @"online") {} else inj (Proxy @"offline") {}
+
+-- | A line that **reads the colour scheme the user prefers**, `light` or
+-- | `dark`, under field `l`, followed as the system setting changes —
+-- | `( p $ text schemeLine ) # colorScheme @"scheme"` (here-and-now). For
+-- | styling alone the stylesheet's `prefers-color-scheme` needs no word;
+-- | this is for a line whose words or data differ. `reading`'s laws.
+colorScheme
+  :: forall @l r t
+   . IsSymbol l
+  => Cons l [ light :: {}, dark :: {} ] r t
+  => PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+colorScheme = reading @l (schemeCase <$> mediaMatches dark) (mediaChanges [ dark ])
+  where
+  dark = "(prefers-color-scheme: dark)"
+  schemeCase d = if d then inj (Proxy @"dark") {} else inj (Proxy @"light") {}
+
+-- | A line that **reads whether the user asks for less motion**, the
+-- | platform's `prefers-reduced-motion` — `reduce` or `noPreference` —
+-- | under field `l` (`( p $ text motionLine ) # reducedMotion @"motion"`,
+-- | here-and-now). `reading`'s laws.
+reducedMotion
+  :: forall @l r t
+   . IsSymbol l
+  => Cons l [ reduce :: {}, noPreference :: {} ] r t
+  => PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+reducedMotion = reading @l (motionCase <$> mediaMatches reduce) (mediaChanges [ reduce ])
+  where
+  reduce = "(prefers-reduced-motion: reduce)"
+  motionCase r = if r then inj (Proxy @"reduce") {} else inj (Proxy @"noPreference") {}
+
+-- | A line that **reads what the user points with**, the platform's
+-- | primary `pointer` — `coarse` (a finger), `fine` (a mouse, a pen) or
+-- | `none` — under field `l` (`( p $ text pointerLine ) # pointer
+-- | @"pointer"`, here-and-now). `reading`'s laws.
+pointer
+  :: forall @l r t
+   . IsSymbol l
+  => Cons l [ coarse :: {}, fine :: {}, none :: {} ] r t
+  => PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+pointer = reading @l pointerCase (mediaChanges [ coarse, fine ])
+  where
+  coarse = "(pointer: coarse)"
+  fine = "(pointer: fine)"
+  pointerCase = do
+    isCoarse <- mediaMatches coarse
+    isFine <- mediaMatches fine
+    pure
+      if isCoarse then inj (Proxy @"coarse") {}
+      else if isFine then inj (Proxy @"fine") {}
+      else inj (Proxy @"none") {}
+
+-- | A line that **reads the size of the window**, its layout viewport in
+-- | CSS pixels, under field `l`, followed as it is resized — `( p $ text
+-- | windowLine ) # viewport @"window"` (here-and-now). For layout alone a
+-- | media query needs no word; this is for a line whose words or data
+-- | differ by size. `reading`'s laws.
+viewport
+  :: forall @l r t
+   . IsSymbol l
+  => Cons l { width :: Int, height :: Int } r t
+  => PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+viewport = reading @l viewportNow viewportChanges
+
+-- | A line that **reads the user's preferred language**, as a BCP 47 tag
+-- | (`"pl-PL"`), under field `l`, followed as the browser's setting
+-- | changes — `( p $ text languageLine ) # language @"language"`
+-- | (here-and-now). `reading`'s laws.
+language
+  :: forall @l r t
+   . IsSymbol l
+  => Cons l String r t
+  => PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+language = reading @l languageNow languageChanges
+
+-- | A line that **reads the time zone** the platform keeps, as an IANA name
+-- | (`"Europe/Warsaw"`), under field `l` — `( p $ text whenLine ) #
+-- | timeZone @"zone" # timestamped @"time" clockPeriod` (here-and-now).
+-- | The platform reports no change, so the zone is read at each feed;
+-- | under `timestamped`, as here, every beat is one. `reading`'s laws.
+timeZone
+  :: forall @l r t
+   . IsSymbol l
+  => Cons l String r t
+  => PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+timeZone = reading @l timeZoneNow unwatched
 
 -- | A line that **reads the time**: the stage is fed its row with the wall
 -- | clock under field `l` — `( labelLarge $ text waitLine ) # timestamped
 -- | @"time" clockPeriod`, `waitLine :: { placed :: Time, time :: { hours ::
 -- | Int, minutes :: Int, seconds :: Int } | r } -> String` — and fed it
 -- | again every `period`, so the time is a fact of the platform the line
--- | reads where it is drawn and no field of the model. Laws: **read at the
--- | feed** — every feed reaches the stage with the time of that moment;
--- | **followed** — each `period` the stage is fed the row it was last fed
--- | with the time then, quietly while its scope is suspended; **nothing
--- | leaves on a beat** — what the stage passes on while a beat feeds it,
--- | the same row again, is not passed on, so a beat never reaches the
--- | knot; **the model's row leaves** — what the stage does release, an
--- | edit, leaves without field `l`. The author names the field, and it
--- | must be one the row does not have: the time written over a field of
--- | the model would be dropped with it on the way out. The time has no
--- | source of its own: a source would make it a field of the model, and
--- | each beat a turn of the knot. Beats fall on whole periods of the wall
--- | clock, one timer for every use of a period.
+-- | reads where it is drawn and no field of the model. `reading`'s laws,
+-- | the change being each `period`. The time has no source of its own: a
+-- | source would make it a field of the model, and each beat a turn of
+-- | the knot. Beats fall on whole periods of the wall clock, one timer for
+-- | every use of a period.
 timestamped
   :: forall @l r t
    . IsSymbol l
@@ -933,7 +1056,7 @@ timestamped
   => { ms :: Number }
   -> PUI Web { | t } { | t }
   -> PUI Web { | r } { | r }
-timestamped = reading @l localTime
+timestamped period = reading @l localTime (everyMs period.ms)
 
 -- | A line that **reads the time run**: `timestamped` with the stopwatch's
 -- | clock for the wall's — field `l` is the milliseconds run since the
@@ -943,7 +1066,7 @@ timestamped = reading @l localTime
 -- | what passed between them, whatever the wall clock was set to
 -- | meanwhile, and a moment of `{ ms: 0.0 }` in a seed is the moment the
 -- | page opened, so an application that runs from its start seeds one and
--- | asks nothing. `timestamped`'s laws, all four.
+-- | asks nothing. `reading`'s laws.
 timed
   :: forall @l r t
    . IsSymbol l
@@ -951,36 +1074,7 @@ timed
   => { ms :: Number }
   -> PUI Web { | t } { | t }
   -> PUI Web { | r } { | r }
-timed = reading @l timeRun
-
-reading
-  :: forall @l a r t
-   . IsSymbol l
-  => Cons l a r t
-  => Effect a
-  -> { ms :: Number }
-  -> PUI Web { | t } { | t }
-  -> PUI Web { | r } { | r }
-reading read period (PUI inner) = PUI ado
-  beatReg <- beat
-  innerReg <- inner
-  in \prop -> do
-    rowRef <- Ref.new Nothing
-    beatingRef <- Ref.new false
-    feedInner <- innerReg \o -> do
-      beating <- Ref.read beatingRef
-      unless beating $ prop (unsafeDelete name o)
-    let feed row = read >>= \time -> feedInner (unsafeSet name time row)
-    _ <- beatReg \_ -> Ref.read rowRef >>= traverse_ \row -> do
-      Ref.write true beatingRef
-      feed row
-      Ref.write false beatingRef
-    pure \row -> do
-      Ref.write (Just row) rowRef
-      feed row
-  where
-  name = reflectSymbol (Proxy @l)
-  PUI beat = source @"beat" (pure unit) (\tell -> everyMs period.ms (tell unit)) :: PUI Web {} { beat :: Unit }
+timed period = reading @l timeRun (everyMs period.ms)
 
 -- | An emitter whose event **carries the time it left at**: the wall
 -- | clock is read as the event leaves and joins its payload under field
@@ -1000,7 +1094,7 @@ timestamping
   => RowToList w (RL.Cons c { | b } RL.Nil)
   => PUI Web i [ | v ]
   -> PUI Web i [ | w ]
-timestamping = stamping @l @c localTime
+timestamping = stamping @l @c localTime unwatched
 
 -- | An emitter whose event **carries the time run** when it left:
 -- | `timestamping` with `timed`'s clock — `button' @"Lap" { icon: "flag" }
@@ -1016,25 +1110,7 @@ timing
   => RowToList w (RL.Cons c { | b } RL.Nil)
   => PUI Web i [ | v ]
   -> PUI Web i [ | w ]
-timing = stamping @l @c timeRun
-
-stamping
-  :: forall @l @c t a b v w i
-   . IsSymbol l
-  => IsSymbol c
-  => Cons c { | a } () v
-  => Cons l t a b
-  => Cons c { | b } () w
-  => Effect t
-  -> PUI Web i [ | v ]
-  -> PUI Web i [ | w ]
-stamping read (PUI inner) = PUI ado
-  innerReg <- inner
-  in \prop -> innerReg
-    ( on (Proxy @c)
-        (\payload -> read >>= \time -> prop (inj (Proxy @c) (unsafeSet (reflectSymbol (Proxy @l)) time payload)))
-        case_
-    )
+timing = stamping @l @c timeRun unwatched
 
 -- | An editor whose **edit carries the time run** when it left: field
 -- | `l` of the row an edit releases is the time of that edit —
@@ -1053,28 +1129,10 @@ timingEdits
   => Cons l { ms :: Number } a r
   => PUI Web { | r } { | r }
   -> PUI Web { | r } { | r }
-timingEdits (PUI inner) = PUI ado
-  innerReg <- inner
-  in \prop -> do
-    feeding <- Ref.new false
-    leg <- innerReg \o -> do
-      answering <- Ref.read feeding
-      if answering then prop o else timeRun >>= \time -> prop (unsafeSet (reflectSymbol (Proxy @l)) time o)
-    pure \i -> do
-      Ref.write true feeding
-      leg i
-      Ref.write false feeding
+timingEdits = stampingEdits @l timeRun unwatched
 
--- | The colour scheme the user prefers, `light` or `dark`, followed as the
--- | system setting changes.
-colorScheme
-  :: forall @l r
-   . IsSymbol l
-  => Cons l [ light :: {}, dark :: {} ] () r
-  => PUI Web {} { | r }
-colorScheme = source @l (schemeCase <$> prefersDark) \tell -> watchColorScheme (tell <<< schemeCase)
-  where
-  schemeCase dark = if dark then inj (Proxy @"dark") {} else inj (Proxy @"light") {}
+unwatched :: Effect Unit -> Effect (Effect Unit)
+unwatched _ = pure (pure unit)
 
 -- Entry point
 
