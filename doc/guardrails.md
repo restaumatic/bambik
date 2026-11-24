@@ -415,7 +415,12 @@ allocated there, once per instantiation (2026-10-16).
   source owns a field of the model, so a clock among the sources made
   every beat a feed of the whole row (`clock @l`, deleted 2026-11-22);
   a stream of beats that carries the time is `ticks @l period #
-  timestamping @t`. Neither carries `Lacks`, which is stuck on a
+  timestamping @t`. **Time measured is read the same way**, never
+  counted: `timed @l`, `timing @l` and `timingEdits @l` are the three
+  with the time run since the page opened, to the millisecond, for the
+  wall clock — a moment the model keeps (a start, a lap, an edit) is a
+  field, what has run since is read by the line that shows it, and no
+  beat is folded into the model (timer, stopwatch, 2026-11-22). Neither carries `Lacks`, which is stuck on a
   row whose tail the view model fills (L18); the named field must be one
   the row does not have.
   **Unreachable by design** — a word whose only use another guardrail

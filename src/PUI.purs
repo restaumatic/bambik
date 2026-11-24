@@ -1401,7 +1401,7 @@ renderFieldNames [] = "{}"
 renderFieldNames ls = "{ " <> joinWith ", " ls <> " }"
 
 -- | The **tick source**: the `×→+` leaf owning case `l`
--- | (`ticks @"Clock ticked" tickPeriod`, timer) — every `interval`, the
+-- | (`ticks @"Clock ticked" tickPeriod`, ticker) — every `interval`, the
 -- | row it was last fed leaves as case `l`; replay is `Strong`'s
 -- | retention. Feeds are retained, never answered; nothing ticks before
 -- | the first feed. Beats are due at whole intervals from registration, so

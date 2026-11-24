@@ -70,7 +70,9 @@ none is a monad's `do`):
   (`geolocated @"position"`, `online @"connection"`, `colorScheme
   @"scheme"`, `filePicked @"Photo"`). The current time is never one: it
   is no field of the model, a line reads it (`# timestamped @"time"
-  clockPeriod`) and an event carries it (`# timestamping @"time"`). A
+  clockPeriod`) and an event carries it (`# timestamping @"time"`);
+  time measured is the same with `timed`, `timing` and `timingEdits`,
+  never a count of beats folded into the model. A
   source reads nothing, so it is typed at `{}` and a block of sources
   opens the flow; below a line that releases a field it is a compile
   error, and there a source is followed by `# supplied`, which inserts
@@ -184,7 +186,10 @@ index from the line you need to the word and a demo that writes it.
 | a constant replacing the model whole | `reset @"New game" openingPosition` | tic-tac-toe |
 | an event line that exists in one case | `( … ) # stepped # inCaseAt @"watching" @"phase"` | ticker |
 | an emitter inside a list element, its event carrying that element's row | `( listOfAt' @"Pozycja wydana" @"dish" @"lines" { selected: isPlated } ticketItem ) # joined @"Pozycja wydana"` inside `# gatheredOf @"number" ticketsPage`, folded by `foldInto @"Pozycja wydana" plateDish` | diner |
-| a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | stopwatch, timer |
+| a line that shows time measured: what has run since a moment the model keeps | `( displaySmall $ text elapsedLine ) # timed @"time" tickPeriod`, `time :: { ms :: Number }` the time run since the page opened, `{ ms: 0.0 }` in a seed that moment | stopwatch, timer |
+| an event stamped with the time run, to measure from | `button' @"Lap" { icon: "flag" } # timing @"time"`, folded by `foldInto @"Lap" recordLap` | stopwatch, timer |
+| an edit stamped with the time run, and what follows from it | `sliderLive @"Duration" # timingEdits @"changed" # settled rerun`, `changed :: { ms :: Number }` a model field, `rerun :: Timer -> Timer` | timer |
+| a periodic occurrence | `ticks @"Clock ticked" tickPeriod` | ticker, order-dashboard |
 | an invariant between edited fields | `filledTextField @"Celsius" # settled fromCelsius` | temperature-converter |
 | an effect on a button's case, in the fold block | `( Semigroupoid.do { indeterminateLinearProgress # action @"Place order" placeOrder; snackbar @"Order placed" (const usualOrder) } )`, the pair owning the case | espresso-bar, order-form |
 | an effect on the line after its button | `indeterminateCircularProgress # action @"Charge card" chargeFlaky`, then `snackbar @"Card charged" captured` | payment, ticker |
@@ -672,7 +677,7 @@ in the message, the one the line wants and the one it got, and look
 | the model row against `( event :: …, model :: … )` | the event line | a handler and its fold word disagree: `fold @l f` hands `f` the model alone, `foldInto @l f` one record, `{ event, model }` | match the word to the handler: `fold` for `model -> model` (counter's `increment`), `foldInto` for `{ event, model } -> model` (crud's `pick`) |
 | `Function …` against `Record` | the line after the event path, or the knot (`looped`) when the path is the body's last line | the event path is not closed: bare folds release a step, `model -> model`, where the next line and the knot take a row | close the path, `( … ) # stepped` (counter) |
 | `( "Count" :: … )` against `( "Cout" :: … )` | the fold | one case spelled two ways | spell the case the same on the emitter and its fold |
-| `( "Reset" :: … )` against `( … )` | the first line of the emitter block | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (timer's `fold @"Clock ticked" tick`), or remove the emitter |
+| `( "Reset" :: … )` against `( … )` | the first line of the emitter block | no fold handles the case | add its fold to the fold block, silent if nothing needs telling (ticker's `fold @"Clock ticked" tick`), or remove the emitter |
 | `( "Undo" :: … )` against `( … )` | the first line of the fold block | a fold for a case nothing emits | remove the fold, or add the emitter it was written for |
 | `Two merge operands own the label "Count"` | the first line of the block | a label written twice in one block: a case two emitters emit, a case two folds handle, a field two sources produce | two buttons are two business actions — give each its own case and its own fold (stopwatch's Start and Stop) |
 | `( "E-mail" :: … \| t3 )` against the model row, `while solving Cons "E-mail"` | the editor line | an editor, selector or pane names a field or case the model does not have | spell the label as the model has it, or add the field to the model |

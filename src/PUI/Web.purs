@@ -23,7 +23,9 @@
 -- |   is not among them;
 -- | - **the time beside the model** — `timestamped @l`, a line that reads
 -- |   the time under field `l` of its row, and `timestamping @l`, an
--- |   emitter whose event carries the time it left at;
+-- |   emitter whose event carries the time it left at; for measuring,
+-- |   the time run since the page opened, to the millisecond: `timed @l`,
+-- |   `timing @l`, and `timingEdits @l`, an editor whose edit carries it;
 -- | - **oculars that watch the DOM** — `separating`, a rule shown only
 -- |   between things, and `revealing`, a scroller that shows what it was
 -- |   last given;
@@ -104,6 +106,9 @@ module PUI.Web
   , online
   , timestamped
   , timestamping
+  , timed
+  , timing
+  , timingEdits
   , colorScheme
   , onFilePicked
   , module Panes
@@ -333,6 +338,7 @@ foreign import watchPosition :: ({ lat :: Number, lng :: Number } -> Effect Unit
 foreign import isOnline :: Effect Boolean
 foreign import watchOnline :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
 foreign import localTime :: Effect { hours :: Int, minutes :: Int, seconds :: Int }
+foreign import timeRun :: Effect { ms :: Number }
 foreign import everyMs :: Number -> Effect Unit -> Effect (Effect Unit)
 foreign import prefersDark :: Effect Boolean
 foreign import watchColorScheme :: (Boolean -> Effect Unit) -> Effect (Effect Unit)
@@ -927,7 +933,35 @@ timestamped
   => { ms :: Number }
   -> PUI Web { | t } { | t }
   -> PUI Web { | r } { | r }
-timestamped period (PUI inner) = PUI ado
+timestamped = reading @l localTime
+
+-- | A line that **reads the time run**: `timestamped` with the stopwatch's
+-- | clock for the wall's — field `l` is the milliseconds run since the
+-- | page opened, to the fraction, on a clock that only runs forward
+-- | (`( displaySmall $ text elapsedLine ) # timed @"time" tickPeriod`,
+-- | stopwatch). It is the time to measure with: two readings subtract to
+-- | what passed between them, whatever the wall clock was set to
+-- | meanwhile, and a moment of `{ ms: 0.0 }` in a seed is the moment the
+-- | page opened, so an application that runs from its start seeds one and
+-- | asks nothing. `timestamped`'s laws, all four.
+timed
+  :: forall @l r t
+   . IsSymbol l
+  => Cons l { ms :: Number } r t
+  => { ms :: Number }
+  -> PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+timed = reading @l timeRun
+
+reading
+  :: forall @l a r t
+   . IsSymbol l
+  => Cons l a r t
+  => Effect a
+  -> { ms :: Number }
+  -> PUI Web { | t } { | t }
+  -> PUI Web { | r } { | r }
+reading read period (PUI inner) = PUI ado
   beatReg <- beat
   innerReg <- inner
   in \prop -> do
@@ -936,7 +970,7 @@ timestamped period (PUI inner) = PUI ado
     feedInner <- innerReg \o -> do
       beating <- Ref.read beatingRef
       unless beating $ prop (unsafeDelete name o)
-    let feed row = localTime >>= \time -> feedInner (unsafeSet name time row)
+    let feed row = read >>= \time -> feedInner (unsafeSet name time row)
     _ <- beatReg \_ -> Ref.read rowRef >>= traverse_ \row -> do
       Ref.write true beatingRef
       feed row
@@ -946,7 +980,7 @@ timestamped period (PUI inner) = PUI ado
       feed row
   where
   name = reflectSymbol (Proxy @l)
-  PUI beat = source @"time" localTime (\tell -> everyMs period.ms (localTime >>= tell)) :: PUI Web {} { time :: { hours :: Int, minutes :: Int, seconds :: Int } }
+  PUI beat = source @"beat" (pure unit) (\tell -> everyMs period.ms (tell unit)) :: PUI Web {} { beat :: Unit }
 
 -- | An emitter whose event **carries the time it left at**: the wall
 -- | clock is read as the event leaves and joins its payload under field
@@ -966,13 +1000,70 @@ timestamping
   => RowToList w (RL.Cons c { | b } RL.Nil)
   => PUI Web i [ | v ]
   -> PUI Web i [ | w ]
-timestamping (PUI inner) = PUI ado
+timestamping = stamping @l @c localTime
+
+-- | An emitter whose event **carries the time run** when it left:
+-- | `timestamping` with `timed`'s clock — `button' @"Lap" { icon: "flag" }
+-- | # timing @"time"`, folded by `foldInto @"Lap" recordLap` (stopwatch).
+timing
+  :: forall @l c a b v w i
+   . IsSymbol l
+  => IsSymbol c
+  => RowToList v (RL.Cons c { | a } RL.Nil)
+  => Cons c { | a } () v
+  => Cons l { ms :: Number } a b
+  => Cons c { | b } () w
+  => RowToList w (RL.Cons c { | b } RL.Nil)
+  => PUI Web i [ | v ]
+  -> PUI Web i [ | w ]
+timing = stamping @l @c timeRun
+
+stamping
+  :: forall @l @c t a b v w i
+   . IsSymbol l
+  => IsSymbol c
+  => Cons c { | a } () v
+  => Cons l t a b
+  => Cons c { | b } () w
+  => Effect t
+  -> PUI Web i [ | v ]
+  -> PUI Web i [ | w ]
+stamping read (PUI inner) = PUI ado
   innerReg <- inner
   in \prop -> innerReg
     ( on (Proxy @c)
-        (\payload -> localTime >>= \time -> prop (inj (Proxy @c) (unsafeSet (reflectSymbol (Proxy @l)) time payload)))
+        (\payload -> read >>= \time -> prop (inj (Proxy @c) (unsafeSet (reflectSymbol (Proxy @l)) time payload)))
         case_
     )
+
+-- | An editor whose **edit carries the time run** when it left: field
+-- | `l` of the row an edit releases is the time of that edit —
+-- | `sliderLive @"Duration" # timingEdits @"changed"` (timer), `changed
+-- | :: { ms :: Number }` a field of the model: the moment of its last
+-- | edit, which is a fact the model keeps, where the current time is
+-- | none. What follows from an edit made then is the line's `# settled`,
+-- | a function of the row. Laws: **a feed is answered as fed** — the
+-- | editor's answer to a feed leaves with the `l` it was fed, so a turn of
+-- | the knot stamps nothing; **an edit is stamped** — a release outside a
+-- | feed leaves with `l` read as it leaves. The editor answers within its
+-- | feed, as every leaf does (`unanswering`'s precondition).
+timingEdits
+  :: forall @l a r
+   . IsSymbol l
+  => Cons l { ms :: Number } a r
+  => PUI Web { | r } { | r }
+  -> PUI Web { | r } { | r }
+timingEdits (PUI inner) = PUI ado
+  innerReg <- inner
+  in \prop -> do
+    feeding <- Ref.new false
+    leg <- innerReg \o -> do
+      answering <- Ref.read feeding
+      if answering then prop o else timeRun >>= \time -> prop (unsafeSet (reflectSymbol (Proxy @l)) time o)
+    pure \i -> do
+      Ref.write true feeding
+      leg i
+      Ref.write false feeding
 
 -- | The colour scheme the user prefers, `light` or `dark`, followed as the
 -- | system setting changes.

@@ -2,28 +2,23 @@ module Timer.HTML (timer) where
 
 import Prelude ((#), ($), Unit)
 
-import Data.Profunctor.Row.RecordToVariant as RecordToVariant
-import Data.Profunctor.Row.VariantToRecord as VariantToRecord
 import Effect (Effect)
-import PUI (fold, looped, stepped, ticks, with)
-import PUI.Web (staticText, text)
+import PUI (foldInto, looped, settled, stepped, with)
+import PUI.Web (staticText, text, timed, timing, timingEdits)
 import PUI.Web.HTML (body, button, div, label, p, progress, rangeInput)
 import QualifiedDo.Semigroupoid as Semigroupoid
-import Timer (elapsedFraction, progressLine, restarted, tenSecondFreshTimer, tick, tickPeriod)
+import Timer (elapsedFraction, progressLine, rerun, restarted, tenSecondFreshTimer, tickPeriod)
 
 timer :: Effect Unit
 timer =
   body $ div $ Semigroupoid.do
-    progress elapsedFraction
-    p $ text progressLine
+    ( Semigroupoid.do
+      progress elapsedFraction
+      p $ text progressLine ) # timed @"time" tickPeriod
     p $ label $ Semigroupoid.do
       staticText "Duration "
-      rangeInput @"Duration"
+      rangeInput @"Duration" # timingEdits @"changed" # settled rerun
     ( Semigroupoid.do
-      RecordToVariant.do
-        ticks @"Clock ticked" tickPeriod
-        button @"Reset"
-      VariantToRecord.do
-        fold @"Clock ticked" tick
-        fold @"Reset" restarted ) # stepped
+      button @"Reset" # timing @"time"
+      foldInto @"Reset" restarted ) # stepped
   # looped # with tenSecondFreshTimer

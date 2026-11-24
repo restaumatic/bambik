@@ -607,6 +607,10 @@ export function localTime() {
   return { hours: d.getHours(), minutes: d.getMinutes(), seconds: d.getSeconds() };
 }
 
+export function timeRun() {
+  return { ms: performance.now() };
+}
+
 // everyMs :: Number -> Effect Unit -> Effect (Effect Unit)
 // One timer per period, shared by every subscriber, its beats on whole
 // periods of the wall clock: a beat that took time is followed sooner.
