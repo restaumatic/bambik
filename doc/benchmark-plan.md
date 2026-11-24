@@ -359,3 +359,20 @@ model as it goes.
   29). A third to a half of each is painting and compositing: a station
   that is not open is out of the document, so a switch styles, lays out
   and paints it anew.
+- 2026-11-22: change C and closed stations kept in the DOM measured, both
+  as throwaway patches, neither made. C, at Statystyki on the quarter
+  speed, medians, standard day / 16×: today a page turned 59 / 681 ms, a
+  group picked 78 / 948, a search key 64 / 918; with the sales remembered
+  by the orders array and the sought sales by the model (a last-argument
+  cache in the view model, two lines) 24 / 52, 30 / 65, 18 / 53; with the
+  sought sales remembered by the model only — what a presenting stage
+  would buy, one computation per feed — 27 / 109, 42 / 208, 24 / 192. In
+  node one feed's reads are 4.9 / 140 ms today, 0.4 / 7 with both caches
+  on orders that did not change (what sales kept as a model field by the
+  folds would cost), 0.9 / 19 on orders that did. Closed stations hidden
+  where they stand, switches at quarter speed, medians, Magazyn / Sala /
+  Kuchnia / Wydawka / Raport / Statystyki: detached (today) 119 / 106 /
+  80 / 48 / 36 / 109 ms; `display: none` 107 / 101 / 76 / 50 / 39 / 108;
+  `content-visibility: hidden` 79 / 93 / 55 / 43 / 35 / 101. Start, first
+  visits, a dish added, a second passing, heap and node count are the
+  same in all three.
