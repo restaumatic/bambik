@@ -120,6 +120,8 @@ module PUI
   , providedAt
   , introduced
   , supplied
+  , derivation
+  , derived
   , acknowledged
   , continued
   , module Adopters
@@ -146,7 +148,7 @@ import Data.Profunctor.Keyed.Gathering (class Gathering)
 import Data.Profunctor.Choice (class Choice, left)
 import Data.Profunctor.Cochoice (class Cochoice)
 import Data.Profunctor.Costrong (class Costrong)
-import Data.Profunctor.Row.RecordToRecord (class RecordToRecord, onField, recordToRecord)
+import Data.Profunctor.Row.RecordToRecord (class ForgetFields, class RecordToRecord, forgetFields, onField, onFields, recordToRecord)
 -- the words a view writes beside the leaves, re-exported so demos need the
 -- row modules only for the `.do` merges. `focusField` and the adopters
 -- (`atField`/`atCase`, `toField`) are deliberately absent: every vocabulary
@@ -181,7 +183,7 @@ import Data.Traversable (for, sequence_, traverse_)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Variant (class Contractable, Variant, case_, contract, inj, on, prj)
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
@@ -1492,6 +1494,46 @@ source now watch = fromHandles do
           when active $ prop (row a)
         onCancel sc stop
     }
+
+-- | A field **derived** from the row: the `×→×` producer that reads the
+-- | row and owns one field, `f` of what it is fed, answering every feed —
+-- | the operand of a block of derivations (`RecordToRecord.do`), each
+-- | computed once per feed and released together, the row the screen
+-- | re-presented in its own terms. It is what a source is with the row
+-- | read instead of `{}` fed: the second operand kind of the `×→×`
+-- | replace cell (guardrails L3). It is never copy: a derivation is a
+-- | read several lines share, and a sentence stays a copy function at its
+-- | display (L17).
+derivation
+  :: forall @l m a r s
+   . Applicative m
+  => IsSymbol l
+  => Cons l a () s
+  => ({ | r } -> a)
+  -> PUI m { | r } { | s }
+derivation f = dimap f (\a -> Record.insert (Proxy @l) a {}) identity
+
+-- | A view **over the row plus fields derived from it**: the block's
+-- | fields are computed at each feed and put beside the row for the
+-- | lines inside, which read them by label like any field, and taken off
+-- | again on the way out, so nothing derived reaches the knot or the
+-- | seed. `onFields` in, the lines, `forgetFields` out — refinement at
+-- | `×→×` as re-presentation under the diagonal. Laws: **computed at the
+-- | feed** — every feed reaches the lines with the block's fields as
+-- | they are then, in one row; **the row leaves** — what the lines
+-- | release, a feed answered or an edit, leaves without them. A station
+-- | whose lines all read one expensive derivation reads it once
+-- | (Diner's Statystyki: `# derived (derivation @"sought" soughtSales)`).
+derived
+  :: forall m d dl r v
+   . Applicative m
+  => RowToList d dl
+  => ForgetFields dl
+  => Union d r v
+  => PUI m { | r } { | d }
+  -> PUI m { | v } { | v }
+  -> PUI m { | r } { | r }
+derived block inner = rmap (forgetFields (Proxy @dl)) (onFields block >>> inner)
 
 -- | A line that **reads a fact beside the model**: the stage is fed its
 -- | row with `now` read under field `l`, and fed the row it was last fed

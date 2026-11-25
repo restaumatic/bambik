@@ -76,7 +76,7 @@ allocated there, once per instantiation (2026-10-16).
 
   | Type | Shape | Sort |
   | --- | --- | --- |
-  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included, each with `…Unpicked` and `…Optional` siblings), the introducing form (`introduced @l init`), the labelled group (`group @l`), displays, panes (`inCase`), lists of displays (`actedOf`, `actedAt`), the updatable selection (`actedWithin`), the event path as a line (`stepped`), sources (fed `{}`, owning one field) and a source below a line (`# supplied`), stages |
+  | `PUI Web { \| a } { \| b }` | `×→×` | editors (selectors included, each with `…Unpicked` and `…Optional` siblings), the introducing form (`introduced @l init`), the labelled group (`group @l`), displays, panes (`inCase`), lists of displays (`actedOf`, `actedAt`), the updatable selection (`actedWithin`), the event path as a line (`stepped`), sources (fed `{}`, owning one field) and a source below a line (`# supplied`), derivations (`derivation @l f`, owning one field read from the row) and the lines over them (`# derived block`), stages |
   | `PUI Web { \| a } [ \| b ]` | `×→+` | emitters (`button`, `listOf`, `tile`, `onClickedXY`), `ticks @l`, `load f`, a source joined with its row (`joined @l`), the emitter pane `provided`, the emitting lists `gatheredOf` and `editsOf` |
   | `PUI Web [ \| a ] ({ \| b } -> { \| b })` | `+→×` | the folds (`fold`, `foldInto`, `reset`, `capture`) and the statuses, each a fold with a face (`snackbar @l f`) — the record side written as the **step**, which `stepped` applies to the row its line was last fed (`landed` before the knot, free to change the row's type); the action slot owns `started`/`ended` only, so a status is never the slot |
   | `PUI Web [ \| a ] [ \| b ]` | `+→+` | actions (`action @l f`), the dialogs — `confirmed @l`, and `modal @l` under `# acknowledged` or `# continued exit` |
@@ -121,7 +121,7 @@ allocated there, once per instantiation (2026-10-16).
 
   | | pass | refine | replace |
   | --- | --- | --- | --- |
-  | `×→×` | editors, displays, `group @l`, `inCase`, `actedOf`, `keepingEdits`, `stepped` | `introduced @l`, `supplied`, `onField @l` | sources (`filePicked`), `with`, `landed` on the `{}` a load fills |
+  | `×→×` | editors, displays, `group @l`, `inCase`, `actedOf`, `keepingEdits`, `stepped` | `introduced @l`, `supplied`, `onField @l`, `derived` over a block | sources (`filePicked`), derivations (`derivation @l f`), `with`, `landed` on the `{}` a load fills |
   | `+→+` | `confirmed @l`, the option leaves, `modal @l` under a trailing word | `acknowledged @l`, `onCase @l` | `action @l`, `continued @l`, `joined @l`, `expanded` |
 
   Refine at `×→×` is replace **under the diagonal**: a record-input
@@ -132,12 +132,16 @@ allocated there, once per instantiation (2026-10-16).
   producer, `stepped` over an emitter block (through `landed`). The
   variant-input merges share their output, one row from every arm, and
   need no such word. A new diagonal word MUST name its cell. The `×→×`
-  replace cell has one reachable operand kind, the source; a
-  **derivation** (`{ | model } → { l :: a }`, a read function owning a
-  field, computed once per feed and read by label inside a bracket that
-  forgets it on the way back) would be its second and is not admitted:
-  L17 keeps copy at the leaf, and the shared read it would buy is
-  doc/benchmark-plan.md's route C(2), open (2026-11-25).
+  replace cell has two operand kinds: the **source**, fed `{}` and
+  owning what the platform gives, and the **derivation** (`derivation @l
+  f`, `{ | model } → { l :: a }`, a read function owning a field). A
+  block of derivations is the merge computed once per feed, released as
+  one row; `derived` is its diagonal (`onFields` in, `forgetFields` out),
+  so the lines inside read the derived fields by label and nothing
+  derived reaches the knot or the seed. A derivation is a **shared
+  read**, never copy (L17): admitted 2026-11-25 for Diner's Statystyki,
+  whose seven reads of the day's sales per feed became one
+  (doc/benchmark-plan.md, finding 2, route C(2)).
 - Every component MUST be a citizen of exactly one shape, and its row
   MUST speak the **business label**, stated once as the leaf's own type
   argument. No canonical label (`value`/`clicked`/`event`) appears in
@@ -558,7 +562,12 @@ material and exempt by location.
 - A model field MUST exist because the app's state needs it, never
   because a display wanted a `String` or a `Number`. `settled` therefore
   maintains invariants among **edited** fields only; a `present<App>`
-  normalization feeding a display is a violation. Checkable forms: every
+  normalization feeding a display is a violation. A **shared read** is
+  no model field either: a value several lines derive from the row is
+  derived once beside it (`# derived (derivation @l f)`, L3's `×→×`
+  replace cell) and read by label inside, and taken off before the knot.
+  A derivation with one reader is copy moved into a field and MUST stay
+  a read function at its display. Checkable forms: every
   `# settled` in `demo/` sits on an editor stage; `npm run
   check-view-model` rejects any lambda in a `text` read.
 - A status **tells its case**: label-indexed at its business case, it

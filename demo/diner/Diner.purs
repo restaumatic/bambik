@@ -13,6 +13,7 @@ module Diner
   , Portions
   , Price
   , Receipt
+  , Sales
   , Seating
   , Stage
   , Standing
@@ -30,7 +31,9 @@ module Diner
   , browseState
   , clockPeriod
   , isFirstPage
+  , isFirstSalesPage
   , isLastPage
+  , isLastSalesPage
   , isAdded
   , isLineSoldOut
   , isOffMenu
@@ -44,6 +47,7 @@ module Diner
   , markReady
   , menuPage
   , nextPage
+  , nextSalesPage
   , numberLine
   , offerLine
   , offerState
@@ -63,6 +67,7 @@ module Diner
   , portionRemoved
   , portionsZeroed
   , previousPage
+  , previousSalesPage
   , quantityLine
   , readyLine
   , receiptLine
@@ -71,6 +76,7 @@ module Diner
   , returnUnit
   , salesAmountLine
   , salesPage
+  , salesPageLine
   , searchState
   , seatings
   , sendToKitchen
@@ -79,6 +85,8 @@ module Diner
   , settle
   , soldAmountLine
   , soldQuantityLine
+  , soughtSales
+  , soughtState
   , standings
   , stockPage
   , swatchFace
@@ -239,6 +247,10 @@ type Receipt =
 -- | What the paid orders sold of one dish, and for how much.
 type DishSales = { amount :: Int, dish :: String, quantity :: Int }
 
+-- | The statistics station's row: the day beside the sales of the dishes
+-- | looked for, derived once per feed for every line of the station.
+type Sales = { | DinerRow ( sought :: Array DishSales ) }
+
 -- | The service opened on the day as the back office has it: the first free
 -- | table being served, every dish looked through, the first page
 -- | everywhere.
@@ -270,30 +282,60 @@ clockPeriod = { ms: 1000.0 }
 
 -- | Where the rows on screen stand among all of them, `21–30 z 312`.
 pageLine :: Diner -> String
-pageLine diner =
-  if count == 0 then "0 z 0"
-  else show (first + 1) <> "–" <> show (min count (first + rowsPerPage diner)) <> " z " <> show count
-  where
-  count = listed diner
-  first = pageOf count diner * rowsPerPage diner
+pageLine diner = pageLineOf (listed diner) diner
 
 -- | Nothing before the rows on screen.
 isFirstPage :: Diner -> Boolean
-isFirstPage diner = pageOf (listed diner) diner == 0
+isFirstPage diner = isFirstPageOf (listed diner) diner
 
 -- | Nothing after the rows on screen.
 isLastPage :: Diner -> Boolean
-isLastPage diner = pageOf count diner == lastPage count diner
-  where
-  count = listed diner
+isLastPage diner = isLastPageOf (listed diner) diner
 
 -- | The page before the one on screen.
 previousPage :: Diner -> Diner
-previousPage diner = turnedTo (pageOf (listed diner) diner - 1) diner
+previousPage diner = previousPageOf (listed diner) diner
 
 -- | The page after the one on screen.
 nextPage :: Diner -> Diner
-nextPage diner = turnedTo (pageOf (listed diner) diner + 1) diner
+nextPage diner = nextPageOf (listed diner) diner
+
+-- | The statistics' page words, over the sales looked for as the station
+-- | derives them once per feed (`derived`): the same page as every other
+-- | station's, counted on the derived field instead of read again.
+salesPageLine :: Sales -> String
+salesPageLine sales = pageLineOf (length sales.sought) sales
+
+isFirstSalesPage :: Sales -> Boolean
+isFirstSalesPage sales = isFirstPageOf (length sales.sought) sales
+
+isLastSalesPage :: Sales -> Boolean
+isLastSalesPage sales = isLastPageOf (length sales.sought) sales
+
+previousSalesPage :: Sales -> Sales
+previousSalesPage sales = previousPageOf (length sales.sought) sales
+
+nextSalesPage :: Sales -> Sales
+nextSalesPage sales = nextPageOf (length sales.sought) sales
+
+pageLineOf :: forall r. Int -> { | DinerRow r } -> String
+pageLineOf count diner =
+  if count == 0 then "0 z 0"
+  else show (first + 1) <> "–" <> show (min count (first + rowsPerPage diner)) <> " z " <> show count
+  where
+  first = pageOf count diner * rowsPerPage diner
+
+isFirstPageOf :: forall r. Int -> { | DinerRow r } -> Boolean
+isFirstPageOf count diner = pageOf count diner == 0
+
+isLastPageOf :: forall r. Int -> { | DinerRow r } -> Boolean
+isLastPageOf count diner = pageOf count diner == lastPage count diner
+
+previousPageOf :: forall r. Int -> { | DinerRow r } -> { | DinerRow r }
+previousPageOf count diner = turnedTo (pageOf count diner - 1) diner
+
+nextPageOf :: forall r. Int -> { | DinerRow r } -> { | DinerRow r }
+nextPageOf count diner = turnedTo (pageOf count diner + 1) diner
 
 -- | How dishes are being found: browsed by group, or searched for by name
 -- | across every group.
@@ -303,7 +345,7 @@ browseState diner = if wanted diner == "" then .browsing {} else .searching {}
 -- | The group browsed and the name searched for at the station being worked
 -- | at: the stockroom's, the hall's, the statistics', and none at the
 -- | stations that list no dishes.
-finding :: Diner -> { group :: Group, query :: String }
+finding :: forall r. { | DinerRow r } -> { group :: Group, query :: String }
 finding diner = match
   { "Magazyn": \_ -> { group: diner."Grupa magazynu", query: diner."Szukaj w magazynie" }
   , "Sala": \_ -> { group: diner."Grupa menu", query: diner."Szukaj w menu" }
@@ -675,20 +717,24 @@ takingsLine :: Diner -> String
 takingsLine diner = money (sum (map _.total (receipts diner)))
 
 -- | The dishes on the statistics' page, the best selling first.
-salesPage :: Diner -> Array DishSales
-salesPage diner = paged diner (soughtSales diner)
+salesPage :: Sales -> Array DishSales
+salesPage sales = paged sales sales.sought
 
 -- | What one dish sold for.
 salesAmountLine :: DishSales -> String
 salesAmountLine { amount } = money amount
 
 -- | What the dishes looked for sold for together.
-soldAmountLine :: Diner -> String
-soldAmountLine diner = money (sum (map _.amount (soughtSales diner)))
+soldAmountLine :: Sales -> String
+soldAmountLine sales = money (sum (map _.amount sales.sought))
 
 -- | How many portions of the dishes looked for were sold.
-soldQuantityLine :: Diner -> String
-soldQuantityLine diner = show (sum (map _.quantity (soughtSales diner)))
+soldQuantityLine :: Sales -> String
+soldQuantityLine sales = show (sum (map _.quantity sales.sought))
+
+-- | Whether any dish looked for has sold.
+soughtState :: Sales -> [ found :: {}, none :: {} ]
+soughtState sales = if null sales.sought then .none {} else .found {}
 
 -- | A number of portions.
 quantityLine :: forall r. { quantity :: Int | r } -> String
@@ -705,7 +751,7 @@ overdueAfter = 30
 -- | The dishes looked for: while a name is searched for, the dishes of every
 -- | group whose name contains it, whatever the letter case; otherwise the
 -- | dishes of the group being browsed.
-sought :: Diner -> Array Dish
+sought :: forall r. { | DinerRow r } -> Array Dish
 sought diner@{ dishes } =
   if wanted diner == "" then filter grouped dishes
   else filter (\d -> contains (Pattern (wanted diner)) (toLower d.name)) dishes
@@ -714,7 +760,7 @@ sought diner@{ dishes } =
   grouped d = group == ."Wszystkie" {} || caseText group == caseText d.group
 
 -- | The name searched for, as it is compared: trimmed, in lower case.
-wanted :: Diner -> String
+wanted :: forall r. { | DinerRow r } -> String
 wanted diner = toLower (trim (finding diner).query)
 
 -- | How many rows the station being worked at lists.
@@ -730,31 +776,31 @@ listed diner = match
 
 -- | Rows to a page at the station being worked at, at least one: the hall's
 -- | menu is tiles, every other station a list.
-rowsPerPage :: Diner -> Int
+rowsPerPage :: forall r. { | DinerRow r } -> Int
 rowsPerPage diner = max 1 (if diner."Stanowisko" == ."Sala" {} then diner.perPage.tiles else diner.perPage.list)
 
 -- | The last page of `count` rows, counting from zero.
-lastPage :: Int -> Diner -> Int
+lastPage :: forall r. Int -> { | DinerRow r } -> Int
 lastPage count diner = max 0 ((count - 1) / rowsPerPage diner)
 
 -- | The page on screen of `count` rows, counting from zero: the one turned
 -- | to at this station while the group and the search were what they are
 -- | now, never beyond the last, and the first when none was.
-pageOf :: Int -> Diner -> Int
+pageOf :: forall r. Int -> { | DinerRow r } -> Int
 pageOf count diner = maybe 0 (\{ page } -> clamp 0 (lastPage count diner) page)
   (find (\t -> t.station == diner."Stanowisko" && t.query == query && t.group == group) diner.turned)
   where
   { group, query } = finding diner
 
 -- | The rows of the page on screen.
-paged :: forall a. Diner -> Array a -> Array a
+paged :: forall a r. { | DinerRow r } -> Array a -> Array a
 paged diner rows = slice first (first + rowsPerPage diner) rows
   where
   first = pageOf (length rows) diner * rowsPerPage diner
 
 -- | A page turned to at the station being worked at, under the group and
 -- | the search as they stand, in place of the one turned to there before.
-turnedTo :: Int -> Diner -> Diner
+turnedTo :: forall r. Int -> { | DinerRow r } -> { | DinerRow r }
 turnedTo page diner = diner
   { turned = snoc (filter (\t -> t.station /= diner."Stanowisko") diner.turned)
       { group: (finding diner).group, page: max 0 page, query: (finding diner).query, station: diner."Stanowisko" }

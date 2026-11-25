@@ -376,3 +376,10 @@ model as it goes.
   `content-visibility: hidden` 79 / 93 / 55 / 43 / 35 / 101. Start, first
   visits, a dish added, a second passing, heap and node count are the
   same in all three.
+- 2026-11-25: route C(2) taken, as vocabulary rather than a narrowing
+  word: `derivation @l f` (a read owning a field) and `derived` (the
+  block beside the row, forgotten below) in PUI, over
+  `onFields`/`forgetFields` in the `×→×` shape module. Statystyki reads
+  the sales looked for once per feed, `# derived (derivation @"sought"
+  soughtSales)`, every line of the station typed at `Sales`. Not yet
+  measured against the throwaway patch above.

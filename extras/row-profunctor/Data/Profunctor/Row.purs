@@ -79,7 +79,7 @@
 -- | ```
 -- |
 -- | This is **every function the four shape modules export** beside their
--- | merge, its `do` sugar and the two diagonal introducers `onField`/`onCase`,
+-- | merge, its `do` sugar and the diagonal introducers `onField`/`onFields`/`onCase`,
 -- | and each empty cell is a fact:
 -- |
 -- |   * **focus** — the pure shapes' strength optic at one label (`Lens`,

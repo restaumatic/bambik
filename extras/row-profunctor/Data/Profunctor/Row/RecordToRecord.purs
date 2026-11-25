@@ -9,9 +9,12 @@
 -- |   * **shape class** — `RecordToRecord`, the binary **merge**, with its
 -- |     qualified-do sugar (`bind`/`discard`).
 -- |   * **free functions** — over the strength: `focusField` (the leaf
--- |     lift, making every label-indexed editor a whole-row citizen) and
+-- |     lift, making every label-indexed editor a whole-row citizen),
 -- |     `onField` (a field computed from the row and added to it, the
--- |     mirror of `VariantToVariant.onCase`). No co-strength row form: a
+-- |     mirror of `VariantToVariant.onCase`) and `onFields` (the fields a
+-- |     block computes, united with the row: the merge under the
+-- |     diagonal), with `forgetFields` taking them off again. No
+-- |     co-strength row form: a
 -- |     loop's state is a model field the whole-row `looped` carries
 -- |     (`Data.Profunctor.Row`, *What is deliberately not here*). The
 -- |     one-sided words of this shape — `atField`/`toField` and `settled`
@@ -135,20 +138,28 @@ module Data.Profunctor.Row.RecordToRecord
   , discard
   , focusField
   , onField
+  , onFields
+  , class ForgetFields
+  , forgetFields
   )
   where
 
 import Control.Category (identity)
 import Data.Lens.Lens (lens)
 import Data.Lens.Record (prop)
-import Data.Profunctor (class Profunctor)
+import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Row (class OwnedRecordOutputs)
-import Data.Profunctor.Strong (class Strong)
-import Data.Symbol (class IsSymbol)
+import Data.Profunctor.Strong (class Strong, first)
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Prim.Row (class Cons, class Lacks)
-import Record (insert) as Record
+import Prim.Row (class Cons, class Lacks, class Union)
+import Prim.RowList (RowList)
+import Prim.RowList as RL
+import Record (insert, union) as Record
+import Record.Unsafe (unsafeDelete)
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 class Profunctor p <= RecordToRecord p where
   recordToRecord
@@ -205,3 +216,34 @@ onField
   => p { | b } a
   -> p { | b } { | r }
 onField = lens identity (\b a -> Record.insert (Proxy @l) a b)
+
+-- | The fields a **block** computes from the row, every other field
+-- | passing through: the row **plus the block's fields** leaves. The
+-- | block is a `×→×` merge of producers each owning its field, typed
+-- | `{ | r } → { | d }`, so bare it yields only `d` — the pairing's
+-- | output is owned, never the fed row; this is the pairing **under the
+-- | diagonal**, `Strong`'s `first` with the fed row as the background,
+-- | united with what the block produced. `onField @l` is it over one
+-- | producer whose field is inserted rather than united. Law: at `(->)`,
+-- | `onFields f r = Record.union (f r) r`.
+onFields
+  :: forall p d r v
+   . Union d r v
+  => Strong p
+  => p { | r } { | d }
+  -> p { | r } { | v }
+onFields block = dimap (\r -> Tuple r r) (\(Tuple d r) -> Record.union d r) (first block)
+
+-- | The row **without the fields of `d`**: what `onFields` put on it,
+-- | taken off again — the free map that lowers definiteness, written for
+-- | the one place a stage needs it, the way back out of a row
+-- | re-presented beside itself (`PUI.derived`). Label-driven, so it walks
+-- | `d`'s row list.
+class ForgetFields (dl :: RowList Type) where
+  forgetFields :: forall v r. Proxy dl -> { | v } -> { | r }
+
+instance ForgetFields RL.Nil where
+  forgetFields _ = unsafeCoerce
+
+instance (IsSymbol l, ForgetFields rest) => ForgetFields (RL.Cons l a rest) where
+  forgetFields _ v = forgetFields (Proxy @rest) (unsafeDelete (reflectSymbol (Proxy @l)) v)

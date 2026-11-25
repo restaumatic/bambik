@@ -3,9 +3,9 @@ module Diner.View.Statistics (statistics) where
 import Prelude ((#), ($))
 
 import Data.Profunctor.Row.VariantToVariant as VariantToVariant
-import Diner (Diner, DishSales, browseState, isFirstPage, isLastPage, nextPage, pageLine, paidState, previousPage, quantityLine, salesAmountLine, salesPage, searchState, soldAmountLine, soldQuantityLine)
+import Diner (Diner, DishSales, Sales, browseState, isFirstSalesPage, isLastSalesPage, nextSalesPage, paidState, previousSalesPage, quantityLine, salesAmountLine, salesPage, salesPageLine, soldAmountLine, soldQuantityLine, soughtSales, soughtState)
 import Diner.Design (amountCell, amountHeader, note, pager, station, totalAmountCell, totalCell)
-import PUI (actedOf, PUI)
+import PUI (actedOf, derivation, derived, PUI)
 import PUI.Web (Web, inCase, text, textAt)
 import PUI.Web.MDC3 (columnHeader, dataCell, dataRow, dataTable', filledTextField', rowHeader, tab, tabBar)
 import QualifiedDo.Semigroupoid as Semigroupoid
@@ -23,12 +23,13 @@ statistics =
         tab @"Makarony"
         tab @"Dania główne"
         tab @"Desery" ) # inCase @"browsing" browseState
-      note "Nie ma takich dań" # inCase @"none" searchState
       ( Semigroupoid.do
-        salesTable
-        pager pageLine { isFirst: isFirstPage, isLast: isLastPage, next: nextPage, previous: previousPage } ) # inCase @"found" searchState ) # inCase @"some" paidState
+        note "Nie ma takich dań" # inCase @"none" soughtState
+        ( Semigroupoid.do
+          salesTable
+          pager salesPageLine { isFirst: isFirstSalesPage, isLast: isLastSalesPage, next: nextSalesPage, previous: previousSalesPage } ) # inCase @"found" soughtState ) # derived (derivation @"sought" soughtSales) ) # inCase @"some" paidState
 
-salesTable :: PUI Web Diner Diner
+salesTable :: PUI Web Sales Sales
 salesTable =
   dataTable' "Statystyki" { fullWidth: true }
     ( Semigroupoid.do

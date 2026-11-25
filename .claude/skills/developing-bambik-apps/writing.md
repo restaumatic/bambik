@@ -65,9 +65,14 @@ put several components over one value, one per shape (`import
 Data.Profunctor.Row.RecordToRecord as RecordToRecord` and siblings;
 none is a monad's `do`):
 
-- `RecordToRecord.do` (×→×) — **sources**, each owning the one field it
-  produces: what the user gives through the platform rather than an
-  editor (`filePicked @"Photo"`). The environment is never one — the
+- `RecordToRecord.do` (×→×) — **sources** and **derivations**, each
+  owning the one field it produces. A source is what the user gives
+  through the platform rather than an editor (`filePicked @"Photo"`). A
+  derivation is a read several lines share, computed once per feed
+  (`derivation @"sought" soughtSales`); the lines that read it are
+  written over the row plus the field, `( lines ) # derived
+  (derivation @l f)`, and the field is gone again below the bracket, so
+  it is never a model field (Diner's Statystyki). The environment is never one — the
   time, where the device is, whether it is online, the colour scheme,
   the window's size, the language: none is a field of the model. A line
   reads it beside the row (`( p $ text whereLine ) # geolocated
@@ -104,9 +109,9 @@ drops no field and admits no case. A block is where a new row is stated
 in terms of the old — sources produce fields, emitters produce events,
 `action @l` turns one case into its outcomes, the folds return the model
 — so a change of page, stage or view is a block, never a line that
-narrows. A block of sources or emitters yields only what its operands
-own; it is `# supplied` and `# stepped` that put the row the view
-carries back beside what the block produced.
+narrows. A block of sources, derivations or emitters yields only what
+its operands own; it is `# supplied`, `# derived` and `# stepped` that
+put the row the view carries back beside what the block produced.
 
 **The one runtime rule.** A record merge — and everything built on one —
 shows nothing until every field it waits for has a value, then updates
@@ -497,7 +502,9 @@ button'   @"Sign up" { icon: "person_add" }    -- the record: optional presentat
   never several leaves with `staticText` between them, never a formatter
   in the view. A field shown as stored names the field (`textAt
   @"title"`). A model field exists because the state needs it, never
-  because a display wanted a `String`.
+  because a display wanted a `String`. A read several lines share is
+  neither a field nor copy: it is derived once beside the row (`# derived
+  (derivation @"sought" soughtSales)`) and read by label inside.
 - **Fixed copy is static or constant.** A **static** is on screen
   regardless of data — a heading, a note, a caption — and is a value,
   never a label: `staticText "Hours"`, written first over what it

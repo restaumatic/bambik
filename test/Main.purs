@@ -39,7 +39,7 @@ import Effect.Aff (delay, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import PUI (fromHandles, handles, PUI, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedAt, actedOf, actedWithin, announce, dispatchedOf, editsOf, gathered, gatheredOf, cancelScope, capture, fold, foldInto, folding, inScope, landed, looped, newScope, reading, resolveFor, resumeScope, seeded, stamping, stampingEdits, suspendScope, stepped, ticks, unanswering, with)
+import PUI (fromHandles, handles, PUI, derivation, derived, ScopeState(..), accumulatedOf, accumulatedOn, acted, actedAt, actedOf, actedWithin, announce, dispatchedOf, editsOf, gathered, gatheredOf, cancelScope, capture, fold, foldInto, folding, inScope, landed, looped, newScope, reading, resolveFor, resumeScope, seeded, stamping, stampingEdits, suspendScope, stepped, ticks, unanswering, with)
 import PUI (acknowledged, continued, introduced, modalOver, supplied) as PUI
 import Unsafe.Coerce (unsafeCoerce)
 import Test.Exhaustive as Exhaustive
@@ -2312,6 +2312,27 @@ main = do
       delay (Milliseconds 60.0)
       cancelled <- liftEffect $ Ref.read beats
       liftEffect $ assertEqual "scope: a cancelled parent ends the child's ticks" atCancel cancelled
+
+  -- == A row re-presented beside itself (`derivation`, `derived`): the ==
+  -- == block's fields computed at each feed, in one row, inside only.  ==
+  do
+    ins <- Ref.new ([] :: Array { n :: Int, thrice :: Int, twice :: Int })
+    prop <- Ref.new Nothing
+    outs <- Ref.new ([] :: Array { n :: Int })
+    d <- handles
+      ( derived
+          (recordToRecord (derivation @"twice" (\r -> r.n * 2)) (derivation @"thrice" (\r -> r.n * 3)))
+          (echoProbe identity ins prop) :: PUI Effect { n :: Int } { n :: Int }
+      )
+    d.fromUser \o -> Ref.modify_ (_ <> [ o ]) outs
+    d.toUser { n: 5 }
+    Ref.read ins >>= assertEqual "derived: computed at the feed, both fields in one row" [ { n: 5, thrice: 15, twice: 10 } ]
+    Ref.read outs >>= assertEqual "derived: the feed is answered without them" [ { n: 5 } ]
+    fire prop { n: 6, thrice: 15, twice: 10 }
+    Ref.read outs >>= assertEqual "derived: an edit leaves without them" [ { n: 5 }, { n: 6 } ]
+    d.toUser { n: 7 }
+    Ref.read ins >>= assertEqual "derived: re-fed, computed again" [ { n: 5, thrice: 15, twice: 10 }, { n: 7, thrice: 21, twice: 14 } ]
+    Ref.read outs >>= assertEqual "derived: answered once per feed" [ { n: 5 }, { n: 6 }, { n: 7 } ]
 
   -- == A fact beside the model (`reading`, `stamping`, `stampingEdits`): ==
   -- == read at the feed or as the event leaves, followed with no turn.  ==
