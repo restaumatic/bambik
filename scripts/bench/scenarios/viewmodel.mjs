@@ -16,8 +16,11 @@ const reads = {
   Kuchnia: ['kitchenState', 'ticketsPage', 'pageLine', 'isFirstPage', 'isLastPage'],
   Wydawka: ['billsState', 'billsPage', 'pageLine', 'isFirstPage', 'isLastPage'],
   Raport: ['paidState', 'takingsLine', 'paidPage', 'pageLine', 'isFirstPage', 'isLastPage'],
-  Statystyki: ['paidState', 'browseState', 'searchState', 'soldQuantityLine', 'soldAmountLine', 'salesPage', 'pageLine', 'isFirstPage', 'isLastPage'],
+  Statystyki: ['paidState', 'browseState', 'soughtSales', 'soughtState', 'soldQuantityLine', 'soldAmountLine', 'salesPage', 'salesPageLine', 'isFirstSalesPage', 'isLastSalesPage'],
 }
+// Statystyki derives the sales looked for once (`derived`) and its other
+// reads are of the day beside them
+const derivedFor = { Statystyki: (D, model) => ({ ...model, sought: D.soughtSales(model) }) }
 
 // median time of one call, over enough calls to fill `budget` ms
 const time = (f, budget) => {
@@ -50,7 +53,9 @@ export const viewmodel = {
       stations[station] = {}
       for (const scale of scales) {
         const model = F.busyWith(load(S, scale))({ list: 10, tiles: 24 })(variant(station))
-        stations[station][scale] = Object.fromEntries(fns.map(fn => [fn, round(time(() => D[fn](fn === 'servedLine' ? { ...model, time: { hours: 13, minutes: 0, seconds: 0 } } : model), budget), 4)]))
+        const derived = derivedFor[station] ? derivedFor[station](D, model) : model
+        const fed = fn => fn === 'servedLine' ? { ...model, time: { hours: 13, minutes: 0, seconds: 0 } } : fn === 'soughtSales' ? model : derived
+        stations[station][scale] = Object.fromEntries(fns.map(fn => [fn, round(time(() => D[fn](fed(fn)), budget), 4)]))
       }
     }
     return { scales, generation, stations }

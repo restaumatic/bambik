@@ -128,13 +128,15 @@ const expected = (D, m) => {
     view.pager = some ? pager() : null
   }
   if (station === 'Statystyki') {
-    const some = is(D.paidState(m), 'some')
+    // the station's lines read the day beside the sales looked for, derived once (`derived`)
+    const sales = { ...m, sought: D.soughtSales(m) }
+    const some = is(D.paidState(m), 'some'), sought = is(D.soughtState(sales), 'found')
     if (!some) view.notes.push('Nic jeszcze nie sprzedano')
     view.finder = some ? finder() : null
-    if (some && !found()) view.notes.push('Nie ma takich dań')
-    view.total = some && found() ? [D.soldQuantityLine(m), D.soldAmountLine(m)] : null
-    view.rows = some && found() ? D.salesPage(m).map(s => [s.dish, D.quantityLine(s), D.salesAmountLine(s)]) : []
-    view.pager = some && found() ? pager() : null
+    if (some && !sought) view.notes.push('Nie ma takich dań')
+    view.total = some && sought ? [D.soldQuantityLine(sales), D.soldAmountLine(sales)] : null
+    view.rows = some && sought ? D.salesPage(sales).map(s => [s.dish, D.quantityLine(s), D.salesAmountLine(s)]) : []
+    view.pager = some && sought ? [D.salesPageLine(sales), D.isFirstSalesPage(sales), D.isLastSalesPage(sales)] : null
   }
   return JSON.stringify(view)
 }
