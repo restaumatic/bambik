@@ -381,5 +381,18 @@ model as it goes.
   block beside the row, forgotten below) in PUI, over
   `onFields`/`forgetFields` in the `×→×` shape module. Statystyki reads
   the sales looked for once per feed, `# derived (derivation @"sought"
-  soughtSales)`, every line of the station typed at `Sales`. Not yet
-  measured against the throwaway patch above.
+  soughtSales)`, every line of the station typed at `Sales`. Measured
+  (bench/results/2026-11-25-14-44 full, 2026-11-25-15-12 scale alone):
+  at ¼ speed on the standard day a page turned 14.6 → 7.7 ms, a group
+  picked 21.5 → 8.6, a key in the search 15.9 → 5.1, switched to 26.1
+  → 13.8; on the station alone a page turned 15.9 / 43 / 170 / 828 ms
+  at 1× / 4× / 16× / 64× became 8.2 / 10.8 / 27 / 96 and drawn 93 / 179 /
+  429 / 1 671 became 75 / 92 / 153 / 372, growth 0.95 → 0.6 and 0.69 →
+  0.38. Close to the throwaway patch's "sought sales remembered by the
+  model only" (27 / 109 at ¼, standard / 16×), as it should be: the same
+  one computation per feed. The full run read Kitchen drawn and turned
+  about twice the baseline; the scale scenario run alone on the same
+  build, and on 16642c1e and c5de5a03 in worktrees, reads it at the
+  baseline (drawn 92 / 92 / 131 / 187, a page turned 22 / 24 / 25 /
+  31), so that was the full run's load, not the code. Baseline not
+  replaced: a replacement wants a quiet full run.
