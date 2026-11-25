@@ -150,7 +150,7 @@ application has none), `check-determined` time on the synthetic
 applications, accelerated time in the soak (it runs four real minutes), a
 pass/fail budget subset for CI.
 
-## Findings (baseline of 2026-11-21, bench/baseline.md)
+## Findings (baseline of 2026-11-25, bench/baseline.md)
 
 i7-11850H, Chrome 158 headless. "At ¼" is 4× CPU throttle, the stand-in for
 a mid-range phone. No library change was made in this work; each finding
@@ -394,5 +394,10 @@ model as it goes.
   about twice the baseline; the scale scenario run alone on the same
   build, and on 16642c1e and c5de5a03 in worktrees, reads it at the
   baseline (drawn 92 / 92 / 131 / 187, a page turned 22 / 24 / 25 /
-  31), so that was the full run's load, not the code. Baseline not
-  replaced: a replacement wants a quiet full run.
+  31), so that was the full run's load, not the code. Baseline replaced
+  by a quiet full run on 32a6f1af (`git show 1171a28e:bench/baseline.md`
+  for the one before): Kitchen back at the baseline, 20 of 186 medians
+  moved by more than 25%, all but two of them Statystyki's falling
+  (a page turned 14.6 → 7.6 ms at ¼, mount at 64× 1 635 → 384); the two
+  rising, a second passing at Wydawka and at Statystyki at ¼, by a
+  millisecond or two, within a beat's noise.
