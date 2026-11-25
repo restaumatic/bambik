@@ -94,6 +94,20 @@ none is a monad's `do`):
   @"return flight"`). Events need no such block.
 - `VariantToRecord.do` (+→×) — one fold per case.
 
+**A line refines, a block re-presents.** Read a pipeline as what each
+line does to what is known. Most lines pass the row with its shape
+unchanged (editors, displays, groups, panes, lists, `stepped`). A few
+make it more definite: `introduced @l` and `# supplied` add a field, `#
+acknowledged` drops a case, each with the user supplying what the field
+or the case's absence stands for. No line goes the other way: a view
+drops no field and admits no case. A block is where a new row is stated
+in terms of the old — sources produce fields, emitters produce events,
+`action @l` turns one case into its outcomes, the folds return the model
+— so a change of page, stage or view is a block, never a line that
+narrows. A block of sources or emitters yields only what its operands
+own; it is `# supplied` and `# stepped` that put the row the view
+carries back beside what the block produced.
+
 **The one runtime rule.** A record merge — and everything built on one —
 shows nothing until every field it waits for has a value, then updates
 on every change. A pane that stays blank is waiting; the seed is what

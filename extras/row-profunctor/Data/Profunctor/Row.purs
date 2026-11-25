@@ -225,6 +225,36 @@
 -- | of its own (`extras/keyed-profunctor`) that imports nothing from this
 -- | one.
 -- |
+-- | ## Two operations on a diagonal
+-- |
+-- | Rows are ordered by **definiteness**: a record is more definite with
+-- | more fields, a variant with fewer cases. On the two diagonal shapes
+-- | the algebra offers two operations, and they relate to this order
+-- | differently:
+-- |
+-- |   * **Composition refines.** `>>>` along a diagonal, over the words
+-- |     the shape modules export, is monotone in definiteness: a focus
+-- |     (`focusField`, `focusCase`) keeps it, an introducer raises it —
+-- |     `onField @l` adds a field to the row, `onCase @l` eliminates a
+-- |     case from it, the same move read in the two row forms. Nothing
+-- |     here lowers it: dropping a field or admitting a case is a free
+-- |     map (`lcmap`/`rmap` of a row function), no component.
+-- |   * **A merge re-presents.** The pairing at a record input yields a
+-- |     record of whatever its operands produce from the shared row; the
+-- |     copairing at a variant input yields a variant of whatever its arms
+-- |     return. Neither is monotone: a merge states a new row in terms of
+-- |     the old, dropping and creating labels at once.
+-- |
+-- | The two differ in what leaves. A copairing returns one shared row
+-- | from every arm, so a bare variant-input merge loses nothing. A
+-- | pairing's output is owned, so a bare record-input merge yields the
+-- | owned labels and not the fed row; the row rides beside such a block
+-- | only under the diagonal — `Strong`'s `first` with the fed row as the
+-- | background, the lens whose getter is identity. `onField @l` is exactly
+-- | that over one producer, and refinement at `×→×` is re-presentation
+-- | under the diagonal. On the mixed shapes neither operation has a
+-- | reading: an arrow between the row forms is a replacement by kind.
+-- |
 -- | ## The shared floor
 -- |
 -- | What every shape's module (`Data.Profunctor.Row.*`) stands on:

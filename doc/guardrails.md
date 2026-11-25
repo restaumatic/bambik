@@ -103,6 +103,41 @@ allocated there, once per instantiation (2026-10-16).
   MUST use these four names for these four positions and for nothing
   else; the **view model module** is the module holding the functions of
   all four arrows.
+- **Two operations on a diagonal: a line refines, a block re-presents.**
+  Rows are ordered by **definiteness**: a record is more definite with
+  more fields, a variant with fewer cases. Along a diagonal shape
+  (`×→×`, `+→+`) composition is monotone in it — a line passes the row
+  with its shape unchanged, or makes it more definite: `onField @l`
+  (`introduced @l`, `supplied`) adds a field, `onCase @l`
+  (`acknowledged @l`) eliminates a case, both with a user supplying the
+  information. A view line MUST NOT lower definiteness (drop a field,
+  admit a case): those are free maps with no component, and a view
+  narrows nowhere (2026-10-13). A merge is the other operation: the
+  pairing builds a record of whatever its operands produce from the
+  shared row, the copairing a variant of whatever its arms return,
+  neither monotone — a new row stated in terms of the old, which is
+  what a change of view, page or stage is. So every diagonal word is in
+  one of three cells per shape:
+
+  | | pass | refine | replace |
+  | --- | --- | --- | --- |
+  | `×→×` | editors, displays, `group @l`, `inCase`, `actedOf`, `keepingEdits`, `stepped` | `introduced @l`, `supplied`, `onField @l` | sources (`filePicked`), `with`, `landed` on the `{}` a load fills |
+  | `+→+` | `confirmed @l`, the option leaves, `modal @l` under a trailing word | `acknowledged @l`, `onCase @l` | `action @l`, `continued @l`, `joined @l`, `expanded` |
+
+  Refine at `×→×` is replace **under the diagonal**: a record-input
+  merge yields only what its operands own, so its fed row leaves a bare
+  block only where it is `{}` (sources opening a flow), and otherwise
+  rides beside the block through a lens whose getter is identity
+  (`Strong`'s `first`): `supplied` over a source, `onField` over one
+  producer, `stepped` over an emitter block (through `landed`). The
+  variant-input merges share their output, one row from every arm, and
+  need no such word. A new diagonal word MUST name its cell. The `×→×`
+  replace cell has one reachable operand kind, the source; a
+  **derivation** (`{ | model } → { l :: a }`, a read function owning a
+  field, computed once per feed and read by label inside a bracket that
+  forgets it on the way back) would be its second and is not admitted:
+  L17 keeps copy at the leaf, and the shared read it would buy is
+  doc/benchmark-plan.md's route C(2), open (2026-11-25).
 - Every component MUST be a citizen of exactly one shape, and its row
   MUST speak the **business label**, stated once as the leaf's own type
   argument. No canonical label (`value`/`clicked`/`event`) appears in
